@@ -24,7 +24,7 @@ Create a `.env` file in the project root:
 # Required for all apps
 AI_PROVIDER=claude
 CLAUDE_API_KEY=sk-ant-xxx
-GCP_PROJECT_ID=hdma1-242116
+GCP_PROJECT_ID=your-gcp-project-here
 GOOGLE_APPLICATION_CREDENTIALS=/path/to/gcp-credentials.json
 SECRET_KEY=your-random-secret-key
 
