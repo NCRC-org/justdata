@@ -1,0 +1,30 @@
+WITH lender_counts AS (
+    SELECT
+        activity_year,
+        county_code,
+        lei,
+        SUM(total_originations) AS loan_volume
+    FROM justdata.race_originations
+    GROUP BY 1,2,3
+    HAVING SUM(total_originations) > 1
+)
+
+SELECT
+    a.activity_year,
+    a.county_code,
+    a.lei,
+    a.loan_volume AS subject_volume,
+    ARRAY_AGG(
+        STRUCT(b.lei AS peer_lei, b.loan_volume AS peer_volume)
+        ORDER BY ABS(b.loan_volume - a.loan_volume) ASC, b.loan_volume DESC
+        LIMIT 10
+    ) AS peers
+FROM lender_counts a
+LEFT JOIN lender_counts b
+    ON a.activity_year = b.activity_year
+    AND a.county_code = b.county_code
+    AND b.lei != a.lei
+    AND b.loan_volume BETWEEN 0.50 * a.loan_volume AND 2.00 * a.loan_volume
+WHERE a.county_code IS NOT NULL
+GROUP BY 1,2,3,4
+

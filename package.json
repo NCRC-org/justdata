@@ -1,0 +1,35 @@
+{
+  "name": "justdata",
+  "version": "1.0.0",
+  "description": "A comprehensive data analysis platform providing insights across three key financial domains: banking, mortgage, and small business. Built with modern Python architecture and AI-powered analytics.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "hs": "hs",
+    "hs:project:create": "hs project create",
+    "hs:project:deploy": "hs project deploy",
+    "hs:init": "hs init",
+    "hs:auth": "hs auth",
+    "hs:accounts": "hs accounts list",
+    "hs:upload": "hs upload",
+    "hs:fetch": "hs fetch",
+    "hs:watch": "hs watch"
+  },
+  "keywords": [
+    "data-analysis",
+    "banking",
+    "mortgage",
+    "lending",
+    "hubspot",
+    "crm",
+    "financial-analysis"
+  ],
+  "author": "Jad Edlebi <jedlebi@ncrc.org>",
+  "license": "MIT",
+  "devDependencies": {
+    "@hubspot/cli": "^7.7.0"
+  }
+}
