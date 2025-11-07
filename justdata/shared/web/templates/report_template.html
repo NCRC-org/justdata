@@ -200,6 +200,29 @@
             border-bottom: 1px solid #e0e0e0;
         }
         
+        .table-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+        }
+        
+        .table-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            font-style: italic;
+        }
+        
+        .table-source {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 8px;
+            font-style: normal;
+        }
+        
         .summary-cards {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -398,7 +421,7 @@
         
         <!-- Report Header -->
         <div class="report-header">
-            <h1 class="report-title">FDIC Bank Branch Analysis Report</h1>
+            <h1 class="report-title">Bank Branch Analysis</h1>
             <p class="report-subtitle">Comprehensive Banking Market Intelligence</p>
             <div class="report-meta">
                 <div>
@@ -449,9 +472,9 @@
         
         <!-- Report Content -->
         <div id="reportContent" style="display: none;">
-            <!-- Executive Summary Section -->
+            <!-- Latest Statistics Section -->
             <div class="report-section">
-                <h2 class="section-title">Executive Summary</h2>
+                <h2 class="section-title" id="latestStatsTitle">Latest Statistics</h2>
                 <div class="summary-cards" id="summaryCards">
                     <!-- Summary cards will be populated by JavaScript -->
                 </div>
@@ -467,16 +490,13 @@
                 </div>
             </div>
             
-            <!-- Summary Table -->
+            <!-- Table 1: Summary -->
             <div class="report-section print-break">
-                <h2 class="section-title">Summary by County and Year</h2>
+                <h3 class="table-title">Table 1: Yearly Breakdown</h3>
+                <p class="table-description">Comprehensive overview of branch data across counties and years, including LMI and majority-minority percentages.</p>
+                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
                 <div class="table-container">
-                    <div class="table-header">
-                        <button class="collapse-btn" onclick="toggleTable('summaryTable')">
-                            <i class="fas fa-chevron-down"></i> Show/Hide Table
-                        </button>
-                    </div>
-                    <table class="data-table collapsible-table" id="summaryTable">
+                    <table class="data-table" id="summaryTable">
                         <thead>
                             <tr>
                                 <th style="text-align: center;">County</th>
@@ -506,9 +526,11 @@
                 </div>
             </div>
             
-            <!-- Bank Analysis -->
+            <!-- Table 2: Bank Analysis -->
             <div class="report-section print-break">
-                <h2 class="section-title">Analysis by Bank</h2>
+                <h3 class="table-title">Table 2: Analysis by Bank</h3>
+                <p class="table-description">Detailed breakdown of branches by individual banks.</p>
+                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
                 <div class="table-container">
                     <div class="table-header">
                         <button class="collapse-btn" onclick="toggleTable('bankTable')">
@@ -545,16 +567,13 @@
                 </div>
             </div>
             
-            <!-- County Analysis -->
+            <!-- Table 3: County Analysis -->
             <div class="report-section print-break">
-                <h2 class="section-title">Analysis by County</h2>
+                <h3 class="table-title">Table 3: Analysis by County</h3>
+                <p class="table-description">Geographic distribution of bank branches, highlighting locations existing in LMI and/or majority-minority communities.</p>
+                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
                 <div class="table-container">
-                    <div class="table-header">
-                        <button class="collapse-btn" onclick="toggleTable('countyTable')">
-                            <i class="fas fa-chevron-down"></i> Show/Hide Table
-                        </button>
-                    </div>
-                    <table class="data-table collapsible-table" id="countyTable">
+                    <table class="data-table" id="countyTable">
                         <thead>
                             <tr>
                                 <th style="text-align: center;">County</th>
@@ -584,9 +603,11 @@
                 </div>
             </div>
             
-            <!-- Trends Analysis -->
+            <!-- Table 4: Trends Analysis -->
             <div class="report-section print-break" id="trendsSection" style="display: none;">
-                <h2 class="section-title">Year-over-Year Trends</h2>
+                <h3 class="table-title">Table 4: Year-over-Year Trends</h3>
+                <p class="table-description">Temporal analysis showing growth patterns, market changes, and strategic shifts in branch operations over time.</p>
+                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
                 <div class="table-container">
                     <div class="table-header">
                         <button class="collapse-btn" onclick="toggleTable('trendsTable')">
@@ -660,8 +681,8 @@
             document.getElementById('years').textContent = metadata.years.join(', ');
             document.getElementById('totalRecords').textContent = metadata.total_records.toLocaleString();
             
-            // Populate summary cards
-            populateSummaryCards(data.summary);
+            // Populate summary cards using raw_data to ensure unique branch counts by uninumbr
+            populateSummaryCards(data.raw_data);
             
             // Populate AI insights if available
             if (metadata.ai_insights) {
@@ -802,38 +823,64 @@
             }).filter(p => p).join(''); // Filter out empty strings
         }
         
-        function populateSummaryCards(summaryData) {
-            if (!summaryData || summaryData.length === 0) return;
+        function populateSummaryCards(rawData) {
+            if (!rawData || rawData.length === 0) return;
             
             const cardsContainer = document.getElementById('summaryCards');
             
-            // Calculate totals
-            const totalBranches = summaryData.reduce((sum, row) => sum + (row['Total Branches'] || 0), 0);
-            const totalLMI = summaryData.reduce((sum, row) => sum + (row['LMI Branches'] || 0), 0);
-            const totalMinority = summaryData.reduce((sum, row) => sum + (row['Minority Branches'] || 0), 0);
+            // Find the latest year from the data
+            const years = [...new Set(rawData.map(row => row['year']))].sort((a, b) => b - a);
+            const latestYear = years[0];
+            
+            // Update the section title with the latest year
+            const titleElement = document.getElementById('latestStatsTitle');
+            if (titleElement) {
+                titleElement.textContent = `Latest Statistics (${latestYear})`;
+            }
+            
+            // Filter data for the latest year only
+            const latestYearData = rawData.filter(row => row['year'] === latestYear);
+            
+            // Compute unique branches by uninumbr for the latest year only
+            const uniqueAll = new Set();
+            const uniqueLMI = new Set();
+            const uniqueMinority = new Set();
+            
+            latestYearData.forEach(row => {
+                const id = row['uninumbr'];
+                if (id !== null && id !== undefined) {
+                    uniqueAll.add(id);
+                    if (row['lmict'] === 1 || row['br_lmi'] === 1) uniqueLMI.add(id);
+                    if (row['mmct'] === 1 || row['br_minority'] === 1) uniqueMinority.add(id);
+                }
+            });
+            
+            const totalBranches = uniqueAll.size;
+            const totalLMI = uniqueLMI.size;
+            const totalMinority = uniqueMinority.size;
             const avgLMI = totalBranches > 0 ? ((totalLMI / totalBranches) * 100).toFixed(1) : '0.0';
             const avgMinority = totalBranches > 0 ? ((totalMinority / totalBranches) * 100).toFixed(1) : '0.0';
             
             cardsContainer.innerHTML = `
                 <div class="summary-card">
                     <h3>${totalBranches.toLocaleString()}</h3>
-                    <p>Total Branches</p>
+                    <p>Total Branches (${latestYear})</p>
                 </div>
                 <div class="summary-card">
                     <h3>${totalLMI.toLocaleString()}</h3>
-                    <p>LMI Branches</p>
+                    <p>LMI Branches (${latestYear})</p>
                 </div>
                 <div class="summary-card">
                     <h3>${totalMinority.toLocaleString()}</h3>
-                    <p>Minority Branches</p>
+                    <p>Minority Branches (${latestYear})</p>
                 </div>
                 <div class="summary-card">
                     <h3>${avgLMI}%</h3>
-                    <p>Avg LMI %</p>
+                    <p>LMI % (${latestYear})</p>
                 </div>
                 <div class="summary-card">
                     <h3>${avgMinority}%</h3>
-                    <p>Avg Minority %</p>
+                    <p>Minority % (${latestYear})</p>
                 </div>
             `;
         }
@@ -915,8 +962,8 @@
                 return `<tr>${cells.map(cell => `<td style="text-align: center;">${cell}</td>`).join('')}</tr>`;
             }).join('');
             
-            // Auto-collapse tables with more than 10 rows
-            if (data.length > 10) {
+            // Auto-collapse only the bank table if it has more than 10 rows
+            if (tableId === 'bankTable' && data.length > 10) {
                 table.classList.add('collapsed');
                 const button = table.previousElementSibling.querySelector('.collapse-btn');
                 const icon = button.querySelector('i');
