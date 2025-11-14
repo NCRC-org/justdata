@@ -1,0 +1,204 @@
+#!/usr/bin/env python3
+"""
+Analyze Bank Branch Quarterly Trends Excel reports.
+"""
+
+import pandas as pd
+import sys
+import os
+from pathlib import Path
+from typing import Dict, List, Any
+
+
+def analyze_excel_report(file_path: str) -> Dict[str, Any]:
+    """
+    Analyze an Excel report file and extract key information.
+    
+    Args:
+        file_path: Path to the Excel file
+        
+    Returns:
+        Dictionary containing analysis results
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"File not found: {file_path}")
+    
+    print(f"📊 Analyzing Excel report: {file_path}")
+    print("=" * 80)
+    
+    # Read all sheets from the Excel file
+    excel_file = pd.ExcelFile(file_path)
+    sheet_names = excel_file.sheet_names
+    
+    print(f"\n📑 Found {len(sheet_names)} sheet(s):")
+    for i, sheet in enumerate(sheet_names, 1):
+        print(f"  {i}. {sheet}")
+    
+    analysis = {
+        'file_path': file_path,
+        'file_name': os.path.basename(file_path),
+        'sheets': {},
+        'summary': {}
+    }
+    
+    # Analyze each sheet
+    for sheet_name in sheet_names:
+        print(f"\n{'=' * 80}")
+        print(f"📋 Analyzing sheet: {sheet_name}")
+        print(f"{'=' * 80}")
+        
+        df = pd.read_excel(file_path, sheet_name=sheet_name)
+        
+        sheet_info = {
+            'row_count': len(df),
+            'column_count': len(df.columns),
+            'columns': list(df.columns),
+            'sample_data': df.head(5).to_dict('records') if not df.empty else [],
+            'summary_stats': {}
+        }
+        
+        print(f"\n📏 Dimensions: {len(df)} rows × {len(df.columns)} columns")
+        print(f"\n📊 Columns:")
+        for col in df.columns:
+            print(f"  - {col}")
+        
+        # Calculate summary statistics for numeric columns
+        numeric_cols = df.select_dtypes(include=['number']).columns
+        if len(numeric_cols) > 0:
+            print(f"\n📈 Summary Statistics:")
+            stats = df[numeric_cols].describe()
+            print(stats.to_string())
+            sheet_info['summary_stats'] = stats.to_dict()
+        
+        # Show sample data
+        if not df.empty:
+            print(f"\n🔍 Sample Data (first 5 rows):")
+            print(df.head().to_string())
+        
+        # Special analysis for specific sheet types
+        if 'Summary' in sheet_name or 'summary' in sheet_name.lower():
+            analyze_summary_sheet(df, sheet_info)
+        elif 'Trend' in sheet_name or 'trend' in sheet_name.lower():
+            analyze_trends_sheet(df, sheet_info)
+        elif 'Bank' in sheet_name or 'bank' in sheet_name.lower():
+            analyze_bank_sheet(df, sheet_info)
+        elif 'County' in sheet_name or 'county' in sheet_name.lower():
+            analyze_county_sheet(df, sheet_info)
+        
+        analysis['sheets'][sheet_name] = sheet_info
+    
+    # Generate overall summary
+    total_rows = sum(s['row_count'] for s in analysis['sheets'].values())
+    analysis['summary'] = {
+        'total_sheets': len(sheet_names),
+        'total_rows': total_rows,
+        'sheet_names': sheet_names
+    }
+    
+    print(f"\n{'=' * 80}")
+    print(f"✅ Analysis Complete")
+    print(f"{'=' * 80}")
+    print(f"Total sheets: {len(sheet_names)}")
+    print(f"Total rows across all sheets: {total_rows}")
+    
+    return analysis
+
+
+def analyze_summary_sheet(df: pd.DataFrame, sheet_info: Dict):
+    """Analyze summary sheet with specific metrics."""
+    print(f"\n📊 Summary Sheet Analysis:")
+    
+    # Look for key columns
+    if 'Total Branches' in df.columns:
+        total = df['Total Branches'].sum()
+        print(f"  Total Branches: {total:,.0f}")
+    
+    if 'LMI %' in df.columns:
+        avg_lmi = df['LMI %'].mean()
+        print(f"  Average LMI %: {avg_lmi:.1f}%")
+    
+    if 'Minority %' in df.columns:
+        avg_minority = df['Minority %'].mean()
+        print(f"  Average Minority %: {avg_minority:.1f}%")
+
+
+def analyze_trends_sheet(df: pd.DataFrame, sheet_info: Dict):
+    """Analyze trends sheet with year-over-year changes."""
+    print(f"\n📈 Trends Sheet Analysis:")
+    
+    if 'Year' in df.columns:
+        years = sorted(df['Year'].unique())
+        print(f"  Years covered: {years}")
+    
+    if 'Total Branches YoY %' in df.columns:
+        yoy_changes = df['Total Branches YoY %'].dropna()
+        if len(yoy_changes) > 0:
+            avg_change = yoy_changes.mean()
+            print(f"  Average YoY Change: {avg_change:.1f}%")
+
+
+def analyze_bank_sheet(df: pd.DataFrame, sheet_info: Dict):
+    """Analyze bank-specific sheet."""
+    print(f"\n🏦 Bank Sheet Analysis:")
+    
+    if 'Bank Name' in df.columns:
+        unique_banks = df['Bank Name'].nunique()
+        print(f"  Unique Banks: {unique_banks}")
+        
+        if 'Total Branches' in df.columns:
+            top_banks = df.groupby('Bank Name')['Total Branches'].sum().sort_values(ascending=False).head(5)
+            print(f"\n  Top 5 Banks by Total Branches:")
+            for bank, branches in top_banks.items():
+                print(f"    {bank}: {branches:,.0f} branches")
+
+
+def analyze_county_sheet(df: pd.DataFrame, sheet_info: Dict):
+    """Analyze county-specific sheet."""
+    print(f"\n🗺️  County Sheet Analysis:")
+    
+    if 'County' in df.columns:
+        unique_counties = df['County'].nunique()
+        print(f"  Unique Counties: {unique_counties}")
+        
+        if 'Total Branches' in df.columns:
+            top_counties = df.groupby('County')['Total Branches'].sum().sort_values(ascending=False).head(5)
+            print(f"\n  Top 5 Counties by Total Branches:")
+            for county, branches in top_counties.items():
+                print(f"    {county}: {branches:,.0f} branches")
+
+
+if __name__ == '__main__':
+    # Default file path
+    script_dir = Path(__file__).parent
+    default_file = script_dir / "data" / "Q3_2025_Bank_Branch_Trends_Report_20251113_191533.xlsx"
+    
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+    else:
+        file_path = str(default_file)
+        print(f"Using default file path: {file_path}")
+        print()
+    
+    try:
+        analysis = analyze_excel_report(file_path)
+        
+        # Optionally export to JSON
+        if len(sys.argv) > 2 and sys.argv[2] == '--export':
+            import json
+            output_path = file_path.replace('.xlsx', '_analysis.json')
+            with open(output_path, 'w') as f:
+                json.dump(analysis, f, indent=2, default=str)
+            print(f"\n💾 Analysis exported to: {output_path}")
+        
+    except FileNotFoundError as e:
+        print(f"❌ Error: {e}")
+        print(f"\n💡 Please make sure the file exists at:")
+        print(f"   {file_path}")
+        print(f"\n   Or provide the file path as an argument:")
+        print(f"   python analyze_report.py <path_to_excel_file>")
+        sys.exit(1)
+    except Exception as e:
+        print(f"❌ Error analyzing file: {e}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
