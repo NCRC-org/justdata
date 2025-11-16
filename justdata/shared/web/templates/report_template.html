@@ -13,7 +13,9 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
         /* Print-specific styles */
@@ -36,20 +38,23 @@
         .report-header {
             text-align: center;
             margin-bottom: 40px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #e0e0e0;
+            padding: 30px 20px;
+            background: #003366;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
         .report-title {
             font-size: 2.5rem;
             font-weight: 700;
-            color: #1a1a1a;
+            color: white;
             margin-bottom: 10px;
         }
         
         .report-subtitle {
             font-size: 1.2rem;
-            color: #666;
+            color: rgba(255, 255, 255, 0.9);
             margin-bottom: 20px;
         }
         
@@ -60,7 +65,7 @@
             flex-wrap: wrap;
             gap: 20px;
             font-size: 0.9rem;
-            color: #666;
+            color: rgba(255, 255, 255, 0.95);
             text-align: left;
         }
         
@@ -87,13 +92,13 @@
         }
         
         .action-btn.primary {
-            background: #007bff;
+            background: #0066CC;
             color: white;
-            border-color: #007bff;
+            border-color: #0066CC;
         }
         
         .action-btn.primary:hover {
-            background: #0056b3;
+            background: #003366;
         }
         
         .dropdown {
@@ -171,7 +176,7 @@
         }
         
         .ai-insight-card h3 i {
-            color: #007bff;
+            color: #003366;
         }
         
         .ai-content {
@@ -216,11 +221,49 @@
             font-style: italic;
         }
         
+        .table-introduction {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
         .table-source {
             font-size: 0.75rem;
             color: #888;
             margin-top: 8px;
             font-style: normal;
+        }
+        
+        .table-caption {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #003366;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        
+        .table-caption strong {
+            color: #003366;
+            font-weight: 600;
+        }
+        
+        .table-narrative {
+            margin-top: 25px;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #333;
+        }
+        
+        .table-narrative p {
+            margin-bottom: 15px;
+        }
+        
+        .table-narrative p:last-child {
+            margin-bottom: 0;
         }
         
         .summary-cards {
@@ -241,8 +284,14 @@
         .summary-card h3 {
             font-size: 2rem;
             font-weight: 700;
-            color: #007bff;
+            color: #003366;
             margin: 0 0 10px 0;
+        }
+        
+        .summary-card h3 .percentage-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #666;
         }
         
         .summary-card p {
@@ -373,7 +422,7 @@
             align-items: center;
             gap: 8px;
             padding: 10px 20px;
-            background: #6c757d;
+            background: #003366;
             color: white;
             text-decoration: none;
             border-radius: 6px;
@@ -382,7 +431,7 @@
         }
         
         .back-btn:hover {
-            background: #545b62;
+            background: #0066CC;
             color: white;
         }
         
@@ -421,8 +470,11 @@
         
         <!-- Report Header -->
         <div class="report-header">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+            </div>
             <h1 class="report-title">Bank Branch Analysis</h1>
-            <p class="report-subtitle">Comprehensive Banking Market Intelligence</p>
+            <p class="report-subtitle">Data drives the <em>movement</em></p>
             <div class="report-meta">
                 <div>
                     <strong>Generated:</strong> <span id="generatedAt">Loading...</span><br>
@@ -480,6 +532,18 @@
                 </div>
             </div>
             
+            <!-- Branch Map Section -->
+            <div class="report-section print-break" id="branchMapSection" style="display: none;">
+                <h2 class="section-title">Branch Locations Map</h2>
+                <p class="table-introduction">
+                    Interactive map showing the geographic distribution of bank branches in the selected area.
+                </p>
+                <div id="branchMap" style="height: 600px; width: 100%; border: 2px solid #ddd; border-radius: 8px; margin: 20px 0;"></div>
+                <p class="table-caption" id="mapCaption">
+                    <!-- Map caption will be populated by JavaScript -->
+                </p>
+            </div>
+            
             <!-- AI Executive Summary -->
             <div class="report-section print-break" id="aiExecutiveSummarySection" style="display: none;">
                 <h2 class="section-title">Executive Summary</h2>
@@ -487,32 +551,6 @@
                     <div class="ai-content" id="executiveSummaryContent">
                         <!-- AI content will be populated by JavaScript -->
                     </div>
-                </div>
-            </div>
-            
-            <!-- Table 1: Summary -->
-            <div class="report-section print-break">
-                <h3 class="table-title">Table 1: Yearly Breakdown</h3>
-                <p class="table-description">Comprehensive overview of branch data across counties and years, including LMI and majority-minority percentages.</p>
-                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
-                <div class="table-container">
-                    <table class="data-table" id="summaryTable">
-                        <thead>
-                            <tr>
-                                <th style="text-align: center;">County</th>
-                                <th style="text-align: center;">Year</th>
-                                <th style="text-align: center;">Total Branches</th>
-                                <th style="text-align: center;">LMI Branches</th>
-                                <th style="text-align: center;">Minority Branches</th>
-                                <th style="text-align: center;">Number of Banks</th>
-                                <th style="text-align: center;">LMI %</th>
-                                <th style="text-align: center;">Minority %</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
             
@@ -526,125 +564,157 @@
                 </div>
             </div>
             
-            <!-- Table 2: Bank Analysis -->
+            <!-- Section 1: Yearly Breakdown -->
             <div class="report-section print-break">
-                <h3 class="table-title">Table 2: Analysis by Bank</h3>
-                <p class="table-description">Detailed breakdown of branches by individual banks.</p>
-                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
+                <h2 class="section-title">Section 1: Yearly Breakdown</h2>
+                <p class="table-introduction" id="summaryTableIntroduction">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="summaryTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Variable</th>
+                                <!-- Year columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="summaryTableCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+                <div class="table-narrative" id="summaryTableNarrative">
+                    <!-- Narrative analysis will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Section 2: Analysis by Bank -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 2: Analysis by Bank</h2>
+                <p class="table-introduction" id="bankTableIntroduction">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
                 <div class="table-container">
                     <div class="table-header">
                         <button class="collapse-btn" onclick="toggleTable('bankTable')">
                             <i class="fas fa-chevron-down"></i> Show/Hide Table
                         </button>
+                        <button class="expand-btn" id="expandBankTableBtn" onclick="expandBankTable()" style="display: none;">
+                            <i class="fas fa-chevron-down"></i> Show All Banks
+                        </button>
                     </div>
                     <table class="data-table collapsible-table" id="bankTable">
                         <thead>
                             <tr>
-                                <th style="text-align: center;">Bank Name</th>
-                                <th style="text-align: center;">County</th>
-                                <th style="text-align: center;">Year</th>
+                                <th style="text-align: left;">Bank Name</th>
                                 <th style="text-align: center;">Total Branches</th>
-                                <th style="text-align: center;">LMI Branches</th>
-                                <th style="text-align: center;">Minority Branches</th>
-                                <th style="text-align: center;">LMI %</th>
-                                <th style="text-align: center;">Minority %</th>
+                                <th style="text-align: center;">LMI Only Branches</th>
+                                <th style="text-align: center;">MMCT Only Branches</th>
+                                <th style="text-align: center;">Both LMICT/MMCT Branches</th>
+                                <th style="text-align: center;">Net Change</th>
                             </tr>
                         </thead>
                         <tbody>
                             <!-- Data will be populated by JavaScript -->
                         </tbody>
                     </table>
+                    <p class="table-caption" id="bankTableCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+                <div class="table-narrative" id="bankTableNarrative">
+                    <!-- Narrative analysis will be populated by JavaScript -->
                 </div>
             </div>
             
-            <!-- AI Bank Strategies -->
-            <div class="report-section print-break" id="aiBankStrategiesSection" style="display: none;">
-                <h2 class="section-title">Bank Strategies Analysis</h2>
-                <div class="ai-insight-card">
-                    <div class="ai-content" id="bankStrategiesContent">
-                        <!-- AI content will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Table 3: County Analysis -->
-            <div class="report-section print-break">
-                <h3 class="table-title">Table 3: Analysis by County</h3>
-                <p class="table-description">Geographic distribution of bank branches, highlighting locations existing in LMI and/or majority-minority communities.</p>
-                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
+            <!-- Section 3: County by County Analysis (only shown for multiple counties) -->
+            <div class="report-section print-break" id="countyTableSection" style="display: none;">
+                <h2 class="section-title">Section 3: County by County Analysis</h2>
+                <p class="table-introduction" id="countyTableIntroduction">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
                 <div class="table-container">
                     <table class="data-table" id="countyTable">
                         <thead>
                             <tr>
-                                <th style="text-align: center;">County</th>
-                                <th style="text-align: center;">Year</th>
+                                <th style="text-align: left;">County</th>
                                 <th style="text-align: center;">Total Branches</th>
-                                <th style="text-align: center;">LMI Branches</th>
-                                <th style="text-align: center;">Minority Branches</th>
+                                <th style="text-align: center;">LMI Only Branches</th>
+                                <th style="text-align: center;">MMCT Only Branches</th>
+                                <th style="text-align: center;">Both LMICT/MMCT Branches</th>
                                 <th style="text-align: center;">Number of Banks</th>
-                                <th style="text-align: center;">LMI %</th>
-                                <th style="text-align: center;">Minority %</th>
                             </tr>
                         </thead>
                         <tbody>
                             <!-- Data will be populated by JavaScript -->
                         </tbody>
                     </table>
+                    <p class="table-caption" id="countyTableCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+                <div class="table-narrative" id="countyTableNarrative">
+                    <!-- Narrative analysis will be populated by JavaScript -->
                 </div>
             </div>
             
-            <!-- AI Community Impact -->
-            <div class="report-section print-break" id="aiCommunityImpactSection" style="display: none;">
-                <h2 class="section-title">Community Impact Analysis</h2>
+            <!-- Methods Section -->
+            <div class="report-section print-break" id="methodsSection">
+                <h2 class="section-title">Methods</h2>
                 <div class="ai-insight-card">
-                    <div class="ai-content" id="communityImpactContent">
-                        <!-- AI content will be populated by JavaScript -->
+                    <div class="ai-content">
+                        <h3>Data Sources</h3>
+                        <p>This report uses data from the Federal Deposit Insurance Corporation (FDIC) Summary of Deposits (SOD). Branch-level data is sourced from the FDIC's annual survey of all FDIC-insured institutions, compiled and maintained in NCRC's curated databases. Data is queried from NCRC datasets for the years specified in the analysis.</p>
+                        
+                        <p><strong>Branch Service Types:</strong> This analysis includes all branch service types reported in the FDIC Summary of Deposits, including Full Service Branches, Limited Service Branches, Drive-Through Branches, and other branch service types. No service type filtering is applied to the data.</p>
+                        
+                        <p><strong>Data Quality Assurance:</strong> All data used in this report has been downloaded, cleaned, and tested by NCRC Research staff to ensure accuracy and reliability. Users can download the complete raw dataset for their report using the Excel Export feature to verify any claims or statistics presented in the AI-generated narratives. When using AI-generated content, always keep a human in the loop—review AI interpretations against the underlying data and exercise professional judgment in your analysis.</p>
+                        
+                        <h3>Calculations</h3>
+                        
+                        <p><strong>Branch Counts:</strong> Unique branches are identified using the unique institution number (<code>uninumbr</code>). Branch counts represent distinct physical branch locations, not transactions or accounts.</p>
+            
+                        <p><strong>Low-to-Moderate Income (LMI) Designation:</strong> Branches are classified as located in Low-to-Moderate Income Census Tracts (LMICT) when the census tract's median family income is below 80% of the area median family income, as defined by the U.S. Department of Housing and Urban Development (HUD).</p>
+                        
+                        <p><strong>Majority-Minority Census Tract (MMCT) Designation:</strong> Branches are classified as located in Majority-Minority Census Tracts when minority populations represent more than 50% of the total population in the census tract, as defined by the U.S. Census Bureau.</p>
+                        
+                        <p><strong>2020 Census Boundary Changes:</strong> The 2020 census boundaries that took effect in 2022 resulted in a dramatic increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a dramatic increase in majority-minority branch locations between 2021 and 2022. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual branch location changes or banking strategy shifts. When analyzing MMCT branch changes between 2021 and 2022, this census boundary change effect should be considered.</p>
+                        
+                        <p><strong>Deduplication:</strong> Branch categories (LMI Only, MMCT Only, and Both LMICT/MMCT) are mutually exclusive. Each branch is counted in only one category based on its census tract characteristics. Branches that are both LMICT and MMCT are counted only in the "Both LMICT/MMCT Branches" category.</p>
+                        
+                        <p><strong>Net Change:</strong> Calculated as the difference between branch counts in the first year and the final year of the analysis period.</p>
+                        
+                        <p><strong>Herfindahl-Hirschman Index (HHI):</strong> Market concentration is measured using the HHI, calculated as the sum of squared market shares of all banks in the study area based on deposit market share. Market shares are expressed as percentages, and the HHI scale ranges from 0 to 10,000:</p>
+                        <ul>
+                            <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+                            <li>HHI 1,500-2,500: Moderate concentration</li>
+                            <li>HHI &gt; 2,500: High concentration</li>
+                        </ul>
+                        <p>The HHI calculation uses deposit data from all banks in the study area, not just the banks shown in the report tables.</p>
+                        
+                        <p><strong>Geographic Identifiers:</strong> Counties are identified using <code>geoid5</code>, a 5-digit code where the first 2 digits represent the state FIPS code and the next 3 digits represent the county FIPS code. Leading zeros are preserved to maintain proper formatting.</p>
+                        
+                        <h3>Abbreviations and Acronyms</h3>
+                        <ul>
+                            <li><strong>FDIC:</strong> Federal Deposit Insurance Corporation</li>
+                            <li><strong>SOD:</strong> Summary of Deposits</li>
+                            <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+                            <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
+                            <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
+                            <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
+                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                        </ul>
+                        
+                        <h3>AI Disclosure</h3>
+                        <p>This report was generated using AI assistance through Cursor and other language models (primarily Claude Sonnet 4). AI-generated content includes narrative analysis, executive summaries, key findings, and table introductions. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. All underlying data and calculations are based on FDIC Summary of Deposits data compiled by NCRC research staff. Users should verify specific claims and data points using the Excel Export, which contains the complete underlying dataset.</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Table 4: Trends Analysis -->
-            <div class="report-section print-break" id="trendsSection" style="display: none;">
-                <h3 class="table-title">Table 4: Year-over-Year Trends</h3>
-                <p class="table-description">Temporal analysis showing growth patterns, market changes, and strategic shifts in branch operations over time.</p>
-                <p class="table-source"><strong>Source:</strong> FDIC Summary of Deposits</p>
-                <div class="table-container">
-                    <div class="table-header">
-                        <button class="collapse-btn" onclick="toggleTable('trendsTable')">
-                            <i class="fas fa-chevron-down"></i> Show/Hide Table
-                        </button>
-                    </div>
-                    <table class="data-table collapsible-table" id="trendsTable">
-                        <thead>
-                            <tr>
-                                <th style="text-align: center;">Year</th>
-                                <th style="text-align: center;">Total Branches</th>
-                                <th style="text-align: center;">LMI Branches</th>
-                                <th style="text-align: center;">Minority Branches</th>
-                                <th style="text-align: center;">Number of Banks</th>
-                                <th style="text-align: center;">Total Branches YoY %</th>
-                                <th style="text-align: center;">LMI Branches YoY %</th>
-                                <th style="text-align: center;">Minority Branches YoY %</th>
-                                <th style="text-align: center;">LMI %</th>
-                                <th style="text-align: center;">Minority %</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <!-- AI Trends Analysis -->
-            <div class="report-section print-break" id="aiTrendsAnalysisSection" style="display: none;">
-                <h2 class="section-title">Trends Analysis</h2>
-                <div class="ai-insight-card">
-                    <div class="ai-content" id="trendsAnalysisContent">
-                        <!-- AI content will be populated by JavaScript -->
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
     
@@ -684,21 +754,78 @@
             // Populate summary cards using raw_data to ensure unique branch counts by uninumbr
             populateSummaryCards(data.raw_data);
             
+            // Initialize branch map if coordinates are available
+            initializeBranchMap(data.raw_data, metadata);
+            
             // Populate AI insights if available
             if (metadata.ai_insights) {
                 populateAIInsights(metadata.ai_insights);
             }
             
-            // Populate tables
-            populateTable('summaryTable', data.summary);
-            populateTable('bankTable', data.by_bank);
-            populateTable('countyTable', data.by_county);
+            // Populate tables with introductions, captions, and narratives
+            populateTable('summaryTable', data.summary, metadata, 'table1');
             
-            // Show trends if available
-            if (data.trends && data.trends.length > 0) {
-                document.getElementById('trendsSection').style.display = 'block';
-                populateTable('trendsTable', data.trends);
+            // Update Net Change header in bankTable with year range
+            if (metadata.years && metadata.years.length > 0) {
+                const years = metadata.years;
+                const yearRange = years.length > 1 
+                    ? `${Math.min(...years)}-${Math.max(...years)}`
+                    : years[0].toString();
+                const netChangeHeader = document.querySelector('#bankTable thead th:last-child');
+                if (netChangeHeader && netChangeHeader.textContent.trim() === 'Net Change') {
+                    netChangeHeader.textContent = `Net Change (${yearRange})`;
+                }
             }
+            
+            populateTable('bankTable', data.by_bank, metadata, 'table2');
+            
+            // Show expand button if there are more than 10 banks
+            if (data.by_bank && data.by_bank.length > 10) {
+                const expandBtn = document.getElementById('expandBankTableBtn');
+                if (expandBtn) {
+                    expandBtn.style.display = 'inline-block';
+                }
+            }
+            
+            // Populate table introductions and narratives
+            if (metadata.ai_insights && metadata.ai_insights.table_introductions) {
+                if (metadata.ai_insights.table_introductions.table1) {
+                    const introEl = document.getElementById('summaryTableIntroduction');
+                    if (introEl) introEl.textContent = metadata.ai_insights.table_introductions.table1;
+                }
+                if (metadata.ai_insights.table_introductions.table2) {
+                    const introEl = document.getElementById('bankTableIntroduction');
+                    if (introEl) introEl.textContent = metadata.ai_insights.table_introductions.table2;
+                }
+                if (metadata.ai_insights.table_introductions.table3) {
+                    const introEl = document.getElementById('countyTableIntroduction');
+                    if (introEl) introEl.textContent = metadata.ai_insights.table_introductions.table3;
+                }
+            }
+            
+            // Populate table narratives
+            if (metadata.ai_insights && metadata.ai_insights.table_narratives) {
+                if (metadata.ai_insights.table_narratives.table1) {
+                    const narrativeEl = document.getElementById('summaryTableNarrative');
+                    if (narrativeEl) narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table1);
+                }
+                if (metadata.ai_insights.table_narratives.table2) {
+                    const narrativeEl = document.getElementById('bankTableNarrative');
+                    if (narrativeEl) narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table2);
+                }
+                if (metadata.ai_insights.table_narratives.table3) {
+                    const narrativeEl = document.getElementById('countyTableNarrative');
+                    if (narrativeEl) narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table3);
+                }
+            }
+            
+            // Show county table only if multiple counties and data exists
+            if (metadata.counties && metadata.counties.length > 1 && data.by_county && data.by_county.length > 0) {
+                document.getElementById('countyTableSection').style.display = 'block';
+                populateTable('countyTable', data.by_county, metadata, 'table3');
+            }
+            
+            // Methods section is hardcoded in HTML (not populated by JavaScript)
         }
         
         function populateAIInsights(aiInsights) {
@@ -842,24 +969,40 @@
             const latestYearData = rawData.filter(row => row['year'] === latestYear);
             
             // Compute unique branches by uninumbr for the latest year only
+            // Properly dedupe: LMI only, MMCT only, and both
             const uniqueAll = new Set();
-            const uniqueLMI = new Set();
-            const uniqueMinority = new Set();
+            const uniqueLMIOnly = new Set();      // LMI=1, MMCT=0
+            const uniqueMMCTOnly = new Set();     // LMI=0, MMCT=1
+            const uniqueBoth = new Set();         // LMI=1, MMCT=1
             
             latestYearData.forEach(row => {
                 const id = row['uninumbr'];
                 if (id !== null && id !== undefined) {
                     uniqueAll.add(id);
-                    if (row['lmict'] === 1 || row['br_lmi'] === 1) uniqueLMI.add(id);
-                    if (row['mmct'] === 1 || row['br_minority'] === 1) uniqueMinority.add(id);
+                    
+                    // Check LMI and MMCT status
+                    const isLMI = (row['lmict'] === 1 || row['br_lmi'] === 1);
+                    const isMMCT = (row['mmct'] === 1 || row['br_minority'] === 1);
+                    
+                    if (isLMI && !isMMCT) {
+                        uniqueLMIOnly.add(id);
+                    } else if (!isLMI && isMMCT) {
+                        uniqueMMCTOnly.add(id);
+                    } else if (isLMI && isMMCT) {
+                        uniqueBoth.add(id);
+                    }
                 }
             });
             
             const totalBranches = uniqueAll.size;
-            const totalLMI = uniqueLMI.size;
-            const totalMinority = uniqueMinority.size;
-            const avgLMI = totalBranches > 0 ? ((totalLMI / totalBranches) * 100).toFixed(1) : '0.0';
-            const avgMinority = totalBranches > 0 ? ((totalMinority / totalBranches) * 100).toFixed(1) : '0.0';
+            const lmiOnlyCount = uniqueLMIOnly.size;
+            const mmctOnlyCount = uniqueMMCTOnly.size;
+            const bothCount = uniqueBoth.size;
+            
+            // Calculate percentages
+            const lmiOnlyPct = totalBranches > 0 ? ((lmiOnlyCount / totalBranches) * 100).toFixed(1) : '0.0';
+            const mmctOnlyPct = totalBranches > 0 ? ((mmctOnlyCount / totalBranches) * 100).toFixed(1) : '0.0';
+            const bothPct = totalBranches > 0 ? ((bothCount / totalBranches) * 100).toFixed(1) : '0.0';
             
             cardsContainer.innerHTML = `
                 <div class="summary-card">
@@ -867,20 +1010,16 @@
                     <p>Total Branches (${latestYear})</p>
                 </div>
                 <div class="summary-card">
-                    <h3>${totalLMI.toLocaleString()}</h3>
-                    <p>LMI Branches (${latestYear})</p>
+                    <h3>${lmiOnlyCount.toLocaleString()} <span class="percentage-text">(${lmiOnlyPct}%)</span></h3>
+                    <p>LMI Only Branches (${latestYear})</p>
                 </div>
                 <div class="summary-card">
-                    <h3>${totalMinority.toLocaleString()}</h3>
-                    <p>Minority Branches (${latestYear})</p>
+                    <h3>${mmctOnlyCount.toLocaleString()} <span class="percentage-text">(${mmctOnlyPct}%)</span></h3>
+                    <p>MMCT Only Branches (${latestYear})</p>
                 </div>
                 <div class="summary-card">
-                    <h3>${avgLMI}%</h3>
-                    <p>LMI % (${latestYear})</p>
-                </div>
-                <div class="summary-card">
-                    <h3>${avgMinority}%</h3>
-                    <p>Minority % (${latestYear})</p>
+                    <h3>${bothCount.toLocaleString()} <span class="percentage-text">(${bothPct}%)</span></h3>
+                    <p>Both LMICT/MMCT Branches (${latestYear})</p>
                 </div>
             `;
         }
@@ -915,16 +1054,92 @@
             }
         }
         
-        function populateTable(tableId, data) {
+        function populateTable(tableId, data, metadata = null, tableKey = null) {
             if (!data || data.length === 0) return;
             
             const table = document.getElementById(tableId);
+            const thead = table.querySelector('thead');
             const tbody = table.querySelector('tbody');
             
+            // Special handling for summaryTable (transposed structure)
+            if (tableId === 'summaryTable') {
+                // Get all column names (Variable + years)
+                const columns = Object.keys(data[0]);
+                const variableCol = 'Variable';
+                const yearCols = columns.filter(col => col !== variableCol).sort((a, b) => {
+                    // Put "Net Change" at the end
+                    if (a === 'Net Change') return 1;
+                    if (b === 'Net Change') return -1;
+                    // Sort numeric years
+                    return parseInt(a) - parseInt(b);
+                });
+                
+                // Build header row
+                let headerRow = `<tr><th style="text-align: left;">${variableCol}</th>`;
+                yearCols.forEach(year => {
+                    headerRow += `<th style="text-align: center;">${year}</th>`;
+                });
+                headerRow += '</tr>';
+                thead.innerHTML = headerRow;
+                
+                // Build data rows
+                tbody.innerHTML = data.map(row => {
+                    let cells = `<td style="text-align: left; font-weight: 600;">${row[variableCol]}</td>`;
+                    yearCols.forEach(year => {
+                        let value = row[year];
+                        if (value === null || value === undefined) {
+                            value = 0;
+                        }
+                        // Format as number with commas
+                        const formatted = typeof value === 'number' ? value.toLocaleString() : value;
+                        
+                        // Apply color coding for Net Change column (same as bankTable)
+                        if (year === 'Net Change') {
+                            const numValue = typeof value === 'number' ? value : parseFloat(value);
+                            const color = numValue < 0 ? 'red' : (numValue > 0 ? '#2fade3' : 'black');
+                            cells += `<td style="text-align: center; color: ${color}; font-weight: 600;">${formatted}</td>`;
+                        } else {
+                            cells += `<td style="text-align: center;">${formatted}</td>`;
+                        }
+                    });
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+                
+                // Populate caption with metadata
+                if (metadata) {
+                    const caption = document.getElementById('summaryTableCaption');
+                    if (caption) {
+                        const counties = metadata.counties || [];
+                        const years = metadata.years || [];
+                        const countyCount = counties.length;
+                        
+                        let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
+                        
+                        if (countyCount > 1) {
+                            captionText += ` | <strong>Note:</strong> Data for ${countyCount} counties (${counties.join(', ')}) are summed across all years shown.`;
+                        } else if (countyCount === 1) {
+                            captionText += ` | <strong>County:</strong> ${counties[0]}`;
+                        }
+                        
+                        if (years && years.length > 0) {
+                            const yearRange = years.length > 1 
+                                ? `${Math.min(...years)}-${Math.max(...years)}`
+                                : years[0].toString();
+                            captionText += ` | <strong>Years:</strong> ${yearRange}`;
+                        }
+                        
+                        caption.innerHTML = captionText;
+                    }
+                }
+                
+                return;
+            }
+            
+            // Standard table population for other tables
             // Get the table headers to determine column order
             const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
             
-            tbody.innerHTML = data.map(row => {
+            tbody.innerHTML = data.map((row, rowIndex) => {
                 // Map data to columns in the correct order based on table headers
                 const cells = headers.map(header => {
                     let value = row[header];
@@ -959,24 +1174,65 @@
                     return value;
                 });
                 
+                // Special handling for bankTable - first column (Bank Name) should be left-aligned
+                // Also handle Net Change column with color coding
+                if (tableId === 'bankTable') {
+                    const bankNameCell = cells[0];
+                    const otherCellsArray = cells.slice(1);
+                    const otherCells = otherCellsArray.map((cell, idx) => {
+                        // Check if this is the Net Change column (last column)
+                        // Header may be "Net Change" or "Net Change (YYYY-YYYY)"
+                        const headerIndex = idx + 1; // +1 because we sliced off the first cell
+                        const headerText = headerIndex < headers.length ? headers[headerIndex] : '';
+                        if (headerText && headerText.startsWith('Net Change')) {
+                            const netChangeValue = row['Net Change'];
+                            if (netChangeValue !== null && netChangeValue !== undefined) {
+                                const numValue = typeof netChangeValue === 'number' ? netChangeValue : parseFloat(netChangeValue);
+                                const color = numValue < 0 ? 'red' : (numValue > 0 ? '#2fade3' : 'black');
+                                const formatted = typeof numValue === 'number' ? numValue.toLocaleString() : numValue;
+                                return `<td style="text-align: center; color: ${color}; font-weight: 600;">${formatted}</td>`;
+                            }
+                        }
+                        return `<td style="text-align: center;">${cell}</td>`;
+                    });
+                    // Hide rows beyond the first 10 (index 0-9)
+                    const isHidden = rowIndex >= 10 ? 'style="display: none;"' : '';
+                    return `<tr data-index="${rowIndex}" ${isHidden}><td style="text-align: left; font-weight: 600;">${bankNameCell}</td>${otherCells.join('')}</tr>`;
+                }
+                
                 return `<tr>${cells.map(cell => `<td style="text-align: center;">${cell}</td>`).join('')}</tr>`;
             }).join('');
             
-            // Auto-collapse only the bank table if it has more than 10 rows
-            if (tableId === 'bankTable' && data.length > 10) {
-                table.classList.add('collapsed');
-                const button = table.previousElementSibling.querySelector('.collapse-btn');
-                const icon = button.querySelector('i');
-                button.classList.add('collapsed');
-                icon.style.transform = 'rotate(-90deg)';
-                
-                // Hide rows beyond the first 3
-                const rows = table.querySelectorAll('tbody tr');
-                rows.forEach((row, index) => {
-                    if (index >= 3) {
-                        row.style.display = 'none';
+            // Populate caption for bankTable
+            if (tableId === 'bankTable' && metadata) {
+                const caption = document.getElementById('bankTableCaption');
+                if (caption) {
+                    const years = metadata.years || [];
+                    const latestYear = years.length > 0 ? Math.max(...years) : '';
+                    let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
+                    if (latestYear) {
+                        captionText += ` | <strong>Year:</strong> ${latestYear} (most recent year in report)`;
                     }
-                });
+                    caption.innerHTML = captionText;
+                }
+            }
+            
+            // Populate caption for countyTable
+            if (tableId === 'countyTable' && metadata) {
+                const caption = document.getElementById('countyTableCaption');
+                if (caption) {
+                    const years = metadata.years || [];
+                    const latestYear = years.length > 0 ? Math.max(...years) : '';
+                    const counties = metadata.counties || [];
+                    let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
+                    if (latestYear) {
+                        captionText += ` | <strong>Year:</strong> ${latestYear} (most recent year in report)`;
+                    }
+                    if (counties.length > 1) {
+                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                    }
+                    caption.innerHTML = captionText;
+                    }
             }
         }
         
@@ -986,8 +1242,140 @@
             document.getElementById('errorMessage').textContent = message;
         }
         
+        // Map initialization and branch plotting
+        let branchMap = null;
+        
+        function initializeBranchMap(rawData, metadata) {
+            if (!rawData || !Array.isArray(rawData) || rawData.length === 0) {
+                return; // No data to display
+            }
+            
+            // Filter branches with valid coordinates
+            const branchesWithCoords = rawData.filter(branch => 
+                branch.latitude != null && 
+                branch.longitude != null && 
+                !isNaN(parseFloat(branch.latitude)) && 
+                !isNaN(parseFloat(branch.longitude)) &&
+                parseFloat(branch.latitude) !== 0 &&
+                parseFloat(branch.longitude) !== 0
+            );
+            
+            if (branchesWithCoords.length === 0) {
+                console.log('No branches with valid coordinates found');
+                return; // No valid coordinates
+            }
+            
+            // Show the map section
+            const mapSection = document.getElementById('branchMapSection');
+            if (mapSection) {
+                mapSection.style.display = 'block';
+            }
+            
+            // Get latest year for filtering
+            const latestYear = metadata.years ? Math.max(...metadata.years) : null;
+            const latestYearBranches = latestYear 
+                ? branchesWithCoords.filter(b => b.year === latestYear)
+                : branchesWithCoords;
+            
+            // Calculate center point (average of all coordinates)
+            const avgLat = latestYearBranches.reduce((sum, b) => sum + parseFloat(b.latitude), 0) / latestYearBranches.length;
+            const avgLng = latestYearBranches.reduce((sum, b) => sum + parseFloat(b.longitude), 0) / latestYearBranches.length;
+            
+            // Initialize map if not already initialized
+            if (!branchMap) {
+                branchMap = L.map('branchMap').setView([avgLat, avgLng], 11);
+                
+                // Add OpenStreetMap tile layer
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors',
+                    maxZoom: 19
+                }).addTo(branchMap);
+            } else {
+                branchMap.setView([avgLat, avgLng], 11);
+                branchMap.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        branchMap.removeLayer(layer);
+                    }
+                });
+            }
+            
+            // Create markers for each branch
+            const markers = [];
+            latestYearBranches.forEach(branch => {
+                const lat = parseFloat(branch.latitude);
+                const lng = parseFloat(branch.longitude);
+                
+                // Create popup content
+                const popupContent = `
+                    <div style="min-width: 200px;">
+                        <strong>${branch.branch_name || 'Branch'}</strong><br>
+                        ${branch.bank_name || 'Unknown Bank'}<br>
+                        ${branch.address || ''}<br>
+                        ${branch.city || ''}, ${branch.state_abbrv || branch.state || ''} ${branch.zip || ''}<br>
+                        ${branch.lmict ? 'LMI' : ''} ${branch.mmct ? 'Minority' : ''}
+                    </div>
+                `;
+                
+                // Create marker with custom icon
+                const marker = L.marker([lat, lng])
+                    .bindPopup(popupContent)
+                    .addTo(branchMap);
+                
+                markers.push(marker);
+            });
+            
+            // Fit map to show all markers if there are multiple
+            if (markers.length > 1) {
+                const group = new L.featureGroup(markers);
+                branchMap.fitBounds(group.getBounds().pad(0.1));
+            }
+            
+            // Update map caption
+            const mapCaption = document.getElementById('mapCaption');
+            if (mapCaption) {
+                const countyText = metadata.counties ? metadata.counties.join(', ') : 'Selected area';
+                const yearText = latestYear ? latestYear : '';
+                mapCaption.innerHTML = `<strong>Source:</strong> FDIC Summary of Deposits${yearText ? ` | <strong>Year:</strong> ${yearText}` : ''} | <strong>Counties:</strong> ${countyText} | <strong>Branches Shown:</strong> ${latestYearBranches.length}`;
+            }
+        }
+        
+        // Function to expand/collapse bank table to show all banks or just top 10
+        function expandBankTable() {
+            const table = document.getElementById('bankTable');
+            const rows = table.querySelectorAll('tbody tr');
+            const expandBtn = document.getElementById('expandBankTableBtn');
+            const icon = expandBtn.querySelector('i');
+            
+            // Check if currently showing all (rows 10+ are visible)
+            const isExpanded = rows.length > 10 && rows[10].style.display !== 'none';
+            
+            if (isExpanded) {
+                // Collapse to top 10
+                rows.forEach((row, index) => {
+                    if (index >= 10) {
+                        row.style.display = 'none';
+                    }
+                });
+                expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show All Banks';
+            } else {
+                // Expand to show all
+                rows.forEach((row) => {
+                    row.style.display = '';
+                });
+                expandBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Top 10 Only';
+            }
+        }
+        
         // Load report data when page loads
         document.addEventListener('DOMContentLoaded', loadReportData);
     </script>
+    
+    <!-- Footer -->
+    <footer class="footer" style="margin-top: 40px;">
+        <div class="footer-bottom">
+            &copy; 2025 JustData - BranchSeeker. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
 </body>
 </html>

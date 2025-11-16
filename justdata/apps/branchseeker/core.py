@@ -13,14 +13,42 @@ from .analysis import BranchSeekerAnalyzer
 from justdata.shared.reporting.report_builder import build_report, save_excel_report
 
 
-def parse_web_parameters(counties_str: str, years_str: str) -> tuple:
-    """Parse parameters from web interface."""
-    counties = [c.strip() for c in counties_str.split(";") if c.strip()]
+def parse_web_parameters(counties_str: str, years_str: str, selection_type: str = 'county', 
+                        state_code: str = None, metro_code: str = None) -> tuple:
+    """Parse parameters from web interface.image.png
     
+    Args:
+        counties_str: Semicolon-separated county names (for county selection)
+        years_str: Comma-separated years or "all"
+        selection_type: 'county', 'state', or 'metro'
+        state_code: Two-digit state FIPS code (for state selection)
+        metro_code: CBSA code (for metro selection)
+    
+    Returns:
+        Tuple of (counties_list, years_list)
+    """
+    from .data_utils import expand_state_to_counties, expand_metro_to_counties
+    
+    # Parse years
     if years_str.lower() == "all":
         years = list(range(2017, 2025))
     else:
         years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
+    
+    # Parse counties based on selection type
+    if selection_type == 'state' and state_code:
+        # Expand state to counties
+        counties = expand_state_to_counties(state_code)
+        if not counties:
+            raise ValueError(f"No counties found for state code: {state_code}")
+    elif selection_type == 'metro' and metro_code:
+        # Expand metro area to counties
+        counties = expand_metro_to_counties(metro_code)
+        if not counties:
+            raise ValueError(f"No counties found for metro code: {metro_code}")
+    else:
+        # Default: parse counties from string
+        counties = [c.strip() for c in counties_str.split(";") if c.strip()]
     
     return counties, years
 
@@ -39,15 +67,19 @@ def load_sql_template() -> str:
         raise Exception(f"SQL template not found at {sql_template_path}")
 
 
-def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress_tracker=None) -> Dict:
+def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress_tracker=None, 
+                 selection_type: str = 'county', state_code: str = None, metro_code: str = None) -> Dict:
     """
     Run analysis for web interface - FULL IMPLEMENTATION.
     
     Args:
-        counties_str: Semicolon-separated county names
+        counties_str: Semicolon-separated county names (or empty if using state/metro selection)
         years_str: Comma-separated years or "all"
         run_id: Optional run ID for tracking
         progress_tracker: Optional progress tracker for real-time updates
+        selection_type: 'county', 'state', or 'metro'
+        state_code: Two-digit state FIPS code (for state selection)
+        metro_code: CBSA code (for metro selection)
     
     Returns:
         Dictionary with success status and results
@@ -57,8 +89,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         if progress_tracker:
             progress_tracker.update_progress('initializing')
         
-        # Parse parameters
-        counties, years = parse_web_parameters(counties_str, years_str)
+        # Parse parameters with selection context
+        counties, years = parse_web_parameters(counties_str, years_str, selection_type, state_code, metro_code)
         
         if progress_tracker:
             progress_tracker.update_progress('parsing_params')
@@ -74,15 +106,26 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             progress_tracker.update_progress('preparing_data')
         
         clarified_counties = []
-        for county in counties:
+        total_counties = len(counties)
+        for idx, county in enumerate(counties, 1):
             try:
+                if progress_tracker:
+                    progress_tracker.update_progress('preparing_data', 
+                        int(15 + (idx / total_counties) * 5),
+                        f'Preparing data... Matching county {idx}/{total_counties}: {county}')
+                
+                print(f"Matching county {idx}/{total_counties}: {county}")
                 matches = find_exact_county_match(county)
                 if not matches:
-                    return {'success': False, 'error': f'No matching counties found for: {county}'}
-                clarified_counties.append(matches[0])
-                print(f"✅ Using county: {matches[0]}")
-            except ValueError as e:
-                return {'success': False, 'error': str(e)}
+                    # This shouldn't happen with the fallback, but handle it anyway
+                    print(f"Warning: No matches found for {county}, using input as-is")
+                    clarified_counties.append(county)
+                else:
+                    clarified_counties.append(matches[0])
+                    print(f"Using county: {matches[0]}")
+            except Exception as e:
+                print(f"Error matching county {county}: {e}, using input as-is")
+                clarified_counties.append(county)
         
         # Load SQL template
         if progress_tracker:
@@ -123,7 +166,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         if progress_tracker:
             progress_tracker.update_progress('processing_data')
         
-        print(f"\n📊 Building report with {len(all_results)} records...")
+        print(f"\nBuilding report with {len(all_results)} records...")
         report_data = build_report(all_results, clarified_counties, years)
         
         # Save Excel report
@@ -131,8 +174,15 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             progress_tracker.update_progress('building_report')
         
         excel_path = os.path.join(OUTPUT_DIR, 'fdic_branch_analysis.xlsx')
-        save_excel_report(report_data, excel_path)
-        print(f"✅ Excel report saved: {excel_path}")
+        # Prepare metadata for Notes sheet
+        excel_metadata = {
+            'counties': clarified_counties,
+            'years': years,
+            'total_records': len(all_results),
+            'generated_at': datetime.now().isoformat()
+        }
+        save_excel_report(report_data, excel_path, metadata=excel_metadata)
+        print(f"Excel report saved: {excel_path}")
         
         # Generate AI insights (optional if API key is configured)
         ai_insights = {}
@@ -141,19 +191,65 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             from justdata.shared.analysis.ai_provider import convert_numpy_types
             
             # Prepare data for AI analysis
+            county_df = report_data.get('by_county', pd.DataFrame())
+            hhi_data = report_data.get('hhi', {})
+            raw_df = report_data.get('raw_data', pd.DataFrame())
+            
+            # Calculate final year's unique branch count (not summed across years)
+            final_year_branch_count = 0
+            if not raw_df.empty and 'year' in raw_df.columns and 'uninumbr' in raw_df.columns:
+                final_year = max(years)
+                final_year_df = raw_df[raw_df['year'] == final_year]
+                final_year_branch_count = final_year_df['uninumbr'].nunique()
+            
+            # Prepare table data for AI analysis
+            by_bank_df = report_data.get('by_bank', pd.DataFrame())
+            by_bank_data = convert_numpy_types(by_bank_df.to_dict('records') if not by_bank_df.empty else [])
+            
+            # Safely get top banks list
+            top_banks_list = []
+            if not by_bank_df.empty and 'Bank Name' in by_bank_df.columns:
+                top_banks_list = by_bank_df.head(5)['Bank Name'].tolist()
+            
+            # Validate data before passing to AI
+            if not clarified_counties:
+                raise ValueError("No counties available for AI analysis")
+            if not years:
+                raise ValueError("No years available for AI analysis")
+            
+            # Ensure counties is a list of strings
+            counties_list = [str(c) for c in clarified_counties] if clarified_counties else []
+            
             ai_data = {
-                'counties': clarified_counties,
+                'counties': counties_list,
                 'years': years,
-                'total_branches': len(all_results),
-                'top_banks': report_data.get('by_bank', pd.DataFrame()).groupby('Bank Name')['Total Branches'].sum().nlargest(5).index.tolist() if not report_data.get('by_bank', pd.DataFrame()).empty else [],
+                'final_year': max(years) if years else None,
+                'final_year_branch_count': final_year_branch_count,  # Use final year count, not total
+                'top_banks': top_banks_list,
                 'summary_data': convert_numpy_types(report_data.get('summary', {}).to_dict('records') if not report_data.get('summary', pd.DataFrame()).empty else []),
-                'trends_data': convert_numpy_types(report_data.get('trends', {}).to_dict('records') if not report_data.get('trends', pd.DataFrame()).empty else [])
+                'trends_data': convert_numpy_types(report_data.get('trends', {}).to_dict('records') if not report_data.get('trends', pd.DataFrame()).empty else []),
+                'hhi': convert_numpy_types(hhi_data),
+                'county_data': convert_numpy_types(county_df.to_dict('records') if not county_df.empty else []),
+                'by_bank': by_bank_data
             }
             
             if progress_tracker:
                 progress_tracker.update_progress('generating_ai')
             
-            analyzer = BranchSeekerAnalyzer()
+            # Initialize analyzer - this may raise an exception if API key is missing
+            print(f"Initializing AI analyzer...")
+            print(f"Counties for AI: {clarified_counties}")
+            print(f"Years for AI: {years}")
+            print(f"Final year branch count: {final_year_branch_count}")
+            
+            try:
+                analyzer = BranchSeekerAnalyzer()
+                print("AI analyzer initialized successfully")
+            except Exception as init_error:
+                print(f"Failed to initialize AI analyzer: {init_error}")
+                import traceback
+                traceback.print_exc()
+                raise Exception(f"AI analyzer initialization failed: {init_error}. Please check API key configuration.")
             
             # Generate AI insights with progress tracking
             ai_insights = {}
@@ -165,39 +261,116 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 ('community_impact', 'Community Impact')
             ]
             
+            # Add county comparison if multiple counties
+            if len(clarified_counties) > 1:
+                ai_insight_types.append(('county_comparison', 'County Comparison'))
+            
             for i, (insight_key, insight_name) in enumerate(ai_insight_types, 1):
                 if progress_tracker:
                     progress_tracker.update_ai_progress(i, len(ai_insight_types), insight_name)
                 
                 print(f"  Generating {insight_name}...")
-                
-                if insight_key == 'executive_summary':
-                    ai_insights[insight_key] = analyzer.generate_executive_summary(ai_data)
-                elif insight_key == 'key_findings':
-                    ai_insights[insight_key] = analyzer.generate_key_findings(ai_data)
-                elif insight_key == 'trends_analysis':
-                    ai_insights[insight_key] = analyzer.generate_trends_analysis(ai_data)
-                elif insight_key == 'bank_strategies':
-                    ai_insights[insight_key] = analyzer.generate_bank_strategies_analysis(ai_data)
-                elif insight_key == 'community_impact':
-                    ai_insights[insight_key] = analyzer.generate_community_impact_analysis(ai_data)
-            print("✅ AI insights generated successfully")
+                try:
+                    if insight_key == 'executive_summary':
+                        ai_insights[insight_key] = analyzer.generate_executive_summary(ai_data)
+                    elif insight_key == 'key_findings':
+                        ai_insights[insight_key] = analyzer.generate_key_findings(ai_data)
+                    elif insight_key == 'trends_analysis':
+                        ai_insights[insight_key] = analyzer.generate_trends_analysis(ai_data)
+                    elif insight_key == 'bank_strategies':
+                        ai_insights[insight_key] = analyzer.generate_bank_strategies_analysis(ai_data)
+                    elif insight_key == 'community_impact':
+                        ai_insights[insight_key] = analyzer.generate_community_impact_analysis(ai_data)
+                    elif insight_key == 'county_comparison':
+                        ai_insights[insight_key] = analyzer.generate_county_comparison_analysis(ai_data)
+                    print(f"  [OK] {insight_name} generated successfully")
+                except Exception as gen_error:
+                    print(f"  [ERROR] Error generating {insight_name}: {gen_error}")
+                    import traceback
+                    traceback.print_exc()
+                    raise  # Re-raise to be caught by outer exception handler
+            
+            # Generate table-specific introductions (2 sentences each)
+            print("Generating table introductions...")
+            table_introductions = {}
+            try:
+                if not report_data.get('summary', pd.DataFrame()).empty:
+                    print("  Generating table1 introduction...")
+                    table_introductions['table1'] = analyzer.generate_table_introduction('table1', ai_data)
+                if not report_data.get('by_bank', pd.DataFrame()).empty:
+                    print("  Generating table2 introduction...")
+                    table_introductions['table2'] = analyzer.generate_table_introduction('table2', ai_data)
+                if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
+                    print("  Generating table3 introduction...")
+                    table_introductions['table3'] = analyzer.generate_table_introduction('table3', ai_data)
+            except Exception as intro_error:
+                print(f"Error generating table introductions: {intro_error}")
+                import traceback
+                traceback.print_exc()
+                raise
+            
+            # Generate table-specific narratives
+            print("Generating table narratives...")
+            table_narratives = {}
+            try:
+                if not report_data.get('summary', pd.DataFrame()).empty:
+                    print("  Generating table1 narrative...")
+                    table_narratives['table1'] = analyzer.generate_table_narrative('table1', ai_data)
+                if not report_data.get('by_bank', pd.DataFrame()).empty:
+                    print("  Generating table2 narrative...")
+                    table_narratives['table2'] = analyzer.generate_table_narrative('table2', ai_data)
+                if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
+                    print("  Generating table3 narrative...")
+                    table_narratives['table3'] = analyzer.generate_table_narrative('table3', ai_data)
+            except Exception as narrative_error:
+                print(f"Error generating table narratives: {narrative_error}")
+                import traceback
+                traceback.print_exc()
+                raise
+            
+            ai_insights['table_introductions'] = table_introductions
+            ai_insights['table_narratives'] = table_narratives
+            
+            # Methods section is hardcoded in the template (not AI-generated)
+            print("AI insights generated successfully")
             
         except Exception as e:
-            print(f"⚠️  AI analysis skipped: {e}")
+            import traceback
+            error_type = type(e).__name__
+            # Safely encode error message to avoid Unicode issues
+            try:
+                error_message = str(e).encode('ascii', 'replace').decode('ascii')
+            except:
+                error_message = "An error occurred during AI analysis"
+            
+            print(f"AI analysis skipped: {error_type}: {error_message}")
+            print("Full traceback:")
+            traceback.print_exc()  # Print full traceback for debugging
+            
+            # More specific error message based on error type
+            if "API key" in error_message or "No API key" in error_message:
+                error_msg = "AI analysis not available - API key not configured or service unavailable."
+            elif "No counties" in error_message or "No years" in error_message:
+                error_msg = f"AI analysis not available - {error_message}"
+            else:
+                error_msg = f"AI analysis not available - Error: {error_type}: {error_message}"
+            
             ai_insights = {
-                'executive_summary': 'AI analysis not available - API key not configured or service unavailable.',
-                'key_findings': 'AI analysis not available - API key not configured or service unavailable.',
-                'trends_analysis': 'AI analysis not available - API key not configured or service unavailable.',
-                'bank_strategies': 'AI analysis not available - API key not configured or service unavailable.',
-                'community_impact': 'AI analysis not available - API key not configured or service unavailable.'
+                'executive_summary': error_msg,
+                'key_findings': error_msg,
+                'trends_analysis': error_msg,
+                'bank_strategies': error_msg,
+                'community_impact': error_msg,
+                'table_introductions': {},
+                'table_narratives': {},
+                'methods': 'Methods section not available - AI analysis failed.'
             }
         
         # Mark as completed
         if progress_tracker:
             progress_tracker.update_progress('completed')
         
-        print("\n🎉 Analysis completed successfully!")
+        print("\nAnalysis completed successfully!")
         
         return {
             'success': True,
@@ -217,7 +390,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         }
         
     except Exception as e:
-        print(f"\n❌ Error: {str(e)}")
+        print(f"\nError: {str(e)}")
         if progress_tracker:
             progress_tracker.complete(success=False, error=str(e))
         return {'success': False, 'error': f'Analysis failed: {str(e)}'}
