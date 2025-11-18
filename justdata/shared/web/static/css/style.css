@@ -1,3 +1,20 @@
+/* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
+:root {
+    --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC blue */
+    --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
+    --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
+    --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
+    --ncrc-dark-blue: #034ea0;          /* Dark Blue for headers */
+    --ncrc-light-blue: #E6F2FF;         /* Light blue background (custom, not in palette) */
+    --ncrc-gold: #ffc23a;               /* Golden Yellow */
+    --ncrc-purple: #552d87;             /* Deep Purple (same as primary blue) */
+    --ncrc-gray: #818390;               /* Medium Gray */
+    --ncrc-white: #FFFFFF;
+    --ncrc-black: #000000;              /* Solid Black */
+    --ncrc-gray-light: #F5F5F5;         /* Light gray background (custom) */
+    --ncrc-gray-dark: #333333;          /* Dark gray text (custom) */
+}
+
 /* Reset and Base Styles */
 * {
     margin: 0;
@@ -7,59 +24,422 @@
 
 body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--ncrc-gray-light);
     min-height: 100vh;
-    color: #333;
+    color: var(--ncrc-gray-dark);
     line-height: 1.6;
+    overflow-x: visible !important;
+    overflow-y: auto;
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
     padding: 0 20px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 30px;
+    align-items: flex-start;
+    overflow: visible !important;
+}
+
+.content-wrapper {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.analysis-card {
+    position: relative;
+    z-index: 1;
+}
+
+.sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-top: 20px;
+    will-change: auto;
+    contain: none !important;
+    backface-visibility: visible !important;
+    transform: translateZ(0);
+    overflow: visible !important;
+    z-index: 100;
 }
 
 /* Header */
 .header {
+    background: var(--ncrc-dark-blue);
     text-align: center;
-    padding: 60px 0 40px;
+    padding: 40px 20px 30px;
     color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .header-content {
-    max-width: 600px;
+    max-width: 1200px;
     margin: 0 auto;
+}
+
+.header-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    position: relative;
+    width: 100%;
 }
 
 .logo {
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 15px;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    flex: 0 0 auto;
+}
+
+.header-title-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+}
+
+.header-tagline {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    flex: 0 0 auto;
+}
+
+.logo img {
+    max-height: 90px;
+    width: auto;
+    border-radius: 8px;
 }
 
 .logo i {
     font-size: 2.5rem;
-    color: #ffd700;
+    color: var(--ncrc-gold);
+    display: none; /* Hide icon when logo image is used */
 }
 
-.logo h1 {
+
+.header-title-section h1 {
     font-size: 2.5rem;
     font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    color: white;
+    margin: 0;
+}
+
+.just-data-subtitle {
+    font-size: 1.2rem; /* Adjusted smaller */
+    font-weight: 400; /* Regular/medium weight */
+    color: rgba(255, 255, 255, 0.95);
+    margin: 10px 0 0 0; /* 10px margin-top */
+    text-align: center;
+}
+
+.header-tagline {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    flex: 0 0 auto;
+}
+
+.tagline-box {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    height: 90px;
+    width: 256px; /* Matches NCRC logo width (469px × 165px image scaled to 90px height = 256px width) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+.header-tagline p {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #000000;
+    margin: 0;
+    font-style: normal;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 100%;
+}
+
+.header-tagline p em {
+    font-style: italic;
+    color: var(--ncrc-pink);
 }
 
 .subtitle {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 300;
-    opacity: 0.9;
+    opacity: 0.95;
     margin-top: 10px;
+    color: rgba(255, 255, 255, 0.9);
 }
 
 /* Main Content */
 .main-content {
     padding-bottom: 60px;
+}
+
+/* Sidebar Styles */
+/* Ensure sidebar content is visible */
+.sidebar .sidebar-features,
+.sidebar .sidebar-docs {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+}
+
+.sidebar .feature-card,
+.sidebar .doc-link {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+}
+
+.sidebar *,
+.sidebar *::before,
+.sidebar *::after {
+    /* Prevent any keyframe animations, but allow display */
+    animation: none !important;
+}
+
+.sidebar h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ncrc-primary-blue);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--ncrc-light-blue);
+}
+
+/* Sidebar Features */
+.sidebar-features {
+    display: flex !important;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+    width: 100%;
+    overflow: visible !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Sidebar Documentation Links */
+.sidebar-docs {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.sidebar-docs .doc-link {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--ncrc-dark-blue);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.sidebar-docs .doc-link:hover {
+    background: var(--ncrc-light-blue);
+    border-color: var(--ncrc-primary-blue);
+    color: var(--ncrc-primary-blue);
+    text-decoration: none;
+    transform: translateX(3px);
+}
+
+.sidebar-docs .doc-link i {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar .feature-card {
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: var(--ncrc-light-blue);
+    border-radius: 8px;
+    padding: 15px;
+    text-align: center;
+    transition: background-color 0.2s ease;
+    border: 1px solid rgba(0, 51, 102, 0.1);
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 120px;
+    position: relative;
+    cursor: pointer;
+}
+
+.sidebar .feature-card:hover {
+    background: rgba(0, 102, 204, 0.1);
+}
+
+/* Tooltip/Popup for feature cards */
+.sidebar .feature-card {
+    position: relative !important;
+    z-index: 1;
+    overflow: visible !important;
+}
+
+.sidebar .feature-card,
+.sidebar .feature-card * {
+    overflow: visible !important;
+}
+
+/* CSS tooltips disabled - using JavaScript tooltips for HTML support */
+.sidebar .feature-card::before,
+.sidebar .feature-card::after {
+    display: none !important;
+}
+
+.sidebar .feature-card i {
+    font-size: 2rem;
+    color: var(--ncrc-primary-blue);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.sidebar .feature-card h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ncrc-primary-blue);
+    margin: 10px 0 8px 0;
+}
+
+.sidebar .feature-card p {
+    font-size: 0.85rem;
+    color: var(--ncrc-gray);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Sidebar Documentation */
+.sidebar-docs {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.sidebar .doc-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: var(--ncrc-light-blue);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--ncrc-primary-blue);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 51, 102, 0.1);
+}
+
+.sidebar .doc-link:hover {
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--ncrc-secondary-blue);
+    text-decoration: none;
+}
+
+.sidebar .doc-link i {
+    font-size: 1.2rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar .doc-link span {
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.report-preview {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: 25px;
+    /* Disable transform transitions to prevent flickering */
+    transition: color 0.2s ease;
+}
+
+.report-preview:last-child {
+    margin-bottom: 0;
+}
+
+.report-preview:hover {
+    /* Only change color on hover, no transform */
+    text-decoration: none;
+}
+
+.report-preview-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: block;
+    object-fit: cover;
+    aspect-ratio: 16 / 9;
+    background-color: #f0f0f0;
+}
+
+.report-preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ncrc-primary-blue);
+    line-height: 1.4;
+    margin-bottom: 10px;
+    transition: color 0.2s ease;
+    /* Prevent layout shifts - set fixed height for multi-line titles */
+    min-height: 2.8em;
+    /* Use translateZ(0) for hardware acceleration without visual transform */
+    transform: translateZ(0);
+}
+
+.report-preview:hover .report-preview-title {
+    color: var(--ncrc-secondary-blue);
+}
+
+.report-preview-meta {
+    font-size: 0.85rem;
+    color: var(--ncrc-gray);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.report-preview-meta i {
+    color: var(--ncrc-primary-blue);
 }
 
 /* Analysis Card */
@@ -90,7 +470,7 @@ body {
 }
 
 .card-header h2 i {
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
 }
 
 .card-header p {
@@ -120,7 +500,7 @@ body {
 }
 
 .form-group label i {
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
 }
 
 .form-group input {
@@ -135,9 +515,9 @@ body {
 
 .form-group input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--ncrc-primary-blue);
     background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
 }
 
 /* Year Range Styles */
@@ -174,13 +554,13 @@ body {
 
 .year-select-group select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--ncrc-primary-blue);
     background: white;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
 }
 
 .year-select-group select:hover {
-    border-color: #667eea;
+    border-color: var(--ncrc-primary-blue);
     background: white;
 }
 
@@ -207,17 +587,17 @@ body {
 }
 
 .help-text i {
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
 }
 
 /* Submit Button */
 .submit-btn {
     width: 100%;
     padding: 18px 30px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--ncrc-primary-blue);
     color: white;
     border: none;
-    border-radius: 12px;
+    border-radius: 8px;
     font-size: 1.1rem;
     font-weight: 600;
     cursor: pointer;
@@ -226,12 +606,13 @@ body {
     align-items: center;
     justify-content: center;
     gap: 10px;
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
 }
 
 .submit-btn:hover {
+    background: var(--ncrc-secondary-blue);
     transform: translateY(-2px);
-    box-shadow: 0 12px 25px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 16px rgba(0, 51, 102, 0.4);
 }
 
 .submit-btn:active {
@@ -254,7 +635,7 @@ body {
 
 .submit-info i {
     margin-right: 5px;
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
 }
 
 /* Progress Section */
@@ -276,7 +657,7 @@ body {
 
 .progress-header i {
     font-size: 2rem;
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
     margin-bottom: 10px;
 }
 
@@ -296,7 +677,7 @@ body {
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #667eea, #764ba2);
+    background: var(--ncrc-primary-blue);
     border-radius: 4px;
     transition: width 0.3s ease;
     width: 0%;
@@ -310,13 +691,13 @@ body {
 .progress-info {
     margin-top: 15px;
     padding: 10px;
-    background: rgba(102, 126, 234, 0.1);
+    background: var(--ncrc-light-blue);
     border-radius: 8px;
-    border-left: 3px solid #667eea;
+    border-left: 3px solid var(--ncrc-primary-blue);
 }
 
 .progress-info i {
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
     margin-right: 8px;
 }
 
@@ -499,7 +880,7 @@ body {
 
 .feature-card i {
     font-size: 2.5rem;
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
     margin-bottom: 15px;
 }
 
@@ -565,13 +946,13 @@ body {
 .doc-link:hover {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(0,0,0,0.1);
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--ncrc-primary-blue);
     color: white;
 }
 
 .doc-link i {
     font-size: 1.5rem;
-    color: #667eea;
+    color: var(--ncrc-primary-blue);
 }
 
 .doc-link:hover i {
@@ -580,34 +961,59 @@ body {
 
 /* Footer */
 .footer {
-    background: rgba(40, 20, 90, 0.7);
+    background: var(--ncrc-dark-blue);
     padding: 2rem 0 0.5rem 0;
-    border-radius: 18px;
-    margin: 2rem auto 0 auto;
-    max-width: 1100px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
+    border-radius: 0;
+    margin: 2rem 0 0 0;
+    width: 100%;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
 }
 
 .footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start;
     align-items: flex-start;
     flex-wrap: wrap;
-    gap: 2rem;
-    padding: 0 2rem;
+    gap: 3rem;
 }
 
 .footer-col {
-    flex: 1 1 250px;
+    flex: 1 1 0;
     min-width: 200px;
+    max-width: 300px;
     margin-bottom: 1rem;
 }
 
+.footer-col.footer-logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: auto;
+    max-width: none;
+    margin-left: auto;
+}
+
+.footer-logo-img {
+    height: 90px;
+    width: auto;
+    border-radius: 8px;
+}
+
 .footer-col h4 {
-    color: #ffd600;
+    color: var(--ncrc-gold);
     margin-bottom: 0.5rem;
     font-size: 1.1rem;
     font-weight: 700;
+}
+
+.footer-col p {
+    color: #fff;
+    margin: 0;
+    line-height: 1.6;
 }
 
 .footer-col a {
@@ -617,7 +1023,7 @@ body {
 }
 
 .footer-col a:hover {
-    color: #ffd600;
+    color: var(--ncrc-gold);
 }
 
 .footer-bottom {
@@ -629,10 +1035,404 @@ body {
     border-top: 1px solid rgba(255,255,255,0.08);
 }
 
+.version-text {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
+/* Table Header and Expand Button */
+.table-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.collapse-btn,
+.expand-btn {
+    padding: 8px 16px;
+    background: var(--ncrc-primary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.collapse-btn:hover,
+.expand-btn:hover {
+    background: var(--ncrc-secondary-blue);
+    transform: translateY(-1px);
+}
+
+.collapse-btn i,
+.expand-btn i {
+    font-size: 0.85rem;
+}
+
+/* Tour Button */
+.tour-btn {
+    transition: all 0.2s ease;
+}
+
+.tour-btn:hover {
+    background: var(--ncrc-primary-blue) !important;
+    transform: translateY(-1px);
+}
+
+/* Tooltips */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 16px;
+    background: var(--ncrc-dark-blue);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 200px;
+    z-index: 10000;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    pointer-events: none;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+/* Disable generic tooltips for sidebar feature cards - only disable the generic ::after and ::before rules */
+.sidebar .feature-card[data-tooltip]:hover::after {
+    display: none !important;
+    content: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Note: We can't disable ::before here because our custom tooltip uses ::before for content */
+/* Instead, we rely on specificity - .sidebar .feature-card::before is more specific than [data-tooltip]:hover::before */
+
+/* Generic tooltip arrow - but not for sidebar feature cards */
+[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ncrc-dark-blue);
+    z-index: 10001;
+    margin-bottom: -5px;
+}
+
+/* Ensure our custom sidebar tooltip ::before takes precedence over generic tooltip arrow */
+.sidebar .feature-card[data-tooltip]::before {
+    /* This ensures our custom tooltip content shows, not the generic arrow */
+    content: attr(data-tooltip) !important;
+}
+
+/* Disable generic tooltip arrow for sidebar feature cards */
+.sidebar .feature-card[data-tooltip]:hover::before {
+    /* Override generic arrow properties */
+    border: none !important;
+    margin-bottom: 0 !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    right: calc(100% + 15px) !important;
+}
+
+
+/* Form Validation Messages */
+.validation-message {
+    display: none;
+    margin-top: 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.validation-message.error {
+    display: block;
+    background: #fee;
+    color: #c33;
+    border-left: 3px solid #c33;
+}
+
+.validation-message.success {
+    display: block;
+    background: #efe;
+    color: #3c3;
+    border-left: 3px solid #3c3;
+}
+
+.validation-message.info {
+    display: block;
+    background: #eef;
+    color: #33c;
+    border-left: 3px solid #33c;
+}
+
+.form-group.has-error input,
+.form-group.has-error select {
+    border-color: #c33;
+    box-shadow: 0 0 0 3px rgba(204, 51, 51, 0.1);
+}
+
+.form-group.has-success input,
+.form-group.has-success select {
+    border-color: #3c3;
+}
+
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.progress-step.pending {
+    background: #f5f5f5;
+    color: #999;
+}
+
+.progress-step.active {
+    background: var(--ncrc-light-blue);
+    color: var(--ncrc-dark-blue);
+    font-weight: 600;
+    border-left: 3px solid var(--ncrc-dark-blue);
+}
+
+.progress-step.completed {
+    background: #efe;
+    color: #3c3;
+}
+
+.progress-step i {
+    width: 20px;
+    text-align: center;
+}
+
+.progress-step.pending i {
+    color: #ccc;
+}
+
+.progress-step.active i {
+    color: var(--ncrc-dark-blue);
+}
+
+.progress-step.completed i {
+    color: #3c3;
+}
+
+/* Intro.js Custom Styling */
+.introjs-tooltip {
+    font-family: 'Inter', sans-serif;
+    min-width: 400px;
+    max-width: 550px;
+    padding: 5px !important;
+    box-sizing: border-box;
+    position: fixed !important;
+    top: 50% !important;
+    right: 200px !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    z-index: 999999 !important;
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    background-clip: border-box !important;
+    background-origin: border-box !important;
+    background-size: 100% 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+}
+
+/* Change arrow to point left instead of up */
+.introjs-arrow {
+    border-color: transparent !important;
+    border-right-color: white !important;
+    border-width: 10px !important;
+    left: -20px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.introjs-arrow.top {
+    border-color: transparent !important;
+    border-right-color: white !important;
+    border-width: 10px !important;
+    left: -20px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+}
+
+.introjs-arrow.bottom {
+    border-color: transparent !important;
+    border-right-color: white !important;
+    border-width: 10px !important;
+    left: -20px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+}
+
+.introjs-tooltipbuttons {
+    text-align: center;
+    padding-top: 5px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    flex-direction: row;
+}
+
+.introjs-button {
+    background: var(--ncrc-dark-blue);
+    border-color: var(--ncrc-dark-blue);
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    margin: 0;
+    min-width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.introjs-button:hover {
+    background: var(--ncrc-secondary-blue);
+    border-color: var(--ncrc-secondary-blue);
+}
+
+.introjs-skipbutton {
+    font-size: 0.9rem !important;
+    padding: 8px 12px !important;
+    margin: 0 10px !important;
+    min-width: 80px !important;
+    width: auto !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    background: var(--ncrc-gray) !important;
+    border: 1px solid var(--ncrc-gray) !important;
+    border-radius: 4px;
+    color: white !important;
+    cursor: pointer;
+    position: relative !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    order: 2 !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+/* Match skip button width to other buttons - make it the same as Back/Next */
+.introjs-tooltipbuttons .introjs-skipbutton {
+    min-width: 80px !important;
+    width: 80px !important;
+    flex: 0 0 80px !important;
+}
+
+/* Ensure all buttons in the container have consistent width and reduced padding */
+.introjs-tooltipbuttons .introjs-button,
+.introjs-tooltipbuttons .introjs-prevbutton,
+.introjs-tooltipbuttons .introjs-nextbutton {
+    min-width: 80px;
+    width: 80px;
+    flex: 0 0 80px;
+    padding: 8px 12px !important;
+}
+
+.introjs-skipbutton:hover {
+    background: var(--ncrc-dark-blue) !important;
+    border-color: var(--ncrc-dark-blue) !important;
+}
+
+/* Ensure skip button is in the button container and positioned correctly */
+.introjs-tooltipbuttons .introjs-skipbutton {
+    order: 3 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Hide skip button if it's outside the button container */
+.introjs-tooltip > .introjs-skipbutton {
+    display: none !important;
+}
+
+.introjs-tooltipReferenceLayer {
+    position: relative;
+}
+
+.introjs-tooltiptext {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding: 5px !important;
+    margin: 0 0 10px 0;
+}
+
 /* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        position: relative;
+        top: 0;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         padding: 0 15px;
+        flex-direction: column;
     }
     
     .header {
@@ -662,6 +1462,11 @@ body {
     
     .card-header h2 {
         font-size: 1.5rem;
+    }
+    
+    .sidebar {
+        width: 100%;
+        padding: 20px;
     }
 }
 
