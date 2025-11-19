@@ -183,3 +183,5 @@ credentials.json
 *.temp
 .cache/
 
+.secrets/
+.secrets/*

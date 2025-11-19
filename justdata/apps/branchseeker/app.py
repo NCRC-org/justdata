@@ -31,7 +31,8 @@ app = create_app(
 
 def index():
     """Main page with the analysis form"""
-    return render_template('analysis_template.html', version=__version__)
+    return render_template('branchseeker_template.html', 
+                         version=__version__)
 
 
 @app.route('/branch-mapper')
@@ -380,9 +381,8 @@ def counties():
         print(f"Error in counties endpoint: {e}")
         import traceback
         traceback.print_exc()
-        # Return fallback list on error
-        from .data_utils import get_fallback_counties
-        return jsonify(get_fallback_counties())
+        # Return empty list on error - BigQuery should always be available
+        return jsonify([])
 
 
 def states():
@@ -460,6 +460,21 @@ def counties_by_state_route(state_code):
             'error': str(e),
             'counties': []
         }), 500
+
+
+@app.route('/years')
+def years_route():
+    """Return available years dynamically from BigQuery"""
+    try:
+        from .data_utils import get_available_years
+        years = get_available_years()
+        return jsonify(years)
+    except Exception as e:
+        print(f"Error in years endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        # Fallback
+        return jsonify(list(range(2017, 2026)))  # 2017-2025
 
 @app.route('/api/census-tracts/<county>')
 def api_census_tracts(county):

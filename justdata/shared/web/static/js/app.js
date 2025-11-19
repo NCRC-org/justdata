@@ -293,10 +293,18 @@ function validateInput(input, type) {
             input.setCustomValidity('Please select a year.');
         } else {
             const year = parseInt(value);
-            if (isNaN(year) || year < 2017 || year > 2024) {
+            // Dynamic validation based on actual dropdown options
+            const yearSelect = input.id === 'startYear' ? document.getElementById('startYear') : document.getElementById('endYear');
+            const yearOptions = Array.from(yearSelect.options)
+                .map(opt => parseInt(opt.value))
+                .filter(val => !isNaN(val));
+            const minYear = yearOptions.length > 0 ? Math.min(...yearOptions) : 2017;
+            const maxYear = yearOptions.length > 0 ? Math.max(...yearOptions) : 2024;
+            
+            if (isNaN(year) || year < minYear || year > maxYear) {
                 isValid = false;
-                message = 'Please select a valid year between 2017-2024.';
-                input.setCustomValidity('Please select a valid year between 2017-2024.');
+                message = `Please select a valid year between ${minYear}-${maxYear}.`;
+                input.setCustomValidity(`Please select a valid year between ${minYear}-${maxYear}.`);
             } else {
                 // Check if the range is at least 3 years
                 const startYear = document.getElementById('startYear').value;

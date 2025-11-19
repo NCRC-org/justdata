@@ -1,0 +1,83 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment
+.env
+.env.local
+.env.*.local
+.secrets/
+
+# Documentation
+*.md
+docs/
+README*
+
+# Tests
+tests/
+test_*.py
+*_test.py
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Node modules (if any)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Deployment scripts (not needed in container)
+scripts/
+Makefile
+cloudbuild.yaml
+
+# Large data files
+*.csv
+*.json.gz
+*.parquet
+data/
+datasets/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+

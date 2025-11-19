@@ -1,4 +1,4 @@
-.PHONY: help install dev test clean docker-build docker-up docker-down docker-logs lint format
+.PHONY: help install dev test clean docker-build docker-up docker-down docker-logs lint format deploy-all deploy-main deploy-branchseeker deploy-lendsight deploy-branchmapper
 
 # Default target
 help:
@@ -28,6 +28,13 @@ help:
 	@echo "Utilities:"
 	@echo "  clean        Clean up generated files"
 	@echo "  logs         View application logs"
+	@echo ""
+	@echo "Cloud Run Deployment:"
+	@echo "  deploy-all          Deploy all configured services"
+	@echo "  deploy-main         Deploy BranchSeeker, BranchMapper, and LendSight"
+	@echo "  deploy-branchseeker Deploy BranchSeeker only"
+	@echo "  deploy-branchmapper Deploy BranchMapper only"
+	@echo "  deploy-lendsight    Deploy LendSight only"
 
 # Installation
 install:
@@ -110,6 +117,31 @@ deploy-prod:
 	docker build -t justdata:latest .
 	docker tag justdata:latest us-docker.pkg.dev/hdma1-242116/justdata-repo/justdata:latest
 	docker push us-docker.pkg.dev/hdma1-242116/justdata-repo/justdata:latest
+
+# Deploy all services to Cloud Run
+deploy-all:
+	bash scripts/deploy-all.sh all
+
+# Deploy the three main services (BranchSeeker, BranchMapper, LendSight)
+deploy-main:
+	bash scripts/deploy-all.sh branchseeker branchmapper lendsight
+
+# Deploy individual services to Cloud Run
+deploy-branchseeker:
+	bash scripts/deploy-all.sh branchseeker
+
+deploy-lendsight:
+	bash scripts/deploy-all.sh lendsight
+
+deploy-branchmapper:
+	bash scripts/deploy-all.sh branchmapper
+
+# Additional services (optional)
+deploy-bizsight:
+	bash scripts/deploy-all.sh bizsight
+
+deploy-mergermeter:
+	bash scripts/deploy-all.sh mergermeter
 
 # Health checks
 health:

@@ -388,6 +388,30 @@ def create_trend_analysis(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
     return yearly_totals.round(1)
 
 
+def sanitize_sheet_name(name: str, max_length: int = 31) -> str:
+    """
+    Sanitize Excel sheet name by removing invalid characters.
+    Excel doesn't allow: : \ / ? * [ ]
+    
+    Args:
+        name: Original sheet name
+        max_length: Maximum length (Excel limit is 31 characters)
+    
+    Returns:
+        Sanitized sheet name
+    """
+    # Replace invalid characters with dashes
+    invalid_chars = [':', '\\', '/', '?', '*', '[', ']']
+    sanitized = name
+    for char in invalid_chars:
+        sanitized = sanitized.replace(char, '-')
+    
+    # Remove leading/trailing spaces and limit length
+    sanitized = sanitized.strip()[:max_length]
+    
+    return sanitized
+
+
 def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, metadata: Dict[str, Any] = None):
     """
     Save the report data to an Excel file with multiple sheets.
@@ -409,11 +433,13 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         # Write report tables matching the report sections
         # Section 1: Yearly Breakdown
         if 'summary' in report_data and not report_data['summary'].empty:
-            report_data['summary'].to_excel(writer, sheet_name='Section 1: Yearly Breakdown', index=False)
+            sheet_name = sanitize_sheet_name('Section 1 - Yearly Breakdown')
+            report_data['summary'].to_excel(writer, sheet_name=sheet_name, index=False)
         
         # Section 2: Analysis by Bank
         if 'by_bank' in report_data and not report_data['by_bank'].empty:
-            report_data['by_bank'].to_excel(writer, sheet_name='Section 2: Analysis by Bank', index=False)
+            sheet_name = sanitize_sheet_name('Section 2 - Analysis by Bank')
+            report_data['by_bank'].to_excel(writer, sheet_name=sheet_name, index=False)
         
         # Section 3: County by County Analysis (only if multiple counties)
         if 'by_county' in report_data and not report_data['by_county'].empty:
@@ -425,11 +451,13 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
                     multiple_counties = True
             
             if multiple_counties:
-                report_data['by_county'].to_excel(writer, sheet_name='Section 3: County by County', index=False)
+                sheet_name = sanitize_sheet_name('Section 3 - County by County')
+                report_data['by_county'].to_excel(writer, sheet_name=sheet_name, index=False)
         
         # Raw Data sheet
         if 'raw_data' in report_data and not report_data['raw_data'].empty:
-            report_data['raw_data'].to_excel(writer, sheet_name='Raw Data', index=False)
+            sheet_name = sanitize_sheet_name('Raw Data')
+            report_data['raw_data'].to_excel(writer, sheet_name=sheet_name, index=False)
         
         # Create Notes sheet with metadata
         workbook = writer.book

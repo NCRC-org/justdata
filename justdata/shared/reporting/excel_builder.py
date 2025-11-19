@@ -10,6 +10,30 @@ import os
 from openpyxl import load_workbook
 
 
+def sanitize_sheet_name(name: str, max_length: int = 31) -> str:
+    """
+    Sanitize Excel sheet name by removing invalid characters.
+    Excel doesn't allow: : \ / ? * [ ]
+    
+    Args:
+        name: Original sheet name
+        max_length: Maximum length (Excel limit is 31 characters)
+    
+    Returns:
+        Sanitized sheet name
+    """
+    # Replace invalid characters with dashes
+    invalid_chars = [':', '\\', '/', '?', '*', '[', ']']
+    sanitized = name
+    for char in invalid_chars:
+        sanitized = sanitized.replace(char, '-')
+    
+    # Remove leading/trailing spaces and limit length
+    sanitized = sanitized.strip()[:max_length]
+    
+    return sanitized
+
+
 def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, sheet_names: Dict[str, str] = None):
     """
     Save the report data to an Excel file with multiple sheets.
@@ -42,7 +66,8 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, sh
         for key, df in report_data.items():
             if isinstance(df, pd.DataFrame) and not df.empty:
                 sheet_name = default_sheet_names.get(key, key.replace('_', ' ').title())
-                df.to_excel(writer, sheet_name=sheet_name[:31], index=False)  # Excel sheet name limit is 31 chars
+                sheet_name = sanitize_sheet_name(sheet_name)  # Sanitize to remove invalid characters
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
         
         # Auto-adjust column widths
         for sheet_name in writer.sheets:
