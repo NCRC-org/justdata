@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MergerMeter - Merger Impact Analysis Report</title>
+    <meta name="description" content="Two-Bank Merger Impact Analysis Report - Comprehensive community benefits assessment">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="MergerMeter - Merger Impact Analysis Report">
+    <meta property="og:description" content="Comprehensive two-bank merger impact analysis report">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Print-specific styles */
+        @media print {
+            .no-print { display: none !important; }
+            .print-break { page-break-before: always; }
+            body { font-size: 12px; }
+            .report-section { margin-bottom: 20px; }
+            .data-table { font-size: 10px; }
+        }
+        
+        /* Report-specific styles */
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+        }
+        
+        .report-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: #003366;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .report-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .report-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+        }
+        
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.95);
+            text-align: left;
+        }
+        
+        .report-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+        
+        .action-btn.primary {
+            background: #0066CC;
+            color: white;
+            border-color: #0066CC;
+        }
+        
+        .action-btn.primary:hover {
+            background: #003366;
+        }
+        
+        /* Sheet tabs */
+        .sheet-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+            flex-wrap: wrap;
+        }
+        
+        .sheet-tab {
+            padding: 10px 20px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s ease;
+        }
+        
+        .sheet-tab:hover {
+            background: #e8e8e8;
+        }
+        
+        .sheet-tab.active {
+            background: white;
+            color: #003366;
+            border-color: #003366;
+            border-bottom-color: white;
+            margin-bottom: -2px;
+        }
+        
+        .sheet-content {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .sheet-content.active {
+            display: block;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+        
+        .data-table th {
+            background: #003366;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .data-table tr:hover {
+            background: #f5f5f5;
+        }
+        
+        /* Default alignment handled inline in JavaScript based on column type */
+        
+        .data-table-container {
+            max-height: 600px;
+            overflow: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .sheet-header {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #003366;
+        }
+        
+        .sheet-header h2 {
+            color: #003366;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .sheet-info {
+            color: #666;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        /* Modal/Popup styles for informational cards */
+        .info-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.2s;
+        }
+        
+        .info-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .info-modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: slideIn 0.3s;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        .info-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #003366;
+        }
+        
+        .info-modal-header h3 {
+            margin: 0;
+            color: #003366;
+            font-size: 1.5rem;
+        }
+        
+        .info-modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .info-modal-close:hover {
+            background: #f0f0f0;
+            color: #000;
+        }
+        
+        .info-modal-body {
+            line-height: 1.8;
+            color: #333;
+        }
+        
+        .info-modal-body h4 {
+            color: #003366;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .info-modal-body p {
+            margin-bottom: 15px;
+        }
+        
+        .info-modal-body ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .info-modal-body li {
+            margin-bottom: 8px;
+        }
+        
+        .info-modal-body strong {
+            color: #003366;
+        }
+        
+        .feature-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+    </style>
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1>MergerMeter</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-star"></i> Report Sections</h3>
+            <div class="sidebar-features">
+                <div class="feature-card" data-info-type="mortgage-goals">
+                    <i class="fas fa-bullseye"></i>
+                    <h4>Mortgage Goals</h4>
+                    <p>Post-merger performance goals</p>
+                </div>
+                <div class="feature-card" data-info-type="mortgage-data">
+                    <i class="fas fa-chart-line"></i>
+                    <h4>Mortgage Data</h4>
+                    <p>Bank-specific mortgage lending metrics</p>
+                </div>
+                <div class="feature-card" data-info-type="small-business">
+                    <i class="fas fa-briefcase"></i>
+                    <h4>Small Business Data</h4>
+                    <p>Small business lending analysis</p>
+                </div>
+                <div class="feature-card" data-info-type="branch-data">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <h4>Branch Data</h4>
+                    <p>Branch network analysis</p>
+                </div>
+            </div>
+        </aside>
+        
+        <!-- Info Modal -->
+        <div id="infoModal" class="info-modal">
+            <div class="info-modal-content">
+                <div class="info-modal-header">
+                    <h3 id="modalTitle"></h3>
+                    <button class="info-modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="info-modal-body" id="modalBody"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <div class="report-container">
+                <div class="report-header">
+                    <h1 class="report-title">MergerMeter - Merger Impact Analysis</h1>
+                    <p class="report-subtitle">Two-Bank Community Benefits Assessment</p>
+                    <div class="report-meta">
+                        <div>
+                            <strong>Generated:</strong> <span id="reportDate"></span><br>
+                            <strong>Analysis Period:</strong> <span id="analysisPeriod"></span>
+                        </div>
+                        <div class="report-actions no-print">
+                            <a href="/" class="action-btn">New Analysis</a>
+                            <a href="#" class="action-btn primary" id="downloadReportBtn">
+                                <i class="fas fa-download"></i> Download Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reportContent" class="report-content">
+                    <div class="report-section">
+                        <h2>Loading report data...</h2>
+                        <p>Please wait while we load your merger analysis report.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>MergerMeter</h4>
+                <p>AI-powered bank merger impact analysis platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - MergerMeter. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        $(document).ready(function() {
+            // Set report date
+            document.getElementById('reportDate').textContent = new Date().toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // Load report data
+            const urlParams = new URLSearchParams(window.location.search);
+            const jobId = urlParams.get('job_id') || sessionStorage.getItem('merger_job_id');
+            
+            if (jobId) {
+                loadReportData(jobId);
+            } else {
+                document.getElementById('reportContent').innerHTML = `
+                    <div class="report-section">
+                        <h2>No Report Data Found</h2>
+                        <p>Please run an analysis first to generate a report.</p>
+                        <a href="/" class="action-btn primary">Start New Analysis</a>
+                    </div>
+                `;
+            }
+
+            function loadReportData(jobId) {
+                fetch(`/report-data?job_id=${jobId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.report) {
+                            displayReport(data.report, data.metadata);
+                        } else {
+                            document.getElementById('reportContent').innerHTML = `
+                                <div class="report-section">
+                                    <h2>Error Loading Report</h2>
+                                    <p>${data.error || 'Unable to load report data.'}</p>
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error loading report:', error);
+                        document.getElementById('reportContent').innerHTML = `
+                            <div class="report-section">
+                                <h2>Error Loading Report</h2>
+                                <p>An error occurred while loading the report. Please try again.</p>
+                            </div>
+                        `;
+                    });
+            }
+
+            function displayReport(report, metadata) {
+                // Set analysis period
+                if (metadata && metadata.hmda_years) {
+                    const years = Array.isArray(metadata.hmda_years) ? metadata.hmda_years : String(metadata.hmda_years).split(',');
+                    document.getElementById('analysisPeriod').textContent = years.join(', ');
+                }
+
+                // Get sheet names - use provided order if available, otherwise use object keys
+                let sheetNames = metadata && metadata.sheet_order ? metadata.sheet_order : Object.keys(report);
+                
+                // If no order provided, sort sheets logically
+                if (!metadata || !metadata.sheet_order) {
+                    const preferredOrder = [
+                        'Assessment Areas',
+                        'Mortgage Goals',
+                        'Bank A Mortgage Subject',
+                        'Bank A Mortgage Peer',
+                        'Bank B Mortgage Subject',
+                        'Bank B Mortgage Peer',
+                        'Bank A Small Business Subject',
+                        'Bank A Small Business Peer',
+                        'Bank B Small Business Subject',
+                        'Bank B Small Business Peer',
+                        'Bank A Branch',
+                        'Bank B Branch',
+                        'HHI Analysis'
+                    ];
+                    
+                    // Sort: preferred sheets first, then others alphabetically
+                    sheetNames = sheetNames.sort((a, b) => {
+                        const aIndex = preferredOrder.findIndex(p => a.toLowerCase().includes(p.toLowerCase().replace(/\s+/g, '')));
+                        const bIndex = preferredOrder.findIndex(p => b.toLowerCase().includes(p.toLowerCase().replace(/\s+/g, '')));
+                        
+                        if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+                        if (aIndex !== -1) return -1;
+                        if (bIndex !== -1) return 1;
+                        return a.localeCompare(b);
+                    });
+                }
+                
+                if (sheetNames.length === 0) {
+                    document.getElementById('reportContent').innerHTML = `
+                        <div class="report-section">
+                            <h2>No Data Available</h2>
+                            <p>The report contains no data sheets.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                // Create tabs
+                let tabsHTML = '<div class="sheet-tabs">';
+                sheetNames.forEach((sheetName, index) => {
+                    const activeClass = index === 0 ? 'active' : '';
+                    tabsHTML += `<div class="sheet-tab ${activeClass}" data-sheet="${sheetName}">${sheetName}</div>`;
+                });
+                tabsHTML += '</div>';
+
+                // Create sheet content
+                let contentHTML = '';
+                sheetNames.forEach((sheetName, index) => {
+                    const activeClass = index === 0 ? 'active' : '';
+                    const sheetData = report[sheetName];
+                    const headers = sheetData.headers || [];
+                    const data = sheetData.data || [];
+                    
+                    // Create table
+                    let tableHTML = '<div class="data-table-container"><table class="data-table"><thead><tr>';
+                    headers.forEach((header, idx) => {
+                        const headerStr = String(header).toLowerCase();
+                        // Determine alignment based on header name
+                        let align = 'right'; // Default to right for numbers
+                        if (idx === 0 || headerStr.includes('name') || headerStr.includes('county') || headerStr.includes('state') || headerStr.includes('cbsa') || headerStr.includes('area')) {
+                            align = 'left'; // Left-align labels and names
+                        } else if (headerStr.includes('percentage') || headerStr.includes('%') || headerStr.includes('percent')) {
+                            align = 'center'; // Center-align percentages
+                        }
+                        tableHTML += `<th style="text-align: ${align}">${escapeHtml(header)}</th>`;
+                    });
+                    tableHTML += '</tr></thead><tbody>';
+                    
+                    data.forEach(row => {
+                        tableHTML += '<tr>';
+                        headers.forEach((header, idx) => {
+                            const value = row[header];
+                            const displayValue = formatCellValue(value, header);
+                            const headerStr = String(header).toLowerCase();
+                            // Determine alignment based on header name
+                            let align = 'right'; // Default to right for numbers
+                            if (idx === 0 || headerStr.includes('name') || headerStr.includes('county') || headerStr.includes('state') || headerStr.includes('cbsa') || headerStr.includes('area')) {
+                                align = 'left'; // Left-align labels and names
+                            } else if (headerStr.includes('percentage') || headerStr.includes('%') || headerStr.includes('percent')) {
+                                align = 'center'; // Center-align percentages
+                            }
+                            tableHTML += `<td style="text-align: ${align}">${escapeHtml(displayValue)}</td>`;
+                        });
+                        tableHTML += '</tr>';
+                    });
+                    
+                    tableHTML += '</tbody></table></div>';
+                    
+                    contentHTML += `
+                        <div class="sheet-content ${activeClass}" data-sheet="${sheetName}">
+                            <div class="sheet-header">
+                                <h2>${escapeHtml(sheetName)}</h2>
+                                <div class="sheet-info">${data.length} rows × ${headers.length} columns</div>
+                            </div>
+                            ${tableHTML}
+                        </div>
+                    `;
+                });
+
+                document.getElementById('reportContent').innerHTML = tabsHTML + contentHTML;
+
+                // Add tab click handlers
+                document.querySelectorAll('.sheet-tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        const sheetName = this.getAttribute('data-sheet');
+                        
+                        // Update active tab
+                        document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+                        this.classList.add('active');
+                        
+                        // Update active content
+                        document.querySelectorAll('.sheet-content').forEach(c => c.classList.remove('active'));
+                        document.querySelector(`.sheet-content[data-sheet="${sheetName}"]`).classList.add('active');
+                    });
+                });
+            }
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+            
+            // Format values based on column header and value type
+            function formatCellValue(value, header) {
+                // Handle null/undefined/empty
+                if (value === null || value === undefined || value === '') {
+                    return '';
+                }
+                
+                // Convert to string for analysis
+                const valueStr = String(value).trim();
+                const headerStr = String(header).toLowerCase();
+                
+                // Try to parse as number
+                let numValue = null;
+                if (valueStr !== '' && !isNaN(valueStr) && valueStr !== 'NaN' && valueStr !== 'None') {
+                    numValue = parseFloat(valueStr);
+                }
+                
+                // Format based on header name patterns
+                if (headerStr.includes('percentage') || headerStr.includes('%') || headerStr.includes('percent')) {
+                    // Percentage formatting
+                    if (numValue !== null && !isNaN(numValue)) {
+                        return numValue.toFixed(2) + '%';
+                    }
+                    // If it already has a % sign, return as is
+                    if (valueStr.includes('%')) {
+                        return valueStr;
+                    }
+                }
+                
+                if (headerStr.includes('deposit') || headerStr.includes('amount') || headerStr.includes('loan amount') || headerStr.includes('total amount')) {
+                    // Currency/amount formatting
+                    if (numValue !== null && !isNaN(numValue)) {
+                        // If it's in millions (has 'M' suffix), format accordingly
+                        if (valueStr.includes('M') || numValue >= 1000000) {
+                            if (valueStr.includes('M')) {
+                                return valueStr; // Already formatted
+                            }
+                            return (numValue / 1000000).toFixed(1) + 'M';
+                        }
+                        // Format with thousands separators
+                        return numValue.toLocaleString('en-US', { 
+                            minimumFractionDigits: 0, 
+                            maximumFractionDigits: 2 
+                        });
+                    }
+                }
+                
+                if (headerStr.includes('loan') && (headerStr.includes('count') || headerStr.includes('total') || headerStr.includes('number'))) {
+                    // Loan counts - whole numbers with thousands separators
+                    if (numValue !== null && !isNaN(numValue)) {
+                        return Math.round(numValue).toLocaleString('en-US');
+                    }
+                }
+                
+                // General number formatting (if it's a number)
+                if (numValue !== null && !isNaN(numValue)) {
+                    // Check if it's a whole number
+                    if (Number.isInteger(numValue) || (numValue % 1 === 0)) {
+                        return Math.round(numValue).toLocaleString('en-US');
+                    } else {
+                        // Decimal number - format with appropriate decimal places
+                        const decimals = numValue < 1 ? 4 : (numValue < 100 ? 2 : 1);
+                        return numValue.toLocaleString('en-US', {
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: decimals
+                        });
+                    }
+                }
+                
+                // Return as string if not a number
+                return valueStr;
+            }
+
+            // Download report handler
+            $('#downloadReportBtn').on('click', function(e) {
+                e.preventDefault();
+                const jobId = new URLSearchParams(window.location.search).get('job_id') || sessionStorage.getItem('merger_job_id');
+                if (jobId) {
+                    window.location.href = `/download?format=excel&job_id=${jobId}`;
+                }
+            });
+            
+            // Info modal handlers - initialize immediately when DOM is ready
+            function initializeInfoModals() {
+                const modal = document.getElementById('infoModal');
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+                const closeModal = document.getElementById('closeModal');
+                
+                if (!modal || !modalTitle || !modalBody || !closeModal) {
+                    console.error('[MergerMeter] Modal elements not found in DOM');
+                    console.error('[MergerMeter] Modal:', modal, 'Title:', modalTitle, 'Body:', modalBody, 'Close:', closeModal);
+                    return;
+                }
+                
+                console.log('[MergerMeter] Info modal system initialized');
+                
+                const infoContent = {
+                    'mortgage-goals': {
+                    title: 'Mortgage Goals - How They Are Determined',
+                    content: `
+                        <h4>What Are Mortgage Goals?</h4>
+                        <p>Mortgage goals represent post-merger performance targets for mortgage lending across all assessment areas. These goals are set at the state level and help ensure the merged bank maintains or improves its community reinvestment performance.</p>
+                        
+                        <h4>How Mortgage Goals Are Calculated</h4>
+                        <p>Mortgage goals are calculated based on:</p>
+                        <ul>
+                            <li><strong>Historical Performance:</strong> Analysis of both banks' past mortgage lending patterns in their assessment areas</li>
+                            <li><strong>Peer Comparison:</strong> Comparison with peer banks (banks with 50%-200% of the subject bank's lending volume) in the same markets</li>
+                            <li><strong>Market Demographics:</strong> Consideration of low-to-moderate income (LMI) and majority-minority census tract (MMCT) populations in assessment areas</li>
+                            <li><strong>State-Level Aggregation:</strong> Goals are aggregated at the state level to provide comprehensive coverage targets</li>
+                        </ul>
+                        
+                        <h4>Goal Categories</h4>
+                        <p>The mortgage goals include three main loan purpose categories:</p>
+                        <ul>
+                            <li><strong>Home Purchase Loans:</strong> Loans for purchasing owner-occupied properties (1-4 units)</li>
+                            <li><strong>Refinance Loans:</strong> Loans for refinancing existing mortgages</li>
+                            <li><strong>Home Equity Loans:</strong> Loans secured by home equity (loan purposes 2 and 4)</li>
+                        </ul>
+                        
+                        <h4>Data Sources</h4>
+                        <p>Mortgage goals are derived from:</p>
+                        <ul>
+                            <li>HMDA (Home Mortgage Disclosure Act) data from the Federal Financial Institutions Examination Council (FFIEC)</li>
+                            <li>Historical lending data for both the acquirer and target banks</li>
+                            <li>Peer bank lending data for market context</li>
+                        </ul>
+                    `
+                },
+                'mortgage-data': {
+                    title: 'Mortgage Data - Sources and Methodology',
+                    content: `
+                        <h4>Data Source</h4>
+                        <p>Mortgage lending data comes from the <strong>Home Mortgage Disclosure Act (HMDA)</strong> database, maintained by the Consumer Financial Protection Bureau (CFPB) and the Federal Financial Institutions Examination Council (FFIEC).</p>
+                        
+                        <h4>What Data Is Included</h4>
+                        <p>The mortgage data includes:</p>
+                        <ul>
+                            <li><strong>Loan Originations:</strong> Only loans that were originated (action taken = 1)</li>
+                            <li><strong>Owner-Occupied Properties:</strong> Loans for owner-occupied properties (occupancy type = 1)</li>
+                            <li><strong>1-4 Unit Properties:</strong> Single-family and small multi-family properties</li>
+                            <li><strong>Site-Built Construction:</strong> Excludes manufactured homes</li>
+                            <li><strong>Non-Reverse Mortgages:</strong> Excludes reverse mortgages</li>
+                        </ul>
+                        
+                        <h4>Loan Purpose Categories</h4>
+                        <ul>
+                            <li><strong>Home Purchase:</strong> Loans for purchasing a home (loan purpose = 1)</li>
+                            <li><strong>Refinance:</strong> Loans for refinancing existing mortgages (loan purposes = 31, 32)</li>
+                            <li><strong>Home Improvement:</strong> Loans for home improvement (loan purpose = 2)</li>
+                            <li><strong>Home Equity:</strong> Home equity lines of credit (loan purpose = 4)</li>
+                        </ul>
+                        
+                        <h4>Key Metrics Calculated</h4>
+                        <ul>
+                            <li><strong>Total Loans:</strong> Count of all originated loans</li>
+                            <li><strong>Total Amount:</strong> Sum of all loan amounts</li>
+                            <li><strong>LMI Census Tract (LMICT) Loans:</strong> Loans in census tracts where median family income is ≤80% of the MSA/MD median</li>
+                            <li><strong>LMI Borrower (LMIB) Loans:</strong> Loans to borrowers with income ≤80% of the MSA/MD median</li>
+                            <li><strong>Majority-Minority Census Tract (MMCT) Loans:</strong> Loans in census tracts where >50% of the population is minority</li>
+                            <li><strong>Minority Borrower (MINB) Loans:</strong> Loans to Hispanic, Black, Asian, Native American, or Native Hawaiian/Pacific Islander borrowers</li>
+                        </ul>
+                        
+                        <h4>Race/Ethnicity Classification</h4>
+                        <p>Race and ethnicity are classified using the COALESCE methodology:</p>
+                        <ul>
+                            <li>First, check for Hispanic ethnicity (any ethnicity field indicating Hispanic)</li>
+                            <li>For non-Hispanic applicants, use the first valid race code (excluding codes 6, 7, 8 which indicate "Not Provided", "Not Applicable", or "No co-applicant")</li>
+                            <li>Minority borrowers include: Hispanic, Black (race = 3), Asian (race = 2, 21-27), Native American (race = 1), Native Hawaiian/Pacific Islander (race = 4, 41-44)</li>
+                        </ul>
+                        
+                        <h4>Peer Bank Selection</h4>
+                        <p>Peer banks are selected based on the 50%-200% volume rule: banks with total lending volume between 50% and 200% of the subject bank's volume in the same assessment areas and time period.</p>
+                    `
+                },
+                'small-business': {
+                    title: 'Small Business Data - Sources and Methodology',
+                    content: `
+                        <h4>Data Source</h4>
+                        <p>Small business lending data comes from the <strong>Small Business Lending Survey</strong> data collected by the Federal Financial Institutions Examination Council (FFIEC) under the Community Reinvestment Act (CRA).</p>
+                        
+                        <h4>What Data Is Included</h4>
+                        <p>The small business data includes:</p>
+                        <ul>
+                            <li><strong>Originated Loans:</strong> Small business loans that were originated during the reporting period</li>
+                            <li><strong>Loan Amounts:</strong> Original loan amounts at origination</li>
+                            <li><strong>Revenue-Based Lending:</strong> Loans to businesses based on annual revenue</li>
+                            <li><strong>Geographic Coverage:</strong> Loans made within the banks' assessment areas</li>
+                        </ul>
+                        
+                        <h4>Key Metrics Calculated</h4>
+                        <ul>
+                            <li><strong>Total Loans:</strong> Count of all originated small business loans</li>
+                            <li><strong>Total Amount:</strong> Sum of all loan amounts</li>
+                            <li><strong>Average Loan Amount:</strong> Mean loan size</li>
+                            <li><strong>LMI Census Tract (LMICT) Loans:</strong> Loans in low-to-moderate income census tracts</li>
+                            <li><strong>LMICT Percentage:</strong> Percentage of loans in LMI census tracts</li>
+                            <li><strong>Revenue-Based Categories:</strong> Breakdown by business revenue size</li>
+                        </ul>
+                        
+                        <h4>Assessment Area Coverage</h4>
+                        <p>Small business lending is analyzed within each bank's defined assessment areas, which typically include:</p>
+                        <ul>
+                            <li>Metropolitan Statistical Areas (MSAs) or Metropolitan Divisions (MDs) where the bank has branches</li>
+                            <li>Counties or portions of counties where the bank has significant lending activity</li>
+                            <li>Areas where the bank has received deposits</li>
+                        </ul>
+                        
+                        <h4>Peer Bank Comparison</h4>
+                        <p>Small business lending performance is compared with peer banks (banks with 50%-200% of the subject bank's lending volume) to provide market context and identify opportunities for improvement.</p>
+                        
+                        <h4>Data Years</h4>
+                        <p>Small business lending data is typically available for years 2019-2023, depending on the reporting period selected for the analysis.</p>
+                    `
+                },
+                'branch-data': {
+                    title: 'Branch Data - Sources and Methodology',
+                    content: `
+                        <h4>Data Source</h4>
+                        <p>Branch location and deposit data comes from the <strong>FDIC Summary of Deposits (SOD)</strong> file, which is released annually by the Federal Deposit Insurance Corporation (FDIC).</p>
+                        
+                        <h4>What Data Is Included</h4>
+                        <p>The branch data includes:</p>
+                        <ul>
+                            <li><strong>Branch Locations:</strong> Physical addresses and geographic coordinates (latitude/longitude) of all bank branches</li>
+                            <li><strong>Deposit Amounts:</strong> Total deposits held at each branch as of June 30th of the reporting year</li>
+                            <li><strong>Branch Names:</strong> Official names of branch locations</li>
+                            <li><strong>Geographic Information:</strong> County, state, and census tract information for each branch</li>
+                        </ul>
+                        
+                        <h4>Key Metrics Calculated</h4>
+                        <ul>
+                            <li><strong>Total Branches:</strong> Count of all branches in assessment areas</li>
+                            <li><strong>Total Deposits:</strong> Sum of all deposits across branches</li>
+                            <li><strong>LMI Census Tract Coverage:</strong> Percentage of branches located in low-to-moderate income census tracts</li>
+                            <li><strong>MMCT Coverage:</strong> Percentage of branches located in majority-minority census tracts</li>
+                            <li><strong>Branch Distribution:</strong> Geographic distribution of branches across assessment areas</li>
+                        </ul>
+                        
+                        <h4>Income and Minority Classifications</h4>
+                        <p>Branches are classified based on the census tract in which they are located:</p>
+                        <ul>
+                            <li><strong>LMI Census Tracts:</strong> Census tracts where median family income is ≤80% of the MSA/MD median family income</li>
+                            <li><strong>Majority-Minority Census Tracts (MMCT):</strong> Census tracts where >50% of the population is minority (non-Hispanic White excluded)</li>
+                        </ul>
+                        
+                        <h4>Assessment Area Coverage</h4>
+                        <p>Branch analysis focuses on the banks' defined assessment areas, which typically include:</p>
+                        <ul>
+                            <li>Metropolitan Statistical Areas (MSAs) or Metropolitan Divisions (MDs) where the bank has branches</li>
+                            <li>Counties or portions of counties where the bank has significant deposit-taking activity</li>
+                            <li>Areas where the bank has received a substantial portion of its deposits</li>
+                        </ul>
+                        
+                        <h4>Data Year</h4>
+                        <p>Branch data is typically from the most recent FDIC Summary of Deposits release (June 30th snapshot). The current analysis uses data from 2025.</p>
+                        
+                        <h4>Geographic Matching</h4>
+                        <p>Branches are matched to census tracts using geographic coordinates (latitude/longitude) and then classified based on the demographic characteristics of those census tracts using U.S. Census Bureau American Community Survey (ACS) data.</p>
+                    `
+                    }
+                };
+                
+                // Add click handlers to feature cards
+                const featureCards = document.querySelectorAll('.feature-card[data-info-type]');
+                console.log('[MergerMeter] Found', featureCards.length, 'feature cards with data-info-type');
+                
+                featureCards.forEach(card => {
+                    card.style.cursor = 'pointer'; // Ensure cursor shows it's clickable
+                    card.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const infoType = this.getAttribute('data-info-type');
+                        console.log('[MergerMeter] Card clicked, info type:', infoType);
+                        
+                        if (infoContent[infoType]) {
+                            modalTitle.textContent = infoContent[infoType].title;
+                            modalBody.innerHTML = infoContent[infoType].content;
+                            modal.classList.add('active');
+                            console.log('[MergerMeter] Modal opened for:', infoType);
+                        } else {
+                            console.warn('[MergerMeter] No content found for info type:', infoType);
+                        }
+                    });
+                });
+                
+                // Close modal handlers
+                closeModal.addEventListener('click', function() {
+                    modal.classList.remove('active');
+                });
+                
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        modal.classList.remove('active');
+                    }
+                });
+                
+                // Close on Escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && modal.classList.contains('active')) {
+                        modal.classList.remove('active');
+                    }
+                });
+                
+                console.log('[MergerMeter] Added click handlers to', featureCards.length, 'feature cards');
+            }
+            
+            // Initialize modals when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeInfoModals);
+            } else {
+                // DOM is already ready
+                initializeInfoModals();
+            }
+        });
+    </script>
+</body>
+</html>
+

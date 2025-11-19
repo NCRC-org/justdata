@@ -1,0 +1,23 @@
+{
+  "hmda_years": [
+    "2020",
+    "2021",
+    "2022",
+    "2023",
+    "2024"
+  ],
+  "sb_years": [
+    "2019",
+    "2020",
+    "2021",
+    "2022",
+    "2023"
+  ],
+  "loan_purpose": "1",
+  "acquirer_lei": "AD6GFRVSDT01YPT1CS68",
+  "target_lei": "5493009V3WNJX9V2GZ85",
+  "acquirer_rssd": "817824",
+  "target_rssd": "288853",
+  "acquirer_sb_id": "0000001316",
+  "target_sb_id": "0000288853"
+}
