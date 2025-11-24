@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ app_title|default('BranchSeeker') }} - AI-Powered Banking Insights</title>
+    <title>BranchSeeker - AI-Powered Banking Insights</title>
     <meta name="description" content="AI-powered bank branch data analyzer with BigQuery integration. Generate comprehensive banking market analysis reports.">
-    <meta name="keywords" content="{{ app_title|default('BranchSeeker') }}, banking, branch analysis, AI, BigQuery, market intelligence">
+    <meta name="keywords" content="BranchSeeker, banking, branch analysis, AI, BigQuery, market intelligence">
     <meta name="author" content="JustData - National Community Reinvestment Coalition">
     
     <!-- Open Graph / Facebook -->
@@ -39,7 +39,7 @@
                     <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
                 </div>
                 <div class="header-title-section">
-                    <h1>{{ app_title|default('BranchSeeker') }}</h1>
+                    <h1>BranchSeeker</h1>
                     <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
                 </div>
                 <div class="header-tagline">
@@ -52,49 +52,6 @@
     </header>
 
     <div class="container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> What You'll Get</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="Access state and county-level data on bank branch networks, including which institutions operate in each market and their deposit market share. See the percentage of branches located in low-to-moderate income census tracts, majority-minority census tracts, or areas that are both. Track changes in branch counts and market concentration over time to identify expansion or contraction patterns in specific geographies and community types.">
-                    <i class="fas fa-chart-bar"></i>
-                    <h4>Comprehensive Data</h4>
-                    <p>Detailed branch statistics, market share analysis, and growth trends</p>
-                </div>
-                <div class="feature-card" data-tooltip="AI-generated narrative analysis of branch distribution patterns, market concentration trends, and demographic service coverage based on NCRC's curated datasets. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. Verify specific claims and data points using the Excel Export, which contains the complete underlying data compiled by NCRC research staff.">
-                    <i class="fas fa-robot"></i>
-                    <h4>AI Insights</h4>
-                    <p>Claude AI-powered analysis of banking strategies and market dynamics</p>
-                </div>
-                <div class="feature-card" data-tooltip="Download structured data tables showing branch counts, deposit market shares, and demographic breakdowns by institution, state, and county. Use this file to conduct custom analysis, create additional visualizations, or verify findings from the AI-generated insights and web reports.">
-                    <i class="fas fa-file-excel"></i>
-                    <h4>Excel Export</h4>
-                    <p>Structured data in Excel format for further analysis and reporting</p>
-                </div>
-                <div class="feature-card" data-tooltip="View formatted tables and charts showing branch distributions, market concentration metrics, and demographic coverage statistics. Export individual tables or charts as needed. For detailed analysis or data verification, use the Excel Export option to access the complete underlying dataset.">
-                    <i class="fas fa-globe"></i>
-                    <h4>Web Report</h4>
-                    <p>Interactive web-based report with charts, tables, and export options</p>
-                </div>
-            </div>
-            
-            <h3 style="margin-top: 40px;"><i class="fas fa-book"></i> Documentation</h3>
-            <div class="sidebar-docs">
-                <a href="/static/docs/README.md" class="doc-link" target="_blank">
-                    <i class="fas fa-file-alt"></i>
-                    <span>User Guide</span>
-                </a>
-                <a href="/static/docs/API.md" class="doc-link" target="_blank">
-                    <i class="fas fa-code"></i>
-                    <span>API Documentation</span>
-                </a>
-                <a href="/static/docs/DEPLOYMENT.md" class="doc-link" target="_blank">
-                    <i class="fas fa-server"></i>
-                    <span>Deployment Guide</span>
-                </a>
-            </div>
-        </aside>
-
         <!-- Main Content -->
         <div class="content-wrapper">
         <main class="main-content">
@@ -108,30 +65,8 @@
                 </div>
 
                 <form id="analysisForm" class="analysis-form">
-                    <!-- Selection Type Radio Buttons -->
-                    <div class="form-group" style="text-align: center;" data-intro="Choose how you want to select your analysis area. Select 'County' to pick specific counties, or 'State' to analyze all counties in a state." data-step="1">
-                        <div style="display: block; margin-bottom: 10px; font-weight: 600;">
-                            <i class="fas fa-filter"></i>
-                            Select By:
-                        </div>
-                        <div class="selection-mode-container" style="display: inline-flex; gap: 20px; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; justify-content: center;">
-                            <label class="radio-option" style="display: flex; align-items: center; cursor: pointer;">
-                                <input type="radio" name="selection_type" id="selection_type_county" value="county" checked style="margin-right: 8px;">
-                                <span>County</span>
-                            </label>
-                            <label class="radio-option" style="display: flex; align-items: center; cursor: pointer;">
-                                <input type="radio" name="selection_type" id="selection_type_state" value="state" style="margin-right: 8px;">
-                                <span>State</span>
-                            </label>
-                        </div>
-                        <small class="help-text">
-                            <i class="fas fa-info-circle"></i>
-                            Choose how you want to select your analysis area. You cannot mix selection types.
-                        </small>
-                    </div>
-
-                    <!-- County Selection (default, shown when selection_type = 'county') -->
-                    <div class="form-group" id="county-selection-group" data-intro="First, optionally filter by state to narrow the county list. Then select one or more counties to analyze. Tip: Select up to 3 counties for faster processing." data-step="2">
+                    <!-- County Selection -->
+                    <div class="form-group" id="county-selection-group" data-intro="First, optionally filter by state to narrow the county list. Then select up to 3 counties to analyze." data-step="1">
                         <label for="state-filter-select" data-tooltip="Narrow the county list to a specific state. This makes it easier to find the counties you're looking for.">
                             <i class="fas fa-map"></i>
                             Filter by State (Optional)
@@ -143,34 +78,18 @@
                             <i class="fas fa-info-circle"></i>
                             Optionally select a state to filter the county list below.
                         </small>
-                        <label for="county-select" data-tooltip="Select one or more counties to analyze. You can search by typing. For best performance, limit to 3 counties.">
+                        <label for="county-select" data-tooltip="Select up to 3 counties to analyze. You can search by typing.">
                             <i class="fas fa-map-marker-alt"></i>
                             Counties
                         </label>
-                        <select id="county-select" name="counties" multiple="multiple" style="width: 100%;" placeholder="Select counties..."></select>
+                        <select id="county-select" name="counties" multiple="multiple" style="width: 100%;" placeholder="Select up to 3 counties..."></select>
                         <small class="help-text">
                             <i class="fas fa-info-circle"></i>
-                            Select one or more counties. For better timing, we recommend limiting to a maximum of three counties selected.
+                            Select up to 3 counties to analyze.
                         </small>
                     </div>
 
-                    <!-- State Selection (shown when selection_type = 'state') -->
-                    <div class="form-group" id="state-selection-group" style="display: none;">
-                        <label for="state-select">
-                            <i class="fas fa-map"></i>
-                            State
-                        </label>
-                        <select id="state-select" name="state_code" style="width: 100%;" placeholder="Select a state...">
-                            <option value="">Select a state...</option>
-                        </select>
-                        <small class="help-text">
-                            <i class="fas fa-info-circle"></i>
-                            Select a state to analyze all counties within that state.
-                        </small>
-                    </div>
-
-
-                    <div class="form-group" data-intro="Select the year range for your analysis. Choose at least 3 years for meaningful trends. Longer ranges provide more comprehensive insights but take longer to process." data-step="3">
+                    <div class="form-group" style="display: none;" data-intro="Year range is automatically set to last 5 years" data-step="2">
                         <div style="display: block; margin-bottom: 10px; font-weight: 600;">
                             <i class="fas fa-calendar-alt"></i>
                             Year Range
@@ -188,6 +107,7 @@
                                     <option value="2022">2022</option>
                                     <option value="2023">2023</option>
                                     <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
                                 </select>
                             </div>
                             <div class="year-select-group">
@@ -202,6 +122,7 @@
                                     <option value="2022">2022</option>
                                     <option value="2023">2023</option>
                                     <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
                                 </select>
                             </div>
                         </div>
@@ -290,6 +211,39 @@
 
         </main>
         </div> <!-- End content-wrapper -->
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-star"></i> What You'll Get</h3>
+            <div class="sidebar-features">
+                <div class="feature-card" data-tooltip="Access state and county-level data on bank branch networks, including which institutions operate in each market and their deposit market share. See the percentage of branches located in low-to-moderate income census tracts, majority-minority census tracts, or areas that are both. Track changes in branch counts and market concentration over time to identify expansion or contraction patterns in specific geographies and community types.">
+                    <i class="fas fa-chart-bar"></i>
+                    <h4>Comprehensive Data</h4>
+                    <p>Detailed branch statistics, market share analysis, and growth trends</p>
+                </div>
+                <div class="feature-card" data-tooltip="AI-generated narrative analysis of branch distribution patterns, market concentration trends, and demographic service coverage based on NCRC's curated datasets. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. Verify specific claims and data points using the Excel Export, which contains the complete underlying data compiled by NCRC research staff.">
+                    <i class="fas fa-robot"></i>
+                    <h4>AI Insights</h4>
+                    <p>Claude AI-powered analysis of banking strategies and market dynamics</p>
+                </div>
+                <div class="feature-card" data-tooltip="Download structured data tables showing branch counts, deposit market shares, and demographic breakdowns by institution, state, and county. Use this file to conduct custom analysis, create additional visualizations, or verify findings from the AI-generated insights and web reports.">
+                    <i class="fas fa-file-excel"></i>
+                    <h4>Excel Export</h4>
+                    <p>Structured data in Excel format for further analysis and reporting</p>
+                </div>
+                <div class="feature-card" data-tooltip="View formatted tables and charts showing branch distributions, market concentration metrics, and demographic coverage statistics. Export individual tables or charts as needed. For detailed analysis or data verification, use the Excel Export option to access the complete underlying dataset.">
+                    <i class="fas fa-globe"></i>
+                    <h4>Web Report</h4>
+                    <p>Interactive web-based report with charts, tables, and export options</p>
+                </div>
+            </div>
+            
+            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current development version. Version 1.0 will be released when the product is ready for production use.">
+                <i class="fas fa-code-branch"></i>
+                <h4>Version</h4>
+                <p>{{ version }} (Development)</p>
+            </div>
+        </aside>
     </div> <!-- End container -->
 
     <!-- Footer -->

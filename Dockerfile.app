@@ -31,6 +31,10 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
+# Copy and make startup script executable
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
@@ -39,10 +43,6 @@ USER app
 # Expose port (Cloud Run will set PORT env var)
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:${PORT:-8080}/health || exit 1
-
-# Run the appropriate application based on APP_NAME
-CMD python run_${APP_NAME}.py
+# Run the startup script which handles PORT variable correctly
+CMD ["/app/start.sh"]
 

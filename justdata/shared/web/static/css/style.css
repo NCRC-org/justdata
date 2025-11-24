@@ -71,6 +71,8 @@ body {
     backface-visibility: visible !important;
     transform: translateZ(0);
     overflow: visible !important;
+    overflow-y: auto !important;
+    max-height: calc(100vh - 40px) !important;
     z-index: 100;
 }
 
@@ -162,7 +164,7 @@ body {
 }
 
 .tagline-box {
-    background: transparent;
+    background: white;
     padding: 12px 16px;
     border-radius: 8px;
     height: 90px;
@@ -170,13 +172,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
 }
 
 .header-tagline p {
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 500;
-    color: #FFFFFF;
+    color: #000000;
     margin: 0;
     font-style: normal;
     white-space: normal;
@@ -187,7 +190,6 @@ body {
 
 .header-tagline p em {
     font-style: italic;
-    font-size: 2rem;
     color: var(--ncrc-pink);
 }
 
@@ -256,6 +258,8 @@ body {
     flex-direction: column;
     gap: 10px;
     margin-top: 20px;
+    overflow: visible !important;
+    max-height: none !important;
 }
 
 .sidebar-docs .doc-link {
@@ -1118,6 +1122,7 @@ body {
 }
 
 /* Disable generic tooltips for sidebar feature cards - only disable the generic ::after and ::before rules */
+/* CSS tooltips disabled - using JavaScript tooltips instead */
 .sidebar .feature-card[data-tooltip]:hover::after {
     display: none !important;
     content: none !important;
@@ -1141,21 +1146,59 @@ body {
     margin-bottom: -5px;
 }
 
-/* Ensure our custom sidebar tooltip ::before takes precedence over generic tooltip arrow */
+/* Disable CSS tooltips for sidebar feature cards - using JavaScript tooltips instead */
 .sidebar .feature-card[data-tooltip]::before {
-    /* This ensures our custom tooltip content shows, not the generic arrow */
-    content: attr(data-tooltip) !important;
+    display: none !important;
+    content: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
 }
 
-/* Disable generic tooltip arrow for sidebar feature cards */
+/* Disable CSS tooltip on hover for sidebar feature cards */
 .sidebar .feature-card[data-tooltip]:hover::before {
-    /* Override generic arrow properties */
+    display: none !important;
+    content: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
     border: none !important;
-    margin-bottom: 0 !important;
-    bottom: auto !important;
-    left: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Custom tooltip for sidebar feature cards with white background */
+.custom-tooltip {
+    display: none !important;
+    position: fixed !important;
+    background: white !important;
+    color: #333 !important;
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    max-width: 350px !important;
+    min-width: 250px !important;
+    z-index: 99999 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    pointer-events: auto !important;
+    text-align: left !important;
+    word-wrap: break-word !important;
+    margin: 0 !important;
+    border: 1px solid #ddd !important;
+    overflow: visible !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.custom-tooltip::after {
+    content: '' !important;
+    position: absolute !important;
+    right: -10px !important;
+    top: 50% !important;
     transform: translateY(-50%) !important;
-    right: calc(100% + 15px) !important;
+    border: 10px solid transparent !important;
+    border-left-color: white !important;
+    border-right: none !important;
+    pointer-events: none !important;
 }
 
 
@@ -1256,9 +1299,9 @@ body {
 /* Intro.js Custom Styling */
 .introjs-tooltip {
     font-family: 'Inter', sans-serif;
-    min-width: 350px;
-    max-width: 450px;
-    padding: 15px !important;
+    min-width: 400px;
+    max-width: 550px;
+    padding: 5px !important;
     box-sizing: border-box;
     position: fixed !important;
     top: 50% !important;
@@ -1275,8 +1318,7 @@ body {
     background-size: 100% 100% !important;
     height: auto !important;
     min-height: auto !important;
-    max-height: 80vh !important;
-    overflow-y: auto !important;
+    max-height: none !important;
 }
 
 /* Change arrow to point left instead of up */
@@ -1411,12 +1453,10 @@ body {
 }
 
 .introjs-tooltiptext {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     line-height: 1.5;
-    padding: 0 !important;
-    margin: 0 0 15px 0;
-    max-height: 60vh;
-    overflow-y: auto;
+    padding: 5px !important;
+    margin: 0 0 10px 0;
 }
 
 /* Responsive Design */
@@ -1447,7 +1487,7 @@ body {
     }
     
     .analysis-card {
-        padding-top: 10px;
+        padding: 25px;
     }
     
     .features-grid {

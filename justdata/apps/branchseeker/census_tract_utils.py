@@ -28,7 +28,7 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
     """
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from justdata.apps.branchseeker.config import PROJECT_ID
+        from apps.branchseeker.config import PROJECT_ID
         
         # First, extract FIPS codes to get GEOID5
         fips_data = extract_fips_from_county_state(county_state)
@@ -162,7 +162,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
     """
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from justdata.apps.branchseeker.config import PROJECT_ID
+        from apps.branchseeker.config import PROJECT_ID
         
         client = get_bigquery_client(PROJECT_ID)
         

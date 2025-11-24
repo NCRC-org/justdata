@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MergerMeter - Two-Bank Merger Impact Analyzer</title>
+    <meta name="description" content="AI-powered bank merger analysis tool with BigQuery integration. Generate comprehensive community benefits merger analysis reports.">
+    <meta name="keywords" content="MergerMeter, merger analysis, bank merger, community benefits, CRA, AI, BigQuery, market intelligence">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://justdata.app/mergermeter/">
+    <meta property="og:title" content="MergerMeter - Two-Bank Merger Impact Analyzer">
+    <meta property="og:description" content="Generate comprehensive bank merger analysis reports with AI-powered insights for community benefits assessment.">
+    <meta property="og:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://justdata.app/mergermeter/">
+    <meta property="twitter:title" content="MergerMeter - Two-Bank Merger Impact Analyzer">
+    <meta property="twitter:description" content="Generate comprehensive bank merger analysis reports with AI-powered insights for community benefits assessment.">
+    <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- Favicon removed - add favicon.ico to static/ folder if needed -->
+    <style>
+        /* Ensure feature cards have relative positioning for tooltips */
+        .sidebar .feature-card {
+            position: relative;
+        }
+    </style>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Intro.js for onboarding tour -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1>MergerMeter</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main Content -->
+        <div class="content-wrapper">
+        <main class="main-content">
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-search"></i> Generate Merger Impact Analysis</h2>
+                    <p>Upload merger research ticket and assessment area documents to analyze two-bank merger</p>
+                    <button id="startTourBtn" class="tour-btn" style="margin-top: 10px; padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+                        <i class="fas fa-question-circle"></i> Take a Tour
+                    </button>
+                </div>
+
+                <form id="analysisForm" class="analysis-form">
+                    <!-- Bank Information Section -->
+                    <div class="form-group" data-intro="Enter the identifiers for both banks. You'll need LEI, RSSD, and Small Business Respondent ID for each bank. Click 'Load' to fetch and confirm the bank names." data-step="1">
+                        <h3 style="margin-bottom: 20px; color: var(--ncrc-dark-blue);">
+                            <i class="fas fa-building"></i> Bank Information
+                        </h3>
+                        
+                        <!-- Bulk Import Section -->
+                        <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bee5eb;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <h4 style="margin: 0; color: var(--ncrc-dark-blue); font-size: 1rem;">
+                                    <i class="fas fa-paste"></i> Bulk Import Banks
+                                </h4>
+                                <button type="button" id="toggleBulkImport" class="btn-link" style="background: none; border: none; color: var(--ncrc-secondary-blue); cursor: pointer; text-decoration: underline; font-size: 0.9rem;">
+                                    <i class="fas fa-chevron-down"></i> Show
+                                </button>
+                            </div>
+                            <div id="bulkImportSection" style="display: none;">
+                                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                                    <strong>Excel Format:</strong> Copy a table from Excel with these columns (headers optional):
+                                </p>
+                                <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 10px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
+                                    <table style="border-collapse: collapse; width: 100%;">
+                                        <thead>
+                                            <tr style="background: #e9ecef; font-weight: bold;">
+                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Bank Name</th>
+                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">LEI</th>
+                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">RSSD</th>
+                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">ResID</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">PNC BANK</td>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">549300BJX7P13H14EN18</td>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">451965</td>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">123456789</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">FIRSTBANK</td>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">549300ABC123DEF456</td>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">123456</td>
+                                                <td style="border: 1px solid #ddd; padding: 6px;">987654321</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                                    <strong>Instructions:</strong> In Excel, create a table with 4 columns (Bank Name, LEI, RSSD, ResID). Select the rows you want to import (including headers if present), copy (Ctrl+C), and paste below. The system will automatically detect tab-separated format from Excel.
+                                </p>
+                                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
+                                    <strong>Alternative formats also supported:</strong> Comma-separated (CSV) or pipe-separated (|)
+                                </p>
+                                <div style="margin-bottom: 10px;">
+                                    <a href="/api/download-bank-identifiers-template" download="bank_identifiers_template.csv" style="padding: 6px 12px; background: var(--ncrc-secondary-blue); color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+                                        <i class="fas fa-download"></i> Download Bank Identifiers Template
+                                    </a>
+                                </div>
+                                <textarea id="bulkImportText" placeholder="Paste your Excel table here (Ctrl+V)&#10;&#10;Example:&#10;PNC BANK	549300BJX7P13H14EN18	451965	123456789&#10;FIRSTBANK	549300ABC123DEF456	123456	987654321" style="width: 100%; min-height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 0.85rem; margin-bottom: 10px;"></textarea>
+                                <button type="button" id="parseBulkImportBtn" class="submit-btn" style="width: auto; padding: 8px 16px; font-size: 0.9rem;">
+                                    <i class="fas fa-upload"></i> Parse and Import Banks
+                                </button>
+                                <div id="bulkImportResults" style="margin-top: 10px; display: none;"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Bank A (Acquirer) -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-hand-holding"></i> Bank A (Acquirer)
+                            </h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <label for="acquirer_lei">
+                                        <i class="fas fa-id-card"></i>
+                                        LEI Number <span style="color: red;">*</span>
+                                    </label>
+                                    <input type="text" id="acquirer_lei" name="acquirer_lei" placeholder="Enter LEI (20 characters)" maxlength="20" required>
+                                </div>
+                                <div>
+                                    <label for="acquirer_rssd">
+                                        <i class="fas fa-database"></i>
+                                        RSSD Number
+                                    </label>
+                                    <input type="text" id="acquirer_rssd" name="acquirer_rssd" placeholder="Enter RSSD (6+ digits)" pattern="[0-9]+">
+                                </div>
+                                <div>
+                                    <label for="acquirer_sb_id">
+                                        <i class="fas fa-briefcase"></i>
+                                        Res ID
+                                    </label>
+                                    <input type="text" id="acquirer_sb_id" name="acquirer_sb_id" placeholder="Enter Res ID">
+                                </div>
+                            </div>
+                            <div id="acquirer_confirmation" style="display: none; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; margin-top: 10px;">
+                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong> 
+                                <span id="acquirer_name_display"></span>
+                            </div>
+                        </div>
+
+                        <!-- Bank B (Target) -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-bullseye"></i> Bank B (Target)
+                            </h4>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                                <div>
+                                    <label for="target_lei">
+                                        <i class="fas fa-id-card"></i>
+                                        LEI Number <span style="color: red;">*</span>
+                                    </label>
+                                    <input type="text" id="target_lei" name="target_lei" placeholder="Enter LEI (20 characters)" maxlength="20" required>
+                                </div>
+                                <div>
+                                    <label for="target_rssd">
+                                        <i class="fas fa-database"></i>
+                                        RSSD Number
+                                    </label>
+                                    <input type="text" id="target_rssd" name="target_rssd" placeholder="Enter RSSD (6+ digits)" pattern="[0-9]+">
+                                </div>
+                                <div>
+                                    <label for="target_sb_id">
+                                        <i class="fas fa-briefcase"></i>
+                                        Res ID
+                                    </label>
+                                    <input type="text" id="target_sb_id" name="target_sb_id" placeholder="Enter Res ID">
+                                </div>
+                            </div>
+                            <div id="target_confirmation" style="display: none; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; margin-top: 10px;">
+                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong> 
+                                <span id="target_name_display"></span>
+                            </div>
+                        </div>
+
+                        <button type="button" id="loadBanksBtn" class="submit-btn" style="width: auto; margin-bottom: 20px;">
+                            <i class="fas fa-search"></i>
+                            Load Bank Names
+                        </button>
+                        <small class="help-text" style="display: block; margin-top: -15px; margin-bottom: 20px;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Required:</strong> Enter the LEI number for each bank and click "Load" to fetch and confirm bank names. The system uses the LEI number to look up the bank name from the database. RSSD and SB Respondent ID are optional.
+                        </small>
+                    </div>
+
+                    <!-- Assessment Area Upload Section -->
+                    <div class="form-group" id="assessmentAreaSection" style="display: none;" data-intro="Upload assessment area documents for each bank. Assessment areas are built from combining one or more counties. Files can be in PDF or Text format." data-step="2">
+                        <h3 style="margin-bottom: 20px; color: var(--ncrc-dark-blue);">
+                            <i class="fas fa-upload"></i> Assessment Area Documents
+                        </h3>
+                        <small class="help-text" style="display: block; margin-bottom: 20px;">
+                            <i class="fas fa-info-circle"></i>
+                            Assessment areas are built from combining one or more counties. Upload PDF or Text files defining which counties are in each bank's assessment areas.
+                        </small>
+                        
+                        <!-- Bank A Assessment Areas -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-hand-holding"></i> Bank A (Acquirer) Assessment Areas
+                            </h4>
+                            
+                            <!-- Toggle between upload, manual input, and branch generation -->
+                            <div style="margin-bottom: 15px; display: flex; gap: 10px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                                <button type="button" class="aa-toggle-btn" data-bank="acquirer" data-mode="upload" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-upload"></i> Upload JSON
+                                </button>
+                                <button type="button" class="aa-toggle-btn active" data-bank="acquirer" data-mode="manual" style="flex: 1; padding: 8px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-keyboard"></i> Manual Entry
+                                </button>
+                                <button type="button" class="aa-toggle-btn" data-bank="acquirer" data-mode="branches" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-map-marker-alt"></i> Generate from Branches
+                                </button>
+                            </div>
+                            
+                            <!-- Generate from Branches Option -->
+                            <div id="acquirer_branches_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px; padding: 15px; background: #e8f4f8; border: 1px solid #bee5eb; border-radius: 8px;">
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-weight: 600;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Generate assessment areas automatically from branch locations
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">
+                                        This will query all branch locations and deposits for Bank A, calculate deposit shares by CBSA/metro area, and create assessment areas based on CBSAs where the bank has significant deposit presence. 
+                                        All counties within qualifying CBSAs are automatically included.
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-size: 0.9rem; font-weight: 600; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                        <i class="fas fa-filter"></i>
+                                        <strong>Filter Applied:</strong> CBSAs with 1% or more of the bank's total deposits are included as assessment areas. All counties within qualifying CBSAs are automatically included.
+                                    </p>
+                                    <button type="button" class="generate-from-branches-btn" data-bank="acquirer" style="padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                                        <i class="fas fa-magic"></i> Generate Assessment Areas from Branches
+                                    </button>
+                                    <small class="help-text" style="display: block; margin-top: 10px; color: #666;">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Requires RSSD number. Assessment areas will be grouped by metro area (CBSA).
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Upload Option -->
+                            <div id="acquirer_upload_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px;">
+                                    <label for="acquirer_assessment_areas">
+                                        <i class="fas fa-file-code"></i>
+                                        Upload Assessment Area File (JSON or CSV)
+                                    </label>
+                                    <input type="file" id="acquirer_assessment_areas" name="acquirer_assessment_areas" accept=".json,.csv" style="width: 100%; padding: 10px; border: 2px dashed #ccc; border-radius: 8px; background: white;">
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                                        <a href="/api/download-assessment-area-template" download="assessment_area_template.csv" style="padding: 6px 12px; background: var(--ncrc-secondary-blue); color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-download"></i> Download CSV Template
+                                        </a>
+                                        <small class="help-text" style="margin: 0; color: #666;">
+                                            <i class="fas fa-info-circle"></i>
+                                            Upload a JSON or CSV file. CSV format: Assessment Area Name, State Code, County Code, County Name, State Name
+                                        </small>
+                                    </div>
+                                    <details style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                                        <summary style="cursor: pointer; font-weight: 600; color: var(--ncrc-dark-blue);">JSON File Format</summary>
+                                        <pre style="margin-top: 10px; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; overflow-x: auto;">[
+  {
+    "cbsa_name": "Assessment Area Name",
+    "counties": [
+      "County Name, State",
+      "Another County, State"
+    ]
+  },
+  {
+    "cbsa_name": "Another Assessment Area",
+    "counties": [
+      "County Name, State"
+    ]
+  }
+]</pre>
+                                    </details>
+                                </div>
+                            </div>
+                            
+                            <!-- Manual Entry Option -->
+                            <div id="acquirer_manual_section" class="aa-input-section">
+                                <div style="margin-bottom: 15px;">
+                                    <label>
+                                        <i class="fas fa-keyboard"></i>
+                                        Enter Assessment Areas Manually
+                                    </label>
+                                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                                        <div id="acquirer_manual_areas" style="margin-bottom: 10px;">
+                                            <!-- Assessment areas will be added here dynamically -->
+                                        </div>
+                                        <button type="button" class="add-aa-btn" data-bank="acquirer" style="padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                            <i class="fas fa-plus"></i> Add Assessment Area
+                                        </button>
+                                    </div>
+                                    <small class="help-text" style="display: block; margin-top: 5px;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Enter assessment area name and list counties (one per line). You can also enter MSA codes like "MSA 14500, 19740" or MSA names like "Denver-Aurora-Lakewood, CO" and counties will be looked up automatically.
+                                    </small>
+                                </div>
+                            </div>
+                            <div id="acquirer_aa_status" style="display: none; padding: 12px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 6px; margin-top: 10px;">
+                                <strong><i class="fas fa-info-circle"></i> Status:</strong> 
+                                <span id="acquirer_aa_status_text"></span>
+                            </div>
+                            <div id="acquirer_aa_preview" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #ddd; border-radius: 6px;">
+                                <strong>Parsed Assessment Areas:</strong>
+                                <div id="acquirer_aa_list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bank B Assessment Areas -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-bullseye"></i> Bank B (Target) Assessment Areas
+                            </h4>
+                            
+                            <!-- Toggle between upload, manual input, and branch generation -->
+                            <div style="margin-bottom: 15px; display: flex; gap: 10px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                                <button type="button" class="aa-toggle-btn" data-bank="target" data-mode="upload" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-upload"></i> Upload JSON
+                                </button>
+                                <button type="button" class="aa-toggle-btn active" data-bank="target" data-mode="manual" style="flex: 1; padding: 8px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-keyboard"></i> Manual Entry
+                                </button>
+                                <button type="button" class="aa-toggle-btn" data-bank="target" data-mode="branches" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-map-marker-alt"></i> Generate from Branches
+                                </button>
+                            </div>
+                            
+                            <!-- Generate from Branches Option -->
+                            <div id="target_branches_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px; padding: 15px; background: #e8f4f8; border: 1px solid #bee5eb; border-radius: 8px;">
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-weight: 600;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Generate assessment areas automatically from branch locations
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">
+                                        This will query all branch locations and deposits for Bank B, calculate deposit shares by CBSA/metro area, and create assessment areas based on CBSAs where the bank has significant deposit presence. 
+                                        All counties within qualifying CBSAs are automatically included.
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-size: 0.9rem; font-weight: 600; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                        <i class="fas fa-filter"></i>
+                                        <strong>Filter Applied:</strong> CBSAs with 1% or more of the bank's total deposits are included as assessment areas. All counties within qualifying CBSAs are automatically included.
+                                    </p>
+                                    <button type="button" class="generate-from-branches-btn" data-bank="target" style="padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                                        <i class="fas fa-magic"></i> Generate Assessment Areas from Branches
+                                    </button>
+                                    <small class="help-text" style="display: block; margin-top: 10px; color: #666;">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Requires RSSD number. Assessment areas will be grouped by metro area (CBSA).
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Upload Option -->
+                            <div id="target_upload_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px;">
+                                    <label for="target_assessment_areas">
+                                        <i class="fas fa-file-code"></i>
+                                        Upload Assessment Area File (JSON or CSV)
+                                    </label>
+                                    <input type="file" id="target_assessment_areas" name="target_assessment_areas" accept=".json,.csv" style="width: 100%; padding: 10px; border: 2px dashed #ccc; border-radius: 8px; background: white;">
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                                        <a href="/api/download-assessment-area-template" download="assessment_area_template.csv" style="padding: 6px 12px; background: var(--ncrc-secondary-blue); color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-download"></i> Download CSV Template
+                                        </a>
+                                        <small class="help-text" style="margin: 0; color: #666;">
+                                            <i class="fas fa-info-circle"></i>
+                                            Upload a JSON or CSV file. CSV format: Assessment Area Name, State Code, County Code, County Name, State Name
+                                        </small>
+                                    </div>
+                                    <details style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                                        <summary style="cursor: pointer; font-weight: 600; color: var(--ncrc-dark-blue);">JSON File Format</summary>
+                                        <pre style="margin-top: 10px; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; overflow-x: auto;">[
+  {
+    "cbsa_name": "Assessment Area Name",
+    "counties": [
+      "County Name, State",
+      "Another County, State"
+    ]
+  },
+  {
+    "cbsa_name": "Another Assessment Area",
+    "counties": [
+      "County Name, State"
+    ]
+  }
+]</pre>
+                                    </details>
+                                </div>
+                            </div>
+                            
+                            <!-- Manual Entry Option -->
+                            <div id="target_manual_section" class="aa-input-section">
+                                <div style="margin-bottom: 15px;">
+                                    <label>
+                                        <i class="fas fa-keyboard"></i>
+                                        Enter Assessment Areas Manually
+                                    </label>
+                                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                                        <div id="target_manual_areas" style="margin-bottom: 10px;">
+                                            <!-- Assessment areas will be added here dynamically -->
+                                        </div>
+                                        <button type="button" class="add-aa-btn" data-bank="target" style="padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                            <i class="fas fa-plus"></i> Add Assessment Area
+                                        </button>
+                                    </div>
+                                    <small class="help-text" style="display: block; margin-top: 5px;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Enter assessment area name and list counties (one per line). You can also enter MSA codes like "MSA 14500, 19740" or MSA names like "Denver-Aurora-Lakewood, CO" and counties will be looked up automatically.
+                                    </small>
+                                </div>
+                            </div>
+                            <div id="target_aa_status" style="display: none; padding: 12px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 6px; margin-top: 10px;">
+                                <strong><i class="fas fa-info-circle"></i> Status:</strong> 
+                                <span id="target_aa_status_text"></span>
+                            </div>
+                            <div id="target_aa_preview" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #ddd; border-radius: 6px;">
+                                <strong>Parsed Assessment Areas:</strong>
+                                <div id="target_aa_list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Settings Section -->
+                    <div class="form-group" data-intro="Select the filters for your analysis. Default settings are preselected based on standard merger analysis requirements, but you can change them as needed." data-step="3">
+                        <h3 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                            <i class="fas fa-cog"></i> Analysis Filters
+                        </h3>
+
+                        <!-- Compact Horizontal Filter Section -->
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <!-- Year Ranges Row - Now Automatic (Last 5 Years) -->
+                            <div style="display: none; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+                                <div style="flex: 0 0 auto;">
+                                    <label for="hmda_start_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
+                                        HMDA Start
+                                    </label>
+                                    <select id="hmda_start_year" name="hmda_start_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
+                                        <option value="2020" selected>2020</option>
+                                        <option value="2021">2021</option>
+                                        <option value="2022">2022</option>
+                                        <option value="2023">2023</option>
+                                        <option value="2024">2024</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 0 0 auto;">
+                                    <label for="hmda_end_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
+                                        HMDA End
+                                    </label>
+                                    <select id="hmda_end_year" name="hmda_end_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
+                                        <option value="2020">2020</option>
+                                        <option value="2021">2021</option>
+                                        <option value="2022">2022</option>
+                                        <option value="2023">2023</option>
+                                        <option value="2024" selected>2024</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 0 0 auto;">
+                                    <label for="sb_start_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
+                                        SB Start
+                                    </label>
+                                    <select id="sb_start_year" name="sb_start_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
+                                        <option value="2019" selected>2019</option>
+                                        <option value="2020">2020</option>
+                                        <option value="2021">2021</option>
+                                        <option value="2022">2022</option>
+                                        <option value="2023">2023</option>
+                                    </select>
+                                </div>
+                                <div style="flex: 0 0 auto;">
+                                    <label for="sb_end_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
+                                        SB End
+                                    </label>
+                                    <select id="sb_end_year" name="sb_end_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
+                                        <option value="2019">2019</option>
+                                        <option value="2020">2020</option>
+                                        <option value="2021">2021</option>
+                                        <option value="2022">2022</option>
+                                        <option value="2023" selected>2023</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Loan Purpose Row -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+                                <label for="loan_purpose" style="font-size: 0.85rem; color: #666; margin-right: 8px; font-weight: 600;">Loan Purpose:</label>
+                                <select id="loan_purpose" name="loan_purpose" style="padding: 8px 12px; font-size: 0.85rem; border: 2px solid var(--ncrc-secondary-blue); border-radius: 6px; background: #f0f7fa; min-width: 180px;">
+                                    <option value="1" selected>Home Purchase</option>
+                                    <option value="31,32">Refinance</option>
+                                    <option value="2,4,5">Home Equity</option>
+                                </select>
+                            </div>
+
+                            <!-- HMDA Filters Row -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; margin-bottom: 8px;">
+                                <span style="font-size: 0.85rem; color: #666; margin-right: 8px; font-weight: 600; align-self: flex-start; padding-top: 24px;">HMDA Filters:</span>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="action_taken" style="font-size: 0.75rem; color: #666;">Action Taken:</label>
+                                    <select id="action_taken" name="action_taken" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Originations (1)</option>
+                                        <option value="2">Approved but not accepted (2)</option>
+                                        <option value="3">Denied (3)</option>
+                                        <option value="4">Withdrawn (4)</option>
+                                        <option value="5">Closed for incompleteness (5)</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="occupancy_type" style="font-size: 0.75rem; color: #666;">Occupancy:</label>
+                                    <select id="occupancy_type" name="occupancy_type" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Owner-Occupied (1)</option>
+                                        <option value="2">Not Owner-Occupied (2)</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="total_units" style="font-size: 0.75rem; color: #666;">Units:</label>
+                                    <select id="total_units" name="total_units" multiple style="min-width: 180px;">
+                                        <option value="1" selected>1 Unit</option>
+                                        <option value="2" selected>2 Units</option>
+                                        <option value="3" selected>3 Units</option>
+                                        <option value="4" selected>4 Units</option>
+                                        <option value="5">5+ Units</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="construction_method" style="font-size: 0.75rem; color: #666;">Construction:</label>
+                                    <select id="construction_method" name="construction_method" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Site-Built (1)</option>
+                                        <option value="2">Manufactured Home (2)</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="not_reverse" style="font-size: 0.75rem; color: #666;">Reverse Mortgage:</label>
+                                    <select id="not_reverse" name="not_reverse" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Not Reverse (1)</option>
+                                        <option value="2">Reverse Mortgage (2)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="help-text" style="display: block; margin-top: 8px; font-size: 0.75rem; color: #666;">
+                                <i class="fas fa-info-circle"></i>
+                                Note: The Goals sheet includes all loan types. Loan Purpose selection applies to Mortgage Data sheets only.
+                            </small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn" data-intro="Click here to start your merger analysis! The process typically takes 5-10 minutes depending on the data volume. You'll see progress updates as it runs." data-step="4" data-tooltip="Click to generate your merger analysis. Make sure you've entered bank information and uploaded the required files.">
+                        <i class="fas fa-magic"></i>
+                        <span>Generate Merger Analysis</span>
+                    </button>
+                    <small class="submit-info">
+                        <i class="fas fa-clock"></i>
+                        Analysis typically takes 5-10 minutes
+                    </small>
+                </form>
+
+                <!-- Progress Section -->
+                <div id="progressSection" class="progress-section" style="display: none;">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <h3>Analyzing Merger Data...</h3>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="progress-bar" style="margin-bottom: 20px;">
+                            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.9rem; color: #666;">
+                            <span id="progressPercent" style="font-weight: 600; color: var(--ncrc-secondary-blue);">0%</span>
+                            <span id="progressText" style="font-weight: 500;">Initializing analysis...</span>
+                        </div>
+                        
+                        <div class="progress-info" style="text-align: center; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                            <i class="fas fa-clock" style="margin-right: 5px;"></i>
+                            <small style="color: #666;">Analysis typically takes 5-10 minutes depending on the data volume. Please keep this window open.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" class="results-section" style="display: none;">
+                    <div class="results-card">
+                        <div class="results-header">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>Analysis Complete!</h3>
+                        </div>
+                        <div class="results-content">
+                            <p>Your merger impact analysis has been generated successfully.</p>
+                            <div class="download-options">
+                                <button class="download-btn" id="viewReportBtn">
+                                    <i class="fas fa-chart-bar"></i>
+                                    View Web Report
+                                </button>
+                                <button class="download-btn secondary" id="downloadBtn">
+                                    <i class="fas fa-download"></i>
+                                    Export Data
+                                </button>
+                                <small class="download-info">
+                                    <i class="fas fa-globe"></i>
+                                    Interactive web report with export options
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="errorSection" class="error-section" style="display: none;">
+                    <div class="error-card">
+                        <div class="error-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Analysis Failed</h3>
+                        </div>
+                        <div class="error-content">
+                            <p id="errorMessage"></p>
+                            <button class="retry-btn" onclick="resetForm()">
+                                <i class="fas fa-redo"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+        </div> <!-- End content-wrapper -->
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-star"></i> What You'll Get</h3>
+            <div class="sidebar-features">
+                <div class="feature-card" data-tooltip="Access comprehensive data on two banks planning to merge, including mortgage lending patterns, small business lending, and branch distribution across assessment areas. Compare performance metrics between the acquirer and target banks, analyze market concentration, and identify geographic and demographic coverage patterns. All data is sourced from HMDA (mortgage lending), Small Business Lending Survey, and FDIC Summary of Deposits.">
+                    <i class="fas fa-chart-bar"></i>
+                    <h4>Comprehensive Data</h4>
+                    <p>Detailed merger analysis including mortgage, small business, and branch data</p>
+                </div>
+                <div class="feature-card" data-tooltip="AI-generated narrative analysis of merger impact, community benefits assessment, and post-merger goal setting based on NCRC's curated datasets. The analysis evaluates lending performance in low-to-moderate income communities, majority-minority census tracts, and assessment area coverage. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. Verify specific claims and data points using the Excel Export, which contains the complete underlying data compiled by NCRC research staff.">
+                    <i class="fas fa-robot"></i>
+                    <h4>AI Insights</h4>
+                    <p>Claude AI-powered analysis of merger impact and community benefits</p>
+                </div>
+                <div class="feature-card" data-tooltip="Download structured data tables showing mortgage goals, bank-specific mortgage data, small business data, and branch data for both acquirer and target banks. The Excel file includes separate sheets for mortgage lending analysis, small business lending, branch distribution, assessment area coverage, and post-merger goal recommendations. Use this file to conduct custom analysis, create additional visualizations, or verify findings from the AI-generated insights and web reports.">
+                    <i class="fas fa-file-excel"></i>
+                    <h4>Excel Export</h4>
+                    <p>Structured merger analysis data in Excel format for further analysis and reporting</p>
+                </div>
+                <div class="feature-card" data-tooltip="View formatted tables and charts showing post-merger goals, bank performance comparisons, peer benchmarking, and assessment area coverage. The web report includes interactive visualizations of lending patterns, demographic coverage, and geographic distribution. Export individual tables or charts as needed. For detailed analysis or data verification, use the Excel Export option to access the complete underlying dataset.">
+                    <i class="fas fa-globe"></i>
+                    <h4>Web Report</h4>
+                    <p>Interactive web-based report with charts, tables, and export options</p>
+                </div>
+            </div>
+            
+            <!-- Version Card -->
+            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current development version of MergerMeter. Version 1.0 will be released when the product is ready for production use.">
+                <i class="fas fa-code-branch"></i>
+                <h4>Version</h4>
+                <p>0.9.0 (Development)</p>
+            </div>
+        </aside>
+    </div> <!-- End container -->
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>MergerMeter</h4>
+                <p>AI-powered bank merger impact analysis platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - MergerMeter. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
+
+    <!-- jQuery (must be first) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Intro.js for onboarding tour -->
+    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
+    <!-- Your app.js (after dependencies) -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Setup HTML tooltips for feature cards
+        function setupFeatureCardTooltips() {
+            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+            featureCards.forEach(card => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                if (!tooltipText) return;
+                
+                // Check if tooltip already exists to prevent duplicates
+                if (card.querySelector('.feature-card-tooltip')) {
+                    return; // Tooltip already exists, skip
+                }
+                
+                // Create tooltip element
+                const tooltip = document.createElement('div');
+                tooltip.className = 'feature-card-tooltip';
+                tooltip.innerHTML = tooltipText;
+                tooltip.style.cssText = `
+                    position: absolute;
+                    right: calc(100% + 15px);
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: white;
+                    color: black;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                    min-width: 250px;
+                    max-width: 350px;
+                    width: fit-content;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                    opacity: 0;
+                    visibility: hidden;
+                    pointer-events: none;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    z-index: 100000;
+                    text-align: left;
+                    word-wrap: break-word;
+                    border: 2px solid black;
+                    box-sizing: border-box;
+                `;
+                
+                // Create arrow
+                const arrow = document.createElement('div');
+                arrow.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 6px solid transparent;
+                    border-bottom: 6px solid transparent;
+                    border-left: 6px solid white;
+                    z-index: 1;
+                `;
+                
+                // Create arrow border
+                const arrowBorder = document.createElement('div');
+                arrowBorder.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 7px solid transparent;
+                    border-bottom: 7px solid transparent;
+                    border-left: 7px solid black;
+                    z-index: 0;
+                `;
+                tooltip.appendChild(arrowBorder);
+                tooltip.appendChild(arrow);
+                
+                card.appendChild(tooltip);
+                
+                // Show/hide on hover
+                card.addEventListener('mouseenter', function() {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.visibility = 'visible';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    tooltip.style.opacity = '0';
+                    tooltip.style.visibility = 'hidden';
+                });
+            });
+        }
+        
+        // Manual Assessment Area Entry
+        let manualAssessmentAreas = {
+            acquirer: [],
+            target: []
+        };
+        
+        // Toggle between upload and manual entry
+        $(document).on('click', '.aa-toggle-btn', function() {
+            const bank = $(this).data('bank');
+            const mode = $(this).data('mode');
+            
+            // Update button styles
+            $(`.aa-toggle-btn[data-bank="${bank}"]`).removeClass('active')
+                .css({'background': '#e0e0e0', 'color': '#333'});
+            $(this).addClass('active')
+                .css({'background': 'var(--ncrc-secondary-blue)', 'color': 'white'});
+            
+            // Show/hide sections
+            if (mode === 'upload') {
+                $(`#${bank}_upload_section`).show();
+                $(`#${bank}_manual_section`).hide();
+            } else {
+                $(`#${bank}_upload_section`).hide();
+                $(`#${bank}_manual_section`).show();
+            }
+        });
+        
+        // Add new assessment area entry
+        $(document).on('click', '.add-aa-btn', function() {
+            const bank = $(this).data('bank');
+            const areaId = `aa_${bank}_${Date.now()}`;
+            
+            const areaHtml = `
+                <div class="manual-aa-entry" data-id="${areaId}" style="margin-bottom: 15px; padding: 15px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <label style="font-weight: 600; color: var(--ncrc-dark-blue);">Assessment Area Name:</label>
+                        <button type="button" class="remove-aa-btn" data-id="${areaId}" style="padding: 4px 8px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">
+                            <i class="fas fa-times"></i> Remove
+                        </button>
+                    </div>
+                    <input type="text" class="aa-name-input" placeholder="e.g., Denver-Boulder-Greeley CSA or MSA 14500, 19740" style="width: 100%; padding: 8px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px;">
+                    <label style="display: block; font-weight: 600; color: var(--ncrc-dark-blue); margin-bottom: 5px;">Counties (one per line) or MSA codes:</label>
+                    <textarea class="aa-counties-input" placeholder="Enter counties (e.g., Denver County, Colorado) or MSA codes (e.g., MSA 14500, 19740, 24540)" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit;"></textarea>
+                </div>
+            `;
+            
+            $(`#${bank}_manual_areas`).append(areaHtml);
+        });
+        
+        // Remove assessment area entry
+        $(document).on('click', '.remove-aa-btn', function() {
+            const areaId = $(this).data('id');
+            $(`.manual-aa-entry[data-id="${areaId}"]`).remove();
+        });
+        
+        // Process manual assessment areas (called before form submission)
+        function processManualAssessmentAreas(bank) {
+            const areas = [];
+            $(`#${bank}_manual_areas .manual-aa-entry`).each(function() {
+                const name = $(this).find('.aa-name-input').val().trim();
+                const countiesText = $(this).find('.aa-counties-input').val().trim();
+                
+                if (name && countiesText) {
+                    // Check if it contains MSA codes
+                    const msaMatch = countiesText.match(/MSA\s+(\d+(?:\s*,\s*\d+)*)/i);
+                    if (msaMatch) {
+                        // MSA codes - will be looked up on backend
+                        areas.push({
+                            cbsa_name: name,
+                            counties: countiesText.split('\n').map(c => c.trim()).filter(c => c),
+                            has_msa_codes: true
+                        });
+                    } else {
+                        // Regular county list
+                        areas.push({
+                            cbsa_name: name,
+                            counties: countiesText.split('\n').map(c => c.trim()).filter(c => c),
+                            has_msa_codes: false
+                        });
+                    }
+                }
+            });
+            
+            return areas;
+        }
+        
+        // MergerMeter-specific customizations
+        $(document).ready(function() {
+            // Setup feature card tooltips
+            setupFeatureCardTooltips();
+            
+            // Initialize Select2 for multi-select HMDA filters
+            $('#action_taken, #occupancy_type, #total_units, #construction_method, #not_reverse').select2({
+                placeholder: 'Select options...',
+                allowClear: false,
+                width: '100%',
+                closeOnSelect: false
+            });
+            
+            // Bulk Import Toggle
+            $('#toggleBulkImport').on('click', function() {
+                const section = $('#bulkImportSection');
+                const isVisible = section.is(':visible');
+                section.slideToggle();
+                $(this).html(isVisible ? '<i class="fas fa-chevron-down"></i> Show' : '<i class="fas fa-chevron-up"></i> Hide');
+            });
+            
+            // Parse and Import Banks
+            $('#parseBulkImportBtn').on('click', function() {
+                const text = $('#bulkImportText').val().trim();
+                if (!text) {
+                    alert('Please paste bank data first.');
+                    return;
+                }
+                
+                const lines = text.split('\n').filter(line => line.trim());
+                if (lines.length < 1) {
+                    alert('Please paste at least one bank\'s information.');
+                    return;
+                }
+                
+                const banks = [];
+                for (const line of lines) {
+                    const trimmed = line.trim();
+                    if (!trimmed) continue;
+                    
+                    // Try different delimiters: tab, pipe (|), comma
+                    let parts;
+                    if (trimmed.includes('\t')) {
+                        parts = trimmed.split('\t').map(p => p.trim().replace(/\s+/g, '')); // Remove all whitespace including newlines
+                    } else if (trimmed.includes('|')) {
+                        parts = trimmed.split('|').map(p => p.trim().replace(/\s+/g, ''));
+                    } else if (trimmed.includes(',')) {
+                        parts = trimmed.split(',').map(p => p.trim().replace(/\s+/g, ''));
+                    } else {
+                        continue; // Skip lines without delimiters
+                    }
+                    
+                    // Clean up parts - remove newlines and extra whitespace, but preserve the data
+                    parts = parts.map(p => p.replace(/\n/g, '').replace(/\r/g, '').trim());
+                    
+                    // Handle two formats:
+                    // Format 1: Bank Name, LEI, RSSD, ResID (4 columns)
+                    // Format 2: LEI, RSSD, ResID (3 columns - no bank name)
+                    if (parts.length >= 3) {
+                        // Check if first column looks like an LEI (should be 20 characters, alphanumeric)
+                        // But also check if it might be split - LEIs can be 18-20 chars in some formats
+                        let firstPart = (parts[0] || '').replace(/\s+/g, ''); // Remove all whitespace
+                        const secondPart = (parts[1] || '').replace(/\s+/g, '');
+                        
+                        // Check if LEI might be split: if first part is 18 chars and second part starts with numbers/letters
+                        // that could be the end of an LEI, try combining them
+                        if (firstPart.length === 18 && secondPart.length >= 2 && /^[A-Z0-9]{2,}/i.test(secondPart)) {
+                            // Might be split LEI - check if combining makes sense
+                            const combined = firstPart + secondPart.substring(0, 2);
+                            if (combined.length === 20 && /^[A-Z0-9]{20}$/i.test(combined)) {
+                                // It's a split LEI! Use combined version and shift other fields
+                                firstPart = combined;
+                                parts = [firstPart, secondPart.substring(2), parts[2], parts[3]].filter(p => p !== undefined);
+                            }
+                        }
+                        
+                        const isLEIFormat = firstPart.length === 20 && /^[A-Z0-9]{20}$/i.test(firstPart);
+                        
+                        let bank;
+                        if (isLEIFormat) {
+                            // Format 2: LEI, RSSD, ResID (no bank name)
+                            bank = {
+                                name: '', // No bank name provided
+                                lei: firstPart, // Use cleaned/split-corrected LEI
+                                rssd: (parts[1] || '').replace(/\s+/g, ''),
+                                resid: (parts[2] || '').replace(/\s+/g, '')
+                            };
+                        } else {
+                            // Format 1: Bank Name, LEI, RSSD, ResID
+                            // Check if second part is LEI
+                            const secondPartClean = (parts[1] || '').replace(/\s+/g, '');
+                            const isSecondPartLEI = secondPartClean.length === 20 && /^[A-Z0-9]{20}$/i.test(secondPartClean);
+                            
+                            if (isSecondPartLEI) {
+                                bank = {
+                                    name: parts[0] || '',
+                                    lei: secondPartClean,
+                                    rssd: (parts[2] || '').replace(/\s+/g, ''),
+                                    resid: (parts[3] || '').replace(/\s+/g, '')
+                                };
+                            } else {
+                                // Try to use what we have
+                                bank = {
+                                    name: parts[0] || '',
+                                    lei: secondPartClean, // Might be incomplete, but use it
+                                    rssd: (parts[2] || '').replace(/\s+/g, ''),
+                                    resid: (parts[3] || '').replace(/\s+/g, '')
+                                };
+                            }
+                        }
+                        banks.push(bank);
+                    } else if (parts.length === 2) {
+                        // Might be just LEI and RSSD
+                        let firstPart = (parts[0] || '').replace(/\s+/g, '');
+                        const secondPart = (parts[1] || '').replace(/\s+/g, '');
+                        
+                        // Check if LEI might be split
+                        if (firstPart.length === 18 && secondPart.length >= 2 && /^[A-Z0-9]{2,}/i.test(secondPart)) {
+                            const combined = firstPart + secondPart.substring(0, 2);
+                            if (combined.length === 20 && /^[A-Z0-9]{20}$/i.test(combined)) {
+                                firstPart = combined;
+                            }
+                        }
+                        
+                        const isLEIFormat = firstPart.length === 20 && /^[A-Z0-9]{20}$/i.test(firstPart);
+                        if (isLEIFormat) {
+                            banks.push({
+                                name: '',
+                                lei: firstPart,
+                                rssd: secondPart,
+                                resid: ''
+                            });
+                        }
+                    }
+                }
+                
+                if (banks.length === 0) {
+                    $('#bulkImportResults').html('<div style="color: red; padding: 10px; background: #ffe6e6; border-radius: 4px;">No valid bank data found. Please check the format.</div>').show();
+                    return;
+                }
+                
+                // Fill in Bank A (first bank)
+                if (banks.length >= 1) {
+                    const bankA = banks[0];
+                    if (bankA.lei) {
+                        // Clean LEI - remove all whitespace and ensure it's exactly 20 characters
+                        const cleanLEI = bankA.lei.replace(/\s+/g, '').substring(0, 20);
+                        $('#acquirer_lei').val(cleanLEI).trigger('input'); // Trigger input event to update validation
+                    }
+                    if (bankA.rssd) {
+                        const cleanRSSD = bankA.rssd.replace(/\s+/g, '');
+                        $('#acquirer_rssd').val(cleanRSSD).trigger('input');
+                    }
+                    if (bankA.resid) {
+                        const cleanResID = bankA.resid.replace(/\s+/g, '');
+                        $('#acquirer_sb_id').val(cleanResID).trigger('input');
+                    }
+                }
+                
+                // Fill in Bank B (second bank, if available)
+                if (banks.length >= 2) {
+                    const bankB = banks[1];
+                    if (bankB.lei) {
+                        // Clean LEI - remove all whitespace and ensure it's exactly 20 characters
+                        const cleanLEI = bankB.lei.replace(/\s+/g, '').substring(0, 20);
+                        $('#target_lei').val(cleanLEI).trigger('input'); // Trigger input event to update validation
+                    }
+                    if (bankB.rssd) {
+                        const cleanRSSD = bankB.rssd.replace(/\s+/g, '');
+                        $('#target_rssd').val(cleanRSSD).trigger('input');
+                    }
+                    if (bankB.resid) {
+                        const cleanResID = bankB.resid.replace(/\s+/g, '');
+                        $('#target_sb_id').val(cleanResID).trigger('input');
+                    }
+                }
+                
+                // Show success message
+                let message = `<div style="color: green; padding: 10px; background: #e6ffe6; border-radius: 4px;">`;
+                message += `<strong>Successfully imported ${banks.length} bank(s):</strong><ul style="margin: 10px 0 0 20px;">`;
+                banks.forEach((bank, idx) => {
+                    message += `<li>Bank ${idx + 1}: ${bank.name || 'Unnamed'} (LEI: ${bank.lei || 'N/A'})</li>`;
+                });
+                message += `</ul>`;
+                if (banks.length === 1) {
+                    message += `<p style="margin-top: 10px; color: #666;">Only one bank was found. Please add the second bank manually or paste another line.</p>`;
+                }
+                message += `<p style="margin-top: 10px; color: #0066cc;"><strong>Next step:</strong> Click "Load Bank Names" button below to verify and fetch bank names.</p>`;
+                message += `</div>`;
+                
+                $('#bulkImportResults').html(message).show();
+                
+                // Auto-collapse after successful import
+                setTimeout(() => {
+                    $('#bulkImportSection').slideUp();
+                    $('#toggleBulkImport').html('<i class="fas fa-chevron-down"></i> Show');
+                }, 3000);
+            });
+            
+            // Load Bank Names Handler
+            $('#loadBanksBtn').on('click', async function() {
+                const btn = $(this);
+                const originalText = btn.html();
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Loading...');
+                
+                // Get bank identifiers - clean them thoroughly
+                const acquirerLEI = $('#acquirer_lei').val().replace(/\s+/g, '').trim();
+                const acquirerRSSD = $('#acquirer_rssd').val().replace(/\s+/g, '').trim();
+                const acquirerResID = $('#acquirer_sb_id').val().replace(/\s+/g, '').trim();
+                
+                const targetLEI = $('#target_lei').val().replace(/\s+/g, '').trim();
+                const targetRSSD = $('#target_rssd').val().replace(/\s+/g, '').trim();
+                const targetResID = $('#target_sb_id').val().replace(/\s+/g, '').trim();
+                
+                const acquirerData = {
+                    lei: acquirerLEI,
+                    rssd: acquirerRSSD,
+                    sb_respondent_id: acquirerResID
+                };
+                
+                const targetData = {
+                    lei: targetLEI,
+                    rssd: targetRSSD,
+                    sb_respondent_id: targetResID
+                };
+                
+                // Validate LEI number is provided (required for bank name lookup)
+                // Clean LEI and check it's exactly 20 characters
+                if (!acquirerData.lei || acquirerData.lei.length !== 20) {
+                    alert('Please enter a valid LEI number (20 characters) for Bank A (Acquirer). The system uses the LEI number to look up the bank name.\n\nCurrent value: "' + $('#acquirer_lei').val() + '" (length: ' + acquirerData.lei.length + ')');
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+                
+                if (!targetData.lei || targetData.lei.length !== 20) {
+                    alert('Please enter a valid LEI number (20 characters) for Bank B (Target). The system uses the LEI number to look up the bank name.\n\nCurrent value: "' + $('#target_lei').val() + '" (length: ' + targetData.lei.length + ')');
+                    btn.prop('disabled', false).html(originalText);
+                    return;
+                }
+                
+                try {
+                    // Fetch bank names from backend
+                    const response = await fetch('/api/load-bank-names', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            acquirer: acquirerData,
+                            target: targetData
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Display confirmed bank names
+                        if (result.acquirer_name) {
+                            $('#acquirer_name_display').text(result.acquirer_name);
+                            $('#acquirer_confirmation').show();
+                            // Store for form submission
+                            $('#analysisForm').data('acquirer_name', result.acquirer_name);
+                        }
+                        
+                        if (result.target_name) {
+                            $('#target_name_display').text(result.target_name);
+                            $('#target_confirmation').show();
+                            // Store for form submission
+                            $('#analysisForm').data('target_name', result.target_name);
+                        }
+                        
+                        // Show success message
+                        if (result.acquirer_name && result.target_name) {
+                            alert(`Bank names confirmed:\n\nBank A (Acquirer): ${result.acquirer_name}\nBank B (Target): ${result.target_name}`);
+                            // Show assessment area section after banks are loaded
+                            $('#assessmentAreaSection').slideDown(300);
+                        }
+                    } else {
+                        alert(`Error loading bank names: ${result.error || 'Unknown error'}`);
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Network error. Please check your connection and try again.');
+                } finally {
+                    btn.prop('disabled', false).html(originalText);
+                }
+            });
+            
+            // Handle Assessment Area Toggle Buttons
+            $('.aa-toggle-btn').on('click', function() {
+                const bank = $(this).data('bank');
+                const mode = $(this).data('mode');
+                
+                // Update button styles
+                $(`.aa-toggle-btn[data-bank="${bank}"]`).removeClass('active').css({
+                    'background': '#e0e0e0',
+                    'color': '#333'
+                });
+                $(this).addClass('active').css({
+                    'background': 'var(--ncrc-secondary-blue)',
+                    'color': 'white'
+                });
+                
+                // Hide all sections
+                $(`#${bank}_upload_section`).hide();
+                $(`#${bank}_manual_section`).hide();
+                $(`#${bank}_branches_section`).hide();
+                
+                // Show selected section
+                if (mode === 'upload') {
+                    $(`#${bank}_upload_section`).show();
+                } else if (mode === 'manual') {
+                    $(`#${bank}_manual_section`).show();
+                } else if (mode === 'branches') {
+                    $(`#${bank}_branches_section`).show();
+                }
+            });
+            
+            // Handle Generate from Branches Button
+            $('.generate-from-branches-btn').on('click', async function() {
+                const bank = $(this).data('bank');
+                const bankType = bank === 'acquirer' ? 'acquirer' : 'target';
+                const btn = $(this);
+                const originalText = btn.html();
+                
+                // Get RSSD number
+                const rssdField = bank === 'acquirer' ? $('#acquirer_rssd') : $('#target_rssd');
+                const rssd = rssdField.val().trim();
+                
+                if (!rssd) {
+                    alert(`Please enter the RSSD number for ${bank === 'acquirer' ? 'Bank A (Acquirer)' : 'Bank B (Target)'} to generate assessment areas from branches.`);
+                    return;
+                }
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Generating...');
+                
+                const statusDiv = $(`#${bank}_aa_status`);
+                const statusText = $(`#${bank}_aa_status_text`);
+                const previewDiv = $(`#${bank}_aa_preview`);
+                const listDiv = $(`#${bank}_aa_list`);
+                
+                statusDiv.show();
+                statusText.html('<i class="fas fa-spinner fa-spin"></i> Querying branch locations...');
+                statusDiv.css({
+                    'background': '#d1ecf1',
+                    'border-color': '#bee5eb'
+                });
+                
+                try {
+                    const response = await fetch('/api/generate-assessment-areas-from-branches', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            rssd: rssd,
+                            bank_type: bankType,
+                            year: 2025,
+                            group_by_cbsa: true,
+                            min_branches: 1
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        if (response.status === 404) {
+                            throw new Error('Endpoint not found. Please refresh the page (Ctrl+F5) and try again.');
+                        }
+                        const errorText = await response.text();
+                        throw new Error(`Server error (${response.status}): ${errorText}`);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        statusText.html(`<i class="fas fa-check-circle"></i> Generated ${result.count || result.assessment_areas?.length || 0} assessment areas from branch locations.`);
+                        statusDiv.css({
+                            'background': '#d4edda',
+                            'border-color': '#c3e6cb'
+                        });
+                        
+                        // Display generated assessment areas
+                        if (result.assessment_areas && result.assessment_areas.length > 0) {
+                            let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+                            result.assessment_areas.forEach((aa, index) => {
+                                const countiesList = aa.counties || [];
+                                const countiesDisplay = countiesList.map(c => {
+                                    if (typeof c === 'object' && c.state_code && c.county_code) {
+                                        return `${c.state_code}${c.county_code}`;
+                                    }
+                                    return c;
+                                }).join(', ');
+                                
+                                html += `<li style="padding: 8px; margin-bottom: 8px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue);">
+                                    <strong>Assessment Area ${index + 1}:</strong> ${aa.cbsa_name || 'Unnamed'}<br>
+                                    <small style="color: #666;">Counties: ${countiesDisplay || 'None found'}</small>
+                                </li>`;
+                            });
+                            html += '</ul>';
+                            listDiv.html(html);
+                            previewDiv.show();
+                            
+                            // Store assessment areas for form submission
+                            $('#analysisForm').data(`${bankType}_assessment_areas`, result.assessment_areas);
+                        }
+                    } else {
+                        const errorMsg = result.error || 'Failed to generate assessment areas';
+                        statusText.html(`<i class="fas fa-times-circle"></i> Error: ${errorMsg}`);
+                        statusDiv.css({
+                            'background': '#f8d7da',
+                            'border-color': '#f5c6cb'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error generating assessment areas:', error);
+                    statusText.html(`<i class="fas fa-times-circle"></i> Network error. Please check your connection and try again.`);
+                    statusDiv.css({
+                        'background': '#f8d7da',
+                        'border-color': '#f5c6cb'
+                    });
+                } finally {
+                    btn.prop('disabled', false).html(originalText);
+                }
+            });
+            
+            // Handle Assessment Area File Uploads
+            $('#acquirer_assessment_areas').on('change', async function() {
+                const file = this.files[0];
+                if (!file) return;
+                
+                await uploadAssessmentArea(file, 'acquirer');
+            });
+            
+            $('#target_assessment_areas').on('change', async function() {
+                const file = this.files[0];
+                if (!file) return;
+                
+                await uploadAssessmentArea(file, 'target');
+            });
+            
+            async function uploadAssessmentArea(file, bankType) {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('bank_type', bankType);
+                
+                const statusDiv = $(`#${bankType}_aa_status`);
+                const statusText = $(`#${bankType}_aa_status_text`);
+                const previewDiv = $(`#${bankType}_aa_preview`);
+                const listDiv = $(`#${bankType}_aa_list`);
+                
+                statusDiv.show();
+                statusText.html('<i class="fas fa-spinner fa-spin"></i> Uploading and parsing file...');
+                previewDiv.hide();
+                
+                try {
+                    const response = await fetch('/api/upload-assessment-areas', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    // Check if response is OK before trying to parse JSON
+                    if (!response.ok) {
+                        // Try to get error message from response
+                        let errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+                        try {
+                            const errorData = await response.json();
+                            errorMsg = errorData.error || errorMsg;
+                        } catch (e) {
+                            // If we can't parse JSON, use the status text
+                        }
+                        throw new Error(errorMsg);
+                    }
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        statusText.html(`<i class="fas fa-check-circle"></i> File uploaded and parsed successfully. Found ${result.count || result.assessment_areas?.length || 0} assessment areas.`);
+                        statusDiv.css({
+                            'background': '#d4edda',
+                            'border-color': '#c3e6cb'
+                        });
+                        
+                        // Display parsed assessment areas
+                        if (result.assessment_areas && result.assessment_areas.length > 0) {
+                            let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
+                            result.assessment_areas.forEach((aa, index) => {
+                                html += `<li style="padding: 8px; margin-bottom: 8px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue);">
+                                    <strong>Assessment Area ${index + 1}:</strong> ${aa.cbsa_name || 'N/A'}<br>
+                                    <small style="color: #666;">Counties: ${aa.counties?.join(', ') || 'None found'}</small>
+                                </li>`;
+                            });
+                            html += '</ul>';
+                            listDiv.html(html);
+                            previewDiv.show();
+                            
+                            // Store assessment areas for form submission
+                            $(`#analysisForm`).data(`${bankType}_assessment_areas`, result.assessment_areas);
+                        } else {
+                            statusText.html(`<i class="fas fa-exclamation-triangle"></i> File uploaded but no assessment areas were found. Please check the file format.`);
+                            statusDiv.css({
+                                'background': '#fff3cd',
+                                'border-color': '#ffeaa7'
+                            });
+                        }
+                    } else {
+                        const errorMsg = result.error || 'Failed to parse file';
+                        statusText.html(`<i class="fas fa-times-circle"></i> Error: ${errorMsg}`);
+                        statusDiv.css({
+                            'background': '#f8d7da',
+                            'border-color': '#f5c6cb'
+                        });
+                        console.error('Upload error:', errorMsg);
+                    }
+                } catch (error) {
+                    console.error('Error uploading assessment area:', error);
+                    const errorMsg = error.message || 'Network error. Please check your connection and try again.';
+                    statusText.html(`<i class="fas fa-times-circle"></i> ${errorMsg}`);
+                    statusDiv.css({
+                        'background': '#f8d7da',
+                        'border-color': '#f5c6cb'
+                    });
+                }
+            }
+            
+            // Update loan purpose card styles on selection
+            $('input[name="loan_purpose"]').on('change', function() {
+                $('input[name="loan_purpose"]').each(function() {
+                    const card = $(this).closest('label');
+                    if ($(this).is(':checked')) {
+                        card.css({
+                            'border-color': 'var(--ncrc-secondary-blue)',
+                            'background': '#f0f7fa'
+                        });
+                    } else {
+                        card.css({
+                            'border-color': '#e0e0e0',
+                            'background': 'white'
+                        });
+                    }
+                });
+            });
+            
+            // Initialize loan purpose card styles
+            $('input[name="loan_purpose"]:checked').each(function() {
+                $(this).closest('label').css({
+                    'border-color': 'var(--ncrc-secondary-blue)',
+                    'background': '#f0f7fa'
+                });
+            });
+            
+            // Initialize tour for MergerMeter
+            if (typeof window.initializeTour === 'function') {
+                const originalInitializeTour = window.initializeTour;
+                window.initializeTour = function() {
+                    const hasSeenTour = localStorage.getItem('mergermeter_tour_completed');
+                    const startTourBtn = document.getElementById('startTourBtn');
+                    
+                    if (!startTourBtn) return;
+                    
+                    startTourBtn.addEventListener('click', function() {
+                        startTour();
+                    });
+                    
+                    if (!hasSeenTour) {
+                        setTimeout(() => {
+                            const shouldStart = confirm('Welcome to MergerMeter! Would you like to take a quick tour to learn how to use the tool?');
+                            if (shouldStart) {
+                                startTour();
+                            } else {
+                                localStorage.setItem('mergermeter_tour_completed', 'true');
+                            }
+                        }, 1000);
+                    }
+                };
+            }
+            
+            // Initialize tour after a short delay
+            setTimeout(function() {
+                if (typeof window.initializeTour === 'function') {
+                    window.initializeTour();
+                }
+            }, 500);
+            
+            // Form submission handler
+            $('#analysisForm').on('submit', async function(e) {
+                e.preventDefault();
+                
+                // Validate required fields
+                const acquirerLei = $('#acquirer_lei').val().trim();
+                const targetLei = $('#target_lei').val().trim();
+                const acquirerName = $('#analysisForm').data('acquirer_name') || $('#acquirer_name_display').text().trim();
+                const targetName = $('#analysisForm').data('target_name') || $('#target_name_display').text().trim();
+                
+                if (!acquirerLei || acquirerLei.length !== 20) {
+                    alert('Please enter a valid LEI number (20 characters) for Bank A (Acquirer) and click "Load Bank Names".');
+                    return;
+                }
+                
+                if (!targetLei || targetLei.length !== 20) {
+                    alert('Please enter a valid LEI number (20 characters) for Bank B (Target) and click "Load Bank Names".');
+                    return;
+                }
+                
+                if (!acquirerName || acquirerName === '') {
+                    alert('Please click "Load Bank Names" to confirm Bank A name before submitting.');
+                    return;
+                }
+                
+                if (!targetName || targetName === '') {
+                    alert('Please click "Load Bank Names" to confirm Bank B name before submitting.');
+                    return;
+                }
+                
+                // Collect assessment areas
+                let acquirerAA = $('#analysisForm').data('acquirer_assessment_areas') || [];
+                let targetAA = $('#analysisForm').data('target_assessment_areas') || [];
+                
+                // Process manual assessment areas
+                const acquirerManual = processManualAssessmentAreas('acquirer');
+                const targetManual = processManualAssessmentAreas('target');
+                
+                if (acquirerManual.length > 0) {
+                    acquirerAA = acquirerAA.concat(acquirerManual);
+                }
+                if (targetManual.length > 0) {
+                    targetAA = targetAA.concat(targetManual);
+                }
+                
+                if (acquirerAA.length === 0 && acquirerManual.length === 0) {
+                    alert('Please upload or manually enter assessment areas for Bank A (Acquirer).');
+                    return;
+                }
+                
+                if (targetAA.length === 0 && targetManual.length === 0) {
+                    alert('Please upload or manually enter assessment areas for Bank B (Target).');
+                    return;
+                }
+                
+                // Get form data
+                const formData = new FormData(this);
+                
+                // Add bank names
+                formData.append('acquirer_name', acquirerName);
+                formData.append('target_name', targetName);
+                
+                // Add assessment areas as JSON
+                formData.append('acquirer_assessment_areas', JSON.stringify(acquirerAA));
+                formData.append('target_assessment_areas', JSON.stringify(targetAA));
+                
+                // Get loan purpose from dropdown
+                const loanPurpose = $('#loan_purpose').val() || '';
+                formData.set('loan_purpose', loanPurpose);
+                
+                // Get HMDA filter values from multi-select dropdowns (join arrays with commas)
+                const actionTaken = $('#action_taken').val() || [];
+                const occupancyType = $('#occupancy_type').val() || [];
+                const totalUnits = $('#total_units').val() || [];
+                const constructionMethod = $('#construction_method').val() || [];
+                const notReverse = $('#not_reverse').val() || [];
+                
+                formData.set('action_taken', Array.isArray(actionTaken) ? actionTaken.join(',') : actionTaken);
+                formData.set('occupancy_type', Array.isArray(occupancyType) ? occupancyType.join(',') : occupancyType);
+                formData.set('total_units', Array.isArray(totalUnits) ? totalUnits.join(',') : totalUnits);
+                formData.set('construction_method', Array.isArray(constructionMethod) ? constructionMethod.join(',') : constructionMethod);
+                formData.set('not_reverse', Array.isArray(notReverse) ? notReverse.join(',') : notReverse);
+                
+                // Years are now automatically determined (last 5 years) - don't send years
+                // Backend will automatically get last 5 years from BigQuery
+                formData.set('hmda_years', '');  // Empty = auto-determine
+                formData.set('sb_years', '');    // Empty = auto-determine
+                
+                // Generate job ID
+                const jobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                formData.append('job_id', jobId);
+                
+                // Show progress
+                $('#progressSection').show();
+                $('#resultsSection').hide();
+                $('#errorSection').hide();
+                $('#analysisForm').hide();
+                
+                // Disable submit button
+                $('#submitBtn').prop('disabled', true);
+                
+                try {
+                    const response = await fetch('/analyze', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!result.success) {
+                        throw new Error(result.error || 'Analysis failed');
+                    }
+                    
+                    // Start listening for progress
+                    const jobIdFromResponse = result.job_id || jobId;
+                    listenForProgress(jobIdFromResponse);
+                    
+                } catch (error) {
+                    console.error('Error:', error);
+                    $('#errorMessage').text(error.message || 'Network error. Please check your connection and try again.');
+                    $('#errorSection').show();
+                    $('#progressSection').hide();
+                    $('#submitBtn').prop('disabled', false);
+                }
+            });
+            
+            // Progress tracking function
+            function listenForProgress(jobId) {
+                const eventSource = new EventSource(`/progress/${jobId}`);
+                const progressFill = document.getElementById('progressFill');
+                const progressText = document.getElementById('progressText');
+                const progressPercent = document.getElementById('progressPercent');
+                
+                // Progress steps section was removed, so we only track progress bar
+                
+                eventSource.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.done) {
+                        eventSource.close();
+                        
+                        if (data.error) {
+                            $('#errorMessage').text(data.error);
+                            $('#errorSection').show();
+                            $('#progressSection').hide();
+                        } else {
+                            $('#resultsSection').show();
+                            $('#progressSection').hide();
+                            
+                            // Setup download button
+                            $('#downloadBtn').off('click').on('click', function() {
+                                window.location.href = `/download?job_id=${jobId}`;
+                            });
+                            
+                            // Setup view report button
+                            $('#viewReportBtn').off('click').on('click', function() {
+                                window.location.href = `/report?job_id=${jobId}`;
+                            });
+                        }
+                        $('#submitBtn').prop('disabled', false);
+                        return;
+                    }
+                    
+                    const percent = data.percent || 0;
+                    const stepMessage = data.step || 'Processing...';
+                    
+                    // Update progress bar and text
+                    if (progressFill) progressFill.style.width = percent + '%';
+                    if (progressPercent) progressPercent.textContent = percent + '%';
+                    if (progressText) progressText.textContent = stepMessage;
+                };
+                
+                eventSource.onerror = function(error) {
+                    console.error('Progress tracking error:', error);
+                    // Check if connection is closed
+                    if (eventSource.readyState === EventSource.CLOSED) {
+                        console.log('EventSource connection closed');
+                        // Try to reconnect after a delay
+                        setTimeout(() => {
+                            console.log('Attempting to reconnect to progress stream...');
+                            eventSource.close();
+                            listenForProgress(jobId);
+                        }, 2000);
+                    } else if (eventSource.readyState === EventSource.CONNECTING) {
+                        console.log('EventSource is connecting...');
+                    } else {
+                        // Connection might be temporarily interrupted
+                        console.log('EventSource connection interrupted, waiting...');
+                    }
+                };
+            }
+        });
+    </script>
+</body>
+</html>
+

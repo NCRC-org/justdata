@@ -5,7 +5,7 @@ Shared AI service for JustData applications.
 from typing import Dict, Any, List, Optional
 import anthropic
 import openai
-from justdata.core.config.settings import get_settings
+from core.config.settings import get_settings
 import structlog
 
 logger = structlog.get_logger()

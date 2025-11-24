@@ -1,6 +1,7 @@
 """
-BizSight - Business data analysis application.
-Shares infrastructure with BranchSeeker and LendSight.
+BizSight Application
+Self-contained small business lending analysis application.
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
+

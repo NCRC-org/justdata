@@ -28,7 +28,11 @@ def convert_numpy_types(obj):
 def ask_ai(prompt: str, ai_provider: str = "claude", model: str = None, api_key: str = None) -> str:
     """Send a prompt to the configured AI provider and return the response."""
     if not api_key:
-        api_key = os.getenv("CLAUDE_API_KEY") if ai_provider == "claude" else os.getenv("OPENAI_API_KEY")
+        # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
+        if ai_provider == "claude":
+            api_key = os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+        else:
+            api_key = os.getenv("OPENAI_API_KEY")
     
     if not api_key:
         raise Exception(f"No API key found for provider: {ai_provider}")
@@ -67,7 +71,11 @@ class AIAnalyzer:
     def __init__(self, ai_provider: str = "claude", model: str = None, api_key: str = None):
         self.provider = ai_provider
         self.model = model
-        self.api_key = api_key or (os.getenv("CLAUDE_API_KEY") if ai_provider == "claude" else os.getenv("OPENAI_API_KEY"))
+        if ai_provider == "claude":
+            # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
+            self.api_key = api_key or os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
+        else:
+            self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         
         if not self.api_key:
             raise Exception(f"No API key found for provider: {ai_provider}")
@@ -100,8 +108,12 @@ class AIAnalyzer:
                 )
                 return response.content[0].text.strip()
         except Exception as e:
-            print(f"Error calling {self.provider} API: {e}")
-            return ""
+            error_msg = f"Error calling {self.provider} API: {e}"
+            print(error_msg)
+            import traceback
+            traceback.print_exc()
+            # Re-raise the exception so calling code can handle it
+            raise Exception(error_msg) from e
         
     def generate_executive_summary(self, data: Dict[str, Any]) -> str:
         """Generate an executive summary of the analysis."""

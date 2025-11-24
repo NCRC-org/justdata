@@ -5,7 +5,7 @@ Configuration settings for BranchSeeker (FDIC bank branch analyzer).
 
 import os
 
-# Base directories
+# Base directories (project root - 2 levels up from config.py: branchseeker -> apps -> root)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
 TEMPLATES_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'templates')

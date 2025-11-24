@@ -3,7 +3,7 @@ Celery application for JustData background tasks.
 """
 
 from celery import Celery
-from justdata.core.config.settings import get_settings
+from core.config.settings import get_settings
 
 settings = get_settings()
 
@@ -13,9 +13,9 @@ celery_app = Celery(
     broker=settings.redis_url,
     backend=settings.redis_url,
     include=[
-        "justdata.apps.branchseeker.tasks",
-        "justdata.apps.lendsight.tasks",
-        "justdata.apps.bizsight.tasks",
+        "apps.branchseeker.tasks",
+        "apps.lendsight.tasks",
+        "apps.bizsight.tasks",
     ]
 )
 
@@ -34,11 +34,11 @@ celery_app.conf.update(
     result_expires=3600,  # 1 hour
     beat_schedule={
         "cleanup-old-reports": {
-            "task": "justdata.shared.services.cleanup.cleanup_old_reports",
+            "task": "shared.services.cleanup.cleanup_old_reports",
             "schedule": 86400.0,  # Daily
         },
         "update-data-sources": {
-            "task": "justdata.shared.services.data_sync.sync_data_sources",
+            "task": "shared.services.data_sync.sync_data_sources",
             "schedule": 3600.0,  # Hourly
         },
     }
@@ -46,10 +46,10 @@ celery_app.conf.update(
 
 # Task routing
 celery_app.conf.task_routes = {
-    "justdata.apps.branchseeker.*": {"queue": "branchseeker"},
-    "justdata.apps.lendsight.*": {"queue": "lendsight"},
-    "justdata.apps.bizsight.*": {"queue": "bizsight"},
-    "justdata.shared.services.*": {"queue": "shared"},
+    "apps.branchseeker.*": {"queue": "branchseeker"},
+    "apps.lendsight.*": {"queue": "lendsight"},
+    "apps.bizsight.*": {"queue": "bizsight"},
+    "shared.services.*": {"queue": "shared"},
 }
 
 if __name__ == "__main__":

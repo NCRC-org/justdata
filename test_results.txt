@@ -1,0 +1,94 @@
+
+======================================================================
+JUSTDATA FULL STACK INTEGRATION TEST
+======================================================================
+
+======================================================================
+BACKEND TESTS
+======================================================================
+
+Test 1: App Creation
+  ✅ App created successfully
+
+Test 2: Blueprint Registration
+  ✅ branchseeker blueprint registered
+  ✅ lendsight blueprint registered
+  ✅ bizsight blueprint registered
+  ✅ mergermeter blueprint registered
+  ✅ branchmapper blueprint registered
+  ✅ dashboard blueprint registered
+
+Test 3: Route Registration
+  ✅ Route landing -> /
+  ✅ Route health -> /health
+  ✅ Route api_access_info -> /api/access-info
+  ✅ Route branchseeker.index -> /branchseeker/
+  ✅ Route lendsight.index -> /lendsight/
+  ✅ Route bizsight.index -> /bizsight/
+  ✅ Route mergermeter.index -> /mergermeter/
+  ✅ Route branchmapper.index -> /branchmapper/
+
+Test 4: API Endpoints
+  ✅ /health endpoint: healthy
+  ✅ /api/access-info: user_type = public
+
+======================================================================
+FRONTEND TESTS
+======================================================================
+
+Test 1: Template Rendering
+  ✅ Landing page renders
+    ✅ Contains 'JustData' text
+    ✅ Contains app cards
+    ✅ No unrendered template variables
+  ✅ branchseeker page accessible (status: 302)
+  ✅ lendsight page accessible (status: 200)
+  ✅ bizsight page accessible (status: 302)
+  ✅ mergermeter page accessible (status: 302)
+
+Test 2: Static File Serving
+  ✅ /static/css/style.css served (text/css; charset=utf-8)
+  ✅ /static/js/app.js served (text/javascript; charset=utf-8)
+
+Test 3: Template Variable Injection
+  ✅ Template variables rendered (no raw Jinja2 syntax)
+
+======================================================================
+INTEGRATION TESTS
+======================================================================
+
+Test 1: Full Analysis Request Flow (LendSight)
+[DEBUG] analyze endpoint - received data: {'counties': 'Alameda County, California', 'selection_type': 'county', 'years': ''}
+[DEBUG] Calling parse_web_parameters with counties_str=Alameda County;California, years=auto (last 5), selection_type=county, state_code=None
+✅ Fetched last 5 HMDA years: [2024, 2023, 2022, 2021, 2020]
+✅ Automatically using last 5 HMDA years: [2024, 2023, 2022, 2021, 2020]
+[DEBUG] parse_web_parameters returned 2 counties and 5 years
+[DEBUG] Starting background thread for job 823fc544-6ab8-4d83-bcec-5e1d9e4284f4
+Matching county 1/2: Alameda County
+[DEBUG] Returning success response with job_id: 823fc544-6ab8-4d83-bcec-5e1d9e4284f4
+  ✅ Analysis request accepted
+    ✅ Job ID: 823fc544-6ab8-4d83-bcec-5e1d9e4284f4
+    ✅ Progress endpoint accessible
+
+Test 2: User Type API
+  ✅ User type set to: staff
+    ✅ Permissions: ['can_export', 'export_formats', 'geographic_limit']
+
+Test 3: Cache System Integration
+  ✅ Cache key generation works
+    ✅ Normalized params: ['app', 'counties', 'years']
+    ✅ Cache key: lendsight_0acd1815c7bd477326e55b...
+
+======================================================================
+TEST SUMMARY
+======================================================================
+✅ Backend: App creation, blueprints, routes, APIs
+✅ Frontend: Templates, static files, rendering
+✅ Integration: Analysis flow, user management, cache
+
+🎉 Full stack test complete!
+
+To start the server:
+  python run_justdata.py
+
+Then open: http://localhost:8000

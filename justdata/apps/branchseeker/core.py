@@ -27,11 +27,15 @@ def parse_web_parameters(counties_str: str, years_str: str, selection_type: str 
     Returns:
         Tuple of (counties_list, years_list)
     """
-    from .data_utils import expand_state_to_counties, expand_metro_to_counties
+    from .data_utils import expand_state_to_counties, expand_metro_to_counties, get_last_5_years_sod
     
-    # Parse years
-    if years_str.lower() == "all":
-        years = list(range(2017, 2025))
+    # Parse years - if empty or None, automatically get last 5 years
+    if not years_str or not years_str.strip():
+        # Automatically get last 5 years from SOD data
+        years = get_last_5_years_sod()
+        print(f"✅ Automatically using last 5 SOD years: {years}")
+    elif years_str.lower() == "all":
+        years = list(range(2017, 2026))  # Include 2025
     else:
         years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
     
@@ -251,85 +255,88 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 traceback.print_exc()
                 raise Exception(f"AI analyzer initialization failed: {init_error}. Please check API key configuration.")
             
-            # Generate AI insights with progress tracking
+            # Generate AI insights: Key Findings and table narratives for the three report sections
+            # Note: Executive Summary is now generated in JavaScript, not via AI
             ai_insights = {}
-            ai_insight_types = [
-                ('executive_summary', 'Executive Summary'),
-                ('key_findings', 'Key Findings'),
-                ('trends_analysis', 'Trends Analysis'),
-                ('bank_strategies', 'Bank Strategies'),
-                ('community_impact', 'Community Impact')
-            ]
             
-            # Add county comparison if multiple counties
-            if len(clarified_counties) > 1:
-                ai_insight_types.append(('county_comparison', 'County Comparison'))
-            
-            for i, (insight_key, insight_name) in enumerate(ai_insight_types, 1):
-                if progress_tracker:
-                    progress_tracker.update_ai_progress(i, len(ai_insight_types), insight_name)
-                
-                print(f"  Generating {insight_name}...")
-                try:
-                    if insight_key == 'executive_summary':
-                        ai_insights[insight_key] = analyzer.generate_executive_summary(ai_data)
-                    elif insight_key == 'key_findings':
-                        ai_insights[insight_key] = analyzer.generate_key_findings(ai_data)
-                    elif insight_key == 'trends_analysis':
-                        ai_insights[insight_key] = analyzer.generate_trends_analysis(ai_data)
-                    elif insight_key == 'bank_strategies':
-                        ai_insights[insight_key] = analyzer.generate_bank_strategies_analysis(ai_data)
-                    elif insight_key == 'community_impact':
-                        ai_insights[insight_key] = analyzer.generate_community_impact_analysis(ai_data)
-                    elif insight_key == 'county_comparison':
-                        ai_insights[insight_key] = analyzer.generate_county_comparison_analysis(ai_data)
-                    print(f"  [OK] {insight_name} generated successfully")
-                except Exception as gen_error:
-                    print(f"  [ERROR] Error generating {insight_name}: {gen_error}")
-                    import traceback
-                    traceback.print_exc()
-                    raise  # Re-raise to be caught by outer exception handler
-            
-            # Generate table-specific introductions (2 sentences each)
-            print("Generating table introductions...")
-            table_introductions = {}
+            # Generate Key Findings
+            print("Generating Key Findings...")
             try:
-                if not report_data.get('summary', pd.DataFrame()).empty:
-                    print("  Generating table1 introduction...")
-                    table_introductions['table1'] = analyzer.generate_table_introduction('table1', ai_data)
-                if not report_data.get('by_bank', pd.DataFrame()).empty:
-                    print("  Generating table2 introduction...")
-                    table_introductions['table2'] = analyzer.generate_table_introduction('table2', ai_data)
-                if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
-                    print("  Generating table3 introduction...")
-                    table_introductions['table3'] = analyzer.generate_table_introduction('table3', ai_data)
-            except Exception as intro_error:
-                print(f"Error generating table introductions: {intro_error}")
+                if progress_tracker:
+                    progress_tracker.update_ai_progress(1, 4, 'Key Findings')
+                ai_insights['key_findings'] = analyzer.generate_key_findings(ai_data)
+                print(f"  [OK] Key Findings generated successfully")
+            except Exception as key_findings_error:
+                print(f"  [ERROR] Error generating Key Findings: {key_findings_error}")
                 import traceback
                 traceback.print_exc()
-                raise
+                # Don't raise - allow report to continue without key findings
+                print("  [WARNING] Continuing without Key Findings due to error")
             
             # Generate table-specific narratives
             print("Generating table narratives...")
             table_narratives = {}
-            try:
-                if not report_data.get('summary', pd.DataFrame()).empty:
-                    print("  Generating table1 narrative...")
-                    table_narratives['table1'] = analyzer.generate_table_narrative('table1', ai_data)
-                if not report_data.get('by_bank', pd.DataFrame()).empty:
-                    print("  Generating table2 narrative...")
-                    table_narratives['table2'] = analyzer.generate_table_narrative('table2', ai_data)
-                if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
-                    print("  Generating table3 narrative...")
-                    table_narratives['table3'] = analyzer.generate_table_narrative('table3', ai_data)
-            except Exception as narrative_error:
-                print(f"Error generating table narratives: {narrative_error}")
-                import traceback
-                traceback.print_exc()
-                raise
             
-            ai_insights['table_introductions'] = table_introductions
+            # Generate table1 narrative
+            if not report_data.get('summary', pd.DataFrame()).empty:
+                try:
+                    if progress_tracker:
+                        progress_tracker.update_ai_progress(2, 4, 'Yearly Breakdown Analysis')
+                    print("  Generating table1 narrative (Yearly Breakdown Analysis)...")
+                    narrative1 = analyzer.generate_table_narrative('table1', ai_data)
+                    if narrative1 and narrative1.strip():
+                        table_narratives['table1'] = narrative1
+                        print(f"  [OK] table1 narrative generated ({len(narrative1)} chars)")
+                    else:
+                        print("  [WARNING] table1 narrative is empty or None")
+                except Exception as e:
+                    print(f"  [ERROR] Failed to generate table1 narrative: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # Generate table2 narrative
+            if not report_data.get('by_bank', pd.DataFrame()).empty:
+                try:
+                    if progress_tracker:
+                        progress_tracker.update_ai_progress(3, 4, 'Analysis by Bank')
+                    print("  Generating table2 narrative (Analysis by Bank)...")
+                    narrative2 = analyzer.generate_table_narrative('table2', ai_data)
+                    if narrative2 and narrative2.strip():
+                        table_narratives['table2'] = narrative2
+                        print(f"  [OK] table2 narrative generated ({len(narrative2)} chars)")
+                    else:
+                        print("  [WARNING] table2 narrative is empty or None")
+                except Exception as e:
+                    print(f"  [ERROR] Failed to generate table2 narrative: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # Generate table3 narrative
+            if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
+                try:
+                    if progress_tracker:
+                        progress_tracker.update_ai_progress(4, 4, 'County by County Analysis')
+                    print("  Generating table3 narrative (County by County Analysis)...")
+                    narrative3 = analyzer.generate_table_narrative('table3', ai_data)
+                    if narrative3 and narrative3.strip():
+                        table_narratives['table3'] = narrative3
+                        print(f"  [OK] table3 narrative generated ({len(narrative3)} chars)")
+                    else:
+                        print("  [WARNING] table3 narrative is empty or None")
+                except Exception as e:
+                    print(f"  [ERROR] Failed to generate table3 narrative: {e}")
+                    import traceback
+                    traceback.print_exc()
+            
             ai_insights['table_narratives'] = table_narratives
+            
+            # Debug: Print what we're storing
+            print(f"Stored table_narratives keys: {list(table_narratives.keys())}")
+            for key, value in table_narratives.items():
+                if value:
+                    print(f"  {key}: {len(value)} characters")
+                else:
+                    print(f"  {key}: EMPTY or None")
             
             # Methods section is hardcoded in the template (not AI-generated)
             print("AI insights generated successfully")
@@ -356,14 +363,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 error_msg = f"AI analysis not available - Error: {error_type}: {error_message}"
             
             ai_insights = {
-                'executive_summary': error_msg,
-                'key_findings': error_msg,
-                'trends_analysis': error_msg,
-                'bank_strategies': error_msg,
-                'community_impact': error_msg,
-                'table_introductions': {},
-                'table_narratives': {},
-                'methods': 'Methods section not available - AI analysis failed.'
+                'key_findings': None,
+                'table_narratives': {}
             }
         
         # Mark as completed

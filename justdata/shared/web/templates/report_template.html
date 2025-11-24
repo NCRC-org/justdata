@@ -13,9 +13,7 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <style>
         /* Print-specific styles */
@@ -39,7 +37,7 @@
             text-align: center;
             margin-bottom: 40px;
             padding: 30px 20px;
-            background: #003366;
+            background: #034ea0;
             color: white;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -92,13 +90,13 @@
         }
         
         .action-btn.primary {
-            background: #0066CC;
+            background: #2fade3;
             color: white;
-            border-color: #0066CC;
+            border-color: #2fade3;
         }
         
         .action-btn.primary:hover {
-            background: #003366;
+            background: #034ea0;
         }
         
         .dropdown {
@@ -176,7 +174,7 @@
         }
         
         .ai-insight-card h3 i {
-            color: #003366;
+            color: #034ea0;
         }
         
         .ai-content {
@@ -226,6 +224,26 @@
             color: #333;
             margin-bottom: 20px;
             line-height: 1.6;
+        }
+        
+        .table-narrative {
+            font-size: 1rem;
+            color: #333;
+            margin-top: 25px;
+            margin-bottom: 20px;
+            line-height: 1.7;
+            padding: 20px;
+            background: #f8f9fa;
+            border-left: 4px solid #034ea0;
+            border-radius: 4px;
+        }
+        
+        .table-narrative p {
+            margin-bottom: 15px;
+        }
+        
+        .table-narrative p:last-child {
+            margin-bottom: 0;
         }
         
         .table-source {
@@ -532,24 +550,12 @@
                 </div>
             </div>
             
-            <!-- Branch Map Section -->
-            <div class="report-section print-break" id="branchMapSection" style="display: none;">
-                <h2 class="section-title">Branch Locations Map</h2>
-                <p class="table-introduction">
-                    Interactive map showing the geographic distribution of bank branches in the selected area.
-                </p>
-                <div id="branchMap" style="height: 600px; width: 100%; border: 2px solid #ddd; border-radius: 8px; margin: 20px 0;"></div>
-                <p class="table-caption" id="mapCaption">
-                    <!-- Map caption will be populated by JavaScript -->
-                </p>
-            </div>
-            
-            <!-- AI Executive Summary -->
-            <div class="report-section print-break" id="aiExecutiveSummarySection" style="display: none;">
+            <!-- Executive Summary -->
+            <div class="report-section print-break" id="executiveSummarySection">
                 <h2 class="section-title">Executive Summary</h2>
                 <div class="ai-insight-card">
                     <div class="ai-content" id="executiveSummaryContent">
-                        <!-- AI content will be populated by JavaScript -->
+                        <!-- Executive summary will be populated by JavaScript -->
                     </div>
                 </div>
             </div>
@@ -611,6 +617,7 @@
                             <tr>
                                 <th style="text-align: left;">Bank Name</th>
                                 <th style="text-align: center;">Total Branches</th>
+                                <th style="text-align: center;">Deposits ($ Millions)</th>
                                 <th style="text-align: center;">LMI Only Branches</th>
                                 <th style="text-align: center;">MMCT Only Branches</th>
                                 <th style="text-align: center;">Both LMICT/MMCT Branches</th>
@@ -751,13 +758,13 @@
             document.getElementById('years').textContent = metadata.years.join(', ');
             document.getElementById('totalRecords').textContent = metadata.total_records.toLocaleString();
             
+            // Generate Executive Summary in JavaScript
+            generateExecutiveSummary(metadata);
+            
             // Populate summary cards using raw_data to ensure unique branch counts by uninumbr
             populateSummaryCards(data.raw_data);
             
-            // Initialize branch map if coordinates are available
-            initializeBranchMap(data.raw_data, metadata);
-            
-            // Populate AI insights if available
+            // Populate AI insights if available (excluding executive summary - now generated in JS)
             if (metadata.ai_insights) {
                 populateAIInsights(metadata.ai_insights);
             }
@@ -804,19 +811,48 @@
             }
             
             // Populate table narratives
+            console.log('Checking for table narratives...', metadata.ai_insights);
+            console.log('Full ai_insights structure:', JSON.stringify(metadata.ai_insights, null, 2));
             if (metadata.ai_insights && metadata.ai_insights.table_narratives) {
+                console.log('Table narratives object:', metadata.ai_insights.table_narratives);
+                console.log('Table narratives type:', typeof metadata.ai_insights.table_narratives);
+                console.log('Table narratives keys:', Object.keys(metadata.ai_insights.table_narratives));
+                console.log('Table narratives is array?', Array.isArray(metadata.ai_insights.table_narratives));
                 if (metadata.ai_insights.table_narratives.table1) {
                     const narrativeEl = document.getElementById('summaryTableNarrative');
-                    if (narrativeEl) narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table1);
+                    if (narrativeEl) {
+                        console.log('Populating table1 narrative:', metadata.ai_insights.table_narratives.table1.substring(0, 100));
+                        narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table1);
+                    } else {
+                        console.warn('summaryTableNarrative element not found');
+                    }
+                } else {
+                    console.warn('table1 narrative is missing or empty');
                 }
                 if (metadata.ai_insights.table_narratives.table2) {
                     const narrativeEl = document.getElementById('bankTableNarrative');
-                    if (narrativeEl) narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table2);
+                    if (narrativeEl) {
+                        console.log('Populating table2 narrative:', metadata.ai_insights.table_narratives.table2.substring(0, 100));
+                        narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table2);
+                    } else {
+                        console.warn('bankTableNarrative element not found');
+                    }
+                } else {
+                    console.warn('table2 narrative is missing or empty');
                 }
                 if (metadata.ai_insights.table_narratives.table3) {
                     const narrativeEl = document.getElementById('countyTableNarrative');
-                    if (narrativeEl) narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table3);
+                    if (narrativeEl) {
+                        console.log('Populating table3 narrative:', metadata.ai_insights.table_narratives.table3.substring(0, 100));
+                        narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table3);
+                    } else {
+                        console.warn('countyTableNarrative element not found');
+                    }
+                } else {
+                    console.warn('table3 narrative is missing or empty');
                 }
+            } else {
+                console.warn('No table narratives in ai_insights:', metadata.ai_insights);
             }
             
             // Show county table only if multiple counties and data exists
@@ -828,18 +864,101 @@
             // Methods section is hardcoded in HTML (not populated by JavaScript)
         }
         
+        function generateExecutiveSummary(metadata) {
+            // Extract counties, states, years, and data sources
+            const counties = metadata.counties || [];
+            const years = metadata.years || [];
+            const totalRecords = metadata.total_records || 0;
+            
+            // Extract unique states from counties (format: "County, State")
+            const states = [];
+            counties.forEach(county => {
+                if (county.includes(',')) {
+                    const state = county.split(',').slice(-1)[0].trim();
+                    if (state && !states.includes(state)) {
+                        states.push(state);
+                    }
+                }
+            });
+            
+            // Format years
+            let yearText = '';
+            if (years.length === 1) {
+                yearText = years[0].toString();
+            } else if (years.length === 2) {
+                yearText = `${years[0]} and ${years[1]}`;
+            } else {
+                const sortedYears = [...years].sort((a, b) => a - b);
+                yearText = `${sortedYears[0]} through ${sortedYears[sortedYears.length - 1]}`;
+            }
+            
+            // Format counties
+            let countyText = '';
+            if (counties.length === 1) {
+                countyText = counties[0];
+            } else if (counties.length === 2) {
+                countyText = `${counties[0]} and ${counties[1]}`;
+            } else {
+                countyText = counties.slice(0, -1).join(', ') + ', and ' + counties[counties.length - 1];
+            }
+            
+            // Format states
+            let stateText = '';
+            if (states.length === 1) {
+                stateText = states[0];
+            } else if (states.length === 2) {
+                stateText = `${states[0]} and ${states[1]}`;
+            } else {
+                stateText = states.slice(0, -1).join(', ') + ', and ' + states[states.length - 1];
+            }
+            
+            // Generate plain English summary
+            let summary = `This report provides a comprehensive analysis of bank branch locations and distribution patterns `;
+            
+            if (counties.length > 0) {
+                summary += `in ${countyText}`;
+                if (states.length > 0 && states.length < counties.length) {
+                    summary += ` (${stateText})`;
+                }
+                summary += `. `;
+            }
+            
+            summary += `The analysis covers the period from ${yearText} and examines branch distribution patterns, `;
+            summary += `including the location of branches in Low-to-Moderate Income (LMI) census tracts and Majority-Minority Census Tracts (MMCT). `;
+            
+            // Add census tract change note if 2021 and 2022 are in the years
+            if (years.includes(2021) && years.includes(2022)) {
+                summary += `The census tract changes from 2021 to 2022 created a 30% increase nationally in the number of majority-minority census tracts, most of which are not low to moderate income. `;
+            }
+            
+            summary += `The data for this report comes from the Federal Deposit Insurance Corporation (FDIC) Summary of Deposits (SOD), `;
+            summary += `which is compiled annually by the FDIC and maintained in NCRC's curated databases. `;
+            
+            summary += `This report includes ${totalRecords.toLocaleString()} branch records `;
+            summary += `across ${counties.length} ${counties.length === 1 ? 'county' : 'counties'}`;
+            if (states.length > 1) {
+                summary += ` spanning ${states.length} states`;
+            }
+            summary += `. `;
+            
+            summary += `The report presents data in tables showing yearly breakdowns, analysis by bank, `;
+            if (counties.length > 1) {
+                summary += `county-by-county comparisons, `;
+            }
+            summary += `and includes the complete underlying dataset for verification and further analysis.`;
+            
+            // Populate the executive summary
+            const element = document.getElementById('executiveSummaryContent');
+            if (element) {
+                element.innerHTML = `<p>${summary}</p>`;
+            }
+        }
+        
         function populateAIInsights(aiInsights) {
             if (!aiInsights) return;
             
-            // Populate each AI insight section individually
-            if (aiInsights.executive_summary) {
-                const content = aiInsights.executive_summary;
-                const element = document.getElementById('executiveSummaryContent');
-                if (element) {
-                    element.innerHTML = formatMarkdownContent(content);
-                    document.getElementById('aiExecutiveSummarySection').style.display = 'block';
-                }
-            }
+            // Populate each AI insight section individually (excluding executive summary)
+            // Note: Executive Summary is now generated in JavaScript, not from AI
             
             if (aiInsights.key_findings) {
                 const content = aiInsights.key_findings;

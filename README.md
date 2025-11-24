@@ -10,6 +10,18 @@ JustData is a unified platform that consolidates three specialized financial ana
 - **LendSight** - Mortgage lending patterns and market trends 🏗️ *Framework Ready*
 - **BizSight** - Small business lending and economic indicators 🏗️ *Framework Ready*
 
+## 📚 Documentation
+
+- **[DEPENDENCIES.md](DEPENDENCIES.md)** - Complete guide to dependencies, data sources, and report generation flows
+- **[CACHE_IMPLEMENTATION.md](CACHE_IMPLEMENTATION.md)** - BigQuery-based caching system documentation
+- **[HUBSPOT_SETUP.md](HUBSPOT_SETUP.md)** - HubSpot CLI installation and integration guide
+- **[HUBSPOT_DEVELOPER_PROJECTS.md](HUBSPOT_DEVELOPER_PROJECTS.md)** - HubSpot Developer Projects integration approach
+
+### App-Specific Documentation
+- **BranchSeeker**: [SERVICE_TYPE_DEFINITIONS.md](justdata/apps/branchseeker/SERVICE_TYPE_DEFINITIONS.md) - Service type reference
+- **MergerMeter**: [README.md](justdata/apps/mergermeter/README.md) - App-specific documentation
+- **Shared Utils**: [BIGQUERY_QUERIES.md](justdata/shared/utils/BIGQUERY_QUERIES.md) - BigQuery query reference
+
 ## 🚀 Quick Start
 
 ### 1. Install Dependencies
@@ -34,11 +46,18 @@ OPENAI_API_KEY=sk-xxx
 
 ### 3. Run an Application
 
-#### BranchSeeker (FDIC Branch Analyzer) - READY TO USE ✅
+#### Unified JustData Platform - READY TO USE ✅
 ```bash
-python run_branchseeker.py
+python run_justdata.py
 ```
-Then open: http://localhost:8080
+Then open: http://localhost:8000
+
+All applications are accessible from the unified landing page:
+- **BranchSeeker**: http://localhost:8000/branchseeker/
+- **LendSight**: http://localhost:8000/lendsight/
+- **BizSight**: http://localhost:8000/bizsight/
+- **MergerMeter**: http://localhost:8000/mergermeter/
+- **BranchMapper**: http://localhost:8000/branchmapper/
 
 **Features:**
 - Analyze bank branches by county and year
@@ -47,25 +66,13 @@ Then open: http://localhost:8080
 - Excel, CSV, JSON, and ZIP export options
 - Real-time progress tracking with substeps
 
-#### BizSight (Business Analyzer) - SKELETON 🏗️
-```bash
-python run_bizsight.py
-```
-Then open: http://localhost:8081
-
-#### LendSight (Lending Analyzer) - SKELETON 🏗️
-```bash
-python run_lendsight.py
-```
-Then open: http://localhost:8082
+All applications are now unified under a single entry point. Use `run_justdata.py` to start all applications.
 
 ## 🏗️ Project Structure
 
 ```
 justdata/
-├── run_branchseeker.py       # ← Run this for BranchSeeker
-├── run_bizsight.py           # ← Run this for BizSight  
-├── run_lendsight.py          # ← Run this for LendSight
+├── run_justdata.py           # ← Run this for unified platform
 ├── requirements.txt          # ← Install these packages
 ├── .env                      # ← Your API keys (create this)
 │
@@ -165,13 +172,8 @@ All applications use consistent routing patterns:
 ### Running Locally
 ```bash
 # Start BranchSeeker
-python run_branchseeker.py
-
-# Start BizSight
-python run_bizsight.py
-
-# Start LendSight
-python run_lendsight.py
+# Start unified JustData platform (all apps)
+python run_justdata.py
 ```
 
 ### Environment Variables
@@ -226,8 +228,7 @@ DEBUG=True
 
 ### Available Documentation
 - **README.md** - This document (project overview and quick start)
-- **justdata/AGENTS.md** - HubSpot development guidelines
-- **justdata/CLAUDE.md** - Claude AI integration notes
+- **justdata/CLAUDE.md** - HubSpot development guidelines and Claude AI integration notes
 
 ### Code Documentation
 - Inline docstrings and type hints throughout

@@ -187,11 +187,11 @@ def years_route():
         from justdata.core.config.app_config import LendSightConfig
         
         client = get_bigquery_client(LendSightConfig.PROJECT_ID)
-        # Query HMDA LAR table for available years
+        # Query HMDA table for available years (using activity_year field)
         query = """
-        SELECT DISTINCT year
-        FROM hmda.lar
-        WHERE year IS NOT NULL
+        SELECT DISTINCT CAST(activity_year AS INT64) as year
+        FROM `hdma1-242116.hmda.hmda`
+        WHERE activity_year IS NOT NULL
         ORDER BY year ASC
         """
         query_job = client.query(query)

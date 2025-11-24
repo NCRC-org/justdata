@@ -1,4 +1,6 @@
-"""Version information for BranchMapper application."""
+"""
+Version information for BranchMapper application.
+"""
 
-__version__ = "1.0.0"
+__version__ = "0.9.0"
 

@@ -1,29 +1,52 @@
-#!/usr/bin/env python3
 """
-Configuration settings for MergerMeter (Bank merger analysis tool).
+Configuration for MergerMeter application.
 """
 
 import os
+from pathlib import Path
 
-# Base directories
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
-TEMPLATES_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'templates')
-STATIC_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'static')
+# Base directory for this application
+BASE_DIR = Path(__file__).parent
+# Base directory for justdata package (2 levels up from config.py: mergermeter -> apps -> root)
+JUSTDATA_BASE = BASE_DIR.parent.parent
 
-# Ensure output directory exists
-OUTPUT_DIR = os.path.join(DATA_DIR, 'reports', 'mergermeter')
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+# Template and static directories
+TEMPLATES_DIR = str(BASE_DIR / 'templates')
+# Use shared static folder (same as BranchSeeker and LendSight)
+STATIC_DIR = str(JUSTDATA_BASE / 'shared' / 'web' / 'static')
+OUTPUT_DIR = BASE_DIR / 'output'
 
-# BigQuery Configuration
-PROJECT_ID = "hdma1-242116"
-DATASET_ID = "branches"
-TABLE_ID = "sod"
+# Excel template file path (for matching original merger report format)
+# Support multiple path options for flexibility across different environments
+# 1. Check environment variable first (for CI/CD, Docker, etc.)
+MERGER_REPORT_BASE_ENV = os.getenv('MERGER_REPORT_BASE')
+if MERGER_REPORT_BASE_ENV:
+    MERGER_REPORT_BASE = Path(MERGER_REPORT_BASE_ENV)
+else:
+    # 2. Try relative path from workspace root (for GitHub/main branch)
+    # Look for 1_Merger_Report relative to the workspace root
+    workspace_root = JUSTDATA_BASE.parent if JUSTDATA_BASE.name == '#JustData_Repo' else JUSTDATA_BASE.parent.parent
+    relative_merger_path = workspace_root / '1_Merger_Report'
+    
+    # 3. Fallback to absolute path (for local development)
+    absolute_merger_path = Path(r'C:\DREAM\1_Merger_Report')
+    
+    # Use whichever exists, preferring relative path
+    if relative_merger_path.exists():
+        MERGER_REPORT_BASE = relative_merger_path
+    elif absolute_merger_path.exists():
+        MERGER_REPORT_BASE = absolute_merger_path
+    else:
+        MERGER_REPORT_BASE = None
 
-# Load environment variables from .env if available
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
+# Template files - NO LONGER USED (we use simplified format only)
+# Kept for backwards compatibility but not used
+TEMPLATE_FILE = None
+CLEAN_TEMPLATE_FILE = None
+
+# Create output directory if it doesn't exist
+OUTPUT_DIR.mkdir(exist_ok=True)
+
+# BigQuery Project ID
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
 

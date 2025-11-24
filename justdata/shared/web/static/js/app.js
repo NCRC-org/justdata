@@ -27,45 +27,37 @@ function setupFormHandler() {
     e.preventDefault();
     
     const formData = new FormData(analysisForm);
-    const selectionType = formData.get('selection_type') || 'county';
     const startYear = formData.get('startYear');
     const endYear = formData.get('endYear');
     
     // Enhanced validation with helpful messages
     let hasErrors = false;
     
-    // Validate year range
-    if (!startYear || !endYear) {
-        showValidationMessage(document.getElementById('startYear'), 'Please select both start and end years.', 'error');
-        if (endYear) showValidationMessage(document.getElementById('endYear'), 'Please select both start and end years.', 'error');
-        hasErrors = true;
-    } else {
-        const start = parseInt(startYear);
-        const end = parseInt(endYear);
-        const yearRange = end - start + 1;
-        
-        if (start > end) {
-            showValidationMessage(document.getElementById('startYear'), 'Start year must be before or equal to end year.', 'error');
-            showValidationMessage(document.getElementById('endYear'), 'End year must be after or equal to start year.', 'error');
-            hasErrors = true;
-        } else if (yearRange < 3) {
-            showValidationMessage(document.getElementById('startYear'), `You've selected ${yearRange} ${yearRange === 1 ? 'year' : 'years'}. Please select at least 3 years for meaningful analysis.`, 'error');
-            showValidationMessage(document.getElementById('endYear'), `You've selected ${yearRange} ${yearRange === 1 ? 'year' : 'years'}. Please select at least 3 years for meaningful analysis.`, 'error');
-            hasErrors = true;
-        }
-    }
+    // Year range is now automatic (last 5 years) - no validation needed
+    // Years will be automatically determined by the backend
     
-    // Validate selection based on type
-    if (selectionType === 'county') {
+    // State selection is optional
+    const selectedState = $('#state-filter-select').val();
+    
+    // Validate county selection (single or multiple based on select type)
+    const countySelectEl = document.getElementById('county-select');
+    const isMultiple = countySelectEl && countySelectEl.hasAttribute('multiple');
+    
+    if (isMultiple) {
+        // Multi-select validation (for MergerMeter)
         const selectedCounties = $('#county-select').val();
         if (!selectedCounties || selectedCounties.length === 0) {
-            showValidationMessage(document.getElementById('county-select'), 'Please select at least one county to analyze.', 'error');
+            showValidationMessage(countySelectEl, 'Please select at least one county to analyze.', 'error');
+            hasErrors = true;
+        } else if (selectedCounties.length > 3) {
+            showValidationMessage(countySelectEl, `Please select no more than 3 counties to analyze. You selected ${selectedCounties.length} counties.`, 'error');
             hasErrors = true;
         }
-    } else if (selectionType === 'state') {
-        const stateCode = formData.get('state_code');
-        if (!stateCode) {
-            showValidationMessage(document.getElementById('state-select'), 'Please select a state to analyze.', 'error');
+    } else {
+        // Single-select validation (for LendSight, BizSight, BranchSeeker)
+        const selectedCounty = countySelectEl ? countySelectEl.value : '';
+        if (!selectedCounty || selectedCounty === '') {
+            showValidationMessage(countySelectEl, 'Please select a county to analyze.', 'error');
             hasErrors = true;
         }
     }
@@ -79,51 +71,138 @@ function setupFormHandler() {
         return;
     }
     
-    const start = parseInt(startYear);
-    const end = parseInt(endYear);
-    
-    // Build request data
-    let requestData = {
-        selection_type: selectionType,
-        years: (() => {
-            const years = [];
-            for (let year = start; year <= end; year++) {
-                years.push(year);
-            }
-            return years.join(',');
-        })()
-    };
-    
-    if (selectionType === 'county') {
-        const selectedCounties = $('#county-select').val();
-        requestData.counties = selectedCounties.join(';');
-    } else if (selectionType === 'state') {
-        const stateCode = formData.get('state_code');
-        requestData.state_code = stateCode;
+    // Years are now automatically determined (last 5 years) - no need to parse
+    // Get loan purpose from checkboxes
+    const loanPurpose = [];
+    if (document.getElementById('loan_purpose_purchase') && document.getElementById('loan_purpose_purchase').checked) {
+        loanPurpose.push('purchase');
+    }
+    if (document.getElementById('loan_purpose_refinance') && document.getElementById('loan_purpose_refinance').checked) {
+        loanPurpose.push('refinance');
+    }
+    if (document.getElementById('loan_purpose_equity') && document.getElementById('loan_purpose_equity').checked) {
+        loanPurpose.push('equity');
+    }
+    // Default to purchase if nothing selected
+    if (loanPurpose.length === 0) {
+        loanPurpose.push('purchase');
     }
     
-    // Show progress and disable form
-    showProgress();
-    disableForm();
+    // Build request data (handle both single and multi-select)
+    // Reuse countySelectEl and isMultiple from above (lines 67-68) - don't redeclare
     
+    let selectedCountiesList = [];
+    if (isMultiple) {
+        // Multi-select: get array from jQuery
+        selectedCountiesList = $('#county-select').val() || [];
+    } else {
+        // Single-select: get single value from DOM
+        const selectedCounty = countySelectEl ? countySelectEl.value : '';
+        if (selectedCounty) {
+            selectedCountiesList = [selectedCounty];
+        }
+    }
+    
+    // Extract county data (with FIPS codes) if available, otherwise use county names
+    const countiesData = selectedCountiesList.map(countyName => {
+        // Try to get the full county object from the option's data attribute
+        let countyData = null;
+        if (isMultiple) {
+            const option = $('#county-select option').filter(function() {
+                return $(this).val() === countyName;
+            }).first();
+            countyData = option.data('county-data');
+        } else {
+            // Single-select: get from dataset attribute
+            const option = countySelectEl.options[countySelectEl.selectedIndex];
+            if (option && option.dataset.county) {
+                try {
+                    countyData = JSON.parse(option.dataset.county);
+                } catch (e) {
+                    // Ignore parse errors
+                }
+            }
+        }
+        
+        if (countyData && countyData.geoid5) {
+            // Return the full county object with FIPS codes
+            return countyData;
+        } else {
+            // Fallback: return just the county name (old format)
+            return countyName;
+        }
+    });
+    
+    let requestData = {
+        selection_type: 'county',
+        state_code: selectedState,
+        // years: omitted - will be automatically determined by backend (last 5 years)
+        counties: selectedCountiesList.join(';'), // Keep for backward compatibility
+        counties_data: countiesData, // New: send full county objects with FIPS codes
+        loan_purpose: loanPurpose
+    };
+    
+    // Debug logging
+    console.log('Form submission - selectedState:', selectedState);
+    console.log('Form submission - requestData:', requestData);
+    
+    // Show progress and disable form
     try {
+        showProgress();
+        disableForm();
+        console.log('[DEBUG] Progress shown and form disabled');
+    } catch (error) {
+        console.error('[ERROR] Error showing progress/disabling form:', error);
+    }
+    
+    let timeoutId = null;
+    try {
+        console.log('[DEBUG] Sending analyze request:', requestData);
+        const controller = new AbortController();
+        timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
         const response = await fetch('/analyze', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(requestData)
+            body: JSON.stringify(requestData),
+            signal: controller.signal
         });
         
+        clearTimeout(timeoutId);
+        console.log('[DEBUG] Received response, status:', response.status);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('[ERROR] Response not OK:', response.status, errorText);
+            throw new Error(`Server error: ${response.status} - ${errorText}`);
+        }
+        
         const result = await response.json();
+        console.log('[DEBUG] Response JSON:', result);
+        
         if (!result.success) {
             throw new Error(result.error || 'Analysis failed');
         }
         const jobId = result.job_id;
+        console.log('[DEBUG] Got job_id:', jobId);
         listenForProgress(jobId);
     } catch (error) {
-        console.error('Error:', error);
-        showError(error.message || 'Network error. Please check your connection and try again.');
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+        console.error('[ERROR] Fetch error:', error);
+        console.error('[ERROR] Error details:', {
+            name: error.name,
+            message: error.message,
+            stack: error.stack
+        });
+        if (error.name === 'AbortError') {
+            showError('Request timed out. The server may be processing your request. Please check the progress indicator or try again.');
+        } else {
+            showError(error.message || 'Network error. Please check your connection and try again.');
+        }
         hideProgress();
         enableForm();
     }
@@ -226,6 +305,15 @@ function resetForm() {
 
 // Show validation message
 function showValidationMessage(element, message, type = 'error') {
+    // Check if element exists
+    if (!element || !element.parentElement) {
+        // Silently return - element might not exist in all app contexts
+        // Only log in debug mode
+        if (window.DEBUG_MODE) {
+            console.warn('Cannot show validation message: element or parentElement is null');
+        }
+        return;
+    }
     // Remove existing validation message
     const existing = element.parentElement.querySelector('.validation-message');
     if (existing) {
@@ -270,21 +358,40 @@ function validateInput(input, type) {
     let messageType = 'error';
     
     if (type === 'county-select') {
-        const selected = $('#county-select').val();
-        if (!selected || selected.length === 0) {
-            isValid = false;
-            message = 'Please select at least one county to analyze.';
-            input.setCustomValidity('Please select at least one county.');
-        } else if (selected.length > 3) {
-            isValid = true;
-            message = `You've selected ${selected.length} counties. Analysis may take longer with more counties.`;
-            messageType = 'info';
-            input.setCustomValidity('');
+        const countySelectEl = document.getElementById('county-select');
+        const isMultiple = countySelectEl && countySelectEl.hasAttribute('multiple');
+        
+        if (isMultiple) {
+            // Multi-select validation (for MergerMeter)
+            const selected = $('#county-select').val();
+            if (!selected || selected.length === 0) {
+                isValid = false;
+                message = 'Please select at least one county to analyze.';
+                input.setCustomValidity('Please select at least one county.');
+            } else if (selected.length > 3) {
+                isValid = true;
+                message = `You've selected ${selected.length} counties. Analysis may take longer with more counties.`;
+                messageType = 'info';
+                input.setCustomValidity('');
+            } else {
+                isValid = true;
+                message = `Great! You've selected ${selected.length} ${selected.length === 1 ? 'county' : 'counties'}.`;
+                messageType = 'success';
+                input.setCustomValidity('');
+            }
         } else {
-            isValid = true;
-            message = `Great! You've selected ${selected.length} ${selected.length === 1 ? 'county' : 'counties'}.`;
-            messageType = 'success';
-            input.setCustomValidity('');
+            // Single-select validation (for LendSight, BizSight, BranchSeeker)
+            const selectedCounty = countySelectEl ? countySelectEl.value : '';
+            if (!selectedCounty || selectedCounty === '') {
+                isValid = false;
+                message = 'Please select a county to analyze.';
+                input.setCustomValidity('Please select a county.');
+            } else {
+                isValid = true;
+                message = 'County selected successfully.';
+                messageType = 'success';
+                input.setCustomValidity('');
+            }
         }
     } else if (type === 'startYear' || type === 'endYear') {
         if (!value) {
@@ -293,22 +400,16 @@ function validateInput(input, type) {
             input.setCustomValidity('Please select a year.');
         } else {
             const year = parseInt(value);
-            // Dynamic validation based on actual dropdown options
-            const yearSelect = input.id === 'startYear' ? document.getElementById('startYear') : document.getElementById('endYear');
-            const yearOptions = Array.from(yearSelect.options)
-                .map(opt => parseInt(opt.value))
-                .filter(val => !isNaN(val));
-            const minYear = yearOptions.length > 0 ? Math.min(...yearOptions) : 2017;
-            const maxYear = yearOptions.length > 0 ? Math.max(...yearOptions) : 2024;
-            
-            if (isNaN(year) || year < minYear || year > maxYear) {
+            if (isNaN(year) || year < 2017 || year > 2025) {
                 isValid = false;
-                message = `Please select a valid year between ${minYear}-${maxYear}.`;
-                input.setCustomValidity(`Please select a valid year between ${minYear}-${maxYear}.`);
+                message = 'Please select a valid year between 2017-2025.';
+                input.setCustomValidity('Please select a valid year between 2017-2025.');
             } else {
                 // Check if the range is at least 3 years
-                const startYear = document.getElementById('startYear').value;
-                const endYear = document.getElementById('endYear').value;
+                const startYearEl = document.getElementById('startYear');
+                const endYearEl = document.getElementById('endYear');
+                const startYear = startYearEl ? startYearEl.value : null;
+                const endYear = endYearEl ? endYearEl.value : null;
                 
                 if (startYear && endYear) {
                     const start = parseInt(startYear);
@@ -360,18 +461,18 @@ function initializeTour() {
         startTour();
     });
     
-    // Auto-start tour for first-time visitors
-    if (!hasSeenTour) {
-        // Wait a bit for page to load, then show tour
-        setTimeout(() => {
-            const shouldStart = confirm('Welcome to BranchSeeker! Would you like to take a quick tour to learn how to use the tool?');
-            if (shouldStart) {
-                startTour();
-            } else {
-                localStorage.setItem('branchseeker_tour_completed', 'true');
-            }
-        }, 1000);
-    }
+    // Auto-start tour for first-time visitors - DISABLED
+    // if (!hasSeenTour) {
+    //     // Wait a bit for page to load, then show tour
+    //     setTimeout(() => {
+    //         const shouldStart = confirm('Welcome to BranchSeeker! Would you like to take a quick tour to learn how to use the tool?');
+    //         if (shouldStart) {
+    //             startTour();
+    //         } else {
+    //             localStorage.setItem('branchseeker_tour_completed', 'true');
+    //         }
+    //     }, 1000);
+    // }
 }
 
 // Start the onboarding tour
@@ -436,41 +537,56 @@ $(document).ready(function() {
     // Initialize tour
     initializeTour();
     
-    // County selection validation
-    $('#county-select').on('change', function() {
-        validateInput(this, 'county-select');
-    });
+    // County selection validation - check if element exists
+    const countySelect = $('#county-select');
+    if (countySelect.length) {
+        countySelect.on('change', function() {
+            validateInput(this, 'county-select');
+        });
+    }
     
-    // Year validation
-    document.getElementById('startYear').addEventListener('change', function() {
-        validateInput(this, 'startYear');
-        // Also validate end year when start year changes
-        const endYearInput = document.getElementById('endYear');
-        if (endYearInput.value) {
-            validateInput(endYearInput, 'endYear');
-        }
-    });
+    // Year validation - check if element exists first
+    const startYearInput = document.getElementById('startYear');
+    if (startYearInput) {
+        startYearInput.addEventListener('change', function() {
+            validateInput(this, 'startYear');
+            // Also validate end year when start year changes
+            const endYearInput = document.getElementById('endYear');
+            if (endYearInput && endYearInput.value) {
+                validateInput(endYearInput, 'endYear');
+            }
+        });
+    }
     
-    document.getElementById('endYear').addEventListener('change', function() {
-        validateInput(this, 'endYear');
-        // Also validate start year when end year changes
-        const startYearInput = document.getElementById('startYear');
-        if (startYearInput.value) {
-            validateInput(startYearInput, 'startYear');
-        }
-    });
+    const endYearInput = document.getElementById('endYear');
+    if (endYearInput) {
+        endYearInput.addEventListener('change', function() {
+            validateInput(this, 'endYear');
+            // Also validate start year when end year changes
+            const startYearInput = document.getElementById('startYear');
+            if (startYearInput && startYearInput.value) {
+                validateInput(startYearInput, 'startYear');
+            }
+        });
+    }
     
-    // State selection validation
-    $('#state-select').on('change', function() {
-        if (!this.value) {
-            showValidationMessage(this, 'Please select a state to analyze.', 'error');
-        } else {
-            hideValidationMessage(this);
-        }
-    });
+    // State selection validation - check if element exists
+    const stateSelect = $('#state-select');
+    if (stateSelect.length) {
+        stateSelect.on('change', function() {
+            if (!this.value) {
+                showValidationMessage(this, 'Please select a state to analyze.', 'error');
+            } else {
+                hideValidationMessage(this);
+            }
+        });
+    }
     
     // Initialize onboarding tour
     initializeTour();
+    
+    // Initialize sidebar tooltips
+    initializeSidebarTooltips();
 });
 
 // Global function to ensure Select2 search inputs have proper attributes
@@ -585,81 +701,137 @@ $(document).ready(function() {
         });
     }
 
-    // Handle selection type radio buttons
-    const selectionTypeRadios = document.querySelectorAll('input[name="selection_type"]');
-    const countyGroup = document.getElementById('county-selection-group');
-    const stateGroup = document.getElementById('state-selection-group');
-    
-    selectionTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            const selectionType = this.value;
-            
-            // Hide all groups
-            countyGroup.style.display = 'none';
-            stateGroup.style.display = 'none';
-            
-            // Show appropriate group
-            if (selectionType === 'county') {
-                countyGroup.style.display = 'block';
-            } else if (selectionType === 'state') {
-                stateGroup.style.display = 'block';
-            }
-        });
-    });
-    
     // Store all counties for filtering
     let allCounties = [];
     let countySelect2Initialized = false;
     
+    // Function to detect if county select is single-select or multi-select
+    function isCountySelectMultiple() {
+        const countySelect = document.getElementById('county-select');
+        if (!countySelect) return false;
+        // Check if element has multiple attribute
+        return countySelect.hasAttribute('multiple');
+    }
+    
     // Function to load and populate counties
     function loadCounties(stateCode = null) {
         const $countySelect = $('#county-select');
-        const selectedCounties = $countySelect.val() || [];
+        const countySelectEl = document.getElementById('county-select');
+        
+        if (!$countySelect.length || !countySelectEl) {
+            console.error('County select element not found!');
+            return;
+        }
+        
+        // Detect if this is a single-select or multi-select
+        const isMultiple = isCountySelectMultiple();
+        const selectedCounties = isMultiple ? ($countySelect.val() || []) : ($countySelect.val() ? [$countySelect.val()] : []);
         
         let url = '/counties';
         if (stateCode) {
             url = `/counties-by-state/${stateCode}`;
         }
         
+        console.log(`Fetching counties from: ${url} (${isMultiple ? 'multi-select' : 'single-select'})`);
         fetch(url)
-            .then(response => response.json())
+            .then(response => {
+                console.log(`Response status: ${response.status}, ok: ${response.ok}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(counties => {
+                console.log('Raw response data type:', typeof counties, Array.isArray(counties));
+                console.log('Raw response data sample:', counties ? counties.slice(0, 3) : 'null');
+                console.log(`loadCounties: Received ${counties.length} counties from ${url}`);
+                
+                // Handle error response from backend
+                if (counties.error) {
+                    console.error('Backend error:', counties.error);
+                    throw new Error(counties.error);
+                }
+                
+                // Ensure counties is an array
+                if (!Array.isArray(counties)) {
+                    console.error('Invalid response format:', counties);
+                    throw new Error('Invalid response format from server');
+                }
+                
                 if (!stateCode) {
                     allCounties = counties; // Store all counties when loading without filter
+                    console.log(`Stored ${allCounties.length} counties in allCounties`);
                 }
                 
-                $countySelect.empty();
-                counties.forEach(county => {
-                    $countySelect.append(new Option(county, county));
-                });
-                
-                // Re-select previously selected counties if they're still in the filtered list
-                const availableCounties = counties.map(c => c);
-                const validSelections = selectedCounties.filter(c => availableCounties.includes(c));
-                if (validSelections.length > 0) {
-                    $countySelect.val(validSelections).trigger('change');
+                // If Select2 is initialized, destroy it first
+                if (countySelect2Initialized && $countySelect.hasClass('select2-hidden-accessible')) {
+                    console.log('Destroying existing Select2 instance');
+                    $countySelect.select2('destroy');
+                    countySelect2Initialized = false;
                 }
                 
-                // Initialize Select2 only once
-                if (!countySelect2Initialized) {
+                // Clear and populate options using plain DOM (no Select2 for single-select)
+                if (isMultiple) {
+                    // Multi-select: Use Select2
+                    $countySelect.empty();
+                    if (counties.length === 0) {
+                        console.warn('No counties returned from server');
+                        $countySelect.append(new Option('No counties available', '', true, true));
+                    } else {
+                        console.log(`Adding ${counties.length} counties to dropdown`);
+                        counties.forEach((county, index) => {
+                            if (county) {
+                                // Handle both old format (strings) and new format (objects with FIPS codes)
+                                if (typeof county === 'string') {
+                                    // Old format: just county name string
+                                    $countySelect.append(new Option(county, county));
+                                } else if (county && county.name) {
+                                    // New format: county object with name, geoid5, state_fips, county_fips
+                                    const option = new Option(county.name, county.name);
+                                    $(option).data('county-data', county); // Store full county object
+                                    $countySelect.append(option);
+                                }
+                            }
+                        });
+                        console.log(`Successfully added ${counties.length} county options`);
+                    }
+                    
+                    // Re-select previously selected counties if they're still in the filtered list
+                    const availableCounties = counties.map(c => typeof c === 'string' ? c : (c && c.name ? c.name : c));
+                    const validSelections = selectedCounties.filter(c => availableCounties.includes(c));
+                    if (validSelections.length > 0) {
+                        $countySelect.val(validSelections);
+                    }
+                    
+                    // Initialize Select2 for multi-select
+                    console.log('Initializing Select2 for counties (multi-select)');
                     $countySelect.select2({
-                        placeholder: "Select counties...",
+                        placeholder: "Select up to 3 counties...",
                         allowClear: true,
+                        width: '100%',
+                        dropdownAutoWidth: false,
+                        minimumResultsForSearch: 0,
+                        maximumSelectionLength: 3, // Limit to 3 counties
                         matcher: function(params, data) {
-                            // If there is no search term, return all data
                             if ($.trim(params.term) === '') {
                                 return data;
                             }
-                            // Use the default matcher to get matches
-                            var matches = $.fn.select2.defaults.defaults.matcher(params, data);
-                            // If matches is an array, limit to 10
-                            if (matches && matches.children && matches.children.length > 10) {
-                                matches.children = matches.children.slice(0, 10);
+                            if (typeof $.fn.select2.defaults.defaults.matcher === 'function') {
+                                return $.fn.select2.defaults.defaults.matcher(params, data);
                             }
-                            return matches;
+                            if (data.text && params.term) {
+                                return data.text.toUpperCase().indexOf(params.term.toUpperCase()) >= 0 ? data : null;
+                            }
+                            return data;
                         }
                     });
                     countySelect2Initialized = true;
+                    console.log('Select2 initialized for counties');
+                    
+                    // Trigger change if we have valid selections
+                    if (validSelections.length > 0) {
+                        $countySelect.val(validSelections).trigger('change');
+                    }
                     
                     // Ensure Select2 search input has proper attributes
                     $countySelect.on('select2:open', function() {
@@ -676,27 +848,98 @@ $(document).ready(function() {
                         }, 50);
                     });
                 } else {
-                    // If Select2 is already initialized, just trigger change to refresh
-                    $countySelect.trigger('change');
+                    // Single-select: Use plain HTML select (like BizSight)
+                    countySelectEl.innerHTML = '<option value="">Select a county...</option>';
+                    counties.forEach(county => {
+                        const option = document.createElement('option');
+                        if (typeof county === 'string') {
+                            option.value = county;
+                            option.textContent = county;
+                        } else if (county && county.name) {
+                            option.value = county.name;
+                            option.textContent = county.name;
+                            option.dataset.county = JSON.stringify(county);
+                        }
+                        countySelectEl.appendChild(option);
+                    });
+                    console.log(`Successfully added ${counties.length} county options (single-select, no Select2)`);
+                    
+                    // Re-select previously selected county if it's still in the list
+                    if (selectedCounties.length > 0) {
+                        const selectedCounty = selectedCounties[0];
+                        const availableCounties = counties.map(c => typeof c === 'string' ? c : (c && c.name ? c.name : c));
+                        if (availableCounties.includes(selectedCounty)) {
+                            countySelectEl.value = selectedCounty;
+                        }
+                    }
                 }
+                
+                // Verify options are in the DOM
+                const optionCount = countySelectEl.options.length;
+                console.log(`County dropdown now has ${optionCount} options`);
             })
             .catch(error => {
                 console.error('Error loading counties:', error);
+                console.error('Error details:', error.message, error.stack);
+                
+                // Try to load fallback or retry
+                const $countySelect = $('#county-select');
+                if ($countySelect.length) {
+                    // Try one more time after a delay
+                    setTimeout(function() {
+                        console.log('Retrying county load...');
+                        loadCounties(stateCode);
+                    }, 1000);
+                }
             });
     }
     
     // Populate state filter dropdown and county dropdown
-    if ($('#county-select').length) {
+    // Skip this for LendSight - it has its own state management
+    if ($('#county-select').length && !window.LENDSIGHT_MODE) {
         // First, populate state filter dropdown
         fetch('/states')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(states => {
+                console.log(`Loading ${states.length} states into dropdown`);
+                
+                // Validate response format
+                if (!Array.isArray(states)) {
+                    console.error('Invalid states response format:', states);
+                    throw new Error('Invalid response format from server');
+                }
+                
                 const $stateFilter = $('#state-filter-select');
+                if ($stateFilter.length === 0) {
+                    console.error('State filter dropdown not found!');
+                    return;
+                }
+                
+                // Clear existing options
                 $stateFilter.empty();
                 $stateFilter.append(new Option('All States', ''));
+                
+                // Add all states
                 states.forEach(state => {
-                    $stateFilter.append(new Option(state.name, state.code));
+                    if (state && state.name && state.code) {
+                        $stateFilter.append(new Option(state.name, state.code));
+                    } else {
+                        console.warn('Invalid state object:', state);
+                    }
                 });
+                
+                console.log(`Added ${states.length} states to dropdown`);
+                
+                // Initialize or reinitialize Select2
+                if ($stateFilter.hasClass('select2-hidden-accessible')) {
+                    $stateFilter.select2('destroy');
+                }
+                
                 $stateFilter.select2({
                     placeholder: "Select a state to filter counties...",
                     allowClear: true
@@ -705,6 +948,7 @@ $(document).ready(function() {
                 // When state filter changes, reload counties
                 $stateFilter.on('change', function() {
                     const stateCode = $(this).val();
+                    console.log('State filter changed to:', stateCode);
                     loadCounties(stateCode || null);
                 });
                 
@@ -725,10 +969,37 @@ $(document).ready(function() {
             })
             .catch(error => {
                 console.error('Error loading states for filter:', error);
+                // Show error in dropdown
+                const $stateFilter = $('#state-filter-select');
+                if ($stateFilter.length) {
+                    $stateFilter.empty();
+                    $stateFilter.append(new Option('Error loading states. Please refresh.', '', true, true));
+                    if ($stateFilter.hasClass('select2-hidden-accessible')) {
+                        $stateFilter.select2('destroy');
+                    }
+                    $stateFilter.select2({
+                        placeholder: "Error loading states...",
+                        allowClear: true
+                    });
+                }
             });
         
-        // Load all counties initially
-        loadCounties();
+        // Load all counties initially - use a small delay to ensure DOM is ready
+        // Skip this for LendSight - it has its own state/county management
+        if (!window.LENDSIGHT_MODE) {
+            setTimeout(function() {
+                console.log('Loading counties on page load...');
+                loadCounties();
+            }, 100);
+        } else {
+            console.log('Skipping automatic county load for LendSight');
+        }
+    } else {
+        // County select is optional - some apps (like MergerMeter) don't use it
+        // Only log if we're in debug mode
+        if (window.DEBUG_MODE) {
+            console.warn('County select element not found in DOM (this is OK if not using county selection)');
+        }
     }
     
     // Populate state dropdown
@@ -789,6 +1060,100 @@ document.querySelectorAll('.help-text').forEach(helpText => {
     helpText.title = helpText.textContent;
 });
 
+// Initialize tooltips for sidebar feature cards with white backgrounds
+function initializeSidebarTooltips() {
+    const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+    
+    featureCards.forEach((card, index) => {
+        const tooltipText = card.getAttribute('data-tooltip');
+        if (!tooltipText) return;
+        
+        // Create tooltip element
+        let tooltip = card.querySelector('.custom-tooltip');
+        if (!tooltip) {
+            tooltip = document.createElement('div');
+            tooltip.className = 'custom-tooltip';
+            tooltip.innerHTML = tooltipText;
+            // Append to body to avoid overflow issues
+            document.body.appendChild(tooltip);
+        }
+        
+        // Show tooltip on hover
+        card.addEventListener('mouseenter', function() {
+            const cardRect = card.getBoundingClientRect();
+            
+            // Show tooltip first to measure it
+            tooltip.style.cssText = 'display: block !important; visibility: hidden !important; opacity: 0 !important; position: fixed !important;';
+            
+            // Calculate position after tooltip is rendered
+            requestAnimationFrame(() => {
+                const tooltipRect = tooltip.getBoundingClientRect();
+                const tooltipWidth = tooltipRect.width || 300;
+                const tooltipHeight = tooltipRect.height || 100;
+                
+                // Position to the left of the sidebar card
+                // Always position to the left, never to the right
+                let left = cardRect.left - tooltipWidth - 15;
+                let top = cardRect.top + (cardRect.height / 2) - (tooltipHeight / 2);
+                
+                // If tooltip would go off screen to the left, adjust position
+                if (left < 10) {
+                    // Position it at the left edge of the screen with some padding
+                    left = 10;
+                }
+                if (top < 10) {
+                    top = 10;
+                }
+                if (top + tooltipHeight > window.innerHeight - 10) {
+                    top = window.innerHeight - tooltipHeight - 10;
+                }
+                
+                // Apply all styles with white background
+                tooltip.style.cssText = `
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    position: fixed !important;
+                    left: ${left}px !important;
+                    top: ${top}px !important;
+                    z-index: 99999 !important;
+                    background: white !important;
+                    color: #333 !important;
+                    padding: 12px 16px !important;
+                    border-radius: 8px !important;
+                    font-size: 0.9rem !important;
+                    line-height: 1.5 !important;
+                    white-space: normal !important;
+                    max-width: 350px !important;
+                    min-width: 250px !important;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+                    pointer-events: auto !important;
+                    text-align: left !important;
+                    word-wrap: break-word !important;
+                    margin: 0 !important;
+                    border: 1px solid #ddd !important;
+                    overflow: visible !important;
+                `;
+            });
+        });
+        
+        // Hide tooltip on mouse leave
+        card.addEventListener('mouseleave', function() {
+            tooltip.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
+        });
+        
+        // Keep tooltip visible when hovering over it
+        tooltip.addEventListener('mouseenter', function() {
+            tooltip.style.opacity = '1';
+            tooltip.style.visibility = 'visible';
+        });
+        
+        tooltip.addEventListener('mouseleave', function() {
+            tooltip.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
+        });
+    });
+}
+
 // Add success animation for form submission
 function addSuccessAnimation() {
     const form = document.querySelector('.analysis-form');
@@ -822,12 +1187,13 @@ style.textContent = `
 document.head.appendChild(style);
 
 // Progress steps configuration
-const PROGRESS_STEPS = [
+// Can be overridden by app-specific templates
+const PROGRESS_STEPS = window.PROGRESS_STEPS || [
     { id: 'initializing', label: 'Initializing analysis', icon: 'fa-cog' },
     { id: 'parsing_params', label: 'Parsing parameters', icon: 'fa-check-circle' },
     { id: 'preparing_data', label: 'Preparing data', icon: 'fa-database' },
     { id: 'connecting_db', label: 'Connecting to database', icon: 'fa-plug' },
-    { id: 'fetching_data', label: 'Fetching branch data', icon: 'fa-download' },
+    { id: 'fetching_data', label: 'Fetching data', icon: 'fa-download' },
     { id: 'processing_data', label: 'Processing data', icon: 'fa-cogs' },
     { id: 'generating_ai', label: 'Generating AI insights', icon: 'fa-brain' },
     { id: 'completed', label: 'Analysis complete', icon: 'fa-check' }
@@ -901,17 +1267,27 @@ function mapStepToId(stepName) {
 
 // Real-time progress bar using SSE
 function listenForProgress(jobId) {
-    const evtSource = new EventSource(`/progress/${jobId}`);
+    console.log(`[DEBUG] Starting progress listener for job: ${jobId}`);
+    const baseUrl = window.APP_BASE_URL || '';
+    const progressUrl = baseUrl ? `${baseUrl}/progress/${jobId}` : `/progress/${jobId}`;
+    const evtSource = new EventSource(progressUrl);
     let currentStepId = null;
+    
+    evtSource.onopen = function(event) {
+        console.log('[DEBUG] SSE connection opened');
+    };
     
     evtSource.onmessage = function(event) {
         const data = JSON.parse(event.data);
+        console.log('[DEBUG] Progress update received:', data);
+        
         document.getElementById('progressFill').style.width = data.percent + '%';
         document.getElementById('progressText').textContent = data.step;
         
         // Update progress steps
         const stepId = mapStepToId(data.step.toLowerCase());
         if (stepId && stepId !== currentStepId) {
+            console.log(`[DEBUG] Progress step changed: ${currentStepId} -> ${stepId}`);
             if (currentStepId) {
                 updateProgressStep(currentStepId, 'completed');
             }
@@ -920,6 +1296,7 @@ function listenForProgress(jobId) {
         }
         
         if (data.done || data.error) {
+            console.log(`[DEBUG] Progress complete. done: ${data.done}, error: ${data.error}`);
             evtSource.close();
             if (currentStepId) {
                 updateProgressStep(currentStepId, 'completed');
@@ -936,7 +1313,8 @@ function listenForProgress(jobId) {
     };
     
     evtSource.onerror = function(event) {
-        console.error('SSE error:', event);
+        console.error('[ERROR] SSE error:', event);
+        console.error('[ERROR] SSE readyState:', evtSource.readyState);
         evtSource.close();
         showError('Connection lost. Please refresh and try again.');
         hideProgress();

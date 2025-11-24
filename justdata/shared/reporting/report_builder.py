@@ -8,6 +8,31 @@ import numpy as np
 from typing import List, Dict, Any, Tuple
 from datetime import datetime
 import os
+import re
+
+
+def sanitize_sheet_name(name: str) -> str:
+    r"""
+    Sanitize Excel sheet name by removing invalid characters and truncating to 31 characters.
+    
+    Excel sheet names cannot contain: : \ / ? * [ ]
+    Excel sheet names are limited to 31 characters.
+    
+    Args:
+        name: Original sheet name
+    
+    Returns:
+        Sanitized sheet name
+    """
+    # Replace invalid characters with dash
+    invalid_chars = r'[:\\/?*\[\]]'
+    sanitized = re.sub(invalid_chars, '-', name)
+    
+    # Truncate to 31 characters (Excel limit)
+    if len(sanitized) > 31:
+        sanitized = sanitized[:31]
+    
+    return sanitized
 
 
 def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: List[int]) -> Dict[str, pd.DataFrame]:
@@ -34,6 +59,13 @@ def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: Lis
     missing_columns = [col for col in required_columns if col not in df.columns]
     if missing_columns:
         raise ValueError(f"Missing required columns: {missing_columns}")
+    
+    # Check if deposits column exists (optional but preferred)
+    has_deposits = 'total_deposits' in df.columns
+    if has_deposits:
+        print(f"[DEBUG] Deposits column found. Sample values: {df['total_deposits'].head(5).tolist()}")
+    else:
+        print("[WARNING] Deposits column (total_deposits) not found in data. Deposits will show as N/A.")
     
     # Clean and prepare data
     df = clean_data(df)
@@ -150,15 +182,17 @@ def clean_data(df: pd.DataFrame) -> pd.DataFrame:
     # Convert year to integer
     df['year'] = pd.to_numeric(df['year'], errors='coerce').fillna(0).astype(int)
     
-    # Clean bank names - remove "National Association" and variations
+    # Clean bank names - remove "National Association" and variations, and remove everything after commas
     if 'bank_name' in df.columns:
         df['bank_name'] = df['bank_name'].str.strip()
+        # Remove everything after the first comma (including the comma)
+        df['bank_name'] = df['bank_name'].str.split(',').str[0].str.strip()
         # Remove "National Association" and variations (case-insensitive)
         df['bank_name'] = df['bank_name'].str.replace(r'\s+National\s+Association\s*$', '', case=False, regex=True)
         df['bank_name'] = df['bank_name'].str.replace(r'\s+National\s+Assoc\.?\s*$', '', case=False, regex=True)
         df['bank_name'] = df['bank_name'].str.replace(r'\s+N\.?A\.?\s*$', '', case=False, regex=True)
         # Clean up any extra whitespace
-    df['bank_name'] = df['bank_name'].str.strip()
+        df['bank_name'] = df['bank_name'].str.strip()
     
     # Remove rows with invalid data
     df = df[df['year'] > 0]
@@ -270,15 +304,40 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
         # Net change
         net_change = total_branches_latest - total_branches_first
         
+        # Calculate total deposits for this bank in latest year
+        # Sum deposits across all branches for this bank
+        total_deposits = 0
+        if 'total_deposits' in bank_latest.columns:
+            # Sum deposits, handling NaN values
+            deposits_series = pd.to_numeric(bank_latest['total_deposits'], errors='coerce').fillna(0)
+            total_deposits = float(deposits_series.sum())
+            # Debug for first bank
+            if bank_name == all_banks[0]:
+                print(f"[DEBUG] Bank '{bank_name}': {len(bank_latest)} branches, total_deposits sum = {total_deposits}")
+        else:
+            # Debug if column missing
+            if bank_name == all_banks[0]:
+                print(f"[DEBUG] Bank '{bank_name}': total_deposits column not found in data")
+        
+        # Format deposits in millions (no $ and no M suffix since header has it)
+        # Format with thousand separators as whole numbers: #,###
+        if total_deposits and total_deposits > 0:
+            deposits_millions = total_deposits / 1_000_000
+            deposits_formatted = f"{deposits_millions:,.0f}"
+        else:
+            deposits_formatted = "N/A"
+        
         bank_data.append({
             'Bank Name': bank_name,
             'Total Branches': total_branches_latest,
+            'Deposits ($ Millions)': deposits_formatted,
             'LMI Only Branches': f"{lmi_only_latest} ({lmi_only_pct}%)",
             'MMCT Only Branches': f"{mmct_only_latest} ({mmct_only_pct}%)",
             'Both LMICT/MMCT Branches': f"{both_latest} ({both_pct}%)",
             'Net Change': net_change,
             # Store raw values for sorting
             '_total_branches': total_branches_latest,
+            '_total_deposits': total_deposits,
             '_lmi_only': lmi_only_latest,
             '_mmct_only': mmct_only_latest,
             '_both': both_latest
@@ -293,7 +352,7 @@ def create_bank_summary(df: pd.DataFrame, years: List[int] = None) -> pd.DataFra
     result['_is_top_10'] = result.index < 10
     
     # Drop helper columns
-    result = result.drop(columns=['_total_branches', '_lmi_only', '_mmct_only', '_both', '_is_top_10'])
+    result = result.drop(columns=['_total_branches', '_total_deposits', '_lmi_only', '_mmct_only', '_both', '_is_top_10'])
     
     return result
 
@@ -388,30 +447,6 @@ def create_trend_analysis(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
     return yearly_totals.round(1)
 
 
-def sanitize_sheet_name(name: str, max_length: int = 31) -> str:
-    """
-    Sanitize Excel sheet name by removing invalid characters.
-    Excel doesn't allow: : \ / ? * [ ]
-    
-    Args:
-        name: Original sheet name
-        max_length: Maximum length (Excel limit is 31 characters)
-    
-    Returns:
-        Sanitized sheet name
-    """
-    # Replace invalid characters with dashes
-    invalid_chars = [':', '\\', '/', '?', '*', '[', ']']
-    sanitized = name
-    for char in invalid_chars:
-        sanitized = sanitized.replace(char, '-')
-    
-    # Remove leading/trailing spaces and limit length
-    sanitized = sanitized.strip()[:max_length]
-    
-    return sanitized
-
-
 def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, metadata: Dict[str, Any] = None):
     """
     Save the report data to an Excel file with multiple sheets.
@@ -433,13 +468,11 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         # Write report tables matching the report sections
         # Section 1: Yearly Breakdown
         if 'summary' in report_data and not report_data['summary'].empty:
-            sheet_name = sanitize_sheet_name('Section 1 - Yearly Breakdown')
-            report_data['summary'].to_excel(writer, sheet_name=sheet_name, index=False)
+            report_data['summary'].to_excel(writer, sheet_name=sanitize_sheet_name('Section 1: Yearly Breakdown'), index=False)
         
         # Section 2: Analysis by Bank
         if 'by_bank' in report_data and not report_data['by_bank'].empty:
-            sheet_name = sanitize_sheet_name('Section 2 - Analysis by Bank')
-            report_data['by_bank'].to_excel(writer, sheet_name=sheet_name, index=False)
+            report_data['by_bank'].to_excel(writer, sheet_name=sanitize_sheet_name('Section 2: Analysis by Bank'), index=False)
         
         # Section 3: County by County Analysis (only if multiple counties)
         if 'by_county' in report_data and not report_data['by_county'].empty:
@@ -451,17 +484,15 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
                     multiple_counties = True
             
             if multiple_counties:
-                sheet_name = sanitize_sheet_name('Section 3 - County by County')
-                report_data['by_county'].to_excel(writer, sheet_name=sheet_name, index=False)
+                report_data['by_county'].to_excel(writer, sheet_name=sanitize_sheet_name('Section 3: County by County'), index=False)
         
         # Raw Data sheet
         if 'raw_data' in report_data and not report_data['raw_data'].empty:
-            sheet_name = sanitize_sheet_name('Raw Data')
-            report_data['raw_data'].to_excel(writer, sheet_name=sheet_name, index=False)
+            report_data['raw_data'].to_excel(writer, sheet_name=sanitize_sheet_name('Raw Data'), index=False)
         
         # Create Notes sheet with metadata
         workbook = writer.book
-        notes_sheet = workbook.create_sheet('Notes', 0)  # Insert as first sheet
+        notes_sheet = workbook.create_sheet(sanitize_sheet_name('Notes'), 0)  # Insert as first sheet
         
         # Prepare notes content
         notes_content = []
@@ -570,8 +601,9 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
         notes_sheet.column_dimensions['B'].width = 80
         
         # Auto-adjust column widths for all other sheets
+        sanitized_notes_name = sanitize_sheet_name('Notes')
         for sheet_name in writer.sheets:
-            if sheet_name != 'Notes':
+            if sheet_name != sanitized_notes_name:
                 worksheet = writer.sheets[sheet_name]
                 for column in worksheet.columns:
                     max_length = 0

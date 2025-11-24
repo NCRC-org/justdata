@@ -62,11 +62,19 @@ class ProgressTracker:
         ai_percent = 80 + (current_call / total_calls) * 15
         
         if insight_name:
-            message = f"Generating AI insights... {insight_name} ({current_call}/{total_calls})"
+            # Show just the section name with progress, e.g., "Trends Analysis (3/3)"
+            message = f"{insight_name} ({current_call}/{total_calls})"
         else:
             message = f"Generating AI insights... ({current_call}/{total_calls})"
             
         self.update_progress('generating_ai', int(ai_percent), message)
+    
+    def update_section_progress(self, current_section: int, total_sections: int, section_name: str):
+        """Update progress during report section building."""
+        # Section building progress is between 60% and 80%
+        section_percent = 60 + (current_section / total_sections) * 20
+        message = f"{section_name} ({current_section}/{total_sections})"
+        self.update_progress('building_report', int(section_percent), message)
     
     def complete(self, success: bool = True, error: Optional[str] = None):
         """Mark the analysis as completed."""

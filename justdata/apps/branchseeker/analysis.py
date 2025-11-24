@@ -40,7 +40,7 @@ class BranchSeekerAnalyzer(AIAnalyzer):
             census_note = """
         
         CRITICAL CENSUS BOUNDARY CHANGE NOTE (MUST INCLUDE):
-        The 2020 census boundaries that took effect in 2022 resulted in a dramatic increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a dramatic increase in majority-minority branch locations between 2021 and 2022. When discussing MMCT (Majority-Minority Census Tract) branch changes between 2021 and 2022, you MUST explicitly note this census boundary change effect. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual branch location changes or banking strategy shifts.
+        The census tract changes from 2021 to 2022 created a 30% increase nationally in the number of majority-minority census tracts, most of which are not low to moderate income. The 2020 census boundaries that took effect in 2022 resulted in a dramatic increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a dramatic increase in majority-minority branch locations between 2021 and 2022. When discussing MMCT (Majority-Minority Census Tract) branch changes between 2021 and 2022, you MUST explicitly note this census boundary change effect. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual branch location changes or banking strategy shifts.
         """
         
         prompt = f"""
@@ -390,13 +390,20 @@ Top Banks by Deposits:
             - The table shows: Total Branches, LMI Only Branches, MMCT Only Branches, and Both LMICT/MMCT Branches
             - These categories are mutually exclusive (deduplicated)
             
-            Write 1-2 paragraphs that:
-            1. Describe the changes over time in total branches and each category
-            2. Indicate the percentage of branches that are LMI only, MMCT only, and both LMICT/MMCT combined over time
-            3. Note any significant trends or patterns in the net change column
-            4. Discuss what these changes mean for branch distribution patterns
+            Write exactly 2 paragraphs that focus on BROAD TRENDS and MAJOR GAPS OR CHANGES:
             
-            WRITING REQUIREMENTS:
+            Paragraph 1: Focus on broad trends over time
+            - Describe the overall changes in total branches across the study period
+            - Identify major trends in LMI only, MMCT only, and both LMICT/MMCT branch categories
+            - Note the percentage of branches in each category over time
+            - Highlight any significant net changes between the first and final year
+            
+            Paragraph 2: Focus on major gaps or changes
+            - Identify any major gaps or significant changes in branch distribution patterns
+            - Note any substantial shifts in the proportion of branches serving LMI or MMCT communities
+            - Discuss what these patterns indicate about branch access over the study period
+            
+            WRITING REQUIREMENTS (NCRC Style Guide):
             - Plain English, accessible to non-technical readers
             - Write in objective, third-person style
             - NO first-person language (no "I", "we", "my", "our")
@@ -405,7 +412,9 @@ Top Banks by Deposits:
             - NO speculation about underlying reasons
             - Present ONLY what the data shows
             - Use professional, analytical tone
+            - Focus on BROAD TRENDS and MAJOR GAPS/CHANGES only - avoid minor details
             - Include specific percentages when discussing categories
+            - Limit discussion to observable patterns in the data
             """
             
         elif table_id == 'table2':
@@ -435,12 +444,19 @@ Top Banks by Deposits:
             - HHI (Herfindahl-Hirschman Index) measures market concentration using ALL banks' deposit shares, not just the banks shown in the table
             - HHI scale: 0-10,000 (HHI < 1,500 = Low concentration, 1,500-2,500 = Moderate, > 2,500 = High)
             
-            Write 1-2 paragraphs that:
-            1. Discuss trends over time: which banks have grown the most or shrunk the most over the study period (use Net Change column)
-            2. {"Analyze market concentration using the HHI calculation. State the HHI score (" + str(hhi_data.get('hhi', 'N/A')) + "), the concentration level (" + str(hhi_data.get('concentration_level', 'N/A')) + "), and explain what this means for the banking market. Note that the HHI calculation uses ALL banks in the study area, not just the banks shown in the table." if hhi_data.get('hhi') is not None else "Note that HHI (Herfindahl-Hirschman Index) analysis could not be performed because deposit data was not available in this dataset. HHI would measure market concentration using all banks' deposit shares."}
-            3. Note patterns in how top banks serve LMICT and MMCT communities based on the percentages shown
+            Write exactly 2 paragraphs that focus on BROAD TRENDS and MAJOR GAPS OR CHANGES:
             
-            WRITING REQUIREMENTS:
+            Paragraph 1: Focus on broad trends over time
+            - Identify which banks have grown the most or shrunk the most over the study period (use Net Change column)
+            - Describe overall patterns in how banks serve LMICT and MMCT communities based on percentages
+            - Note any broad trends in branch distribution across the top banks
+            
+            Paragraph 2: Focus on major gaps or changes and market concentration
+            - {"Analyze market concentration using the HHI calculation. State the HHI score (" + str(hhi_data.get('hhi', 'N/A')) + "), the concentration level (" + str(hhi_data.get('concentration_level', 'N/A')) + "), and explain what this means for the banking market. Note that the HHI calculation uses ALL banks in the study area, not just the banks shown in the table." if hhi_data.get('hhi') is not None else "Note that HHI (Herfindahl-Hirschman Index) analysis could not be performed because deposit data was not available in this dataset. HHI would measure market concentration using all banks' deposit shares."}
+            - Identify any major gaps in how different banks serve LMI and MMCT communities
+            - Highlight significant differences in branch distribution patterns among the top banks
+            
+            WRITING REQUIREMENTS (NCRC Style Guide):
             - Plain English, accessible to non-technical readers
             - Write in objective, third-person style
             - NO first-person language (no "I", "we", "my", "our")
@@ -449,7 +465,9 @@ Top Banks by Deposits:
             - NO speculation about underlying reasons
             - Present ONLY what the data shows
             - Use professional, analytical tone
+            - Focus on BROAD TRENDS and MAJOR GAPS/CHANGES only - avoid minor details
             - Include a sentence explaining that HHI uses all banks, not just the banks shown in the table
+            - Limit discussion to observable patterns in the data
             """
             
         elif table_id == 'table3':
@@ -473,15 +491,19 @@ Top Banks by Deposits:
             - The table shows: Total Branches, LMI Only Branches (with %), MMCT Only Branches (with %), and Both LMICT/MMCT Branches (with %)
             - These categories are mutually exclusive (deduplicated)
             
-            Write 1-2 paragraphs that:
-            1. Compare the total number of branches across counties
-            2. Explain differences in the share of LMI Only branches between counties
-            3. Explain differences in the share of MMCT Only branches between counties
-            4. Explain differences in the share of Both LMICT/MMCT branches between counties
-            5. Note which counties have more branches in LMICT or MMCT areas
-            6. Discuss what these differences mean for branch access patterns
+            Write exactly 2 paragraphs that focus on BROAD TRENDS and MAJOR GAPS OR CHANGES:
             
-            WRITING REQUIREMENTS:
+            Paragraph 1: Focus on broad trends across counties
+            - Compare the total number of branches across counties
+            - Describe overall patterns in branch distribution between counties
+            - Note any broad trends in how counties differ in total branch counts
+            
+            Paragraph 2: Focus on major gaps or changes in branch access
+            - Identify major differences in the share of LMI Only, MMCT Only, and Both LMICT/MMCT branches between counties
+            - Highlight which counties have notably more or fewer branches in LMICT or MMCT areas
+            - Discuss what these major differences indicate about branch access patterns across counties
+            
+            WRITING REQUIREMENTS (NCRC Style Guide):
             - Plain English, accessible to non-technical readers
             - Write in objective, third-person style
             - NO first-person language (no "I", "we", "my", "our")
@@ -490,6 +512,9 @@ Top Banks by Deposits:
             - NO speculation about underlying reasons
             - Present ONLY what the data shows
             - Use professional, analytical tone
+            - Focus on BROAD TRENDS and MAJOR GAPS/CHANGES only - avoid minor details
+            - Include specific percentages when discussing categories
+            - Limit discussion to observable patterns in the data
             - Reference specific counties and numbers from the data
             - Explicitly mention that the data is from {latest_year} (the most recent year in the report)
             """
