@@ -1,0 +1,145 @@
+================================================================================
+TABLEAU EXEMPTION FORMULA - FIXED VERSION
+================================================================================
+
+PROBLEM IDENTIFIED:
+- Your Total_Loans values are showing in billions (17+ billion), which suggests:
+  1. You might be using AMOUNT fields (amt_*) instead of COUNT fields (num_*)
+  2. OR the FIXED LOD is aggregating incorrectly
+  3. OR there's data duplication in your Tableau data source
+
+================================================================================
+STEP 1: DIAGNOSTIC - Check what fields you actually have
+================================================================================
+
+Create these diagnostic fields to see what's in your data:
+
+Field Name: Check_Field_Names
+Formula:
+"num_under_100k: " + STR(SUM([num_under_100k])) + 
+" | num_100k_250k: " + STR(SUM([num_100k_250k])) + 
+" | num_250k_1m: " + STR(SUM([num_250k_1m]))
+
+This will show you if these fields exist and what values they contain.
+
+================================================================================
+STEP 2: CORRECTED FORMULA - Ensure we're using COUNT fields, not AMOUNT
+================================================================================
+
+Field Name: Total_Loans_2023_CORRECTED
+Formula:
+{FIXED [Respondent ID]: 
+    SUM(IF INT([Year]) = 2023 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+Field Name: Total_Loans_2024_CORRECTED
+Formula:
+{FIXED [Respondent ID]: 
+    SUM(IF INT([Year]) = 2024 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+Field Name: Is_Exempt_2024_CORRECTED
+Formula:
+[Total_Loans_2023_CORRECTED] < 1000 
+AND 
+[Total_Loans_2024_CORRECTED] < 1000
+
+================================================================================
+STEP 3: ALTERNATIVE - If your field names are different
+================================================================================
+
+If your Tableau data source has different field names, check:
+- Right-click on your data source fields
+- Look for fields that contain "num" or "count" or "number"
+- Look for fields that contain "under_100k", "100k_250k", "250k_1m"
+
+Common variations:
+- [Number Under 100k] instead of [num_under_100k]
+- [Num Under 100k] instead of [num_under_100k]
+- [Count Under 100k] instead of [num_under_100k]
+- [Loans Under 100k] instead of [num_under_100k]
+
+================================================================================
+STEP 4: IF YOU HAVE A PRE-CALCULATED TOTAL LOANS FIELD
+================================================================================
+
+If your data source already has a field that sums all loans (like [Total_Loans] or [Loan_Count]),
+use this simpler formula:
+
+Field Name: Is_Exempt_2024_Simple
+Formula:
+{FIXED [Respondent ID]: SUM(IF INT([Year]) = 2023 THEN [Total_Loans] ELSE 0 END)} < 1000
+AND
+{FIXED [Respondent ID]: SUM(IF INT([Year]) = 2024 THEN [Total_Loans] ELSE 0 END)} < 1000
+
+Replace [Total_Loans] with your actual field name.
+
+================================================================================
+STEP 5: VERIFY THE FIXED LOD IS WORKING CORRECTLY
+================================================================================
+
+The FIXED LOD should calculate at the lender level, ignoring any filters or dimensions in your view.
+
+To test if it's working:
+1. Create a table with: [Respondent ID], [Total_Loans_2023_CORRECTED], [Total_Loans_2024_CORRECTED]
+2. The values should be the SAME for each lender, regardless of which county you're viewing
+3. If values change by county, the FIXED LOD isn't working correctly
+
+================================================================================
+STEP 6: IF VALUES ARE STILL TOO HIGH - Check for data duplication
+================================================================================
+
+If your loan counts are still showing billions:
+1. Check if your data source has duplicate rows
+2. Check if you have multiple joins that are creating duplicates
+3. Try using DISTINCT in your data source query, or
+4. Use this alternative formula that ensures we're not double-counting:
+
+Field Name: Total_Loans_2023_Distinct
+Formula:
+{FIXED [Respondent ID]: 
+    SUM(IF INT([Year]) = 2023 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END) / 
+    COUNTD(IF INT([Year]) = 2023 THEN [Row ID] END)
+}
+
+But this is a workaround - the real issue is likely in your data source.
+
+================================================================================
+QUICK TEST - Verify one lender manually
+================================================================================
+
+To verify the formula is working:
+1. Pick one lender (Respondent ID)
+2. Create a table showing: [Year], [num_under_100k], [num_100k_250k], [num_250k_1m]
+3. Filter to that one lender and years 2023 and 2024
+4. Manually sum: num_under_100k + num_100k_250k + num_250k_1m for each year
+5. Compare to what [Total_Loans_2023_CORRECTED] and [Total_Loans_2024_CORRECTED] show
+6. They should match!
+
+================================================================================
+MOST LIKELY SOLUTION
+================================================================================
+
+Based on your output showing billions, you're probably:
+1. Using [amt_under_100k] instead of [num_under_100k] (amounts vs counts)
+2. OR your data source has the fields named differently
+
+Check your field list in Tableau and make sure you're using fields that say "num" or "number" or "count", NOT "amt" or "amount" or "dollar".
+
+================================================================================
+
+
+
+
+
+
+
+
+
+

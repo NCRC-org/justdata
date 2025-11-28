@@ -1,0 +1,39 @@
+# MemberView Application Dependencies
+# Self-contained application for NCRC member management
+
+# Web Framework
+Flask>=2.3.0
+Werkzeug>=2.3.0
+
+# Data Processing
+pandas>=2.0.0
+numpy>=1.24.0
+pyarrow>=12.0.0  # For parquet file support
+
+# HubSpot Integration
+hubspot-api-client>=7.0.0
+python-dotenv>=1.0.0
+
+# Excel/File Export
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0
+
+# Date/Time
+python-dateutil>=2.8.0
+
+# Utilities
+requests>=2.31.0
+beautifulsoup4>=4.12.0  # For web scraping
+lxml>=4.9.0  # HTML parser for BeautifulSoup
+
+# ProPublica API (for IRS Form 990 data)
+# Note: ProPublica API is free, no API key required
+
+# Optional: AI Features (if needed)
+anthropic>=0.7.0
+
+# Development (optional)
+# pytest>=7.4.0
+# black>=23.0.0
+tqdm>=4.66.0  # Progress bars for enrichment script
+

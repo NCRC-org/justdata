@@ -4,7 +4,7 @@ Simple startup script for JustData.
 """
 
 import uvicorn
-from justdata.core.config.settings import get_settings
+from core.config.settings import get_settings
 
 if __name__ == "__main__":
     settings = get_settings()
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     print(f"📚 API documentation: http://{settings.api_host}:{settings.api_port}/docs")
     
     uvicorn.run(
-        "justdata.api.main:app",
+        "api.main:app",
         host=settings.api_host,
         port=settings.api_port,
         reload=settings.debug,

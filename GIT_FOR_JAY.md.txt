@@ -1,0 +1,112 @@
+# Git for Jay
+
+This is a quick reference for how you use Git on this project.
+
+## 1. Big picture
+
+- `main` = official, protected lane. Do not push here.
+- `JasonEdits` = your personal work lane. Do all your work here.
+- All your pushes should go to: origin JasonEdits
+
+## 2. Key terms (plain English)
+
+- Repository (repo): The project folder that Git tracks.
+- Branch: A lane of work.
+  - `main` = official lane.
+  - `JasonEdits` = your lane.
+- Commit: A saved checkpoint of your changes.
+- Remote: The copy of the repo on GitHub.
+  - `origin` = the GitHub version of the repo.
+- CLI (Command Line Interface): The terminal window where you type git commands.
+
+## 3. Normal workflow for a work session
+
+### Step 1 – Before editing anything
+
+Run these in the terminal inside the repo folder:
+
+- Get the latest info from GitHub:
+  git fetch
+
+- Switch to your branch (your safe lane):
+  git checkout JasonEdits
+
+- Pull any new changes into JasonEdits:
+  git pull origin JasonEdits
+
+Now confirm you’re on the right branch:
+
+- Check status:
+  git status
+
+You want to see:
+  On branch JasonEdits
+
+If it says:
+  On branch main
+
+then switch with:
+  git checkout JasonEdits
+
+### Step 2 – After you’ve made changes
+
+When you’re ready to save and upload your work:
+
+- See what changed:
+  git status
+
+- Stage your changes:
+  git add .
+
+- Save a checkpoint with a short message:
+  git commit -m "Short description of what you did"
+
+- Push your work to your branch on GitHub:
+  git push origin JasonEdits
+
+Important safety rule:
+Always push to origin JasonEdits, never to origin main.
+
+## 4. Safety rules
+
+- Do NOT run:
+  git push origin main
+
+- Avoid plain:
+  git push
+  unless:
+  - git status shows: On branch JasonEdits
+  - and you’ve already pushed this branch before with:
+    git push origin JasonEdits
+
+- If you’re unsure, run:
+  git status
+
+If it does not say:
+  On branch JasonEdits
+
+then stop and switch:
+  git checkout JasonEdits
+
+## 5. Quick command cheat sheet
+
+- See branch and changes:
+  git status
+
+- Switch to your branch:
+  git checkout JasonEdits
+
+- Get latest info from GitHub:
+  git fetch
+
+- Update your branch from GitHub:
+  git pull origin JasonEdits
+
+- Stage all changed files:
+  git add .
+
+- Commit with a message:
+  git commit -m "message"
+
+- Push your work (normal push):
+  git push origin JasonEdits

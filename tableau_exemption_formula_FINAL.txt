@@ -1,0 +1,120 @@
+================================================================================
+TABLEAU EXEMPTION FORMULA - FINAL CORRECTED VERSION
+================================================================================
+
+PROBLEM IDENTIFIED:
+- Your "# All SB Loans" field shows correct values (604,787 for Wells Fargo)
+- But Total_Loans_2023 is showing inflated values (167M+)
+- This means the FIXED LOD is summing incorrectly, likely due to data grain issues
+
+SOLUTION: Use your existing "# All SB Loans" field instead of summing num_* fields
+
+================================================================================
+CORRECTED FORMULA - Use Your Existing Field
+================================================================================
+
+Field Name: Total_Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF INT([Year]) = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Total_Loans_2024
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF INT([Year]) = 2024 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Is_Exempt_2024
+Formula:
+[Total_Loans_2023] < 1000 
+AND 
+[Total_Loans_2024] < 1000
+
+================================================================================
+ALTERNATIVE: If "# All SB Loans" is already aggregated at lender-year level
+================================================================================
+
+If "# All SB Loans" is already at the lender-year level (one row per lender per year),
+then you might not need the FIXED LOD at all. Try this simpler version:
+
+Field Name: Total_Loans_2023_Simple
+Formula:
+IF INT([Year]) = 2023 THEN [# All SB Loans] ELSE 0 END
+
+Field Name: Total_Loans_2024_Simple
+Formula:
+IF INT([Year]) = 2024 THEN [# All SB Loans] ELSE 0 END
+
+Field Name: Is_Exempt_2024_Simple
+Formula:
+MAX(IF INT([Year]) = 2023 THEN [# All SB Loans] END) < 1000
+AND
+MAX(IF INT([Year]) = 2024 THEN [# All SB Loans] END) < 1000
+
+But you'll need to use this with FIXED LOD to get lender-level aggregation:
+
+Field Name: Is_Exempt_2024_Fixed
+Formula:
+{FIXED [Respondent Id]: MAX(IF INT([Year]) = 2023 THEN [# All SB Loans] END)} < 1000
+AND
+{FIXED [Respondent Id]: MAX(IF INT([Year]) = 2024 THEN [# All SB Loans] END)} < 1000
+
+================================================================================
+RECOMMENDED APPROACH (Based on Your Data)
+================================================================================
+
+Since "# All SB Loans" already shows correct values, use this:
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    MAX(IF INT([Year]) = 2023 THEN [# All SB Loans] END)
+}
+
+Field Name: Loans_2024
+Formula:
+{FIXED [Respondent Id]: 
+    MAX(IF INT([Year]) = 2024 THEN [# All SB Loans] END)
+}
+
+Field Name: Is_Exempt_2024
+Formula:
+ZN([Loans_2023]) < 1000 
+AND 
+ZN([Loans_2024]) < 1000
+
+Why MAX instead of SUM?
+- If "# All SB Loans" is already aggregated at lender-year level, each lender-year combination has one value
+- Using MAX ensures we get that single value (SUM would work too, but MAX is clearer)
+- The FIXED LOD ensures we're getting the lender-level value regardless of view context
+
+================================================================================
+TESTING
+================================================================================
+
+After creating these fields, create a table with:
+- [Respondent Id]
+- [Sb Lender]
+- [# All SB Loans] (filtered to 2023)
+- [Loans_2023]
+- [Loans_2024]
+- [Is_Exempt_2024]
+
+The [Loans_2023] should match [# All SB Loans] when filtered to 2023.
+The [Loans_2024] should match [# All SB Loans] when filtered to 2024.
+
+If they don't match, your data might be at a different grain (e.g., county-level or census tract-level),
+and you'll need to use SUM instead of MAX.
+
+================================================================================
+
+
+
+
+
+
+
+
+
+

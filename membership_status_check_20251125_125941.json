@@ -1,0 +1,384 @@
+{
+  "current_grace_members": [],
+  "other_members": [
+    {
+      "id": "16343380497",
+      "name": "The Community Preservation Corporation",
+      "domain": "communityp.com",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2023-07-07T18:00:15.524Z",
+        "domain": "communityp.com",
+        "hs_lastmodifieddate": "2025-06-05T15:50:30.085Z",
+        "hs_object_id": "16343380497",
+        "name": "The Community Preservation Corporation"
+      }
+    },
+    {
+      "id": "10022491548",
+      "name": "Housing Conservation Coordinators, Inc.",
+      "domain": "hcc-nyc.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.098Z",
+        "domain": "hcc-nyc.org",
+        "hs_lastmodifieddate": "2025-08-06T18:49:56.749Z",
+        "hs_object_id": "10022491548",
+        "name": "Housing Conservation Coordinators, Inc."
+      }
+    },
+    {
+      "id": "10023592080",
+      "name": "DC Fiscal Policy Institute",
+      "domain": "dcfpi.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:26.925Z",
+        "domain": "dcfpi.org",
+        "hs_lastmodifieddate": "2024-11-19T21:37:55.069Z",
+        "hs_object_id": "10023592080",
+        "name": "DC Fiscal Policy Institute"
+      }
+    },
+    {
+      "id": "10023620188",
+      "name": "Local Initiatives Support Corporation (LISC)",
+      "domain": "lisc.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.182Z",
+        "domain": "lisc.org",
+        "hs_lastmodifieddate": "2025-11-19T16:55:48.068Z",
+        "hs_object_id": "10023620188",
+        "name": "Local Initiatives Support Corporation (LISC)"
+      }
+    },
+    {
+      "id": "10022427741",
+      "name": "Greater Miami LISC",
+      "domain": "manta.com",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.037Z",
+        "domain": "manta.com",
+        "hs_lastmodifieddate": "2025-08-06T18:49:56.626Z",
+        "hs_object_id": "10022427741",
+        "name": "Greater Miami LISC"
+      }
+    },
+    {
+      "id": "10022368009",
+      "name": "LISC Greater Kansas City",
+      "domain": "",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.179Z",
+        "domain": "",
+        "hs_lastmodifieddate": "2025-10-24T20:00:05.822Z",
+        "hs_object_id": "10022368009",
+        "name": "LISC Greater Kansas City"
+      }
+    },
+    {
+      "id": "10023524676",
+      "name": "LISC Jacksonville",
+      "domain": null,
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.179Z",
+        "domain": null,
+        "hs_lastmodifieddate": "2024-08-09T17:36:46.016Z",
+        "hs_object_id": "10023524676",
+        "name": "LISC Jacksonville"
+      }
+    },
+    {
+      "id": "10022479203",
+      "name": "LISC-Greater Cincinnati",
+      "domain": null,
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.180Z",
+        "domain": null,
+        "hs_lastmodifieddate": "2025-09-05T19:45:18.758Z",
+        "hs_object_id": "10022479203",
+        "name": "LISC-Greater Cincinnati"
+      }
+    },
+    {
+      "id": "20414763135",
+      "name": "LISC Memphis",
+      "domain": null,
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2024-04-23T16:16:55.509Z",
+        "domain": null,
+        "hs_lastmodifieddate": "2024-08-09T17:36:46.520Z",
+        "hs_object_id": "20414763135",
+        "name": "LISC Memphis"
+      }
+    },
+    {
+      "id": "31609408942",
+      "name": "LISC DC",
+      "domain": "concise.us",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2025-03-31T19:49:13.453Z",
+        "domain": "concise.us",
+        "hs_lastmodifieddate": "2025-11-04T15:18:38.974Z",
+        "hs_object_id": "31609408942",
+        "name": "LISC DC"
+      }
+    },
+    {
+      "id": "31932066464",
+      "name": "LISC Virginia",
+      "domain": "lisc.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2025-04-10T04:07:06.128Z",
+        "domain": "lisc.org",
+        "hs_lastmodifieddate": "2025-04-10T04:18:16.471Z",
+        "hs_object_id": "31932066464",
+        "name": "LISC Virginia"
+      }
+    },
+    {
+      "id": "10022296666",
+      "name": "Community Legal Aid Society, Inc.",
+      "domain": "declasi.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:26.892Z",
+        "domain": "declasi.org",
+        "hs_lastmodifieddate": "2025-05-19T18:24:36.021Z",
+        "hs_object_id": "10022296666",
+        "name": "Community Legal Aid Society, Inc."
+      }
+    },
+    {
+      "id": "10022368029",
+      "name": "Legal Aid Society of Milwaukee",
+      "domain": "lasmilwaukee.com",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.158Z",
+        "domain": "lasmilwaukee.com",
+        "hs_lastmodifieddate": "2025-08-06T18:49:56.997Z",
+        "hs_object_id": "10022368029",
+        "name": "Legal Aid Society of Milwaukee"
+      }
+    },
+    {
+      "id": "10022479277",
+      "name": "Legal Aid Society of San Diego",
+      "domain": "lassd.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.158Z",
+        "domain": "lassd.org",
+        "hs_lastmodifieddate": "2025-02-25T15:13:59.259Z",
+        "hs_object_id": "10022479277",
+        "name": "Legal Aid Society of San Diego"
+      }
+    },
+    {
+      "id": "10023496803",
+      "name": "Legal Aid Society of Hawaii",
+      "domain": null,
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.158Z",
+        "domain": null,
+        "hs_lastmodifieddate": "2024-08-09T17:36:45.408Z",
+        "hs_object_id": "10023496803",
+        "name": "Legal Aid Society of Hawaii"
+      }
+    },
+    {
+      "id": "10022536079",
+      "name": "Legal Aid Society of Southwest Ohio Housing Team",
+      "domain": null,
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.169Z",
+        "domain": null,
+        "hs_lastmodifieddate": "2025-08-06T18:49:57.939Z",
+        "hs_object_id": "10022536079",
+        "name": "Legal Aid Society of Southwest Ohio Housing Team"
+      }
+    },
+    {
+      "id": "10021418122",
+      "name": "Legal Aid Society of the Orange County Bar Association, Inc.",
+      "domain": "legalaidocba.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.170Z",
+        "domain": "legalaidocba.org",
+        "hs_lastmodifieddate": "2025-08-06T18:49:56.608Z",
+        "hs_object_id": "10021418122",
+        "name": "Legal Aid Society of the Orange County Bar Association, Inc."
+      }
+    },
+    {
+      "id": "10022413152",
+      "name": "Legal Aid Society, Inc.",
+      "domain": "laslou.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.170Z",
+        "domain": "laslou.org",
+        "hs_lastmodifieddate": "2025-08-06T18:49:56.934Z",
+        "hs_object_id": "10022413152",
+        "name": "Legal Aid Society, Inc."
+      }
+    },
+    {
+      "id": "10022436753",
+      "name": "The Legal Aid Society of Cleveland",
+      "domain": "lasclev.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:27.542Z",
+        "domain": "lasclev.org",
+        "hs_lastmodifieddate": "2025-07-08T14:45:02.428Z",
+        "hs_object_id": "10022436753",
+        "name": "The Legal Aid Society of Cleveland"
+      }
+    },
+    {
+      "id": "18679363076",
+      "name": "Legal Aid Society of San Bernardino",
+      "domain": "legalaidofsb.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2024-01-10T23:55:28.822Z",
+        "domain": "legalaidofsb.org",
+        "hs_lastmodifieddate": "2024-08-09T17:50:55.859Z",
+        "hs_object_id": "18679363076",
+        "name": "Legal Aid Society of San Bernardino"
+      }
+    },
+    {
+      "id": "25018671669",
+      "name": "Legal Aid Society of Milwaukee",
+      "domain": "legalaidmke.com",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2024-10-22T14:41:14.080Z",
+        "domain": "legalaidmke.com",
+        "hs_lastmodifieddate": "2024-10-22T14:41:38.765Z",
+        "hs_object_id": "25018671669",
+        "name": "Legal Aid Society of Milwaukee"
+      }
+    },
+    {
+      "id": "26120846141",
+      "name": "The Legal Aid Society",
+      "domain": "legal-aid.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2024-11-19T15:04:26.360Z",
+        "domain": "legal-aid.org",
+        "hs_lastmodifieddate": "2025-06-09T16:36:17.443Z",
+        "hs_object_id": "26120846141",
+        "name": "The Legal Aid Society"
+      }
+    },
+    {
+      "id": "30369917828",
+      "name": "The Legal Aid Society of Columbus",
+      "domain": "columbuslegalaid.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2025-02-25T15:13:46.425Z",
+        "domain": "columbuslegalaid.org",
+        "hs_lastmodifieddate": "2025-02-25T15:14:48.718Z",
+        "hs_object_id": "30369917828",
+        "name": "The Legal Aid Society of Columbus"
+      }
+    },
+    {
+      "id": "30368674069",
+      "name": "Legal Aid Society",
+      "domain": "legalaidpbc.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2025-02-25T15:13:46.629Z",
+        "domain": "legalaidpbc.org",
+        "hs_lastmodifieddate": "2025-02-25T15:15:04.694Z",
+        "hs_object_id": "30368674069",
+        "name": "Legal Aid Society"
+      }
+    },
+    {
+      "id": "29798679606",
+      "name": "32BJ SEIU",
+      "domain": "seiu32bj.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2025-02-10T20:45:24.068Z",
+        "domain": "seiu32bj.org",
+        "hs_lastmodifieddate": "2025-05-01T16:19:00.498Z",
+        "hs_object_id": "29798679606",
+        "name": "32BJ SEIU"
+      }
+    },
+    {
+      "id": "28650586485",
+      "name": "Community Service Society of New York",
+      "domain": "cssny.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2025-01-16T04:30:06.662Z",
+        "domain": "cssny.org",
+        "hs_lastmodifieddate": "2025-02-27T19:21:10.279Z",
+        "hs_object_id": "28650586485",
+        "name": "Community Service Society of New York"
+      }
+    },
+    {
+      "id": "10022506573",
+      "name": "Association for Neighborhood & Housing Development, Inc. ANHD",
+      "domain": "anhd.org",
+      "membership_status": "Not specified",
+      "all_membership_fields": {},
+      "all_properties": {
+        "createdate": "2022-11-07T22:15:26.637Z",
+        "domain": "anhd.org",
+        "hs_lastmodifieddate": "2025-11-24T19:43:00.463Z",
+        "hs_object_id": "10022506573",
+        "name": "Association for Neighborhood & Housing Development, Inc. ANHD"
+      }
+    }
+  ],
+  "timestamp": "2025-11-25T12:59:41.901266"
+}

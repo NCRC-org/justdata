@@ -1,0 +1,282 @@
+HUBSPOT COMPANIES SEARCH RESULTS - NCRC MEMBERS
+================================================================================
+
+Search Date: 2025-11-25T12:50:23.829678
+Total Organizations Searched: 26
+Unique NCRC Member Companies Found: 27
+
+================================================================================
+
+NCRC MEMBER COMPANIES FOUND
+--------------------------------------------------------------------------------
+
+Company Name: The Community Preservation Corporation
+Domain: communityp.com
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Community Preservation Corporation
+HubSpot ID: 16343380497
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/16343380497
+
+Company Name: Housing Conservation Coordinators, Inc.
+Domain: hcc-nyc.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Housing Conservation Coordinators
+HubSpot ID: 10022491548
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022491548
+
+Company Name: DC Fiscal Policy Institute
+Domain: dcfpi.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Fiscal Policy Institute
+HubSpot ID: 10023592080
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10023592080
+
+Company Name: Local Initiatives Support Corporation (LISC)
+Domain: lisc.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Local Initiatives Support Corporation
+HubSpot ID: 10023620188
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10023620188
+
+Company Name: Greater Miami LISC
+Domain: manta.com
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: LISC
+HubSpot ID: 10022427741
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022427741
+
+Company Name: LISC Greater Kansas City
+Domain: 
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: LISC
+HubSpot ID: 10022368009
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022368009
+
+Company Name: LISC Jacksonville
+Domain: None
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: LISC
+HubSpot ID: 10023524676
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10023524676
+
+Company Name: LISC-Greater Cincinnati
+Domain: None
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: LISC
+HubSpot ID: 10022479203
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022479203
+
+Company Name: LISC Memphis
+Domain: None
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: LISC
+HubSpot ID: 20414763135
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/20414763135
+
+Company Name: LISC DC
+Domain: concise.us
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: LISC
+HubSpot ID: 31609408942
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/31609408942
+
+Company Name: LISC Virginia
+Domain: lisc.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: LISC
+HubSpot ID: 31932066464
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/31932066464
+
+Company Name: Community Legal Aid Society, Inc.
+Domain: declasi.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10022296666
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022296666
+
+Company Name: Legal Aid Society of Milwaukee
+Domain: lasmilwaukee.com
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10022368029
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022368029
+
+Company Name: Legal Aid Society of San Diego
+Domain: lassd.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10022479277
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022479277
+
+Company Name: Legal Aid Society of Hawaii
+Domain: None
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10023496803
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10023496803
+
+Company Name: Legal Aid Society of Southwest Ohio Housing Team
+Domain: None
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10022536079
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022536079
+
+Company Name: Legal Aid Society of the Orange County Bar Association, Inc.
+Domain: legalaidocba.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10021418122
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10021418122
+
+Company Name: Legal Aid Society, Inc.
+Domain: laslou.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10022413152
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022413152
+
+Company Name: The Legal Aid Society of Cleveland
+Domain: lasclev.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 10022436753
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022436753
+
+Company Name: Legal Aid Society of San Bernardino
+Domain: legalaidofsb.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 18679363076
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/18679363076
+
+Company Name: Legal Aid Society of Milwaukee
+Domain: legalaidmke.com
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 25018671669
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/25018671669
+
+Company Name: The Legal Aid Society
+Domain: legal-aid.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 26120846141
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/26120846141
+
+Company Name: The Legal Aid Society of Columbus
+Domain: columbuslegalaid.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 30369917828
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/30369917828
+
+Company Name: Legal Aid Society
+Domain: legalaidpbc.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Legal Aid Society
+HubSpot ID: 30368674069
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/30368674069
+
+Company Name: 32BJ SEIU
+Domain: seiu32bj.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: 32BJ SEIU
+HubSpot ID: 29798679606
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/29798679606
+
+Company Name: Community Service Society of New York
+Domain: cssny.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Community Service Society
+HubSpot ID: 28650586485
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/28650586485
+
+Company Name: Association for Neighborhood & Housing Development, Inc. ANHD
+Domain: anhd.org
+Industry: N/A
+City: N/A
+State: N/A
+Match Type: company_name
+Searched Term: Association for Neighborhood & Housing Development
+HubSpot ID: 10022506573
+HubSpot URL: https://app.hubspot.com/contacts/N/A/company/10022506573
+

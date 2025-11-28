@@ -1,0 +1,203 @@
+{
+  "contacts": [
+    {
+      "created_at": "2022-09-13T18:12:38.315000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "2360293",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2022-09-13T18:12:38.315Z",
+        "email": "fatima_sierravargas@banking.senate.gov",
+        "firstname": "Fatima",
+        "hs_object_id": "2360293",
+        "lastmodifieddate": "2025-03-01T05:00:00Z",
+        "lastname": "Sierra-Vargas"
+      },
+      "updated_at": "2025-03-01T05:00:00+00:00",
+      "match_type": "company_contact",
+      "search_organization": "Committee on Housing"
+    },
+    {
+      "created_at": "2023-01-16T02:40:03.886000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "8799101",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2023-01-16T02:40:03.886Z",
+        "email": "grayja2011@yahoo.com",
+        "firstname": "",
+        "hs_object_id": "8799101",
+        "lastmodifieddate": "2025-11-25T15:41:05.347Z",
+        "lastname": "Gray"
+      },
+      "updated_at": "2025-11-25T15:41:05.347000+00:00",
+      "match_type": "name_partial",
+      "search_organization": "Open New York"
+    },
+    {
+      "created_at": "2024-12-17T15:28:48.863000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "85640427150",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2024-12-17T15:28:48.863Z",
+        "email": "dgreenberg@lisc.org",
+        "firstname": "David",
+        "hs_object_id": "85640427150",
+        "lastmodifieddate": "2025-11-19T20:07:30.977Z",
+        "lastname": "Greenberg"
+      },
+      "updated_at": "2025-11-19T20:07:30.977000+00:00",
+      "match_type": "name",
+      "search_organization": "Local Initiatives Support Corporation (LISC)"
+    },
+    {
+      "created_at": "2022-11-29T17:36:32.736000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "229051",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2022-11-29T17:36:32.736Z",
+        "email": "kathryn.nickerson@td.com",
+        "firstname": "",
+        "hs_object_id": "229051",
+        "lastmodifieddate": "2025-11-25T15:40:13.220Z",
+        "lastname": "Nickerson"
+      },
+      "updated_at": "2025-11-25T15:40:13.220000+00:00",
+      "match_type": "name_partial",
+      "search_organization": "LiveOn NY"
+    },
+    {
+      "created_at": "2022-09-13T18:12:32.483000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "2306575",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2022-09-13T18:12:32.483Z",
+        "email": "yrivera@ledcmetro.org",
+        "firstname": "",
+        "hs_object_id": "2306575",
+        "lastmodifieddate": "2025-11-14T05:31:02.162Z",
+        "lastname": "Rivera"
+      },
+      "updated_at": "2025-11-14T05:31:02.162000+00:00",
+      "match_type": "name_partial",
+      "search_organization": "New York State Association for Affordable Housing"
+    },
+    {
+      "created_at": "2022-09-13T18:12:36.276000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "2334659",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2022-09-13T18:12:36.276Z",
+        "email": "barika.w@anhd.org",
+        "firstname": "Barika",
+        "hs_object_id": "2334659",
+        "lastmodifieddate": "2025-11-25T15:41:02.581Z",
+        "lastname": "Williams"
+      },
+      "updated_at": "2025-11-25T15:41:02.581000+00:00",
+      "match_type": "name",
+      "search_organization": "Association for Neighborhood & Housing Development"
+    },
+    {
+      "created_at": "2023-03-06T18:43:48.822000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "11715051",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2023-03-06T18:43:48.822Z",
+        "email": "execassistant@anhd.org",
+        "firstname": "Barika",
+        "hs_object_id": "11715051",
+        "lastmodifieddate": "2025-10-24T19:44:02.753Z",
+        "lastname": "Williams"
+      },
+      "updated_at": "2025-10-24T19:44:02.753000+00:00",
+      "match_type": "name",
+      "search_organization": "Association for Neighborhood & Housing Development"
+    },
+    {
+      "created_at": "2022-09-13T18:12:35.881000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "2330100",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2022-09-13T18:12:35.881Z",
+        "email": "pwilliams@districtsupplyinc.com",
+        "firstname": "E. Paul",
+        "hs_object_id": "2330100",
+        "lastmodifieddate": "2025-11-25T15:40:38.445Z",
+        "lastname": "Williams"
+      },
+      "updated_at": "2025-11-25T15:40:38.445000+00:00",
+      "match_type": "name",
+      "search_organization": "Center for Public Enterprise"
+    },
+    {
+      "created_at": "2022-09-13T18:12:36.215000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "2337723",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2022-09-13T18:12:36.215Z",
+        "email": "paul.williams@hacm.org",
+        "firstname": "Paul",
+        "hs_object_id": "2337723",
+        "lastmodifieddate": "2025-11-25T15:40:59.315Z",
+        "lastname": "Williams"
+      },
+      "updated_at": "2025-11-25T15:40:59.315000+00:00",
+      "match_type": "name",
+      "search_organization": "Center for Public Enterprise"
+    },
+    {
+      "created_at": "2025-09-10T14:08:16.520000+00:00",
+      "archived": false,
+      "archived_at": null,
+      "properties_with_history": null,
+      "id": "154211952438",
+      "object_write_trace_id": null,
+      "properties": {
+        "createdate": "2025-09-10T14:08:16.520Z",
+        "email": "governmentpauldavid@gmail.com",
+        "firstname": "Paul-David",
+        "hs_object_id": "154211952438",
+        "lastmodifieddate": "2025-11-14T14:42:06.528Z",
+        "lastname": "Williams"
+      },
+      "updated_at": "2025-11-14T14:42:06.528000+00:00",
+      "match_type": "name",
+      "search_organization": "Center for Public Enterprise"
+    }
+  ],
+  "companies": [],
+  "member_list_matches": [],
+  "summary": {
+    "total_searched": 25,
+    "contacts_found": 10,
+    "companies_found": 0,
+    "member_list_matches": 0,
+    "timestamp": "2025-11-25T12:44:48.199086"
+  }
+}

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataExplorer - Interactive Financial Data Dashboard</title>
+    <meta name="description" content="Interactive dashboard for analyzing HMDA, Small Business, and Branch data with full filtering and peer comparison capabilities.">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version or '1.0.0' }}">
+</head>
+<body>
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1>DataExplorer</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <main id="main-content" class="main-content">
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="tab-btn active" data-tab="area-analysis">
+                    <i class="fas fa-map-marked-alt"></i> Area Analysis
+                </button>
+                <button class="tab-btn" data-tab="lender-analysis">
+                    <i class="fas fa-building"></i> Lender Analysis
+                </button>
+            </div>
+
+            <!-- Area Analysis Tab -->
+            <div id="area-analysis" class="tab-content active">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-map-marked-alt"></i> Area Analysis</h2>
+                        <p>Analyze lending and branch data by geography, years, and data type. Compare areas without focusing on specific lenders.</p>
+                    </div>
+
+                    <div class="filters-section">
+                        <!-- Feature Cards Layout -->
+                        <div class="filter-cards-container">
+                            <!-- Data Type Card -->
+                            <div class="filter-feature-card">
+                                <div class="feature-card-header">
+                                    <i class="fas fa-database"></i>
+                                    <h3>Data Type</h3>
+                                </div>
+                                <div class="feature-card-content">
+                                    <div class="data-type-selector">
+                                        <label class="data-type-option">
+                                            <input type="radio" name="data-type" value="hmda" checked>
+                                            <span>HMDA</span>
+                                        </label>
+                                        <label class="data-type-option">
+                                            <input type="radio" name="data-type" value="sb">
+                                            <span>Small Business</span>
+                                        </label>
+                                        <label class="data-type-option">
+                                            <input type="radio" name="data-type" value="branches">
+                                            <span>Branch Data</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Geography Card -->
+                            <div class="filter-feature-card">
+                                <div class="feature-card-header">
+                                    <i class="fas fa-map"></i>
+                                    <h3>Geography</h3>
+                                </div>
+                                <div class="feature-card-content" style="position: relative;">
+                                    <div class="geography-loading-overlay" id="geography-loading-overlay">
+                                        <img src="{{ url_for('static', filename='img/ncrc-logo-invert.png') }}" alt="NCRC Logo" id="geography-loading-logo">
+                                        <div id="geography-loading-text">Loading...</div>
+                                    </div>
+                                    <div class="geo-selector-tabs">
+                                        <button type="button" class="geo-tab-btn active" data-geo-type="county">Counties</button>
+                                        <button type="button" class="geo-tab-btn" data-geo-type="metro">Metro Areas</button>
+                                        <button type="button" class="geo-tab-btn" data-geo-type="state">States</button>
+                                    </div>
+                                    
+                                    <div id="geo-county-selector" class="geo-selector active">
+                                        <select id="state-filter-area" style="width: 100%; margin-bottom: 10px;">
+                                            <option value="">All States</option>
+                                        </select>
+                                        <select id="county-select-area" multiple="multiple" style="width: 100%;">
+                                            <option value="">Loading counties...</option>
+                                        </select>
+                                        <small class="help-text">Select one or more counties to analyze</small>
+                                    </div>
+                                    
+                                    <div id="geo-metro-selector" class="geo-selector">
+                                        <select id="metro-select-area" multiple="multiple" style="width: 100%;">
+                                            <option value="">Loading metro areas...</option>
+                                        </select>
+                                        <small class="help-text">Select one or more metro areas to analyze</small>
+                                        <div id="metro-counties-display" class="counties-display" style="display: none; margin-top: 12px;">
+                                            <div class="counties-display-header">
+                                                <strong>Counties Included:</strong>
+                                                <button type="button" class="btn-select-all-counties" data-context="metro">Select All</button>
+                                                <button type="button" class="btn-deselect-all-counties" data-context="metro">Deselect All</button>
+                                            </div>
+                                            <div id="metro-counties-checkboxes" class="counties-checkboxes">
+                                                <!-- Counties will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="geo-state-selector" class="geo-selector">
+                                        <select id="state-select-area" multiple="multiple" style="width: 100%;">
+                                            <option value="">Loading states...</option>
+                                        </select>
+                                        <small class="help-text">Select one or more states to analyze</small>
+                                        <div id="state-counties-display" class="counties-display" style="display: none; margin-top: 12px;">
+                                            <div class="counties-display-header">
+                                                <strong>Counties Included:</strong>
+                                                <button type="button" class="btn-select-all-counties" data-context="state">Select All</button>
+                                                <button type="button" class="btn-deselect-all-counties" data-context="state">Deselect All</button>
+                                            </div>
+                                            <div id="state-counties-checkboxes" class="counties-checkboxes">
+                                                <!-- Counties will be populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Actions Card -->
+                            <div class="filter-feature-card actions-card">
+                                <div class="feature-card-header">
+                                    <i class="fas fa-cogs"></i>
+                                    <h3>Actions</h3>
+                                </div>
+                                <div class="feature-card-content">
+                                    <!-- Default Filters Section (Expandable) -->
+                                    <div class="default-filters-section">
+                                        <button type="button" id="default-filters-toggle-btn" class="default-filters-toggle">
+                                            <i class="fas fa-cog"></i> Default Filters
+                                            <i class="fas fa-chevron-down toggle-icon"></i>
+                                        </button>
+                                        <div class="default-filters-content" id="default-filters-content-area" style="display: none;">
+                                            <div class="filter-row">
+                                                <div class="filter-col">
+                                                    <label>Action Taken (Default)</label>
+                                                    <select id="default-action-taken" multiple="multiple" style="width: 100%;">
+                                                        <option value="1">Originations (1)</option>
+                                                        <option value="1,2,3,4,5">Applications (1-5)</option>
+                                                        <option value="3">Denials (3)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="filter-row" style="margin-top: 12px;">
+                                                <div class="filter-col">
+                                                    <label>Occupancy Type (Default)</label>
+                                                    <select id="default-occupancy-type" multiple="multiple" style="width: 100%;">
+                                                        <option value="1">Owner-Occupied</option>
+                                                        <option value="2">Not Owner-Occupied</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="filter-row" style="margin-top: 12px;">
+                                                <div class="filter-col">
+                                                    <label>Construction Method (Default)</label>
+                                                    <select id="default-construction-method" multiple="multiple" style="width: 100%;">
+                                                        <option value="1">Site-Built</option>
+                                                        <option value="2">Manufactured Home</option>
+                                                    </select>
+                                                </div>
+                                                <div class="filter-col">
+                                                    <label class="checkbox-label" style="margin-top: 24px;">
+                                                        <input type="checkbox" id="default-exclude-reverse">
+                                                        <span>Exclude Reverse Mortgages (Default)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div style="margin-top: 12px;">
+                                                <button type="button" id="save-default-filters-btn" class="btn-primary" style="width: 100%;">
+                                                    <i class="fas fa-save"></i> Save Defaults
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="action-buttons-container">
+                                        <button type="button" id="analyze-area-btn" class="btn-primary">
+                                            <i class="fas fa-chart-line"></i> Analyze Area
+                                        </button>
+                                        <button type="button" id="clear-area-filters-btn" class="btn-secondary">
+                                            <i class="fas fa-redo"></i> Clear Filters
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- HMDA-Specific Filters -->
+                        <div id="hmda-filters-area" class="filter-group data-type-filters">
+                            <button type="button" class="filters-toggle-btn" id="filters-toggle-area">
+                                <i class="fas fa-filter"></i> Advanced Filters
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </button>
+                            <div class="filters-content" id="filters-content-area" style="display: none;">
+                                <div class="filter-row">
+                                    <div class="filter-col">
+                                        <label>Action Taken</label>
+                                        <select id="action-taken-area" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>Originations (1)</option>
+                                            <option value="1,2,3,4,5">Applications (1-5)</option>
+                                            <option value="3">Denials (3)</option>
+                                        </select>
+                                        <small class="help-text" style="display: block; margin-top: 6px; font-size: 0.85rem; color: #666;">
+                                            Default: Originations only (action taken 1). Applications includes all loan applications (action taken 1-5). Denials shows only denied applications (action taken 3).
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="filter-row" style="margin-top: 12px;">
+                                    <div class="filter-col">
+                                        <label>Occupancy Type</label>
+                                        <select id="occupancy-type-area" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>Owner-Occupied</option>
+                                            <option value="2">Not Owner-Occupied</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-col">
+                                        <label>Total Units</label>
+                                        <select id="total-units-area" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>1 Unit</option>
+                                            <option value="2" selected>2 Units</option>
+                                            <option value="3" selected>3 Units</option>
+                                            <option value="4" selected>4 Units</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="filter-row" style="margin-top: 12px;">
+                                    <div class="filter-col">
+                                        <label>Construction Method</label>
+                                        <select id="construction-method-area" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>Site-Built</option>
+                                            <option value="2">Manufactured Home</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-col">
+                                        <label class="checkbox-label" style="margin-top: 24px;">
+                                            <input type="checkbox" id="exclude-reverse-area" checked>
+                                            <span>Exclude Reverse Mortgages</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="filter-defaults-info" style="margin-top: 12px; padding: 12px; background: #f0f7ff; border-radius: 4px; font-size: 12px; color: #666;">
+                                    <i class="fas fa-info-circle"></i> Default filters: Owner-Occupied, Site-Built, 1-4 Units
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="area-results" class="results-section" style="display: none;">
+                    <div class="results-header">
+                        <h3><i class="fas fa-chart-bar"></i> Analysis Results</h3>
+                        <div class="results-actions">
+                            <button type="button" class="btn-export" id="export-area-btn">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <div id="area-results-content" class="results-content">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lender Analysis Tab -->
+            <div id="lender-analysis" class="tab-content">
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-building"></i> Lender Analysis</h2>
+                        <p>Select a specific lender and compare their performance to peer lenders in the same market. Peer lenders are automatically identified based on similar lending volume (50%-200% of subject lender).</p>
+                    </div>
+
+                    <div class="filters-section">
+                        <!-- Feature Cards Layout -->
+                        <div class="filter-cards-container" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <!-- Subject Lender Card (Left) -->
+                            <div class="filter-feature-card">
+                                <div class="feature-card-header">
+                                    <i class="fas fa-building"></i>
+                                    <h3>Subject Lender</h3>
+                                </div>
+                                <div class="feature-card-content">
+                                    <div id="lender-lookup-form">
+                                        <div style="margin-bottom: 16px;">
+                                            <label style="font-weight: 500; margin-bottom: 6px; display: block; font-size: 0.9rem;">
+                                                <i class="fas fa-building"></i> Select Lender by Name
+                                            </label>
+                                            <select id="lender-name-select" style="width: 100%;">
+                                                <option value="">Select a lender...</option>
+                                            </select>
+                                            <small class="help-text" style="display: block; margin-top: 6px;">Select a lender from the HMDA lenders database.</small>
+                                        </div>
+                                        
+                                        <!-- Display-only fields for other identifiers -->
+                                        <div id="lender-details-display" style="display: none; margin-top: 16px; padding: 12px; background: #f9f9f9; border-radius: 4px; border: 1px solid #e0e0e0;">
+                                            <div style="margin-bottom: 10px;">
+                                                <label style="font-weight: 500; margin-bottom: 4px; display: block; font-size: 0.85rem; color: #666;">
+                                                    <i class="fas fa-id-card"></i> LEI (Legal Entity Identifier)
+                                                </label>
+                                                <div id="lender-lei-display" style="padding: 6px; background: white; border: 1px solid #ddd; border-radius: 3px; font-family: monospace; font-size: 0.9rem;"></div>
+                                            </div>
+                                            <div style="margin-bottom: 10px;">
+                                                <label style="font-weight: 500; margin-bottom: 4px; display: block; font-size: 0.85rem; color: #666;">
+                                                    <i class="fas fa-bank"></i> RSSD ID
+                                                </label>
+                                                <div id="lender-rssd-display" style="padding: 6px; background: white; border: 1px solid #ddd; border-radius: 3px; font-size: 0.9rem; color: #999;">
+                                                    <em>Not available for HMDA lenders</em>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label style="font-weight: 500; margin-bottom: 4px; display: block; font-size: 0.85rem; color: #666;">
+                                                    <i class="fas fa-file-invoice"></i> Business Respondent ID
+                                                </label>
+                                                <div id="lender-respondent-id-display" style="padding: 6px; background: white; border: 1px solid #ddd; border-radius: 3px; font-size: 0.9rem; color: #999;">
+                                                    <em>Not available for HMDA lenders</em>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="button" id="confirm-lender-btn" class="btn-primary" style="width: 100%; margin-top: 16px;" disabled>
+                                            <i class="fas fa-check-circle"></i> Confirm Lender
+                                        </button>
+                                        <small class="help-text" style="display: block; margin-top: 8px;">Select a lender from the dropdown. Additional identifiers will be displayed automatically.</small>
+                                    </div>
+                                    <div id="confirmed-lender-info" style="display: none; margin-top: 16px; padding: 12px; background: #f0f7ff; border-radius: 6px; border-left: 3px solid var(--ncrc-primary-blue);">
+                                        <div style="display: flex; justify-content: space-between; align-items: start;">
+                                            <div>
+                                                <strong style="display: block; margin-bottom: 6px;" id="confirmed-lender-name"></strong>
+                                                <div style="font-size: 0.85rem; color: #666;">
+                                                    <span id="confirmed-lender-details"></span>
+                                                </div>
+                                            </div>
+                                            <button type="button" id="change-lender-btn" class="btn-secondary" style="padding: 4px 12px; font-size: 0.85rem;">
+                                                <i class="fas fa-edit"></i> Change
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Geography Card (Middle) -->
+                            <div class="filter-feature-card">
+                                <div class="feature-card-header">
+                                    <i class="fas fa-map"></i>
+                                    <h3>Geography</h3>
+                                </div>
+                                <div class="feature-card-content">
+
+                                    <!-- Geography Selection Method Toggle -->
+                                    <div id="geography-method-toggle" style="margin-bottom: 20px; border-bottom: 1px solid #ddd; padding-bottom: 15px;">
+                                        <label style="font-weight: 600; margin-bottom: 12px; display: block;">
+                                            <i class="fas fa-cog"></i> Geography Selection Method
+                                        </label>
+                                        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                                            <button type="button" class="geo-method-toggle-btn active" data-method="manual" style="flex: 1; padding: 10px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                                <i class="fas fa-keyboard"></i> Custom Selection
+                                            </button>
+                                            <button type="button" class="geo-method-toggle-btn" data-method="branches" style="flex: 1; padding: 10px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                                <i class="fas fa-map-marker-alt"></i> Branch Networks
+                                            </button>
+                                            <button type="button" class="geo-method-toggle-btn" data-method="lending_activity" style="flex: 1; padding: 10px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                                <i class="fas fa-file-invoice-dollar"></i> Mortgage Applications
+                                            </button>
+                                        </div>
+                                        <div style="padding: 12px; background: #f0f7ff; border-radius: 6px; border-left: 3px solid var(--ncrc-primary-blue);">
+                                            <p style="margin: 0; font-size: 0.85rem; color: var(--ncrc-gray-dark);">
+                                                <i class="fas fa-info-circle"></i> 
+                                                <strong>Branch Networks:</strong> Counties with at least one branch (CBSA-based, 1% deposit threshold). 
+                                                <strong>Mortgage Applications:</strong> Counties with ≥1% of loan applications. 
+                                                <strong>Custom Selection:</strong> Manually select counties, metros, or states.
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <!-- Manual Geography Selection (shown when Custom Selection is active) -->
+                                    <div id="manual-geography-group" style="display: block;">
+                                        <label style="font-weight: 600; margin-bottom: 12px; display: block;">
+                                            <i class="fas fa-map"></i> Geography Selection
+                                        </label>
+                                        
+                                        <!-- Scrollable Geography Container -->
+                                        <div style="max-height: 400px; overflow-y: auto; overflow-x: hidden; padding-right: 8px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px;">
+                                            <!-- Counties -->
+                                            <div class="geo-selector-section" style="margin-bottom: 16px;">
+                                                <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">
+                                                    <i class="fas fa-map-marker-alt"></i> Counties
+                                                </label>
+                                                <select id="state-filter-lender" style="width: 100%; margin-bottom: 8px;">
+                                                    <option value="">All States</option>
+                                                </select>
+                                                <select id="county-select-lender" multiple="multiple" style="width: 100%;">
+                                                    <option value="">Select counties...</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Metro Areas -->
+                                            <div class="geo-selector-section" style="margin-bottom: 16px;">
+                                                <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">
+                                                    <i class="fas fa-city"></i> Metro Areas
+                                                </label>
+                                                <select id="metro-select-lender" multiple="multiple" style="width: 100%;">
+                                                    <option value="">Select metro areas...</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- States -->
+                                            <div class="geo-selector-section">
+                                                <label style="font-size: 0.9rem; font-weight: 500; margin-bottom: 8px; display: block;">
+                                                    <i class="fas fa-flag"></i> States
+                                                </label>
+                                                <select id="state-select-lender" multiple="multiple" style="width: 100%;">
+                                                    <option value="">Select states...</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Automatic Selection Results (branches or lending activity) -->
+                                    <div id="auto-selection-group" style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                                        <label style="font-weight: 600; margin-bottom: 8px; display: block;">
+                                            <i class="fas fa-map-marked-alt"></i> Selected Counties
+                                        </label>
+                                        <div id="auto-selection-info" style="padding: 12px; background: var(--ncrc-light-blue); border-radius: 6px; margin-bottom: 12px; border-left: 3px solid var(--ncrc-primary-blue);">
+                                            <p style="margin: 0; font-size: 0.9rem; color: var(--ncrc-gray-dark);" id="auto-selection-message">
+                                                <i class="fas fa-info-circle"></i> 
+                                                Counties will be identified based on your selection method.
+                                            </p>
+                                        </div>
+                                        <!-- Scrollable county selection -->
+                                        <div style="max-height: 300px; overflow-y: auto; overflow-x: hidden; padding-right: 8px; border: 1px solid #e0e0e0; border-radius: 6px; padding: 12px; margin-bottom: 12px;">
+                                            <select id="auto-county-select" multiple="multiple" style="width: 100%;" disabled>
+                                                <option value="">Select lender and method first...</option>
+                                            </select>
+                                        </div>
+                                        <small class="help-text">Review and adjust the automatically identified counties.</small>
+                                        <button type="button" id="btn-back-to-manual" class="btn-secondary" style="width: 100%; margin-top: 12px;">
+                                            <i class="fas fa-arrow-left"></i> Back to Manual Selection
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons Card (Right) -->
+                            <div class="filter-feature-card">
+                                <div class="feature-card-header">
+                                    <i class="fas fa-tasks"></i>
+                                    <h3>Actions</h3>
+                                </div>
+                                <div class="feature-card-content" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <button type="button" id="analyze-lender-btn" class="btn-primary" style="width: 100%; padding: 12px;">
+                                        <i class="fas fa-chart-line"></i> Analyze Lender
+                                    </button>
+                                    
+                                    <!-- Default Filters Section (Expandable) -->
+                                    <div class="default-filters-section">
+                                        <button type="button" id="default-filters-toggle-btn-lender" class="default-filters-toggle" style="width: 100%; padding: 12px;">
+                                            <i class="fas fa-cog"></i> Default Filters
+                                            <i class="fas fa-chevron-down toggle-icon"></i>
+                                        </button>
+                                        <div class="default-filters-content" id="default-filters-content-lender" style="display: none;">
+                                            <div class="filter-row">
+                                                <div class="filter-col">
+                                                    <label>Action Taken (Default)</label>
+                                                    <select id="default-action-taken-lender" multiple="multiple" style="width: 100%;">
+                                                        <option value="1">Originations (1)</option>
+                                                        <option value="1,2,3,4,5">Applications (1-5)</option>
+                                                        <option value="3">Denials (3)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="filter-row" style="margin-top: 12px;">
+                                                <div class="filter-col">
+                                                    <label>Occupancy Type (Default)</label>
+                                                    <select id="default-occupancy-type-lender" multiple="multiple" style="width: 100%;">
+                                                        <option value="1">Owner-Occupied</option>
+                                                        <option value="2">Not Owner-Occupied</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="filter-row" style="margin-top: 12px;">
+                                                <div class="filter-col">
+                                                    <label>Construction Method (Default)</label>
+                                                    <select id="default-construction-method-lender" multiple="multiple" style="width: 100%;">
+                                                        <option value="1">Site-Built</option>
+                                                        <option value="2">Manufactured Home</option>
+                                                    </select>
+                                                </div>
+                                                <div class="filter-col">
+                                                    <label class="checkbox-label" style="margin-top: 24px;">
+                                                        <input type="checkbox" id="default-exclude-reverse-lender">
+                                                        <span>Exclude Reverse Mortgages (Default)</span>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div style="margin-top: 12px;">
+                                                <button type="button" id="save-default-filters-btn-lender" class="btn-primary" style="width: 100%;">
+                                                    <i class="fas fa-save"></i> Save Defaults
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <button type="button" id="clear-lender-filters-btn" class="btn-secondary" style="width: 100%; padding: 12px;">
+                                        <i class="fas fa-redo"></i> Clear Filters
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- HMDA-Specific Filters -->
+                        <div id="hmda-filters-lender" class="filter-group data-type-filters">
+                            <button type="button" class="filters-toggle-btn" id="filters-toggle-lender">
+                                <i class="fas fa-filter"></i> Advanced Filters
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </button>
+                            <div class="filters-content" id="filters-content-lender" style="display: none;">
+                                <div class="filter-row">
+                                    <div class="filter-col">
+                                        <label>Loan Purpose</label>
+                                        <select id="loan-purpose-lender" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>Home Purchase</option>
+                                            <option value="2" selected>Home Improvement</option>
+                                            <option value="31,32" selected>Refinance</option>
+                                            <option value="4" selected>Home Equity</option>
+                                        </select>
+                                        <small class="help-text" style="display: block; margin-top: 6px; font-size: 0.85rem; color: #666;">
+                                            Select loan purposes to include in analysis. Default includes all purposes.
+                                        </small>
+                                    </div>
+                                    <div class="filter-col">
+                                        <label>Action Taken</label>
+                                        <select id="action-taken-lender" multiple="multiple" style="width: 100%;">
+                                            <option value="1,2,3,4,5" selected>Applications (1-5)</option>
+                                            <option value="3">Denials (3)</option>
+                                        </select>
+                                        <small class="help-text" style="display: block; margin-top: 6px; font-size: 0.85rem; color: #666;">
+                                            Applications includes all loan applications (action taken 1-5). Denials shows only denied applications (action taken 3).
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="filter-row" style="margin-top: 12px;">
+                                    <div class="filter-col">
+                                        <label>Occupancy Type</label>
+                                        <select id="occupancy-type-lender" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>Owner-Occupied</option>
+                                            <option value="2">Not Owner-Occupied</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-col">
+                                        <label>Total Units</label>
+                                        <select id="total-units-lender" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>1 Unit</option>
+                                            <option value="2" selected>2 Units</option>
+                                            <option value="3" selected>3 Units</option>
+                                            <option value="4" selected>4 Units</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="filter-row" style="margin-top: 12px;">
+                                    <div class="filter-col">
+                                        <label>Construction Method</label>
+                                        <select id="construction-method-lender" multiple="multiple" style="width: 100%;">
+                                            <option value="1" selected>Site-Built</option>
+                                            <option value="2">Manufactured Home</option>
+                                        </select>
+                                    </div>
+                                    <div class="filter-col">
+                                        <label class="checkbox-label" style="margin-top: 24px;">
+                                            <input type="checkbox" id="exclude-reverse-lender" checked>
+                                            <span>Exclude Reverse Mortgages</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="filter-defaults-info" style="margin-top: 12px; padding: 12px; background: #f0f7ff; border-radius: 4px; font-size: 12px; color: #666;">
+                                    <i class="fas fa-info-circle"></i> Default filters: Owner-Occupied, Site-Built, 1-4 Units
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Peer Comparison Section -->
+                        <div class="filter-group" id="peer-comparison-section" style="display: none;">
+                            <div style="margin-bottom: 15px;">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="enable-peer-comparison" checked>
+                                    <span>Enable Peer Comparison</span>
+                                </label>
+                                <small class="help-text" style="display: block; margin-top: 6px;">Compare subject lender to peers with similar volume (50%-200% of subject lender's volume)</small>
+                            </div>
+                            
+                            <!-- Automatic Peers Display -->
+                            <div id="automatic-peers-display" style="display: none; margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h4 style="margin: 0; font-size: 1rem; color: var(--ncrc-dark-blue);">
+                                        <i class="fas fa-users"></i> Automatically Identified Peers
+                                    </h4>
+                                    <span id="peer-count-badge" style="padding: 4px 12px; background: var(--ncrc-secondary-blue); color: white; border-radius: 12px; font-size: 0.85rem; font-weight: 600;">0 peers</span>
+                                </div>
+                                <div id="automatic-peers-list" style="max-height: 200px; overflow-y: auto; margin-bottom: 12px;">
+                                    <p style="margin: 0; color: #666; font-size: 0.9rem; font-style: italic;">Peers will be identified after analysis runs...</p>
+                                </div>
+                                <small class="help-text" style="display: block; color: #666;">
+                                    <i class="fas fa-info-circle"></i> Peers are automatically identified based on similar lending volume (50%-200% of subject lender) in the selected geography.
+                                </small>
+                            </div>
+                            
+                            <!-- Custom Peers Section -->
+                            <div id="custom-peers-section" style="display: none; margin-top: 15px; padding: 15px; background: #fff; border-radius: 6px; border: 1px solid #ddd;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <h4 style="margin: 0; font-size: 1rem; color: var(--ncrc-dark-blue);">
+                                        <i class="fas fa-user-plus"></i> Custom Peers
+                                    </h4>
+                                    <button type="button" id="btn-add-custom-peer" class="btn-secondary" style="padding: 6px 12px; font-size: 0.85rem;">
+                                        <i class="fas fa-plus"></i> Add Peer
+                                    </button>
+                                </div>
+                                <div id="custom-peers-list" style="max-height: 150px; overflow-y: auto;">
+                                    <p style="margin: 0; color: #666; font-size: 0.9rem; font-style: italic;">No custom peers added yet.</p>
+                                </div>
+                                <small class="help-text" style="display: block; margin-top: 8px; color: #666;">
+                                    <i class="fas fa-info-circle"></i> Add specific lenders to compare alongside automatically identified peers.
+                                </small>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="lender-results" class="results-section" style="display: none;">
+                    <div class="results-header">
+                        <h3><i class="fas fa-chart-bar"></i> Lender Analysis Results</h3>
+                        <div class="results-actions">
+                            <button type="button" class="btn-export" id="export-lender-btn">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                    <div id="lender-results-content" class="results-content">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;" role="status" aria-live="polite" aria-label="Loading data">
+        <div class="loading-spinner">
+            <img src="{{ url_for('static', filename='img/ncrc-logo-invert.png') }}" alt="NCRC Logo" class="loading-logo">
+            <p id="loading-message">Loading data...</p>
+        </div>
+    </div>
+    
+    <!-- Error notification area (ARIA live region) -->
+    <div id="error-notification" role="alert" aria-live="assertive" aria-atomic="true" class="error-notification" style="display: none;"></div>
+    
+    
+    <!-- Toast notification area -->
+    <div id="toast-container" class="toast-container" role="status" aria-live="polite" aria-atomic="false"></div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ version or '1.0.0' }}&t={{ timestamp or '' }}"></script>
+</body>
+</html>
+

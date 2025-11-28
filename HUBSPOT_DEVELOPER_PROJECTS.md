@@ -314,7 +314,7 @@ echo ".hubspot/" >> .gitignore
 In your Python code:
 ```python
 import os
-from justdata.apps.hubspot import HubSpotClient
+from apps.hubspot import HubSpotClient
 
 # Read from environment
 client = HubSpotClient(

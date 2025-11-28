@@ -1,0 +1,4 @@
+"""
+Shared web application components.
+"""
+

@@ -45,7 +45,7 @@ services:
   # Celery Worker (for background tasks)
   celery-worker:
     build: .
-    command: celery -A justdata.shared.services.celery_app worker --loglevel=info
+    command: celery -A shared.services.celery_app worker --loglevel=info
     environment:
       - DEBUG=true
       - LOG_LEVEL=INFO
@@ -62,7 +62,7 @@ services:
   # Celery Beat (for scheduled tasks)
   celery-beat:
     build: .
-    command: celery -A justdata.shared.services.celery_app beat --loglevel=info
+    command: celery -A shared.services.celery_app beat --loglevel=info
     environment:
       - DEBUG=true
       - LOG_LEVEL=INFO

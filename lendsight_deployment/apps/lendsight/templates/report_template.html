@@ -1,0 +1,2676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LendSight - Mortgage Lending Analysis Report</title>
+    <meta name="description" content="HMDA Mortgage Lending Analysis Report - Comprehensive mortgage market intelligence">
+    <!-- Skip to main content link for screen readers -->
+    <style>
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #034ea0;
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            z-index: 100;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+    </style>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="LendSight - Mortgage Lending Analysis Report">
+    <meta property="og:description" content="Comprehensive HMDA mortgage lending analysis report">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Print-specific styles for PDF export - optimized for readability */
+        @media print {
+            .no-print { display: none !important; }
+            /* Eliminate all page breaks - content flows naturally */
+            .print-break { page-break-before: auto; }
+            
+            /* Base typography - improved readability */
+            body { 
+                font-size: 11pt; 
+                line-height: 1.4;
+                margin: 0;
+                padding: 0;
+                color: #333;
+            }
+            
+            html {
+                margin: 0;
+                padding: 0;
+            }
+            
+            /* Report container - reduce padding for more content per page */
+            .report-container {
+                padding: 15px;
+                max-width: 100%;
+            }
+            
+            /* Section spacing - tighter but readable */
+            .report-section { 
+                margin-bottom: 15px;
+                padding: 0;
+                page-break-inside: auto;
+            }
+            
+            /* Section titles - clear hierarchy */
+            .section-title {
+                font-size: 14pt;
+                font-weight: 600;
+                margin-bottom: 6px;
+                margin-top: 0;
+                color: #1a1a1a;
+            }
+            
+            /* Table introduction - readable paragraph spacing */
+            .table-introduction {
+                font-size: 10.5pt;
+                line-height: 1.5;
+                margin-bottom: 6px;
+                margin-top: 0;
+                orphans: 2;
+                widows: 2;
+            }
+            
+            /* Table description - smaller but readable */
+            .table-description {
+                font-size: 9.5pt;
+                line-height: 1.4;
+                color: #555;
+                margin-bottom: 6px;
+                margin-top: 0;
+            }
+            
+            /* Table container - proper spacing */
+            .table-container {
+                margin-top: 0;
+                margin-bottom: 8px;
+            }
+            
+            /* Tables - improved readability, allow breaking if needed */
+            table {
+                border-collapse: collapse;
+                margin: 0;
+                width: 100%;
+                font-size: 9pt;
+                line-height: 1.3;
+            }
+            
+            /* Table headers - clear and readable */
+            th {
+                background-color: #f5f5f5 !important;
+                font-weight: 600;
+                padding: 6px 8px;
+                border: 1px solid #ddd;
+                text-align: left;
+                font-size: 9pt;
+            }
+            
+            /* Table cells - proper spacing, allow breaking if needed */
+            td {
+                padding: 5px 8px;
+                border: 1px solid #e0e0e0;
+                font-size: 9pt;
+            }
+            
+            /* Table caption - readable but smaller */
+            .table-caption {
+                font-size: 8.5pt;
+                line-height: 1.4;
+                color: #666;
+                margin-top: 4px;
+                margin-bottom: 0;
+            }
+            
+            /* Table narrative - readable text blocks */
+            .table-narrative {
+                font-size: 10pt;
+                line-height: 1.6;
+                margin-top: 12px;
+                margin-bottom: 0;
+                orphans: 3;
+                widows: 3;
+            }
+            
+            /* Report header - compact */
+            .report-header {
+                margin-bottom: 12px;
+            }
+            
+            /* AI content sections */
+            .ai-insight-card {
+                margin-bottom: 12px;
+            }
+            
+            .ai-content {
+                font-size: 10pt;
+                line-height: 1.6;
+            }
+            
+            /* Introduction, population demographics, and key findings - allow natural flow */
+            #aiIntroParagraphSection {
+                margin-bottom: 12px;
+            }
+            
+            /* Population Demographics section */
+            #demographicOverviewTableSection {
+                margin-bottom: 12px;
+            }
+            
+            /* Key Findings section */
+            #aiKeyFindingsSection {
+                margin-bottom: 12px;
+            }
+            
+            /* Reduce excessive white space between sections */
+            .report-section.print-break {
+                margin-top: 20px;
+            }
+            
+            /* Headings hierarchy */
+            h1 { font-size: 16pt; font-weight: 700; margin: 0 0 10px 0; }
+            h2 { font-size: 14pt; font-weight: 600; margin: 0 0 8px 0; }
+            h3 { font-size: 12pt; font-weight: 600; margin: 0 0 6px 0; }
+            
+            /* Paragraphs */
+            p {
+                margin: 0 0 8px 0;
+                line-height: 1.5;
+            }
+            
+            /* Lists */
+            ul, ol {
+                margin: 0 0 8px 0;
+                padding-left: 20px;
+            }
+            
+            li {
+                margin-bottom: 4px;
+                line-height: 1.5;
+            }
+        }
+        
+        /* Report-specific styles */
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-sizing: border-box;
+        }
+        
+        @media (max-width: 1240px) {
+            body {
+                padding: 20px 10px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+        }
+        
+        .report-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: #034ea0;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .report-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .report-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+        }
+        
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.95);
+            text-align: left;
+        }
+        
+        .report-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+        
+        .action-btn.primary {
+            background: #2fade3;
+            color: white;
+            border-color: #2fade3;
+        }
+        
+        .action-btn.primary:hover {
+            background: #034ea0;
+            border-color: #034ea0;
+        }
+        
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s ease;
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item:hover {
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .ai-insights {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .ai-insight-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .ai-insight-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .ai-insight-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .ai-insight-card h3 i {
+            color: #034ea0;
+        }
+        
+        .ai-content {
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .ai-content p {
+            margin: 0 0 15px 0;
+        }
+        
+        .ai-content p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .report-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .table-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+        }
+        
+        .table-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            font-style: italic;
+        }
+        
+        .table-introduction {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .table-source {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 8px;
+            font-style: normal;
+        }
+        
+        .table-caption {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #034ea0;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        
+        .table-caption strong {
+            color: #034ea0;
+            font-weight: 600;
+        }
+        
+        .table-narrative {
+            margin-top: 25px;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #333;
+        }
+        
+        .table-narrative p {
+            margin-bottom: 15px;
+        }
+        
+        .table-narrative p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .summary-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #003366;
+            margin: 0 0 10px 0;
+        }
+        
+        .summary-card h3 .percentage-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .summary-card p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .data-table th[role="button"] {
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+        
+        .data-table th[role="button"]:hover {
+            background: #e9ecef;
+        }
+        
+        .data-table th[role="button"]:focus {
+            outline: 2px solid #034ea0;
+            outline-offset: -2px;
+        }
+        
+        .sort-indicator {
+            display: inline-block;
+            margin-left: 4px;
+            color: #034ea0;
+            font-size: 0.85em;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .table-container {
+            position: relative;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        
+        .collapse-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #666;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .collapse-btn:hover {
+            background: #e9ecef;
+            border-color: #999;
+        }
+        
+        .collapse-btn i {
+            transition: transform 0.2s ease;
+        }
+        
+        .collapse-btn.collapsed i {
+            transform: rotate(-90deg);
+        }
+        
+        .collapsible-table {
+            transition: all 0.3s ease;
+        }
+        
+        .collapsible-table.collapsed {
+            position: relative;
+        }
+        
+        .collapsible-table.collapsed tbody {
+            position: relative;
+        }
+        
+        .collapsible-table.collapsed tbody::after {
+            content: '... more rows available';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(transparent, rgba(255,255,255,0.9), white);
+            pointer-events: none;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .collapsible-table.collapsed tbody tr:nth-child(n+4) {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #034ea0;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            transition: background 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            background: #2fade3;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .report-container {
+                padding: 10px;
+            }
+            
+            .report-title {
+                font-size: 2rem;
+            }
+            
+            .report-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .data-table {
+                font-size: 0.8rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div class="report-container">
+        <!-- Back Button -->
+        <a href="/" class="back-btn no-print" aria-label="Return to analysis form">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            Back to Analysis
+        </a>
+        
+        <!-- Report Header -->
+        <header class="report-header" role="banner">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+            </div>
+            <h1 class="report-title">LendSight - Mortgage Lending Analysis</h1>
+            <p class="report-subtitle">Data drives the <em>movement</em></p>
+            <div class="report-meta">
+                <div>
+                    <strong>Counties:</strong> <span id="counties">Loading...</span><br>
+                    <strong>Years:</strong> <span id="years">Loading...</span>
+                </div>
+                <div class="report-actions no-print">
+                    <a href="/download?format=pdf" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer;">
+                        <i class="fas fa-file-pdf"></i> Download PDF
+                    </a>
+                    <div class="dropdown">
+                        <button class="action-btn primary dropdown-toggle">
+                            <i class="fas fa-download"></i> Export Data
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="dropdown-menu">
+                            <a href="/download?format=excel" class="dropdown-item">
+                                <i class="fas fa-file-excel"></i> Excel (.xlsx)
+                            </a>
+                            <a href="/download?format=csv" class="dropdown-item">
+                                <i class="fas fa-file-csv"></i> CSV (.csv)
+                            </a>
+                            <a href="/download?format=json" class="dropdown-item">
+                                <i class="fas fa-file-code"></i> JSON (.json)
+                            </a>
+                            <a href="/download?format=zip" class="dropdown-item">
+                                <i class="fas fa-file-archive"></i> ZIP (.zip)
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading State -->
+        <div id="loadingState" class="loading">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Loading report data...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div id="errorState" class="error" style="display: none;">
+            <h3><i class="fas fa-exclamation-triangle"></i> Error Loading Report</h3>
+            <p id="errorMessage"></p>
+        </div>
+        
+            <!-- Report Content -->
+            <main id="main-content" style="display: none;" role="main">
+            <!-- Intro Paragraph -->
+            <div class="report-section print-break" id="aiIntroParagraphSection" style="display: none;">
+                <div class="ai-insight-card">
+                    <div class="ai-content" id="introParagraphContent">
+                        <!-- AI content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Demographic Overview Table -->
+            <div class="report-section print-break" id="demographicOverviewTableSection">
+                <h2 class="section-title">Population Demographics</h2>
+                <p class="table-description">
+                    This table shows the total population and racial/ethnic composition of the selected geography based on U.S. Census Bureau American Community Survey (ACS) 5-year estimates.
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="populationDemographicsTable">
+                        <thead>
+                            <tr id="populationDemographicsHeader">
+                                <th style="text-align: left;">Demographic</th>
+                                <!-- Time period columns will be added dynamically: 2010 Census, 2020 Census, 2024 ACS -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- AI Key Findings -->
+            <div class="report-section print-break" id="aiKeyFindingsSection" style="display: none;">
+                <h2 class="section-title">Key Findings</h2>
+                <div class="ai-insight-card">
+                    <div class="ai-content" id="keyFindingsContent" style="line-height: 1.8;">
+                        <!-- AI content will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Population Demographics Table Caption (moved below Key Findings) -->
+            <div class="report-section" id="populationDemographicsCaptionSection" style="display: none;">
+                <p class="table-caption" id="populationDemographicsCaption">
+                    <strong>Source:</strong> U.S. Census Bureau American Community Survey (ACS) 5-year estimates. Data represents the most recent available ACS 5-year period and is shown for reference years in the analysis. Groups representing less than 1% of the total population are excluded from this table.
+                </p>
+            </div>
+            
+            <style>
+                #keyFindingsContent ul {
+                    margin: 0;
+                    padding-left: 20px;
+                }
+                #keyFindingsContent ul li {
+                    margin-bottom: 12px;
+                }
+                #keyFindingsContent ul li:last-child {
+                    margin-bottom: 0;
+                }
+            </style>
+            
+            <!-- Section 1: Demographic Overview -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 1: Demographic Overview</h2>
+                <p class="table-introduction" id="demographicOverviewIntro">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="demographicOverviewTable" role="table" aria-label="Demographic Overview Lending Data">
+                        <thead>
+                            <tr role="row">
+                                <th style="text-align: left;" role="columnheader" scope="col">Metric</th>
+                                <!-- Year columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody role="rowgroup">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="demographicOverviewCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+                <div class="table-narrative" id="demographicOverviewDiscussion">
+                    <!-- Discussion will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Section 2: Income and Neighborhood Indicators -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 2: Income and Neighborhood Indicators</h2>
+                <p class="table-introduction" id="incomeNeighborhoodIntro">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="incomeNeighborhoodTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Metric</th>
+                                <!-- Year columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="incomeNeighborhoodCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+                <div class="table-narrative" id="incomeNeighborhoodDiscussion">
+                    <!-- Discussion will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Section 3: Top Lenders by Total Loans -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 3: Top Lenders by Total Loans</h2>
+                <p class="table-introduction" id="topLendersDetailedIntro">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <div class="table-header">
+                        <button class="expand-btn" id="expandTopLendersBtn" onclick="expandTopLendersTable()" style="display: none;">
+                            <i class="fas fa-chevron-down"></i> Show All Lenders
+                        </button>
+                    </div>
+                    <table class="data-table collapsible-table" id="topLendersDetailedTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Lender Name</th>
+                                <th style="text-align: center;">Total Loans</th>
+                                <!-- Race/ethnicity and indicator columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="topLendersDetailedCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+                <div class="table-narrative" id="topLendersDetailedDiscussion">
+                    <!-- Discussion will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Methodology Section -->
+            <div class="report-section print-break" id="methodsSection">
+                <h2 class="section-title">Methods</h2>
+                <div class="ai-insight-card">
+                    <div class="ai-content">
+                        <h3>Data Sources</h3>
+                        <p>This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff. Data is queried from NCRC datasets for the years specified in the analysis.</p>
+                        
+                        <p><strong>HMDA Data Coverage:</strong> This analysis includes mortgage loan originations (action taken = 1) for owner-occupied, site-built, 1-4 unit properties. <span id="loanPurposeCoverage">Loan purpose information will be populated dynamically.</span> Reverse mortgages are excluded from the analysis. For more information about HMDA data collection and reporting requirements, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
+                        
+                        <p id="censusDataSource"><strong>Census Data Sources:</strong> <span id="censusDataSourceText">Population demographic data is sourced from the U.S. Census Bureau American Community Survey (ACS) 5-year estimates. Census data is used to provide context about the racial and ethnic composition of the selected geography and is displayed in the Population Demographics table. The most recent available ACS 5-year estimates are used for all years in the analysis period.</span></p>
+                        
+                        <p><strong>Data Filters Applied:</strong> The following filters are automatically applied to all analyses in this report:
+                            <ul id="dataFiltersList" style="margin-top: 8px; padding-left: 20px;">
+                                <li>Originations only (action taken = 1)</li>
+                                <li>Site-built properties (construction method = 1)</li>
+                                <li>Owner-occupied properties (occupancy type = 1)</li>
+                                <li>Forward loans (excludes reverse mortgages where reverse_mortgage = 1)</li>
+                                <li>1-4 unit properties (total_units IN ('1','2','3','4'))</li>
+                            </ul>
+                        </p>
+                        
+                        <p><strong>Data Quality Assurance:</strong> All data used in this report has been downloaded, cleaned, and tested by NCRC Research staff to ensure accuracy and reliability. Users can download the complete raw dataset for their report using the Excel Export feature to verify any claims or statistics presented in the AI-generated narratives. When using AI-generated content, always keep a human in the loop—review AI interpretations against the underlying data and exercise professional judgment in your analysis.</p>
+                        
+                        <h3>Calculations</h3>
+                        
+                        <p><strong>Loan Originations:</strong> This report analyzes mortgage loan originations, defined as loans where action taken = 1. Originations represent completed mortgage loans, not applications or denials.</p>
+                        
+                        <p><strong>Race and Ethnicity Classification:</strong> Race and ethnicity are determined from multiple applicant race and ethnicity fields in the HMDA data. The methodology follows these steps:</p>
+                        <ol>
+                            <li><strong>Hispanic Classification:</strong> If any ethnicity field (applicant_ethnicity_1 through applicant_ethnicity_5) indicates Hispanic (codes 1, 11, 12, 13, or 14), the borrower is classified as Hispanic, regardless of race codes.</li>
+                            <li><strong>Race Classification for Non-Hispanic Borrowers:</strong> For borrowers not classified as Hispanic, the first valid race code is identified from applicant_race_1 through applicant_race_5. Valid race codes exclude codes 6 (Not Provided), 7 (Not Applicable), and 8 (Information not provided).</li>
+                            <li><strong>Race Categories:</strong> Based on the first valid race code identified:
+                                <ul>
+                                    <li>Code 1: Native American</li>
+                                    <li>Code 2 or 21-27: Asian</li>
+                                    <li>Code 3: Black or African American</li>
+                                    <li>Code 4 or 41-44: Hawaiian/Pacific Islander</li>
+                                    <li>Code 5: White</li>
+                                </ul>
+                            </li>
+                            <li><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100, where loans with demographic data = total loans minus loans without race/ethnicity data. Only groups representing ≥1% of all loans are included in demographic overview tables.</li>
+                        </ol>
+                        
+                        <p><strong>Exclusion of Loans Without Demographic Data:</strong> Loans without race/ethnicity data are excluded from the denominator before calculating percentages in the demographic overview table. This ensures that percentages reflect the distribution of loans among borrowers with known race/ethnicity classifications, rather than including loans where this information is missing. The exclusion of these loans from the calculation provides a more accurate representation of lending patterns by race and ethnicity.</p>
+                        
+                        <p><strong>Low-to-Moderate Income Borrower (LMIB):</strong> Borrowers are classified as Low-to-Moderate Income when their reported income is below 80% of the area median family income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) in which the property is located. Income thresholds are determined using FFIEC median family income data.</p>
+                        
+                        <p><strong>Low-to-Moderate Income Census Tract (LMICT):</strong> Census tracts are classified as Low-to-Moderate Income when the tract's median family income is below 80% of the area median family income, as defined by the U.S. Department of Housing and Urban Development (HUD). This designation is based on the census tract where the property securing the loan is located.</p>
+                        
+                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts are classified as Majority-Minority when minority populations represent more than 50% of the total population in the census tract, as defined by the U.S. Census Bureau. This designation is based on the census tract where the property securing the loan is located.</p>
+                        
+                        <p><strong>2020 Census Boundary Changes:</strong> The 2020 census boundaries that took effect in 2022 resulted in a dramatic increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a dramatic increase in majority-minority mortgage originations between 2021 and 2022. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual lending pattern changes or lender strategy shifts. When analyzing MMCT origination changes between 2021 and 2022, this census boundary change effect should be considered.</p>
+                        
+                        <p><strong>Change Over Time:</strong> Calculated as the difference between values in the first year and the final year of the analysis period. Positive changes are displayed in blue (NCRC light blue #2fade3), and negative changes are displayed in red. Changes are shown as both count changes and percentage point changes (pp).</p>
+                        
+                        <p><strong>Top Lenders Selection:</strong> The top 10 lenders are identified based on total number of loan originations in the most recent year of the report. Lenders are sorted in descending order by total loans. For each lender, race/ethnicity percentages use the same methodology as the demographic overview, with denominator = loans with demographic data. Income and neighborhood indicator percentages use denominator = total loans.</p>
+                        
+                        <p><strong>Geographic Identifiers:</strong> Counties are identified using the 5-digit Federal Information Processing Standards (FIPS) county code. The county code is used to join HMDA data with geographic reference tables to obtain county names and state information.</p>
+                        
+                        <p><strong>Lender Identification:</strong> Lenders are identified using the Legal Entity Identifier (LEI) and matched to lender names from the HMDA Lenders table (lenders18) using the LEI as the linking field.</p>
+                        
+                        <h3>Abbreviations and Acronyms</h3>
+                        <ul>
+                            <li><strong>HMDA:</strong> Home Mortgage Disclosure Act</li>
+                            <li><strong>CFPB:</strong> Consumer Financial Protection Bureau</li>
+                            <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
+                            <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+                            <li><strong>LMIB:</strong> Low-to-Moderate Income Borrower</li>
+                            <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
+                            <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
+                            <li><strong>AMFI:</strong> Area Median Family Income</li>
+                            <li><strong>MSA:</strong> Metropolitan Statistical Area</li>
+                            <li><strong>MD:</strong> Metropolitan Division</li>
+                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
+                            <li><strong>FFIEC:</strong> Federal Financial Institutions Examination Council</li>
+                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                            <li><strong>LEI:</strong> Legal Entity Identifier</li>
+                            <li><strong>pp:</strong> Percentage Points</li>
+                        </ul>
+                        
+                        <h3>AI Disclosure</h3>
+                        <p>This report was generated using AI assistance through Cursor and other language models (primarily Claude Sonnet 4). AI-generated content includes narrative analysis, introductory paragraphs, key findings, and table discussions. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. All underlying data and calculations are based on HMDA data compiled by NCRC research staff. Users should verify specific claims and data points using the Excel Export, which contains the complete underlying dataset. For official HMDA data and documentation, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
+                    </div>
+                </div>
+            </div>
+            
+
+            
+        </div>
+    </div>
+    
+    <script>
+        // Update download links with job_id from URL
+        function updateDownloadLinks() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const jobId = urlParams.get('job_id');
+            
+            if (jobId) {
+                // Update dropdown download links
+                const downloadLinks = document.querySelectorAll('.dropdown-item[href^="/download"]');
+                downloadLinks.forEach(link => {
+                    const href = link.getAttribute('href');
+                    if (href && !href.includes('job_id=')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        link.setAttribute('href', `${href}${separator}job_id=${encodeURIComponent(jobId)}`);
+                    }
+                });
+                
+                // Update PDF download button
+                const pdfBtn = document.getElementById('downloadPdfBtn');
+                if (pdfBtn) {
+                    const href = pdfBtn.getAttribute('href');
+                    if (href && !href.includes('job_id=')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        pdfBtn.setAttribute('href', `${href}${separator}job_id=${encodeURIComponent(jobId)}`);
+                    }
+                }
+            }
+        }
+        
+        // Load and display report data
+        async function loadReportData() {
+            try {
+                // Check for job_id in URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const jobId = urlParams.get('job_id');
+                
+                console.log('Loading report data...', { jobId, url: window.location.href });
+                
+                // Update download links with job_id
+                updateDownloadLinks();
+                
+                // Build URL with job_id if available
+                let url = '/report-data';
+                if (jobId) {
+                    url += `?job_id=${encodeURIComponent(jobId)}`;
+                    console.log('Using job_id from URL:', jobId);
+                } else {
+                    console.log('No job_id in URL, relying on session');
+                }
+                
+                const response = await fetch(url);
+                console.log('Response status:', response.status);
+                
+                const result = await response.json();
+                console.log('Response data:', { success: result.success, hasData: !!result.data, dataKeys: result.data ? Object.keys(result.data) : [] });
+                console.log('Metadata:', result.metadata ? {
+                    counties: result.metadata.counties,
+                    years: result.metadata.years,
+                    hasCensusData: !!result.metadata.census_data,
+                    censusDataKeys: result.metadata.census_data ? Object.keys(result.metadata.census_data) : []
+                } : 'No metadata');
+                
+                if (!result.success) {
+                    const errorMsg = result.error || 'Failed to load report data';
+                    console.error('Report data error:', errorMsg);
+                    throw new Error(errorMsg);
+                }
+                
+                // Check if we have actual data
+                if (!result.data || Object.keys(result.data).length === 0) {
+                    console.warn('No data in response:', result);
+                    throw new Error('No report data available. The analysis may still be running or may have failed.');
+                }
+                
+                // Ensure metadata exists with defaults
+                const metadata = result.metadata || {
+                    generated_at: new Date().toISOString(),
+                    counties: [],
+                    years: [],
+                    total_records: 0,
+                    ai_insights: {}
+                };
+                
+                console.log('Displaying report with metadata:', metadata);
+                displayReport(result.data || {}, metadata);
+                
+            } catch (error) {
+                console.error('Error loading report:', error);
+                const errorMessage = error.message || 'Failed to load report data';
+                if (errorMessage.includes('No analysis') || errorMessage.includes('No analysis session') || errorMessage.includes('No report data')) {
+                    showError('No analysis data found. Please run an analysis first by selecting counties and years on the <a href="/">analysis page</a>.');
+                } else {
+                    showError('Error loading report: ' + errorMessage + '. Please try running a new analysis on the <a href="/">analysis page</a>.');
+                }
+            }
+        }
+        
+        function displayReport(data, metadata) {
+            // Ensure metadata exists
+            if (!metadata) {
+                console.error('Metadata is missing');
+                showError('Report data is incomplete. Please try generating a new report.');
+                return;
+            }
+            
+            console.log('Displaying report with metadata:', metadata);
+            console.log('Census data in metadata:', metadata.census_data ? {
+                counties: Object.keys(metadata.census_data),
+                sampleCounty: metadata.census_data[Object.keys(metadata.census_data)[0]]
+            } : 'No census_data in metadata');
+            
+            // Hide loading state
+            document.getElementById('loadingState').style.display = 'none';
+            
+            // Show report content
+            document.getElementById('main-content').style.display = 'block';
+            
+            // Update metadata with safe defaults
+            document.getElementById('counties').textContent = 
+                (metadata.counties && metadata.counties.length > 0) ? metadata.counties.join(', ') : 'N/A';
+            document.getElementById('years').textContent = 
+                (metadata.years && metadata.years.length > 0) ? metadata.years.join(', ') : 'N/A';
+            
+            // Populate intro paragraph and demographics table (always show these)
+            generateIntroParagraph(metadata);
+            populatePopulationDemographicsTable(metadata);
+            
+            // Populate AI insights if available
+            if (metadata.ai_insights) {
+                populateAIInsights(metadata.ai_insights, metadata);
+            } else {
+                // If no AI insights, still show the caption section after demographics table
+                const captionSection = document.getElementById('populationDemographicsCaptionSection');
+                if (captionSection) {
+                    captionSection.style.display = 'block';
+                }
+            }
+            
+            // Populate demographic overview table
+            if (data.demographic_overview && data.demographic_overview.length > 0) {
+                populateDemographicOverviewTable(data.demographic_overview, metadata);
+            }
+            
+            // Populate income and neighborhood indicators table
+            if (data.income_neighborhood_indicators && data.income_neighborhood_indicators.length > 0) {
+                populateIncomeNeighborhoodTable(data.income_neighborhood_indicators, metadata);
+            }
+            
+            // Populate top 10 lenders detailed table
+            if (data.top_lenders_detailed && data.top_lenders_detailed.length > 0) {
+                populateTopLendersDetailedTable(data.top_lenders_detailed, metadata);
+            }
+            
+            // Populate methodology section with loan purpose information
+            populateMethodology(metadata);
+        }
+        
+        function populateMethodology(metadata) {
+            // Populate loan purpose coverage text
+            const loanPurposeCoverage = document.getElementById('loanPurposeCoverage');
+            if (loanPurposeCoverage && metadata.loan_purpose) {
+                const loanPurposes = Array.isArray(metadata.loan_purpose) ? metadata.loan_purpose : [metadata.loan_purpose];
+                
+                // Map loan purpose values to display names
+                const purposeMap = {
+                    'purchase': 'home purchase loans (loan purpose = 1)',
+                    'refinance': 'refinance and cash-out refinance loans (loan purpose IN (31, 32))',
+                    'equity': 'home equity lending (loan purpose IN (2, 4))'
+                };
+                
+                // Filter out 'all' if present and get actual purposes
+                const selectedPurposes = loanPurposes.filter(p => p !== 'all');
+                
+                // If all three are selected or 'all' was selected, show all purposes
+                if (selectedPurposes.length === 0 || 
+                    (selectedPurposes.includes('purchase') && selectedPurposes.includes('refinance') && selectedPurposes.includes('equity')) ||
+                    loanPurposes.includes('all')) {
+                    loanPurposeCoverage.textContent = 'The analysis includes all loan purposes: home purchase loans (loan purpose = 1), refinance and cash-out refinance loans (loan purpose IN (31, 32)), and home equity lending (loan purpose IN (2, 4)).';
+                } else if (selectedPurposes.length === 1) {
+                    const purposeName = purposeMap[selectedPurposes[0]] || selectedPurposes[0];
+                    loanPurposeCoverage.textContent = `The analysis includes ${purposeName}.`;
+                } else {
+                    const purposeNames = selectedPurposes.map(p => purposeMap[p] || p);
+                    const lastPurpose = purposeNames.pop();
+                    const purposesText = purposeNames.length > 0 
+                        ? purposeNames.join(', ') + ', and ' + lastPurpose
+                        : lastPurpose;
+                    loanPurposeCoverage.textContent = `The analysis includes ${purposesText}.`;
+                }
+            } else if (loanPurposeCoverage) {
+                // Default text if no loan purpose info is available
+                loanPurposeCoverage.textContent = 'The analysis includes all loan purposes: home purchase loans (loan purpose = 1), refinance and cash-out refinance loans (loan purpose IN (31, 32)), and home equity lending (loan purpose IN (2, 4)).';
+            }
+            
+            // Populate Census data source information
+            const censusDataSourceText = document.getElementById('censusDataSourceText');
+            if (censusDataSourceText && metadata.census_data) {
+                const censusData = metadata.census_data;
+                const counties = Object.keys(censusData);
+                
+                if (counties.length > 0) {
+                    // Get the ACS data year from the first county
+                    const firstCounty = censusData[counties[0]];
+                    const timePeriods = firstCounty.time_periods || {};
+                    const acsPeriod = timePeriods.acs;
+                    const acsYear = acsPeriod?.data_year || 'the most recent available ACS 5-year estimates';
+                    
+                    let censusText = `Population demographic data is sourced from the U.S. Census Bureau. `;
+                    censusText += `The Population Demographics table shows change over time using three data sources: `;
+                    censusText += `(1) the most recent American Community Survey (ACS) 5-year estimates (${acsYear}), `;
+                    censusText += `(2) the 2020 Decennial Census, and (3) the 2010 Decennial Census. `;
+                    censusText += `Census data is used to provide context about the racial and ethnic composition of the selected geography and how it has changed over time. `;
+                    censusText += `For more information about Census data, visit the <a href="https://www.census.gov/data/developers/data-sets.html" target="_blank">U.S. Census Bureau Data API website</a>.`;
+                    
+                    censusDataSourceText.innerHTML = censusText;
+                } else {
+                    censusDataSourceText.textContent = 'Population demographic data from the U.S. Census Bureau was not available for the selected geography.';
+                }
+            } else if (censusDataSourceText) {
+                censusDataSourceText.textContent = 'Population demographic data from the U.S. Census Bureau was not available for the selected geography.';
+            }
+        }
+        
+        function populatePopulationDemographicsTable(metadata) {
+            console.log('populatePopulationDemographicsTable called with metadata:', metadata);
+            
+            if (!metadata) {
+                console.warn('No metadata provided to populatePopulationDemographicsTable');
+                return;
+            }
+            
+            const censusData = metadata.census_data;
+            console.log('Census data object:', censusData);
+            console.log('Census data type:', typeof censusData);
+            console.log('Census data keys:', censusData ? Object.keys(censusData) : 'null/undefined');
+            console.log('Census data length:', censusData ? Object.keys(censusData).length : 0);
+            
+            if (!censusData || Object.keys(censusData).length === 0) {
+                console.warn('No Census data available - showing empty table with message');
+                // Show the table section even if no data, with a message
+                const tbody = document.querySelector('#populationDemographicsTable tbody');
+                if (tbody) {
+                    // Use a large colspan to cover all potential columns
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #666; font-style: italic;">Census demographic data is not available for the selected geography.</td></tr>';
+                }
+                const section = document.getElementById('demographicOverviewTableSection');
+                if (section) {
+                    section.style.display = 'block';
+                }
+                return;
+            }
+            
+            // Debug: Check structure of first county
+            const firstCountyKey = Object.keys(censusData)[0];
+            const firstCountyData = censusData[firstCountyKey];
+            console.log('First county key:', firstCountyKey);
+            console.log('First county data:', firstCountyData);
+            console.log('First county data keys:', firstCountyData ? Object.keys(firstCountyData) : 'null');
+            if (firstCountyData) {
+                console.log('Has time_periods:', 'time_periods' in firstCountyData);
+                if (firstCountyData.time_periods) {
+                    console.log('Time periods keys:', Object.keys(firstCountyData.time_periods));
+                }
+            }
+            
+            // Helper function to aggregate demographics across counties for a specific time period
+            // 
+            // AGGREGATION METHOD FOR MULTIPLE COUNTIES:
+            // When multiple counties are selected, the demographics are calculated using a weighted average
+            // based on each county's population. This ensures that larger counties have more influence
+            // on the overall percentages than smaller counties.
+            //
+            // Formula: For each race/ethnicity group:
+            //   1. Sum the weighted counts: (county_percentage * county_population) / 100 for all counties
+            //   2. Divide by total population across all counties
+            //   3. Multiply by 100 to get the final percentage
+            //
+            // Example: If County A has 100,000 people (60% White) and County B has 50,000 people (40% White):
+            //   - Weighted White count = (60 * 100,000) / 100 + (40 * 50,000) / 100 = 60,000 + 20,000 = 80,000
+            //   - Total population = 150,000
+            //   - Final White percentage = (80,000 / 150,000) * 100 = 53.3%
+            function aggregateTimePeriod(timePeriodKey) {
+                let totalPopulation = 0;
+                let whiteSum = 0;
+                let blackSum = 0;
+                let asianSum = 0;
+                let nativeAmSum = 0;
+                let hopiSum = 0;
+                let hispanicSum = 0;
+                
+                for (const countyName in censusData) {
+                    const countyData = censusData[countyName];
+                    const timePeriods = countyData.time_periods || {};
+                    const periodData = timePeriods[timePeriodKey];
+                    
+                    if (periodData && periodData.demographics) {
+                        const demographics = periodData.demographics;
+                        const pop = demographics.total_population || 0;
+                        
+                        if (pop > 0) {
+                            totalPopulation += pop;
+                            
+                            // Calculate weighted percentages
+                            // For each county, multiply the percentage by the population to get the weighted count
+                            const whitePct = demographics.white_percentage || 0;
+                            const blackPct = demographics.black_percentage || 0;
+                            const asianPct = demographics.asian_percentage || 0;
+                            const nativeAmPct = demographics.native_american_percentage || 0;
+                            const hopiPct = demographics.hopi_percentage || 0;
+                            const hispanicPct = demographics.hispanic_percentage || 0;
+                            
+                            // Sum weighted counts: (percentage * population) / 100
+                            whiteSum += (whitePct * pop) / 100;
+                            blackSum += (blackPct * pop) / 100;
+                            asianSum += (asianPct * pop) / 100;
+                            nativeAmSum += (nativeAmPct * pop) / 100;
+                            hopiSum += (hopiPct * pop) / 100;
+                            hispanicSum += (hispanicPct * pop) / 100;
+                        }
+                    }
+                }
+                
+                if (totalPopulation === 0) {
+                    return null;
+                }
+                
+                // Calculate weighted average percentages
+                // Final percentage = (sum of weighted counts / total population) * 100
+                return {
+                    total_population: totalPopulation,
+                    white_percentage: (whiteSum / totalPopulation) * 100,
+                    black_percentage: (blackSum / totalPopulation) * 100,
+                    hispanic_percentage: (hispanicSum / totalPopulation) * 100,
+                    asian_percentage: (asianSum / totalPopulation) * 100,
+                    native_american_percentage: (nativeAmSum / totalPopulation) * 100,
+                    hopi_percentage: (hopiSum / totalPopulation) * 100
+                };
+            }
+            
+            // Aggregate data for each time period
+            const acsData = aggregateTimePeriod('acs');
+            const census2020Data = aggregateTimePeriod('census2020');
+            const census2010Data = aggregateTimePeriod('census2010');
+            
+            // Determine which time periods we have data for (order: 2010 Census, 2020 Census, 2024 ACS)
+            const timePeriods = [];
+            if (census2010Data) {
+                timePeriods.push({
+                    key: 'census2010',
+                    label: '2010 Census',
+                    data: census2010Data
+                });
+            }
+            if (census2020Data) {
+                timePeriods.push({
+                    key: 'census2020',
+                    label: '2020 Census',
+                    data: census2020Data
+                });
+            }
+            if (acsData) {
+                const firstCounty = censusData[Object.keys(censusData)[0]];
+                const acsPeriod = firstCounty.time_periods?.acs;
+                timePeriods.push({
+                    key: 'acs',
+                    label: acsPeriod?.year || '2024 ACS',
+                    data: acsData
+                });
+            }
+            
+            if (timePeriods.length === 0) {
+                console.warn('No time period data available - showing empty table with message');
+                const tbody = document.querySelector('#populationDemographicsTable tbody');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; color: #666; font-style: italic;">Census demographic data is not available for the selected geography.</td></tr>';
+                }
+                const section = document.getElementById('demographicOverviewTableSection');
+                if (section) {
+                    section.style.display = 'block';
+                }
+                return;
+            }
+            
+            // Determine visible race groups (show if >= 1% in any time period)
+            const allPercentages = {
+                white: [],
+                black: [],
+                hispanic: [],
+                asian: [],
+                native_american: [],
+                hopi: []
+            };
+            
+            timePeriods.forEach(period => {
+                if (period.data) {
+                    allPercentages.white.push(period.data.white_percentage || 0);
+                    allPercentages.black.push(period.data.black_percentage || 0);
+                    allPercentages.hispanic.push(period.data.hispanic_percentage || 0);
+                    allPercentages.asian.push(period.data.asian_percentage || 0);
+                    allPercentages.native_american.push(period.data.native_american_percentage || 0);
+                    allPercentages.hopi.push(period.data.hopi_percentage || 0);
+                }
+            });
+            
+            // Define race groups in the desired order: White, Black, Hispanic, Asian, Native American, Hawaiian
+            const raceGroups = [
+                { name: 'White', key: 'white', percentages: allPercentages.white },
+                { name: 'Black', key: 'black', percentages: allPercentages.black },
+                { name: 'Hispanic', key: 'hispanic', percentages: allPercentages.hispanic },
+                { name: 'Asian', key: 'asian', percentages: allPercentages.asian },
+                { name: 'Native American', key: 'native_american', percentages: allPercentages.native_american },
+                { name: 'Hawaiian/PI', key: 'hopi', percentages: allPercentages.hopi }
+            ];
+            
+            // Filter out groups that are less than 1% in all time periods
+            const visibleGroups = raceGroups.filter(group => 
+                group.percentages.some(pct => pct >= 1.0)
+            );
+            
+            // Populate table header with time period columns (2010 Census, 2020 Census, 2024 ACS)
+            const thead = document.querySelector('#populationDemographicsTable thead tr');
+            if (thead) {
+                // Clear existing headers except the first one (Demographic)
+                const existingHeaders = thead.querySelectorAll('th');
+                existingHeaders.forEach((th, index) => {
+                    if (index > 0) th.remove();
+                });
+                
+                // Add headers for each time period
+                timePeriods.forEach(period => {
+                    const th = document.createElement('th');
+                    th.style.textAlign = 'center';
+                    th.textContent = period.label;
+                    thead.appendChild(th);
+                });
+            }
+            
+            // Populate table body - rows are demographics, columns are time periods
+            const tbody = document.querySelector('#populationDemographicsTable tbody');
+            if (!tbody) {
+                console.error('Could not find #populationDemographicsTable tbody element');
+                return;
+            }
+            
+            // Create rows for each demographic group
+            const rows = [];
+            
+            // Total Population row
+            rows.push(`
+                <tr>
+                    <td style="text-align: left; font-weight: 600;">Total Population</td>
+                    ${timePeriods.map(period => 
+                        `<td style="text-align: center; font-weight: 600;">${(period.data.total_population || 0).toLocaleString()}</td>`
+                    ).join('')}
+                </tr>
+            `);
+            
+            // Add rows for visible race groups
+            visibleGroups.forEach(group => {
+                rows.push(`
+                    <tr>
+                        <td style="text-align: left;">${group.name} (%)</td>
+                        ${timePeriods.map(period => {
+                            const pct = period.data[`${group.key}_percentage`] || 0;
+                            return `<td style="text-align: center;">${pct.toFixed(1)}%</td>`;
+                        }).join('')}
+                    </tr>
+                `);
+            });
+            
+            tbody.innerHTML = rows.join('');
+            
+            // Update caption (now located below Key Findings)
+            const caption = document.getElementById('populationDemographicsCaption');
+            if (caption) {
+                let captionText = '<strong>Source:</strong> U.S. Census Bureau data. ';
+                if (acsData) {
+                    const firstCounty = censusData[Object.keys(censusData)[0]];
+                    const acsPeriod = firstCounty.time_periods?.acs;
+                    if (acsPeriod && acsPeriod.data_year) {
+                        const yearMatch = acsPeriod.data_year.match(/(\d{4})/);
+                        if (yearMatch) {
+                            const year = parseInt(yearMatch[1]);
+                            captionText += `Most recent data from ${year} ACS 5-year estimates (${year - 4}-${year} period). `;
+                        }
+                    }
+                }
+                captionText += '2020 and 2010 data from Decennial Census. Groups representing less than 1% of the total population in all time periods are excluded from this table.';
+                caption.innerHTML = captionText;
+            }
+            
+            // Show the table section
+            const section = document.getElementById('demographicOverviewTableSection');
+            if (section) {
+                section.style.display = 'block';
+                console.log('Demographics table section displayed');
+            } else {
+                console.error('Could not find #demographicOverviewTableSection element');
+            }
+            
+            // Show the caption section (below Key Findings)
+            const captionSection = document.getElementById('populationDemographicsCaptionSection');
+            if (captionSection) {
+                captionSection.style.display = 'block';
+                console.log('Population Demographics caption section displayed');
+            }
+        }
+        
+        function generateIntroParagraph(metadata) {
+            if (!metadata) return;
+            
+            const counties = metadata.counties || [];
+            const years = metadata.years || [];
+            const loanPurpose = metadata.loan_purpose || ['purchase'];
+            
+            if (counties.length === 0 || years.length === 0) return;
+            
+            // Format counties - group by state and avoid repeating state names
+            let countiesStr = '';
+            
+            // Parse counties into {name, state} objects
+            const parsedCounties = counties.map(county => {
+                // Handle formats like "Richmond County, Virginia" or "Richmond city, Virginia"
+                const match = county.match(/^(.+?),\s*(.+)$/);
+                if (match) {
+                    return { name: match[1].trim(), state: match[2].trim(), full: county };
+                }
+                // If no comma, assume it's just the name (no state specified)
+                return { name: county.trim(), state: null, full: county };
+            });
+            
+            // Group by state
+            const byState = {};
+            parsedCounties.forEach(item => {
+                const state = item.state || 'Unknown';
+                if (!byState[state]) {
+                    byState[state] = [];
+                }
+                byState[state].push(item.name);
+            });
+            
+            // Format the string
+            const states = Object.keys(byState);
+            
+            if (counties.length === 1) {
+                // Single county - use original format
+                countiesStr = counties[0];
+            } else if (states.length === 1) {
+                // All counties in same state
+                const state = states[0];
+                const names = byState[state];
+                if (names.length === 1) {
+                    countiesStr = `${names[0]}, ${state}`;
+                } else if (names.length === 2) {
+                    countiesStr = `${names[0]} and ${names[1]}, ${state}`;
+                } else {
+                    const last = names.slice().pop();
+                    const rest = names.slice(0, -1);
+                    countiesStr = `${rest.join(', ')}, and ${last}, ${state}`;
+                }
+            } else {
+                // Multiple states - format each state group
+                const stateGroups = states.map(state => {
+                    const names = byState[state];
+                    if (names.length === 1) {
+                        return `${names[0]}, ${state}`;
+                    } else if (names.length === 2) {
+                        return `${names[0]} and ${names[1]}, ${state}`;
+                    } else {
+                        const last = names.slice().pop();
+                        const rest = names.slice(0, -1);
+                        return `${rest.join(', ')}, and ${last}, ${state}`;
+                    }
+                });
+                
+                if (stateGroups.length === 2) {
+                    countiesStr = stateGroups.join(' and ');
+                } else {
+                    const last = stateGroups.pop();
+                    countiesStr = `${stateGroups.join(', ')}, and ${last}`;
+                }
+            }
+            
+            // Format years
+            const yearsStr = years.length > 1 
+                ? `${Math.min(...years)} to ${Math.max(...years)}`
+                : years[0].toString();
+            
+            // Format loan purposes
+            const purposeMap = {
+                'purchase': 'home purchase loans',
+                'refinance': 'refinance and cash-out refinance loans',
+                'equity': 'home equity lending'
+            };
+            
+            const selectedPurposes = Array.isArray(loanPurpose) 
+                ? loanPurpose.filter(p => p !== 'all')
+                : [loanPurpose].filter(p => p !== 'all');
+            
+            let loanPurposeStr = '';
+            if (selectedPurposes.length === 0 || 
+                (selectedPurposes.includes('purchase') && selectedPurposes.includes('refinance') && selectedPurposes.includes('equity'))) {
+                loanPurposeStr = 'all loan purposes (home purchase loans, refinance and cash-out refinance loans, and home equity lending)';
+            } else if (selectedPurposes.length === 1) {
+                loanPurposeStr = purposeMap[selectedPurposes[0]] || selectedPurposes[0];
+            } else {
+                const purposeNames = selectedPurposes.map(p => purposeMap[p] || p);
+                const lastPurpose = purposeNames.pop();
+                loanPurposeStr = purposeNames.join(', ') + ', and ' + lastPurpose;
+            }
+            
+            // Build intro paragraph
+            let introText = `This report examines ${loanPurposeStr} in ${countiesStr} from ${yearsStr}. `;
+            introText += `The analysis includes only loans that were completed (originations) for owner-occupied properties, which means homes where the borrower actually lives rather than investment properties. `;
+            introText += `The data is filtered to include only site-built homes (traditional homes constructed on-site, not manufactured or mobile homes), forward mortgages (regular mortgages where the borrower makes payments to the bank, not reverse mortgages where the bank pays the homeowner), and properties with 1-4 units (single-family homes, duplexes, triplexes, and four-unit buildings). `;
+            introText += `It is important to note that shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts.`;
+            
+            // Add Census demographic context if available
+            if (metadata.census_data) {
+                const censusData = metadata.census_data;
+                const countiesWithData = Object.keys(censusData).filter(county => {
+                    const data = censusData[county];
+                    return data && data.demographics && data.demographics.total_population;
+                });
+                
+                if (countiesWithData.length > 0) {
+                    // Aggregate demographics for context
+                    let totalPop = 0;
+                    let whiteSum = 0, hispanicSum = 0, blackSum = 0, asianSum = 0;
+                    
+                    countiesWithData.forEach(county => {
+                        const demo = censusData[county].demographics;
+                        const pop = demo.total_population || 0;
+                        totalPop += pop;
+                        whiteSum += (demo.white_percentage || 0) * pop / 100;
+                        hispanicSum += (demo.hispanic_percentage || 0) * pop / 100;
+                        blackSum += (demo.black_percentage || 0) * pop / 100;
+                        asianSum += (demo.asian_percentage || 0) * pop / 100;
+                    });
+                    
+                    if (totalPop > 0) {
+                        const whitePct = (whiteSum / totalPop * 100).toFixed(1);
+                        const hispanicPct = (hispanicSum / totalPop * 100).toFixed(1);
+                        const blackPct = (blackSum / totalPop * 100).toFixed(1);
+                        const asianPct = (asianSum / totalPop * 100).toFixed(1);
+                        
+                        const parts = [];
+                        if (parseFloat(whitePct) > 0) parts.push(`${whitePct}% White`);
+                        if (parseFloat(hispanicPct) > 0) parts.push(`${hispanicPct}% Hispanic or Latino`);
+                        if (parseFloat(blackPct) > 0) parts.push(`${blackPct}% Black or African American`);
+                        if (parseFloat(asianPct) > 0) parts.push(`${asianPct}% Asian`);
+                        
+                        if (parts.length >= 2) {
+                            const lastPart = parts.pop();
+                            introText += ` According to recent Census data, the population of ${countiesStr} is approximately ${parts.join(', ')}, and ${lastPart}.`;
+                        } else if (parts.length === 1) {
+                            introText += ` According to recent Census data, the population of ${countiesStr} is approximately ${parts[0]}.`;
+                        }
+                    }
+                }
+            }
+            
+            // Display intro paragraph
+                const element = document.getElementById('introParagraphContent');
+                if (element) {
+                element.textContent = introText;
+                    document.getElementById('aiIntroParagraphSection').style.display = 'block';
+                }
+            }
+        
+        function populateAIInsights(aiInsights, metadata) {
+            // Populate intro paragraph (now generated in JavaScript)
+            generateIntroParagraph(metadata);
+            
+            // Populate population demographics table (after intro, before key findings)
+            populatePopulationDemographicsTable(metadata);
+            
+            console.log('populateAIInsights called with:', {
+                hasAiInsights: !!aiInsights,
+                aiInsightsKeys: aiInsights ? Object.keys(aiInsights) : [],
+                demographic_overview_discussion: aiInsights?.demographic_overview_discussion ? 'present' : 'missing',
+                income_neighborhood_discussion: aiInsights?.income_neighborhood_discussion ? 'present' : 'missing',
+                top_lenders_detailed_discussion: aiInsights?.top_lenders_detailed_discussion ? 'present' : 'missing'
+            });
+            
+            if (!aiInsights) {
+                console.warn('No AI insights provided to populateAIInsights');
+                return;
+            }
+            
+            if (aiInsights.key_findings) {
+                const content = aiInsights.key_findings;
+                const element = document.getElementById('keyFindingsContent');
+                if (element) {
+                    element.innerHTML = formatMarkdownContent(content);
+                    document.getElementById('aiKeyFindingsSection').style.display = 'block';
+                    
+                    // Show the Population Demographics caption section after Key Findings
+                    const captionSection = document.getElementById('populationDemographicsCaptionSection');
+                    if (captionSection) {
+                        captionSection.style.display = 'block';
+                    }
+                }
+            }
+            
+            // Populate demographic overview intro (hardcoded two sentences) and discussion
+            const demographicOverviewIntroEl = document.getElementById('demographicOverviewIntro');
+            if (demographicOverviewIntroEl && metadata && metadata.years && metadata.years.length > 0) {
+                const years = metadata.years;
+                const yearRange = years.length > 1 
+                    ? `${Math.min(...years)} to ${Math.max(...years)}`
+                    : years[0].toString();
+                demographicOverviewIntroEl.textContent = `This table shows lending activity by race and ethnicity over the time period ${yearRange}, including the number and percentage of loans to each race and ethnic group. Percentages are calculated using loans with demographic data as the denominator (loans without race/ethnicity data are excluded from the calculation). The table includes a change column showing the increase or decrease of each group over the entire span of years in the report, with positive changes displayed in blue and negative changes in red.`;
+            }
+            
+            if (aiInsights.demographic_overview_discussion) {
+                console.log('[DEBUG] Found demographic_overview_discussion, length:', aiInsights.demographic_overview_discussion.length);
+                const discussionEl = document.getElementById('demographicOverviewDiscussion');
+                if (discussionEl) {
+                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.demographic_overview_discussion);
+                    discussionEl.style.display = 'block'; // Ensure it's visible
+                    console.log('[DEBUG] Populated demographicOverviewDiscussion element');
+                } else {
+                    console.error('[ERROR] Could not find demographicOverviewDiscussion element');
+                }
+            } else {
+                console.warn('[WARNING] demographic_overview_discussion is missing from aiInsights');
+                // Show a placeholder message if discussion is missing
+                const discussionEl = document.getElementById('demographicOverviewDiscussion');
+                if (discussionEl) {
+                    discussionEl.innerHTML = '<p><em>Analysis narrative is being generated. Please refresh the page in a moment.</em></p>';
+                    discussionEl.style.display = 'block';
+                }
+            }
+            
+            // Populate income and neighborhood indicators intro (hardcoded two sentences) and discussion
+            const incomeNeighborhoodIntroEl = document.getElementById('incomeNeighborhoodIntro');
+            if (incomeNeighborhoodIntroEl && metadata && metadata.years && metadata.years.length > 0) {
+                const years = metadata.years;
+                const yearRange = years.length > 1 
+                    ? `${Math.min(...years)} to ${Math.max(...years)}`
+                    : years[0].toString();
+                incomeNeighborhoodIntroEl.textContent = `This table shows lending activity by income and neighborhood characteristics over the time period ${yearRange}, including the total number of loans overall and the number and percentage of loans to Low to Moderate Income Borrowers (LMIB), in Low to Moderate Income Census Tracts (LMICT), and in Majority Minority Census Tracts (MMCT). The table includes a change column showing the increase or decrease of each category over the entire span of years in the report, with positive changes displayed in blue and negative changes in red. It is important to note that the shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally, which may explain any apparent jump in lending to majority-minority census tracts between 2021 and 2022.`;
+            }
+            
+            if (aiInsights.income_neighborhood_discussion) {
+                console.log('[DEBUG] Found income_neighborhood_discussion, length:', aiInsights.income_neighborhood_discussion.length);
+                const discussionEl = document.getElementById('incomeNeighborhoodDiscussion');
+                if (discussionEl) {
+                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.income_neighborhood_discussion);
+                    console.log('[DEBUG] Populated incomeNeighborhoodDiscussion element');
+                } else {
+                    console.error('[ERROR] Could not find incomeNeighborhoodDiscussion element');
+                }
+            } else {
+                console.warn('[WARNING] income_neighborhood_discussion is missing from aiInsights');
+            }
+            
+            // Populate top lenders detailed intro (hardcoded two sentences) and discussion
+            const topLendersDetailedIntroEl = document.getElementById('topLendersDetailedIntro');
+            if (topLendersDetailedIntroEl && metadata && metadata.years && metadata.years.length > 0) {
+                const latestYear = Math.max(...metadata.years);
+                topLendersDetailedIntroEl.textContent = `This table shows the top lenders by total number of loans or applications in ${latestYear} (the most recent year in the report), displayed in descending order by total loans. For each lender, the table shows the share of loans to each race and ethnic group, as well as income and neighborhood indicator variables (LMIB, LMICT, MMCT), using the same calculation methods as the tables above. All columns in this table are sortable by clicking on the column headers.`;
+            }
+            
+            if (aiInsights.top_lenders_detailed_discussion) {
+                console.log('[DEBUG] Found top_lenders_detailed_discussion, length:', aiInsights.top_lenders_detailed_discussion.length);
+                const discussionEl = document.getElementById('topLendersDetailedDiscussion');
+                if (discussionEl) {
+                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.top_lenders_detailed_discussion);
+                    console.log('[DEBUG] Populated topLendersDetailedDiscussion element');
+                } else {
+                    console.error('[ERROR] Could not find topLendersDetailedDiscussion element');
+                }
+            } else {
+                console.warn('[WARNING] top_lenders_detailed_discussion is missing from aiInsights');
+            }
+            
+            if (aiInsights.bank_strategies) {
+                const content = aiInsights.bank_strategies;
+                const element = document.getElementById('bankStrategiesContent');
+                if (element) {
+                    element.innerHTML = formatMarkdownContent(content);
+                    document.getElementById('aiBankStrategiesSection').style.display = 'block';
+                }
+            }
+            
+            if (aiInsights.community_impact) {
+                const content = aiInsights.community_impact;
+                const element = document.getElementById('communityImpactContent');
+                if (element) {
+                    element.innerHTML = formatMarkdownContent(content);
+                    document.getElementById('aiCommunityImpactSection').style.display = 'block';
+                }
+            }
+            
+            if (aiInsights.trends_analysis) {
+                const content = aiInsights.trends_analysis;
+                const element = document.getElementById('trendsAnalysisContent');
+                if (element) {
+                    element.innerHTML = formatMarkdownContent(content);
+                    document.getElementById('aiTrendsAnalysisSection').style.display = 'block';
+                }
+            }
+        }
+        
+        function formatMarkdownContent(content) {
+            // Split into paragraphs
+            const paragraphs = content.split('\n\n').filter(p => p.trim());
+            
+            return paragraphs.map(paragraph => {
+                let formatted = paragraph.trim();
+                
+                // Remove lines that start with ## (markdown headers) since we already have section titles
+                const lines = formatted.split('\n');
+                const filteredLines = lines.filter(line => {
+                    const trimmed = line.trim();
+                    // Skip lines that start with ## (markdown headers)
+                    return !trimmed.startsWith('##');
+                });
+                formatted = filteredLines.join('\n').trim();
+                
+                // Skip empty paragraphs after filtering
+                if (!formatted) {
+                    return '';
+                }
+                
+                // Convert **text** to <strong>text</strong>
+                formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                
+                // Convert bullet points • to proper list items
+                if (formatted.includes('•')) {
+                    const lines = formatted.split('\n');
+                    const listItems = lines.map(line => {
+                        if (line.trim().startsWith('•')) {
+                            return `<li>${line.trim().substring(1).trim()}</li>`;
+                        }
+                        return line;
+                    });
+                    
+                    // Check if we have list items
+                    const hasListItems = listItems.some(item => item.startsWith('<li>'));
+                    if (hasListItems) {
+                        // Group consecutive list items
+                        let result = '';
+                        let inList = false;
+                        
+                        for (let i = 0; i < listItems.length; i++) {
+                            const item = listItems[i];
+                            if (item.startsWith('<li>')) {
+                                if (!inList) {
+                                    result += '<ul>';
+                                    inList = true;
+                                }
+                                result += item;
+                            } else {
+                                if (inList) {
+                                    result += '</ul>';
+                                    inList = false;
+                                }
+                                if (item.trim()) {
+                                    result += `<p>${item}</p>`;
+                                }
+                            }
+                        }
+                        
+                        if (inList) {
+                            result += '</ul>';
+                        }
+                        
+                        return result;
+                    }
+                }
+                
+                return `<p>${formatted}</p>`;
+            }).filter(p => p).join(''); // Filter out empty strings
+        }
+        
+        function populateSummaryCards(rawData) {
+            if (!rawData || rawData.length === 0) return;
+            
+            const cardsContainer = document.getElementById('summaryCards');
+            
+            // Find the latest year from the data
+            const years = [...new Set(rawData.map(row => row['year']))].sort((a, b) => b - a);
+            const latestYear = years[0];
+            
+            // Update the section title with the latest year
+            const titleElement = document.getElementById('latestStatsTitle');
+            if (titleElement) {
+                titleElement.textContent = `Latest Statistics (${latestYear})`;
+            }
+            
+            // Filter data for the latest year only
+            const latestYearData = rawData.filter(row => row['year'] === latestYear);
+            
+            // Compute unique branches by uninumbr for the latest year only
+            // Properly dedupe: LMI only, MMCT only, and both
+            const uniqueAll = new Set();
+            const uniqueLMIOnly = new Set();      // LMI=1, MMCT=0
+            const uniqueMMCTOnly = new Set();     // LMI=0, MMCT=1
+            const uniqueBoth = new Set();         // LMI=1, MMCT=1
+            
+            latestYearData.forEach(row => {
+                const id = row['uninumbr'];
+                if (id !== null && id !== undefined) {
+                    uniqueAll.add(id);
+                    
+                    // Check LMI and MMCT status
+                    const isLMI = (row['lmict'] === 1 || row['br_lmi'] === 1);
+                    const isMMCT = (row['mmct'] === 1 || row['br_minority'] === 1);
+                    
+                    if (isLMI && !isMMCT) {
+                        uniqueLMIOnly.add(id);
+                    } else if (!isLMI && isMMCT) {
+                        uniqueMMCTOnly.add(id);
+                    } else if (isLMI && isMMCT) {
+                        uniqueBoth.add(id);
+                    }
+                }
+            });
+            
+            const totalBranches = uniqueAll.size;
+            const lmiOnlyCount = uniqueLMIOnly.size;
+            const mmctOnlyCount = uniqueMMCTOnly.size;
+            const bothCount = uniqueBoth.size;
+            
+            // Calculate percentages
+            const lmiOnlyPct = totalBranches > 0 ? ((lmiOnlyCount / totalBranches) * 100).toFixed(1) : '0.0';
+            const mmctOnlyPct = totalBranches > 0 ? ((mmctOnlyCount / totalBranches) * 100).toFixed(1) : '0.0';
+            const bothPct = totalBranches > 0 ? ((bothCount / totalBranches) * 100).toFixed(1) : '0.0';
+            
+            cardsContainer.innerHTML = `
+                <div class="summary-card">
+                    <h3>${totalBranches.toLocaleString()}</h3>
+                    <p>Total Branches (${latestYear})</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${lmiOnlyCount.toLocaleString()} <span class="percentage-text">(${lmiOnlyPct}%)</span></h3>
+                    <p>LMI Only Branches (${latestYear})</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${mmctOnlyCount.toLocaleString()} <span class="percentage-text">(${mmctOnlyPct}%)</span></h3>
+                    <p>MMCT Only Branches (${latestYear})</p>
+                </div>
+                <div class="summary-card">
+                    <h3>${bothCount.toLocaleString()} <span class="percentage-text">(${bothPct}%)</span></h3>
+                    <p>Both LMICT/MMCT Branches (${latestYear})</p>
+                </div>
+            `;
+        }
+        
+        function toggleTable(tableId) {
+            const table = document.getElementById(tableId);
+            const button = table.previousElementSibling.querySelector('.collapse-btn');
+            const icon = button.querySelector('i');
+            
+            if (table.classList.contains('collapsed')) {
+                // Expand table - show all rows
+                table.classList.remove('collapsed');
+                button.classList.remove('collapsed');
+                icon.style.transform = 'rotate(0deg)';
+                
+                // Show all rows
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach(row => row.style.display = '');
+            } else {
+                // Collapse table - show only first 3 rows with fade
+                table.classList.add('collapsed');
+                button.classList.add('collapsed');
+                icon.style.transform = 'rotate(-90deg)';
+                
+                // Hide rows beyond the first 3
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach((row, index) => {
+                    if (index >= 3) {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+        }
+        
+        function populateTable(tableId, data, metadata = null, tableKey = null) {
+            if (!data || data.length === 0) return;
+            
+            const table = document.getElementById(tableId);
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            // Special handling for summaryTable (transposed structure)
+            if (tableId === 'summaryTable') {
+                // Get all column names (Variable + years)
+                const columns = Object.keys(data[0]);
+                const variableCol = 'Variable';
+                const yearCols = columns.filter(col => col !== variableCol).sort((a, b) => {
+                    // Put "Net Change" at the end
+                    if (a === 'Net Change') return 1;
+                    if (b === 'Net Change') return -1;
+                    // Sort numeric years
+                    return parseInt(a) - parseInt(b);
+                });
+                
+                // Build header row
+                let headerRow = `<tr><th style="text-align: left;">${variableCol}</th>`;
+                yearCols.forEach(year => {
+                    headerRow += `<th style="text-align: center;">${year}</th>`;
+                });
+                headerRow += '</tr>';
+                thead.innerHTML = headerRow;
+                
+                // Build data rows
+                tbody.innerHTML = data.map(row => {
+                    let cells = `<td style="text-align: left; font-weight: 600;">${row[variableCol]}</td>`;
+                    yearCols.forEach(year => {
+                        let value = row[year];
+                        if (value === null || value === undefined) {
+                            value = 0;
+                        }
+                        // Format as number with commas
+                        const formatted = typeof value === 'number' ? value.toLocaleString() : value;
+                        
+                        // Apply color coding for Net Change column (same as bankTable)
+                        if (year === 'Net Change') {
+                            const numValue = typeof value === 'number' ? value : parseFloat(value);
+                            const color = numValue < 0 ? 'red' : (numValue > 0 ? '#2fade3' : 'black');
+                            cells += `<td style="text-align: center; color: ${color}; font-weight: 600;">${formatted}</td>`;
+                        } else {
+                            cells += `<td style="text-align: center;">${formatted}</td>`;
+                        }
+                    });
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+                
+                // Populate caption with metadata
+                if (metadata) {
+                    const caption = document.getElementById('summaryTableCaption');
+                    if (caption) {
+                        const counties = metadata.counties || [];
+                        const years = metadata.years || [];
+                        const countyCount = counties.length;
+                        
+                        let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
+                        
+                        if (countyCount > 1) {
+                            captionText += ` | <strong>Note:</strong> Data for ${countyCount} counties (${counties.join(', ')}) are summed across all years shown.`;
+                        } else if (countyCount === 1) {
+                            captionText += ` | <strong>County:</strong> ${counties[0]}`;
+                        }
+                        
+                        if (years && years.length > 0) {
+                            const yearRange = years.length > 1 
+                                ? `${Math.min(...years)}-${Math.max(...years)}`
+                                : years[0].toString();
+                            captionText += ` | <strong>Years:</strong> ${yearRange}`;
+                        }
+                        
+                        caption.innerHTML = captionText;
+                    }
+                }
+                
+                return;
+            }
+            
+            // Standard table population for other tables
+            // Get the table headers to determine column order
+            const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+            
+            tbody.innerHTML = data.map((row, rowIndex) => {
+                // Map data to columns in the correct order based on table headers
+                const cells = headers.map(header => {
+                    let value = row[header];
+                    if (value === null || value === undefined) {
+                        return '';
+                    }
+                    
+                    // Format based on column type
+                    if (header.toLowerCase().includes('year')) {
+                        // Years should not have commas
+                        return value.toString();
+                    } else if (header.includes('%') || header.toLowerCase().includes('percent')) {
+                        // Percentage fields
+                        if (typeof value === 'number') {
+                            return value.toFixed(1) + '%';
+                        }
+                        return value + '%';
+                    } else if (header.toLowerCase().includes('yoy') || header.toLowerCase().includes('change')) {
+                        // YoY change fields - add + for positive values
+                        if (typeof value === 'number') {
+                            if (value > 0) {
+                                return '+' + value.toFixed(1) + '%';
+                            } else {
+                                return value.toFixed(1) + '%';
+                            }
+                        }
+                        return value;
+                    } else if (typeof value === 'number') {
+                        // Regular numbers with commas
+                        return value.toLocaleString();
+                    }
+                    return value;
+                });
+                
+                // Special handling for bankTable - first column (Bank Name) should be left-aligned
+                // Also handle Net Change column with color coding
+                if (tableId === 'bankTable') {
+                    const bankNameCell = cells[0];
+                    const otherCellsArray = cells.slice(1);
+                    const otherCells = otherCellsArray.map((cell, idx) => {
+                        // Check if this is the Net Change column (last column)
+                        // Header may be "Net Change" or "Net Change (YYYY-YYYY)"
+                        const headerIndex = idx + 1; // +1 because we sliced off the first cell
+                        const headerText = headerIndex < headers.length ? headers[headerIndex] : '';
+                        if (headerText && headerText.startsWith('Net Change')) {
+                            const netChangeValue = row['Net Change'];
+                            if (netChangeValue !== null && netChangeValue !== undefined) {
+                                const numValue = typeof netChangeValue === 'number' ? netChangeValue : parseFloat(netChangeValue);
+                                const color = numValue < 0 ? 'red' : (numValue > 0 ? '#2fade3' : 'black');
+                                const formatted = typeof numValue === 'number' ? numValue.toLocaleString() : numValue;
+                                return `<td style="text-align: center; color: ${color}; font-weight: 600;">${formatted}</td>`;
+                            }
+                        }
+                        return `<td style="text-align: center;">${cell}</td>`;
+                    });
+                    // Hide rows beyond the first 10 (index 0-9)
+                    const isHidden = rowIndex >= 10 ? 'style="display: none;"' : '';
+                    return `<tr data-index="${rowIndex}" ${isHidden}><td style="text-align: left; font-weight: 600;">${bankNameCell}</td>${otherCells.join('')}</tr>`;
+                }
+                
+                return `<tr>${cells.map(cell => `<td style="text-align: center;">${cell}</td>`).join('')}</tr>`;
+            }).join('');
+            
+            // Populate caption for bankTable
+            if (tableId === 'bankTable' && metadata) {
+                const caption = document.getElementById('bankTableCaption');
+                if (caption) {
+                    const years = metadata.years || [];
+                    const latestYear = years.length > 0 ? Math.max(...years) : '';
+                    let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
+                    if (latestYear) {
+                        captionText += ` | <strong>Year:</strong> ${latestYear} (most recent year in report)`;
+                    }
+                    caption.innerHTML = captionText;
+                }
+            }
+            
+            // Populate caption for countyTable
+            if (tableId === 'countyTable' && metadata) {
+                const caption = document.getElementById('countyTableCaption');
+                if (caption) {
+                    const years = metadata.years || [];
+                    const latestYear = years.length > 0 ? Math.max(...years) : '';
+                    const counties = metadata.counties || [];
+                    let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
+                    if (latestYear) {
+                        captionText += ` | <strong>Year:</strong> ${latestYear} (most recent year in report)`;
+                    }
+                    if (counties.length > 1) {
+                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                    }
+                    caption.innerHTML = captionText;
+                }
+            }
+        }
+        
+        function populateDemographicOverviewTable(data, metadata) {
+            if (!data || data.length === 0) return;
+            
+            console.log('populateDemographicOverviewTable called with:', {
+                dataLength: data.length,
+                firstRow: data[0],
+                hasMetadata: !!metadata,
+                hasCensusData: metadata ? !!metadata.census_data : false
+            });
+            
+            const table = document.getElementById('demographicOverviewTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            // Get all column names (Metric + years + Population Share + Change column)
+            const columns = Object.keys(data[0]);
+            const metricCol = 'Metric';
+            const populationShareCol = 'Population Share (%)';
+            
+            console.log('Table columns:', columns);
+            console.log('Has Population Share column:', columns.includes(populationShareCol));
+            
+            // Separate columns into categories
+            const yearCols = columns.filter(col => {
+                return col !== metricCol && 
+                       col !== populationShareCol && 
+                       !col.startsWith('Change Over Time') &&
+                       !isNaN(parseInt(col));
+            }).sort((a, b) => parseInt(a) - parseInt(b));
+            
+            const changeCol = columns.find(col => col.startsWith('Change Over Time'));
+            const hasPopulationShare = columns.includes(populationShareCol);
+            
+            // Build header row
+            let headerRow = `<tr><th style="text-align: left;">${metricCol}</th>`;
+            yearCols.forEach(year => {
+                headerRow += `<th style="text-align: center;">${year}</th>`;
+            });
+            if (hasPopulationShare) {
+                headerRow += `<th style="text-align: center;">${populationShareCol}</th>`;
+            }
+            if (changeCol) {
+                headerRow += `<th style="text-align: center;">${changeCol}</th>`;
+            }
+            headerRow += '</tr>';
+            thead.innerHTML = headerRow;
+            
+            // Build table rows
+            // Data format: Total Loans row has integers, race/ethnicity rows have percentages only
+            const rowsHtml = data.map((row, rowIndex) => {
+                const metric = row[metricCol];
+                const isTotalLoans = metric === 'Total Loans';
+                
+                let cells = `<td style="text-align: left; font-weight: ${isTotalLoans ? '600' : '500'};">${metric}</td>`;
+                
+                // Add year columns
+                yearCols.forEach(year => {
+                    let value = row[year];
+                    if (value === null || value === undefined) {
+                        value = isTotalLoans ? '0' : '0.0%';
+                    }
+                    
+                    // Year columns: Total Loans shows integer, others show percentage
+                    if (isTotalLoans) {
+                        cells += `<td style="text-align: center; font-weight: 600;">${value}</td>`;
+                    } else {
+                        cells += `<td style="text-align: center;">${value}</td>`;
+                    }
+                });
+                
+                // Add Population Share column (if available)
+                if (hasPopulationShare) {
+                    let popValue = row[populationShareCol];
+                    if (popValue === null || popValue === undefined || popValue === '') {
+                        popValue = '';
+                    } else if (typeof popValue === 'number') {
+                        // Format as percentage if it's a number
+                        popValue = popValue.toFixed(1) + '%';
+                    }
+                    cells += `<td style="text-align: center; ${isTotalLoans ? 'font-weight: 600;' : ''}">${popValue}</td>`;
+                }
+                
+                // Add Change Over Time column (if available)
+                if (changeCol) {
+                    let value = row[changeCol];
+                    if (value === null || value === undefined) {
+                        value = isTotalLoans ? '0' : '0.0pp';
+                    }
+                    
+                    // Apply color coding for Change Over Time column
+                    const changeStr = String(value);
+                    const isPositive = changeStr.startsWith('+');
+                    const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
+                    
+                    // NCRC light blue for positive, red for negative
+                    const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
+                    cells += `<td style="text-align: center; color: ${color}; font-weight: 600;">${value}</td>`;
+                }
+                
+                // Add border styling for Total Loans row
+                let rowStyle = '';
+                if (isTotalLoans) {
+                    rowStyle = 'border-bottom: 2px solid #e0e0e0;';
+                }
+                
+                return `<tr style="${rowStyle}">${cells}</tr>`;
+            }).join('');
+            
+            tbody.innerHTML = rowsHtml;
+            
+            // Populate caption with data source and methodology
+            if (metadata) {
+                const caption = document.getElementById('demographicOverviewCaption');
+                if (caption) {
+                    const counties = metadata.counties || [];
+                    const years = metadata.years || [];
+                    const yearRange = years.length > 1 
+                        ? `${Math.min(...years)}-${Math.max(...years)}`
+                        : years[0] ? years[0].toString() : '';
+                    
+                    let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases. ';
+                    captionText += '<strong>Methodology:</strong> Percentages are calculated as (group loans / loans with demographic data) × 100, where loans with demographic data = total loans minus loans without race/ethnicity data. ';
+                    captionText += 'Groups representing less than 1% of overall loans are excluded from this table.';
+                    
+                    if (counties.length > 0) {
+                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                    }
+                    if (yearRange) {
+                        captionText += ` | <strong>Years:</strong> ${yearRange}`;
+                    }
+                    
+                    caption.innerHTML = captionText;
+                }
+            }
+        }
+        
+        function populateIncomeNeighborhoodTable(data, metadata) {
+            if (!data || data.length === 0) return;
+            
+            const table = document.getElementById('incomeNeighborhoodTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            // Get all column names (Metric + years + Change column)
+            const columns = Object.keys(data[0]);
+            const metricCol = 'Metric';
+            const yearCols = columns.filter(col => col !== metricCol).sort((a, b) => {
+                // Put "Change Over Time" at the end
+                if (a.startsWith('Change Over Time')) return 1;
+                if (b.startsWith('Change Over Time')) return -1;
+                // Sort numeric years
+                return parseInt(a) - parseInt(b);
+            });
+            
+            // Build header row
+            let headerRow = `<tr><th style="text-align: left;">${metricCol}</th>`;
+            yearCols.forEach(year => {
+                headerRow += `<th style="text-align: center;">${year}</th>`;
+            });
+            headerRow += '</tr>';
+            thead.innerHTML = headerRow;
+            
+            // Build data rows
+            // Data format: "Loans" row has integers, other rows have percentages only
+            tbody.innerHTML = data.map((row, rowIndex) => {
+                const metric = row[metricCol];
+                const isLoansRow = metric === 'Loans';
+                
+                let cells = `<td style="text-align: left; font-weight: 600;">${metric}</td>`;
+                
+                yearCols.forEach(year => {
+                    let value = row[year];
+                    if (value === null || value === undefined) {
+                        value = isLoansRow ? '0' : '0.0%';
+                    }
+                    
+                    // Apply color coding for Change Over Time column
+                    if (year.startsWith('Change Over Time')) {
+                        // Parse the change value
+                        const changeStr = String(value);
+                        const isPositive = changeStr.startsWith('+');
+                        const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
+                        
+                        // NCRC light blue for positive, red for negative
+                        const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
+                        cells += `<td style="text-align: center; color: ${color}; font-weight: 600;">${value}</td>`;
+                    } else {
+                        // Year columns: Loans row shows integer, others show percentage
+                        if (isLoansRow) {
+                            cells += `<td style="text-align: center; font-weight: 600;">${value}</td>`;
+                        } else {
+                            cells += `<td style="text-align: center;">${value}</td>`;
+                        }
+                    }
+                });
+                
+                return `<tr>${cells}</tr>`;
+            }).join('');
+            
+            // Populate caption
+            if (metadata) {
+                const caption = document.getElementById('incomeNeighborhoodCaption');
+                if (caption) {
+                    const counties = metadata.counties || [];
+                    const years = metadata.years || [];
+                    const yearRange = years.length > 1 
+                        ? `${Math.min(...years)}-${Math.max(...years)}`
+                        : years[0] ? years[0].toString() : '';
+                    
+                    let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases. ';
+                    captionText += '<strong>Methodology:</strong> Percentages are calculated as (category loans / total loans) × 100. ';
+                    captionText += 'LMICT = Low to Moderate Income Census Tract. ';
+                    captionText += 'LMIB = Low to Moderate Income Borrower. ';
+                    captionText += 'MMCT = Majority Minority Census Tract.';
+                    
+                    if (counties.length > 0) {
+                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                    }
+                    if (yearRange) {
+                        captionText += ` | <strong>Years:</strong> ${yearRange}`;
+                    }
+                    
+                    caption.innerHTML = captionText;
+                }
+            }
+        }
+        
+        function populateTopLendersDetailedTable(data, metadata) {
+            if (!data || data.length === 0) return;
+            
+            const table = document.getElementById('topLendersDetailedTable');
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            // Get all column names (excluding Lender Name and Total Loans)
+            const columns = Object.keys(data[0]);
+            const baseCols = ['Lender Name', 'Total Loans'];
+            const dataCols = columns.filter(col => !baseCols.includes(col));
+            
+            // Sort data columns: race/ethnicity first, then income/neighborhood indicators
+            // Note: Only columns >= 1% overall are included (determined in Python)
+            const raceCols = dataCols.filter(col => col.includes('Hispanic') || col.includes('Black') || 
+                                                    col.includes('White') || col.includes('Asian') || 
+                                                    col.includes('Native American') || col.includes('Hawaiian'));
+            const indicatorCols = dataCols.filter(col => col.includes('LMIB') || col.includes('LMICT') || col.includes('MMCT'));
+            
+            // Sort race columns in a consistent order
+            const raceOrder = ['Hispanic (%)', 'Black (%)', 'White (%)', 'Asian (%)', 'Native American (%)', 'Hawaiian/Pacific Islander (%)'];
+            const sortedRaceCols = raceOrder.filter(col => raceCols.includes(col));
+            const otherRaceCols = raceCols.filter(col => !raceOrder.includes(col));
+            const finalRaceCols = [...sortedRaceCols, ...otherRaceCols];
+            
+            // Sort indicator columns
+            const indicatorOrder = ['LMIB (%)', 'LMICT (%)', 'MMCT (%)'];
+            const sortedIndicatorCols = indicatorOrder.filter(col => indicatorCols.includes(col));
+            const otherIndicatorCols = indicatorCols.filter(col => !indicatorOrder.includes(col));
+            const finalIndicatorCols = [...sortedIndicatorCols, ...otherIndicatorCols];
+            
+            // Function to abbreviate column names for display
+            function abbreviateColumnName(col) {
+                if (col === 'Native American (%)') return 'Native Am. (%)';
+                if (col === 'Hawaiian/Pacific Islander (%)') return 'Hawaiian/PI (%)';
+                return col;
+            }
+            
+            // Build header row with uniform width for data columns and sorting functionality
+            let headerRow = `<tr>
+                <th style="text-align: left; cursor: pointer; user-select: none;" onclick="sortTable('topLendersDetailedTable', 0, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 0, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Name">
+                    Lender Name <span class="sort-indicator" id="sort-indicator-0"></span>
+                </th>
+                <th style="text-align: center; cursor: pointer; user-select: none;" onclick="sortTable('topLendersDetailedTable', 1, 'number')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 1, 'number');}" tabindex="0" role="button" aria-label="Sort by Total Loans">
+                    Total Loans <span class="sort-indicator" id="sort-indicator-1"></span>
+                </th>`;
+            
+            let colIndex = 2;
+            finalRaceCols.forEach(col => {
+                const displayName = abbreviateColumnName(col);
+                headerRow += `<th style="text-align: center; width: 80px; min-width: 80px; max-width: 80px; cursor: pointer; user-select: none;" onclick="sortTable('topLendersDetailedTable', ${colIndex}, 'number')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', ${colIndex}, 'number');}" tabindex="0" role="button" aria-label="Sort by ${displayName}">
+                    ${displayName} <span class="sort-indicator" id="sort-indicator-${colIndex}"></span>
+                </th>`;
+                colIndex++;
+            });
+            
+            finalIndicatorCols.forEach(col => {
+                headerRow += `<th style="text-align: center; width: 80px; min-width: 80px; max-width: 80px; cursor: pointer; user-select: none;" onclick="sortTable('topLendersDetailedTable', ${colIndex}, 'number')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', ${colIndex}, 'number');}" tabindex="0" role="button" aria-label="Sort by ${col}">
+                    ${col} <span class="sort-indicator" id="sort-indicator-${colIndex}"></span>
+                </th>`;
+                colIndex++;
+            });
+            
+            headerRow += '</tr>';
+            thead.innerHTML = headerRow;
+            
+            // Build data rows
+            tbody.innerHTML = data.map((row, rowIndex) => {
+                let cells = `<td style="text-align: left; font-weight: 600;">${row['Lender Name']}</td>`;
+                cells += `<td style="text-align: center;">${row['Total Loans']}</td>`;
+                
+                finalRaceCols.forEach(col => {
+                    const value = row[col] || '';
+                    cells += `<td style="text-align: center; width: 80px; min-width: 80px; max-width: 80px;">${value}</td>`;
+                });
+                
+                finalIndicatorCols.forEach(col => {
+                    const value = row[col] || '';
+                    cells += `<td style="text-align: center; width: 80px; min-width: 80px; max-width: 80px;">${value}</td>`;
+                });
+                
+                // Hide rows beyond the first 10 (index 0-9) if there are more than 10 lenders
+                const isHidden = (data.length > 10 && rowIndex >= 10) ? 'style="display: none;"' : '';
+                return `<tr data-index="${rowIndex}" ${isHidden}>${cells}</tr>`;
+            }).join('');
+            
+            // Show expand button only if there are more than 10 lenders
+            if (data.length > 10) {
+                const expandBtn = document.getElementById('expandTopLendersBtn');
+                if (expandBtn) {
+                    expandBtn.style.display = 'inline-block';
+                }
+            }
+            
+            // Populate caption
+            if (metadata) {
+                const caption = document.getElementById('topLendersDetailedCaption');
+                if (caption) {
+                    const years = metadata.years || [];
+                    const latestYear = years.length > 0 ? Math.max(...years) : '';
+                    const counties = metadata.counties || [];
+                    
+                    let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases. ';
+                    captionText += '<strong>Year:</strong> ' + latestYear + ' (most recent year in report). ';
+                    captionText += '<strong>Methodology:</strong> Lenders are sorted in descending order by total loans. ';
+                    captionText += 'Race/ethnicity percentages use denominator = loans with demographic data. ';
+                    captionText += 'Income and neighborhood indicator percentages use denominator = total loans. ';
+                    captionText += 'Only race/ethnicity groups representing ≥1% of overall lending are included. ';
+                    captionText += '<strong>Abbreviations:</strong> Native Am. = Native American; Hawaiian/PI = Hawaiian/Pacific Islander.';
+                    
+                    if (counties.length > 0) {
+                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                    }
+                    
+                    caption.innerHTML = captionText;
+                }
+            }
+        }
+        
+        function showError(message) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('errorState').style.display = 'block';
+            const errorElement = document.getElementById('errorMessage');
+            // Allow HTML in error messages (for links)
+            errorElement.innerHTML = message;
+        }
+        
+        // Function to expand/collapse bank table to show all banks or just top 10
+        function expandBankTable() {
+            const table = document.getElementById('bankTable');
+            const rows = table.querySelectorAll('tbody tr');
+            const expandBtn = document.getElementById('expandBankTableBtn');
+            const icon = expandBtn.querySelector('i');
+            
+            // Check if currently showing all (rows 10+ are visible)
+            const isExpanded = rows.length > 10 && rows[10].style.display !== 'none';
+            
+            if (isExpanded) {
+                // Collapse to top 10
+                rows.forEach((row, index) => {
+                    if (index >= 10) {
+                        row.style.display = 'none';
+                    }
+                });
+                expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show All Banks';
+            } else {
+                // Expand to show all
+                rows.forEach((row) => {
+                    row.style.display = '';
+                });
+                expandBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Top 10 Only';
+            }
+        }
+        
+        // Function to expand/collapse top lenders table to show all lenders or just top 10
+        function expandTopLendersTable() {
+            const table = document.getElementById('topLendersDetailedTable');
+            const rows = table.querySelectorAll('tbody tr');
+            const expandBtn = document.getElementById('expandTopLendersBtn');
+            
+            // Only proceed if there are more than 10 lenders
+            if (rows.length <= 10) {
+                return;
+            }
+            
+            // Check if currently showing all (rows 10+ are visible)
+            const isExpanded = rows[10].style.display !== 'none';
+            
+            if (isExpanded) {
+                // Collapse to top 10
+                rows.forEach((row, index) => {
+                    if (index >= 10) {
+                        row.style.display = 'none';
+                    }
+                });
+                expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show All Lenders';
+            } else {
+                // Expand to show all
+                rows.forEach((row) => {
+                    row.style.display = '';
+                });
+                expandBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Top 10 Only';
+            }
+        }
+        
+        // Table sorting function
+        let currentSortColumn = -1;
+        let currentSortDirection = 'asc';
+        
+        function sortTable(tableId, columnIndex, dataType) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Clear all sort indicators
+            table.querySelectorAll('.sort-indicator').forEach(indicator => {
+                indicator.textContent = '';
+            });
+            
+            // Determine sort direction
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = columnIndex;
+                currentSortDirection = 'asc';
+            }
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aCell = a.cells[columnIndex];
+                const bCell = b.cells[columnIndex];
+                
+                if (!aCell || !bCell) return 0;
+                
+                let aValue = aCell.textContent.trim();
+                let bValue = bCell.textContent.trim();
+                
+                if (dataType === 'number') {
+                    // Extract numeric value (remove % and commas)
+                    aValue = parseFloat(aValue.replace(/[%,]/g, '')) || 0;
+                    bValue = parseFloat(bValue.replace(/[%,]/g, '')) || 0;
+                } else {
+                    // Text comparison (case-insensitive)
+                    aValue = aValue.toLowerCase();
+                    bValue = bValue.toLowerCase();
+                }
+                
+                if (aValue < bValue) return currentSortDirection === 'asc' ? -1 : 1;
+                if (aValue > bValue) return currentSortDirection === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+            
+            // Update sort indicator
+            const indicator = document.getElementById(`sort-indicator-${columnIndex}`);
+            if (indicator) {
+                indicator.textContent = currentSortDirection === 'asc' ? ' ▲' : ' ▼';
+                indicator.setAttribute('aria-label', `Sorted ${currentSortDirection === 'asc' ? 'ascending' : 'descending'}`);
+            }
+        }
+        
+        // Update download links immediately (in case DOM is already loaded)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                updateDownloadLinks();
+                setupPdfButton();
+            });
+        } else {
+            updateDownloadLinks();
+            setupPdfButton();
+        }
+        
+        // Setup PDF button click handler
+        function setupPdfButton() {
+            const pdfBtn = document.getElementById('downloadPdfBtn');
+            console.log('Setting up PDF button, found:', !!pdfBtn);
+            if (pdfBtn) {
+                // Remove any existing listeners by cloning and replacing
+                const newBtn = pdfBtn.cloneNode(true);
+                pdfBtn.parentNode.replaceChild(newBtn, pdfBtn);
+                
+                // Get job_id from URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const jobId = urlParams.get('job_id');
+                
+                if (jobId) {
+                    // Update href with job_id if not already present
+                    let href = newBtn.getAttribute('href');
+                    if (href && !href.includes('job_id=')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        href = `${href}${separator}job_id=${encodeURIComponent(jobId)}`;
+                        newBtn.setAttribute('href', href);
+                    }
+                }
+                
+                // Add click handler
+                newBtn.addEventListener('click', function(e) {
+                    console.log('PDF download button clicked!');
+                    const currentHref = this.getAttribute('href');
+                    console.log('Current href:', currentHref);
+                    // Let the default link behavior proceed
+                });
+                
+                console.log('PDF button setup complete, href:', newBtn.getAttribute('href'));
+            } else {
+                console.error('PDF button not found!');
+            }
+        }
+        
+        // Load report data when page loads
+        document.addEventListener('DOMContentLoaded', loadReportData);
+    </script>
+    
+    <!-- Footer -->
+    <footer class="footer" style="margin-top: 40px;">
+        <div class="footer-bottom">
+            &copy; 2025 JustData - LendSight. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
+</body>
+</html>

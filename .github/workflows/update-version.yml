@@ -1,0 +1,66 @@
+name: Update Version from Changelog
+
+on:
+  # Run on a schedule (every 12 hours)
+  schedule:
+    - cron: '0 */12 * * *'  # Every 12 hours at minute 0
+  # Also run when CHANGELOG.json is modified
+  push:
+    paths:
+      - 'justdata/apps/branchseeker/CHANGELOG.json'
+  # Allow manual triggering
+  workflow_dispatch:
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    
+    - name: Check if version update is needed
+      id: check-version
+      run: |
+        cd justdata/apps/branchseeker
+        python update_version.py --check-only
+        if [ $? -eq 1 ]; then
+          echo "update_needed=true" >> $GITHUB_OUTPUT
+        else
+          echo "update_needed=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Update version
+      if: steps.check-version.outputs.update_needed == 'true'
+      run: |
+        cd justdata/apps/branchseeker
+        python update_version.py
+    
+    - name: Check for changes
+      id: verify-changed-files
+      if: steps.check-version.outputs.update_needed == 'true'
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          echo "changed=true" >> $GITHUB_OUTPUT
+        else
+          echo "changed=false" >> $GITHUB_OUTPUT
+        fi
+    
+    - name: Commit and push changes
+      if: steps.verify-changed-files.outputs.changed == 'true'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add justdata/apps/branchseeker/version.py
+        git commit -m "chore: auto-update version from CHANGELOG.json [skip ci]"
+        git push
+
+
+

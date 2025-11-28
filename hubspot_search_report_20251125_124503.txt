@@ -1,0 +1,94 @@
+HUBSPOT CONTACT AND MEMBER DATA SEARCH RESULTS
+================================================================================
+
+Search Date: 2025-11-25T12:44:48.199086
+Total Targets Searched: 25
+Contacts Found: 10
+Companies Found: 0
+Member List Matches: 0
+
+================================================================================
+
+CONTACTS FOUND
+--------------------------------------------------------------------------------
+
+Name: Fatima Sierra-Vargas
+Email: fatima_sierravargas@banking.senate.gov
+Company: N/A
+Match Type: company_contact
+Searched Organization: Committee on Housing
+HubSpot ID: 2360293
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/2360293
+
+Name:  Gray
+Email: grayja2011@yahoo.com
+Company: N/A
+Match Type: name_partial
+Searched Organization: Open New York
+HubSpot ID: 8799101
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/8799101
+
+Name: David Greenberg
+Email: dgreenberg@lisc.org
+Company: N/A
+Match Type: name
+Searched Organization: Local Initiatives Support Corporation (LISC)
+HubSpot ID: 85640427150
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/85640427150
+
+Name:  Nickerson
+Email: kathryn.nickerson@td.com
+Company: N/A
+Match Type: name_partial
+Searched Organization: LiveOn NY
+HubSpot ID: 229051
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/229051
+
+Name:  Rivera
+Email: yrivera@ledcmetro.org
+Company: N/A
+Match Type: name_partial
+Searched Organization: New York State Association for Affordable Housing
+HubSpot ID: 2306575
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/2306575
+
+Name: Barika Williams
+Email: barika.w@anhd.org
+Company: N/A
+Match Type: name
+Searched Organization: Association for Neighborhood & Housing Development
+HubSpot ID: 2334659
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/2334659
+
+Name: Barika Williams
+Email: execassistant@anhd.org
+Company: N/A
+Match Type: name
+Searched Organization: Association for Neighborhood & Housing Development
+HubSpot ID: 11715051
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/11715051
+
+Name: E. Paul Williams
+Email: pwilliams@districtsupplyinc.com
+Company: N/A
+Match Type: name
+Searched Organization: Center for Public Enterprise
+HubSpot ID: 2330100
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/2330100
+
+Name: Paul Williams
+Email: paul.williams@hacm.org
+Company: N/A
+Match Type: name
+Searched Organization: Center for Public Enterprise
+HubSpot ID: 2337723
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/2337723
+
+Name: Paul-David Williams
+Email: governmentpauldavid@gmail.com
+Company: N/A
+Match Type: name
+Searched Organization: Center for Public Enterprise
+HubSpot ID: 154211952438
+HubSpot URL: https://app.hubspot.com/contacts/N/A/contact/154211952438
+

@@ -1,0 +1,32 @@
+{
+  "versions": [
+    {
+      "version": "0.9.0",
+      "date": "2025-01-27",
+      "changes": [
+        "Development version - preparing for 1.0 release",
+        "Updated version card styling to match LendSight",
+        "Excel export with Notes and Raw Data sheets",
+        "Report tables matching web report sections",
+        "Summary cards with deduped LMI/MMCT statistics",
+        "AI-generated narratives and hardcoded introductions",
+        "State/county selection with filtering",
+        "Onboarding tour and contextual help"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2025-01-27",
+      "changes": [
+        "Initial release with full feature set",
+        "Excel export with Notes and Raw Data sheets",
+        "Report tables matching web report sections",
+        "Summary cards with deduped LMI/MMCT statistics",
+        "AI-generated narratives and hardcoded introductions",
+        "State/county selection with filtering",
+        "Onboarding tour and contextual help"
+      ]
+    }
+  ]
+}
+

@@ -263,7 +263,7 @@ Add these to your FastAPI router:
 ```python
 # justdata/api/v1/hubspot.py
 from fastapi import APIRouter, HTTPException
-from justdata.apps.hubspot.client import HubSpotClient
+from apps.hubspot.client import HubSpotClient
 
 router = APIRouter(prefix="/hubspot", tags=["hubspot"])
 

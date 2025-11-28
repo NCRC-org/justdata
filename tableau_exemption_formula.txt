@@ -1,0 +1,192 @@
+================================================================================
+TABLEAU CALCULATED FIELD: 2024 Exemption Flag (CORRECTED)
+================================================================================
+
+Field Name: Is_Exempt_2024
+Data Type: Boolean (True/False)
+
+Formula (ROBUST VERSION - handles NULLs and data type issues):
+================================================================================
+
+// First, create helper fields to calculate loan totals per lender per year
+// Then use those to determine exemption
+
+VAR Loans2023 = {FIXED [Respondent ID]: 
+    SUM(IF INT([Year]) = 2023 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+VAR Loans2024 = {FIXED [Respondent ID]: 
+    SUM(IF INT([Year]) = 2024 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+RETURN
+    Loans2023 < 1000 AND Loans2024 < 1000
+
+================================================================================
+ALTERNATIVE VERSION (If Year is already numeric):
+================================================================================
+
+VAR Loans2023 = {FIXED [Respondent ID]: 
+    SUM(IF [Year] = 2023 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+VAR Loans2024 = {FIXED [Respondent ID]: 
+    SUM(IF [Year] = 2024 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+RETURN
+    Loans2023 < 1000 AND Loans2024 < 1000
+
+================================================================================
+SIMPLE VERSION (If you prefer the original style):
+================================================================================
+
+ZN({FIXED [Respondent ID]: SUM(IF INT([Year]) = 2023 THEN 
+    ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)}) < 1000
+AND
+ZN({FIXED [Respondent ID]: SUM(IF INT([Year]) = 2024 THEN 
+    ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)}) < 1000
+
+================================================================================
+ALTERNATIVE VERSION (If you have a pre-calculated loan count field):
+================================================================================
+
+Field Name: Is_Exempt_2024
+Data Type: Boolean (True/False)
+
+Formula:
+================================================================================
+
+IF {FIXED [Respondent ID]: SUM(IF [Year] = 2023 THEN [Total_Loans] ELSE 0 END)} < 1000
+AND
+{FIXED [Respondent ID]: SUM(IF [Year] = 2024 THEN [Total_Loans] ELSE 0 END)} < 1000
+THEN TRUE
+ELSE FALSE
+END
+
+================================================================================
+EXPLANATION:
+================================================================================
+
+1. {FIXED [Respondent ID]: ...} 
+   - This is a Level of Detail (LOD) expression that calculates at the lender level
+   - It aggregates across all counties/rows for each lender
+   - This ensures we get the NATIONWIDE total (not county-specific)
+
+2. SUM(IF [Year] = 2023 THEN ... ELSE 0 END)
+   - Sums loan counts only for 2023
+   - Uses conditional aggregation to filter by year
+
+3. The formula checks BOTH conditions:
+   - 2023 nationwide loans < 1,000
+   - 2024 nationwide loans < 1,000
+   - Returns TRUE only if BOTH are true (exempt)
+   - Returns FALSE otherwise (not exempt)
+
+4. Field names to adjust:
+   - Replace [Respondent ID] with your actual lender identifier field name
+   - Replace [Year] with your actual year field name
+   - Replace [num_under_100k], [num_100k_250k], [num_250k_1m] with your actual field names
+   - OR use [Total_Loans] if you have a pre-calculated field
+
+================================================================================
+USAGE:
+================================================================================
+
+- Use this field as a filter to show only exempt lenders: [Is_Exempt_2024] = TRUE
+- Use in visualizations to compare exempt vs. non-exempt lenders
+- Can be used in calculations, e.g., COUNTD(IF [Is_Exempt_2024] THEN [Respondent ID] END)
+
+================================================================================
+DEBUGGING HELPER FIELDS (Use these to troubleshoot):
+================================================================================
+
+Field Name: Total_Loans_2023
+Formula:
+{FIXED [Respondent ID]: SUM(IF INT([Year]) = 2023 THEN 
+    ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)}
+
+Field Name: Total_Loans_2024
+Formula:
+{FIXED [Respondent ID]: SUM(IF INT([Year]) = 2024 THEN 
+    ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)}
+
+Field Name: Exemption_Status (Text version)
+Formula:
+IF [Is_Exempt_2024] THEN "Exempt" ELSE "Not Exempt" END
+
+Field Name: Debug_Exemption_Details
+Formula:
+"2023: " + STR([Total_Loans_2023]) + 
+", 2024: " + STR([Total_Loans_2024]) + 
+", Exempt: " + STR([Is_Exempt_2024])
+
+================================================================================
+TROUBLESHOOTING TIPS:
+================================================================================
+
+1. Check if Year field is numeric or string:
+   - If string: Use INT([Year]) to convert
+   - If numeric: Use [Year] directly
+
+2. Check for NULL values:
+   - ZN() function converts NULL to 0
+   - This prevents NULL + number = NULL issues
+
+3. Verify field names match exactly:
+   - Tableau is case-sensitive
+   - Check for spaces or special characters
+
+4. Test the helper fields first:
+   - Create [Total_Loans_2023] and [Total_Loans_2024]
+   - Check if they return reasonable values
+   - If they're all 0 or NULL, the field names might be wrong
+
+5. Check data structure:
+   - Make sure you have data for both 2023 and 2024
+   - Some lenders might only appear in one year
+   - The formula will return FALSE if either year is missing
+
+6. If still showing 100% FALSE:
+   - Create a table showing: [Respondent ID], [Year], [Total_Loans_2023], [Total_Loans_2024], [Is_Exempt_2024]
+   - Check if the loan totals are being calculated correctly
+   - Verify that some lenders actually have <1,000 loans in both years
+
+================================================================================
+ALTERNATIVE APPROACH (If FIXED LOD isn't working):
+================================================================================
+
+If the FIXED LOD expressions aren't working, try using INCLUDE/EXCLUDE:
+
+Field Name: Is_Exempt_2024_Alt
+Formula:
+
+VAR Loans2023 = {INCLUDE [Respondent ID]: 
+    SUM(IF INT([Year]) = 2023 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+VAR Loans2024 = {INCLUDE [Respondent ID]: 
+    SUM(IF INT([Year]) = 2024 THEN 
+        ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m]) 
+    ELSE 0 END)
+}
+
+RETURN
+    Loans2023 < 1000 AND Loans2024 < 1000
+
+================================================================================
+

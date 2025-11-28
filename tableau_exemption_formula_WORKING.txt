@@ -1,0 +1,183 @@
+================================================================================
+TABLEAU EXEMPTION FORMULA - WORKING SOLUTION
+================================================================================
+
+PROBLEM IDENTIFIED:
+- "# All SB Loans" shows correct year-specific values (12,509 for 2023, 17,614 for 2024)
+- But Total_Loans_2023 and Total_Loans_2024 show the same value (5,768) for both years
+- This means the FIXED LOD is summing across all years, not filtering by year
+
+SOLUTION: Use "# All SB Loans" directly with proper year filtering
+
+================================================================================
+CORRECTED FORMULA - Use "# All SB Loans" Directly
+================================================================================
+
+Since "# All SB Loans" already shows correct year-specific values, we can use it directly
+but we need to ensure we're getting the lender-level total for each year.
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF [Year (Disclosure)] = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Loans_2024
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF [Year (Disclosure)] = 2024 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Is_Exempt_2024
+Formula:
+ZN([Loans_2023]) < 1000 
+AND 
+ZN([Loans_2024]) < 1000
+
+================================================================================
+ALTERNATIVE: If Your Data is Already at Lender-Year Level
+================================================================================
+
+If "# All SB Loans" is already aggregated at the lender-year level (one row per lender per year),
+then you might be able to use it more simply, but you still need FIXED LOD to get lender-level values
+that work across different views.
+
+However, if the issue is that FIXED LOD is summing across years, try this approach:
+
+Field Name: Loans_2023_Alt
+Formula:
+IF [Year (Disclosure)] = 2023 
+THEN {FIXED [Respondent Id]: SUM([# All SB Loans])}
+ELSE NULL
+END
+
+But this won't work well because it will only show values for 2023 rows.
+
+================================================================================
+BEST SOLUTION: Use MAX with Year Filter
+================================================================================
+
+Since "# All SB Loans" appears to be at the lender-year-county level (or similar granularity),
+and you need the lender-level total for each year, use:
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    MAX(IF [Year (Disclosure)] = 2023 THEN [# All SB Loans] END)
+}
+
+Wait, that won't work either if there are multiple rows per lender-year.
+
+================================================================================
+ACTUAL SOLUTION: The Issue is Data Grain
+================================================================================
+
+Looking at your data, "# All SB Loans" shows different values for the same lender in different years:
+- Wells Fargo 2023: 12,509
+- Wells Fargo 2024: 17,614
+
+But your calculated fields show the same value (5,768) for both years. This suggests:
+1. Your data might be at county-level or census tract-level
+2. The FIXED LOD is summing across all counties/tracts for all years, not filtering by year
+3. The 5,768 might be from a specific county or subset of data
+
+The solution is to ensure the year filter is applied WITHIN the FIXED LOD:
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id], [Year (Disclosure)]: 
+    SUM([# All SB Loans])
+}
+
+Then filter this to Year = 2023, OR use:
+
+Field Name: Loans_2023_Fixed
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF [Year (Disclosure)] = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+But make sure you're not including Year in your view when using this, OR use this version:
+
+Field Name: Loans_2023_ByYear
+Formula:
+IF [Year (Disclosure)] = 2023
+THEN {FIXED [Respondent Id]: SUM([# All SB Loans])}
+ELSE NULL
+END
+
+This will only calculate for 2023 rows, but then you need a separate one for 2024.
+
+================================================================================
+RECOMMENDED APPROACH
+================================================================================
+
+Since "# All SB Loans" is already correct and year-specific, and your data shows it varies by year,
+the issue is that your FIXED LOD formula is not respecting the year filter.
+
+Try this - it explicitly filters within the FIXED LOD:
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF [Year (Disclosure)] = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Loans_2024
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF [Year (Disclosure)] = 2024 THEN [# All SB Loans] ELSE 0 END)
+}
+
+If these STILL show the same value, the problem might be:
+1. The field name is wrong - check if it's "[Year (Disclosure)]" or just "[Year]"
+2. The year values might be stored as strings - try: IF STR([Year (Disclosure)]) = "2023"
+3. There might be data quality issues
+
+================================================================================
+DEBUGGING STEP
+================================================================================
+
+Create this diagnostic field to see what's happening:
+
+Field Name: Debug_Year_Check
+Formula:
+"Year: " + STR([Year (Disclosure)]) + 
+" | Loans: " + STR([# All SB Loans]) + 
+" | Fixed2023: " + STR({FIXED [Respondent Id]: SUM(IF [Year (Disclosure)] = 2023 THEN [# All SB Loans] ELSE 0 END)})
+
+This will show you:
+- What year each row represents
+- What the "# All SB Loans" value is
+- What the FIXED LOD calculation returns
+
+If the FIXED LOD value is the same for all rows of the same lender, then the IF condition isn't working.
+
+================================================================================
+MOST LIKELY FIX
+================================================================================
+
+Try removing the INT() conversion and use the exact field name:
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF [Year (Disclosure)] = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Make sure:
+- Field name matches exactly: "[Year (Disclosure)]" (with parentheses and space)
+- No INT() conversion needed if Year is already numeric
+- Use SUM, not MAX, since you might have multiple rows per lender-year
+
+================================================================================
+
+
+
+
+
+
+
+
+
+

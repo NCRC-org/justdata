@@ -1,0 +1,138 @@
+================================================================================
+TABLEAU EXEMPTION FORMULA - YEAR FILTERING FIX
+================================================================================
+
+PROBLEM: Loans_2023 and Loans_2024 showing the same value
+SOLUTION: Use SUM with explicit year filtering, or check data structure
+
+================================================================================
+CORRECTED FORMULA - Explicit Year Filtering
+================================================================================
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF INT([Year]) = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Loans_2024
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF INT([Year]) = 2024 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Is_Exempt_2024
+Formula:
+ZN([Loans_2023]) < 1000 
+AND 
+ZN([Loans_2024]) < 1000
+
+================================================================================
+IF THAT STILL SHOWS SAME VALUES - Check Your Data Structure
+================================================================================
+
+If Loans_2023 and Loans_2024 are still the same, the issue might be:
+
+1. "# All SB Loans" might be a pre-calculated field that doesn't vary by year
+2. Your data might not have Year as a separate dimension
+3. The Year field might not be filtering correctly
+
+Try this diagnostic:
+
+Field Name: Check_Year_Values
+Formula:
+"Year: " + STR([Year]) + " | Loans: " + STR([# All SB Loans])
+
+Create a table with [Respondent Id], [Year], [Check_Year_Values] to see if:
+- Year values are actually different (2023 vs 2024)
+- "# All SB Loans" values are different for different years
+
+================================================================================
+ALTERNATIVE: If "# All SB Loans" is Year-Agnostic
+================================================================================
+
+If "# All SB Loans" doesn't vary by year in your data source, you need to calculate
+loan counts from the underlying num_* fields, but do it correctly:
+
+Field Name: Loan_Count_Calc
+Formula:
+ZN([num_under_100k]) + ZN([num_100k_250k]) + ZN([num_250k_1m])
+
+Field Name: Loans_2023_From_Counts
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF INT([Year]) = 2023 THEN [Loan_Count_Calc] ELSE 0 END)
+}
+
+Field Name: Loans_2024_From_Counts
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF INT([Year]) = 2024 THEN [Loan_Count_Calc] ELSE 0 END)
+}
+
+Field Name: Is_Exempt_2024_From_Counts
+Formula:
+ZN([Loans_2023_From_Counts]) < 1000 
+AND 
+ZN([Loans_2024_From_Counts]) < 1000
+
+================================================================================
+BEST APPROACH: Verify Data Structure First
+================================================================================
+
+Step 1: Create a simple table
+- Rows: [Respondent Id], [Year]
+- Values: [# All SB Loans]
+- Filter: [Respondent Id] = "0000000001" (Wells Fargo)
+
+This will show you:
+- Does Wells Fargo have separate rows for 2023 and 2024?
+- Are the "# All SB Loans" values different for each year?
+
+Step 2: If YES (separate rows, different values):
+   Use the SUM version with IF statements (first formula above)
+
+Step 3: If NO (same value for both years, or only one row):
+   Your "# All SB Loans" field is not year-specific
+   Use the "Loan_Count_Calc" approach with num_* fields
+
+================================================================================
+MOST LIKELY SOLUTION
+================================================================================
+
+Based on your issue, try this - it explicitly filters within the FIXED LOD:
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(CASE WHEN INT([Year]) = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Field Name: Loans_2024
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(CASE WHEN INT([Year]) = 2024 THEN [# All SB Loans] ELSE 0 END)
+}
+
+Note: Tableau might not support CASE in calculated fields. If that doesn't work,
+use the IF version, but make sure your Year field is actually numeric or convert it:
+
+Field Name: Loans_2023
+Formula:
+{FIXED [Respondent Id]: 
+    SUM(IF [Year] = 2023 THEN [# All SB Loans] ELSE 0 END)
+}
+
+(Remove the INT() conversion if Year is already numeric)
+
+================================================================================
+
+
+
+
+
+
+
+
+
+

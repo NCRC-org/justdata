@@ -39,20 +39,20 @@ dev:
 
 # Development
 run:
-	python -m justdata.api.main
+	python -m api.main
 
 test:
-	pytest tests/ -v --cov=justdata --cov-report=html
+	pytest tests/ -v --cov=apps --cov-report=html
 
 lint:
-	flake8 justdata/ tests/
-	mypy justdata/
-	black --check justdata/ tests/
-	isort --check-only justdata/ tests/
+	flake8 apps/ shared/ core/ api/ cli/ tests/
+	mypy apps/ shared/ core/ api/ cli/
+	black --check apps/ shared/ core/ api/ cli/ tests/
+	isort --check-only apps/ shared/ core/ api/ cli/ tests/
 
 format:
-	black justdata/ tests/
-	isort justdata/ tests/
+	black apps/ shared/ core/ api/ cli/ tests/
+	isort apps/ shared/ core/ api/ cli/ tests/
 
 # Docker commands
 docker-build:
@@ -69,7 +69,7 @@ docker-logs:
 
 # Database
 db-init:
-	python -c "from justdata.core.database.connection import init_database; init_database()"
+	python -c "from core.database.connection import init_database; init_database()"
 
 db-migrate:
 	alembic upgrade head
@@ -86,7 +86,7 @@ logs:
 
 # Development server with auto-reload
 dev-server:
-	uvicorn justdata.api.main:app --reload --host 0.0.0.0 --port 8000
+	uvicorn api.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run specific application tests
 test-branchseeker:
@@ -117,4 +117,4 @@ health:
 
 # Database connection test
 test-db:
-	python -c "from justdata.core.database.connection import test_connections; test_connections()"
+	python -c "from core.database.connection import test_connections; test_connections()"

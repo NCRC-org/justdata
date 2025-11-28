@@ -1,0 +1,202 @@
+{
+  "seattle, wa, usa": {
+    "lat": 47.6038321,
+    "lng": -122.330062
+  },
+  "raleigh, nc, usa": {
+    "lat": 35.7803977,
+    "lng": -78.6390989
+  },
+  "jacksonville, fl, usa": {
+    "lat": 30.3321838,
+    "lng": -81.655651
+  },
+  "cleveland, tn, usa": {
+    "lat": 35.1595182,
+    "lng": -84.8766115
+  },
+  "gig harbor, wa, usa": {
+    "lat": 47.3259697,
+    "lng": -122.5878659
+  },
+  "hattiesburg, ms, usa": {
+    "lat": 31.3271189,
+    "lng": -89.2903392
+  },
+  "campti, la, usa": {
+    "lat": 31.8934954,
+    "lng": -93.1182202
+  },
+  "las vegas, nv, usa": {
+    "lat": 36.1674263,
+    "lng": -115.1484131
+  },
+  "athens, ga, usa": {
+    "lat": 33.9597677,
+    "lng": -83.376398
+  },
+  "san bernardino, ca, usa": {
+    "lat": 34.8253019,
+    "lng": -116.0833144
+  },
+  "los angeles, ca, usa": {
+    "lat": 34.0536909,
+    "lng": -118.242766
+  },
+  "anchorage, al, usa": {
+    "lat": 34.7272703,
+    "lng": -86.4927257
+  },
+  "birmingham, al, usa": {
+    "lat": 33.5206824,
+    "lng": -86.8024326
+  },
+  "fargo, nd, usa": {
+    "lat": 46.877229,
+    "lng": -96.789821
+  },
+  "new haven, ct, usa": {
+    "lat": 41.3082138,
+    "lng": -72.9250518
+  },
+  "beaverton, or, usa": {
+    "lat": 45.4871723,
+    "lng": -122.80378
+  },
+  "raleigh, nc, united states": {
+    "lat": 35.7803977,
+    "lng": -78.6390989
+  },
+  "jacksonville, fl, united states": {
+    "lat": 30.3321838,
+    "lng": -81.655651
+  },
+  "los angeles, ca, united states": {
+    "lat": 34.0536909,
+    "lng": -118.242766
+  },
+  "new haven, ct, united states": {
+    "lat": 41.3082138,
+    "lng": -72.9250518
+  },
+  "saint paul, mn, united states": {
+    "lat": 44.9497487,
+    "lng": -93.0931028
+  },
+  "oakland, ca, united states": {
+    "lat": 37.8044557,
+    "lng": -122.271356
+  },
+  "philadelphia, pa, united states": {
+    "lat": 39.9527237,
+    "lng": -75.1635262
+  },
+  "elizabeth, nj, united states": {
+    "lat": 40.6639916,
+    "lng": -74.2107006
+  },
+  "parkland, fl, united states": {
+    "lat": 26.3100794,
+    "lng": -80.23727
+  },
+  "yakima, wa, united states": {
+    "lat": 46.601557,
+    "lng": -120.510842
+  },
+  "bronx, ny, united states": {
+    "lat": 40.8466508,
+    "lng": -73.8785937
+  },
+  "new york, ny, united states": {
+    "lat": 40.7127281,
+    "lng": -74.0060152
+  },
+  "milwaukee, wi, usa": {
+    "lat": 43.0386475,
+    "lng": -87.9090751
+  },
+  "tacoma, wa, united states": {
+    "lat": 47.2455013,
+    "lng": -122.438329
+  },
+  "fresno, ca, united states": {
+    "lat": 36.7394421,
+    "lng": -119.78483
+  },
+  "detroit, mi, united states": {
+    "lat": 42.3315509,
+    "lng": -83.0466403
+  },
+  "louisville, ky, united states": {
+    "lat": 38.2542376,
+    "lng": -85.759407
+  },
+  "portland, or, united states": {
+    "lat": 45.5202471,
+    "lng": -122.674194
+  },
+  "providence, ri, united states": {
+    "lat": 41.8239891,
+    "lng": -71.4128343
+  },
+  "lowell, ma, united states": {
+    "lat": 42.6414437,
+    "lng": -71.3085329
+  },
+  "minneapolis, mn, united states": {
+    "lat": 44.9772995,
+    "lng": -93.2654692
+  },
+  "arlington, tx, united states": {
+    "lat": 32.7355816,
+    "lng": -97.1071186
+  },
+  "wilmington, de, united states": {
+    "lat": 39.7459468,
+    "lng": -75.546589
+  },
+  "locust grove, va, usa": {
+    "lat": 38.3051818,
+    "lng": -77.8102591
+  },
+  "north chicago, il, united states": {
+    "lat": 42.327724,
+    "lng": -87.8394189
+  },
+  "atlanta, ga, usa": {
+    "lat": 33.7544657,
+    "lng": -84.3898151
+  },
+  "ellenwood, ga, usa": {
+    "lat": 33.6101096,
+    "lng": -84.287978
+  },
+  "midlothian, va, united states": {
+    "lat": 37.486806,
+    "lng": -77.6473195
+  },
+  "northfield, mn, united states": {
+    "lat": 44.4582041,
+    "lng": -93.161159
+  },
+  "nashville, tn, united states": {
+    "lat": 36.1622767,
+    "lng": -86.7742984
+  },
+  "hartford, ct, united states": {
+    "lat": 41.764582,
+    "lng": -72.6908547
+  },
+  "atlanta, ga, united states": {
+    "lat": 33.7544657,
+    "lng": -84.3898151
+  },
+  "dallas, tx, usa": {
+    "lat": 32.7762719,
+    "lng": -96.7968559
+  },
+  "denver, co, united states": {
+    "lat": 39.7392364,
+    "lng": -104.984862
+  }
+}

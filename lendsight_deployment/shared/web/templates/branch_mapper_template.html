@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BranchMapper - Bank Branch Location Map</title>
+    <meta name="description" content="Interactive map showing bank branch locations with demographic and deposit data.">
+    
+    <!-- Font Awesome for icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    
+    <!-- Shared CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* Branch Mapper specific styles */
+        .mapper-container {
+            width: 100%;
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+        
+        .content-wrapper {
+            flex: 1 1 auto;
+            min-width: 0;
+            max-width: 100%;
+            overflow: hidden;
+        }
+        
+        .map-container {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+        }
+        
+        #branchMap {
+            width: 100%;
+            height: 560px;
+            box-sizing: border-box;
+        }
+        
+        /* Force CSS Grid layout - override ALL other styles including shared CSS */
+        body .container,
+        html body .container,
+        .container {
+            display: grid !important;
+            grid-template-columns: 1fr 320px !important;
+            grid-template-rows: auto !important;
+            gap: 30px !important;
+            align-items: start !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            /* Completely disable flexbox */
+            flex-direction: unset !important;
+            flex-wrap: unset !important;
+            flex: unset !important;
+        }
+        
+        /* Make sure container is NOT using flexbox at any breakpoint */
+        @media all {
+            body .container,
+            html body .container,
+            .container {
+                display: grid !important;
+            }
+        }
+        
+        /* Content wrapper in first column */
+        body .container > .content-wrapper,
+        html body .container > .content-wrapper,
+        .container > .content-wrapper {
+            grid-column: 1 !important;
+            grid-row: 1 !important;
+            min-width: 0 !important;
+            overflow: hidden;
+            flex: unset !important;
+        }
+        
+        /* Sidebar in second column (right side) - MUST be on same row */
+        /* Since sidebar is now first in HTML, we need to use order or grid-column */
+        body .container > .sidebar,
+        html body .container > .sidebar,
+        body .container .sidebar,
+        .container > .sidebar,
+        .container .sidebar {
+            grid-column: 2 !important;
+            grid-row: 1 !important;
+            width: 320px !important;
+            min-width: 320px !important;
+            max-width: 320px !important;
+            position: sticky !important;
+            top: 20px !important;
+            align-self: start !important;
+            display: block !important;
+            flex-shrink: 0 !important;
+            order: 2 !important;
+        }
+        
+        /* Content wrapper in first column */
+        body .container > .content-wrapper {
+            order: 1 !important;
+        }
+        
+        /* Override ALL media queries that might be affecting layout */
+        @media (max-width: 2000px) {
+            body .container,
+            html body .container,
+            .container {
+                display: grid !important;
+                grid-template-columns: 1fr 320px !important;
+                flex-direction: unset !important;
+            }
+            body .container > .sidebar,
+            html body .container > .sidebar,
+            body .container .sidebar,
+            .container > .sidebar,
+            .container .sidebar {
+                grid-column: 2 !important;
+                grid-row: 1 !important;
+                width: 320px !important;
+                position: relative !important;
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            body .container,
+            html body .container,
+            .container {
+                display: grid !important;
+                grid-template-columns: 1fr 320px !important;
+                flex-direction: unset !important;
+            }
+            body .container > .sidebar,
+            html body .container > .sidebar,
+            body .container .sidebar,
+            .container > .sidebar,
+            .container .sidebar {
+                grid-column: 2 !important;
+                grid-row: 1 !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body .container,
+            html body .container,
+            .container {
+                display: grid !important;
+                grid-template-columns: 1fr 320px !important;
+                flex-direction: unset !important;
+            }
+            body .container > .sidebar,
+            html body .container > .sidebar,
+            body .container .sidebar,
+            .container > .sidebar,
+            .container .sidebar {
+                grid-column: 2 !important;
+                grid-row: 1 !important;
+            }
+        }
+        
+        /* Feature cards - only show icon and title */
+        .sidebar .feature-card p {
+            display: none;
+        }
+        
+        .sidebar .feature-card {
+            text-align: center;
+            padding: 15px 10px;
+        }
+        
+        .sidebar .feature-card i {
+            font-size: 2rem;
+            margin-bottom: 8px;
+            color: var(--ncrc-primary-blue);
+        }
+        
+        .sidebar .feature-card h4 {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+        
+        .mapper-controls {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+            align-items: start;
+        }
+        
+        /* Column 1: State, County, Census Layer, Legend */
+        .controls-column-1 {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        /* Column 2: Buttons and Income Legend */
+        .controls-column-2 {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            justify-content: flex-start;
+        }
+        
+        /* Column 3: Banks dropdown - match height of column 1 */
+        .controls-column-3 {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .map-actions {
+            margin-top: 10px;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .control-group label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ncrc-dark-blue);
+        }
+        
+        .control-group select {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: white;
+        }
+        
+        .control-group select[multiple] {
+            min-height: 80px;
+            max-height: 100px;
+            padding: 6px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+        
+        .control-group select[multiple]:focus {
+            border-color: var(--ncrc-primary-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(3, 78, 160, 0.1);
+        }
+        
+        .bank-select-container {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .bank-select-help {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .selected-banks-display {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 5px;
+        }
+        
+        .selected-bank-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            background: var(--ncrc-light-blue);
+            color: var(--ncrc-dark-blue);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .selected-bank-tag .remove-btn {
+            cursor: pointer;
+            color: var(--ncrc-dark-blue);
+            font-weight: bold;
+            padding: 0 2px;
+        }
+        
+        .selected-bank-tag .remove-btn:hover {
+            color: #e82e2e;
+        }
+        
+        .control-group small {
+            font-size: 0.7rem;
+            color: #666;
+            margin-top: 2px;
+        }
+        
+        .map-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .map-actions button {
+            padding: 6px 14px;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .map-actions button:hover {
+            background: var(--ncrc-dark-blue);
+        }
+        
+        .map-actions button.secondary {
+            background: #6c757d;
+        }
+        
+        .map-actions button.secondary:hover {
+            background: #5a6268;
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        
+        #branchMap {
+            height: 600px;
+            width: 100%;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+        }
+        
+        .bank-legend {
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            display: none;
+            flex-wrap: wrap;
+            gap: 10px;
+            font-size: 0.85rem;
+        }
+        
+        .bank-legend.active {
+            display: flex;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        
+        .info-panel {
+            background: #f8f9fa;
+            border-radius: 6px;
+            padding: 8px 12px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        .info-panel strong {
+            color: var(--ncrc-dark-blue);
+        }
+        
+        /* Custom marker popup styles */
+        .leaflet-popup-content {
+            min-width: 200px;
+        }
+        
+        .popup-content {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .popup-content strong {
+            color: var(--ncrc-primary-blue);
+            font-size: 1rem;
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .popup-content .branch-info {
+            margin: 5px 0;
+        }
+        
+        .popup-content .branch-tags {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        
+        .tag {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #e6f2ff;
+            color: var(--ncrc-primary-blue);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+        
+        .tag.lmi {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .tag.minority {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .report-problem-btn {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: #e82e2e;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            text-align: center;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .report-problem-btn:hover {
+            background: #c41e1e;
+            color: white;
+            text-decoration: none;
+        }
+        
+        .report-problem-btn i {
+            margin-right: 6px;
+        }
+        
+        /* Explicitly hide any version text in footer */
+        .footer .version-text,
+        .footer-bottom .version-text,
+        footer .version-text {
+            display: none !important;
+            visibility: hidden !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1>BranchMapper</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Sidebar (moved first in HTML for grid layout) -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-info-circle"></i> About BranchMapper</h3>
+            <div class="sidebar-features">
+                <div class="feature-card" data-tooltip="<strong>Data Sources</strong><br><br>Branch location data comes from the FDIC Summary of Deposits file released June 30, 2025, providing a snapshot of all bank branches open at that time.<br><br>Census tract demographic data (income and minority population) comes from the U.S. Census Bureau American Community Survey (ACS) 5-Year Estimates, 2018-2022.">
+                    <i class="fas fa-database"></i>
+                    <h4>Data Sources</h4>
+                </div>
+                <div class="feature-card" data-tooltip="<strong>How to Use</strong><br><br>1. Select a state and county from the dropdowns<br>2. Click 'Load Map' to view all bank branches in that area<br>3. Use the bank selector to filter and compare up to 3 specific banks (they will appear in different colors)<br>4. Click on any branch marker to see detailed information including branch name, deposits, and address<br>5. Toggle census tract layers to view income levels or minority population data overlaid on the map">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <h4>How to Use</h4>
+                </div>
+                <div class="feature-card" data-tooltip="<strong>Income & Minority Levels</strong><br><br><strong>Income Levels:</strong> Compare each census tract's median family income to the county median:<br>• Low: ≤50% of county median<br>• Moderate: ≤80% of county median<br>• Middle: ≤120% of county median<br>• Upper: >120% of county median<br><br><strong>Minority Levels:</strong> Compare each tract's minority population percentage to the county average:<br>• Very High: ≥2x county average<br>• High: 1.5-2x county average<br>• Above Average: 1.2-1.5x county average<br>• Average: 0.8-1.2x county average<br>• Below Average: <0.8x county average">
+                    <i class="fas fa-chart-line"></i>
+                    <h4>Income & Minority Levels</h4>
+                </div>
+                <div class="feature-card" data-tooltip="<strong>Need Help?</strong><br><br>For questions about the data, assistance with analysis, or more detailed research support, please contact NCRC Research at <strong>research@ncrc.org</strong>.<br><br>Our research team can help with:<br>• Custom analysis<br>• Data interpretation<br>• Detailed market research<br>• Technical support">
+                    <i class="fas fa-envelope"></i>
+                    <h4>Need Help?</h4>
+                </div>
+            </div>
+            
+            <!-- Version Card at bottom of sidebar -->
+            <div class="feature-card" data-tooltip="<strong>Version Information</strong><br><br><strong>Version:</strong> {{ version }}<br><br><strong>Copyright:</strong> &copy; 2025 JustData - BranchMapper<br><br>Powered by FDIC Summary of Deposits and U.S. Census Bureau data.<br><br>This version number is automatically updated when significant changes are made to the application.">
+                <i class="fas fa-code-branch"></i>
+                <h4>Version</h4>
+            </div>
+        </aside>
+        
+        <!-- Main Content -->
+        <div class="content-wrapper">
+    <div class="mapper-container">
+        <!-- Map Controls -->
+        <div class="mapper-controls">
+            <h2 style="margin-bottom: 10px; color: var(--ncrc-dark-blue); font-size: 1.1rem;">
+                <i class="fas fa-map-marked-alt"></i> Branch Location Map
+            </h2>
+            
+            <!-- Data Description -->
+            <div class="data-description" style="background: #e6f2ff; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid var(--ncrc-primary-blue);">
+                <p style="margin: 0; color: #333; line-height: 1.4; font-size: 0.8rem;">
+                    <strong><i class="fas fa-info-circle"></i> About:</strong> Data from <strong>Summary of Deposits</strong> (June 30, 2025). Select state/county and click <strong>Load Map</strong>. Select up to 3 banks to compare.
+                </p>
+            </div>
+            
+            <div class="controls-grid">
+                <!-- Column 1: State, County, Census Layer, Legend -->
+                <div class="controls-column-1">
+                    <div class="control-group">
+                        <label for="stateSelect">
+                            <i class="fas fa-map"></i> State
+                        </label>
+                        <select id="stateSelect">
+                            <option value="">Select State</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="countySelect">
+                            <i class="fas fa-map-marker-alt"></i> County
+                        </label>
+                        <select id="countySelect">
+                            <option value="">Select County</option>
+                        </select>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label for="censusLayerSelect">
+                            <i class="fas fa-layer-group"></i> Census Tract Layer
+                        </label>
+                        <select id="censusLayerSelect">
+                            <option value="">None</option>
+                            <option value="income">Income Levels</option>
+                            <option value="minority">Minority Population</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Column 2: Buttons and Income Legend -->
+                <div class="controls-column-2">
+                    <div class="map-actions" style="margin-top: 0;">
+                        <button onclick="loadMapData()" style="width: 100%; margin-bottom: 8px;">
+                            <i class="fas fa-map"></i> Load Map
+                        </button>
+                        <button onclick="clearMap()" class="secondary" style="width: 100%; margin-bottom: 8px;">
+                            <i class="fas fa-trash"></i> Clear Map
+                        </button>
+                        <button onclick="exportMapAndData()" style="width: 100%; background: var(--ncrc-primary-blue); color: white; border: none; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: background 0.2s;">
+                            <i class="fas fa-download"></i> Export Map & Data
+                        </button>
+                    </div>
+                    
+                    <!-- Dynamic Legend (shows based on selected layer) -->
+                    <div id="column2Legend" style="padding: 10px; background: #f9f9f9; border-radius: 6px; border: 1px solid #ddd; margin-top: 10px; display: none;">
+                        <!-- Income Levels Legend -->
+                        <div id="column2IncomeLegend" style="display: none;">
+                            <strong style="font-size: 0.85rem; color: var(--ncrc-dark-blue);">Income Levels:</strong>
+                            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; font-size: 0.75rem; color: #666;">
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #333333; border: 1px solid #333;"></span>
+                                    <span>Low (≤50%)</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #666666; border: 1px solid #333;"></span>
+                                    <span>Moderate (≤80%)</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #999999; border: 1px solid #333;"></span>
+                                    <span>Middle (≤120%)</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #cccccc; border: 1px solid #333;"></span>
+                                    <span>Upper (>120%)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Minority Population Legend -->
+                        <div id="column2MinorityLegend" style="display: none;">
+                            <strong style="font-size: 0.85rem; color: var(--ncrc-dark-blue);">Minority Population:</strong>
+                            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; font-size: 0.75rem; color: #666;">
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #1a1a1a; border: 1px solid #333;"></span>
+                                    <span>Very High (2x+)</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #333333; border: 1px solid #333;"></span>
+                                    <span>High (1.5-2x)</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #666666; border: 1px solid #333;"></span>
+                                    <span>Above Avg (1.2-1.5x)</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #999999; border: 1px solid #333;"></span>
+                                    <span>Avg (0.8-1.2x)</span>
+                                </div>
+                                <div style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #cccccc; border: 1px solid #333;"></span>
+                                    <span>Below Avg (<0.8x)</span>
+                                </div>
+                            </div>
+                            <div style="margin-top: 4px; font-style: italic; color: #999; font-size: 0.7rem;">
+                                Minority = All non-Hispanic White excluded
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Column 3: Banks dropdown (match height of column 1) -->
+                <div class="controls-column-3">
+                    <div class="control-group" style="flex: 1; display: flex; flex-direction: column;">
+                        <label for="bankSelect">
+                            <i class="fas fa-university"></i> Banks
+                        </label>
+                        <div class="bank-select-container" style="flex: 1; display: flex; flex-direction: column;">
+                            <select id="bankSelect" multiple style="width: 100%; flex: 1; min-height: 200px;">
+                                <option value="all">All Banks</option>
+                            </select>
+                            <div class="bank-select-help">
+                                <small>Click to select/deselect (max 3 banks)</small>
+                                <div class="selected-banks-display" id="selectedBanksDisplay"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bank Legend -->
+        <div class="bank-legend" id="bankLegend">
+            <strong>Bank Colors:</strong>
+        </div>
+        
+        <!-- Map Container -->
+        <div class="map-container">
+            <div id="branchMap"></div>
+        </div>
+        
+        <!-- Info Panel -->
+        <div class="info-panel" id="infoPanel">
+            <strong>Instructions:</strong><br>
+            • Select a state and county to view 2025 bank branch locations<br>
+            • Use the bank selector to filter by specific banks (select up to 3)<br>
+            • Click on markers to see branch details<br>
+            • Use the "Report a Problem" button in popups to report data issues
+        </div>
+        </div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let branchMap = null;
+        let currentMarkers = [];
+        let allBranches = [];
+        let bankColors = {};
+        let incomeLayer = null; // Census tract income layer
+        let minorityLayer = null; // Census tract minority layer
+        let layerControl = null; // Leaflet layer control
+        
+        // Color palette for banks (distinct colors)
+        const colorPalette = [
+            '#034ea0', // NCRC Dark Blue
+            '#e82e2e', // NCRC Red
+            '#552d87', // NCRC Purple
+            '#2fade3', // NCRC Sky Blue
+            '#eb2f89', // NCRC Pink
+            '#ffc23a', // NCRC Gold
+            '#28a745', // Green
+            '#17a2b8', // Teal
+            '#6f42c1', // Purple
+            '#fd7e14', // Orange
+            '#20c997', // Mint
+            '#dc3545'  // Red
+        ];
+        
+        // State center coordinates and zoom levels (approximate)
+        const stateCenters = {
+            '01': { lat: 32.806671, lng: -86.791130, zoom: 7 }, // Alabama
+            '04': { lat: 34.048928, lng: -111.093731, zoom: 7 }, // Arizona
+            '06': { lat: 36.116203, lng: -119.681564, zoom: 6 }, // California
+            '10': { lat: 39.318523, lng: -75.507141, zoom: 8 }, // Delaware
+            '12': { lat: 27.766279, lng: -81.686783, zoom: 7 }, // Florida
+            '13': { lat: 33.040619, lng: -83.643074, zoom: 7 }, // Georgia
+            '17': { lat: 40.349457, lng: -88.986137, zoom: 7 }, // Illinois
+            '24': { lat: 39.063946, lng: -76.802101, zoom: 7 }, // Maryland
+            '26': { lat: 43.326618, lng: -84.536095, zoom: 7 }, // Michigan
+            '36': { lat: 42.165726, lng: -74.948051, zoom: 7 }, // New York
+            '39': { lat: 40.388783, lng: -82.764915, zoom: 7 }, // Ohio
+            '42': { lat: 40.590752, lng: -77.209755, zoom: 7 }, // Pennsylvania
+            '48': { lat: 31.054487, lng: -97.563461, zoom: 6 }, // Texas
+            '53': { lat: 47.400902, lng: -121.490494, zoom: 7 }  // Washington
+        };
+        
+        // Initialize map
+        function initMap() {
+            if (branchMap) {
+                branchMap.remove();
+            }
+            
+            // Default center: US center
+            branchMap = L.map('branchMap').setView([39.8283, -98.5795], 4);
+            
+            // Add OpenStreetMap tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(branchMap);
+            
+            // Add layer control for census tract layers
+            setupLayerControl();
+        }
+        
+        // Setup layer control for toggling census tract layers
+        function setupLayerControl() {
+            if (!branchMap) return;
+            
+            // Create base layers (just the map)
+            const baseLayers = {};
+            
+            // Create overlay layers (census tract layers) - start empty, will be added when layer is created
+            const overlays = {};
+            
+            // Add layer control
+            layerControl = L.control.layers(baseLayers, overlays, {
+                collapsed: true,
+                position: 'topright'
+            }).addTo(branchMap);
+        }
+        
+        // Get gray shade for income category (darker = lower income)
+        function getIncomeColor(category) {
+            switch(category) {
+                case 'Low':
+                    return '#333333';      // Dark gray - Low income
+                case 'Moderate':
+                    return '#666666';     // Medium-dark gray - Moderate income
+                case 'Middle':
+                    return '#999999';     // Medium gray - Middle income
+                case 'Upper':
+                    return '#cccccc';     // Light gray - Upper income
+                default:
+                    return '#e0e0e0';      // Very light gray - Unknown
+            }
+        }
+        
+        // Get gray shade for minority category (darker = higher minority relative to metro)
+        function getMinorityColor(category) {
+            switch(category) {
+                case 'Very High':
+                    return '#1a1a1a';      // Very dark gray - Very High (2x+ metro)
+                case 'High':
+                    return '#333333';      // Dark gray - High (1.5-2x metro)
+                case 'Above Average':
+                    return '#666666';     // Medium-dark gray - Above Average (1.2-1.5x metro)
+                case 'Average':
+                    return '#999999';     // Medium gray - Average (0.8-1.2x metro)
+                case 'Below Average':
+                    return '#cccccc';     // Light gray - Below Average (<0.8x metro)
+                default:
+                    return '#e0e0e0';      // Very light gray - Unknown
+            }
+        }
+        
+        // Style function for income layer
+        function styleIncomeLayer(feature) {
+            const category = feature.properties.income_category || 'Unknown';
+            return {
+                fillColor: getIncomeColor(category),
+                fillOpacity: 0.5,  // 50% opacity to see branch markers and map
+                color: '#666',
+                weight: 1,
+                opacity: 0.6
+            };
+        }
+        
+        // Style function for minority layer
+        function styleMinorityLayer(feature) {
+            const category = feature.properties.minority_category || 'Unknown';
+            return {
+                fillColor: getMinorityColor(category),
+                fillOpacity: 0.5,  // 50% opacity to see branch markers and map
+                color: '#666',
+                weight: 1,
+                opacity: 0.6
+            };
+        }
+        
+        // Load and display income layer
+        async function loadIncomeLayer(county) {
+            if (!branchMap) {
+                initMap();
+            }
+            
+            // Remove existing income layer
+            if (incomeLayer) {
+                branchMap.removeLayer(incomeLayer);
+                incomeLayer = null;
+            }
+            
+            try {
+                updateInfoPanel('Loading census tract income data...');
+                console.log('Loading income layer for county:', county);
+                
+                const url = `/api/census-tracts/${encodeURIComponent(county)}?income=true&minority=false`;
+                console.log('Fetching from URL:', url);
+                
+                const response = await fetch(url);
+                console.log('Response status:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    console.error('API error response:', errorData);
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('API response data:', data);
+                
+                if (!data.success) {
+                    console.error('API returned success=false:', data);
+                    throw new Error(data.error || 'Failed to load census tract data');
+                }
+                
+                if (!data.geojson || !data.geojson.features) {
+                    console.error('Invalid GeoJSON data:', data);
+                    throw new Error('Invalid GeoJSON data received');
+                }
+                
+                console.log('Creating GeoJSON layer with', data.geojson.features.length, 'features');
+                
+                // Create GeoJSON layer
+                incomeLayer = L.geoJSON(data.geojson, {
+                    style: styleIncomeLayer,
+                    onEachFeature: function(feature, layer) {
+                        const props = feature.properties;
+                        const income = props.median_family_income;
+                        const category = props.income_category || 'Unknown';
+                        // Use baseline_median_income (works for both CBSA and state fallback)
+                        const baselineIncome = props.baseline_median_income || props.cbsa_median_income;
+                        // Check baseline_type property - default to 'cbsa' if not set
+                        const baselineType = props.baseline_type;
+                        console.log('Tract income popup - baseline_type:', baselineType, 'props:', props);
+                        const ratio = props.income_ratio;
+                        
+                        // Format income with commas
+                        const formatIncome = (val) => {
+                            if (!val) return 'N/A';
+                            return '$' + Math.round(val).toLocaleString('en-US');
+                        };
+                        
+                        // Determine baseline label
+                        // Use county baseline (baseline_type should be 'county')
+                        let baselineLabel = 'County Median'; // Default to county
+                        if (baselineType === 'state') {
+                            baselineLabel = 'State Median';
+                        } else if (baselineType === 'cbsa') {
+                            baselineLabel = 'Metro Area Median'; // Legacy support
+                        }
+                        
+                        // Create popup content
+                        const popupContent = `
+                            <div style="min-width: 200px;">
+                                <strong>${props.NAME || 'Census Tract'}</strong><br>
+                                <hr style="margin: 8px 0;">
+                                <strong>Income Category:</strong> ${category}<br>
+                                <strong>Tract Median Family Income:</strong> ${formatIncome(income)}<br>
+                                <strong>${baselineLabel}:</strong> ${formatIncome(baselineIncome)}<br>
+                                ${ratio ? `<strong>Ratio:</strong> ${ratio.toFixed(2)}x county average<br>` : ''}
+                                <hr style="margin: 8px 0;">
+                                <small style="color: #666;">
+                                    Categories: Low (≤50%), Moderate (≤80%), Middle (≤120%), Upper (>120%)
+                                </small>
+                            </div>
+                        `;
+                        
+                        layer.bindPopup(popupContent);
+                    }
+                }).addTo(branchMap);
+                
+                console.log('Income layer added to map. Layer bounds:', incomeLayer.getBounds());
+                console.log('Map bounds before fit:', branchMap.getBounds());
+                
+                // Fit map to show all tracts
+                branchMap.fitBounds(incomeLayer.getBounds().pad(0.1));
+                
+                console.log('Map bounds after fit:', branchMap.getBounds());
+                console.log('Income layer is on map:', branchMap.hasLayer(incomeLayer));
+                
+                // Update layer control to include income layer
+                if (layerControl) {
+                    layerControl.addOverlay(incomeLayer, 'Income Levels');
+                    console.log('Added income layer to layer control');
+                } else {
+                    console.warn('Layer control not available');
+                }
+                
+                const countyIncome = data.baseline_median_family_income;
+                const countyIncomeStr = (countyIncome !== null && countyIncome !== undefined) ? '$' + Math.round(countyIncome).toLocaleString() : 'N/A';
+                updateInfoPanel(`Loaded income data for ${data.tract_count} census tracts. County median: ${countyIncomeStr}`);
+                
+            } catch (error) {
+                console.error('Error loading income layer:', error);
+                updateInfoPanel(`Error loading income data: ${error.message}`);
+            }
+        }
+        
+        // Load and display minority layer
+        async function loadMinorityLayer(county) {
+            if (!branchMap) {
+                initMap();
+            }
+            
+            // Remove existing minority layer
+            if (minorityLayer) {
+                branchMap.removeLayer(minorityLayer);
+                minorityLayer = null;
+            }
+            
+            try {
+                updateInfoPanel('Loading census tract minority population data...');
+                
+                const response = await fetch(`/api/census-tracts/${encodeURIComponent(county)}?income=false&minority=true`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load census tract data');
+                }
+                
+                // Create GeoJSON layer
+                minorityLayer = L.geoJSON(data.geojson, {
+                    style: styleMinorityLayer,
+                    onEachFeature: function(feature, layer) {
+                        const props = feature.properties;
+                        const minorityPct = props.minority_percentage;
+                        const category = props.minority_category || 'Unknown';
+                        const countyMinorityPct = props.county_minority_percentage;
+                        const ratio = props.minority_ratio;
+                        const totalPop = props.total_population;
+                        const minorityPop = props.minority_population;
+                        
+                        // Format numbers
+                        const formatNumber = (val) => {
+                            if (!val && val !== 0) return 'N/A';
+                            return Math.round(val).toLocaleString('en-US');
+                        };
+                        
+                        const formatPercent = (val) => {
+                            if (val === null || val === undefined || (val !== 0 && !val)) return 'N/A';
+                            try {
+                                return parseFloat(val).toFixed(1) + '%';
+                            } catch (e) {
+                                return 'N/A';
+                            }
+                        };
+                        
+                        // Create popup content
+                        const popupContent = `
+                            <div style="min-width: 200px;">
+                                <strong>${props.NAME || 'Census Tract'}</strong><br>
+                                <hr style="margin: 8px 0;">
+                                <strong>Minority Category:</strong> ${category}<br>
+                                <strong>Tract Minority %:</strong> ${formatPercent(minorityPct)}<br>
+                                <strong>County Minority %:</strong> ${formatPercent(countyMinorityPct)}<br>
+                                ${ratio !== null && ratio !== undefined ? `<strong>Ratio:</strong> ${parseFloat(ratio).toFixed(2)}x county average<br>` : ''}
+                                <hr style="margin: 8px 0;">
+                                <strong>Total Population:</strong> ${formatNumber(totalPop)}<br>
+                                <strong>Minority Population:</strong> ${formatNumber(minorityPop)}<br>
+                                <hr style="margin: 8px 0;">
+                                <small style="color: #666;">
+                                    Minority = Non-Hispanic White excluded<br>
+                                    Categories based on ratio to county average
+                                </small>
+                            </div>
+                        `;
+                        
+                        layer.bindPopup(popupContent);
+                    }
+                }).addTo(branchMap);
+                
+                // Fit map to show all tracts
+                branchMap.fitBounds(minorityLayer.getBounds().pad(0.1));
+                
+                // Update layer control to include minority layer
+                if (layerControl) {
+                    layerControl.addOverlay(minorityLayer, 'Minority Population');
+                }
+                
+                const countyMinorityPct = data.county_minority_percentage;
+                const countyMinorityStr = (countyMinorityPct !== null && countyMinorityPct !== undefined) ? countyMinorityPct.toFixed(1) + '%' : 'N/A';
+                updateInfoPanel(`Loaded minority data for ${data.tract_count} census tracts. County: ${countyMinorityStr} minority`);
+                
+            } catch (error) {
+                console.error('Error loading minority layer:', error);
+                updateInfoPanel(`Error loading minority data: ${error.message}`);
+            }
+        }
+        
+        // Toggle income layer
+        function toggleIncomeLayer(county) {
+            if (incomeLayer && branchMap.hasLayer(incomeLayer)) {
+                branchMap.removeLayer(incomeLayer);
+                updateInfoPanel('Income layer hidden');
+            } else if (incomeLayer) {
+                branchMap.addLayer(incomeLayer);
+                updateInfoPanel('Income layer shown');
+            } else if (county) {
+                loadIncomeLayer(county);
+            }
+        }
+        
+        // Zoom map to state
+        function zoomToState(stateCode) {
+            if (!branchMap) {
+                initMap();
+            }
+            
+            if (stateCenters[stateCode]) {
+                const center = stateCenters[stateCode];
+                branchMap.setView([center.lat, center.lng], center.zoom);
+                console.log('Zoomed to state:', stateCode, center);
+            } else {
+                // Default to US center if state not found
+                branchMap.setView([39.8283, -98.5795], 4);
+            }
+        }
+        
+        // Initialize dropdowns
+        async function initializeDropdowns() {
+            // Year is fixed to 2025, no dropdown needed
+            // Populate state dropdown
+            await populateStateDropdown();
+            
+            // Try to detect user's location from IP
+            detectUserLocation();
+        }
+        
+        // Detect user's location from IP address
+        async function detectUserLocation() {
+            try {
+                // Use a free IP geolocation service
+                // ipapi.co provides free geolocation (1000 requests/day free)
+                const response = await fetch('https://ipapi.co/json/');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('User location detected:', data);
+                    
+                    if (data.region_code && data.region) {
+                        // Try to match the state
+                        const stateSelect = document.getElementById('stateSelect');
+                        const stateName = data.region; // e.g., "Delaware"
+                        const stateCode = data.region_code; // e.g., "DE" - but we need FIPS code
+                        
+                        // Find matching state in dropdown
+                        // Try exact match first, then case-insensitive match
+                        const stateOptions = Array.from(stateSelect.options);
+                        let matchingState = stateOptions.find(opt => {
+                            const optText = opt.textContent.trim();
+                            return optText.toLowerCase() === stateName.toLowerCase();
+                        });
+                        
+                        // If no exact match, try partial match
+                        if (!matchingState) {
+                            matchingState = stateOptions.find(opt => {
+                                const optText = opt.textContent.trim().toLowerCase();
+                                return optText.includes(stateName.toLowerCase()) || 
+                                       stateName.toLowerCase().includes(optText);
+                            });
+                        }
+                        
+                        if (matchingState) {
+                            matchingState.selected = true;
+                            const stateCodeValue = matchingState.value;
+                            console.log('Pre-selected state:', stateName, 'with code:', stateCodeValue);
+                            
+                            // Now try to pre-select county
+                            await populateCountyDropdown(stateCodeValue);
+                            
+                            // Try to find matching county
+                            if (data.county) {
+                                const countySelect = document.getElementById('countySelect');
+                                const countyName = data.county; // e.g., "New Castle County"
+                                
+                                // Wait a bit for counties to load
+                                setTimeout(() => {
+                                    const countyOptions = Array.from(countySelect.options);
+                                    const matchingCounty = countyOptions.find(opt => {
+                                        const optText = opt.textContent.trim();
+                                        // Match if county name appears in the option (e.g., "New Castle County, Delaware")
+                                        return optText.includes(countyName);
+                                    });
+                                    
+                                    if (matchingCounty) {
+                                        matchingCounty.selected = true;
+                                        console.log('Pre-selected county:', matchingCounty.textContent);
+                                        // Trigger change event to load map data and zoom
+                                        matchingCounty.dispatchEvent(new Event('change', { bubbles: true }));
+                                    }
+                                }, 500);
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('Could not detect user location:', error.message);
+                // Silently fail - just don't pre-select anything
+            }
+        }
+        
+        // Populate state dropdown
+        async function populateStateDropdown() {
+            const stateSelect = document.getElementById('stateSelect');
+            
+            // Store reference to original select for event listener
+            let originalStateSelect = stateSelect;
+            
+            // Common US states for testing
+            const commonStates = [
+                { code: '12', name: 'Florida' },
+                { code: '06', name: 'California' },
+                { code: '36', name: 'New York' },
+                { code: '48', name: 'Texas' },
+                { code: '17', name: 'Illinois' },
+                { code: '13', name: 'Georgia' },
+                { code: '39', name: 'Ohio' },
+                { code: '26', name: 'Michigan' },
+                { code: '24', name: 'Maryland' },
+                { code: '42', name: 'Pennsylvania' },
+                { code: '53', name: 'Washington' },
+                { code: '04', name: 'Arizona' },
+                { code: '01', name: 'Alabama' }
+            ];
+            
+            // Check if we're running on a server (not file://)
+            const isServer = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+            
+            // Add change listener to state dropdown FIRST, before populating options
+            // This ensures the listener is always attached
+            stateSelect.addEventListener('change', async function() {
+                const stateCode = this.value;
+                const selectedOption = this.options[this.selectedIndex];
+                if (!selectedOption) return;
+                
+                const stateName = selectedOption.textContent.trim();
+                console.log('=== STATE CHANGED ===');
+                console.log('State code:', stateCode);
+                console.log('State name:', stateName);
+                console.log('Selected index:', this.selectedIndex);
+                
+                // Immediately clear the county dropdown
+                const countySelect = document.getElementById('countySelect');
+                countySelect.innerHTML = '<option value="">Loading counties...</option>';
+                
+                // Clear any existing markers
+                clearMarkers();
+                
+                // Zoom map to selected state
+                if (stateCode && this.selectedIndex > 0) {
+                    zoomToState(stateCode);
+                    
+                    // Populate counties for the selected state
+                    try {
+                        await populateCountyDropdown(stateCode);
+                        console.log('Counties loaded for state:', stateName);
+                    } catch (error) {
+                        console.error('Error loading counties:', error);
+                        countySelect.innerHTML = '<option value="">Error loading counties</option>';
+                    }
+                } else {
+                    countySelect.innerHTML = '<option value="">Select a state first</option>';
+                    // Reset to US view
+                    if (branchMap) {
+                        branchMap.setView([39.8283, -98.5795], 4);
+                    }
+                }
+            }, { once: false }); // Allow multiple calls
+            
+            // Now populate the state options
+            // Try to fetch from API if available and on server
+            if (isServer) {
+                try {
+                    const response = await fetch('/states');
+                    if (response.ok) {
+                        const states = await response.json();
+                        states.forEach(state => {
+                            const option = document.createElement('option');
+                            option.value = state.code;
+                            option.textContent = state.name;
+                            // Don't pre-select - let geolocation handle it
+                            stateSelect.appendChild(option);
+                        });
+                        // Don't auto-load counties - wait for geolocation or user selection
+                        return;
+                    }
+                } catch (error) {
+                    console.log('API not available, using hardcoded states:', error.message);
+                }
+            } else {
+                console.log('Opening file directly - using hardcoded states. For API access, open via http://127.0.0.1:8080');
+            }
+            
+            // Use hardcoded states (don't pre-select - let geolocation or timeout handle it)
+            commonStates.forEach(state => {
+                const option = document.createElement('option');
+                option.value = state.code;
+                option.textContent = state.name;
+                stateSelect.appendChild(option);
+            });
+            
+            // Don't auto-select Florida - let geolocation handle it, or user can select manually
+            // Only default to Florida if geolocation fails and nothing is selected after a delay
+            setTimeout(() => {
+                const currentStateSelect = document.getElementById('stateSelect');
+                if (currentStateSelect && (currentStateSelect.selectedIndex === 0 || currentStateSelect.value === '')) {
+                    // No state selected yet, default to Florida
+                    currentStateSelect.value = '12';
+                    populateCountyDropdown('12');
+                }
+            }, 2000); // Wait 2 seconds for geolocation to complete
+        }
+        
+        // Populate county dropdown based on selected state
+        async function populateCountyDropdown(stateCode) {
+            console.log('=== POPULATE COUNTY DROPDOWN ===');
+            console.log('State code received:', stateCode);
+            
+            const countySelect = document.getElementById('countySelect');
+            const stateSelect = document.getElementById('stateSelect');
+            
+            if (!stateSelect) {
+                console.error('State select element not found!');
+                return;
+            }
+            
+            // Get state name from dropdown - use the actual selected option
+            if (!stateCode || stateSelect.selectedIndex === 0 || stateSelect.value === '' || stateSelect.value !== stateCode) {
+                console.warn('Invalid state selection:', {
+                    stateCode,
+                    selectedIndex: stateSelect.selectedIndex,
+                    value: stateSelect.value
+                });
+                countySelect.innerHTML = '<option value="">Select a state first</option>';
+                return;
+            }
+            
+            // Get state name from the currently selected option
+            const selectedOption = stateSelect.options[stateSelect.selectedIndex];
+            if (!selectedOption) {
+                console.error('No selected option found in state dropdown');
+                countySelect.innerHTML = '<option value="">Error: No state selected</option>';
+                return;
+            }
+            
+            const stateName = selectedOption.textContent.trim();
+            console.log('Populating counties for state:', stateCode, stateName);
+            console.log('State select value:', stateSelect.value, 'selectedIndex:', stateSelect.selectedIndex);
+            
+            // Clear the dropdown immediately
+            countySelect.innerHTML = '<option value="">Loading counties...</option>';
+            
+            // Small delay to ensure UI updates
+            await new Promise(resolve => setTimeout(resolve, 50));
+            
+            // Check if we're running on a server (not file://)
+            const isServer = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+            
+            // Try to fetch counties for the specific state (only if on server)
+            if (isServer) {
+                try {
+                    // Use the state-specific endpoint which queries BigQuery directly
+                    const response = await fetch(`/counties-by-state/${stateCode}`);
+                    console.log('Response status:', response.status, response.statusText);
+                    
+                    if (response.ok) {
+                        const stateCounties = await response.json();
+                        console.log('Fetched counties for state', stateName, ':', stateCounties.length);
+                        
+                        // Handle case where API returns error object
+                        if (stateCounties.error) {
+                            throw new Error(stateCounties.error);
+                        }
+                        
+                        if (stateCounties.length > 0) {
+                            console.log('Sample counties:', stateCounties.slice(0, 5));
+                        }
+                        
+                        // Clear and repopulate - IMPORTANT: Clear first!
+                        countySelect.innerHTML = '';
+                        
+                        // Add default option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'Select County';
+                        countySelect.appendChild(defaultOption);
+                        
+                        if (stateCounties.length === 0) {
+                            const noCountiesOption = document.createElement('option');
+                            noCountiesOption.value = '';
+                            noCountiesOption.textContent = `No counties found for ${stateName}`;
+                            countySelect.appendChild(noCountiesOption);
+                            console.warn('No counties found for state:', stateName);
+                        } else {
+                            stateCounties.forEach(county => {
+                                const option = document.createElement('option');
+                                option.value = county;
+                                option.textContent = county;
+                                countySelect.appendChild(option);
+                            });
+                            console.log('Successfully populated', stateCounties.length, 'counties for', stateName);
+                            
+                            // Re-setup the county change listener after populating
+                            setupCountyChangeListener();
+                        }
+                        return;
+                    } else {
+                        // If state-specific endpoint fails, get error details
+                        const errorText = await response.text();
+                        console.error('State-specific endpoint failed:', response.status, errorText);
+                        
+                        // Try the general counties endpoint as fallback
+                        console.log('Trying general counties endpoint as fallback...');
+                        try {
+                            const fallbackResponse = await fetch('/counties');
+                            if (fallbackResponse.ok) {
+                                const allCounties = await fallbackResponse.json();
+                                console.log('Total counties from API:', allCounties.length);
+                                console.log('Filtering for state:', stateName);
+                                
+                                // Filter counties by selected state - must end with ", StateName"
+                                const filteredCounties = allCounties.filter(county => {
+                                    const countyStr = String(county).trim();
+                                    return countyStr.endsWith(`, ${stateName}`);
+                                });
+                                
+                                console.log('Filtered counties for', stateName, ':', filteredCounties.length);
+                                
+                                // Clear and repopulate
+                                countySelect.innerHTML = '<option value="">Select County</option>';
+                                
+                                if (filteredCounties.length === 0) {
+                                    countySelect.innerHTML = '<option value="">No counties found for ' + stateName + '</option>';
+                                } else {
+                                filteredCounties.forEach(county => {
+                                    const option = document.createElement('option');
+                                    option.value = county;
+                                    option.textContent = county;
+                                    countySelect.appendChild(option);
+                                });
+                                
+                                // Re-setup the county change listener after populating
+                                setupCountyChangeListener();
+                            }
+                            return;
+                            }
+                        } catch (fallbackError) {
+                            console.error('Fallback also failed:', fallbackError);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching counties:', error);
+                    console.log('API not available, using hardcoded counties:', error.message);
+                }
+            } else {
+                console.log('Opening file directly - using hardcoded counties. For API access, open via http://127.0.0.1:8080');
+            }
+            
+            // Fallback: Use hardcoded counties for Florida only
+            // For other states, show message that API is needed
+            if (stateCode === '12') {
+                const floridaCounties = [
+                    'Hillsborough County, Florida',
+                    'Miami-Dade County, Florida',
+                    'Broward County, Florida',
+                    'Orange County, Florida',
+                    'Pinellas County, Florida',
+                    'Duval County, Florida',
+                    'Palm Beach County, Florida'
+                ];
+                countySelect.innerHTML = '<option value="">Select County</option>';
+                floridaCounties.forEach(county => {
+                    const option = document.createElement('option');
+                    option.value = county;
+                    option.textContent = county;
+                    countySelect.appendChild(option);
+                });
+                
+                // Re-setup the county change listener after populating
+                setupCountyChangeListener();
+            } else {
+                countySelect.innerHTML = '<option value="">API connection required for this state</option>';
+                console.warn('No hardcoded counties for state code:', stateCode);
+            }
+        }
+        
+        // Load map data
+        async function loadMapData() {
+            const county = document.getElementById('countySelect').value;
+            const year = 2025; // Fixed to 2025
+            
+            // Clear existing markers
+            clearMarkers();
+            
+            // Validate selections
+            if (!county) {
+                alert('Please select a county.');
+                return;
+            }
+            
+            let branches = [];
+            
+            // Check if we're running on a server (not file://)
+            const isServer = window.location.protocol === 'http:' || window.location.protocol === 'https:';
+            
+            if (!isServer) {
+                alert('This tool requires the web server to be running.\n\nPlease access it at: http://127.0.0.1:8080/branch-mapper');
+                updateInfoPanel('Cannot access API when opening file directly. Please use http://127.0.0.1:8080/branch-mapper');
+                return;
+            }
+            
+            // Load from API
+            try {
+                updateInfoPanel('Loading data from API...');
+                const response = await fetch(`/api/branches?county=${encodeURIComponent(county)}&year=${year}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (!data.success) {
+                    throw new Error(data.error || 'Failed to load branch data');
+                }
+                
+                branches = data.branches || [];
+                
+                if (branches.length === 0) {
+                    updateInfoPanel(`No branches found for ${county} in ${year}.`);
+                    return;
+                }
+                
+                // Log first branch to verify data structure
+                if (branches.length > 0) {
+                    console.log('Sample branch data from API:', branches[0]);
+                }
+                
+                updateInfoPanel(`Loaded ${branches.length} branches from database for ${county} (2025)`);
+            } catch (error) {
+                console.error('Error loading from API:', error);
+                alert(`Error loading data from API: ${error.message}`);
+                updateInfoPanel(`API Error: ${error.message}`);
+                return;
+            }
+            
+            // Store all branches
+            allBranches = branches;
+            
+            // Populate bank selector
+            populateBankSelector(branches);
+            
+            // Initialize map if not already done
+            if (!branchMap) {
+                initMap();
+            }
+            
+            // Add markers based on selection (this will auto-zoom to the county)
+            updateMapMarkers();
+        }
+        
+        // Populate bank selector with unique banks
+        function populateBankSelector(branches) {
+            const bankSelect = document.getElementById('bankSelect');
+            
+            // Extract all bank names (including duplicates to see raw data)
+            const allBankNames = branches.map(b => b.bank_name).filter(Boolean);
+            const uniqueBanks = [...new Set(allBankNames)].sort();
+            
+            // Log for debugging
+            console.log('Total branches loaded:', branches.length);
+            console.log('Unique banks found:', uniqueBanks.length);
+            console.log('All unique bank names:', uniqueBanks);
+            
+            // Check if "Bank of Tampa" is in the data (case-insensitive)
+            const bankOfTampaVariations = allBankNames.filter(name => 
+                name && name.toLowerCase().includes('tampa')
+            );
+            if (bankOfTampaVariations.length > 0) {
+                console.log('Banks containing "Tampa":', [...new Set(bankOfTampaVariations)]);
+            } else {
+                console.warn('No banks containing "Tampa" found in the data');
+            }
+            
+            // Clear existing options (except "All Banks")
+            bankSelect.innerHTML = '<option value="all">All Banks</option>';
+            
+            // Add each bank
+            uniqueBanks.forEach(bankName => {
+                const option = document.createElement('option');
+                option.value = bankName;
+                option.textContent = bankName;
+                bankSelect.appendChild(option);
+            });
+            
+            // Select "All Banks" by default
+            bankSelect.value = 'all';
+            updateSelectedBanksDisplay();
+            
+            // Remove old event listeners by cloning the select
+            const newSelect = bankSelect.cloneNode(true);
+            bankSelect.parentNode.replaceChild(newSelect, bankSelect);
+            
+            // Add change listener with max 3 banks validation
+            newSelect.addEventListener('change', function(e) {
+                const selected = Array.from(this.selectedOptions).map(opt => opt.value);
+                
+                // If "all" is selected, allow it
+                if (selected.includes('all')) {
+                    // If "all" is selected with other options, remove others
+                    if (selected.length > 1) {
+                        // Deselect all except "all"
+                        Array.from(this.options).forEach(opt => {
+                            if (opt.value !== 'all') opt.selected = false;
+                        });
+                    }
+                    updateSelectedBanksDisplay();
+                    updateMapMarkers();
+                    return;
+                }
+                
+                // Limit to maximum 3 banks
+                if (selected.length > 3) {
+                    // Remove the last selected option
+                    const lastSelected = selected[selected.length - 1];
+                    const options = Array.from(this.options);
+                    const lastOption = options.find(opt => opt.value === lastSelected);
+                    if (lastOption) {
+                        lastOption.selected = false;
+                    }
+                    
+                    // Show popup alert
+                    alert('A maximum of 3 banks are allowed.');
+                    
+                    // Update display and map
+                    updateSelectedBanksDisplay();
+                    updateMapMarkers();
+                    return;
+                }
+                
+                updateSelectedBanksDisplay();
+                updateMapMarkers();
+            });
+        }
+        
+        // Update the selected banks display
+        function updateSelectedBanksDisplay() {
+            const bankSelect = document.getElementById('bankSelect');
+            const displayDiv = document.getElementById('selectedBanksDisplay');
+            const selected = Array.from(bankSelect.selectedOptions).map(opt => opt.value);
+            
+            displayDiv.innerHTML = '';
+            
+            if (selected.includes('all') || selected.length === 0) {
+                // Don't show anything if "All Banks" is selected
+                return;
+            }
+            
+            selected.forEach(bankName => {
+                const tag = document.createElement('div');
+                tag.className = 'selected-bank-tag';
+                tag.innerHTML = `
+                    <span>${bankName}</span>
+                    <span class="remove-btn" onclick="removeBank('${bankName.replace(/'/g, "\\'")}')">×</span>
+                `;
+                displayDiv.appendChild(tag);
+            });
+        }
+        
+        // Remove a bank from selection
+        function removeBank(bankName) {
+            const bankSelect = document.getElementById('bankSelect');
+            const option = Array.from(bankSelect.options).find(opt => opt.value === bankName);
+            if (option) {
+                option.selected = false;
+                updateSelectedBanksDisplay();
+                updateMapMarkers();
+            }
+        }
+        
+        // Get selected banks
+        function getSelectedBanks() {
+            const bankSelect = document.getElementById('bankSelect');
+            const selected = Array.from(bankSelect.selectedOptions).map(opt => opt.value);
+            
+            if (selected.includes('all') || selected.length === 0) {
+                return 'all'; // Show all banks
+            }
+            
+            return selected;
+        }
+        
+        // Assign colors to banks
+        function assignBankColors(banks) {
+            bankColors = {};
+            if (banks === 'all') {
+                // When "All Banks" is selected, don't assign colors (will use black)
+                bankColors = {};
+            } else if (banks.length === 1) {
+                // When only one bank is selected, use black
+                bankColors[banks[0]] = '#000000'; // Black
+            } else {
+                // When multiple banks are selected, assign different colors
+                banks.forEach((bankName, index) => {
+                    bankColors[bankName] = colorPalette[index % colorPalette.length];
+                });
+            }
+            
+            // Update legend
+            updateBankLegend();
+        }
+        
+        // Update bank legend
+        function updateBankLegend() {
+            const legend = document.getElementById('bankLegend');
+            const selectedBanks = getSelectedBanks();
+            
+            // Only show legend when multiple banks are selected (more than 1)
+            if (selectedBanks === 'all' || selectedBanks.length <= 1 || Object.keys(bankColors).length === 0) {
+                legend.classList.remove('active');
+                return;
+            }
+            
+            legend.innerHTML = '<strong>Bank Colors:</strong>';
+            
+            Object.entries(bankColors).forEach(([bankName, color]) => {
+                const legendItem = document.createElement('div');
+                legendItem.className = 'legend-item';
+                legendItem.innerHTML = `
+                    <div class="legend-color" style="background: ${color};"></div>
+                    <span>${bankName}</span>
+                `;
+                legend.appendChild(legendItem);
+            });
+            
+            legend.classList.add('active');
+        }
+        
+        // Update map markers based on bank selection
+        function updateMapMarkers() {
+            clearMarkers();
+            
+            const selectedBanks = getSelectedBanks();
+            
+            // Filter branches by selected banks
+            let branchesToShow = allBranches;
+            if (selectedBanks !== 'all') {
+                branchesToShow = allBranches.filter(b => selectedBanks.includes(b.bank_name));
+            }
+            
+            // Assign colors to selected banks
+            assignBankColors(selectedBanks);
+            
+            if (branchesToShow.length === 0) {
+                updateInfoPanel('No branches match the selected banks.');
+                return;
+            }
+            
+            // Add markers
+            addMarkersToMap(branchesToShow);
+            
+            updateInfoPanel(`Displaying ${branchesToShow.length} branches from ${selectedBanks === 'all' ? 'all banks' : selectedBanks.length + ' selected bank(s)'}`);
+        }
+        
+        // Add markers to map
+        function addMarkersToMap(branches) {
+            const markers = [];
+            
+            branches.forEach(branch => {
+                // Parse coordinates - ensure they're numbers
+                let lat = branch.latitude;
+                let lng = branch.longitude;
+                
+                // Handle string or number coordinates
+                if (typeof lat === 'string') {
+                    lat = parseFloat(lat);
+                }
+                if (typeof lng === 'string') {
+                    lng = parseFloat(lng);
+                }
+                
+                // Validate coordinates
+                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+                    console.warn('Invalid coordinates for branch:', branch.branch_name, 'lat:', lat, 'lng:', lng);
+                    return;
+                }
+                
+                // Verify coordinate ranges (US coordinates should be roughly within these bounds)
+                if (lat < 24 || lat > 50 || lng < -125 || lng > -66) {
+                    console.warn('Coordinates out of expected US range for branch:', branch.branch_name, 'lat:', lat, 'lng:', lng);
+                    // Still plot it, but log a warning
+                }
+                
+                // Get color for this bank
+                const bankName = branch.bank_name || 'Unknown';
+                // If no color assigned (All Banks selected), use black
+                // If color assigned, use that color
+                const markerColor = bankColors[bankName] || '#000000'; // Default to black
+                
+                // Create custom colored icon
+                const markerIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="
+                        background: ${markerColor};
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 50%;
+                        border: 3px solid white;
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    ">
+                        <div style="
+                            width: 10px;
+                            height: 10px;
+                            background: white;
+                            border-radius: 50%;
+                        "></div>
+                    </div>`,
+                    iconSize: [24, 24],
+                    iconAnchor: [12, 12]
+                });
+                
+                // Create popup content
+                const tags = [];
+                if (branch.lmict) tags.push('<span class="tag lmi">LMI</span>');
+                if (branch.mmct) tags.push('<span class="tag minority">Minority</span>');
+                
+                // Format deposits with commas
+                const formatDeposits = (deposits) => {
+                    if (!deposits) return 'N/A';
+                    return '$' + deposits.toLocaleString('en-US');
+                };
+                
+                // Create email body with branch information
+                const createEmailBody = (branch) => {
+                    const lines = [
+                        'Branch Information:',
+                        '==================',
+                        `Branch Name: ${branch.branch_name || 'N/A'}`,
+                        `Bank: ${bankName}`,
+                        branch.branch_type ? `Branch Type: ${branch.branch_type}` : '',
+                        branch.total_deposits ? `Deposits: ${formatDeposits(branch.total_deposits)}` : '',
+                        `Address: ${branch.address || 'N/A'}`,
+                        `City: ${branch.city || 'N/A'}`,
+                        `State: ${branch.state_abbrv || branch.state || 'N/A'}`,
+                        `ZIP: ${branch.zip || 'N/A'}`,
+                        branch.lmict ? 'LMI: Yes' : 'LMI: No',
+                        branch.mmct ? 'Minority: Yes' : 'Minority: No',
+                        '',
+                        'Issue Description:',
+                        '==================',
+                        '[Please describe the issue with this branch location or data]'
+                    ];
+                    return lines.filter(line => line !== '').join('%0D%0A'); // URL encode line breaks
+                };
+                
+                // Create mailto link
+                const emailSubject = encodeURIComponent('Branch map issue');
+                const emailBody = createEmailBody(branch);
+                const emailTo = 'research@ncrc.org';
+                const mailtoLink = `mailto:${emailTo}?subject=${emailSubject}&body=${emailBody}`;
+                
+                const popupContent = `
+                    <div class="popup-content">
+                        <strong>${branch.branch_name || 'Branch'}</strong>
+                        <div class="branch-info">
+                            <strong>Bank:</strong> ${bankName}<br>
+                            ${branch.branch_type ? `<strong>Branch Type:</strong> ${branch.branch_type}<br>` : ''}
+                            ${branch.total_deposits ? `<strong>Deposits:</strong> ${formatDeposits(branch.total_deposits)}<br>` : ''}
+                            <strong>Address:</strong> ${branch.address || ''}<br>
+                            ${branch.city || ''}, ${branch.state_abbrv || branch.state || ''} ${branch.zip || ''}
+                        </div>
+                        ${tags.length > 0 ? `<div class="branch-tags">${tags.join('')}</div>` : ''}
+                        <a href="${mailtoLink}" class="report-problem-btn" target="_blank">
+                            <i class="fas fa-exclamation-triangle"></i> Report a Problem
+                        </a>
+                    </div>
+                `;
+                
+                // Create marker with custom icon
+                // Leaflet uses [latitude, longitude] format
+                const marker = L.marker([lat, lng], { icon: markerIcon })
+                    .bindPopup(popupContent)
+                    .addTo(branchMap);
+                
+                // Log coordinates for debugging (can be removed in production)
+                console.log(`Branch: ${branch.branch_name}, Coordinates: [${lat}, ${lng}]`);
+                
+                markers.push(marker);
+                currentMarkers.push(marker);
+            });
+            
+            // Fit map to show all markers (this automatically zooms to the county)
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                branchMap.fitBounds(group.getBounds().pad(0.1));
+                console.log('Map zoomed to fit', markers.length, 'markers');
+            } else {
+                console.warn('No markers to zoom to');
+            }
+        }
+        
+        // Clear markers
+        function clearMarkers() {
+            currentMarkers.forEach(marker => {
+                branchMap.removeLayer(marker);
+            });
+            currentMarkers = [];
+        }
+        
+        // Handle census layer dropdown change
+        function handleCensusLayerChange() {
+            const dropdown = document.getElementById('censusLayerSelect');
+            const selectedValue = dropdown.value;
+            const county = document.getElementById('countySelect').value;
+            
+            // Column 2 legend elements
+            const column2Legend = document.getElementById('column2Legend');
+            const column2IncomeLegend = document.getElementById('column2IncomeLegend');
+            const column2MinorityLegend = document.getElementById('column2MinorityLegend');
+            
+            // Remove any existing layers
+            if (incomeLayer && branchMap.hasLayer(incomeLayer)) {
+                branchMap.removeLayer(incomeLayer);
+                incomeLayer = null;
+            }
+            if (minorityLayer && branchMap.hasLayer(minorityLayer)) {
+                branchMap.removeLayer(minorityLayer);
+                minorityLayer = null;
+            }
+            
+            // Hide column 2 legend by default
+            column2Legend.style.display = 'none';
+            column2IncomeLegend.style.display = 'none';
+            column2MinorityLegend.style.display = 'none';
+            
+            if (!selectedValue || selectedValue === '') {
+                // No layer selected
+                return;
+            }
+            
+            if (!county) {
+                alert('Please select a county first');
+                dropdown.value = '';
+                return;
+            }
+            
+            if (selectedValue === 'income') {
+                // Show income legend in column 2
+                column2Legend.style.display = 'block';
+                column2IncomeLegend.style.display = 'block';
+                loadIncomeLayer(county);
+            } else if (selectedValue === 'minority') {
+                // Show minority legend in column 2
+                column2Legend.style.display = 'block';
+                column2MinorityLegend.style.display = 'block';
+                loadMinorityLayer(county);
+            }
+        }
+        
+        // Clear map
+        function clearMap() {
+            clearMarkers();
+            allBranches = [];
+            bankColors = {};
+            document.getElementById('bankSelect').innerHTML = '<option value="all">All Banks</option>';
+            document.getElementById('bankSelect').value = 'all';
+            updateSelectedBanksDisplay();
+            document.getElementById('bankLegend').classList.remove('active');
+            
+            // Remove layers
+            if (incomeLayer && branchMap) {
+                branchMap.removeLayer(incomeLayer);
+            }
+            if (minorityLayer && branchMap) {
+                branchMap.removeLayer(minorityLayer);
+            }
+            incomeLayer = null;
+            minorityLayer = null;
+            
+            // Reset dropdown and hide legend
+            const censusLayerSelect = document.getElementById('censusLayerSelect');
+            if (censusLayerSelect) {
+                censusLayerSelect.value = '';
+            }
+            const column2Legend = document.getElementById('column2Legend');
+            if (column2Legend) {
+                column2Legend.style.display = 'none';
+            }
+            const column2IncomeLegend = document.getElementById('column2IncomeLegend');
+            if (column2IncomeLegend) {
+                column2IncomeLegend.style.display = 'none';
+            }
+            const column2MinorityLegend = document.getElementById('column2MinorityLegend');
+            if (column2MinorityLegend) {
+                column2MinorityLegend.style.display = 'none';
+            }
+            
+            if (branchMap) {
+                branchMap.setView([39.8283, -98.5795], 4);
+            }
+            updateInfoPanel('Map cleared. Select a county to load 2025 branch data.');
+        }
+        
+        // Format deposits for display
+        function formatDeposits(deposits) {
+            if (!deposits && deposits !== 0) return 'N/A';
+            return '$' + deposits.toLocaleString('en-US');
+        }
+        
+        // Export map and data
+        async function exportMapAndData() {
+            if (!branchMap || allBranches.length === 0) {
+                alert('Please load a map with branch data first.');
+                return;
+            }
+            
+            try {
+                updateInfoPanel('Exporting map and data...');
+                
+                // Get current selections
+                const state = document.getElementById('stateSelect').selectedOptions[0]?.text || 'Unknown';
+                const county = document.getElementById('countySelect').selectedOptions[0]?.text || 'Unknown';
+                const censusLayer = document.getElementById('censusLayerSelect').value;
+                
+                // Create filename prefix
+                const countySlug = county.replace(/[^a-zA-Z0-9]/g, '_');
+                const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+                const filenamePrefix = `BranchMapper_${countySlug}_${timestamp}`;
+                
+                // 1. Capture map as image
+                const mapContainer = document.getElementById('branchMap');
+                const mapCanvas = await html2canvas(mapContainer, {
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    logging: false,
+                    scale: 2 // Higher quality
+                });
+                
+                // Convert canvas to blob
+                const mapBlob = await new Promise(resolve => {
+                    mapCanvas.toBlob(resolve, 'image/png', 1.0);
+                });
+                
+                // 2. Create CSV with branch data
+                const csvRows = [];
+                
+                // CSV Header
+                const headers = [
+                    'Bank Name',
+                    'Branch Name',
+                    'Branch Type',
+                    'Address',
+                    'City',
+                    'State',
+                    'ZIP',
+                    'Latitude',
+                    'Longitude',
+                    'Total Deposits',
+                    'LMI Branch',
+                    'Minority Branch'
+                ];
+                csvRows.push(headers.join(','));
+                
+                // Format deposits - they're stored in thousands, so multiply by 1000 and format
+                function formatDepositsForExport(deposits) {
+                    if (!deposits && deposits !== 0) return '';
+                    // Deposits are in thousands, convert to actual amount
+                    const amount = deposits * 1000;
+                    // Format with commas and dollar sign
+                    return '$' + amount.toLocaleString('en-US');
+                }
+                
+                // Deduplicate branches - use a combination of bank_name, branch_name, and coordinates as unique key
+                const seenBranches = new Set();
+                const uniqueBranches = [];
+                
+                allBranches.forEach(branch => {
+                    // Create a unique key from bank name, branch name, and coordinates
+                    const branchKey = [
+                        (branch.bank_name || '').toLowerCase().trim(),
+                        (branch.branch_name || '').toLowerCase().trim(),
+                        branch.latitude || '',
+                        branch.longitude || ''
+                    ].join('|');
+                    
+                    if (!seenBranches.has(branchKey)) {
+                        seenBranches.add(branchKey);
+                        uniqueBranches.push(branch);
+                    }
+                });
+                
+                console.log(`Export: ${allBranches.length} total branches, ${uniqueBranches.length} unique branches`);
+                
+                // Add branch data rows
+                uniqueBranches.forEach(branch => {
+                    // Format deposits and ensure it's properly escaped for CSV
+                    const depositsFormatted = branch.total_deposits ? formatDepositsForExport(branch.total_deposits) : '';
+                    
+                    const row = [
+                        escapeCSV(branch.bank_name || ''),
+                        escapeCSV(branch.branch_name || ''),
+                        escapeCSV(branch.branch_type || ''),
+                        escapeCSV(branch.address || ''),
+                        escapeCSV(branch.city || ''),
+                        escapeCSV(branch.state_abbrv || branch.state || ''),
+                        escapeCSV(branch.zip || ''),
+                        branch.latitude ? String(branch.latitude) : '',
+                        branch.longitude ? String(branch.longitude) : '',
+                        escapeCSV(depositsFormatted), // Properly escape the formatted deposit value
+                        branch.lmict ? 'Yes' : 'No',
+                        branch.mmct ? 'Yes' : 'No'
+                    ];
+                    csvRows.push(row.join(','));
+                });
+                
+                const csvContent = csvRows.join('\n');
+                const csvBlob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                
+                // 3. Create ZIP file
+                const zip = new JSZip();
+                zip.file(`${filenamePrefix}_map.png`, mapBlob);
+                zip.file(`${filenamePrefix}_branches.csv`, csvBlob);
+                
+                // Add metadata file
+                const metadata = {
+                    export_date: new Date().toISOString(),
+                    state: state,
+                    county: county,
+                    census_layer: censusLayer || 'None',
+                    total_branches: allBranches.length,
+                    selected_banks: getSelectedBanks() === 'all' ? 'All Banks' : getSelectedBanks().join(', ')
+                };
+                zip.file(`${filenamePrefix}_metadata.json`, JSON.stringify(metadata, null, 2));
+                
+                // Generate ZIP
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                
+                // Download
+                saveAs(zipBlob, `${filenamePrefix}.zip`);
+                
+                updateInfoPanel(`Export complete! Downloaded ${filenamePrefix}.zip`);
+                
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('Error exporting map and data: ' + error.message);
+                updateInfoPanel('Export failed. Please try again.');
+            }
+        }
+        
+        // Helper function to escape CSV values
+        function escapeCSV(value) {
+            if (value === null || value === undefined) return '';
+            const stringValue = String(value);
+            // If value contains comma, quote, or newline, wrap in quotes and escape quotes
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return '"' + stringValue.replace(/"/g, '""') + '"';
+            }
+            return stringValue;
+        }
+        
+        // Update info panel
+        function updateInfoPanel(message) {
+            const panel = document.getElementById('infoPanel');
+            panel.innerHTML = `<strong>Status:</strong> ${message}`;
+        }
+        
+        // Geocode county name to get approximate center coordinates
+        async function geocodeCounty(countyName) {
+            try {
+                // Use Nominatim (OpenStreetMap geocoding) - free and no API key required
+                const encodedCounty = encodeURIComponent(countyName);
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodedCounty}&format=json&limit=1`, {
+                    headers: {
+                        'User-Agent': 'BranchMapper/1.0' // Required by Nominatim
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        const lat = parseFloat(data[0].lat);
+                        const lon = parseFloat(data[0].lon);
+                        console.log('Geocoded county:', countyName, 'to:', lat, lon);
+                        return { lat, lon };
+                    }
+                }
+            } catch (error) {
+                console.log('Geocoding failed:', error);
+            }
+            return null;
+        }
+        
+        // Zoom map to county
+        async function zoomToCounty(countyName) {
+            if (!branchMap) {
+                initMap();
+            }
+            
+            console.log('Zooming to county:', countyName);
+            
+            // Try to geocode the county
+            const coords = await geocodeCounty(countyName);
+            if (coords) {
+                // Zoom to county center with appropriate zoom level
+                branchMap.setView([coords.lat, coords.lon], 11);
+                console.log('Zoomed to county:', countyName);
+            } else {
+                console.warn('Could not geocode county, keeping current view');
+            }
+        }
+        
+        // Add change listener to county dropdown for auto-zoom
+        function setupCountyChangeListener() {
+            const countySelect = document.getElementById('countySelect');
+            if (!countySelect) return;
+            
+            // Remove old listener by cloning
+            const newCountySelect = countySelect.cloneNode(true);
+            countySelect.parentNode.replaceChild(newCountySelect, countySelect);
+            
+            newCountySelect.addEventListener('change', async function() {
+                const county = this.value;
+                if (county && this.selectedIndex > 0) {
+                    console.log('County selected:', county);
+                    // Zoom to the selected county
+                    await zoomToCounty(county);
+                    
+                    // If a layer is enabled, reload it for the new county (only one can be active)
+                    const incomeToggle = document.getElementById('incomeLayerToggle');
+                    const minorityToggle = document.getElementById('minorityLayerToggle');
+                    
+                    if (incomeToggle && incomeToggle.checked) {
+                        loadIncomeLayer(county);
+                    } else if (minorityToggle && minorityToggle.checked) {
+                        loadMinorityLayer(county);
+                    }
+                } else {
+                    // If county is deselected, zoom back to state view
+                    const stateSelect = document.getElementById('stateSelect');
+                    if (stateSelect && stateSelect.value) {
+                        zoomToState(stateSelect.value);
+                    }
+                    
+                    // Remove layers
+                    if (incomeLayer && branchMap) {
+                        branchMap.removeLayer(incomeLayer);
+                    }
+                    if (minorityLayer && branchMap) {
+                        branchMap.removeLayer(minorityLayer);
+                    }
+                    const incomeToggle = document.getElementById('incomeLayerToggle');
+                    if (incomeToggle) {
+                        incomeToggle.checked = false;
+                    }
+                    const minorityToggle = document.getElementById('minorityLayerToggle');
+                    if (minorityToggle) {
+                        minorityToggle.checked = false;
+                    }
+                }
+            });
+        }
+        
+        // Setup HTML tooltips for feature cards
+        function setupFeatureCardTooltips() {
+            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+            featureCards.forEach(card => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                if (!tooltipText) return;
+                
+                // Create tooltip element
+                const tooltip = document.createElement('div');
+                tooltip.className = 'feature-card-tooltip';
+                tooltip.innerHTML = tooltipText;
+                tooltip.style.cssText = `
+                    position: absolute;
+                    right: calc(100% + 15px);
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: white;
+                    color: black;
+                    padding: 12px 16px;
+                    border-radius: 8px;
+                    font-size: 0.9rem;
+                    line-height: 1.5;
+                    min-width: 250px;
+                    max-width: 350px;
+                    width: fit-content;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                    opacity: 0;
+                    visibility: hidden;
+                    pointer-events: none;
+                    transition: opacity 0.2s ease, visibility 0.2s ease;
+                    z-index: 100000;
+                    text-align: left;
+                    word-wrap: break-word;
+                    border: 2px solid black;
+                    box-sizing: border-box;
+                `;
+                
+                // Create arrow
+                const arrow = document.createElement('div');
+                arrow.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 6px solid transparent;
+                    border-bottom: 6px solid transparent;
+                    border-left: 6px solid white;
+                    z-index: 1;
+                `;
+                
+                // Create arrow border
+                const arrowBorder = document.createElement('div');
+                arrowBorder.style.cssText = `
+                    position: absolute;
+                    right: -8px;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    width: 0;
+                    height: 0;
+                    border-top: 7px solid transparent;
+                    border-bottom: 7px solid transparent;
+                    border-left: 7px solid black;
+                    z-index: 0;
+                `;
+                tooltip.appendChild(arrowBorder);
+                tooltip.appendChild(arrow);
+                
+                card.appendChild(tooltip);
+                
+                // Show/hide on hover
+                card.addEventListener('mouseenter', function() {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.visibility = 'visible';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    tooltip.style.opacity = '0';
+                    tooltip.style.visibility = 'hidden';
+                });
+            });
+        }
+        
+        // Initialize map on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            setupFeatureCardTooltips();
+            initMap();
+            initializeDropdowns();
+            setupCountyChangeListener();
+            
+            // Setup census layer dropdown handler
+            const censusLayerSelect = document.getElementById('censusLayerSelect');
+            if (censusLayerSelect) {
+                censusLayerSelect.addEventListener('change', handleCensusLayerChange);
+            }
+            
+            updateInfoPanel('Map initialized. Select state and county, then click "Load Map" to view 2025 branch data.');
+        });
+    </script>
+</body>
+</html>
+

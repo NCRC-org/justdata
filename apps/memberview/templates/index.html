@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemberView - NCRC Member Management</title>
+    <meta name="description" content="Member management and analysis tool for NCRC members with HubSpot integration and Form 990 data enrichment.">
+    <meta name="keywords" content="MemberView, NCRC, member management, HubSpot, Form 990, nonprofit">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1>MemberView</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Main Content -->
+        <div class="content-wrapper">
+        <main class="main-content">
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> NCRC Member Management</h2>
+                    <p>Explore and analyze NCRC member data with HubSpot integration and Form 990 enrichment</p>
+                </div>
+
+                <div style="max-width: 800px; margin: 0 auto;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 40px;">
+                        <a href="/search" class="nav-link-card" style="display: block; text-decoration: none; color: inherit;">
+                            <div style="padding: 30px; background: var(--ncrc-light-blue); border-radius: 12px; text-align: center; transition: all 0.3s ease; border: 2px solid transparent;">
+                                <i class="fas fa-search" style="font-size: 3rem; color: var(--ncrc-primary-blue); margin-bottom: 15px; display: block;"></i>
+                                <h3 style="color: var(--ncrc-primary-blue); font-size: 1.3rem; font-weight: 600; margin-bottom: 10px;">Member Search</h3>
+                                <p style="color: #666; font-size: 0.95rem; line-height: 1.5;">Search and filter NCRC members by state, metro area, and membership status. View member details, contact information, and deals.</p>
+                            </div>
+                        </a>
+                        
+                        <div class="nav-link-card" style="display: block; opacity: 0.6; cursor: not-allowed;">
+                            <div style="padding: 30px; background: var(--ncrc-gray-light); border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
+                                <i class="fas fa-list" style="font-size: 3rem; color: #999; margin-bottom: 15px; display: block;"></i>
+                                <h3 style="color: #999; font-size: 1.3rem; font-weight: 600; margin-bottom: 10px;">Member List</h3>
+                                <p style="color: #999; font-size: 0.95rem; line-height: 1.5;">Coming soon - Browse and search all members with detailed filtering and export capabilities.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="nav-link-card" style="display: block; opacity: 0.6; cursor: not-allowed;">
+                            <div style="padding: 30px; background: var(--ncrc-gray-light); border-radius: 12px; text-align: center; border: 2px solid #e0e0e0;">
+                                <i class="fas fa-chart-line" style="font-size: 3rem; color: #999; margin-bottom: 15px; display: block;"></i>
+                                <h3 style="color: #999; font-size: 1.3rem; font-weight: 600; margin-bottom: 10px;">Analytics</h3>
+                                <p style="color: #999; font-size: 0.95rem; line-height: 1.5;">Coming soon - Member engagement and retention analytics with visualizations and reports.</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <style>
+                        .nav-link-card:hover {
+                            transform: translateY(-5px);
+                        }
+                        .nav-link-card:hover > div {
+                            border-color: var(--ncrc-secondary-blue);
+                            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+                        }
+                    </style>
+                </div>
+            </div>
+        </main>
+        </div> <!-- End content-wrapper -->
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-star"></i> What You'll Get</h3>
+            <div class="sidebar-features">
+                <div class="feature-card" data-tooltip="Access comprehensive member data from HubSpot including company information, membership status (Active, Grace Period, Lapsed), contact details, and associated deals. View member locations on an interactive map with filtering by state and status. All data is synced from HubSpot CRM to provide real-time member information.">
+                    <i class="fas fa-database"></i>
+                    <h4>HubSpot Integration</h4>
+                    <p>Complete member data from HubSpot CRM including contacts, deals, and company information</p>
+                </div>
+                <div class="feature-card" data-tooltip="Automatically enriched member profiles with IRS Form 990 data from ProPublica Nonprofit Explorer. When available, view financial information including total revenue, total expenses, tax year, and key officers (CEO, executives) for nonprofit members. Data is matched using company name, city, and state when tax ID is not available.">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <h4>Form 990 Data</h4>
+                    <p>Financial data and officer information from IRS Form 990 filings for nonprofit members</p>
+                </div>
+                <div class="feature-card" data-tooltip="Interactive map visualization showing all NCRC members with their geographic locations. Filter by state and membership status (Active, Grace Period, Lapsed). Click on any member marker to view detailed information including company details, associated contacts, recent deals with amounts, and Form 990 financial data when available.">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <h4>Interactive Map</h4>
+                    <p>Visualize member locations with filtering, popups, and detailed member information</p>
+                </div>
+                <div class="feature-card" data-tooltip="Track membership status across three categories: Active (current members), Grace Period (members with expired but still valid membership), and Lapsed (members whose membership has expired). View associated contacts for each member company and see deal history including deal amounts and close dates.">
+                    <i class="fas fa-chart-pie"></i>
+                    <h4>Membership Tracking</h4>
+                    <p>Monitor member status, contacts, and deal history for retention and engagement analysis</p>
+                </div>
+            </div>
+            
+            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current development version. Version 1.0 will be released when the product is ready for production use.">
+                <i class="fas fa-code-branch"></i>
+                <h4>Version</h4>
+                <p>0.1.0 (Development)</p>
+            </div>
+        </aside>
+    </div> <!-- End container -->
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>MemberView</h4>
+                <p>NCRC member management and analysis platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - MemberView. Powered by HubSpot and ProPublica.<br>
+            <span class="version-text">Version 0.1.0</span>
+        </div>
+    </footer>
+
+    <!-- Tooltip script for feature cards -->
+    <script>
+        // Add tooltip functionality for feature cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+            
+            featureCards.forEach(card => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                if (!tooltipText) return;
+                
+                card.addEventListener('mouseenter', function(e) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'feature-card-tooltip';
+                    tooltip.innerHTML = tooltipText;
+                    document.body.appendChild(tooltip);
+                    
+                    const rect = card.getBoundingClientRect();
+                    tooltip.style.left = rect.right + 10 + 'px';
+                    tooltip.style.top = rect.top + 'px';
+                    
+                    card._tooltip = tooltip;
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    if (card._tooltip) {
+                        card._tooltip.remove();
+                        card._tooltip = null;
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <style>
+        .feature-card-tooltip {
+            position: fixed;
+            background: #333;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            max-width: 300px;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            pointer-events: none;
+        }
+        
+        .nav-link-card {
+            text-decoration: none;
+            color: inherit;
+        }
+    </style>
+</body>
+</html>
