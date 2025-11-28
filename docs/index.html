@@ -1,0 +1,2168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustData - NCRC Data Analysis Platform</title>
+    <meta name="description" content="Comprehensive data analysis platform providing insights across banking, mortgage, small business, and member management.">
+    <meta name="keywords" content="JustData, NCRC, data analysis, banking, mortgage, small business, member management">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    <meta name="theme-color" content="#552d87">
+    <link rel="icon" type="image/jpeg" href="ncrc-logo.jpg">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
+        :root {
+            --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC blue */
+            --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
+            --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
+            --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
+            --ncrc-dark-blue: #034ea0;          /* Dark Blue for headers */
+            --ncrc-light-blue: #E6F2FF;         /* Light blue background */
+            --ncrc-gold: #ffc23a;               /* Golden Yellow */
+            --ncrc-purple: #552d87;             /* Deep Purple */
+            --ncrc-gray: #818390;               /* Medium Gray */
+            --ncrc-white: #FFFFFF;
+            --ncrc-black: #000000;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+        }
+
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ncrc-gray-light);
+            min-height: 100vh;
+            color: var(--ncrc-gray-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .content-wrapper {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Header */
+        .header {
+            background: var(--ncrc-dark-blue);
+            text-align: center;
+            padding: 40px 20px 30px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-layout {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            position: relative;
+            width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+        }
+
+        .header-title-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+        }
+
+        .header-tagline {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+
+        .header-title-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+
+        .just-data-subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.95);
+            margin: 10px 0 0 0;
+            text-align: center;
+        }
+
+        .tagline-box {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            height: 90px;
+            width: 256px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-tagline p {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            margin: 0;
+            font-style: normal;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .header-tagline p em {
+            font-style: italic;
+            color: var(--ncrc-pink);
+        }
+
+        /* User Type Selector */
+        .user-type-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+        }
+
+        .user-type-selector label {
+            color: white;
+            font-size: 0.85rem;
+            margin-right: 8px;
+            font-weight: 500;
+        }
+
+        .user-type-selector select {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-type-selector select:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .user-type-selector select:focus {
+            outline: 2px solid var(--ncrc-gold);
+            outline-offset: 2px;
+        }
+
+        .user-type-selector select option {
+            background: var(--ncrc-dark-blue);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 20px 0 60px;
+        }
+
+        .apps-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .app-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .app-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--ncrc-primary-blue);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .app-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        .app-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .app-card-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--ncrc-light-blue);
+        }
+
+        .app-card-icon {
+            font-size: 2.5rem;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            flex-shrink: 0;
+        }
+
+        .app-card-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            margin: 0;
+        }
+
+        .app-card-description {
+            color: var(--ncrc-gray);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        .app-card-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
+        }
+
+        .app-card-launch-btn {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(85, 45, 135, 0.3);
+        }
+
+        .app-card:hover .app-card-launch-btn {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .app-card-launch-btn:hover {
+            background: var(--ncrc-secondary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(85, 45, 135, 0.4);
+        }
+
+        .app-card-launch-btn i {
+            font-size: 0.85rem;
+        }
+
+        .app-card:hover .app-card-status {
+            opacity: 0.7;
+        }
+
+        /* Focus states for accessibility */
+        .app-card:focus {
+            outline: 3px solid var(--ncrc-secondary-blue);
+            outline-offset: 2px;
+        }
+
+        .app-card:focus-visible {
+            outline: 3px solid var(--ncrc-secondary-blue);
+            outline-offset: 2px;
+        }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 1024px) {
+            .container {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .sidebar {
+                width: 100%;
+                position: relative;
+                top: 0;
+                margin-top: 0;
+                max-height: none;
+            }
+
+            .apps-grid {
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header-layout {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .header-title-section {
+                position: relative;
+                left: auto;
+                transform: none;
+                order: 2;
+            }
+
+            .logo {
+                order: 1;
+                justify-content: center;
+            }
+
+            .header-tagline {
+                order: 3;
+                justify-content: center;
+            }
+
+            .header-title-section h1 {
+                font-size: 2rem;
+            }
+
+            .just-data-subtitle {
+                font-size: 1rem;
+            }
+
+            .apps-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+
+            .app-card {
+                padding: 20px;
+            }
+
+            .app-card-launch-btn {
+                position: relative;
+                bottom: auto;
+                right: auto;
+                margin-top: 15px;
+                width: 100%;
+                justify-content: center;
+                opacity: 1;
+                transform: none;
+            }
+
+            .app-card:hover .app-card-launch-btn {
+                opacity: 1;
+                transform: none;
+            }
+
+            .page-title h2 {
+                font-size: 1.5rem;
+            }
+
+            .page-title p {
+                font-size: 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 20px 15px;
+            }
+
+            .header-title-section h1 {
+                font-size: 1.75rem;
+            }
+
+            .tagline-box {
+                width: 100%;
+                max-width: 256px;
+            }
+
+            .container {
+                padding: 0 15px;
+            }
+
+            .app-card {
+                padding: 15px;
+            }
+
+            .app-card-icon {
+                width: 50px;
+                height: 50px;
+                font-size: 2rem;
+            }
+
+            .app-card-title {
+                font-size: 1.2rem;
+            }
+
+            .app-card-description {
+                font-size: 0.9rem;
+            }
+
+            .sidebar {
+                padding: 15px;
+            }
+
+            .sidebar h3 {
+                font-size: 1rem;
+            }
+
+            .modal-content {
+                max-width: 100%;
+                margin: 10px;
+            }
+
+            .modal-body {
+                padding: 20px 15px;
+            }
+
+            .access-matrix-table {
+                font-size: 0.75rem;
+            }
+
+            .access-matrix-table th,
+            .access-matrix-table td {
+                padding: 8px 5px;
+            }
+        }
+
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+            .app-card {
+                cursor: pointer;
+            }
+
+            .app-card-launch-btn {
+                opacity: 1;
+                transform: none;
+                position: relative;
+                bottom: auto;
+                right: auto;
+                margin-top: 15px;
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        .status-ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-dev {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        /* Color coding for apps */
+        .app-branchseeker .app-card-icon {
+            background: rgba(3, 78, 160, 0.1);
+            color: var(--ncrc-dark-blue);
+        }
+
+        .app-lendsight .app-card-icon {
+            background: rgba(34, 139, 34, 0.1);
+            color: #228b22;
+        }
+
+        .app-branchmapper .app-card-icon {
+            background: rgba(255, 140, 0, 0.1);
+            color: #ff8c00;
+        }
+
+        .app-dataexplorer .app-card-icon {
+            background: rgba(85, 45, 135, 0.1);
+            color: var(--ncrc-primary-blue);
+        }
+
+        .app-commentmaker .app-card-icon {
+            background: rgba(232, 46, 46, 0.1);
+            color: var(--ncrc-accent-red);
+        }
+
+        .app-bizsight .app-card-icon {
+            background: rgba(0, 128, 128, 0.1);
+            color: #008080;
+        }
+
+
+        .app-analytics .app-card-icon {
+            background: rgba(47, 173, 227, 0.1);
+            color: var(--ncrc-secondary-blue);
+        }
+
+        .app-admin .app-card-icon {
+            background: rgba(232, 46, 46, 0.1);
+            color: var(--ncrc-accent-red);
+        }
+
+        /* Locked App States */
+        .app-card.app-locked {
+            opacity: 0.6;
+            position: relative;
+            cursor: not-allowed;
+            pointer-events: auto;
+        }
+
+        .app-card.app-locked::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .app-card.app-locked .lock-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            text-align: center;
+            color: var(--ncrc-gray);
+            pointer-events: none;
+        }
+
+        .app-card.app-locked .lock-overlay i {
+            font-size: 2.5rem;
+            color: var(--ncrc-primary-blue);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .app-card.app-locked .lock-overlay p {
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
+        .app-card.app-locked .app-card-launch-btn {
+            display: none;
+        }
+
+        .app-card.app-hidden {
+            display: none !important;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 320px;
+            flex-shrink: 0;
+            position: sticky;
+            top: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 18px;
+            margin-top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: visible;
+        }
+
+        .sidebar h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--ncrc-light-blue);
+        }
+
+        .sidebar-features {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .sidebar .feature-card {
+            background: var(--ncrc-light-blue);
+            border-radius: 8px;
+            padding: 10px 12px;
+            border: 1px solid rgba(0, 51, 102, 0.1);
+        }
+
+        .sidebar .feature-card i {
+            font-size: 1.4rem;
+            color: var(--ncrc-primary-blue);
+            margin-bottom: 6px;
+            display: inline-block;
+            margin-right: 8px;
+            vertical-align: top;
+        }
+
+        .sidebar .feature-card h4 {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            margin: 0 0 4px 0;
+            display: inline-block;
+            vertical-align: top;
+            width: calc(100% - 40px);
+        }
+
+        .sidebar .feature-card p {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            line-height: 1.3;
+            margin: 4px 0 0 0;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ncrc-dark-blue);
+            color: white;
+            padding: 40px 20px 20px;
+            margin-top: 60px;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .footer-col h4 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: white;
+        }
+
+        .footer-col p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 5px 0;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* User Types Button */
+        .user-types-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+            box-shadow: 0 2px 8px rgba(85, 45, 135, 0.2);
+        }
+
+        .user-types-button:hover {
+            background: var(--ncrc-secondary-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(85, 45, 135, 0.3);
+        }
+
+        .user-types-button:focus {
+            outline: 3px solid var(--ncrc-secondary-blue);
+            outline-offset: 2px;
+        }
+
+        .user-types-button i {
+            font-size: 0.9rem;
+        }
+
+        /* Modal Overlay */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        /* Modal Content */
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalFadeIn 0.3s ease-out;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid var(--ncrc-light-blue);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 1;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            color: var(--ncrc-gray);
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            background: var(--ncrc-light-blue);
+            color: var(--ncrc-primary-blue);
+        }
+
+        .modal-close:focus {
+            outline: 2px solid var(--ncrc-secondary-blue);
+            outline-offset: 2px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        /* Access Matrix Table */
+        .access-matrix-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+            margin-top: 20px;
+        }
+
+        .access-matrix-table th {
+            background: var(--ncrc-primary-blue);
+            color: white;
+            padding: 12px 10px;
+            text-align: center;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .access-matrix-table th:first-child {
+            text-align: left;
+            background: var(--ncrc-dark-blue);
+            position: sticky;
+            left: 0;
+            z-index: 11;
+        }
+
+        .access-matrix-table td {
+            padding: 12px 10px;
+            text-align: center;
+            border-bottom: 1px solid #e0e0e0;
+            vertical-align: middle;
+        }
+
+        .access-matrix-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            color: var(--ncrc-dark-blue);
+            background: var(--ncrc-light-blue);
+            position: sticky;
+            left: 0;
+            z-index: 1;
+        }
+
+        .access-matrix-table tr:hover td {
+            background: #f8f9fa;
+        }
+
+        .access-matrix-table tr:hover td:first-child {
+            background: var(--ncrc-light-blue);
+        }
+
+        /* Access Status Icons */
+        .access-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .access-full {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .access-locked {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .access-hidden {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .access-partial {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .access-icon {
+            margin-right: 4px;
+        }
+
+        /* Launch Modal Feature Details */
+        .feature-detail-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: var(--ncrc-light-blue);
+            border-radius: 8px;
+            border-left: 4px solid var(--ncrc-primary-blue);
+        }
+
+        .feature-detail-section h4 {
+            font-size: 1.1rem;
+            color: var(--ncrc-primary-blue);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .feature-detail-section h4 i {
+            font-size: 1.2rem;
+        }
+
+        .feature-detail-section p {
+            margin: 8px 0;
+            color: var(--ncrc-gray-dark);
+            line-height: 1.6;
+        }
+
+        .feature-detail-section .feature-note {
+            font-size: 0.9rem;
+            color: var(--ncrc-gray);
+            font-style: italic;
+            margin-top: 8px;
+        }
+
+        .export-formats-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .export-formats-list li {
+            padding: 10px 15px;
+            background: white;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            color: var(--ncrc-dark-blue);
+        }
+
+        .export-formats-list li i {
+            color: var(--ncrc-primary-blue);
+        }
+
+        .upgrade-notice {
+            margin-top: 25px;
+            padding: 20px;
+            background: #fff3cd;
+            border-radius: 8px;
+            border-left: 4px solid var(--ncrc-gold);
+        }
+
+        .upgrade-notice h4 {
+            font-size: 1rem;
+            color: #856404;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .upgrade-notice p {
+            margin: 8px 0;
+            color: #856404;
+        }
+
+        .upgrade-notice ul {
+            margin: 10px 0 0 20px;
+            color: #856404;
+        }
+
+        .upgrade-notice ul li {
+            margin: 5px 0;
+        }
+
+        /* Page Title */
+        .page-title {
+            text-align: center;
+            margin: 40px 0 30px;
+        }
+
+        .page-title h2 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            margin-bottom: 10px;
+        }
+
+        .page-title p {
+            font-size: 1.1rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* Skip to main content link for screen readers */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            padding: 8px 16px;
+            text-decoration: none;
+            z-index: 1000;
+            border-radius: 0 0 4px 0;
+        }
+
+        .skip-link:focus {
+            top: 0;
+        }
+
+        /* High contrast mode support */
+        @media (prefers-contrast: high) {
+            .app-card {
+                border: 2px solid var(--ncrc-gray-dark);
+            }
+
+            .app-card:hover {
+                border-color: var(--ncrc-primary-blue);
+            }
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+
+            .app-card:hover {
+                transform: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Skip to main content link -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="ncrc-logo.jpg" alt="NCRC Logo" style="max-height: 90px; width: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                    <i class="fas fa-chart-line" style="font-size: 3rem; color: var(--ncrc-gold); display: none;"></i>
+                </div>
+                <div class="header-title-section">
+                    <h1>JustData</h1>
+                    <p class="just-data-subtitle">An Advocacy Empowerment Tool by NCRC</p>
+                </div>
+            </div>
+            <!-- User Type Selector -->
+            <div class="user-type-selector">
+                <label for="userTypeSelect">View as:</label>
+                <select id="userTypeSelect" onchange="switchUserType(this.value)" aria-label="Select user type to view">
+                    <option value="public" selected>Public (Free)</option>
+                    <option value="economy">Just Economy Club (Free)</option>
+                    <option value="member">Member (Included with $900/yr NCRC membership)</option>
+                    <option value="memberplus">Member Plus ($500-750/yr add-on)</option>
+                    <option value="institutional">Institutional ($5K-15K/yr)</option>
+                    <option value="staff">Staff (Included with employment)</option>
+                    <option value="admin">Admin (Internal)</option>
+                </select>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="content-wrapper">
+            <main class="main-content" id="main-content" role="main">
+                <!-- User Types Button -->
+                <button class="user-types-button" onclick="openUserTypesModal()" aria-label="View user access types and permissions">
+                    <i class="fas fa-users-cog" aria-hidden="true"></i>
+                    <span>User Types</span>
+                </button>
+
+                <!-- Expected Income & Sources Button -->
+                <button class="user-types-button" onclick="openIncomeSourcesModal()" aria-label="View expected income and funding sources" style="margin-top: 10px;">
+                    <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+                    <span>Expected Income & Sources</span>
+                </button>
+
+                <div class="page-title">
+                    <h2><i class="fas fa-th-large" aria-hidden="true"></i> Available Applications</h2>
+                    <p>Select an application to begin your data analysis</p>
+                </div>
+
+                <div class="apps-grid">
+                    <!-- CommentMaker Card -->
+                    <div class="app-card app-commentmaker" data-app="commentmaker" role="button" tabindex="0" aria-label="Launch CommentMaker - Public comment generation application" onclick="handleCardClick('CommentMaker')" onkeydown="handleCardKeyDown(event, 'CommentMaker')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-comments"></i>
+                            </div>
+                            <h3 class="app-card-title">CommentMaker</h3>
+                        </div>
+                        <p class="app-card-description">
+                            A free tool to help everyone write and submit public comments for federal rulemakings. Use templates, integrate data from JustData analyses, and format submissions for agencies like CFPB, FDIC, OCC, and the Federal Reserve. Available to all users.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
+                    <!-- LendSight Card -->
+                    <div class="app-card app-lendsight" data-app="lendsight" role="button" tabindex="0" aria-label="Launch LendSight - Mortgage lending analysis application" onclick="handleCardClick('LendSight')" onkeydown="handleCardKeyDown(event, 'LendSight')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <h3 class="app-card-title">LendSight</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Analyze mortgage lending patterns, disparities, and fair lending compliance using HMDA data with demographic context.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
+                    <!-- BizSight Card -->
+                    <div class="app-card app-bizsight" data-app="bizsight" role="button" tabindex="0" aria-label="Launch BizSight - Small business lending analysis application" onclick="handleCardClick('BizSight')" onkeydown="handleCardKeyDown(event, 'BizSight')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-briefcase"></i>
+                            </div>
+                            <h3 class="app-card-title">BizSight</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Analyze small business lending data from HMDA Section 1071 to assess lending patterns and economic indicators.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
+                    <!-- BranchMapper Card -->
+                    <div class="app-card app-branchmapper" data-app="branchmapper" role="button" tabindex="0" aria-label="Launch BranchMapper - Interactive branch map visualization application" onclick="handleCardClick('BranchMapper')" onkeydown="handleCardKeyDown(event, 'BranchMapper')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-map-marked-alt"></i>
+                            </div>
+                            <h3 class="app-card-title">BranchMapper</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Interactive map visualization of bank branch locations with geographic filtering and detailed branch information.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
+                    <!-- BranchSeeker Card -->
+                    <div class="app-card app-branchseeker" data-app="branchseeker" role="button" tabindex="0" aria-label="Launch BranchSeeker - Bank branch location analysis application" onclick="handleCardClick('BranchSeeker')" onkeydown="handleCardKeyDown(event, 'BranchSeeker')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h3 class="app-card-title">BranchSeeker</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Analyze bank branch locations, market concentration, and branch network changes over time using FDIC Summary of Deposits data.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
+                    <!-- DataExplorer Card -->
+                    <div class="app-card app-dataexplorer" data-app="dataexplorer" role="button" tabindex="0" aria-label="Launch DataExplorer - Advanced data exploration and analysis application" onclick="handleCardClick('DataExplorer')" onkeydown="handleCardKeyDown(event, 'DataExplorer')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <h3 class="app-card-title">DataExplorer</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Advanced data exploration tool with custom filtering, bulk exports, and comprehensive analysis across multiple data sources. Premium feature.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
+
+                    <!-- Analytics Card -->
+                    <div class="app-card app-analytics" data-app="analytics" role="button" tabindex="0" aria-label="Analytics - User analytics and activity monitoring dashboard" onclick="handleCardClick('Analytics')" onkeydown="handleCardKeyDown(event, 'Analytics')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <h3 class="app-card-title">Analytics</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Monitor user activity, application usage, and analytics with interactive maps showing user locations and activity patterns.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
+                    <!-- Admin Card -->
+                    <div class="app-card app-admin" data-app="admin" role="button" tabindex="0" aria-label="Admin - User management and system administration" onclick="handleCardClick('Admin')" onkeydown="handleCardKeyDown(event, 'Admin')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-cog"></i>
+                            </div>
+                            <h3 class="app-card-title">Administration</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Manage JustData users, create and edit accounts, manage Memberful links, and configure HubSpot integrations.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" role="complementary" aria-label="Site instructions and information">
+            <h3><i class="fas fa-info-circle" aria-hidden="true"></i> How to Use This Site</h3>
+            <div class="sidebar-features">
+                <div class="feature-card">
+                    <i class="fas fa-mouse-pointer" aria-hidden="true"></i>
+                    <h4>Select an Application</h4>
+                    <p>Click any card above to launch that data analysis tool. Use Tab key to navigate, Enter or Space to activate.</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-list" aria-hidden="true"></i>
+                    <h4>What's Available</h4>
+                    <p>AI-Driven Reports: LendSight, BranchSeeker, BizSight. Interactive Tools: BranchMapper, CommentMaker, DataExplorer.</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-compass" aria-hidden="true"></i>
+                    <h4>Navigation</h4>
+                    <p>Each app has its own interface with forms, filters, and analysis options.</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-download" aria-hidden="true"></i>
+                    <h4>Export Results</h4>
+                    <p>Export in Excel, PowerPoint, PDF, or CSV formats.</p>
+                </div>
+
+                <div class="feature-card">
+                    <i class="fas fa-robot" aria-hidden="true"></i>
+                    <h4>AI Insights</h4>
+                    <p>AI-generated summaries help interpret data patterns automatically.</p>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>JustData</h4>
+                <p>Comprehensive data analysis platform</p>
+                <p>National Community Reinvestment Coalition</p>
+            </div>
+            <div class="footer-col">
+                <h4>Applications</h4>
+                <p>BranchSeeker</p>
+                <p>LendSight</p>
+                <p>BranchMapper</p>
+                <p>DataExplorer</p>
+                <p>BizSight</p>
+                <p>CommentMaker</p>
+                <p>Analytics</p>
+                <p>Administration</p>
+            </div>
+            <div class="footer-col">
+                <h4>Data Sources</h4>
+                <p>FDIC Summary of Deposits</p>
+                <p>HMDA Mortgage Data</p>
+                <p>HMDA Section 1071</p>
+                <p>U.S. Census Bureau</p>
+                <p>HubSpot CRM</p>
+            </div>
+            <div class="footer-col">
+                <h4>Powered By</h4>
+                <p>Google Cloud BigQuery</p>
+                <p>AI Analysis (Claude/GPT)</p>
+                <p>Flask Web Framework</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - National Community Reinvestment Coalition. All rights reserved.<br>
+            Data drives the <em>movement</em>
+        </div>
+    </footer>
+
+    <!-- Launch Modal -->
+    <div class="modal-overlay" id="launchModal" role="dialog" aria-labelledby="launchModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="launchModalTitle">
+                    <i class="fas fa-rocket" aria-hidden="true"></i>
+                    <span id="launchAppName">Application Features</span>
+                </h3>
+                <button class="modal-close" onclick="closeLaunchModal()" aria-label="Close launch modal">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body" id="launchModalBody">
+                <!-- Content populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Expected Income & Sources Modal -->
+    <div class="modal-overlay" id="incomeSourcesModal" role="dialog" aria-labelledby="incomeModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="incomeModalTitle">
+                    <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+                    Expected Income & Funding Sources
+                </h3>
+                <button class="modal-close" onclick="closeIncomeSourcesModal()" aria-label="Close income sources modal">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-chart-line"></i> Revenue Projections</h4>
+                    <p><strong>Annual Revenue Targets:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>Member Subscriptions:</strong> $900/year per member (included with NCRC membership)</li>
+                        <li><strong>Member Plus Add-ons:</strong> $500-750/year per member (premium features)</li>
+                        <li><strong>Institutional Subscriptions:</strong> $5,000-15,000/year per organization</li>
+                        <li><strong>Projected Year 1 Revenue:</strong> $150,000 - $300,000</li>
+                        <li><strong>Projected Year 3 Revenue:</strong> $500,000 - $1,000,000</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-hand-holding-usd"></i> Primary Funding Sources</h4>
+                    <p><strong>Revenue Streams:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>NCRC Membership Integration:</strong> JustData access included with $900/year NCRC organizational membership</li>
+                        <li><strong>Premium Tier Subscriptions:</strong> Member Plus ($500-750/year) and Institutional ($5K-15K/year) add-on subscriptions</li>
+                        <li><strong>Grant Funding:</strong> Foundation grants supporting data transparency and community reinvestment initiatives</li>
+                        <li><strong>Corporate Sponsorships:</strong> Financial institution partnerships and corporate social responsibility programs</li>
+                        <li><strong>Federal/State Contracts:</strong> Government contracts for data analysis and reporting services</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-building"></i> Institutional Partnerships</h4>
+                    <p><strong>Target Markets:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>Community Development Organizations:</strong> CDFIs, housing counseling agencies, and advocacy groups</li>
+                        <li><strong>Financial Institutions:</strong> Banks, credit unions, and fintech companies seeking market analysis</li>
+                        <li><strong>Consulting Firms:</strong> Fair lending consultants and compliance advisors</li>
+                        <li><strong>Academic Institutions:</strong> Universities and research organizations</li>
+                        <li><strong>Government Agencies:</strong> Federal and state regulatory agencies</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-seedling"></i> Growth Strategy</h4>
+                    <p><strong>Expansion Plans:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>Year 1:</strong> Focus on NCRC member base conversion (target: 200-400 members)</li>
+                        <li><strong>Year 2:</strong> Expand to non-member organizations and institutional clients (target: 50-100 institutional subscriptions)</li>
+                        <li><strong>Year 3:</strong> Scale premium features and add new data sources (target: 1,000+ total users)</li>
+                        <li><strong>Long-term:</strong> Develop API access, white-label solutions, and custom enterprise packages</li>
+                    </ul>
+                </div>
+
+                <div class="upgrade-notice">
+                    <h4><i class="fas fa-info-circle"></i> Sustainability Model</h4>
+                    <p>JustData is designed to be self-sustaining through subscription revenue while maintaining free access to core tools like CommentMaker. Premium features and advanced analytics support the platform's development and maintenance costs.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Types Modal -->
+    <div class="modal-overlay" id="userTypesModal" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">
+                    <i class="fas fa-users-cog" aria-hidden="true"></i>
+                    User Access Matrix
+                </h3>
+                <button class="modal-close" onclick="closeUserTypesModal()" aria-label="Close user types modal">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 20px; color: var(--ncrc-gray);">
+                    This table shows which applications are accessible to each user type. 
+                    <strong>✅ Full Access</strong> means the user can use the application with all features (multiple counties/metro areas, exports). 
+                    <strong>⚠️ Partial Access</strong> means the user can view reports but cannot export and is limited to their own county or single counties. 
+                    <strong>🔒 Visible (Locked)</strong> means the app is visible but requires membership. 
+                    <strong>❌ Hidden</strong> means the app is not visible to that user type.
+                </p>
+                <table class="access-matrix-table">
+                    <thead>
+                        <tr>
+                            <th>Application</th>
+                            <th>Public<br><small>(Free)</small></th>
+                            <th>Just Economy Club<br><small>(Free)</small></th>
+                            <th>Member<br><small>($900/yr*)</small></th>
+                            <th>Member Plus<br><small>($500-750/yr)</small></th>
+                            <th>Institutional<br><small>($5K-15K/yr)</small></th>
+                            <th>Staff<br><small>(Free)</small></th>
+                            <th>Admin<br><small>(Free)</small></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>AI-Driven Reports</strong></td>
+                            <td colspan="7" style="text-align: center; background: var(--ncrc-light-blue); font-weight: 600; color: var(--ncrc-primary-blue);">AI-Driven Reports</td>
+                        </tr>
+                        <tr>
+                            <td>LendSight</td>
+                            <td><span class="access-status access-partial"><i class="fas fa-check-circle access-icon" aria-hidden="true"></i>Limited</span></td>
+                            <td><span class="access-status access-partial"><i class="fas fa-check-circle access-icon" aria-hidden="true"></i>Limited</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
+                            <td>BranchSeeker</td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
+                            <td>BizSight</td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Interactive Tools</strong></td>
+                            <td colspan="7" style="text-align: center; background: var(--ncrc-light-blue); font-weight: 600; color: var(--ncrc-primary-blue);">Interactive Tools</td>
+                        </tr>
+                        <tr>
+                            <td>BranchMapper</td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
+                            <td>CommentMaker</td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
+                            <td>DataExplorer</td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full**</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Administrative</strong></td>
+                            <td colspan="7" style="text-align: center; background: var(--ncrc-light-blue); font-weight: 600; color: var(--ncrc-primary-blue);">Administrative</td>
+                        </tr>
+                        <tr>
+                            <td>Analytics</td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
+                            <td>Administration</td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; padding: 15px; background: var(--ncrc-light-blue); border-radius: 8px; font-size: 0.9rem; color: var(--ncrc-gray);">
+                    <p style="margin: 0 0 10px 0;"><strong>Pricing Notes:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px;">
+                        <li><strong>Public & Just Economy Club (Free):</strong> Limited access to LendSight (own county only, view-only, no exports). CommentMaker is available to all users with full access.</li>
+                        <li><strong>Member ($900/yr*):</strong> Included with NCRC membership. Full access to all apps except DataExplorer. Up to 3 counties/metro areas. Exports: Excel, PDF, PowerPoint.</li>
+                        <li><strong>Member Plus ($500-750/yr):</strong> Add-on to Member tier. Unlocks DataExplorer with enhanced features. 5+ counties or unlimited geography.</li>
+                        <li><strong>Institutional ($5K-15K/yr):</strong> Base tier ($5K) includes standard DataExplorer. Premium tier ($10K-15K) includes enhanced DataExplorer features. Unlimited geography. CSV exports included.</li>
+                        <li><strong>Staff & Admin (Free):</strong> Included with NCRC employment. Full access to all features and formats.</li>
+                    </ul>
+                    <p style="margin: 10px 0 0 0;"><strong>*</strong> Member tier price: Included with $900/year NCRC membership (no additional cost)</p>
+                    <p style="margin: 10px 0 0 0;"><strong>**</strong> Member Plus DataExplorer includes enhanced features: advanced filtering, bulk exports, custom reports, historical data, priority support</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // User Access Configuration
+        const appAccessConfig = {
+            'lendsight': {
+                public: 'limited',
+                economy: 'limited',
+                member: 'full',
+                memberplus: 'full',
+                institutional: 'full',
+                staff: 'full',
+                admin: 'full'
+            },
+            'branchseeker': {
+                public: 'locked',
+                economy: 'locked',
+                member: 'full',
+                memberplus: 'full',
+                institutional: 'full',
+                staff: 'full',
+                admin: 'full'
+            },
+            'branchmapper': {
+                public: 'locked',
+                economy: 'locked',
+                member: 'full',
+                memberplus: 'full',
+                institutional: 'full',
+                staff: 'full',
+                admin: 'full'
+            },
+            'bizsight': {
+                public: 'locked',
+                economy: 'locked',
+                member: 'full',
+                memberplus: 'full',
+                institutional: 'full',
+                staff: 'full',
+                admin: 'full'
+            },
+            'commentmaker': {
+                public: 'full',
+                economy: 'full',
+                member: 'full',
+                memberplus: 'full',
+                institutional: 'full',
+                staff: 'full',
+                admin: 'full'
+            },
+            'dataexplorer': {
+                public: 'locked',
+                economy: 'locked',
+                member: 'locked',
+                memberplus: 'full',
+                institutional: 'full',
+                staff: 'full',
+                admin: 'full'
+            },
+            'analytics': {
+                public: 'hidden',
+                economy: 'hidden',
+                member: 'hidden',
+                memberplus: 'hidden',
+                institutional: 'hidden',
+                staff: 'full',
+                admin: 'full'
+            },
+            'admin': {
+                public: 'hidden',
+                economy: 'hidden',
+                member: 'hidden',
+                memberplus: 'hidden',
+                institutional: 'hidden',
+                staff: 'hidden',
+                admin: 'full'
+            }
+        };
+
+        // Feature Permissions by User Type
+        const featurePermissions = {
+            'public': {
+                geographicLimit: 'own_county_only',
+                canExport: false,
+                exportFormats: [],
+                price: 'Free'
+            },
+            'economy': {
+                geographicLimit: 'own_county_only',
+                canExport: false,
+                exportFormats: [],
+                price: 'Free'
+            },
+            'member': {
+                geographicLimit: 'up_to_3_counties',
+                canExport: true,
+                exportFormats: ['excel', 'powerpoint', 'pdf'],
+                price: 'Included with $900/yr NCRC membership'
+            },
+            'memberplus': {
+                geographicLimit: '5_plus_counties',
+                canExport: true,
+                exportFormats: ['excel', 'powerpoint', 'pdf'],
+                price: '$500-750/year (add-on)'
+            },
+            'institutional': {
+                geographicLimit: 'unlimited',
+                canExport: true,
+                exportFormats: ['excel', 'powerpoint', 'pdf', 'csv'],
+                price: '$5,000-15,000/year'
+            },
+            'staff': {
+                geographicLimit: 'unlimited',
+                canExport: true,
+                exportFormats: ['excel', 'powerpoint', 'pdf', 'csv', 'json'],
+                price: 'Included with employment'
+            },
+            'admin': {
+                geographicLimit: 'unlimited',
+                canExport: true,
+                exportFormats: ['excel', 'powerpoint', 'pdf', 'csv', 'json'],
+                price: 'N/A (internal)'
+            }
+        };
+
+        // Switch user type and update app visibility
+        function switchUserType(userType) {
+            // Update all app cards based on user type
+            Object.keys(appAccessConfig).forEach(appKey => {
+                const card = document.querySelector(`.app-card[data-app="${appKey}"]`);
+                if (!card) return;
+
+                const access = appAccessConfig[appKey][userType];
+                
+                // Remove all state classes
+                card.classList.remove('app-locked', 'app-hidden');
+                
+                // Remove lock overlay if it exists
+                const existingOverlay = card.querySelector('.lock-overlay');
+                if (existingOverlay) {
+                    existingOverlay.remove();
+                }
+
+                if (access === 'hidden') {
+                    // Hide the app completely
+                    card.classList.add('app-hidden');
+                    card.style.display = 'none';
+                } else if (access === 'locked') {
+                    // Show but lock the app
+                    card.classList.add('app-locked');
+                    card.style.display = 'block';
+                    
+                    // Add lock overlay
+                    const lockOverlay = document.createElement('div');
+                    lockOverlay.className = 'lock-overlay';
+                    let lockMessage = 'NCRC organizational members only';
+                    if (appKey === 'dataexplorer') {
+                        lockMessage = 'Member Plus or Institutional tier required';
+                    }
+                    lockOverlay.innerHTML = `
+                        <i class="fas fa-lock"></i>
+                        <p>${lockMessage}</p>
+                    `;
+                    card.appendChild(lockOverlay);
+                    
+                    // Disable click functionality - replace with locked handler
+                    card.onclick = function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        let message = 'This application is available to NCRC organizational members only. Please sign up or log in as a member to access.';
+                        if (appKey === 'dataexplorer') {
+                            message = 'DataExplorer is a premium feature. Upgrade to Member Plus ($500-750/year) or Institutional tier ($5K-15K/year) to access.';
+                        }
+                        alert(message);
+                        return false;
+                    };
+                    card.onkeydown = function(e) {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            let message = 'This application is available to NCRC organizational members only. Please sign up or log in as a member to access.';
+                            if (appKey === 'dataexplorer') {
+                                message = 'DataExplorer is a premium feature. Upgrade to Member Plus ($500-750/year) or Institutional tier ($5K-15K/year) to access.';
+                            }
+                            alert(message);
+                        }
+                        return false;
+                    };
+                } else if (access === 'limited') {
+                    // Limited access (for Status - Staff can see but with restrictions)
+                    card.style.display = 'block';
+                    const appName = card.querySelector('.app-card-title').textContent;
+                    card.setAttribute('onclick', `handleCardClick('${appName}')`);
+                    card.setAttribute('onkeydown', `handleCardKeyDown(event, '${appName}')`);
+                    // Status will handle limited access internally
+                } else {
+                    // Full access - show normally
+                    card.style.display = 'block';
+                    // Restore original onclick handler
+                    const appName = card.querySelector('.app-card-title').textContent;
+                    card.setAttribute('onclick', `handleCardClick('${appName}')`);
+                    card.setAttribute('onkeydown', `handleCardKeyDown(event, '${appName}')`);
+                }
+            });
+
+            // Update page title based on visible apps
+            const visibleApps = document.querySelectorAll('.app-card:not(.app-hidden)').length;
+            const titleP = document.querySelector('.page-title p');
+            if (titleP) {
+                titleP.textContent = `Select an application to begin your data analysis (${visibleApps} available)`;
+            }
+        }
+
+        // Handle card clicks
+        function handleCardClick(appName) {
+            // Special handling for Analytics and Admin
+            if (appName === 'Analytics') {
+                window.location.href = 'analytics-dashboard.html';
+                return;
+            }
+            if (appName === 'Administration' || appName === 'Admin') {
+                window.location.href = 'admin-dashboard.html';
+                return;
+            }
+            
+            // Show launch modal with feature details
+            showLaunchModal(appName);
+        }
+
+        // Show launch modal with feature details based on current user type
+        function showLaunchModal(appName) {
+            const currentUserType = document.getElementById('userTypeSelect').value;
+            const permissions = featurePermissions[currentUserType] || featurePermissions['public'];
+            const modal = document.getElementById('launchModal');
+            const modalTitle = document.getElementById('launchAppName');
+            const modalBody = document.getElementById('launchModalBody');
+            
+            modalTitle.textContent = appName + ' - Available Features';
+            
+            let content = '';
+            
+            // Special handling for CommentMaker - it doesn't use geographic restrictions or exports
+            if (appName === 'CommentMaker') {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-comments"></i> How CommentMaker Works</h4>
+                        <p><strong>Create Your Unique Comment Letter:</strong> CommentMaker helps you write and submit public comments to federal regulatory agencies without using complex forms.</p>
+                        <p>Simply enter your personal information, and CommentMaker will generate a unique, personalized comment letter that includes NCRC's key policy points.</p>
+                    </div>
+                    
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-user-edit"></i> Personal Information</h4>
+                        <p>You'll be asked to provide basic information such as:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                            <li>Your name and contact information</li>
+                            <li>Your organization (if applicable)</li>
+                            <li>Your location</li>
+                            <li>Any specific concerns or experiences you'd like to include</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-file-alt"></i> Generated Comment Letter</h4>
+                        <p>CommentMaker creates a unique comment letter that:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                            <li>Includes NCRC's key policy points and recommendations</li>
+                            <li>Personalizes the content with your information</li>
+                            <li>Formats it properly for federal agency submission</li>
+                            <li>Is ready to copy and paste into the Federal Register comment system</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-paper-plane"></i> Submission to Federal Register</h4>
+                        <p>Once you have your generated comment letter, you can:</p>
+                        <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                            <li>Copy the text directly from CommentMaker</li>
+                            <li>Paste it into the Federal Register comment form</li>
+                            <li>Submit your comment to agencies like CFPB, FDIC, OCC, or the Federal Reserve</li>
+                        </ul>
+                        <p class="feature-note">No need to navigate complex agency forms - CommentMaker does the heavy lifting for you!</p>
+                    </div>
+                    
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-unlock"></i> Available to Everyone</h4>
+                        <p><strong>Free for All Users:</strong> CommentMaker is available to everyone - no membership or subscription required. This tool helps amplify community voices in federal rulemaking processes.</p>
+                    </div>
+                `;
+                
+                modalBody.innerHTML = content;
+                modal.classList.add('active');
+                modal.setAttribute('aria-hidden', 'false');
+                document.body.style.overflow = 'hidden';
+                
+                // Focus on close button for accessibility
+                setTimeout(() => {
+                    modal.querySelector('.modal-close').focus();
+                }, 100);
+                return;
+            }
+            
+            // Geographic limits
+            if (permissions.geographicLimit === 'own_county_only') {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Geographic Selection</h4>
+                        <p><strong>Your County Only:</strong> You can only analyze data for the county in which you are located.</p>
+                        <p class="feature-note">Reports will focus on your home county with detailed analysis. You cannot select other counties.</p>
+                    </div>
+                `;
+            } else if (permissions.geographicLimit === 'single_county') {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Geographic Selection</h4>
+                        <p><strong>Single County Only:</strong> You can analyze data for one county at a time.</p>
+                        <p class="feature-note">Reports will focus on a single county with detailed analysis.</p>
+                    </div>
+                `;
+            } else if (permissions.geographicLimit === 'up_to_3_counties') {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Geographic Selection</h4>
+                        <p><strong>Up to 3 Counties/Metro Areas:</strong> You can select up to 3 counties or metro areas for analysis.</p>
+                        <p class="feature-note">Reports will include separate sections for each selected geographic area, allowing for comparative analysis.</p>
+                    </div>
+                `;
+            } else if (permissions.geographicLimit === '5_plus_counties') {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Geographic Selection</h4>
+                        <p><strong>5+ Counties or Unlimited:</strong> You can select 5 or more counties or unlimited geographic areas for analysis.</p>
+                        <p class="feature-note">Reports will include separate sections for each selected geographic area, allowing for comprehensive comparative analysis.</p>
+                    </div>
+                `;
+            } else if (permissions.geographicLimit === 'multiple_counties') {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Geographic Selection</h4>
+                        <p><strong>Multiple Counties & Metro Areas:</strong> You can select multiple counties or entire metro areas for analysis.</p>
+                        <p class="feature-note">Reports will include separate sections for each selected geographic area, allowing for comparative analysis.</p>
+                    </div>
+                `;
+            } else {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-map-marker-alt"></i> Geographic Selection</h4>
+                        <p><strong>Unlimited:</strong> You can analyze any geographic combination.</p>
+                        <p class="feature-note">Full access to all geographic analysis options.</p>
+                    </div>
+                `;
+            }
+            
+            // Export capabilities
+            if (permissions.canExport && permissions.exportFormats.length > 0) {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-download"></i> Export Options</h4>
+                        <p><strong>Available Formats:</strong></p>
+                        <ul class="export-formats-list">
+                            ${permissions.exportFormats.map(format => `
+                                <li><i class="fas fa-file-${format === 'excel' ? 'excel' : format === 'powerpoint' ? 'powerpoint' : format === 'pdf' ? 'pdf' : format === 'csv' ? 'file-csv' : 'code'}"></i> ${format.toUpperCase()}</li>
+                            `).join('')}
+                        </ul>
+                        <p class="feature-note">You can export your analysis results in the formats listed above.</p>
+                    </div>
+                `;
+            } else {
+                content += `
+                    <div class="feature-detail-section">
+                        <h4><i class="fas fa-download"></i> Export Options</h4>
+                        <p><strong>No Export Available:</strong> Export functionality is not available for your account type.</p>
+                        <p class="feature-note">You can view reports online but cannot download or export data.</p>
+                    </div>
+                `;
+            }
+            
+            // Additional app-specific features
+            content += `
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-chart-bar"></i> Analysis Features</h4>
+                    <p>Access to comprehensive data analysis tools, interactive visualizations, and detailed reporting capabilities.</p>
+                </div>
+            `;
+            
+            // Add pricing information
+            content += `
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-dollar-sign"></i> Pricing</h4>
+                    <p><strong>Your Account Type:</strong> ${permissions.price}</p>
+                </div>
+            `;
+            
+            // User type specific notes
+            if (currentUserType === 'public') {
+                content += `
+                    <div class="upgrade-notice">
+                        <h4><i class="fas fa-info-circle"></i> Upgrade Your Account</h4>
+                        <p>Upgrade to an NCRC Member ($900/year membership) to unlock:</p>
+                        <ul>
+                            <li>Up to 3 counties/metro areas analysis</li>
+                            <li>Export to Excel, PowerPoint, and PDF</li>
+                            <li>Access to BranchSeeker, BranchMapper, and BizSight</li>
+                        </ul>
+                        <p style="margin-top: 10px;"><strong>Or upgrade to Member Plus ($500-750/year add-on) to also unlock DataExplorer with enhanced features!</strong></p>
+                    </div>
+                `;
+            } else if (currentUserType === 'economy') {
+                content += `
+                    <div class="upgrade-notice">
+                        <h4><i class="fas fa-info-circle"></i> Upgrade Your Account</h4>
+                        <p>Upgrade to an NCRC Member ($900/year membership) to unlock:</p>
+                        <ul>
+                            <li>Up to 3 counties/metro areas analysis</li>
+                            <li>Export to Excel, PowerPoint, and PDF</li>
+                            <li>Access to BranchSeeker, BranchMapper, and BizSight</li>
+                        </ul>
+                        <p style="margin-top: 10px;"><strong>Or upgrade to Member Plus ($500-750/year add-on) to also unlock DataExplorer with enhanced features!</strong></p>
+                    </div>
+                `;
+            } else if (currentUserType === 'member') {
+                content += `
+                    <div class="upgrade-notice">
+                        <h4><i class="fas fa-info-circle"></i> Upgrade to Member Plus</h4>
+                        <p>Unlock DataExplorer with enhanced features for $500-750/year:</p>
+                        <ul>
+                            <li>Advanced filtering options</li>
+                            <li>Bulk export capabilities</li>
+                            <li>Custom report builder</li>
+                            <li>Historical data access</li>
+                            <li>Priority support</li>
+                            <li>5+ counties or unlimited geography</li>
+                        </ul>
+                    </div>
+                `;
+            }
+            
+            modalBody.innerHTML = content;
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            
+            // Focus on close button for accessibility
+            setTimeout(() => {
+                modal.querySelector('.modal-close').focus();
+            }, 100);
+        }
+
+        // Close launch modal
+        function closeLaunchModal() {
+            const modal = document.getElementById('launchModal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+        }
+
+        // Handle keyboard navigation for cards
+        function handleCardKeyDown(event, appName) {
+            // Enter or Space key activates the card
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleCardClick(appName);
+            }
+        }
+
+        // Add focus management for better keyboard navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize with public user view (default)
+            const defaultUserType = 'public';
+            document.getElementById('userTypeSelect').value = defaultUserType;
+            switchUserType(defaultUserType);
+            
+            const cards = document.querySelectorAll('.app-card');
+            
+            // Add visual feedback for keyboard users
+            cards.forEach(card => {
+                card.addEventListener('focus', function() {
+                    this.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+
+            // Announce page load to screen readers
+            const announcement = document.createElement('div');
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.setAttribute('aria-atomic', 'true');
+            announcement.className = 'sr-only';
+            announcement.style.cssText = 'position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;';
+            announcement.textContent = 'JustData landing page loaded. ' + cards.length + ' applications available.';
+            document.body.appendChild(announcement);
+
+            // Remove announcement after screen reader has time to read it
+            setTimeout(() => {
+                announcement.remove();
+            }, 1000);
+        });
+
+        // User Types Modal Functions
+        function openUserTypesModal() {
+            const modal = document.getElementById('userTypesModal');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+            
+            // Focus on close button for accessibility
+            setTimeout(() => {
+                modal.querySelector('.modal-close').focus();
+            }, 100);
+        }
+
+        function closeUserTypesModal() {
+            const modal = document.getElementById('userTypesModal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = ''; // Restore scrolling
+            
+            // Return focus to button that opened modal
+            document.querySelector('.user-types-button').focus();
+        }
+
+        // Expected Income & Sources Modal Functions
+        function openIncomeSourcesModal() {
+            const modal = document.getElementById('incomeSourcesModal');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            
+            // Focus on close button for accessibility
+            setTimeout(() => {
+                modal.querySelector('.modal-close').focus();
+            }, 100);
+        }
+
+        function closeIncomeSourcesModal() {
+            const modal = document.getElementById('incomeSourcesModal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            
+            // Return focus to button that opened modal
+            const buttons = document.querySelectorAll('.user-types-button');
+            if (buttons.length > 1) {
+                buttons[1].focus();
+            }
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                const userTypesModal = document.getElementById('userTypesModal');
+                const launchModal = document.getElementById('launchModal');
+                const incomeSourcesModal = document.getElementById('incomeSourcesModal');
+                if (userTypesModal.classList.contains('active')) {
+                    closeUserTypesModal();
+                }
+                if (launchModal.classList.contains('active')) {
+                    closeLaunchModal();
+                }
+                if (incomeSourcesModal.classList.contains('active')) {
+                    closeIncomeSourcesModal();
+                }
+            }
+        });
+
+        // Close modal when clicking overlay (but not modal content)
+        document.getElementById('userTypesModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeUserTypesModal();
+            }
+        });
+
+        document.getElementById('launchModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeLaunchModal();
+            }
+        });
+
+        document.getElementById('incomeSourcesModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeIncomeSourcesModal();
+            }
+        });
+    </script>
+</body>
+</html>
+
