@@ -1,0 +1,102 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Credentials and secrets
+credentials/
+*.json
+!package.json
+!package-lock.json
+gcp-service-account-key.json
+.secrets/
+
+# Data directories
+data/
+logs/
+*.log
+
+# Node modules (if any)
+node_modules/
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+tests/
+test_*.py
+*_test.py
+
+# Deployment scripts (not needed in image)
+scripts/deploy*.sh
+scripts/check_*.py
+scripts/setup_*.py
+
+# Docker files (not needed in image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Project specific
+CACHE_IMPLEMENTATION.md
+DEPENDENCIES.md
+HUBSPOT_*.md
+CLAUDE.md
+*.plan.md
+
+

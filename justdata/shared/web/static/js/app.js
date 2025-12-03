@@ -161,7 +161,11 @@ function setupFormHandler() {
         const controller = new AbortController();
         timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
-        const response = await fetch('/analyze', {
+        const baseUrl = window.APP_BASE_URL || '';
+        const analyzeUrl = `${baseUrl}/analyze`;
+        console.log(`[DEBUG] Fetching from: ${analyzeUrl}`);
+        
+        const response = await fetch(analyzeUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -214,7 +218,8 @@ function setupViewReportHandler() {
     const viewReportBtn = document.getElementById('viewReportBtn');
     if (viewReportBtn) {
         viewReportBtn.addEventListener('click', function() {
-            window.location.href = '/report';
+            const baseUrl = window.APP_BASE_URL || '';
+            window.location.href = `${baseUrl}/report`;
         });
     }
 }
@@ -223,7 +228,8 @@ function setupViewReportHandler() {
 function setupDownloadHandler() {
     if (downloadBtn) {
         downloadBtn.addEventListener('click', function() {
-            window.location.href = '/download';
+            const baseUrl = window.APP_BASE_URL || '';
+            window.location.href = `${baseUrl}/download`;
         });
     }
 }
@@ -255,7 +261,12 @@ function showResults(jobId) {
     // Add a small delay to ensure the analysis result is stored before redirecting
     // Also pass job_id as URL parameter as fallback if session doesn't persist
     setTimeout(function() {
-        const url = jobId ? `/report?job_id=${jobId}` : '/report';
+        const baseUrl = window.APP_BASE_URL || '';
+        console.log('[DEBUG] showResults - APP_BASE_URL:', window.APP_BASE_URL);
+        console.log('[DEBUG] showResults - baseUrl:', baseUrl);
+        console.log('[DEBUG] showResults - jobId:', jobId);
+        const url = jobId ? `${baseUrl}/report?job_id=${jobId}` : `${baseUrl}/report`;
+        console.log('[DEBUG] showResults - redirecting to:', url);
         window.location.href = url;
     }, 1000); // 1 second delay to ensure result is stored
 }
@@ -727,9 +738,10 @@ $(document).ready(function() {
         const isMultiple = isCountySelectMultiple();
         const selectedCounties = isMultiple ? ($countySelect.val() || []) : ($countySelect.val() ? [$countySelect.val()] : []);
         
-        let url = '/counties';
+        const baseUrl = window.APP_BASE_URL || '';
+        let url = `${baseUrl}/counties`;
         if (stateCode) {
-            url = `/counties-by-state/${stateCode}`;
+            url = `${baseUrl}/counties-by-state/${stateCode}`;
         }
         
         console.log(`Fetching counties from: ${url} (${isMultiple ? 'multi-select' : 'single-select'})`);
@@ -810,19 +822,34 @@ $(document).ready(function() {
                         allowClear: true,
                         width: '100%',
                         dropdownAutoWidth: false,
-                        minimumResultsForSearch: 0,
+                        minimumResultsForSearch: 0, // Always show search box
                         maximumSelectionLength: 3, // Limit to 3 counties
+                        language: {
+                            noResults: function() {
+                                return "No counties found";
+                            },
+                            searching: function() {
+                                return "Searching...";
+                            },
+                            maximumSelected: function(e) {
+                                return "You can only select " + e.maximum + " counties";
+                            }
+                        },
                         matcher: function(params, data) {
+                            // If no search term, show all results
                             if ($.trim(params.term) === '') {
                                 return data;
                             }
-                            if (typeof $.fn.select2.defaults.defaults.matcher === 'function') {
-                                return $.fn.select2.defaults.defaults.matcher(params, data);
-                            }
+                            // Case-insensitive search
                             if (data.text && params.term) {
-                                return data.text.toUpperCase().indexOf(params.term.toUpperCase()) >= 0 ? data : null;
+                                const searchTerm = params.term.toUpperCase();
+                                const dataText = data.text.toUpperCase();
+                                // Match if county name contains search term
+                                if (dataText.indexOf(searchTerm) >= 0) {
+                                    return data;
+                                }
                             }
-                            return data;
+                            return null;
                         }
                     });
                     countySelect2Initialized = true;
@@ -848,8 +875,8 @@ $(document).ready(function() {
                         }, 50);
                     });
                 } else {
-                    // Single-select: Use plain HTML select (like BizSight)
-                    countySelectEl.innerHTML = '<option value="">Select a county...</option>';
+                    // Single-select: Use Select2 for better search functionality
+                    countySelectEl.innerHTML = '<option value="">Select a county</option>';
                     counties.forEach(county => {
                         const option = document.createElement('option');
                         if (typeof county === 'string') {
@@ -862,7 +889,7 @@ $(document).ready(function() {
                         }
                         countySelectEl.appendChild(option);
                     });
-                    console.log(`Successfully added ${counties.length} county options (single-select, no Select2)`);
+                    console.log(`Successfully added ${counties.length} county options (single-select)`);
                     
                     // Re-select previously selected county if it's still in the list
                     if (selectedCounties.length > 0) {
@@ -872,6 +899,58 @@ $(document).ready(function() {
                             countySelectEl.value = selectedCounty;
                         }
                     }
+                    
+                    // Initialize Select2 for single-select with search
+                    if ($countySelect.hasClass('select2-hidden-accessible')) {
+                        $countySelect.select2('destroy');
+                    }
+                    $countySelect.select2({
+                        placeholder: "Select a county",
+                        allowClear: true,
+                        width: '100%',
+                        minimumResultsForSearch: 0, // Always show search box
+                        language: {
+                            noResults: function() {
+                                return "No counties found";
+                            },
+                            searching: function() {
+                                return "Searching...";
+                            }
+                        },
+                        matcher: function(params, data) {
+                            // If no search term, show all results
+                            if ($.trim(params.term) === '') {
+                                return data;
+                            }
+                            // Case-insensitive search
+                            if (data.text && params.term) {
+                                const searchTerm = params.term.toUpperCase();
+                                const dataText = data.text.toUpperCase();
+                                // Match if county name contains search term
+                                if (dataText.indexOf(searchTerm) >= 0) {
+                                    return data;
+                                }
+                            }
+                            return null;
+                        }
+                    });
+                    countySelect2Initialized = true;
+                    console.log('Select2 initialized for counties (single-select)');
+                    
+                    // Ensure Select2 search input has proper attributes
+                    $countySelect.on('select2:open', function() {
+                        setTimeout(function() {
+                            const searchInput = $('.select2-container--open .select2-search__field');
+                            if (searchInput.length) {
+                                if (!searchInput.attr('id')) {
+                                    searchInput.attr('id', 'county-select-search');
+                                }
+                                if (!searchInput.attr('name')) {
+                                    searchInput.attr('name', 'county-select-search');
+                                }
+                            }
+                        }, 50);
+                    });
                 }
                 
                 // Verify options are in the DOM
@@ -898,7 +977,18 @@ $(document).ready(function() {
     // Skip this for LendSight - it has its own state management
     if ($('#county-select').length && !window.LENDSIGHT_MODE) {
         // First, populate state filter dropdown
-        fetch('/states')
+        const baseUrl = window.APP_BASE_URL || '';
+        // BizSight uses /api/states, others use /states
+        const statesEndpoint = baseUrl.includes('bizsight') ? `${baseUrl}/api/states` : `${baseUrl}/states`;
+        
+        // Show loading spinner
+        const stateLoadingSpinner = $('#state-loading-spinner');
+        const $stateFilter = $('#state-filter-select');
+        if (stateLoadingSpinner.length) {
+            stateLoadingSpinner.show();
+        }
+        
+        fetch(statesEndpoint)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -914,15 +1004,20 @@ $(document).ready(function() {
                     throw new Error('Invalid response format from server');
                 }
                 
-                const $stateFilter = $('#state-filter-select');
                 if ($stateFilter.length === 0) {
                     console.error('State filter dropdown not found!');
                     return;
                 }
                 
-                // Clear existing options
+                // Hide loading spinner
+                if (stateLoadingSpinner.length) {
+                    stateLoadingSpinner.hide();
+                }
+                
+                // Clear existing options and enable dropdown
                 $stateFilter.empty();
-                $stateFilter.append(new Option('All States', ''));
+                $stateFilter.prop('disabled', false);
+                $stateFilter.append(new Option('Select a state', ''));
                 
                 // Add all states
                 states.forEach(state => {
@@ -941,15 +1036,61 @@ $(document).ready(function() {
                 }
                 
                 $stateFilter.select2({
-                    placeholder: "Select a state to filter counties...",
-                    allowClear: true
+                    placeholder: "Select a state",
+                    allowClear: true,
+                    width: '100%',
+                    minimumResultsForSearch: 0, // Always show search box
+                    language: {
+                        noResults: function() {
+                            return "No states found";
+                        },
+                        searching: function() {
+                            return "Searching...";
+                        }
+                    },
+                    matcher: function(params, data) {
+                        // If no search term, show all results
+                        if ($.trim(params.term) === '') {
+                            return data;
+                        }
+                        // Case-insensitive search
+                        if (data.text && params.term) {
+                            const searchTerm = params.term.toUpperCase();
+                            const dataText = data.text.toUpperCase();
+                            // Match if state name contains search term
+                            if (dataText.indexOf(searchTerm) >= 0) {
+                                return data;
+                            }
+                            // Also check state code if available
+                            if (data.id && data.id.toUpperCase().indexOf(searchTerm) >= 0) {
+                                return data;
+                            }
+                        }
+                        return null;
+                    }
                 });
                 
-                // When state filter changes, reload counties
+                // When state filter changes, show/hide county dropdown and reload counties
                 $stateFilter.on('change', function() {
                     const stateCode = $(this).val();
                     console.log('State filter changed to:', stateCode);
-                    loadCounties(stateCode || null);
+                    const countyWrapper = $('#county-selection-wrapper');
+                    
+                    if (stateCode) {
+                        // Show county dropdown and load counties for selected state
+                        countyWrapper.slideDown(200);
+                        loadCounties(stateCode);
+                    } else {
+                        // Hide county dropdown and clear selection
+                        countyWrapper.slideUp(200);
+                        const $countySelect = $('#county-select');
+                        if ($countySelect.hasClass('select2-hidden-accessible')) {
+                            $countySelect.val(null).trigger('change');
+                            $countySelect.select2('destroy');
+                        } else {
+                            $countySelect.val('');
+                        }
+                    }
                 });
                 
                 // Ensure Select2 search input has proper attributes for state filter
@@ -969,10 +1110,16 @@ $(document).ready(function() {
             })
             .catch(error => {
                 console.error('Error loading states for filter:', error);
+                // Hide loading spinner
+                const stateLoadingSpinner = $('#state-loading-spinner');
+                if (stateLoadingSpinner.length) {
+                    stateLoadingSpinner.hide();
+                }
                 // Show error in dropdown
                 const $stateFilter = $('#state-filter-select');
                 if ($stateFilter.length) {
                     $stateFilter.empty();
+                    $stateFilter.prop('disabled', false);
                     $stateFilter.append(new Option('Error loading states. Please refresh.', '', true, true));
                     if ($stateFilter.hasClass('select2-hidden-accessible')) {
                         $stateFilter.select2('destroy');
@@ -984,13 +1131,12 @@ $(document).ready(function() {
                 }
             });
         
-        // Load all counties initially - use a small delay to ensure DOM is ready
+        // Don't load counties initially - wait for state selection
         // Skip this for LendSight - it has its own state/county management
         if (!window.LENDSIGHT_MODE) {
-            setTimeout(function() {
-                console.log('Loading counties on page load...');
-                loadCounties();
-            }, 100);
+            console.log('Waiting for state selection before loading counties...');
+            // Hide county wrapper initially
+            $('#county-selection-wrapper').hide();
         } else {
             console.log('Skipping automatic county load for LendSight');
         }
@@ -1004,18 +1150,58 @@ $(document).ready(function() {
     
     // Populate state dropdown
     if ($('#state-select').length) {
-        fetch('/states')
+        const baseUrl = window.APP_BASE_URL || '';
+        // BizSight uses /api/states, others use /states
+        const statesEndpoint = baseUrl.includes('bizsight') ? `${baseUrl}/api/states` : `${baseUrl}/states`;
+        
+        const $stateSelect = $('#state-select');
+        // Show loading state
+        $stateSelect.prop('disabled', true);
+        $stateSelect.empty();
+        $stateSelect.append(new Option('Loading states...', ''));
+        
+        fetch(statesEndpoint)
             .then(response => response.json())
             .then(states => {
-                const $stateSelect = $('#state-select');
                 $stateSelect.empty();
-                $stateSelect.append(new Option('Select a state...', ''));
+                $stateSelect.prop('disabled', false);
+                $stateSelect.append(new Option('Select a state', ''));
                 states.forEach(state => {
                     $stateSelect.append(new Option(state.name, state.code));
                 });
                 $stateSelect.select2({
-                    placeholder: "Select a state...",
-                    allowClear: true
+                    placeholder: "Select a state",
+                    allowClear: true,
+                    width: '100%',
+                    minimumResultsForSearch: 0, // Always show search box
+                    language: {
+                        noResults: function() {
+                            return "No states found";
+                        },
+                        searching: function() {
+                            return "Searching...";
+                        }
+                    },
+                    matcher: function(params, data) {
+                        // If no search term, show all results
+                        if ($.trim(params.term) === '') {
+                            return data;
+                        }
+                        // Case-insensitive search
+                        if (data.text && params.term) {
+                            const searchTerm = params.term.toUpperCase();
+                            const dataText = data.text.toUpperCase();
+                            // Match if state name contains search term
+                            if (dataText.indexOf(searchTerm) >= 0) {
+                                return data;
+                            }
+                            // Also check state code if available
+                            if (data.id && data.id.toUpperCase().indexOf(searchTerm) >= 0) {
+                                return data;
+                            }
+                        }
+                        return null;
+                    }
                 });
                 // Ensure Select2 search input has proper attributes
                 $stateSelect.on('select2:open', function() {
@@ -1034,6 +1220,13 @@ $(document).ready(function() {
             })
             .catch(error => {
                 console.error('Error loading states:', error);
+                // Show error in dropdown
+                const $stateSelect = $('#state-select');
+                if ($stateSelect.length) {
+                    $stateSelect.empty();
+                    $stateSelect.prop('disabled', false);
+                    $stateSelect.append(new Option('Error loading states. Please refresh.', '', true, true));
+                }
             });
     }
     
@@ -1320,4 +1513,177 @@ function listenForProgress(jobId) {
         hideProgress();
         enableForm();
     };
-} 
+}
+
+// Navigation Menu Functionality
+(function() {
+    'use strict';
+    
+    // Initialize navigation when DOM is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const navToggle = document.getElementById('navToggle');
+        const navMenu = document.querySelector('.nav-menu');
+        const navList = document.querySelector('.nav-list');
+        const navItems = document.querySelectorAll('.nav-item-dropdown');
+        const dropdownLinks = document.querySelectorAll('.dropdown-toggle');
+        let overlay = document.getElementById('navOverlay');
+        
+        // Ensure nav-list is hidden on load
+        if (navList) {
+            navList.style.display = 'none';
+            navList.style.opacity = '0';
+            navList.style.visibility = 'hidden';
+        }
+        
+        // Create overlay if it doesn't exist
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.className = 'nav-overlay';
+            overlay.id = 'navOverlay';
+            document.body.appendChild(overlay);
+        }
+        
+        // Function to close menu
+        function closeMenu() {
+            if (navMenu) {
+                navMenu.classList.remove('active');
+            }
+            if (navList) {
+                navList.style.display = 'none';
+                navList.style.opacity = '0';
+                navList.style.visibility = 'hidden';
+            }
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+            navItems.forEach(function(item) {
+                item.classList.remove('active');
+            });
+            if (navToggle) {
+                navToggle.setAttribute('aria-expanded', 'false');
+            }
+        }
+        
+        // Function to open menu
+        function openMenu() {
+            if (navMenu) {
+                navMenu.classList.add('active');
+            }
+            if (navList) {
+                // First set display to flex with !important override
+                navList.style.setProperty('display', 'flex', 'important');
+                // Force reflow to ensure display change is applied
+                navList.offsetHeight;
+                // Then trigger the transition
+                requestAnimationFrame(function() {
+                    navList.style.setProperty('opacity', '1', 'important');
+                    navList.style.setProperty('visibility', 'visible', 'important');
+                });
+            }
+            if (overlay) {
+                overlay.classList.add('active');
+            }
+            if (navToggle) {
+                navToggle.setAttribute('aria-expanded', 'true');
+            }
+        }
+        
+        // Hamburger menu toggle
+        if (navToggle && navMenu) {
+            navToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                if (navMenu.classList.contains('active')) {
+                    closeMenu();
+                } else {
+                    openMenu();
+                }
+            });
+        }
+        
+        // Close menu when clicking overlay
+        if (overlay) {
+            overlay.addEventListener('click', function() {
+                closeMenu();
+            });
+        }
+        
+        // Close menu when clicking on a link
+        const allNavLinks = document.querySelectorAll('.nav-link, .dropdown-link');
+        allNavLinks.forEach(function(link) {
+            link.addEventListener('click', function() {
+                // Small delay to allow navigation
+                setTimeout(function() {
+                    closeMenu();
+                }, 100);
+            });
+        });
+        
+        // Dropdown toggle (both desktop and mobile)
+        if (dropdownLinks.length > 0) {
+            dropdownLinks.forEach(function(link) {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const parent = this.closest('.nav-item-dropdown');
+                    if (parent) {
+                        // Close other dropdowns
+                        navItems.forEach(function(item) {
+                            if (item !== parent) {
+                                item.classList.remove('active');
+                            }
+                        });
+                        // Toggle current dropdown
+                        parent.classList.toggle('active');
+                    }
+                });
+            });
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.nav-menu')) {
+                navItems.forEach(function(item) {
+                    item.classList.remove('active');
+                });
+                if (navList && navList.classList.contains('active')) {
+                    navToggle.classList.remove('active');
+                    navList.classList.remove('active');
+                    const overlay = document.querySelector('.nav-overlay');
+                    if (overlay) {
+                        overlay.classList.remove('active');
+                    }
+                }
+            }
+        });
+        
+        // Highlight active page
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link, .dropdown-link');
+        
+        navLinks.forEach(function(link) {
+            const linkPath = new URL(link.href, window.location.origin).pathname;
+            if (linkPath === currentPath || (currentPath.startsWith(linkPath) && linkPath !== '/')) {
+                link.classList.add('active');
+            }
+        });
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(e) {
+            if (navMenu && !navMenu.contains(e.target) && navMenu.classList.contains('active')) {
+                closeMenu();
+            }
+        });
+        
+        // Handle window resize
+        let resizeTimer;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(function() {
+                // Close menu on resize
+                if (navMenu && navMenu.classList.contains('active')) {
+                    closeMenu();
+                }
+            }, 250);
+        });
+    });
+})(); 

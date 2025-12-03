@@ -99,11 +99,11 @@ def states_route():
         query = """
         SELECT DISTINCT 
             s.state_abbrv as code,
-            s.state_name as name
+            s.state as name
         FROM geo.states s
-        INNER JOIN geo.cbsa_to_county c ON s.state_name = c.state
-        WHERE s.state_abbrv IS NOT NULL AND s.state_name IS NOT NULL
-        ORDER BY s.state_name
+        INNER JOIN geo.cbsa_to_county c ON s.state = c.state
+        WHERE s.state_abbrv IS NOT NULL AND s.state IS NOT NULL
+        ORDER BY s.state
         """
         query_job = client.query(query)
         results = query_job.result()
@@ -139,16 +139,16 @@ def counties_by_state_route(state_code):
         # Resolve state_code to state name using geo.states
         if len(state_code) == 2:
             state_name_query = f"""
-            SELECT state_name
+            SELECT state
             FROM geo.states
             WHERE LOWER(state_abbrv) = LOWER('{state_code}')
             LIMIT 1
             """
         else:
             state_name_query = f"""
-            SELECT state_name
+            SELECT state
             FROM geo.states
-            WHERE LOWER(state_name) = LOWER('{state_code}')
+            WHERE LOWER(state) = LOWER('{state_code}')
             LIMIT 1
             """
         
@@ -156,7 +156,7 @@ def counties_by_state_route(state_code):
         state_result = list(state_job.result())
         
         if state_result:
-            state_name = state_result[0].state_name
+            state_name = state_result[0].state
         else:
             state_name = state_code
         

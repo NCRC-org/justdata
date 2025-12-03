@@ -8,10 +8,10 @@ import os
 # Base directories (project root - 2 levels up from config.py: lendsight -> apps -> root)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
-# Use LendSight-specific templates directory
-LENDSIGHT_TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
+# Use LendSight-specific templates directory (use absolute path)
+LENDSIGHT_TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
 # Fallback to shared templates if LendSight-specific doesn't exist
-SHARED_TEMPLATES_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'templates')
+SHARED_TEMPLATES_DIR = os.path.abspath(os.path.join(BASE_DIR, 'shared', 'web', 'templates'))
 # Use LendSight templates if they exist, otherwise use shared
 import os.path
 if os.path.exists(LENDSIGHT_TEMPLATES_DIR):

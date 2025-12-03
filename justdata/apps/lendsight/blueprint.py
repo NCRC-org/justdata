@@ -13,14 +13,11 @@ import json
 from datetime import datetime
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
-from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
-from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key
+from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
+from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.core.config.app_config import LendSightConfig
 from .core import run_analysis, parse_web_parameters
-
-# Template and static directories (shared)
-TEMPLATES_DIR = os.path.join(LendSightConfig.BASE_DIR, 'shared', 'web', 'templates')
-STATIC_DIR = os.path.join(LendSightConfig.BASE_DIR, 'shared', 'web', 'static')
+from .config import TEMPLATES_DIR, STATIC_DIR
 
 # Create blueprint
 lendsight_bp = Blueprint(
@@ -158,8 +155,8 @@ def analyze():
             job_id = cached_result['job_id']
             result_data = cached_result['result_data']
             
-            # Store in progress tracker for compatibility
-            store_analysis_result(job_id, result_data)
+            # Result is already stored in BigQuery via store_cached_result
+            # No need for in-memory storage - BigQuery-only approach
             update_progress(job_id, {
                 'percent': 100,
                 'step': 'Analysis complete (from cache)',
@@ -273,15 +270,18 @@ def analyze():
                     )
                     return
                 
-                # Store the analysis results
-                store_analysis_result(job_id, result)
-                
-                # Store in cache if successful
+                # Store in BigQuery only (no in-memory storage)
+                # store_cached_result stores everything in BigQuery
                 try:
+                    # Include all metadata from result, especially census_data
                     metadata = {
                         'counties': counties_list,
                         'years': years_list,
-                        'duration_seconds': time_module.time() - start_time
+                        'duration_seconds': time_module.time() - start_time,
+                        'total_records': result.get('metadata', {}).get('total_records', 0),
+                        'loan_purpose': result.get('metadata', {}).get('loan_purpose', ['purchase']),
+                        'census_data': result.get('metadata', {}).get('census_data', None),
+                        'generated_at': datetime.now().isoformat()
                     }
                     
                     store_cached_result(
@@ -368,8 +368,107 @@ def analyze():
 @require_access('lendsight', 'partial')
 def report():
     """Report display page"""
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
     app_base_url = url_for('lendsight.index').rstrip('/')
-    return render_template('report_template.html', app_base_url=app_base_url)
+    # Explicitly load from LendSight templates directory to avoid template resolution conflicts
+    env = Environment(
+        loader=FileSystemLoader(TEMPLATES_DIR),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
+    # Add Flask's url_for to the template globals
+    env.globals['url_for'] = url_for
+    template = env.get_template('report_template.html')
+    return template.render(app_base_url=app_base_url)
+
+
+@lendsight_bp.route('/report-data', methods=['GET'])
+@require_access('lendsight', 'partial')
+def report_data():
+    """Return the analysis report data for web display"""
+    try:
+        # Check for job_id in URL parameters first, then session
+        job_id = request.args.get('job_id') or session.get('job_id')
+        
+        if not job_id:
+            return jsonify({
+                'success': False,
+                'error': 'No analysis session found. Please run an analysis first.'
+            }), 400
+        
+        # Retrieve from BigQuery only (no in-memory storage)
+        analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result:
+            # Check progress to see if analysis is still running
+            progress = get_progress(job_id)
+            if not progress.get('done', False):
+                return jsonify({
+                    'success': False,
+                    'error': 'Analysis still in progress',
+                    'progress': progress
+                }), 202  # 202 Accepted - still processing
+            
+            return jsonify({
+                'success': False,
+                'error': 'No analysis data found. The analysis may have expired or failed.',
+                'progress': progress
+            }), 404
+        
+        # Extract report data and metadata
+        report_data = analysis_result.get('report_data', {})
+        metadata = analysis_result.get('metadata', {})
+        ai_insights = analysis_result.get('ai_insights', {})
+        
+        # Debug logging
+        print(f"[DEBUG] report_data keys: {list(report_data.keys()) if report_data else 'None'}")
+        print(f"[DEBUG] metadata keys: {list(metadata.keys()) if metadata else 'None'}")
+        print(f"[DEBUG] ai_insights keys: {list(ai_insights.keys()) if ai_insights else 'None'}")
+        print(f"[DEBUG] ai_insights type: {type(ai_insights)}, value: {ai_insights}")
+        
+        # Convert pandas DataFrames to JSON-serializable format
+        import pandas as pd
+        import numpy as np
+        
+        def convert_dataframe(df):
+            """Convert DataFrame to dict format"""
+            if isinstance(df, pd.DataFrame):
+                if df.empty:
+                    return []
+                # Convert to records format
+                return df.replace({np.nan: None}).to_dict('records')
+            return df
+        
+        # Convert all DataFrames in report_data
+        converted_report_data = {}
+        for key, value in report_data.items():
+            if isinstance(value, pd.DataFrame):
+                converted_report_data[key] = convert_dataframe(value)
+            elif isinstance(value, dict):
+                # Handle nested dicts that might contain DataFrames
+                converted_report_data[key] = {
+                    k: convert_dataframe(v) if isinstance(v, pd.DataFrame) else v
+                    for k, v in value.items()
+                }
+            else:
+                converted_report_data[key] = value
+        
+        # Include ai_insights in metadata for frontend compatibility
+        metadata_with_ai = metadata.copy()
+        metadata_with_ai['ai_insights'] = ai_insights
+        
+        return jsonify({
+            'success': True,
+            'data': converted_report_data,
+            'metadata': metadata_with_ai,
+            'ai_insights': ai_insights  # Also include at top level for backward compatibility
+        })
+        
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'An error occurred while loading report data: {str(e)}'
+        }), 500
 
 
 @lendsight_bp.route('/download')
@@ -384,7 +483,8 @@ def download():
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400
         
-        analysis_result = get_analysis_result(job_id)
+        # Retrieve from BigQuery only (no in-memory storage)
+        analysis_result = get_analysis_result_by_job_id(job_id)
         if not analysis_result:
             return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 400
         
@@ -469,9 +569,18 @@ def counties():
         query_job = client.query(query)
         results = query_job.result()
         counties = [row.county_state for row in results]
+        
+        # Add debug logging
+        print(f"[DEBUG] /lendsight/counties endpoint: Returning {len(counties)} counties")
+        if len(counties) > 0:
+            print(f"[DEBUG] First county example: {counties[0]}")
+        else:
+            print("[WARNING] /lendsight/counties endpoint: No counties returned from query!")
+        
         return jsonify(counties)
     except Exception as e:
         import traceback
+        print(f"[ERROR] /lendsight/counties endpoint failed: {e}")
         traceback.print_exc()
         return jsonify([])
 
@@ -486,22 +595,33 @@ def states():
         query = """
         SELECT DISTINCT 
             s.state_abbrv as code,
-            s.state_name as name
+            s.state as name
         FROM geo.states s
-        INNER JOIN geo.cbsa_to_county c ON s.state_name = c.state
-        WHERE s.state_abbrv IS NOT NULL AND s.state_name IS NOT NULL
-        ORDER BY s.state_name
+        INNER JOIN geo.cbsa_to_county c ON s.state = c.state
+        WHERE s.state_abbrv IS NOT NULL AND s.state IS NOT NULL
+        ORDER BY s.state
         """
         query_job = client.query(query)
         results = query_job.result()
         states = [{"code": row.code, "name": row.name} for row in results if row.code and row.name]
+        
+        # Add debug logging
+        print(f"[DEBUG] /lendsight/states endpoint: Returning {len(states)} states")
+        if len(states) > 0:
+            print(f"[DEBUG] First state example: {states[0]}")
+        else:
+            print("[WARNING] /lendsight/states endpoint: No states returned from query!")
+        
         return jsonify(states)
     except Exception as e:
         import traceback
+        print(f"[ERROR] /lendsight/states endpoint failed: {e}")
         traceback.print_exc()
         # Fallback to shared states
         from justdata.shared.utils.geo_data import get_us_states
-        return jsonify(get_us_states())
+        fallback_states = get_us_states()
+        print(f"[DEBUG] Using fallback states: {len(fallback_states)} states")
+        return jsonify(fallback_states)
 
 
 @lendsight_bp.route('/metro-areas')
@@ -519,43 +639,46 @@ def counties_by_state(state_code):
         
         client = get_bigquery_client(LendSightConfig.PROJECT_ID)
         
-        # Resolve state_code to state name
-        if len(state_code) == 2:
-            state_name_query = f"""
-            SELECT state_name
-            FROM geo.states
-            WHERE LOWER(state_abbrv) = LOWER('{state_code}')
-            LIMIT 1
-            """
-        else:
-            state_name_query = f"""
-            SELECT state_name
-            FROM geo.states
-            WHERE LOWER(state_name) = LOWER('{state_code}')
-            LIMIT 1
-            """
+        # The frontend sends state_abbrv (e.g., "DC"), but geo.cbsa_to_county.state 
+        # contains FULL STATE NAMES (e.g., "District of Columbia")
+        # So we need to look up the state name from geo.states first
+        state_name_query = f"""
+        SELECT state
+        FROM `{LendSightConfig.PROJECT_ID}.geo.states`
+        WHERE state_abbrv = '{state_code.upper().strip()}'
+        LIMIT 1
+        """
         
         state_job = client.query(state_name_query)
         state_result = list(state_job.result())
         
-        if state_result:
-            state_name = state_result[0].state_name
-        else:
-            state_name = state_code
+        if not state_result:
+            print(f"[WARNING] No state found for abbreviation: {state_code}")
+            return jsonify([])
         
-        # Query counties by state name
+        state_name = state_result[0].state
+        
+        # Now query counties using the FULL STATE NAME (not abbreviation)
         query = f"""
         SELECT DISTINCT county_state
-        FROM geo.cbsa_to_county 
-        WHERE LOWER(state) = LOWER('{state_name}')
+        FROM `{LendSightConfig.PROJECT_ID}.geo.cbsa_to_county` 
+        WHERE state = '{state_name}'
         ORDER BY county_state
         """
+        
+        print(f"[DEBUG] /lendsight/counties-by-state: State abbrv '{state_code}' -> State name '{state_name}'")
         query_job = client.query(query)
         results = query_job.result()
         counties = [row.county_state for row in results]
+        
+        print(f"[DEBUG] /lendsight/counties-by-state: Returning {len(counties)} counties for state {state_name}")
+        if len(counties) > 0:
+            print(f"[DEBUG] First county example: {counties[0]}")
+        
         return jsonify(counties)
     except Exception as e:
         import traceback
+        print(f"[ERROR] /lendsight/counties-by-state endpoint failed: {e}")
         traceback.print_exc()
         return jsonify([])
 

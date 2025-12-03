@@ -730,6 +730,11 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- Intro.js for onboarding tour -->
     <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
+    <!-- Set base URL for API calls BEFORE loading app.js -->
+    <script>
+        // Set base URL for API calls (with blueprint prefix)
+        window.APP_BASE_URL = '{{ app_base_url|default("/mergermeter") }}';
+    </script>
     <!-- Your app.js (after dependencies) -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     <script>
@@ -1592,7 +1597,8 @@
                 $('#submitBtn').prop('disabled', true);
                 
                 try {
-                    const response = await fetch('/analyze', {
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    const response = await fetch(`${baseUrl}/analyze`, {
                         method: 'POST',
                         body: formData
                     });
@@ -1618,7 +1624,8 @@
             
             // Progress tracking function
             function listenForProgress(jobId) {
-                const eventSource = new EventSource(`/progress/${jobId}`);
+                const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                const eventSource = new EventSource(`${baseUrl}/progress/${jobId}`);
                 const progressFill = document.getElementById('progressFill');
                 const progressText = document.getElementById('progressText');
                 const progressPercent = document.getElementById('progressPercent');
@@ -1641,12 +1648,14 @@
                             
                             // Setup download button
                             $('#downloadBtn').off('click').on('click', function() {
-                                window.location.href = `/download?job_id=${jobId}`;
+                                const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                                window.location.href = `${baseUrl}/download?job_id=${jobId}`;
                             });
                             
                             // Setup view report button
                             $('#viewReportBtn').off('click').on('click', function() {
-                                window.location.href = `/report?job_id=${jobId}`;
+                                const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                                window.location.href = `${baseUrl}/report?job_id=${jobId}`;
                             });
                         }
                         $('#submitBtn').prop('disabled', false);

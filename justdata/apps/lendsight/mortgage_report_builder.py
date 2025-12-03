@@ -491,13 +491,13 @@ def create_demographic_overview_table(df: pd.DataFrame, years: List[int], census
             last_pct = group_changes[-1][1]
             pct_change = last_pct - first_pct
             
-            # Format change: show only percentage point change
+            # Format change: show only percentage point change (without "pp" suffix)
             if pct_change > 0:
-                change_str = f"+{pct_change:.1f}pp"
+                change_str = f"+{pct_change:.1f}"
             elif pct_change < 0:
-                change_str = f"{pct_change:.1f}pp"
+                change_str = f"{pct_change:.1f}"
             else:
-                change_str = "0.0pp"
+                change_str = "0.0"
             result_data[f'Change Over Time ({time_span})'].append(change_str)
         else:
             if len(years) >= 2:
@@ -611,14 +611,14 @@ def create_income_neighborhood_indicators_table(df: pd.DataFrame, years: List[in
                 else:
                     change_str = "0"
             else:
-                # For other rows, show only percentage point change
+                # For other rows, show only percentage point change (without "pp" suffix)
                 pct_change = last_pct - first_pct
                 if pct_change > 0:
-                    change_str = f"+{pct_change:.1f}pp"
+                    change_str = f"+{pct_change:.1f}"
                 elif pct_change < 0:
-                    change_str = f"{pct_change:.1f}pp"
+                    change_str = f"{pct_change:.1f}"
                 else:
-                    change_str = "0.0pp"
+                    change_str = "0.0"
             
             result_data[f'Change Over Time ({time_span})'].append(change_str)
         else:

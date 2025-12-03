@@ -8,10 +8,10 @@ import os
 # Base directories (project root - 2 levels up from config.py: branchmapper -> apps -> root)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
-# Use BranchMapper-specific templates directory
-BRANCHMAPPER_TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
+# Use BranchMapper-specific templates directory (use absolute path)
+BRANCHMAPPER_TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
 # Fallback to shared templates if BranchMapper-specific doesn't exist
-SHARED_TEMPLATES_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'templates')
+SHARED_TEMPLATES_DIR = os.path.abspath(os.path.join(BASE_DIR, 'shared', 'web', 'templates'))
 # Use BranchMapper templates if they exist, otherwise use shared
 if os.path.exists(BRANCHMAPPER_TEMPLATES_DIR):
     TEMPLATES_DIR = BRANCHMAPPER_TEMPLATES_DIR

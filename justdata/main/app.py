@@ -12,9 +12,11 @@ import os
 def create_app():
     """Create and configure the main Flask application."""
     
+    # Create app - blueprints handle their own templates
+    # Main app routes will explicitly load from shared templates
     app = Flask(
         'justdata',
-        template_folder=MainConfig.TEMPLATES_DIR,
+        template_folder=None,  # Let blueprints handle their own templates
         static_folder=MainConfig.STATIC_DIR
     )
     
@@ -28,11 +30,67 @@ def create_app():
     @app.route('/landing')
     def landing():
         """Main landing page with app selection."""
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+        from flask import url_for
+        
         user_type = get_user_type()
         permissions = get_user_permissions(user_type)
-        return render_template('justdata_landing_page.html', 
-                             user_type=user_type,
-                             permissions=permissions)
+        
+        # Create Jinja2 environment with Flask's url_for function
+        env = Environment(
+            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+        
+        # Add Flask's url_for to the template globals
+        env.globals['url_for'] = url_for
+        
+        template = env.get_template('justdata_landing_page.html')
+        return template.render(user_type=user_type, permissions=permissions)
+    
+    # About page route
+    @app.route('/about')
+    def about():
+        """About page."""
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+        from flask import url_for
+        
+        user_type = get_user_type()
+        permissions = get_user_permissions(user_type)
+        
+        # Create Jinja2 environment with Flask's url_for function
+        env = Environment(
+            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+        
+        # Add Flask's url_for to the template globals
+        env.globals['url_for'] = url_for
+        
+        template = env.get_template('about.html')
+        return template.render(user_type=user_type, permissions=permissions)
+    
+    # Contact page route
+    @app.route('/contact')
+    def contact():
+        """Contact Us page."""
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+        from flask import url_for
+        
+        user_type = get_user_type()
+        permissions = get_user_permissions(user_type)
+        
+        # Create Jinja2 environment with Flask's url_for function
+        env = Environment(
+            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+        
+        # Add Flask's url_for to the template globals
+        env.globals['url_for'] = url_for
+        
+        template = env.get_template('contact.html')
+        return template.render(user_type=user_type, permissions=permissions)
     
     # Register blueprints
     register_blueprints(app)

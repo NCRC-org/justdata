@@ -35,3 +35,5 @@ playwright>=1.40.0
 # Optional - Production Server
 # gunicorn>=20.1.0  # Already included above
 # uwsgi>=2.0.20     # Alternative production server
+census>=0.8.0
+us>=3.0.0

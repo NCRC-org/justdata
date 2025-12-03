@@ -16,9 +16,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from justdata.main.app import create_app
 
+# Create app instance at module level for gunicorn
+app = create_app()
+
 if __name__ == '__main__':
-    app = create_app()
-    
     print("=" * 60)
     print("🚀 Starting JustData - Unified Data Analysis Platform")
     print("=" * 60)

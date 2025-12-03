@@ -7,6 +7,7 @@ Shared across BranchSeeker, BizSight, and LendSight.
 import os
 from google.cloud import bigquery
 from google.oauth2 import service_account
+from google import auth
 from typing import List, Dict, Any
 
 
@@ -22,19 +23,39 @@ def get_bigquery_client(project_id: str = None):
         # First, check environment variable
         env_cred_path = None
         if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-            env_cred_path = Path(os.environ["GOOGLE_APPLICATION_CREDENTIALS"])
-            if env_cred_path.exists():
-                # Cache the working path
-                _credential_path_cache = env_cred_path
-                credentials = service_account.Credentials.from_service_account_file(str(env_cred_path))
-                client = bigquery.Client(credentials=credentials, project=project_id)
-                return client
+            env_cred_path_str = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+            env_cred_path = Path(env_cred_path_str)
+            
+            # Check if file exists - if not, skip to default credentials (Cloud Run service account)
+            if not env_cred_path.exists():
+                # File doesn't exist - this is OK in Cloud Run, will use service account
+                # Don't try to load it, just skip to default credentials
+                print(f"[INFO] GOOGLE_APPLICATION_CREDENTIALS file not found: {env_cred_path}")
+                print(f"[INFO] Using default service account credentials (Cloud Run service account)")
+            else:
+                # File exists, try to use it
+                try:
+                    # Cache the working path
+                    _credential_path_cache = env_cred_path
+                    credentials = service_account.Credentials.from_service_account_file(str(env_cred_path))
+                    client = bigquery.Client(credentials=credentials, project=project_id)
+                    return client
+                except (FileNotFoundError, OSError, ValueError) as e:
+                    # File was deleted or inaccessible between exists() check and open, or invalid format
+                    print(f"[INFO] Credentials file became unavailable or invalid: {e}")
+                    # Clear cache and fall through to use default credentials
+                    _credential_path_cache = None
         
         # If we have a cached path, use it (avoids repeated lookups and messages)
         if _credential_path_cache and _credential_path_cache.exists():
-            credentials = service_account.Credentials.from_service_account_file(str(_credential_path_cache))
-            client = bigquery.Client(credentials=credentials, project=project_id)
-            return client
+            try:
+                credentials = service_account.Credentials.from_service_account_file(str(_credential_path_cache))
+                client = bigquery.Client(credentials=credentials, project=project_id)
+                return client
+            except (FileNotFoundError, OSError) as e:
+                # Cached file no longer exists, clear cache and fall through
+                print(f"[INFO] Cached credentials file no longer available: {e}")
+                _credential_path_cache = None
         
         # Try to find credentials file in common locations
         # Check both the main file and any timestamped backups
@@ -71,30 +92,79 @@ def get_bigquery_client(project_id: str = None):
                     # Silent - env var issue already handled, just use the found file
                     pass
                 # Don't print anything - credentials found and cached, will be used silently next time
-            credentials = service_account.Credentials.from_service_account_file(str(cred_path))
-            client = bigquery.Client(credentials=credentials, project=project_id)
-            return client
+            try:
+                credentials = service_account.Credentials.from_service_account_file(str(cred_path))
+                client = bigquery.Client(credentials=credentials, project=project_id)
+                return client
+            except (FileNotFoundError, OSError, ValueError) as e:
+                # File became unavailable or invalid, clear cache and fall through
+                print(f"[INFO] Cached credentials file no longer available: {e}")
+                _credential_path_cache = None
         
-        # If we get here, no credentials found - show warning about env var if it was set
+        # If we get here, no credentials file found - use default service account
+        # In Cloud Run, this will automatically use the service account assigned to the service
+        # In local development, this will use gcloud application-default credentials
         if env_cred_path and not env_cred_path.exists():
-            print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}")
-            print(f"[WARNING] No credentials file found in common locations either")
-        
-        # Fallback: try default service account (for cloud deployments)
-        print("[INFO] No credentials file found, trying default service account...")
-        client = bigquery.Client(project=project_id)
-        return client
-        
-    except Exception as e:
-        print(f"Error creating BigQuery client: {e}")
-        # Try one more time with default credentials
-        try:
-            print("[INFO] Attempting to use default application credentials...")
+            print(f"[INFO] GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}")
+            print(f"[INFO] Temporarily unsetting GOOGLE_APPLICATION_CREDENTIALS to use default service account")
+            # Temporarily unset the env var so google.auth.default() doesn't try to use it
+            old_cred_path = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+            try:
+                # Now create client with default credentials (Cloud Run service account)
+                credentials, _ = auth.default()
+                client = bigquery.Client(credentials=credentials, project=project_id)
+                # Restore the env var (in case it's needed elsewhere, though it shouldn't be)
+                if old_cred_path:
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
+                return client
+            except Exception as e:
+                # Restore env var even if there's an error
+                if old_cred_path:
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
+                raise
+        else:
+            print("[INFO] No credentials file found, using default service account credentials...")
+            # Use default credentials - in Cloud Run this will be the service account
+            # In local dev this will be gcloud application-default credentials
             client = bigquery.Client(project=project_id)
             return client
-        except Exception as e2:
-            print(f"Error with default credentials: {e2}")
-            raise
+        
+    except Exception as e:
+        # Check if the error is about a missing credentials file
+        error_str = str(e)
+        if "was not found" in error_str or ("File" in error_str and "not found" in error_str):
+            # This is a file not found error - use default credentials instead
+            print(f"[INFO] Credentials file error detected, using default service account: {e}")
+            try:
+                # Temporarily unset GOOGLE_APPLICATION_CREDENTIALS if it's set
+                old_cred_path = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
+                try:
+                    print("[INFO] Attempting to use default application credentials...")
+                    credentials, _ = auth.default()
+                    client = bigquery.Client(credentials=credentials, project=project_id)
+                    # Restore env var
+                    if old_cred_path:
+                        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
+                    return client
+                except Exception as e2:
+                    # Restore env var even on error
+                    if old_cred_path:
+                        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
+                    print(f"Error with default credentials: {e2}")
+                    raise
+            except Exception as e2:
+                print(f"Error with default credentials: {e2}")
+                raise
+        else:
+            # Some other error - log it and try default credentials as fallback
+            print(f"Error creating BigQuery client: {e}")
+            try:
+                print("[INFO] Attempting to use default application credentials as fallback...")
+                client = bigquery.Client(project=project_id)
+                return client
+            except Exception as e2:
+                print(f"Error with default credentials: {e2}")
+                raise
 
 
 def execute_query(client: bigquery.Client, sql: str, timeout: int = 120) -> List[Dict[str, Any]]:

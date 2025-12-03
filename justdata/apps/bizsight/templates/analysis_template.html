@@ -402,6 +402,11 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
+    <!-- Set base URL for API calls BEFORE loading app.js -->
+    <script>
+        // Set base URL for API calls (with blueprint prefix)
+        window.APP_BASE_URL = '{{ app_base_url|default("/bizsight") }}';
+    </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     
     <script>
@@ -411,7 +416,9 @@
         // Initialize state and county dropdowns
         function initializeCountySelection() {
             // Load states into dropdown
-            fetch('/api/states')
+            const baseUrl = window.APP_BASE_URL || '/bizsight';
+            console.log(`[DEBUG] BizSight: Fetching states from ${baseUrl}/api/states`);
+            fetch(`${baseUrl}/api/states`)
                 .then(r => {
                     if (!r.ok) {
                         throw new Error(`HTTP error! status: ${r.status}`);

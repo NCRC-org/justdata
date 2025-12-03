@@ -2,8 +2,9 @@
 FROM python:3.11-slim
 
 # Build argument to specify which app to run
-ARG APP_NAME=branchseeker
-ENV APP_NAME=${APP_NAME}
+# If not provided or empty, defaults to unified "justdata" app
+ARG APP_NAME=
+ENV APP_NAME=${APP_NAME:-justdata}
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1

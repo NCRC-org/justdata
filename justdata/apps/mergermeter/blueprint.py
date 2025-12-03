@@ -3,7 +3,7 @@ MergerMeter Blueprint for main JustData app.
 Converts the standalone MergerMeter app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, send_file, session, Response
+from flask import Blueprint, render_template, request, jsonify, send_file, session, Response, url_for
 import os
 import tempfile
 import zipfile
@@ -15,7 +15,7 @@ import json
 from typing import List, Dict
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
-from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key
+from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
 from .version import __version__
@@ -40,9 +40,11 @@ mergermeter_bp.config = {'MAX_CONTENT_LENGTH': 10 * 1024 * 1024}
 def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
+    app_base_url = url_for('mergermeter.index').rstrip('/')
     return render_template('analysis_template.html', 
                          version=__version__,
-                         permissions=user_permissions)
+                         permissions=user_permissions,
+                         app_base_url=app_base_url)
 
 
 @mergermeter_bp.route('/report')
@@ -167,9 +169,8 @@ def analyze():
             job_id = cached_result['job_id']
             session['job_id'] = job_id
             
-            # Store result in progress tracker
-            from justdata.shared.utils.progress_tracker import store_analysis_result
-            store_analysis_result(job_id, cached_result['result_data'])
+            # Result is already stored in BigQuery via store_cached_result
+            # No need for in-memory storage - BigQuery-only approach
             update_progress(job_id, {
                 'percent': 100,
                 'step': 'Analysis complete (from cache)',

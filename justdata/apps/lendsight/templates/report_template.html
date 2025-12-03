@@ -429,6 +429,11 @@
             font-style: normal;
         }
         
+        .table-container {
+            padding-left: 30px;
+            padding-right: 30px;
+        }
+        
         .table-caption {
             font-size: 0.85rem;
             color: #666;
@@ -690,11 +695,11 @@
                 <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
             </div>
             <h1 class="report-title">LendSight - Mortgage Lending Analysis</h1>
-            <p class="report-subtitle">Data drives the <em>movement</em></p>
+            <p class="report-subtitle">Data drives the <em style="color: #eb2f89; font-weight: bold">movement</em></p>
             <div class="report-meta">
                 <div>
-                    <strong>Counties:</strong> <span id="counties">Loading...</span><br>
-                    <strong>Years:</strong> <span id="years">Loading...</span>
+                    <div id="counties" style="font-size: 1.1em; font-weight: bold;">Loading...</div>
+                    <div id="years" style="font-size: 0.95em;">Loading...</div>
                 </div>
                 <div class="report-actions no-print">
                     <a href="{{ app_base_url|default('/lendsight') }}/download?format=pdf" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer;">
@@ -885,6 +890,98 @@
                 </div>
             </div>
             
+            <!-- Section 4: Summary Table -->
+            <div class="report-section print-break" id="summaryTableSection" style="display: none;">
+                <h2 class="section-title">Section 4: Summary</h2>
+                <p class="table-introduction" id="summaryTableIntro">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="summaryTable">
+                        <thead>
+                            <tr>
+                                <!-- Headers will be populated dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="summaryTableCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Section 5: Lender Summary -->
+            <div class="report-section print-break" id="byLenderTableSection" style="display: none;">
+                <h2 class="section-title">Section 5: Lender Summary</h2>
+                <p class="table-introduction" id="byLenderTableIntro">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="byLenderTable">
+                        <thead>
+                            <tr>
+                                <!-- Headers will be populated dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="byLenderTableCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Section 6: County Summary (only shown for multiple counties) -->
+            <div class="report-section print-break" id="byCountyTableSection" style="display: none;">
+                <h2 class="section-title">Section 6: County Summary</h2>
+                <p class="table-introduction" id="byCountyTableIntro">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="byCountyTable">
+                        <thead>
+                            <tr>
+                                <!-- Headers will be populated dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="byCountyTableCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Section 7: Trends Analysis -->
+            <div class="report-section print-break" id="trendsTableSection" style="display: none;">
+                <h2 class="section-title">Section 7: Trends Analysis</h2>
+                <p class="table-introduction" id="trendsTableIntro">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container">
+                    <table class="data-table" id="trendsTable">
+                        <thead>
+                            <tr>
+                                <!-- Headers will be populated dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="trendsTableCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+            </div>
+            
             <!-- Methodology Section -->
             <div class="report-section print-break" id="methodsSection">
                 <h2 class="section-title">Methods</h2>
@@ -1011,13 +1108,16 @@
         }
         
         // Load and display report data
-        async function loadReportData() {
+        async function loadReportData(retryCount = 0) {
+            const maxRetries = 10;
+            const retryDelay = 1000; // 1 second
+            
             try {
                 // Check for job_id in URL parameters
                 const urlParams = new URLSearchParams(window.location.search);
                 const jobId = urlParams.get('job_id');
                 
-                console.log('Loading report data...', { jobId, url: window.location.href });
+                console.log('Loading report data...', { jobId, url: window.location.href, retryCount });
                 
                 // Update download links with job_id
                 updateDownloadLinks();
@@ -1032,8 +1132,31 @@
                     console.log('No job_id in URL, relying on session');
                 }
                 
+                // Add cache-busting timestamp to force fresh data
+                const cacheBuster = new Date().getTime();
+                url += (url.includes('?') ? '&' : '?') + `_t=${cacheBuster}`;
+                
                 const response = await fetch(url);
                 console.log('Response status:', response.status);
+                
+                // Handle 202 (Analysis still in progress)
+                if (response.status === 202) {
+                    if (retryCount < maxRetries) {
+                        console.log(`Analysis still in progress, retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                        // Show loading message to user
+                        const loadingState = document.getElementById('loadingState');
+                        if (loadingState) {
+                            const loadingText = loadingState.querySelector('p');
+                            if (loadingText) {
+                                loadingText.textContent = `Analysis still in progress, checking again... (${retryCount + 1}/${maxRetries})`;
+                            }
+                        }
+                        setTimeout(() => loadReportData(retryCount + 1), retryDelay);
+                        return; // Exit early, retry will handle the rest
+                    } else {
+                        throw new Error('Analysis is taking longer than expected. Please refresh the page or try again later.');
+                    }
+                }
                 
                 const result = await response.json();
                 console.log('Response data:', { success: result.success, hasData: !!result.data, dataKeys: result.data ? Object.keys(result.data) : [] });
@@ -1079,6 +1202,257 @@
             }
         }
         
+        function populateLenderSummaryTable(data, metadata) {
+            const table = document.getElementById('byLenderTable');
+            if (!table) return;
+            
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            if (!thead || !tbody) return;
+            
+            // Clear existing content
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) return;
+            
+            // Build header
+            const columns = Object.keys(data[0]);
+            let headerRow = '<tr>';
+            columns.forEach(col => {
+                headerRow += `<th style="text-align: ${col === 'Lender Name' ? 'left' : 'center'};">${col}</th>`;
+            });
+            headerRow += '</tr>';
+            thead.innerHTML = headerRow;
+            
+            // Show top 10 initially, rest hidden
+            const showInitial = 10;
+            const allRows = data;
+            const visibleRows = allRows.slice(0, showInitial);
+            const hiddenRows = allRows.slice(showInitial);
+            
+            // Build visible rows
+            visibleRows.forEach(row => {
+                let rowHtml = '<tr>';
+                columns.forEach(col => {
+                    const value = row[col] !== null && row[col] !== undefined ? row[col] : '';
+                    rowHtml += `<td style="text-align: ${col === 'Lender Name' ? 'left' : 'center'};">${value}</td>`;
+                });
+                rowHtml += '</tr>';
+                tbody.innerHTML += rowHtml;
+            });
+            
+            // Add expand/collapse button if there are more than 10 rows
+            const section = document.getElementById('byLenderTableSection');
+            if (section && allRows.length > showInitial) {
+                // Remove existing button if any
+                const existingBtn = section.querySelector('.expand-btn');
+                if (existingBtn) {
+                    existingBtn.remove();
+                }
+                
+                // Remove existing title wrapper if any
+                const existingWrapper = section.querySelector('.section-title-wrapper');
+                if (existingWrapper) {
+                    const title = existingWrapper.querySelector('h2.section-title');
+                    if (title) {
+                        section.insertBefore(title, existingWrapper);
+                    }
+                    existingWrapper.remove();
+                }
+                
+                // Find the section title
+                const sectionTitle = section.querySelector('h2.section-title');
+                
+                if (sectionTitle) {
+                    // Create a wrapper div for the title and button
+                    const titleWrapper = document.createElement('div');
+                    titleWrapper.className = 'section-title-wrapper';
+                    titleWrapper.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;';
+                    
+                    // Move the title into the wrapper
+                    const titleText = sectionTitle.cloneNode(true);
+                    sectionTitle.remove();
+                    titleWrapper.appendChild(titleText);
+                    
+                    // Create the button
+                    const expandBtn = document.createElement('button');
+                    expandBtn.className = 'expand-btn no-print';
+                    expandBtn.style.cssText = 'display: inline-block;';
+                    
+                    // Create icon element
+                    const icon = document.createElement('i');
+                    icon.className = 'fas fa-chevron-down';
+                    
+                    // Create text node
+                    const textNode = document.createTextNode(' Show All Lenders');
+                    
+                    // Append icon and text to button
+                    expandBtn.appendChild(icon);
+                    expandBtn.appendChild(textNode);
+                    
+                    expandBtn.onclick = function() {
+                        const buttonText = this.textContent.trim();
+                        if (buttonText === 'Show All Lenders') {
+                            // Show all rows
+                            hiddenRows.forEach(row => {
+                                let rowHtml = '<tr>';
+                                columns.forEach(col => {
+                                    const value = row[col] !== null && row[col] !== undefined ? row[col] : '';
+                                    rowHtml += `<td style="text-align: ${col === 'Lender Name' ? 'left' : 'center'};">${value}</td>`;
+                                });
+                                rowHtml += '</tr>';
+                                tbody.innerHTML += rowHtml;
+                            });
+                            // Update button text and icon
+                            this.innerHTML = '<i class="fas fa-chevron-up"></i> Show Top 10 Only';
+                        } else {
+                            // Collapse back to top 10
+                            tbody.innerHTML = '';
+                            visibleRows.forEach(row => {
+                                let rowHtml = '<tr>';
+                                columns.forEach(col => {
+                                    const value = row[col] !== null && row[col] !== undefined ? row[col] : '';
+                                    rowHtml += `<td style="text-align: ${col === 'Lender Name' ? 'left' : 'center'};">${value}</td>`;
+                                });
+                                rowHtml += '</tr>';
+                                tbody.innerHTML += rowHtml;
+                            });
+                            // Update button text and icon
+                            this.innerHTML = '<i class="fas fa-chevron-down"></i> Show All Lenders';
+                        }
+                    };
+                    
+                    // Add button to wrapper
+                    titleWrapper.appendChild(expandBtn);
+                    
+                    // Insert wrapper before the table container
+                    const tableContainer = section.querySelector('.table-container');
+                    if (tableContainer) {
+                        tableContainer.parentNode.insertBefore(titleWrapper, tableContainer);
+                    } else {
+                        section.insertBefore(titleWrapper, section.firstChild);
+                    }
+                }
+            }
+            
+            // Show the section
+            if (section) {
+                section.style.display = 'block';
+            }
+            
+            // Populate caption with data source
+            if (metadata) {
+                const caption = document.getElementById('byLenderTableCaption');
+                if (caption) {
+                    const counties = metadata.counties || [];
+                    const years = metadata.years || [];
+                    const yearRange = years.length > 1 
+                        ? `${Math.min(...years)}-${Math.max(...years)}`
+                        : years[0] ? years[0].toString() : '';
+                    
+                    let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases.';
+                    
+                    if (counties.length > 0) {
+                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                    }
+                    if (yearRange) {
+                        captionText += ` | <strong>Years:</strong> ${yearRange}`;
+                    }
+                    
+                    caption.innerHTML = captionText;
+                }
+            }
+        }
+        
+        function populateTrendsTable(data, metadata) {
+            const table = document.getElementById('trendsTable');
+            if (!table) return;
+            
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            if (!thead || !tbody) return;
+            
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+            
+            if (data.length === 0) return;
+            
+            // Get columns, ensure Year is first
+            const columns = Object.keys(data[0]);
+            const yearCol = 'Year';
+            const otherCols = columns.filter(c => c !== yearCol);
+            const orderedCols = [yearCol, ...otherCols];
+            
+            // Build header with Year bold
+            let headerRow = '<tr>';
+            orderedCols.forEach(col => {
+                if (col === yearCol) {
+                    headerRow += `<th style="text-align: left; font-weight: bold;">${col}</th>`;
+                } else {
+                    headerRow += `<th style="text-align: center;">${col}</th>`;
+                }
+            });
+            headerRow += '</tr>';
+            thead.innerHTML = headerRow;
+            
+            // Build rows with Year bold
+            data.forEach(row => {
+                let rowHtml = '<tr>';
+                orderedCols.forEach(col => {
+                    const value = row[col] !== null && row[col] !== undefined ? row[col] : '';
+                    if (col === yearCol) {
+                        rowHtml += `<td style="text-align: left; font-weight: bold;">${value}</td>`;
+                    } else {
+                        // Format percentage values
+                        const formattedValue = typeof value === 'number' && col.includes('(%)') ? 
+                            (isNaN(value) ? '' : value.toFixed(1)) : value;
+                        rowHtml += `<td style="text-align: center;">${formattedValue}</td>`;
+                    }
+                });
+                rowHtml += '</tr>';
+                tbody.innerHTML += rowHtml;
+            });
+            
+            // Show section and update section number based on county count
+            const section = document.getElementById('trendsTableSection');
+            if (section) {
+                // Determine section number: Section 6 if single county, Section 7 if multiple counties
+                const sectionTitle = section.querySelector('h2.section-title');
+                if (sectionTitle && metadata) {
+                    const counties = metadata.counties || [];
+                    const sectionNumber = counties.length > 1 ? 7 : 6;
+                    sectionTitle.textContent = `Section ${sectionNumber}: Trends Analysis`;
+                }
+                section.style.display = 'block';
+            }
+            
+            // Populate caption with data source
+            if (metadata) {
+                const caption = document.getElementById('trendsTableCaption');
+                if (caption) {
+                    const counties = metadata.counties || [];
+                    const years = metadata.years || [];
+                    const yearRange = years.length > 1 
+                        ? `${Math.min(...years)}-${Math.max(...years)}`
+                        : years[0] ? years[0].toString() : '';
+                    
+                    let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases.';
+                    
+                    if (counties.length > 0) {
+                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                    }
+                    if (yearRange) {
+                        captionText += ` | <strong>Years:</strong> ${yearRange}`;
+                    }
+                    
+                    caption.innerHTML = captionText;
+                }
+            }
+        }
+        
         function displayReport(data, metadata) {
             // Ensure metadata exists
             if (!metadata) {
@@ -1100,10 +1474,28 @@
             document.getElementById('main-content').style.display = 'block';
             
             // Update metadata with safe defaults
-            document.getElementById('counties').textContent = 
-                (metadata.counties && metadata.counties.length > 0) ? metadata.counties.join(', ') : 'N/A';
-            document.getElementById('years').textContent = 
-                (metadata.years && metadata.years.length > 0) ? metadata.years.join(', ') : 'N/A';
+            // Format counties (one line, no label)
+            const countiesEl = document.getElementById('counties');
+            if (countiesEl) {
+                countiesEl.textContent = 
+                    (metadata.counties && metadata.counties.length > 0) ? metadata.counties.join(', ') : 'N/A';
+            }
+            
+            // Format years as range in parentheses (one line, no label)
+            const yearsEl = document.getElementById('years');
+            if (yearsEl) {
+                const years = metadata.years || [];
+                if (years.length > 0) {
+                    const sortedYears = years.map(y => parseInt(y)).sort((a, b) => a - b);
+                    if (sortedYears.length > 1) {
+                        yearsEl.textContent = `(${Math.min(...sortedYears)}-${Math.max(...sortedYears)})`;
+                    } else {
+                        yearsEl.textContent = `(${sortedYears[0]})`;
+                    }
+                } else {
+                    yearsEl.textContent = '(N/A)';
+                }
+            }
             
             // Populate intro paragraph and demographics table (always show these)
             generateIntroParagraph(metadata);
@@ -1133,6 +1525,29 @@
             // Populate top 10 lenders detailed table
             if (data.top_lenders_detailed && data.top_lenders_detailed.length > 0) {
                 populateTopLendersDetailedTable(data.top_lenders_detailed, metadata);
+            }
+            
+            // Populate summary table (if available)
+            if (data.summary && data.summary.length > 0) {
+                populateGenericTable('summaryTable', data.summary, metadata);
+            }
+            
+            // Populate by_lender table (if available) with collapse/expand
+            if (data.by_lender && data.by_lender.length > 0) {
+                populateLenderSummaryTable(data.by_lender, metadata);
+            }
+            
+            // Populate by_county table (if available and multiple counties)
+            if (data.by_county && data.by_county.length > 0) {
+                const counties = metadata.counties || [];
+                if (counties.length > 1) {
+                    populateGenericTable('byCountyTable', data.by_county, metadata);
+                }
+            }
+            
+            // Populate trends table (if available) with Year column first and bold
+            if (data.trends && data.trends.length > 0) {
+                populateTrendsTable(data.trends, metadata);
             }
             
             // Populate methodology section with loan purpose information
@@ -1697,7 +2112,7 @@
                 demographicOverviewIntroEl.textContent = `This table shows lending activity by race and ethnicity over the time period ${yearRange}, including the number and percentage of loans to each race and ethnic group. Percentages are calculated using loans with demographic data as the denominator (loans without race/ethnicity data are excluded from the calculation). The table includes a change column showing the increase or decrease of each group over the entire span of years in the report, with positive changes displayed in blue and negative changes in red.`;
             }
             
-            if (aiInsights.demographic_overview_discussion) {
+            if (aiInsights.demographic_overview_discussion && aiInsights.demographic_overview_discussion.trim().length > 0) {
                 console.log('[DEBUG] Found demographic_overview_discussion, length:', aiInsights.demographic_overview_discussion.length);
                 const discussionEl = document.getElementById('demographicOverviewDiscussion');
                 if (discussionEl) {
@@ -1708,11 +2123,11 @@
                     console.error('[ERROR] Could not find demographicOverviewDiscussion element');
                 }
             } else {
-                console.warn('[WARNING] demographic_overview_discussion is missing from aiInsights');
-                // Show a placeholder message if discussion is missing
+                console.warn('[WARNING] demographic_overview_discussion is missing or empty from aiInsights');
+                // Show error message if discussion is missing or empty
                 const discussionEl = document.getElementById('demographicOverviewDiscussion');
                 if (discussionEl) {
-                    discussionEl.innerHTML = '<p><em>Analysis narrative is being generated. Please refresh the page in a moment.</em></p>';
+                    discussionEl.innerHTML = '<p><em>AI narrative generation failed for this section. Please try running a new analysis.</em></p>';
                     discussionEl.style.display = 'block';
                 }
             }
@@ -1727,7 +2142,7 @@
                 incomeNeighborhoodIntroEl.textContent = `This table shows lending activity by income and neighborhood characteristics over the time period ${yearRange}, including the total number of loans overall and the number and percentage of loans to Low to Moderate Income Borrowers (LMIB), in Low to Moderate Income Census Tracts (LMICT), and in Majority Minority Census Tracts (MMCT). The table includes a change column showing the increase or decrease of each category over the entire span of years in the report, with positive changes displayed in blue and negative changes in red. It is important to note that the shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally, which may explain any apparent jump in lending to majority-minority census tracts between 2021 and 2022.`;
             }
             
-            if (aiInsights.income_neighborhood_discussion) {
+            if (aiInsights.income_neighborhood_discussion && aiInsights.income_neighborhood_discussion.trim().length > 0) {
                 console.log('[DEBUG] Found income_neighborhood_discussion, length:', aiInsights.income_neighborhood_discussion.length);
                 const discussionEl = document.getElementById('incomeNeighborhoodDiscussion');
                 if (discussionEl) {
@@ -1737,7 +2152,13 @@
                     console.error('[ERROR] Could not find incomeNeighborhoodDiscussion element');
                 }
             } else {
-                console.warn('[WARNING] income_neighborhood_discussion is missing from aiInsights');
+                console.warn('[WARNING] income_neighborhood_discussion is missing or empty from aiInsights');
+                // Show error message if discussion is missing or empty
+                const discussionEl = document.getElementById('incomeNeighborhoodDiscussion');
+                if (discussionEl) {
+                    discussionEl.innerHTML = '<p><em>AI narrative generation failed for this section. Please try running a new analysis.</em></p>';
+                    discussionEl.style.display = 'block';
+                }
             }
             
             // Populate top lenders detailed intro (hardcoded two sentences) and discussion
@@ -1747,7 +2168,7 @@
                 topLendersDetailedIntroEl.textContent = `This table shows the top lenders by total number of loans or applications in ${latestYear} (the most recent year in the report), displayed in descending order by total loans. For each lender, the table shows the share of loans to each race and ethnic group, as well as income and neighborhood indicator variables (LMIB, LMICT, MMCT), using the same calculation methods as the tables above. All columns in this table are sortable by clicking on the column headers.`;
             }
             
-            if (aiInsights.top_lenders_detailed_discussion) {
+            if (aiInsights.top_lenders_detailed_discussion && aiInsights.top_lenders_detailed_discussion.trim().length > 0) {
                 console.log('[DEBUG] Found top_lenders_detailed_discussion, length:', aiInsights.top_lenders_detailed_discussion.length);
                 const discussionEl = document.getElementById('topLendersDetailedDiscussion');
                 if (discussionEl) {
@@ -1757,7 +2178,13 @@
                     console.error('[ERROR] Could not find topLendersDetailedDiscussion element');
                 }
             } else {
-                console.warn('[WARNING] top_lenders_detailed_discussion is missing from aiInsights');
+                console.warn('[WARNING] top_lenders_detailed_discussion is missing or empty from aiInsights');
+                // Show error message if discussion is missing or empty
+                const discussionEl = document.getElementById('topLendersDetailedDiscussion');
+                if (discussionEl) {
+                    discussionEl.innerHTML = '<p><em>AI narrative generation failed for this section. Please try running a new analysis.</em></p>';
+                    discussionEl.style.display = 'block';
+                }
             }
             
             if (aiInsights.bank_strategies) {
@@ -1860,78 +2287,125 @@
             }).filter(p => p).join(''); // Filter out empty strings
         }
         
-        function populateSummaryCards(rawData) {
-            if (!rawData || rawData.length === 0) return;
+        function populateGenericTable(tableId, data, metadata = null) {
+            if (!data || data.length === 0) return;
             
-            const cardsContainer = document.getElementById('summaryCards');
+            const table = document.getElementById(tableId);
+            if (!table) return;
             
-            // Find the latest year from the data
-            const years = [...new Set(rawData.map(row => row['year']))].sort((a, b) => b - a);
-            const latestYear = years[0];
-            
-            // Update the section title with the latest year
-            const titleElement = document.getElementById('latestStatsTitle');
-            if (titleElement) {
-                titleElement.textContent = `Latest Statistics (${latestYear})`;
+            const section = table.closest('.report-section');
+            if (section) {
+                section.style.display = 'block';
             }
             
-            // Filter data for the latest year only
-            const latestYearData = rawData.filter(row => row['year'] === latestYear);
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
             
-            // Compute unique branches by uninumbr for the latest year only
-            // Properly dedupe: LMI only, MMCT only, and both
-            const uniqueAll = new Set();
-            const uniqueLMIOnly = new Set();      // LMI=1, MMCT=0
-            const uniqueMMCTOnly = new Set();     // LMI=0, MMCT=1
-            const uniqueBoth = new Set();         // LMI=1, MMCT=1
+            // Special handling for summaryTable (transposed structure)
+            if (tableId === 'summaryTable') {
+                // Get all column names (Variable + years)
+                const columns = Object.keys(data[0]);
+                const variableCol = 'Variable';
+                const yearCols = columns.filter(col => col !== variableCol).sort((a, b) => {
+                    // Put "Net Change" at the end
+                    if (a === 'Net Change') return 1;
+                    if (b === 'Net Change') return -1;
+                    // Sort numeric years
+                    return parseInt(a) - parseInt(b);
+                });
+                
+                // Build header row
+                let headerRow = `<tr><th style="text-align: left;">${variableCol}</th>`;
+                yearCols.forEach(year => {
+                    headerRow += `<th style="text-align: center;">${year}</th>`;
+                });
+                headerRow += '</tr>';
+                thead.innerHTML = headerRow;
+                
+                // Build data rows
+                tbody.innerHTML = data.map(row => {
+                    let cells = `<td style="text-align: left; font-weight: 600;">${row[variableCol]}</td>`;
+                    yearCols.forEach(year => {
+                        let value = row[year];
+                        if (value === null || value === undefined) {
+                            value = 0;
+                        }
+                        // Format as number with commas
+                        const formatted = typeof value === 'number' ? value.toLocaleString() : value;
+                        
+                        // Apply color coding for Net Change column
+                        if (year === 'Net Change') {
+                            const numValue = typeof value === 'number' ? value : parseFloat(value);
+                            const color = numValue < 0 ? 'red' : (numValue > 0 ? '#2fade3' : 'black');
+                            cells += `<td style="text-align: center; color: ${color}; font-weight: 600;">${formatted}</td>`;
+                        } else {
+                            cells += `<td style="text-align: center;">${formatted}</td>`;
+                        }
+                    });
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+            } else {
+                // Standard table population for other tables
+                const columns = Object.keys(data[0]);
+                
+                // Build header row
+                let headerRow = '<tr>';
+                columns.forEach(col => {
+                    const align = col.toLowerCase().includes('name') || col.toLowerCase().includes('lender') || col.toLowerCase().includes('county') || col.toLowerCase().includes('metric') 
+                        ? 'left' : 'center';
+                    headerRow += `<th style="text-align: ${align};">${col}</th>`;
+                });
+                headerRow += '</tr>';
+                thead.innerHTML = headerRow;
+                
+                // Build data rows
+                tbody.innerHTML = data.map(row => {
+                    let cells = '';
+                    columns.forEach((col, idx) => {
+                        let value = row[col];
+                        if (value === null || value === undefined) {
+                            value = '';
+                        }
+                        
+                        // Format based on column type
+                        if (col.toLowerCase().includes('year')) {
+                            value = value.toString();
+                        } else if (col.includes('%') || col.toLowerCase().includes('percent')) {
+                            if (typeof value === 'number') {
+                                value = value.toFixed(1) + '%';
+                            } else if (typeof value === 'string' && !value.includes('%')) {
+                                value = value + '%';
+                            }
+                        } else if (typeof value === 'number') {
+                            value = value.toLocaleString();
+                        }
+                        
+                        const align = col.toLowerCase().includes('name') || col.toLowerCase().includes('lender') || col.toLowerCase().includes('county') || col.toLowerCase().includes('metric')
+                            ? 'left' : 'center';
+                        cells += `<td style="text-align: ${align};">${value}</td>`;
+                    });
+                    return `<tr>${cells}</tr>`;
+                }).join('');
+            }
             
-            latestYearData.forEach(row => {
-                const id = row['uninumbr'];
-                if (id !== null && id !== undefined) {
-                    uniqueAll.add(id);
-                    
-                    // Check LMI and MMCT status
-                    const isLMI = (row['lmict'] === 1 || row['br_lmi'] === 1);
-                    const isMMCT = (row['mmct'] === 1 || row['br_minority'] === 1);
-                    
-                    if (isLMI && !isMMCT) {
-                        uniqueLMIOnly.add(id);
-                    } else if (!isLMI && isMMCT) {
-                        uniqueMMCTOnly.add(id);
-                    } else if (isLMI && isMMCT) {
-                        uniqueBoth.add(id);
-                    }
+            // Populate caption
+            const captionId = tableId + 'Caption';
+            const caption = document.getElementById(captionId);
+            if (caption && metadata) {
+                const years = metadata.years || [];
+                const counties = metadata.counties || [];
+                let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases';
+                if (years.length > 0) {
+                    const yearRange = years.length > 1 
+                        ? `${Math.min(...years)}-${Math.max(...years)}`
+                        : years[0].toString();
+                    captionText += ` | <strong>Years:</strong> ${yearRange}`;
                 }
-            });
-            
-            const totalBranches = uniqueAll.size;
-            const lmiOnlyCount = uniqueLMIOnly.size;
-            const mmctOnlyCount = uniqueMMCTOnly.size;
-            const bothCount = uniqueBoth.size;
-            
-            // Calculate percentages
-            const lmiOnlyPct = totalBranches > 0 ? ((lmiOnlyCount / totalBranches) * 100).toFixed(1) : '0.0';
-            const mmctOnlyPct = totalBranches > 0 ? ((mmctOnlyCount / totalBranches) * 100).toFixed(1) : '0.0';
-            const bothPct = totalBranches > 0 ? ((bothCount / totalBranches) * 100).toFixed(1) : '0.0';
-            
-            cardsContainer.innerHTML = `
-                <div class="summary-card">
-                    <h3>${totalBranches.toLocaleString()}</h3>
-                    <p>Total Branches (${latestYear})</p>
-                </div>
-                <div class="summary-card">
-                    <h3>${lmiOnlyCount.toLocaleString()} <span class="percentage-text">(${lmiOnlyPct}%)</span></h3>
-                    <p>LMI Only Branches (${latestYear})</p>
-                </div>
-                <div class="summary-card">
-                    <h3>${mmctOnlyCount.toLocaleString()} <span class="percentage-text">(${mmctOnlyPct}%)</span></h3>
-                    <p>MMCT Only Branches (${latestYear})</p>
-                </div>
-                <div class="summary-card">
-                    <h3>${bothCount.toLocaleString()} <span class="percentage-text">(${bothPct}%)</span></h3>
-                    <p>Both LMICT/MMCT Branches (${latestYear})</p>
-                </div>
-            `;
+                if (counties.length > 1) {
+                    captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
+                }
+                caption.innerHTML = captionText;
+            }
         }
         
         function toggleTable(tableId) {
@@ -2023,7 +2497,7 @@
                         const years = metadata.years || [];
                         const countyCount = counties.length;
                         
-                        let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
+                        let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA)';
                         
                         if (countyCount > 1) {
                             captionText += ` | <strong>Note:</strong> Data for ${countyCount} counties (${counties.join(', ')}) are summed across all years shown.`;
@@ -2113,37 +2587,6 @@
                 return `<tr>${cells.map(cell => `<td style="text-align: center;">${cell}</td>`).join('')}</tr>`;
             }).join('');
             
-            // Populate caption for bankTable
-            if (tableId === 'bankTable' && metadata) {
-                const caption = document.getElementById('bankTableCaption');
-                if (caption) {
-                    const years = metadata.years || [];
-                    const latestYear = years.length > 0 ? Math.max(...years) : '';
-                    let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
-                    if (latestYear) {
-                        captionText += ` | <strong>Year:</strong> ${latestYear} (most recent year in report)`;
-                    }
-                    caption.innerHTML = captionText;
-                }
-            }
-            
-            // Populate caption for countyTable
-            if (tableId === 'countyTable' && metadata) {
-                const caption = document.getElementById('countyTableCaption');
-                if (caption) {
-                    const years = metadata.years || [];
-                    const latestYear = years.length > 0 ? Math.max(...years) : '';
-                    const counties = metadata.counties || [];
-                    let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
-                    if (latestYear) {
-                        captionText += ` | <strong>Year:</strong> ${latestYear} (most recent year in report)`;
-                    }
-                    if (counties.length > 1) {
-                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
-                    }
-                    caption.innerHTML = captionText;
-                }
-            }
         }
         
         function populateDemographicOverviewTable(data, metadata) {

@@ -36,16 +36,13 @@
         <div class="header-content">
             <div class="header-layout">
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
                 </div>
                 <div class="header-title-section">
-                    <h1>LendSight</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                    <h1><span class="app-name-part1">LEND</span><span class="app-name-part2">SIGHT</span></h1>
                 </div>
                 <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
+                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
                 </div>
             </div>
         </div>
@@ -450,30 +447,44 @@
                 }
                 
                 const baseUrl = window.APP_BASE_URL || '/lendsight';
+                console.log(`[DEBUG] loadCountiesForLendSight: Fetching from ${baseUrl}/counties`);
                 fetch(`${baseUrl}/counties`)
                     .then(response => {
+                        console.log(`[DEBUG] loadCountiesForLendSight: Response status: ${response.status}, ok: ${response.ok}`);
                         if (!response.ok) {
-                            throw new Error('Failed to load counties');
+                            throw new Error(`Failed to load counties: ${response.status} ${response.statusText}`);
                         }
                         return response.json();
                     })
                     .then(counties => {
+                        console.log('[DEBUG] loadCountiesForLendSight: Counties response received:', counties);
+                        console.log('[DEBUG] loadCountiesForLendSight: Counties array length:', counties ? counties.length : 'null');
+                        console.log('[DEBUG] loadCountiesForLendSight: Counties type:', Array.isArray(counties) ? 'array' : typeof counties);
+                        
                         if (!Array.isArray(counties)) {
+                            console.error('[ERROR] loadCountiesForLendSight: Invalid response format, expected array, got:', typeof counties);
                             throw new Error('Invalid response format');
+                        }
+                        
+                        if (counties.length === 0) {
+                            console.warn('[WARNING] loadCountiesForLendSight: No counties in response!');
                         }
                         
                         // Clear and populate
                         $(countySelect).empty();
+                        let addedCount = 0;
                         counties.forEach(county => {
+                            console.log(`[DEBUG] loadCountiesForLendSight: Adding county: ${county}`);
                             $(countySelect).append(new Option(county, county));
+                            addedCount++;
                         });
                         
                         // No Select2 needed - using plain HTML select like BizSight
                         
-                        console.log(`Loaded ${counties.length} counties`);
+                        console.log(`[DEBUG] loadCountiesForLendSight: Added ${addedCount} counties to dropdown (total options: ${$(countySelect).find('option').length})`);
                     })
                     .catch(error => {
-                        console.error('Error loading counties:', error);
+                        console.error('[ERROR] loadCountiesForLendSight: Error loading counties:', error);
                     });
             }
             
@@ -798,14 +809,20 @@
                 isLoadingStates = true;
                 
                 const baseUrl = window.APP_BASE_URL || '/lendsight';
+                console.log(`[DEBUG] loadStates: Fetching from ${baseUrl}/states`);
                 fetch(`${baseUrl}/states`)
                     .then(response => {
+                        console.log(`[DEBUG] loadStates: Response status: ${response.status}, ok: ${response.ok}`);
                         if (!response.ok) {
-                            throw new Error('Failed to load states');
+                            throw new Error(`Failed to load states: ${response.status} ${response.statusText}`);
                         }
                         return response.json();
                     })
                     .then(states => {
+                        console.log('[DEBUG] loadStates: States response received:', states);
+                        console.log('[DEBUG] loadStates: States array length:', states ? states.length : 'null');
+                        console.log('[DEBUG] loadStates: States type:', Array.isArray(states) ? 'array' : typeof states);
+                        
                         // Destroy Select2 if it exists to prevent conflicts
                         if (stateSelect.hasClass('select2-hidden-accessible')) {
                             stateSelect.select2('destroy');
@@ -814,14 +831,25 @@
                         stateSelect.empty();
                         stateSelect.append('<option value="">Select a state...</option>');
                         
+                        if (!states || states.length === 0) {
+                            console.warn('[WARNING] loadStates: No states in response!');
+                            isLoadingStates = false;
+                            return;
+                        }
+                        
+                        let addedCount = 0;
                         states.forEach(state => {
                             const stateName = state.name || state;
                             const stateCode = state.code || state;
+                            console.log(`[DEBUG] loadStates: Processing state: name="${stateName}", code="${stateCode}"`);
                             // Store both name and code as data attributes, but use name as value
                             const option = new Option(stateName, stateName);
                             $(option).data('code', stateCode);
                             stateSelect.append(option);
+                            addedCount++;
                         });
+                        
+                        console.log(`[DEBUG] loadStates: Added ${addedCount} states to dropdown (total options: ${stateSelect.find('option').length})`);
                         
                         // Reinitialize Select2 for state dropdown
                         stateSelect.select2({
@@ -829,6 +857,8 @@
                             allowClear: true,
                             width: '100%'
                         });
+                        
+                        console.log('[DEBUG] loadStates: Select2 reinitialized');
                         
                         // DON'T restore previous selection - this was causing automatic Arizona loads
                         // Users should select their state fresh each time
@@ -844,7 +874,7 @@
                         isLoadingStates = false;
                     })
                     .catch(error => {
-                        console.error('Error loading states:', error);
+                        console.error('[ERROR] loadStates: Error loading states:', error);
                         isLoadingStates = false;
                     });
             }
@@ -904,38 +934,56 @@
                 
                 console.log(`[DEBUG] loadCountiesForState called with identifier: ${stateIdentifier}, using verified code: ${stateCode}`);
                 const baseUrl = window.APP_BASE_URL || '/lendsight';
-                fetch(`${baseUrl}/counties-by-state/${encodeURIComponent(stateCode)}`)
+                const url = `${baseUrl}/counties-by-state/${encodeURIComponent(stateCode)}`;
+                console.log(`[DEBUG] loadCountiesForState: Fetching from ${url}`);
+                fetch(url)
                     .then(response => {
+                        console.log(`[DEBUG] loadCountiesForState: Response status: ${response.status}, ok: ${response.ok}`);
                         if (!response.ok) {
-                            throw new Error('Failed to load counties');
+                            throw new Error(`Failed to load counties: ${response.status} ${response.statusText}`);
                         }
                         return response.json();
                     })
                     .then(counties => {
+                        console.log('[DEBUG] loadCountiesForState: Counties response received:', counties);
+                        console.log('[DEBUG] loadCountiesForState: Counties array length:', counties ? counties.length : 'null');
+                        console.log('[DEBUG] loadCountiesForState: Counties type:', Array.isArray(counties) ? 'array' : typeof counties);
+                        
                         const countySelect = document.getElementById('county-select');
                         
                         // Clear and enable the select
                         countySelect.disabled = false;
                         countySelect.innerHTML = '<option value="">Select a county...</option>';
                         
+                        if (!counties || counties.length === 0) {
+                            console.warn('[WARNING] loadCountiesForState: No counties in response!');
+                            return;
+                        }
+                        
                         // Handle both old format (strings) and new format (objects with FIPS codes)
+                        let addedCount = 0;
                         counties.forEach(county => {
                             const option = document.createElement('option');
                             if (typeof county === 'string') {
                                 // Old format: just county name string
+                                console.log(`[DEBUG] loadCountiesForState: Adding county (string): ${county}`);
                                 option.value = county;
                                 option.textContent = county;
                             } else if (county && county.name) {
                                 // New format: county object with name, geoid5, state_fips, county_fips
+                                console.log(`[DEBUG] loadCountiesForState: Adding county (object): ${county.name}`);
                                 option.value = county.name;
                                 option.textContent = county.name;
                                 option.dataset.county = JSON.stringify(county); // Store full county object
                             }
                             countySelect.appendChild(option);
+                            addedCount++;
                         });
+                        
+                        console.log(`[DEBUG] loadCountiesForState: Added ${addedCount} counties to dropdown (total options: ${countySelect.options.length})`);
                     })
                     .catch(error => {
-                        console.error('Error loading counties:', error);
+                        console.error('[ERROR] loadCountiesForState: Error loading counties:', error);
                     });
             }
             

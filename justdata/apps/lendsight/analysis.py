@@ -754,7 +754,7 @@ Top Lenders by Loan Volume:
         Return ONLY a valid JSON object with the three keys specified above. Do not include any other text or explanation.
         """
         
-        response = self._call_ai(prompt, max_tokens=3000, temperature=0.3)
+        response = self._call_ai(prompt, max_tokens=6000, temperature=0.3)  # Increased for 3 discussions
         
         # Parse the JSON response
         try:
@@ -775,13 +775,40 @@ Top Lenders by Loan Volume:
             return discussions
         except json.JSONDecodeError as e:
             print(f"Error parsing JSON response: {e}")
-            print(f"Response was: {response[:500]}")
-            # Fallback: return empty strings
-            return {
-                'demographic_overview_discussion': '',
-                'income_neighborhood_discussion': '',
-                'top_lenders_detailed_discussion': ''
-            }
+            print(f"Response was: {response[:1000]}")  # Show more of the response
+            print(f"Response length: {len(response)}")
+            
+            # Try to extract partial data if possible
+            try:
+                # Try to find and extract individual discussions even if JSON is malformed
+                import re
+                partial_discussions = {}
+                for key in ['demographic_overview_discussion', 'income_neighborhood_discussion', 'top_lenders_detailed_discussion']:
+                    # Look for the key and extract its value (handle escaped quotes and newlines)
+                    pattern = f'"{key}":\\s*"([^"]*(?:\\\\.[^"]*)*)"'
+                    match = re.search(pattern, response, re.DOTALL)
+                    if match:
+                        partial_discussions[key] = match.group(1).replace('\\"', '"').replace('\\n', '\n')
+                    else:
+                        partial_discussions[key] = ''
+                
+                # Only return partial data if we got meaningful content (not just empty strings)
+                if any(v and v.strip() for v in partial_discussions.values()):
+                    print(f"  [WARNING] Extracted partial discussions from malformed JSON")
+                    # Fill in empty ones with empty string
+                    for key in ['demographic_overview_discussion', 'income_neighborhood_discussion', 'top_lenders_detailed_discussion']:
+                        if key not in partial_discussions or not partial_discussions[key]:
+                            partial_discussions[key] = ''
+                    return partial_discussions
+            except Exception as extract_error:
+                print(f"  [ERROR] Could not extract partial data: {extract_error}")
+            
+            # If extraction failed or returned only empty strings, re-raise to trigger fallback in core.py
+            print("  [WARNING] Falling back to individual discussion calls due to JSON parsing error...")
+            raise  # Re-raise to trigger fallback in core.py
+        except Exception as e:
+            print(f"Error in generate_all_table_discussions: {e}")
+            raise
     
     def generate_top_lenders_detailed_discussion(self, data: Dict[str, Any]) -> str:
         """Generate at least 2 paragraphs discussing the top lenders detailed table data."""

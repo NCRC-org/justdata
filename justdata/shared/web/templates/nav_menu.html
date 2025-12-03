@@ -1,0 +1,33 @@
+<!-- Navigation Menu -->
+<nav class="nav-menu" role="navigation" aria-label="Main navigation">
+    <!-- Hamburger Menu Button -->
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle navigation menu" aria-expanded="false" type="button">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+    </button>
+    <!-- Navigation Dropdown Menu -->
+    <ul class="nav-list" id="navList">
+        <li class="nav-item nav-item-dropdown">
+            <a href="#" class="nav-link dropdown-toggle" id="applicationsDropdown" aria-haspopup="true" aria-expanded="false">
+                Applications <i class="fas fa-chevron-down"></i>
+            </a>
+            <ul class="nav-dropdown" id="applicationsDropdownMenu" aria-labelledby="applicationsDropdown">
+                <li><a href="/lendsight/" class="dropdown-link">LendSight</a></li>
+                <li><a href="/branchseeker/" class="dropdown-link">BranchSeeker</a></li>
+                <li><a href="/bizsight/" class="dropdown-link">BizSight</a></li>
+                <li><a href="/branchmapper/" class="dropdown-link">BranchMapper</a></li>
+                <li><a href="/mergermeter/" class="dropdown-link">MergerMeter</a></li>
+            </ul>
+        </li>
+        <li class="nav-item">
+            <a href="/about" class="nav-link">About</a>
+        </li>
+        <li class="nav-item">
+            <a href="/contact" class="nav-link">Contact Us</a>
+        </li>
+    </ul>
+</nav>
+<!-- Overlay for menu (outside nav for proper z-index) -->
+<div class="nav-overlay" id="navOverlay"></div>
+

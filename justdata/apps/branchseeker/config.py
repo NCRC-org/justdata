@@ -8,7 +8,15 @@ import os
 # Base directories (project root - 2 levels up from config.py: branchseeker -> apps -> root)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DATA_DIR = os.path.join(BASE_DIR, '..', 'data')
-TEMPLATES_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'templates')
+# Use BranchSeeker-specific templates directory (use absolute path)
+BRANCHSEEKER_TEMPLATES_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), 'templates'))
+# Fallback to shared templates if BranchSeeker-specific doesn't exist
+SHARED_TEMPLATES_DIR = os.path.abspath(os.path.join(BASE_DIR, 'shared', 'web', 'templates'))
+# Use BranchSeeker templates if they exist, otherwise use shared
+if os.path.exists(BRANCHSEEKER_TEMPLATES_DIR):
+    TEMPLATES_DIR = BRANCHSEEKER_TEMPLATES_DIR
+else:
+    TEMPLATES_DIR = SHARED_TEMPLATES_DIR
 STATIC_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'static')
 
 # Ensure output directory exists

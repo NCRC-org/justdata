@@ -35,17 +35,14 @@
     <header class="header">
         <div class="header-content">
             <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;">
-                </div>
                 <div class="header-title-section">
-                    <h1>BizSight</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
+                    <h1><span class="app-name-part1">BIZ</span><span class="app-name-part2">SIGHT</span></h1>
+                    <div class="header-tagline">
+                        <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
                     </div>
+                </div>
+                <div class="header-nav-wrapper">
+                    {% include 'nav_menu.html' %}
                 </div>
             </div>
         </div>
@@ -78,21 +75,6 @@
                 </div>
             </div>
             
-            <h3 style="margin-top: 40px;"><i class="fas fa-book"></i> Documentation</h3>
-            <div class="sidebar-docs">
-                <a href="/static/docs/README.md" class="doc-link" target="_blank">
-                    <i class="fas fa-file-alt"></i>
-                    <span>User Guide</span>
-                </a>
-                <a href="/static/docs/API.md" class="doc-link" target="_blank">
-                    <i class="fas fa-code"></i>
-                    <span>API Documentation</span>
-                </a>
-                <a href="/static/docs/DEPLOYMENT.md" class="doc-link" target="_blank">
-                    <i class="fas fa-server"></i>
-                    <span>Deployment Guide</span>
-                </a>
-            </div>
         </aside>
 
         <!-- Main Content -->
@@ -108,65 +90,34 @@
                 </div>
 
                 <form id="analysisForm" class="analysis-form">
-                    <!-- Selection Type Radio Buttons -->
-                    <div class="form-group" style="text-align: center;" data-intro="Choose how you want to select your analysis area." data-step="1">
-                        <div style="display: block; margin-bottom: 10px; font-weight: 600;">
-                            <i class="fas fa-filter"></i>
-                            Select By:
-                        </div>
-                        <div class="selection-mode-container" style="display: inline-flex; gap: 20px; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; justify-content: center;">
-                            <label class="radio-option" style="display: flex; align-items: center; cursor: pointer;">
-                                <input type="radio" name="selection_type" id="selection_type_county" value="county" checked style="margin-right: 8px;">
-                                <span>County</span>
-                            </label>
-                            <label class="radio-option" style="display: flex; align-items: center; cursor: pointer;">
-                                <input type="radio" name="selection_type" id="selection_type_state" value="state" style="margin-right: 8px;">
-                                <span>State</span>
-                            </label>
-                        </div>
-                        <small class="help-text">
-                            <i class="fas fa-info-circle"></i>
-                            Choose how you want to select your analysis area.
-                        </small>
-                    </div>
-
                     <!-- County Selection -->
-                    <div class="form-group" id="county-selection-group" data-intro="Select one or more counties to analyze." data-step="2">
+                    <div class="form-group" id="county-selection-group" data-intro="First, filter by state to narrow the county list. Then select one county to analyze." data-step="1">
                         <label for="state-filter-select">
                             <i class="fas fa-map"></i>
-                            Filter by State (Optional)
+                            Filter by State
+                            <span id="state-loading-spinner" style="display: none; margin-left: 10px;">
+                                <i class="fas fa-spinner fa-spin" style="color: var(--ncrc-primary-blue);"></i>
+                                <span style="font-size: 0.9em; color: #666;">Loading states...</span>
+                            </span>
                         </label>
-                        <select id="state-filter-select" name="state_filter" style="width: 100%; margin-bottom: 15px;" placeholder="Select a state to filter counties...">
-                            <option value="">All States</option>
+                        <select id="state-filter-select" name="state_filter" required style="width: 100%; margin-bottom: 15px;" placeholder="Select a state" disabled>
+                            <option value="">Loading states...</option>
                         </select>
                         <small class="help-text" style="margin-bottom: 15px; display: block;">
                             <i class="fas fa-info-circle"></i>
-                            Optionally select a state to filter the county list below.
+                            Select a state to see available counties.
                         </small>
-                        <label for="county-select">
-                            <i class="fas fa-map-marker-alt"></i>
-                            Counties
-                        </label>
-                        <select id="county-select" name="counties" multiple="multiple" style="width: 100%;" placeholder="Select counties..."></select>
-                        <small class="help-text">
-                            <i class="fas fa-info-circle"></i>
-                            Select one or more counties for business analysis.
-                        </small>
-                    </div>
-
-                    <!-- State Selection -->
-                    <div class="form-group" id="state-selection-group" style="display: none;">
-                        <label for="state-select">
-                            <i class="fas fa-map"></i>
-                            State
-                        </label>
-                        <select id="state-select" name="state_code" style="width: 100%;" placeholder="Select a state...">
-                            <option value="">Select a state...</option>
-                        </select>
-                        <small class="help-text">
-                            <i class="fas fa-info-circle"></i>
-                            Select a state to analyze business data for that state.
-                        </small>
+                        <div id="county-selection-wrapper" style="display: none;">
+                            <label for="county-select">
+                                <i class="fas fa-map-marker-alt"></i>
+                                County
+                            </label>
+                            <select id="county-select" name="counties" required style="width: 100%;" placeholder="Select a county"></select>
+                            <small class="help-text">
+                                <i class="fas fa-info-circle"></i>
+                                Select one county for business analysis.
+                            </small>
+                        </div>
                     </div>
 
                     <div class="form-group" style="display: none;" data-intro="Year range is automatically set to last 5 years" data-step="3">
@@ -283,8 +234,27 @@
                     </div>
                 </div>
             </div>
-
-
+            
+            <!-- Documentation Card -->
+            <div class="analysis-card documentation-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-book"></i> Documentation</h2>
+                </div>
+                <div class="sidebar-docs">
+                    <a href="/static/docs/README.md" class="doc-link" target="_blank">
+                        <i class="fas fa-file-alt"></i>
+                        <span>User Guide</span>
+                    </a>
+                    <a href="/static/docs/API.md" class="doc-link" target="_blank">
+                        <i class="fas fa-code"></i>
+                        <span>API Documentation</span>
+                    </a>
+                    <a href="/static/docs/DEPLOYMENT.md" class="doc-link" target="_blank">
+                        <i class="fas fa-server"></i>
+                        <span>Deployment Guide</span>
+                    </a>
+                </div>
+            </div>
         </main>
         </div> <!-- End content-wrapper -->
     </div> <!-- End container -->
@@ -292,29 +262,29 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-container">
-            <div class="footer-col">
+            <div class="footer-col footer-brand">
                 <h4>BizSight</h4>
                 <p>AI-powered business intelligence platform</p>
             </div>
-            <div class="footer-col">
-                <h4>Developed by</h4>
-                <p>NCRC - National Community Reinvestment Coalition<br>
-                Jad Edlebi &amp; Jason Richardson</p>
+            <div class="footer-col footer-organization">
+                <h4>Organization</h4>
+                <p>National Community Reinvestment Coalition</p>
+                <p class="footer-developers">Developed by Jad Edlebi &amp; Jason Richardson</p>
             </div>
-            <div class="footer-col">
-                <h4>Links</h4>
-                <p>
-                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
-                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
-                </p>
+            <div class="footer-col footer-links">
+                <h4>Resources</h4>
+                <ul class="footer-link-list">
+                    <li><a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                    <li><a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a></li>
+                </ul>
             </div>
             <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img">
+                <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" class="footer-logo-img">
             </div>
         </div>
         <div class="footer-bottom">
-            &copy; 2025 JustData - BizSight. Powered by AI and BigQuery.<br>
-            <span class="version-text">Version 1.0.0</span>
+            <p>&copy; 2025 JustData - BizSight. Powered by AI and BigQuery.</p>
+            <p class="version-text">Version 1.0.0</p>
         </div>
     </footer>
 
@@ -325,6 +295,10 @@
     <!-- Intro.js for onboarding tour -->
     <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
     <!-- Your app.js (after dependencies) -->
+    <script>
+        // Set base URL for API calls (with blueprint prefix)
+        window.APP_BASE_URL = '{{ app_base_url|default("/bizsight") }}';
+    </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

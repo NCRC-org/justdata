@@ -3,23 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LendSight - AI-Powered Lending Insights</title>
-    <meta name="description" content="AI-powered HMDA mortgage lending data analyzer with BigQuery integration. Generate comprehensive lending market analysis reports.">
-    <meta name="keywords" content="LendSight, HMDA, mortgage lending, fair lending, AI, BigQuery, market intelligence">
+    <title>{{ app_title|default('BranchSeeker') }} - AI-Powered Banking Insights</title>
+    <meta name="description" content="AI-powered bank branch data analyzer with BigQuery integration. Generate comprehensive banking market analysis reports.">
+    <meta name="keywords" content="{{ app_title|default('BranchSeeker') }}, banking, branch analysis, AI, BigQuery, market intelligence">
     <meta name="author" content="JustData - National Community Reinvestment Coalition">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://justdata.app/lendsight/">
-    <meta property="og:title" content="LendSight - AI-Powered Lending Insights">
-    <meta property="og:description" content="Generate comprehensive mortgage lending market analysis reports with AI-powered insights.">
+    <meta property="og:url" content="https://justdata.app/branchseeker/">
+    <meta property="og:title" content="BranchSeeker - AI-Powered Banking Insights">
+    <meta property="og:description" content="Generate comprehensive banking market analysis reports with AI-powered insights.">
     <meta property="og:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://justdata.app/lendsight/">
-    <meta property="twitter:title" content="LendSight - AI-Powered Lending Insights">
-    <meta property="twitter:description" content="Generate comprehensive mortgage lending market analysis reports with AI-powered insights.">
+    <meta property="twitter:url" content="https://justdata.app/branchseeker/">
+    <meta property="twitter:title" content="BranchSeeker - AI-Powered Banking Insights">
+    <meta property="twitter:description" content="Generate comprehensive banking market analysis reports with AI-powered insights.">
     <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -35,14 +35,14 @@
     <header class="header">
         <div class="header-content">
             <div class="header-layout">
-                <div class="header-title-section">
-                    <h1><span class="app-name-part1">LEND</span><span class="app-name-part2">SIGHT</span></h1>
-                    <div class="header-tagline">
-                        <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
-                    </div>
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
                 </div>
-                <div class="header-nav-wrapper">
-                    {% include 'nav_menu.html' %}
+                <div class="header-title-section">
+                    <h1><span class="app-name-part1">BRANCH</span><span class="app-name-part2">SEEKER</span></h1>
+                </div>
+                <div class="header-tagline">
+                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
                 </div>
             </div>
         </div>
@@ -53,26 +53,42 @@
         <aside class="sidebar">
             <h3><i class="fas fa-star"></i> What You'll Get</h3>
             <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="Access HMDA mortgage lending data by geography, institution, and loan type. Analyze application approval rates, denial reasons, and lending patterns across demographic groups. Track changes in lending volume and market share over time.">
+                <div class="feature-card" data-tooltip="Access state and county-level data on bank branch networks, including which institutions operate in each market and their deposit market share. See the percentage of branches located in low-to-moderate income census tracts, majority-minority census tracts, or areas that are both. Track changes in branch counts and market concentration over time to identify expansion or contraction patterns in specific geographies and community types.">
                     <i class="fas fa-chart-bar"></i>
                     <h4>Comprehensive Data</h4>
-                    <p>Detailed lending statistics, market share analysis, and approval trends</p>
+                    <p>Detailed branch statistics, market share analysis, and growth trends</p>
                 </div>
-                <div class="feature-card" data-tooltip="AI-generated narrative analysis of lending patterns, fair lending indicators, and market dynamics based on NCRC's curated HMDA datasets. All data points are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries.">
+                <div class="feature-card" data-tooltip="AI-generated narrative analysis of branch distribution patterns, market concentration trends, and demographic service coverage based on NCRC's curated datasets. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. Verify specific claims and data points using the Excel Export, which contains the complete underlying data compiled by NCRC research staff.">
                     <i class="fas fa-robot"></i>
                     <h4>AI Insights</h4>
-                    <p>Claude AI-powered analysis of lending strategies and market dynamics</p>
+                    <p>Claude AI-powered analysis of banking strategies and market dynamics</p>
                 </div>
-                <div class="feature-card" data-tooltip="Download structured data tables showing lending volumes, approval rates, and demographic breakdowns by institution and geography. Use this file to conduct custom analysis, create additional visualizations, or verify findings.">
+                <div class="feature-card" data-tooltip="Download structured data tables showing branch counts, deposit market shares, and demographic breakdowns by institution, state, and county. Use this file to conduct custom analysis, create additional visualizations, or verify findings from the AI-generated insights and web reports.">
                     <i class="fas fa-file-excel"></i>
                     <h4>Excel Export</h4>
                     <p>Structured data in Excel format for further analysis and reporting</p>
                 </div>
-                <div class="feature-card" data-tooltip="View formatted tables and charts showing lending distributions, market concentration metrics, and demographic patterns. Export individual tables or charts as needed.">
+                <div class="feature-card" data-tooltip="View formatted tables and charts showing branch distributions, market concentration metrics, and demographic coverage statistics. Export individual tables or charts as needed. For detailed analysis or data verification, use the Excel Export option to access the complete underlying dataset.">
                     <i class="fas fa-globe"></i>
                     <h4>Web Report</h4>
                     <p>Interactive web-based report with charts, tables, and export options</p>
                 </div>
+            </div>
+            
+            <h3 style="margin-top: 40px;"><i class="fas fa-book"></i> Documentation</h3>
+            <div class="sidebar-docs">
+                <a href="/static/docs/README.md" class="doc-link" target="_blank">
+                    <i class="fas fa-file-alt"></i>
+                    <span>User Guide</span>
+                </a>
+                <a href="/static/docs/API.md" class="doc-link" target="_blank">
+                    <i class="fas fa-code"></i>
+                    <span>API Documentation</span>
+                </a>
+                <a href="/static/docs/DEPLOYMENT.md" class="doc-link" target="_blank">
+                    <i class="fas fa-server"></i>
+                    <span>Deployment Guide</span>
+                </a>
             </div>
         </aside>
 
@@ -81,46 +97,77 @@
         <main class="main-content">
             <div class="analysis-card">
                 <div class="card-header">
-                    <h2><i class="fas fa-search"></i> Generate Lending Analysis</h2>
-                    <p>Enter geography and years to analyze HMDA mortgage lending data with AI-powered insights</p>
+                    <h2><i class="fas fa-search"></i> Generate Branch Analysis</h2>
+                    <p>Enter counties and years to analyze FDIC branch data with AI-powered insights</p>
                     <button id="startTourBtn" class="tour-btn" style="margin-top: 10px; padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
                         <i class="fas fa-question-circle"></i> Take a Tour
                     </button>
                 </div>
 
                 <form id="analysisForm" class="analysis-form">
-                    <!-- County Selection -->
-                    <div class="form-group" id="county-selection-group" data-intro="First, filter by state to narrow the county list. Then select one county to analyze." data-step="1">
-                        <label for="state-filter-select" data-tooltip="Narrow the county list to a specific state. This makes it easier to find the county you're looking for.">
+                    <!-- Selection Type Radio Buttons -->
+                    <div class="form-group" style="text-align: center;" data-intro="Choose how you want to select your analysis area. Select 'County' to pick specific counties, or 'State' to analyze all counties in a state." data-step="1">
+                        <div style="display: block; margin-bottom: 10px; font-weight: 600;">
+                            <i class="fas fa-filter"></i>
+                            Select By:
+                        </div>
+                        <div class="selection-mode-container" style="display: inline-flex; gap: 20px; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; justify-content: center;">
+                            <label class="radio-option" style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="selection_type" id="selection_type_county" value="county" checked style="margin-right: 8px;">
+                                <span>County</span>
+                            </label>
+                            <label class="radio-option" style="display: flex; align-items: center; cursor: pointer;">
+                                <input type="radio" name="selection_type" id="selection_type_state" value="state" style="margin-right: 8px;">
+                                <span>State</span>
+                            </label>
+                        </div>
+                        <small class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Choose how you want to select your analysis area. You cannot mix selection types.
+                        </small>
+                    </div>
+
+                    <!-- County Selection (default, shown when selection_type = 'county') -->
+                    <div class="form-group" id="county-selection-group" data-intro="First, optionally filter by state to narrow the county list. Then select one or more counties to analyze. Tip: Select up to 3 counties for faster processing." data-step="2">
+                        <label for="state-filter-select" data-tooltip="Narrow the county list to a specific state. This makes it easier to find the counties you're looking for.">
                             <i class="fas fa-map"></i>
-                            Filter by State
-                            <span id="state-loading-spinner" style="display: none; margin-left: 10px;">
-                                <i class="fas fa-spinner fa-spin" style="color: var(--ncrc-primary-blue);"></i>
-                                <span style="font-size: 0.9em; color: #666;">Loading states...</span>
-                            </span>
+                            Filter by State (Optional)
                         </label>
-                        <select id="state-filter-select" name="state_filter" required style="width: 100%; margin-bottom: 15px;" placeholder="Select a state" disabled>
-                            <option value="">Loading states...</option>
+                        <select id="state-filter-select" name="state_filter" style="width: 100%; margin-bottom: 15px;" placeholder="Select a state to filter counties...">
+                            <option value="">All States</option>
                         </select>
                         <small class="help-text" style="margin-bottom: 15px; display: block;">
                             <i class="fas fa-info-circle"></i>
-                            Select a state to see available counties.
+                            Optionally select a state to filter the county list below.
                         </small>
-                        <div id="county-selection-wrapper" style="display: none;">
-                            <label for="county-select" data-tooltip="Select one county to analyze. You can search by typing.">
-                                <i class="fas fa-map-marker-alt"></i>
-                                County
-                                <span id="county-loading-spinner" style="display: none; margin-left: 10px;">
-                                    <i class="fas fa-spinner fa-spin" style="color: var(--ncrc-primary-blue);"></i>
-                                    <span style="font-size: 0.9em; color: #666;">Loading counties...</span>
-                                </span>
-                            </label>
-                            <select id="county-select" name="counties" required style="width: 100%;" placeholder="Select a county"></select>
-                            <small class="help-text">
-                                <i class="fas fa-info-circle"></i>
-                                Select one county for lending analysis.
-                            </small>
-                        </div>
+                        <label for="county-select" data-tooltip="Select one or more counties to analyze. You can search by typing. For best performance, limit to 3 counties.">
+                            <i class="fas fa-map-marker-alt"></i>
+                            Counties
+                            <span id="county-loading-spinner" style="display: none; margin-left: 10px;">
+                                <i class="fas fa-spinner fa-spin" style="color: var(--ncrc-primary-blue);"></i>
+                                <span style="font-size: 0.9em; color: #666;">Loading counties...</span>
+                            </span>
+                        </label>
+                        <select id="county-select" name="counties" multiple="multiple" style="width: 100%;" placeholder="Select counties..."></select>
+                        <small class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Select one or more counties. For better timing, we recommend limiting to a maximum of three counties selected.
+                        </small>
+                    </div>
+
+                    <!-- State Selection (shown when selection_type = 'state') -->
+                    <div class="form-group" id="state-selection-group" style="display: none;">
+                        <label for="state-select">
+                            <i class="fas fa-map"></i>
+                            State
+                        </label>
+                        <select id="state-select" name="state_code" style="width: 100%;" placeholder="Select a state...">
+                            <option value="">Select a state...</option>
+                        </select>
+                        <small class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Select a state to analyze all counties within that state.
+                        </small>
                     </div>
 
 
@@ -142,6 +189,7 @@
                                     <option value="2022">2022</option>
                                     <option value="2023">2023</option>
                                     <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
                                 </select>
                             </div>
                             <div class="year-select-group">
@@ -156,16 +204,17 @@
                                     <option value="2022">2022</option>
                                     <option value="2023">2023</option>
                                     <option value="2024">2024</option>
+                                    <option value="2025">2025</option>
                                 </select>
                             </div>
                         </div>
                         <small class="help-text">
                             <i class="fas fa-info-circle"></i>
-                            Select a range of at least 3 years (e.g., 2019-2021)
+                            Select a range of at least 3 years (e.g., 2020-2022)
                         </small>
                     </div>
 
-                    <button type="submit" class="submit-btn" id="submitBtn" data-intro="Click here to start your lending analysis! The process typically takes 2-5 minutes." data-step="4" data-tooltip="Click to generate your analysis. Make sure you've selected geography and a year range first.">
+                    <button type="submit" class="submit-btn" id="submitBtn" data-intro="Click here to start your analysis! The process typically takes 2-5 minutes depending on your selections. You'll see progress updates as it runs." data-step="4" data-tooltip="Click to generate your analysis. Make sure you've selected counties and a year range first.">
                         <i class="fas fa-magic"></i>
                         <span>Generate Analysis</span>
                     </button>
@@ -191,7 +240,7 @@
                         <p class="progress-text" id="progressText">Initializing analysis...</p>
                         <div class="progress-info">
                             <i class="fas fa-clock"></i>
-                            <small>Analysis typically takes a few minutes depending on the geography and years selected.</small>
+                            <small>Analysis typically takes a few minutes depending on the number of counties and years selected.</small>
                         </div>
                     </div>
                 </div>
@@ -204,7 +253,7 @@
                             <h3>Analysis Complete!</h3>
                         </div>
                         <div class="results-content">
-                            <p>Your HMDA lending analysis has been generated successfully.</p>
+                            <p>Your FDIC branch analysis has been generated successfully.</p>
                             <div class="download-options">
                                 <button class="download-btn" id="viewReportBtn">
                                     <i class="fas fa-chart-bar"></i>
@@ -240,27 +289,8 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Documentation Card -->
-            <div class="analysis-card documentation-card">
-                <div class="card-header">
-                    <h2><i class="fas fa-book"></i> Documentation</h2>
-                </div>
-                <div class="sidebar-docs">
-                    <a href="/static/docs/README.md" class="doc-link" target="_blank">
-                        <i class="fas fa-file-alt"></i>
-                        <span>User Guide</span>
-                    </a>
-                    <a href="/static/docs/API.md" class="doc-link" target="_blank">
-                        <i class="fas fa-code"></i>
-                        <span>API Documentation</span>
-                    </a>
-                    <a href="/static/docs/DEPLOYMENT.md" class="doc-link" target="_blank">
-                        <i class="fas fa-server"></i>
-                        <span>Deployment Guide</span>
-                    </a>
-                </div>
-            </div>
+
+
         </main>
         </div> <!-- End content-wrapper -->
     </div> <!-- End container -->
@@ -268,29 +298,29 @@
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-container">
-            <div class="footer-col footer-brand">
-                <h4>LendSight</h4>
-                <p>AI-powered mortgage lending intelligence platform</p>
+            <div class="footer-col">
+                <h4>BranchSeeker</h4>
+                <p>AI-powered banking market intelligence platform</p>
             </div>
-            <div class="footer-col footer-organization">
-                <h4>Organization</h4>
-                <p>National Community Reinvestment Coalition</p>
-                <p class="footer-developers">Developed by Jad Edlebi &amp; Jason Richardson</p>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
             </div>
-            <div class="footer-col footer-links">
-                <h4>Resources</h4>
-                <ul class="footer-link-list">
-                    <li><a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
-                    <li><a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a></li>
-                </ul>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
             </div>
             <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" class="footer-logo-img">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; 2025 JustData - LendSight. Powered by AI and BigQuery.</p>
-            <p class="version-text">Version 1.0.0</p>
+            &copy; 2025 JustData - BranchSeeker. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
         </div>
     </footer>
 
@@ -300,30 +330,22 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <!-- Intro.js for onboarding tour -->
     <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
-    <!-- Set base URL for API calls BEFORE loading app.js -->
+    <!-- Your app.js (after dependencies) -->
     <script>
         // Set base URL for API calls (with blueprint prefix)
-        window.APP_BASE_URL = '{{ app_base_url|default("/lendsight") }}';
-        console.log('[DEBUG] APP_BASE_URL set to:', window.APP_BASE_URL);
-        // Set flag to tell shared app.js to skip state management for LendSight
-        window.LENDSIGHT_MODE = true;
+        window.APP_BASE_URL = '{{ app_base_url|default("/branchseeker") }}';
     </script>
-    <!-- Your app.js (after dependencies) -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     
-    <!-- LendSight-specific state loading -->
+    <!-- BranchSeeker-specific state loading -->
     <script>
-        // LendSight-specific state and county loading
         $(document).ready(function() {
-            console.log('[DEBUG] LendSight jQuery ready block executing...');
+            console.log('[DEBUG] BranchSeeker jQuery ready block executing...');
             
-            // Guard to prevent multiple simultaneous calls to loadStates
             let isLoadingStates = false;
             let statesLoaded = false;
             
-            // Load states on page load
             function loadStates() {
-                // Prevent multiple simultaneous calls
                 if (isLoadingStates) {
                     console.log('[DEBUG] loadStates: Already loading, skipping...');
                     return;
@@ -335,19 +357,9 @@
                     return;
                 }
                 
-                // Preserve current selection if any
-                const currentValue = stateSelect.val();
-                console.log(`[DEBUG] loadStates: Current value before load: ${currentValue}`);
-                
                 isLoadingStates = true;
                 
-                // Show loading spinner
-                const stateLoadingSpinner = $('#state-loading-spinner');
-                if (stateLoadingSpinner.length) {
-                    stateLoadingSpinner.show();
-                }
-                
-                const baseUrl = window.APP_BASE_URL || '/lendsight';
+                const baseUrl = window.APP_BASE_URL || '/branchseeker';
                 console.log(`[DEBUG] loadStates: Fetching from ${baseUrl}/states`);
                 fetch(`${baseUrl}/states`)
                     .then(response => {
@@ -360,21 +372,13 @@
                     .then(states => {
                         console.log('[DEBUG] loadStates: States response received:', states);
                         console.log('[DEBUG] loadStates: States array length:', states ? states.length : 'null');
-                        console.log('[DEBUG] loadStates: States type:', Array.isArray(states) ? 'array' : typeof states);
                         
-                        // Hide loading spinner
-                        if (stateLoadingSpinner.length) {
-                            stateLoadingSpinner.hide();
-                        }
-                        
-                        // Destroy Select2 if it exists to prevent conflicts
                         if (stateSelect.hasClass('select2-hidden-accessible')) {
                             stateSelect.select2('destroy');
                         }
                         
                         stateSelect.empty();
-                        stateSelect.prop('disabled', false);
-                        stateSelect.append('<option value="">Select a state</option>');
+                        stateSelect.append('<option value="">All States</option>');
                         
                         if (!states || states.length === 0) {
                             console.warn('[WARNING] loadStates: No states in response!');
@@ -387,38 +391,25 @@
                             const stateName = state.name || state;
                             const stateCode = state.code || state;
                             console.log(`[DEBUG] loadStates: Processing state: name="${stateName}", code="${stateCode}"`);
-                            // Store both name and code as data attributes, but use name as value
                             const option = new Option(stateName, stateName);
                             $(option).data('code', stateCode);
                             stateSelect.append(option);
                             addedCount++;
                         });
                         
-                        console.log(`[DEBUG] loadStates: Added ${addedCount} states to dropdown (total options: ${stateSelect.find('option').length})`);
+                        console.log(`[DEBUG] loadStates: Added ${addedCount} states to dropdown`);
                         
-                        // Reinitialize Select2 for state dropdown
                         stateSelect.select2({
-                            placeholder: 'Select a state',
+                            placeholder: 'All States',
                             allowClear: true,
                             width: '100%'
                         });
-                        
-                        console.log('[DEBUG] loadStates: Select2 reinitialized');
                         
                         statesLoaded = true;
                         isLoadingStates = false;
                     })
                     .catch(error => {
                         console.error('[ERROR] loadStates: Error loading states:', error);
-                        // Hide loading spinner
-                        const stateLoadingSpinner = $('#state-loading-spinner');
-                        if (stateLoadingSpinner.length) {
-                            stateLoadingSpinner.hide();
-                        }
-                        // Enable dropdown and show error
-                        stateSelect.prop('disabled', false);
-                        stateSelect.empty();
-                        stateSelect.append('<option value="">Error loading states. Please refresh.</option>');
                         isLoadingStates = false;
                     });
             }
@@ -436,7 +427,7 @@
                 loadingSpinner.show();
                 countySelect.prop('disabled', true);
                 
-                const baseUrl = window.APP_BASE_URL || '/lendsight';
+                const baseUrl = window.APP_BASE_URL || '/branchseeker';
                 let url = `${baseUrl}/counties`;
                 if (stateCode) {
                     // Get state code from the selected state option
@@ -510,38 +501,27 @@
                 const selectedState = $(this).val();
                 const selectedOption = $(this).find('option:selected');
                 const stateCode = selectedOption.data('code');
-                const countyWrapper = $('#county-selection-wrapper');
                 
                 console.log(`[DEBUG] State filter changed: selectedState="${selectedState}", stateCode="${stateCode}"`);
                 
                 if (selectedState && stateCode) {
-                    // Show county dropdown and load counties filtered by state
-                    countyWrapper.slideDown(200);
+                    // Load counties filtered by state
                     loadCounties(stateCode);
                 } else {
-                    // Hide county dropdown and clear selection
-                    countyWrapper.slideUp(200);
-                    const countySelect = $('#county-select');
-                    if (countySelect.hasClass('select2-hidden-accessible')) {
-                        countySelect.val(null).trigger('change');
-                        countySelect.select2('destroy');
-                    } else {
-                        countySelect.val('');
-                    }
+                    // Load all counties
+                    loadCounties();
                 }
             });
             
-            // Load states on page load - only once
             if (!statesLoaded) {
                 console.log('[DEBUG] Calling loadStates() on page load...');
                 loadStates();
             }
             
-            // Hide county dropdown initially - wait for state selection
-            $('#county-selection-wrapper').hide();
-            console.log('[DEBUG] County dropdown hidden until state is selected');
+            // Load counties on page load
+            console.log('[DEBUG] Calling loadCounties() on page load...');
+            loadCounties();
         });
     </script>
 </body>
-</html>
-
+</html> 

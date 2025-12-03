@@ -3,7 +3,7 @@ BranchSeeker Blueprint for main JustData app.
 Converts the standalone BranchSeeker app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, send_file, Response, session
+from flask import Blueprint, render_template, request, jsonify, send_file, Response, session, url_for
 import os
 import tempfile
 import zipfile
@@ -14,8 +14,8 @@ import time
 import json
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
-from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result
-from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key
+from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
+from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR
 from .data_utils import get_available_counties
 from .core import run_analysis, parse_web_parameters
@@ -37,9 +37,11 @@ branchseeker_bp = Blueprint(
 def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
+    app_base_url = url_for('branchseeker.index').rstrip('/')
     return render_template('branchseeker_template.html', 
                          version=__version__,
-                         permissions=user_permissions)
+                         permissions=user_permissions,
+                         app_base_url=app_base_url)
 
 
 @branchseeker_bp.route('/branch-mapper')
@@ -113,8 +115,8 @@ def analyze():
             job_id = cached_result['job_id']
             result_data = cached_result['result_data']
             
-            # Store in progress tracker for compatibility
-            store_analysis_result(job_id, result_data)
+            # Result is already stored in BigQuery via store_cached_result
+            # No need for in-memory storage - BigQuery-only approach
             update_progress(job_id, {
                 'percent': 100,
                 'step': 'Analysis complete (from cache)',

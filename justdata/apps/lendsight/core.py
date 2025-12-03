@@ -188,7 +188,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             print(f"[DEBUG] Updating progress to fetching_census_data")
             progress_tracker.update_progress('fetching_census_data', 50, 'Fetching Census demographic data...')
         
-        census_data = {}
+        census_data = None
         try:
             print(f"[DEBUG] Importing census_utils...")
             from .census_utils import get_census_data_for_multiple_counties
@@ -205,90 +205,101 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 print(f"  [WARNING] CENSUS_API_KEY not set - Census data will not be available")
             else:
                 print(f"  [INFO] CENSUS_API_KEY is set")
-            print(f"[DEBUG] Calling get_census_data_for_multiple_counties with {len(clarified_counties)} counties...")
-            print(f"[DEBUG] This may take 30-60 seconds as it makes multiple API calls per county...")
-            if progress_tracker:
-                progress_tracker.update_progress('fetching_census_data', 50, f'Fetching Census data for {len(clarified_counties)} counties (this may take a minute)...')
             
-            # Use FIPS codes if provided, otherwise look them up
-            if counties_with_fips and len(counties_with_fips) > 0:
-                # FIPS codes already provided from frontend
-                print(f"  [INFO] Using FIPS codes provided from frontend for {len(counties_with_fips)} counties")
-                census_data = get_census_data_for_multiple_counties(counties_with_fips, state_code, api_key, progress_tracker)
+            # Check if census package is installed
+            try:
+                import census
+            except ImportError:
+                print(f"  [ERROR] 'census' package not installed. Install with: pip install census us requests")
+                print(f"  [ERROR] Census data will not be available until the package is installed.")
+                census_data = None
             else:
-                # Fallback: Look up FIPS codes from BigQuery
-                print(f"  [INFO] Looking up FIPS codes from BigQuery for {len(clarified_counties)} counties...")
-                from justdata.shared.utils.bigquery_client import get_bigquery_client
-                from .config import PROJECT_ID
-                counties_with_fips_lookup = []
-                client = get_bigquery_client(PROJECT_ID)
+                # Only proceed with Census API calls if package is installed
+                print(f"[DEBUG] Calling get_census_data_for_multiple_counties with {len(clarified_counties)} counties...")
+                print(f"[DEBUG] This may take 30-60 seconds as it makes multiple API calls per county...")
+                if progress_tracker:
+                    progress_tracker.update_progress('fetching_census_data', 50, f'Fetching Census data for {len(clarified_counties)} counties (this may take a minute)...')
                 
-                for county_name in clarified_counties:
-                    try:
-                        query = f"""
-                        SELECT DISTINCT county_state, geoid5
-                        FROM geo.cbsa_to_county
-                        WHERE county_state = '{county_name}'
-                        LIMIT 1
-                        """
-                        query_job = client.query(query)
-                        results = list(query_job.result())
-                        if results and results[0].geoid5:
-                            geoid5 = str(results[0].geoid5).zfill(5)
-                            counties_with_fips_lookup.append({
-                                'name': county_name,
-                                'geoid5': geoid5,
-                                'state_fips': geoid5[:2],
-                                'county_fips': geoid5[2:]
-                            })
-                        else:
-                            print(f"  [WARNING] Could not find geoid5 for {county_name}, skipping Census data...")
-                    except Exception as e:
-                        print(f"  [WARNING] Error looking up FIPS for {county_name}: {e}")
-                
-                if counties_with_fips_lookup:
-                    census_data = get_census_data_for_multiple_counties(counties_with_fips_lookup, state_code, api_key, progress_tracker)
+                # Use FIPS codes if provided, otherwise look them up
+                if counties_with_fips and len(counties_with_fips) > 0:
+                    # FIPS codes already provided from frontend
+                    print(f"  [INFO] Using FIPS codes provided from frontend for {len(counties_with_fips)} counties")
+                    census_data = get_census_data_for_multiple_counties(counties_with_fips, state_code, api_key, progress_tracker)
                 else:
-                    print(f"  [WARNING] No counties with valid FIPS codes found, skipping Census data...")
-                    census_data = {}
-            print(f"[DEBUG] get_census_data_for_multiple_counties returned successfully")
-            if census_data and len(census_data) > 0:
-                print(f"  [OK] Retrieved Census data for {len(census_data)} counties")
-                print(f"  [DEBUG] Census data keys: {list(census_data.keys())}")
-                # Debug: print sample data
-                for county, data in list(census_data.items())[:1]:  # Print first county only
-                    print(f"  [DEBUG] Sample Census data for {county}:")
-                    print(f"    - Data keys: {list(data.keys())}")
+                    # Fallback: Look up FIPS codes from BigQuery
+                    print(f"  [INFO] Looking up FIPS codes from BigQuery for {len(clarified_counties)} counties...")
+                    from justdata.shared.utils.bigquery_client import get_bigquery_client
+                    from .config import PROJECT_ID
+                    counties_with_fips_lookup = []
+                    client = get_bigquery_client(PROJECT_ID)
                     
-                    # Check for new structure (time_periods) or old structure (demographics)
-                    if 'time_periods' in data:
-                        time_periods = data.get('time_periods', {})
-                        print(f"    - Time periods: {list(time_periods.keys())}")
-                        for period_key, period_data in time_periods.items():
-                            demographics = period_data.get('demographics', {})
-                            print(f"      - {period_key}: {period_data.get('year', 'N/A')}")
-                            print(f"        Total Population: {demographics.get('total_population', 'N/A')}")
-                            print(f"        White: {demographics.get('white_percentage', 0):.1f}%")
-                            print(f"        Black: {demographics.get('black_percentage', 0):.1f}%")
-                            print(f"        Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
-                    elif 'demographics' in data:
-                        demographics = data.get('demographics', {})
-                        print(f"    - Using legacy demographics format")
-                        print(f"    - Demographics keys: {list(demographics.keys()) if demographics else 'None'}")
-                        print(f"    - Total Population: {demographics.get('total_population', 'N/A')}")
-                        print(f"    - Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
-                        print(f"    - Black: {demographics.get('black_percentage', 0):.1f}%")
-                        print(f"    - White: {demographics.get('white_percentage', 0):.1f}%")
-                        print(f"    - Data year: {data.get('data_year', 'N/A')}")
-            else:
-                print(f"  [WARNING] No Census data retrieved (returned empty dict or None)")
-                print(f"  [DEBUG] Census data type: {type(census_data)}, value: {census_data}")
-                census_data = {}  # Ensure it's an empty dict, not None
+                    for county_name in clarified_counties:
+                        try:
+                            query = f"""
+                            SELECT DISTINCT county_state, geoid5
+                            FROM geo.cbsa_to_county
+                            WHERE county_state = '{county_name}'
+                            LIMIT 1
+                            """
+                            query_job = client.query(query)
+                            results = list(query_job.result())
+                            if results and results[0].geoid5:
+                                geoid5 = str(results[0].geoid5).zfill(5)
+                                counties_with_fips_lookup.append({
+                                    'name': county_name,
+                                    'geoid5': geoid5,
+                                    'state_fips': geoid5[:2],
+                                    'county_fips': geoid5[2:]
+                                })
+                            else:
+                                print(f"  [WARNING] Could not find geoid5 for {county_name}, skipping Census data...")
+                        except Exception as e:
+                            print(f"  [WARNING] Error looking up FIPS for {county_name}: {e}")
+                    
+                    if counties_with_fips_lookup:
+                        census_data = get_census_data_for_multiple_counties(counties_with_fips_lookup, state_code, api_key, progress_tracker)
+                    else:
+                        print(f"  [WARNING] No counties with valid FIPS codes found, skipping Census data...")
+                        census_data = None
+                
+                print(f"[DEBUG] get_census_data_for_multiple_counties returned successfully")
+                if census_data and len(census_data) > 0:
+                    print(f"  [OK] Retrieved Census data for {len(census_data)} counties")
+                    print(f"  [DEBUG] Census data keys: {list(census_data.keys())}")
+                    # Debug: print sample data
+                    for county, data in list(census_data.items())[:1]:  # Print first county only
+                        print(f"  [DEBUG] Sample Census data for {county}:")
+                        print(f"    - Data keys: {list(data.keys())}")
+                        
+                        # Check for new structure (time_periods) or old structure (demographics)
+                        if 'time_periods' in data:
+                            time_periods = data.get('time_periods', {})
+                            print(f"    - Time periods: {list(time_periods.keys())}")
+                            for period_key, period_data in time_periods.items():
+                                demographics = period_data.get('demographics', {})
+                                print(f"      - {period_key}: {period_data.get('year', 'N/A')}")
+                                print(f"        Total Population: {demographics.get('total_population', 'N/A')}")
+                                print(f"        White: {demographics.get('white_percentage', 0):.1f}%")
+                                print(f"        Black: {demographics.get('black_percentage', 0):.1f}%")
+                                print(f"        Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
+                        elif 'demographics' in data:
+                            demographics = data.get('demographics', {})
+                            print(f"    - Using legacy demographics format")
+                            print(f"    - Demographics keys: {list(demographics.keys()) if demographics else 'None'}")
+                            print(f"    - Total Population: {demographics.get('total_population', 'N/A')}")
+                            print(f"    - Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
+                            print(f"    - Black: {demographics.get('black_percentage', 0):.1f}%")
+                            print(f"    - White: {demographics.get('white_percentage', 0):.1f}%")
+                            print(f"    - Data year: {data.get('data_year', 'N/A')}")
+                else:
+                    print(f"  [WARNING] No Census data retrieved (returned empty dict or None)")
+                    print(f"  [DEBUG] Census data type: {type(census_data)}, value: {census_data}")
+                    census_data = None  # Store None when no data, not empty dict
         except Exception as census_error:
             print(f"  [WARNING] Error fetching Census data: {census_error}")
             import traceback
             traceback.print_exc()
-            census_data = {}
+            census_data = None
         
         print(f"[DEBUG] Census data fetch complete, moving to report building...")
         # Build report (pass census_data so it can be included in tables)
@@ -303,6 +314,21 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         # Add census data to report_data
         report_data['census_data'] = census_data
         
+        # Calculate total loans (sum of total_originations from all aggregated rows)
+        # all_results contains aggregated data (one row per lender/county/year)
+        # Each row has a total_originations count, so we sum those to get total loans
+        total_loans = 0
+        if all_results:
+            import pandas as pd
+            df = pd.DataFrame(all_results)
+            if 'total_originations' in df.columns:
+                total_loans = int(df['total_originations'].sum())
+            else:
+                # Fallback: if column doesn't exist, count rows (shouldn't happen)
+                total_loans = len(all_results)
+        
+        print(f"[DEBUG] Total loans calculated: {total_loans} (from {len(all_results)} aggregated rows)")
+        
         # Save Excel report
         if progress_tracker:
             progress_tracker.update_progress('building_report')
@@ -312,7 +338,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         excel_metadata = {
             'counties': clarified_counties,
             'years': years,
-            'total_records': len(all_results),
+            'total_records': total_loans,  # Use total loans, not row count
             'generated_at': datetime.now().isoformat(),
             'loan_purpose': loan_purpose if loan_purpose else ['purchase', 'refinance', 'equity'],  # Include loan purpose in metadata
             'census_data': census_data  # Include Census data for Methods sheet
@@ -529,8 +555,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         print("\nAnalysis completed successfully!")
         
         # Ensure census_data is properly formatted for JSON serialization
-        census_data_serialized = {}
-        if census_data and len(census_data) > 0:
+        census_data_serialized = None
+        if census_data and (not isinstance(census_data, dict) or len(census_data) > 0):
             from justdata.shared.analysis.ai_provider import convert_numpy_types
             try:
                 print(f"  [DEBUG] Before serialization: {len(census_data)} counties")
@@ -568,9 +594,14 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 print(f"  [ERROR] Error serializing census_data: {ser_error}")
                 import traceback
                 traceback.print_exc()
-                census_data_serialized = {}
+                census_data_serialized = None
         else:
-            print(f"  [WARNING] No census_data to serialize (type: {type(census_data)}, len: {len(census_data) if census_data else 0})")
+            if not census_data or (isinstance(census_data, dict) and len(census_data) == 0):
+                print(f"  [WARNING] No census_data to serialize - Census API returned no data")
+                census_data_serialized = None  # Store None instead of empty dict
+            else:
+                print(f"  [WARNING] No census_data to serialize (type: {type(census_data)}, len: {len(census_data) if census_data else 0})")
+                census_data_serialized = None
         
         # Debug: Check AI insights before returning
         print(f"\n[DEBUG] Final ai_insights keys: {list(ai_insights.keys())}")
@@ -588,7 +619,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             'metadata': {
                 'counties': clarified_counties,
                 'years': years,
-                'total_records': len(all_results),
+                'total_records': total_loans,  # Use total loans, not row count
                 'generated_at': datetime.now().isoformat(),
                 'loan_purpose': loan_purpose if loan_purpose else ['purchase', 'refinance', 'equity'],  # Include loan purpose in metadata
                 'census_data': census_data_serialized  # Include Census data for frontend display (serialized)

@@ -492,16 +492,13 @@
         <div class="header-content">
             <div class="header-layout">
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
                 </div>
                 <div class="header-title-section">
-                    <h1>BranchMapper</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                    <h1><span class="app-name-part1">BRANCH</span><span class="app-name-part2">MAPPER</span></h1>
                 </div>
                 <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
+                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
                 </div>
             </div>
         </div>
@@ -702,6 +699,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
+        // Set base URL for API calls (with blueprint prefix)
+        window.APP_BASE_URL = '{{ app_base_url|default("/branchmapper") }}';
+        
         let branchMap = null;
         let currentMarkers = [];
         let allBranches = [];
@@ -1238,7 +1238,8 @@
             // Try to fetch from API if available and on server
             if (isServer) {
                 try {
-                    const response = await fetch('/states');
+                    const baseUrl = window.APP_BASE_URL || '/branchmapper';
+                    const response = await fetch(`${baseUrl}/states`);
                     if (response.ok) {
                         const states = await response.json();
                         states.forEach(state => {
@@ -1326,8 +1327,9 @@
             // Try to fetch counties for the specific state (only if on server)
             if (isServer) {
                 try {
+                    const baseUrl = window.APP_BASE_URL || '/branchmapper';
                     // Use the state-specific endpoint which queries BigQuery directly
-                    const response = await fetch(`/counties-by-state/${stateCode}`);
+                    const response = await fetch(`${baseUrl}/counties-by-state/${stateCode}`);
                     console.log('Response status:', response.status, response.statusText);
                     
                     if (response.ok) {
@@ -2329,6 +2331,143 @@
             }
             
             updateInfoPanel('Map initialized. Select state and county, then click "Load Map" to view 2025 branch data.');
+        });
+        
+        // BranchMapper-specific state loading
+        $(document).ready(function() {
+            console.log('[DEBUG] BranchMapper jQuery ready block executing...');
+            
+            let isLoadingStates = false;
+            let statesLoaded = false;
+            
+            function loadStates() {
+                if (isLoadingStates) {
+                    console.log('[DEBUG] loadStates: Already loading, skipping...');
+                    return;
+                }
+                
+                const stateSelect = $('#stateSelect');
+                if (!stateSelect.length) {
+                    console.warn('[WARNING] State select element not found');
+                    return;
+                }
+                
+                isLoadingStates = true;
+                
+                const baseUrl = window.APP_BASE_URL || '/branchmapper';
+                console.log(`[DEBUG] loadStates: Fetching from ${baseUrl}/states`);
+                fetch(`${baseUrl}/states`)
+                    .then(response => {
+                        console.log(`[DEBUG] loadStates: Response status: ${response.status}, ok: ${response.ok}`);
+                        if (!response.ok) {
+                            throw new Error(`Failed to load states: ${response.status} ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(states => {
+                        console.log('[DEBUG] loadStates: States response received:', states);
+                        console.log('[DEBUG] loadStates: States array length:', states ? states.length : 'null');
+                        
+                        stateSelect.empty();
+                        stateSelect.append('<option value="">Select a state...</option>');
+                        
+                        if (!states || states.length === 0) {
+                            console.warn('[WARNING] loadStates: No states in response!');
+                            isLoadingStates = false;
+                            return;
+                        }
+                        
+                        let addedCount = 0;
+                        states.forEach(state => {
+                            const stateName = state.name || state;
+                            const stateCode = state.code || state;
+                            console.log(`[DEBUG] loadStates: Processing state: name="${stateName}", code="${stateCode}"`);
+                            const option = new Option(stateName, stateName);
+                            $(option).data('code', stateCode);
+                            stateSelect.append(option);
+                            addedCount++;
+                        });
+                        
+                        console.log(`[DEBUG] loadStates: Added ${addedCount} states to dropdown`);
+                        
+                        statesLoaded = true;
+                        isLoadingStates = false;
+                    })
+                    .catch(error => {
+                        console.error('[ERROR] loadStates: Error loading states:', error);
+                        isLoadingStates = false;
+                    });
+            }
+            
+            // Load counties on page load (when state is selected)
+            function loadCountiesForState(stateCode) {
+                if (!stateCode) {
+                    console.log('[DEBUG] loadCountiesForState: No state code provided, skipping');
+                    return;
+                }
+                
+                const countySelect = $('#countySelect');
+                if (!countySelect.length) {
+                    console.warn('[WARNING] County select element not found');
+                    return;
+                }
+                
+                const baseUrl = window.APP_BASE_URL || '/branchmapper';
+                console.log(`[DEBUG] loadCountiesForState: Fetching from ${baseUrl}/counties-by-state/${stateCode}`);
+                fetch(`${baseUrl}/counties-by-state/${encodeURIComponent(stateCode)}`)
+                    .then(response => {
+                        console.log(`[DEBUG] loadCountiesForState: Response status: ${response.status}, ok: ${response.ok}`);
+                        if (!response.ok) {
+                            throw new Error(`Failed to load counties: ${response.status} ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(counties => {
+                        console.log('[DEBUG] loadCountiesForState: Counties response received:', counties);
+                        console.log('[DEBUG] loadCountiesForState: Counties array length:', counties ? counties.length : 'null');
+                        
+                        if (!Array.isArray(counties)) {
+                            console.error('[ERROR] loadCountiesForState: Invalid response format');
+                            return;
+                        }
+                        
+                        countySelect.empty();
+                        countySelect.append('<option value="">Select a county...</option>');
+                        
+                        if (counties.length === 0) {
+                            console.warn('[WARNING] loadCountiesForState: No counties in response!');
+                            return;
+                        }
+                        
+                        let addedCount = 0;
+                        counties.forEach(county => {
+                            const countyName = typeof county === 'string' ? county : (county.name || county);
+                            console.log(`[DEBUG] loadCountiesForState: Adding county: ${countyName}`);
+                            countySelect.append(new Option(countyName, countyName));
+                            addedCount++;
+                        });
+                        
+                        console.log(`[DEBUG] loadCountiesForState: Added ${addedCount} counties to dropdown`);
+                    })
+                    .catch(error => {
+                        console.error('[ERROR] loadCountiesForState: Error loading counties:', error);
+                    });
+            }
+            
+            // Handle state selection change to load counties
+            $('#stateSelect').on('change', function() {
+                const stateCode = $(this).val();
+                if (stateCode) {
+                    loadCountiesForState(stateCode);
+                } else {
+                    $('#countySelect').empty().append('<option value="">Select a county...</option>');
+                }
+            });
+            
+            if (!statesLoaded) {
+                console.log('[DEBUG] Calling loadStates() on page load...');
+                loadStates();
+            }
         });
     </script>
 </body>

@@ -127,15 +127,22 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
     if app_name.lower() == 'branchseeker':
         # Data tables
         report_data = result_data.get('report_data', {})
+        import pandas as pd
+        import numpy as np
         for table_name in ['by_county', 'by_bank', 'summary', 'trends']:
             if table_name in report_data:
                 df = report_data[table_name]
                 if hasattr(df, 'to_dict'):
+                    # Replace all NaN types before converting to dict
+                    df_cleaned = df.replace({pd.NA: None, pd.NaT: None})
+                    df_cleaned = df_cleaned.replace({np.nan: None})
+                    # Convert any remaining NaN values to None using where()
+                    df_cleaned = df_cleaned.where(pd.notnull(df_cleaned), None)
                     sections.append({
                         'section_name': table_name,
                         'section_type': 'data_table',
                         'section_category': 'tables',
-                        'section_data': df.to_dict('records'),
+                        'section_data': df_cleaned.to_dict('records'),
                         'section_metadata': {
                             'columns': list(df.columns) if hasattr(df, 'columns') else [],
                             'row_count': len(df) if hasattr(df, '__len__') else 0
@@ -319,11 +326,40 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
                 display_order += 1
     
     elif app_name.lower() == 'lendsight':
-        # LendSight structure (to be implemented based on actual structure)
+        # LendSight structure - report_data contains pandas DataFrames
         report_data = result_data.get('report_data', {})
         if isinstance(report_data, dict):
+            import pandas as pd
             for key, value in report_data.items():
-                if isinstance(value, list):
+                # Skip non-table data that shouldn't be displayed as sections
+                # Note: census_data is metadata, hhi is a metric dict, raw_data is too large for display
+                if key in ['census_data', 'hhi', 'raw_data']:
+                    continue
+                
+                # Convert DataFrame to list of dicts if needed
+                if isinstance(value, pd.DataFrame):
+                    if not value.empty:
+                        import numpy as np
+                        # Replace all NaN types before converting to dict
+                        # This handles pd.NA, pd.NaT, np.nan, and any other NaN values
+                        df_cleaned = value.replace({pd.NA: None, pd.NaT: None})
+                        df_cleaned = df_cleaned.replace({np.nan: None})
+                        # Convert any remaining NaN values to None using where()
+                        df_cleaned = df_cleaned.where(pd.notnull(df_cleaned), None)
+                        sections.append({
+                            'section_name': key,
+                            'section_type': 'data_table',
+                            'section_category': 'tables',
+                            'section_data': df_cleaned.to_dict('records'),
+                            'section_metadata': {
+                                'row_count': len(value),
+                                'columns': list(value.columns)
+                            },
+                            'display_order': display_order
+                        })
+                        display_order += 1
+                elif isinstance(value, list):
+                    # Already a list
                     sections.append({
                         'section_name': key,
                         'section_type': 'data_table',
@@ -333,6 +369,64 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
                         'display_order': display_order
                     })
                     display_order += 1
+                elif isinstance(value, dict) and value:
+                    # Dict data (like hhi) - but we skip hhi above, so this handles other dicts
+                    sections.append({
+                        'section_name': key,
+                        'section_type': 'data_table',
+                        'section_category': 'metrics',
+                        'section_data': value,
+                        'section_metadata': {},
+                        'display_order': display_order
+                    })
+                    display_order += 1
+        
+        # AI insights for LendSight
+        ai_insights = result_data.get('ai_insights', {})
+        if isinstance(ai_insights, dict):
+            # Extract all AI insights
+            for insight_name, insight_value in ai_insights.items():
+                if isinstance(insight_value, str):
+                    # Simple text insights
+                    sections.append({
+                        'section_name': insight_name,
+                        'section_type': 'ai_summary' if insight_name in ['executive_summary', 'key_findings'] else 'ai_narrative',
+                        'section_category': 'ai_insights',
+                        'section_data': {'text': insight_value},
+                        'section_metadata': {
+                            'word_count': len(insight_value.split()) if isinstance(insight_value, str) else 0
+                        },
+                        'display_order': display_order
+                    })
+                    display_order += 1
+                elif isinstance(insight_value, dict):
+                    # Nested structures like table_introductions, table_narratives
+                    if insight_name in ['table_introductions', 'table_narratives']:
+                        for table_name, text in insight_value.items():
+                            section_type = 'ai_narrative'
+                            prefix = 'table_introduction_' if insight_name == 'table_introductions' else 'table_narrative_'
+                            sections.append({
+                                'section_name': f'{prefix}{table_name}',
+                                'section_type': section_type,
+                                'section_category': 'ai_insights',
+                                'section_data': {'text': text, 'table': table_name},
+                                'section_metadata': {
+                                    'word_count': len(text.split()) if isinstance(text, str) else 0
+                                },
+                                'display_order': display_order
+                            })
+                            display_order += 1
+                    else:
+                        # Other nested dicts - store as-is
+                        sections.append({
+                            'section_name': insight_name,
+                            'section_type': 'ai_narrative',
+                            'section_category': 'ai_insights',
+                            'section_data': insight_value,
+                            'section_metadata': {},
+                            'display_order': display_order
+                        })
+                        display_order += 1
     
     elif app_name.lower() == 'branchmapper':
         # BranchMapper structure (to be implemented based on actual structure)
@@ -484,6 +578,145 @@ def get_cached_result(app_name: str, params: Dict[str, Any],
         return None
 
 
+def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Retrieve analysis result from BigQuery by job_id.
+    Returns None if not found, or dict with 'report_data', 'ai_insights', 'metadata' if found.
+    This is the primary method for retrieving results - BigQuery-only, no in-memory storage.
+    """
+    client = get_bigquery_client(PROJECT_ID)
+    
+    # Query BigQuery for this job_id
+    query = f"""
+    SELECT 
+        r.result_summary,
+        r.sections_summary,
+        r.status,
+        s.section_name,
+        s.section_type,
+        s.section_category,
+        s.section_data,
+        s.section_metadata,
+        s.display_order
+    FROM `{RESULTS_TABLE}` r
+    LEFT JOIN `{SECTIONS_TABLE}` s ON r.job_id = s.job_id
+    WHERE r.job_id = @job_id
+        AND r.status = 'completed'
+    ORDER BY s.display_order ASC
+    """
+    
+    job_config = bigquery.QueryJobConfig(
+        query_parameters=[
+            bigquery.ScalarQueryParameter("job_id", "STRING", job_id)
+        ]
+    )
+    
+    try:
+        query_job = client.query(query, job_config=job_config)
+        rows = list(query_job.result())
+        
+        if not rows:
+            return None
+        
+        # Reconstruct result from sections
+        report_data = {}
+        ai_insights = {}
+        metadata = {}
+        
+        # Get metadata from first row's result_summary
+        if rows[0].result_summary:
+            summary = json.loads(rows[0].result_summary) if isinstance(rows[0].result_summary, str) else rows[0].result_summary
+            census_data_retrieved = summary.get('census_data', None)
+            # Only use census_data if it has actual content (not empty dict)
+            if census_data_retrieved and (not isinstance(census_data_retrieved, dict) or len(census_data_retrieved) > 0):
+                census_data_final = census_data_retrieved
+            else:
+                census_data_final = None
+            
+            print(f"[DEBUG] Retrieved census_data: type={type(census_data_final)}, value={census_data_final if not isinstance(census_data_final, dict) or len(census_data_final) <= 3 else f'dict with {len(census_data_final)} keys'}")
+            
+            metadata = {
+                'counties': summary.get('counties', []),
+                'years': summary.get('years', []),
+                'generated_at': summary.get('created_at', ''),
+                'app_name': summary.get('app_name', ''),
+                'total_records': summary.get('total_records', 0),
+                'loan_purpose': summary.get('loan_purpose', ['purchase']),
+                'census_data': census_data_final
+            }
+        else:
+            # Default metadata if result_summary is missing
+            metadata = {
+                'counties': [],
+                'years': [],
+                'generated_at': '',
+                'app_name': '',
+                'total_records': 0,
+                'loan_purpose': ['purchase'],
+                'census_data': None
+            }
+        
+        # Reconstruct sections
+        print(f"[DEBUG] Reconstructing from {len(rows)} rows...")
+        for row in rows:
+            if row.section_name:
+                print(f"[DEBUG] Processing section: {row.section_name} (type: {row.section_type})")
+                section_data = json.loads(row.section_data) if isinstance(row.section_data, str) else row.section_data
+                
+                if row.section_type in ['data_table', 'raw_data']:
+                    # Handle MergerMeter format with headers
+                    if isinstance(section_data, dict) and 'headers' in section_data:
+                        report_data[row.section_name] = section_data
+                    else:
+                        report_data[row.section_name] = section_data
+                    print(f"[DEBUG] Added to report_data: {row.section_name}")
+                elif row.section_type in ['ai_summary', 'ai_narrative']:
+                    print(f"[DEBUG] AI section - section_data type: {type(section_data)}, keys: {section_data.keys() if isinstance(section_data, dict) else 'N/A'}")
+                    if isinstance(section_data, dict) and 'text' in section_data:
+                        # Handle nested table introductions/narratives
+                        if row.section_name.startswith('table_introduction_'):
+                            table_name = row.section_name.replace('table_introduction_', '')
+                            if 'table_introductions' not in ai_insights:
+                                ai_insights['table_introductions'] = {}
+                            ai_insights['table_introductions'][table_name] = section_data['text']
+                            print(f"[DEBUG] Added table_introduction for {table_name}, length: {len(section_data['text']) if section_data['text'] else 0}")
+                        elif row.section_name.startswith('table_narrative_'):
+                            table_name = row.section_name.replace('table_narrative_', '')
+                            if 'table_narratives' not in ai_insights:
+                                ai_insights['table_narratives'] = {}
+                            ai_insights['table_narratives'][table_name] = section_data['text']
+                            print(f"[DEBUG] Added table_narrative for {table_name}, length: {len(section_data['text']) if section_data['text'] else 0}")
+                        else:
+                            ai_insights[row.section_name] = section_data['text']
+                            print(f"[DEBUG] Added AI insight: {row.section_name}, length: {len(section_data['text']) if section_data['text'] else 0}")
+                    else:
+                        # Store as-is if not in expected format
+                        ai_insights[row.section_name] = section_data
+                        print(f"[DEBUG] Added AI insight (raw): {row.section_name}, type: {type(section_data)}")
+                else:
+                    print(f"[DEBUG] Unknown section type: {row.section_type}, skipping")
+        
+        result = {
+            'report_data': report_data,
+            'ai_insights': ai_insights,
+            'metadata': metadata
+        }
+        
+        # Debug logging
+        print(f"[DEBUG] get_analysis_result_by_job_id returning:")
+        print(f"  - report_data keys: {list(report_data.keys())}")
+        print(f"  - ai_insights keys: {list(ai_insights.keys())}")
+        print(f"  - metadata keys: {list(metadata.keys())}")
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error retrieving analysis result by job_id from BigQuery: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
 def store_cached_result(app_name: str, params: Dict[str, Any], 
                        job_id: str, result_data: Dict[str, Any],
                        user_type: str = 'public',
@@ -498,12 +731,24 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
     # Extract sections
     sections = extract_sections(app_name, result_data)
     
-    # Prepare result summary
+    # Prepare result summary - include all metadata fields
+    census_data_value = metadata.get('census_data', None) if metadata else None
+    # Only store census_data if it has actual content (not empty dict)
+    if census_data_value and (not isinstance(census_data_value, dict) or len(census_data_value) > 0):
+        census_data_to_store = census_data_value
+    else:
+        census_data_to_store = None
+    
+    print(f"[DEBUG] Storing census_data: type={type(census_data_to_store)}, is_empty={census_data_to_store == {} or census_data_to_store is None}, has_keys={list(census_data_to_store.keys()) if isinstance(census_data_to_store, dict) else 'N/A'}")
+    
     result_summary = {
         'counties': metadata.get('counties', []) if metadata else [],
         'years': metadata.get('years', []) if metadata else [],
         'created_at': datetime.now().isoformat(),
-        'app_name': app_name
+        'app_name': app_name,
+        'total_records': metadata.get('total_records', 0) if metadata else 0,
+        'loan_purpose': metadata.get('loan_purpose', ['purchase']) if metadata else ['purchase'],
+        'census_data': census_data_to_store
     }
     
     # Prepare sections summary (quick reference)

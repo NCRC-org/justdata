@@ -3,7 +3,7 @@ BranchMapper Blueprint for main JustData app.
 Converts the standalone BranchMapper app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify
+from flask import Blueprint, render_template, request, jsonify, url_for
 import os
 import numpy as np
 import re
@@ -36,9 +36,11 @@ branchmapper_bp = Blueprint(
 def index():
     """Main page with the interactive map"""
     user_permissions = get_user_permissions()
+    app_base_url = url_for('branchmapper.index').rstrip('/')
     return render_template('branch_mapper_template.html', 
                          version=__version__,
-                         permissions=user_permissions)
+                         permissions=user_permissions,
+                         app_base_url=app_base_url)
 
 
 @branchmapper_bp.route('/counties')

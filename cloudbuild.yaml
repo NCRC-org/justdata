@@ -12,6 +12,8 @@ steps:
       - '${_IMAGE_URI}'
       - '.'
     timeout: '1200s'
+    # Note: _APP_NAME substitution defaults to empty string for unified deployment
+    # If _APP_NAME is empty, Dockerfile will default to unified "justdata" app
 images:
   - '${_IMAGE_URI}'
 options:

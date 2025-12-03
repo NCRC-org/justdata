@@ -3,7 +3,7 @@ BizSight Blueprint for main JustData app.
 Converts the standalone BizSight app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response
+from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for
 import os
 import sys
 import uuid
@@ -14,13 +14,12 @@ from pathlib import Path
 from datetime import datetime
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
-from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key
+from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
 from justdata.apps.bizsight.core import run_analysis
 from justdata.apps.bizsight.data_utils import get_available_counties, get_available_years
 from justdata.apps.bizsight.utils.progress_tracker import (
-    get_progress, update_progress, create_progress_tracker,
-    store_analysis_result, get_analysis_result
+    get_progress, update_progress, create_progress_tracker
 )
 
 # Create blueprint
@@ -38,12 +37,14 @@ bizsight_bp = Blueprint(
 def index():
     """Main page with the US map for county selection."""
     user_permissions = get_user_permissions()
+    app_base_url = url_for('bizsight.index').rstrip('/')
     
     # Force template reload by clearing cache before rendering
     response = make_response(render_template(
         'analysis_template.html', 
         version=BizSightConfig.APP_VERSION,
-        permissions=user_permissions
+        permissions=user_permissions,
+        app_base_url=app_base_url
     ))
     # Add aggressive cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
@@ -167,8 +168,8 @@ def analyze():
             job_id = cached_result['job_id']
             result_data = cached_result['result_data']
             
-            # Store in progress tracker for compatibility
-            store_analysis_result(job_id, result_data)
+            # Result is already stored in BigQuery via store_cached_result
+            # No need for in-memory storage - BigQuery-only approach
             update_progress(job_id, {
                 'percent': 100,
                 'step': 'Analysis complete (from cache)',
@@ -242,8 +243,8 @@ def analyze():
                     )
                     return
                 
-                # Store analysis result
-                store_analysis_result(job_id, result)
+                # Store in BigQuery only (no in-memory storage)
+                # store_cached_result stores everything in BigQuery
                 progress_tracker.complete(success=True)
                 
                 # Store in BigQuery cache
@@ -426,7 +427,8 @@ def report_data():
         if not job_id:
             return jsonify({'error': 'Job ID required'}), 400
         
-        result = get_analysis_result(job_id)
+        # Retrieve from BigQuery only (no in-memory storage)
+        result = get_analysis_result_by_job_id(job_id)
         if not result:
             return jsonify({'error': 'Report not found'}), 404
         
@@ -464,7 +466,8 @@ def download():
         if not progress.get('done'):
             return jsonify({'error': 'Analysis not complete'}), 400
         
-        result = get_analysis_result(job_id)
+        # Retrieve from BigQuery only (no in-memory storage)
+        result = get_analysis_result_by_job_id(job_id)
         if not result:
             return jsonify({'error': 'Result not found'}), 404
         

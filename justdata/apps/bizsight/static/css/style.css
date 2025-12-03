@@ -49,11 +49,16 @@ body {
     min-width: 0;
     position: relative;
     z-index: 1;
+    order: 1; /* Always first in flex order */
+    display: flex;
+    flex-direction: column; /* Stack analysis card and documentation card vertically */
 }
 
 .analysis-card {
     position: relative;
     z-index: 1;
+    margin-top: 20px; /* Reduced top margin */
+    margin-bottom: 60px; /* Increased bottom margin for better centering */
 }
 
 .sidebar {
@@ -74,6 +79,42 @@ body {
     overflow-y: auto !important;
     max-height: calc(100vh - 40px) !important;
     z-index: 100;
+    order: 2; /* Always second (right side) in flex order */
+}
+
+.documentation-card {
+    /* Inside content-wrapper, so it's in the same column as analysis card on desktop */
+    width: 100%; /* Match analysis card width */
+    margin-top: 0; /* Remove top margin since it's directly below analysis card */
+    padding: 20px 30px !important; /* More compact padding */
+    margin-bottom: 30px !important; /* Reduced bottom margin */
+}
+
+.documentation-card .card-header {
+    margin-bottom: 15px; /* Reduced margin below header */
+}
+
+.documentation-card .card-header h2 {
+    font-size: 1.3rem; /* Slightly smaller header */
+    margin-bottom: 0;
+}
+
+/* Make documentation links horizontal on desktop */
+.documentation-card .sidebar-docs {
+    display: flex !important;
+    flex-direction: row; /* Horizontal layout on desktop */
+    gap: 15px;
+    margin-top: 0;
+    flex-wrap: wrap; /* Allow wrapping if needed */
+}
+
+.documentation-card .doc-link {
+    flex: 1; /* Equal width buttons */
+    min-width: 0; /* Allow shrinking */
+    padding: 10px 15px; /* More compact padding */
+    font-size: 0.85rem; /* Slightly smaller text */
+    justify-content: center; /* Center content */
+    text-align: center;
 }
 
 /* Header */
@@ -452,7 +493,8 @@ body {
     border-radius: 20px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     padding: 40px;
-    margin-bottom: 40px;
+    margin-top: 20px; /* Reduced top margin */
+    margin-bottom: 60px; /* Increased bottom margin for better centering */
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
 }
@@ -1463,12 +1505,39 @@ body {
 @media (max-width: 1024px) {
     .container {
         flex-direction: column;
+        display: flex;
+    }
+    
+    .content-wrapper {
+        order: 1; /* Analysis cards first on mobile */
+        min-width: 100%; /* Full width on mobile */
+        display: contents; /* Flatten content-wrapper so children can be reordered */
     }
     
     .sidebar {
+        order: 2; /* Sidebar below analysis cards on mobile */
         width: 100%;
         position: relative;
         top: 0;
+    }
+    
+    /* Reorder children of content-wrapper on mobile */
+    .content-wrapper > .analysis-card {
+        order: 1; /* Analysis card first */
+    }
+    
+    .content-wrapper > .documentation-card {
+        order: 3; /* Documentation card below sidebar on mobile */
+    }
+    
+    /* Make documentation links vertical on mobile */
+    .documentation-card .sidebar-docs {
+        flex-direction: column; /* Vertical layout on mobile */
+    }
+    
+    .documentation-card .doc-link {
+        flex: none; /* Don't stretch on mobile */
+        width: 100%; /* Full width on mobile */
     }
 }
 
