@@ -584,10 +584,23 @@ def get_tract_household_distributions_for_geoids(geoids: List[str], avg_minority
         geoid_list = "', '".join([str(g).zfill(5) for g in geoids])
         
         # Query to get unique tracts with their income and minority classifications from HMDA
+        # Normalize census_tract to 6-digit format for consistent matching with Census API
         query = f"""
         WITH unique_tracts AS (
             SELECT DISTINCT
-                h.census_tract,
+                -- Normalize census_tract to 6-digit format (extract last 6 digits if it's an 11-digit GEOID)
+                CASE 
+                    WHEN CAST(h.census_tract AS STRING) IS NULL THEN NULL
+                    WHEN LENGTH(REGEXP_REPLACE(CAST(h.census_tract AS STRING), r'[^0-9]', '')) > 6 THEN
+                        -- If longer than 6 digits, take last 6 digits (tract portion of GEOID)
+                        LPAD(SUBSTR(REGEXP_REPLACE(CAST(h.census_tract AS STRING), r'[^0-9]', ''), -6), 6, '0')
+                    WHEN LENGTH(REGEXP_REPLACE(CAST(h.census_tract AS STRING), r'[^0-9]', '')) = 6 THEN
+                        -- Already 6 digits, just pad to ensure leading zeros
+                        LPAD(REGEXP_REPLACE(CAST(h.census_tract AS STRING), r'[^0-9]', ''), 6, '0')
+                    ELSE
+                        -- Less than 6 digits, pad with leading zeros
+                        LPAD(REGEXP_REPLACE(CAST(h.census_tract AS STRING), r'[^0-9]', ''), 6, '0')
+                END as census_tract,
                 LPAD(CAST(h.county_code AS STRING), 5, '0') as geoid5,
                 CAST(h.tract_to_msa_income_percentage AS FLOAT64) as tract_income_pct,
                 CAST(h.tract_minority_population_percent AS FLOAT64) as tract_minority_pct

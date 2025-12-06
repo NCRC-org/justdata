@@ -11,6 +11,7 @@ import uuid
 import threading
 import time
 import json
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from shared.web.app_factory import create_app, register_standard_routes
 from shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
@@ -23,6 +24,9 @@ app = create_app(
     template_folder=TEMPLATES_DIR,
     static_folder=STATIC_DIR
 )
+
+# Add ProxyFix for proper request handling behind Render's proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
 # Configure cache-busting (same as BizSight)
 app.config['DEBUG'] = True  # Always True for development
@@ -50,6 +54,12 @@ def clear_template_cache():
                 app.jinja_env.cache.clear()
         except:
             pass
+
+
+@app.route('/health')
+def health():
+    """Health check endpoint for Render"""
+    return {'status': 'ok', 'app': 'lendsight'}, 200
 
 
 def index():
@@ -256,7 +266,7 @@ def download():
         elif format_type == 'pdf':
             return download_pdf(report_data, metadata)
         else:
-            return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel, pdf'}), 400
+            return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel (for data export), pdf (for report export)'}), 400
             
     except Exception as e:
         import traceback

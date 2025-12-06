@@ -700,26 +700,9 @@
                     <a href="/download?format=pdf" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer;">
                         <i class="fas fa-file-pdf"></i> Download PDF
                     </a>
-                    <div class="dropdown">
-                        <button class="action-btn primary dropdown-toggle">
-                            <i class="fas fa-download"></i> Export Data
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a href="/download?format=excel" class="dropdown-item">
-                                <i class="fas fa-file-excel"></i> Excel (.xlsx)
-                            </a>
-                            <a href="/download?format=csv" class="dropdown-item">
-                                <i class="fas fa-file-csv"></i> CSV (.csv)
-                            </a>
-                            <a href="/download?format=json" class="dropdown-item">
-                                <i class="fas fa-file-code"></i> JSON (.json)
-                            </a>
-                            <a href="/download?format=zip" class="dropdown-item">
-                                <i class="fas fa-file-archive"></i> ZIP (.zip)
-                            </a>
-                        </div>
-                    </div>
+                    <a href="/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer;">
+                        <i class="fas fa-file-excel"></i> Export Data (Excel)
+                    </a>
                 </div>
             </div>
         </div>
@@ -1001,6 +984,16 @@
                     if (href && !href.includes('job_id=')) {
                         const separator = href.includes('?') ? '&' : '?';
                         pdfBtn.setAttribute('href', `${href}${separator}job_id=${encodeURIComponent(jobId)}`);
+                    }
+                }
+                
+                // Update Excel download button
+                const excelBtn = document.getElementById('downloadExcelBtn');
+                if (excelBtn) {
+                    const href = excelBtn.getAttribute('href');
+                    if (href && !href.includes('job_id=')) {
+                        const separator = href.includes('?') ? '&' : '?';
+                        excelBtn.setAttribute('href', `${href}${separator}job_id=${encodeURIComponent(jobId)}`);
                     }
                 }
             }
