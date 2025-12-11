@@ -4,7 +4,7 @@ LendSight-specific data utilities for BigQuery and county reference.
 Similar to BranchSeeker but for HMDA mortgage data.
 """
 
-from shared.utils.bigquery_client import get_bigquery_client, execute_query
+from shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
 from typing import List, Optional, Dict, Any
 from .config import PROJECT_ID
 
@@ -24,10 +24,12 @@ def find_exact_county_match(county_input: str) -> list:
         
         # Use exact match on county_state (since it comes from the dropdown, it should be exact)
         # Also match by geoid5 to ensure we get the exact county
+        # Escape apostrophes in county name for SQL safety
+        escaped_county = escape_sql_string(county_input)
         county_query = f"""
             SELECT DISTINCT county_state, geoid5
             FROM geo.cbsa_to_county 
-            WHERE county_state = '{county_input}'
+            WHERE county_state = '{escaped_county}'
             ORDER BY geoid5
             LIMIT 1
             """
@@ -51,10 +53,12 @@ def find_exact_county_match(county_input: str) -> list:
             else:
                 # If no exact match, try case-insensitive match
                 print(f"No exact match found for {county_input}, trying case-insensitive match...")
+                # Escape apostrophes in county name for SQL safety
+                escaped_county = escape_sql_string(county_input)
                 county_query_ci = f"""
                     SELECT DISTINCT county_state, geoid5
                     FROM geo.cbsa_to_county 
-                    WHERE LOWER(county_state) = LOWER('{county_input}')
+                    WHERE LOWER(county_state) = LOWER('{escaped_county}')
                     ORDER BY geoid5
                     LIMIT 1
                     """
@@ -340,8 +344,11 @@ def execute_mortgage_query(sql_template: str, county: str, year: int, loan_purpo
         else:
             loan_purpose_str = ','.join(sorted(loan_purpose))
         
-        # Substitute parameters in SQL template
-        sql = sql_template.replace('@county', f"'{exact_county}'").replace('@year', f"'{year}'").replace('@loan_purpose', f"'{loan_purpose_str}'")
+        # Escape apostrophes in county name for SQL (double them)
+        escaped_county = escape_sql_string(exact_county)
+        
+        # Substitute parameters in SQL template (escape apostrophes in county name)
+        sql = sql_template.replace('@county', f"'{escaped_county}'").replace('@year', f"'{year}'").replace('@loan_purpose', f"'{loan_purpose_str}'")
         
         # Execute query
         return execute_query(client, sql)

@@ -10,6 +10,25 @@ from google.oauth2 import service_account
 from typing import List, Dict, Any
 
 
+def escape_sql_string(value: str) -> str:
+    """
+    Escape a string value for safe use in SQL queries.
+    Escapes apostrophes by doubling them (SQL standard).
+    
+    Args:
+        value: String value to escape
+        
+    Returns:
+        Escaped string safe for SQL interpolation
+    
+    Example:
+        escape_sql_string("Prince George's County") -> "Prince George''s County"
+    """
+    if value is None:
+        return ''
+    return str(value).replace("'", "''")
+
+
 # Cache for credential path to avoid repeated lookups and messages
 _credential_path_cache = None
 

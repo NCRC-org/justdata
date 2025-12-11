@@ -674,10 +674,12 @@ def counties_by_state(state_identifier):
         else:
             # Use state name to match (extract from county_state)
             print(f"[DEBUG] Using state name: {state_identifier}")
+            from shared.utils.bigquery_client import escape_sql_string
+            escaped_state = escape_sql_string(state_identifier)
             query = f"""
             SELECT DISTINCT county_state, geoid5
             FROM geo.cbsa_to_county 
-            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{state_identifier}')
+            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state}')
             ORDER BY county_state
             """
         

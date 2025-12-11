@@ -53,11 +53,15 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
         
         client = get_bigquery_client(PROJECT_ID)
         
+        # Escape apostrophes in county name for SQL safety
+        from shared.utils.bigquery_client import escape_sql_string
+        escaped_county_state = escape_sql_string(county_state)
+        
         # Query to get geoid5 from county_state
         query = f"""
         SELECT DISTINCT geoid5
         FROM geo.cbsa_to_county
-        WHERE county_state = '{county_state}'
+        WHERE county_state = '{escaped_county_state}'
         LIMIT 1
         """
         

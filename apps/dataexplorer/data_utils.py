@@ -1199,7 +1199,8 @@ def lookup_lender(
     
     # Search by name (try all sources)
     if name:
-        name_clean = name.strip().replace("'", "''")  # Escape single quotes for SQL
+        from shared.utils.bigquery_client import escape_sql_string
+        name_clean = escape_sql_string(name.strip())  # Escape single quotes for SQL
         # Try HMDA lenders
         try:
             query = f"""

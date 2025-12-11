@@ -228,10 +228,12 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 
                 for county_name in clarified_counties:
                     try:
+                        from shared.utils.bigquery_client import escape_sql_string
+                        escaped_county = escape_sql_string(county_name)
                         query = f"""
                         SELECT DISTINCT county_state, geoid5
                         FROM geo.cbsa_to_county
-                        WHERE county_state = '{county_name}'
+                        WHERE county_state = '{escaped_county}'
                         LIMIT 1
                         """
                         query_job = client.query(query)
