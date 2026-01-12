@@ -6,8 +6,8 @@
     <title>DataExplorer - JustData</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/wizard-enhancements.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('dataexplorer.static', filename='css/dashboard.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('dataexplorer.static', filename='css/wizard-enhancements.css') }}?v={{ version }}">
     <style>
         /* Header Styles (from LendSight) */
         .header {
@@ -1713,9 +1713,9 @@
     </footer>
     
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/wizard-steps.js') }}"></script>
+    <script src="{{ url_for('dataexplorer.static', filename='js/api-client.js') }}"></script>
+    <script src="{{ url_for('dataexplorer.static', filename='js/wizard.js') }}"></script>
+    <script src="{{ url_for('dataexplorer.static', filename='js/wizard-steps.js') }}"></script>
     <script>
         // Initialize wizard on page load
         document.addEventListener('DOMContentLoaded', function() {
