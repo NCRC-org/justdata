@@ -25,9 +25,8 @@ def create_app():
     app.config['DEBUG'] = MainConfig.DEBUG
     app.config['SESSION_PERMANENT'] = True
     
-    # Main landing page route (handled by main app)
+    # Main landing page route
     @app.route('/')
-    @app.route('/landing')
     def landing():
         """Main landing page with app selection."""
         from jinja2 import Environment, FileSystemLoader, select_autoescape
