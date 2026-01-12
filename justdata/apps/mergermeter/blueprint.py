@@ -41,7 +41,7 @@ def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
     app_base_url = url_for('mergermeter.index').rstrip('/')
-    return render_template('analysis_template.html', 
+    return render_template('mergermeter_analysis.html', 
                          version=__version__,
                          permissions=user_permissions,
                          app_base_url=app_base_url)

@@ -41,7 +41,7 @@ def index():
     
     # Force template reload by clearing cache before rendering
     response = make_response(render_template(
-        'analysis_template.html', 
+        'bizsight_analysis.html', 
         version=BizSightConfig.APP_VERSION,
         permissions=user_permissions,
         app_base_url=app_base_url
