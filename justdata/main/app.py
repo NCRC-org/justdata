@@ -209,4 +209,24 @@ def register_blueprints(app: Flask):
         app.register_blueprint(memberview_bp, url_prefix='/memberview')
     except ImportError:
         print("⚠️  MemberView blueprint not yet created")
+    
+    # Apps in development (from User Access Matrix)
+    try:
+        from justdata.apps.commentmaker.blueprint import commentmaker_bp
+        app.register_blueprint(commentmaker_bp, url_prefix='/commentmaker')
+    except ImportError:
+        print("⚠️  CommentMaker blueprint not yet created (In Development)")
+    
+    try:
+        from justdata.apps.justpolicy.blueprint import justpolicy_bp
+        app.register_blueprint(justpolicy_bp, url_prefix='/justpolicy')
+    except ImportError:
+        print("⚠️  JustPolicy blueprint not yet created (In Development)")
+    
+    # Administrative tools
+    try:
+        from justdata.apps.analytics.blueprint import analytics_bp
+        app.register_blueprint(analytics_bp, url_prefix='/analytics')
+    except ImportError:
+        print("⚠️  Analytics blueprint not yet created")
 
