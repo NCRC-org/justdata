@@ -153,7 +153,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         
         notes_content.append(('Table Descriptions', ''))
         notes_content.append(('', 'Section 1: Geographic Overview - Map and summary statistics with treemap visualizations.'))
-        notes_content.append(('', 'Section 2: County Summary - County-level aggregate data for all years (2018-2024).'))
+        notes_content.append(('', 'Section 2: County Summary - County-level aggregate data for all years (2020-2024).'))
         notes_content.append(('', '  - Number of Loans tab: Shows loan counts by category and year.'))
         notes_content.append(('', '  - Amount of Loans tab: Shows loan amounts by category and year.'))
         notes_content.append(('', 'Section 3: Comparison - Compares county 2024 data with state and national benchmarks.'))
@@ -162,7 +162,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         notes_content.append(('', 'Section 4: Top Lenders - Top lenders by number of loans for 2024 only.'))
         notes_content.append(('', '  - Number of Loans tab: Loan count metrics by lender.'))
         notes_content.append(('', '  - Amount of Loans tab: Loan amount metrics by lender.'))
-        notes_content.append(('', 'Section 5: Market Concentration Trends - HHI by year from 2018 to 2024.'))
+        notes_content.append(('', 'Section 5: Market Concentration Trends - HHI by year from 2020 to 2024.'))
         notes_content.append(('', ''))
         
         notes_content.append(('AI-Generated Content Disclosure', ''))

@@ -537,7 +537,7 @@
         <div class="report-section" id="section1" style="margin-bottom: 30px;">
             <h2 class="section-title">Section 1: Geographic Overview and Tract-Level Analysis</h2>
             <div id="section1Intro" style="margin-bottom: 20px; line-height: 1.8; color: #333;">
-                <p>This report provides a comprehensive analysis of small business lending activity in <span id="introCountyName">the selected county</span> for the years 2018 to 2024. The analysis is based on data collected under the Community Reinvestment Act (CRA), which requires financial institutions to report information about small business loan applications and originations.</p>
+                <p>This report provides a comprehensive analysis of small business lending activity in <span id="introCountyName">the selected county</span> for the years 2020 to 2024. The analysis is based on data collected under the Community Reinvestment Act (CRA), which requires financial institutions to report information about small business loan applications and originations.</p>
                 
                 <p><strong>Data Coverage:</strong> This report includes tract-level and county-level data on small business lending, including loan counts and amounts by loan size categories (under $100K, $100K-$250K, $250K-$1M), lending to businesses with revenues under $1 million, and lending in Low- and Moderate-Income (LMI) census tracts. The data also includes demographic information from the U.S. Census Bureau, including tract-level income, population, and racial/ethnic composition.</p>
                 
@@ -630,9 +630,9 @@
             </div>
         </div>
         
-        <!-- Section 2: County Summary (2018-2024) -->
+        <!-- Section 2: County Summary (2020-2024) -->
         <div class="report-section print-break" id="section2" style="margin-top: 40px;">
-            <h2 class="section-title">Section 2: County Summary (2018-2024)</h2>
+            <h2 class="section-title">Section 2: County Summary (2020-2024)</h2>
             <p class="table-introduction" id="countySummaryIntro">
                 <!-- 2 sentences will be populated by JavaScript -->
             </p>
@@ -844,9 +844,9 @@
         
         <!-- Section 5: Market Concentration Trends (HHI by Year) -->
         <div class="report-section print-break" id="section5" style="margin-top: 40px;">
-            <h2 class="section-title">Section 5: Market Concentration Trends (2018-2024)</h2>
+            <h2 class="section-title">Section 5: Market Concentration Trends (2020-2024)</h2>
             <p class="table-introduction" id="hhiTrendsIntro" style="margin-bottom: 20px;">
-                This chart shows the Herfindahl-Hirschman Index (HHI) for small business lending in the county from 2018 to 2024. The HHI is calculated using the total dollar amount of loans by all lenders in each year, measuring market concentration on a scale from 0 to 10,000. Higher values indicate greater market concentration, while lower values suggest a more competitive market.
+                This chart shows the Herfindahl-Hirschman Index (HHI) for small business lending in the county from 2020 to 2024. The HHI is calculated using the total dollar amount of loans by all lenders in each year, measuring market concentration on a scale from 0 to 10,000. Higher values indicate greater market concentration, while lower values suggest a more competitive market.
             </p>
             <div class="table-container" style="margin-bottom: 20px;">
                 <div id="hhiByYearChart" style="width: 100%; height: 400px; margin: 20px 0;">
@@ -1253,7 +1253,7 @@
                         </div>
                         ` : ''}
                         <div style="margin-bottom: 6px;">
-                            <span style="color: #666; font-weight: 600;">Total Loans (2018-2024):</span> 
+                            <span style="color: #666; font-weight: 600;">Total Loans (2020-2024):</span> 
                             <span style="color: #333;">${totalLoans.toLocaleString()}</span>
                         </div>
                         <div style="margin-bottom: 6px;">
@@ -1758,7 +1758,7 @@
             // Populate table introduction (2 sentences)
             const intro = document.getElementById('countySummaryIntro');
             if (intro && metadata) {
-                const yearRange = metadata.year_range || '2018-2024';
+                const yearRange = metadata.year_range || '2020-2024';
                 intro.textContent = `This table shows aggregate small business lending data for ${metadata.county_name} across the entire study period (${yearRange}). The data includes total loan counts and amounts by size category, lending to low-to-moderate income tracts, and loans to businesses with revenue under $1 million.`;
             }
             
@@ -1766,7 +1766,7 @@
             const caption = document.getElementById('countySummaryCaption');
             if (caption && metadata) {
                 let captionText = '<strong>Source:</strong> Community Reinvestment Act (CRA) Small Business Lending data, compiled and maintained in NCRC\'s curated databases. ';
-                captionText += `<strong>Years:</strong> ${metadata.year_range || '2018-2024'}. `;
+                captionText += `<strong>Years:</strong> ${metadata.year_range || '2020-2024'}. `;
                 captionText += `<strong>County:</strong> ${metadata.county_name || 'Unknown'}. `;
                 captionText += '<strong>Note:</strong> Data for 2020 and 2021 are distorted by the Paycheck Protection Program (PPP) lending activity.';
                 caption.innerHTML = captionText;

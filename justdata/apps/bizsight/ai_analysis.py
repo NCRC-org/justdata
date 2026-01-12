@@ -134,7 +134,7 @@ class BizSightAnalyzer:
         post_ppp_hhi = hhi_values.get(2024, {}).get('value') if 2024 in hhi_values else None
         
         prompt = f"""
-        Generate exactly 2 paragraphs discussing market concentration trends in {county_name} from 2018 to 2024, using the Herfindahl-Hirschman Index (HHI).
+        Generate exactly 2 paragraphs discussing market concentration trends in {county_name} from 2020 to 2024, using the Herfindahl-Hirschman Index (HHI).
         
         HHI Data by Year:
         {json.dumps(hhi_values, indent=2)}
@@ -142,7 +142,7 @@ class BizSightAnalyzer:
         Key Trends:
         - First year (2018) HHI: {first_hhi if first_hhi else 'Not available'}
         - Last year (2024) HHI: {last_hhi if last_hhi else 'Not available'}
-        - Change from 2018 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
+        - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
         - Pre-PPP (2018) HHI: {pre_ppp_hhi if pre_ppp_hhi else 'Not available'}
         - Post-PPP (2024) HHI: {post_ppp_hhi if post_ppp_hhi else 'Not available'}
         
@@ -170,7 +170,7 @@ class BizSightAnalyzer:
         - Present ONLY what the HHI data shows
         - Use professional, analytical tone
         - EXACTLY 2 PARAGRAPHS (required)
-        - First paragraph: Discuss overall trends from 2018 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
+        - First paragraph: Discuss overall trends from 2020 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
         - Second paragraph: Compare pre-PPP (2018) to post-PPP (2024) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
         - Focus on trends and patterns rather than listing every year's value
         - If HHI increased, the market became more concentrated (less competitive)
@@ -322,7 +322,7 @@ class BizSightAnalyzer:
         post_ppp_hhi = hhi_values.get(2024, {}).get('value') if 2024 in hhi_values else None
         
         prompt = f"""
-        Generate exactly 2 paragraphs discussing market concentration trends in {county_name} from 2018 to 2024, using the Herfindahl-Hirschman Index (HHI).
+        Generate exactly 2 paragraphs discussing market concentration trends in {county_name} from 2020 to 2024, using the Herfindahl-Hirschman Index (HHI).
         
         HHI Data by Year:
         {json.dumps(hhi_values, indent=2)}
@@ -330,7 +330,7 @@ class BizSightAnalyzer:
         Key Trends:
         - First year (2018) HHI: {first_hhi if first_hhi else 'Not available'}
         - Last year (2024) HHI: {last_hhi if last_hhi else 'Not available'}
-        - Change from 2018 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
+        - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
         - Pre-PPP (2018) HHI: {pre_ppp_hhi if pre_ppp_hhi else 'Not available'}
         - Post-PPP (2024) HHI: {post_ppp_hhi if post_ppp_hhi else 'Not available'}
         
@@ -358,7 +358,7 @@ class BizSightAnalyzer:
         - Present ONLY what the HHI data shows
         - Use professional, analytical tone
         - EXACTLY 2 PARAGRAPHS (required)
-        - First paragraph: Discuss overall trends from 2018 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
+        - First paragraph: Discuss overall trends from 2020 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
         - Second paragraph: Compare pre-PPP (2018) to post-PPP (2024) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
         - Focus on trends and patterns rather than listing every year's value
         - If HHI increased, the market became more concentrated (less competitive)
@@ -478,7 +478,7 @@ class BizSightAnalyzer:
         post_ppp_hhi = hhi_values.get(2024, {}).get('value') if 2024 in hhi_values else None
         
         prompt = f"""
-        Generate exactly 2 paragraphs discussing market concentration trends in {county_name} from 2018 to 2024, using the Herfindahl-Hirschman Index (HHI).
+        Generate exactly 2 paragraphs discussing market concentration trends in {county_name} from 2020 to 2024, using the Herfindahl-Hirschman Index (HHI).
         
         HHI Data by Year:
         {json.dumps(hhi_values, indent=2)}
@@ -486,7 +486,7 @@ class BizSightAnalyzer:
         Key Trends:
         - First year (2018) HHI: {first_hhi if first_hhi else 'Not available'}
         - Last year (2024) HHI: {last_hhi if last_hhi else 'Not available'}
-        - Change from 2018 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
+        - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
         - Pre-PPP (2018) HHI: {pre_ppp_hhi if pre_ppp_hhi else 'Not available'}
         - Post-PPP (2024) HHI: {post_ppp_hhi if post_ppp_hhi else 'Not available'}
         
@@ -514,7 +514,7 @@ class BizSightAnalyzer:
         - Present ONLY what the HHI data shows
         - Use professional, analytical tone
         - EXACTLY 2 PARAGRAPHS (required)
-        - First paragraph: Discuss overall trends from 2018 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
+        - First paragraph: Discuss overall trends from 2020 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
         - Second paragraph: Compare pre-PPP (2018) to post-PPP (2024) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
         - Focus on trends and patterns rather than listing every year's value
         - If HHI increased, the market became more concentrated (less competitive)

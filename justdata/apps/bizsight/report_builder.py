@@ -31,7 +31,7 @@ def safe_float(value, default=0.0):
 
 def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
     """
-    Create county-level summary table for Section 2 (2018-2024).
+    Create county-level summary table for Section 2 (2020-2024).
     
     Shows aggregate data for the whole county across all years.
     
@@ -819,7 +819,7 @@ def calculate_hhi_for_lenders(disclosure_df: pd.DataFrame, year: int = 2024) -> 
 
 def calculate_hhi_by_year(disclosure_df: pd.DataFrame, years: List[int]) -> List[Dict]:
     """
-    Calculate HHI for each year from 2018 to 2024.
+    Calculate HHI for each year from 2020 to 2024.
     
     Args:
         disclosure_df: DataFrame with disclosure data for all years
