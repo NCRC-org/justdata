@@ -5,14 +5,35 @@ Shared across BranchSeeker, BizSight, and LendSight.
 """
 
 import os
+import json
+import tempfile
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from google import auth
 from typing import List, Dict, Any
 
 
+def escape_sql_string(value: str) -> str:
+    """
+    Escape a string value for safe use in BigQuery SQL queries.
+    BigQuery uses backslash escaping for special characters in single-quoted strings.
+
+    Args:
+        value: String value to escape
+
+    Returns:
+        Escaped string safe for BigQuery SQL interpolation
+    """
+    if value is None:
+        return ''
+    # BigQuery uses backslash escaping (not SQL-standard double apostrophe)
+    # Escape backslashes first, then apostrophes
+    return str(value).replace("\\", "\\\\").replace("'", "\\'")
+
+
 # Cache for credential path to avoid repeated lookups and messages
 _credential_path_cache = None
+_temp_cred_file = None
 
 def get_bigquery_client(project_id: str = None):
     """Get BigQuery client using environment-based credentials."""
