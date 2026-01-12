@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataExplorer 2.0 - Interactive Financial Data Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="logo">
+                <h1>DataExplorer 2.0</h1>
+                <p class="subtitle">Interactive Financial Data Dashboard</p>
+            </div>
+        </header>
+
+        <nav class="mode-selector">
+            <button class="mode-btn active" data-mode="area">Area Analysis</button>
+            <button class="mode-btn" data-mode="lender">Lender Targeting</button>
+        </nav>
+
+        <!-- Area Analysis Mode -->
+        <div id="area-mode" class="mode-panel active">
+            <div class="panel-header">
+                <h2>Area Analysis</h2>
+                <p>Analyze lending patterns by geography, year, and data type</p>
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="data-type">Data Type:</label>
+                    <select id="data-type" class="form-control">
+                        <option value="hmda">HMDA Mortgage Lending</option>
+                        <option value="sb">Small Business Lending</option>
+                        <option value="branches">Bank Branches</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="years">Years:</label>
+                    <input type="text" id="years" class="form-control" placeholder="e.g., 2020,2021,2022,2023,2024">
+                    <small class="form-text">Comma-separated years (max 10 years)</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="geoids">GEOIDs (County FIPS Codes):</label>
+                    <textarea id="geoids" class="form-control" rows="3" placeholder="e.g., 24031,24033,24035"></textarea>
+                    <small class="form-text">Comma-separated county FIPS codes (max 100 counties)</small>
+                </div>
+
+                <div class="form-group">
+                    <button id="run-area-analysis" class="btn btn-primary">Run Analysis</button>
+                </div>
+            </div>
+
+            <div id="area-results" class="results-panel" style="display: none;">
+                <h3>Analysis Results</h3>
+                <div id="area-results-content"></div>
+            </div>
+        </div>
+
+        <!-- Lender Targeting Mode -->
+        <div id="lender-mode" class="mode-panel">
+            <div class="panel-header">
+                <h2>Lender Targeting</h2>
+                <p>Analyze specific lenders with peer comparison</p>
+            </div>
+
+            <div class="form-section">
+                <div class="form-group">
+                    <label for="lender-search">Search for Lender:</label>
+                    <input type="text" id="lender-search" class="form-control" placeholder="Enter lender name">
+                    <button id="search-lender" class="btn btn-secondary">Search</button>
+                </div>
+
+                <div id="lender-results" class="lender-list" style="display: none;">
+                    <h4>Select a Lender:</h4>
+                    <div id="lender-options"></div>
+                </div>
+
+                <div id="selected-lender-info" class="selected-lender" style="display: none;">
+                    <h4>Selected Lender:</h4>
+                    <div id="lender-details"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="enable-peer-comparison" checked>
+                        Enable Peer Comparison
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="lender-years">Years:</label>
+                    <input type="text" id="lender-years" class="form-control" placeholder="e.g., 2020,2021,2022,2023,2024">
+                </div>
+
+                <div class="form-group">
+                    <button id="run-lender-analysis" class="btn btn-primary" disabled>Run Analysis</button>
+                </div>
+            </div>
+
+            <div id="lender-results-panel" class="results-panel" style="display: none;">
+                <h3>Lender Analysis Results</h3>
+                <div id="lender-results-content"></div>
+            </div>
+        </div>
+
+        <footer>
+            <p>DataExplorer 2.0 - Version {{ version }}</p>
+            <p><a href="/">Return to JustData Home</a></p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ version }}"></script>
+</body>
+</html>

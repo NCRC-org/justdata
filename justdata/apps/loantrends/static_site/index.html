@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoanTrends Dashboard - JustData</title>
+    <meta name="description" content="National mortgage lending trends dashboard with quarterly data">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <style>
+        /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
+:root {
+    --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC blue */
+    --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
+    --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
+    --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
+    --ncrc-dark-blue: #034ea0;          /* Dark Blue for headers */
+    --ncrc-light-blue: #E6F2FF;         /* Light blue background (custom, not in palette) */
+    --ncrc-gold: #ffc23a;               /* Golden Yellow */
+    --ncrc-purple: #552d87;             /* Deep Purple (same as primary blue) */
+    --ncrc-gray: #818390;               /* Medium Gray */
+    --ncrc-white: #FFFFFF;
+    --ncrc-black: #000000;              /* Solid Black */
+    --ncrc-gray-light: #F5F5F5;         /* Light gray background (custom) */
+    --ncrc-gray-dark: #333333;          /* Dark gray text (custom) */
+}
+
+/* Reset and Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--ncrc-gray-light);
+    min-height: 100vh;
+    color: var(--ncrc-gray-dark);
+    line-height: 1.6;
+    overflow-x: visible !important;
+    overflow-y: auto;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 30px;
+    align-items: flex-start;
+    overflow: visible !important;
+}
+
+.content-wrapper {
+    flex: 1;
+    min-width: 0;
+    position: relative;
+    z-index: 1;
+}
+
+.analysis-card {
+    position: relative;
+    z-index: 1;
+}
+
+.sidebar {
+    width: 320px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 20px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 25px;
+    margin-top: 20px;
+    will-change: auto;
+    contain: none !important;
+    backface-visibility: visible !important;
+    transform: translateZ(0);
+    overflow: visible !important;
+    max-height: calc(100vh - 40px) !important;
+    z-index: 100;
+}
+
+/* Header */
+.header {
+    background: var(--ncrc-dark-blue);
+    text-align: center;
+    padding: 40px 20px 30px;
+    color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.header-layout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    position: relative;
+    width: 100%;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    flex: 0 0 auto;
+}
+
+.header-title-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+}
+
+.header-tagline {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    flex: 0 0 auto;
+}
+
+.logo img {
+    max-height: 90px;
+    width: auto;
+    border-radius: 8px;
+}
+
+.logo i {
+    font-size: 2.5rem;
+    color: var(--ncrc-gold);
+    display: none; /* Hide icon when logo image is used */
+}
+
+
+.header-title-section h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+}
+
+.just-data-subtitle {
+    font-size: 1.2rem; /* Adjusted smaller */
+    font-weight: 400; /* Regular/medium weight */
+    color: rgba(255, 255, 255, 0.95);
+    margin: 10px 0 0 0; /* 10px margin-top */
+    text-align: center;
+}
+
+.header-tagline {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-shrink: 0;
+    flex: 0 0 auto;
+}
+
+.tagline-box {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    height: 90px;
+    width: 256px; /* Matches NCRC logo width (469px Ã— 165px image scaled to 90px height = 256px width) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+.header-tagline p {
+    font-size: 1rem;
+    font-weight: 500;
+    color: #000000;
+    margin: 0;
+    font-style: normal;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+    max-width: 100%;
+}
+
+.header-tagline p em {
+    font-style: italic;
+    color: var(--ncrc-pink);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    font-weight: 300;
+    opacity: 0.95;
+    margin-top: 10px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Main Content */
+.main-content {
+    padding-bottom: 60px;
+}
+
+/* Sidebar Styles */
+/* Ensure sidebar content is visible */
+.sidebar .sidebar-features,
+.sidebar .sidebar-docs {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+}
+
+.sidebar .feature-card,
+.sidebar .doc-link {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+}
+
+.sidebar *,
+.sidebar *::before,
+.sidebar *::after {
+    /* Prevent any keyframe animations, but allow display */
+    animation: none !important;
+}
+
+.sidebar h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--ncrc-primary-blue);
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--ncrc-light-blue);
+}
+
+/* Sidebar Features */
+.sidebar-features {
+    display: flex !important;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+    width: 100%;
+    overflow: visible !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Sidebar Documentation Links */
+.sidebar-docs {
+    display: flex !important;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+.sidebar-docs .doc-link {
+    display: flex !important;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    text-decoration: none;
+    color: var(--ncrc-dark-blue);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
+}
+
+.sidebar-docs .doc-link:hover {
+    background: var(--ncrc-light-blue);
+    border-color: var(--ncrc-primary-blue);
+    color: var(--ncrc-primary-blue);
+    text-decoration: none;
+    transform: translateX(3px);
+}
+
+.sidebar-docs .doc-link i {
+    font-size: 1rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar .feature-card {
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: var(--ncrc-light-blue);
+    border-radius: 6px;
+    padding: 8px 12px;
+    text-align: center;
+    transition: background-color 0.2s ease;
+    border: 1px solid rgba(0, 51, 102, 0.1);
+    width: 100%;
+    box-sizing: border-box;
+    min-height: 50px;
+    position: relative;
+    cursor: pointer;
+}
+
+.sidebar .feature-card:hover {
+    background: rgba(0, 102, 204, 0.1);
+}
+
+/* Tooltip/Popup for feature cards */
+.sidebar .feature-card {
+    position: relative !important;
+    z-index: 1;
+    overflow: visible !important;
+}
+
+.sidebar .feature-card,
+.sidebar .feature-card * {
+    overflow: visible !important;
+}
+
+/* CSS tooltips disabled - using JavaScript tooltips for HTML support */
+.sidebar .feature-card::before,
+.sidebar .feature-card::after {
+    display: none !important;
+}
+
+.sidebar .feature-card i {
+    font-size: 2rem;
+    color: var(--ncrc-primary-blue);
+    margin-bottom: 10px;
+    display: block;
+}
+
+.sidebar .feature-card h4 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--ncrc-primary-blue);
+    margin: 4px 0;
+}
+
+.sidebar .feature-card p {
+    font-size: 0.85rem;
+    color: var(--ncrc-gray);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Sidebar Documentation */
+.sidebar-docs {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.sidebar .doc-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 15px;
+    background: var(--ncrc-light-blue);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--ncrc-primary-blue);
+    transition: all 0.2s ease;
+    border: 1px solid rgba(0, 51, 102, 0.1);
+}
+
+.sidebar .doc-link:hover {
+    background: rgba(0, 102, 204, 0.1);
+    color: var(--ncrc-secondary-blue);
+    text-decoration: none;
+}
+
+.sidebar .doc-link i {
+    font-size: 1.2rem;
+    width: 20px;
+    text-align: center;
+}
+
+.sidebar .doc-link span {
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.report-preview {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    margin-bottom: 25px;
+    /* Disable transform transitions to prevent flickering */
+    transition: color 0.2s ease;
+}
+
+.report-preview:last-child {
+    margin-bottom: 0;
+}
+
+.report-preview:hover {
+    /* Only change color on hover, no transform */
+    text-decoration: none;
+}
+
+.report-preview-image {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: block;
+    object-fit: cover;
+    aspect-ratio: 16 / 9;
+    background-color: #f0f0f0;
+}
+
+.report-preview-title {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ncrc-primary-blue);
+    line-height: 1.4;
+    margin-bottom: 10px;
+    transition: color 0.2s ease;
+    /* Prevent layout shifts - set fixed height for multi-line titles */
+    min-height: 2.8em;
+    /* Use translateZ(0) for hardware acceleration without visual transform */
+    transform: translateZ(0);
+}
+
+.report-preview:hover .report-preview-title {
+    color: var(--ncrc-secondary-blue);
+}
+
+.report-preview-meta {
+    font-size: 0.85rem;
+    color: var(--ncrc-gray);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.report-preview-meta i {
+    color: var(--ncrc-primary-blue);
+}
+
+/* Analysis Card */
+.analysis-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    padding: 40px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.card-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.card-header h2 {
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.card-header h2 i {
+    color: var(--ncrc-primary-blue);
+}
+
+.card-header p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+/* Form Styles */
+.analysis-form {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-group {
+    margin-bottom: 30px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group label i {
+    color: var(--ncrc-primary-blue);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #f8f9fa;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--ncrc-primary-blue);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+}
+
+/* Year Range Styles */
+.year-range-container {
+    display: flex;
+    gap: 15px;
+    align-items: end;
+}
+
+.year-select-group {
+    flex: 1;
+}
+
+.year-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 5px;
+}
+
+.year-select-group select {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid #e1e5e9;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-family: inherit;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    color: #333;
+    cursor: pointer;
+}
+
+.year-select-group select:focus {
+    outline: none;
+    border-color: var(--ncrc-primary-blue);
+    background: white;
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.1);
+}
+
+.year-select-group select:hover {
+    border-color: var(--ncrc-primary-blue);
+    background: white;
+}
+
+/* Responsive design for year range */
+@media (max-width: 768px) {
+    .year-range-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .year-select-group {
+        width: 100%;
+    }
+}
+
+.help-text {
+    display: block;
+    margin-top: 8px;
+    color: #666;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.help-text i {
+    color: var(--ncrc-primary-blue);
+}
+
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 18px 30px;
+    background: var(--ncrc-primary-blue);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 4px 12px rgba(0, 51, 102, 0.3);
+}
+
+.submit-btn:hover {
+    background: var(--ncrc-secondary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 51, 102, 0.4);
+}
+
+.submit-btn:active {
+    transform: translateY(0);
+}
+
+.submit-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.submit-info {
+    display: block;
+    text-align: center;
+    margin-top: 10px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.submit-info i {
+    margin-right: 5px;
+    color: var(--ncrc-primary-blue);
+}
+
+/* Progress Section */
+.progress-section {
+    margin-top: 30px;
+}
+
+.progress-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+.progress-header {
+    margin-bottom: 20px;
+}
+
+.progress-header i {
+    font-size: 2.5rem;
+    color: var(--ncrc-primary-blue);
+    margin-bottom: 10px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.progress-header h3 {
+    color: #333;
+    font-weight: 600;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 20px 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--ncrc-primary-blue);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+    width: 0%;
+    box-shadow: 0 2px 4px rgba(85, 45, 135, 0.3);
+}
+
+.progress-text {
+    color: #666;
+    font-weight: 500;
+}
+
+.progress-info {
+    margin-top: 15px;
+    padding: 10px;
+    background: var(--ncrc-light-blue);
+    border-radius: 8px;
+    border-left: 3px solid var(--ncrc-primary-blue);
+}
+
+.progress-info i {
+    color: var(--ncrc-primary-blue);
+    margin-right: 8px;
+}
+
+.progress-info small {
+    color: #555;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* Results Section */
+.results-section {
+    margin-top: 30px;
+}
+
+.results-card {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    border: 1px solid #c3e6cb;
+}
+
+.results-header {
+    margin-bottom: 20px;
+}
+
+.results-header i {
+    font-size: 2.5rem;
+    color: #28a745;
+    margin-bottom: 10px;
+}
+
+.results-header h3 {
+    color: #155724;
+    font-weight: 600;
+}
+
+.results-content p {
+    color: #155724;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.download-options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.download-btn {
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 15px rgba(40, 167, 69, 0.3);
+}
+
+.download-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(40, 167, 69, 0.4);
+}
+
+.download-info {
+    color: #155724;
+    opacity: 0.8;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Error Section */
+.error-section {
+    margin-top: 30px;
+}
+
+.error-card {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    border: 1px solid #f5c6cb;
+}
+
+.error-header {
+    margin-bottom: 20px;
+}
+
+.error-header i {
+    font-size: 2.5rem;
+    color: #dc3545;
+    margin-bottom: 10px;
+}
+
+.error-header h3 {
+    color: #721c24;
+    font-weight: 600;
+}
+
+.error-content p {
+    color: #721c24;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+}
+
+.retry-btn {
+    padding: 12px 25px;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.retry-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 15px rgba(220, 53, 69, 0.3);
+}
+
+/* Features Section */
+.features-section {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    padding: 40px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.features-section h3 {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.features-section h3 i {
+    color: #ffd700;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 25px;
+}
+
+.feature-card {
+    text-align: center;
+    padding: 25px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 15px;
+    border: 1px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.feature-card i {
+    font-size: 2.5rem;
+    color: var(--ncrc-primary-blue);
+    margin-bottom: 15px;
+}
+
+.feature-card h4 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.feature-card p {
+    color: #666;
+    line-height: 1.5;
+}
+
+/* Documentation Section */
+.documentation-section {
+    background: white;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    padding: 40px;
+    margin-bottom: 40px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+.documentation-section h3 {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.documentation-section h3 i {
+    color: #ffd700;
+}
+
+.doc-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.doc-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid #dee2e6;
+}
+
+.doc-link:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    background: var(--ncrc-primary-blue);
+    color: white;
+}
+
+.doc-link i {
+    font-size: 1.5rem;
+    color: var(--ncrc-primary-blue);
+}
+
+.doc-link:hover i {
+    color: white;
+}
+
+/* Footer */
+.footer {
+    background: var(--ncrc-dark-blue);
+    padding: 2rem 0 0.5rem 0;
+    border-radius: 0;
+    margin: 2rem 0 0 0;
+    width: 100%;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+}
+
+.footer-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 3rem;
+}
+
+.footer-col {
+    flex: 1 1 0;
+    min-width: 200px;
+    max-width: 300px;
+    margin-bottom: 1rem;
+}
+
+.footer-col.footer-logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: auto;
+    max-width: none;
+    margin-left: auto;
+}
+
+.footer-logo-img {
+    height: 90px;
+    width: auto;
+    border-radius: 8px;
+}
+
+.footer-col h4 {
+    color: var(--ncrc-gold);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.footer-col p {
+    color: #fff;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.footer-col a {
+    color: #fff;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.footer-col a:hover {
+    color: var(--ncrc-gold);
+}
+
+.footer-bottom {
+    text-align: center;
+    color: #ccc;
+    font-size: 0.95rem;
+    margin-top: 1.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.version-text {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+    margin-top: 0.5rem;
+    display: inline-block;
+}
+
+/* Table Header and Expand Button */
+.table-header {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.collapse-btn,
+.expand-btn {
+    padding: 8px 16px;
+    background: var(--ncrc-primary-blue);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.collapse-btn:hover,
+.expand-btn:hover {
+    background: var(--ncrc-secondary-blue);
+    transform: translateY(-1px);
+}
+
+.collapse-btn i,
+.expand-btn i {
+    font-size: 0.85rem;
+}
+
+/* Tour Button */
+.tour-btn {
+    transition: all 0.2s ease;
+}
+
+.tour-btn:hover {
+    background: var(--ncrc-primary-blue) !important;
+    transform: translateY(-1px);
+}
+
+/* Tooltips */
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]:hover::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 16px;
+    background: var(--ncrc-dark-blue);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    white-space: normal;
+    max-width: 300px;
+    min-width: 200px;
+    z-index: 10000;
+    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    pointer-events: none;
+    text-align: left;
+    word-wrap: break-word;
+}
+
+/* Disable generic tooltips for sidebar feature cards - only disable the generic ::after and ::before rules */
+/* CSS tooltips disabled - using JavaScript tooltips instead */
+.sidebar .feature-card[data-tooltip]:hover::after {
+    display: none !important;
+    content: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Note: We can't disable ::before here because our custom tooltip uses ::before for content */
+/* Instead, we rely on specificity - .sidebar .feature-card::before is more specific than [data-tooltip]:hover::before */
+
+/* Generic tooltip arrow - but not for sidebar feature cards */
+[data-tooltip]:hover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--ncrc-dark-blue);
+    z-index: 10001;
+    margin-bottom: -5px;
+}
+
+/* Disable CSS tooltips for sidebar feature cards - using JavaScript tooltips instead */
+.sidebar .feature-card[data-tooltip]::before {
+    display: none !important;
+    content: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+}
+
+/* Disable CSS tooltip on hover for sidebar feature cards */
+.sidebar .feature-card[data-tooltip]:hover::before {
+    display: none !important;
+    content: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Custom tooltip for sidebar feature cards with white background */
+.custom-tooltip {
+    display: none !important;
+    position: fixed !important;
+    background: white !important;
+    color: #333 !important;
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    max-width: 350px !important;
+    min-width: 250px !important;
+    z-index: 99999 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2) !important;
+    pointer-events: auto !important;
+    text-align: left !important;
+    word-wrap: break-word !important;
+    margin: 0 !important;
+    border: 1px solid #ddd !important;
+    overflow: visible !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.custom-tooltip::after {
+    content: '' !important;
+    position: absolute !important;
+    right: -10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    border: 10px solid transparent !important;
+    border-left-color: white !important;
+    border-right: none !important;
+    pointer-events: none !important;
+}
+
+
+/* Form Validation Messages */
+.validation-message {
+    display: none;
+    margin-top: 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.validation-message.error {
+    display: block;
+    background: #fee;
+    color: #c33;
+    border-left: 3px solid #c33;
+}
+
+.validation-message.success {
+    display: block;
+    background: #efe;
+    color: #3c3;
+    border-left: 3px solid #3c3;
+}
+
+.validation-message.info {
+    display: block;
+    background: #eef;
+    color: #33c;
+    border-left: 3px solid #33c;
+}
+
+.form-group.has-error input,
+.form-group.has-error select {
+    border-color: #c33;
+    box-shadow: 0 0 0 3px rgba(204, 51, 51, 0.1);
+}
+
+.form-group.has-success input,
+.form-group.has-success select {
+    border-color: #3c3;
+}
+
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.progress-step.pending {
+    background: white;
+    color: #999;
+    border: 1px solid #e0e0e0;
+}
+
+.progress-step.active {
+    background: var(--ncrc-light-blue);
+    color: var(--ncrc-dark-blue);
+    font-weight: 600;
+    border-left: 3px solid var(--ncrc-secondary-blue);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.progress-step.completed {
+    background: #e8f5e9;
+    color: #388e3c;
+    border: 1px solid #c8e6c9;
+}
+
+.progress-step i {
+    width: 20px;
+    text-align: center;
+    font-size: 1rem;
+}
+
+.progress-step.pending i {
+    color: #ccc;
+}
+
+.progress-step.active i {
+    color: var(--ncrc-secondary-blue);
+}
+
+.progress-step.completed i {
+    color: #388e3c;
+}
+
+/* Intro.js Custom Styling */
+/* Ensure overlay covers entire viewport */
+.introjs-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 100vw !important;
+    min-height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    z-index: 999998 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    box-sizing: border-box !important;
+}
+
+.introjs-tooltip {
+    font-family: 'Inter', sans-serif;
+    min-width: 400px;
+    max-width: 550px;
+    padding: 5px !important;
+    box-sizing: border-box;
+    position: fixed !important;
+    top: 50% !important;
+    right: 200px !important;
+    left: auto !important;
+    transform: translateY(-50%) !important;
+    z-index: 999999 !important;
+    transition: opacity 0.3s ease, transform 0.3s ease !important;
+    background: white !important;
+    background-color: white !important;
+    background-image: none !important;
+    background-clip: border-box !important;
+    background-origin: border-box !important;
+    background-size: 100% 100% !important;
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+}
+
+/* Change arrow to point left instead of up */
+.introjs-arrow {
+    border-color: transparent !important;
+    border-right-color: white !important;
+    border-width: 10px !important;
+    left: -20px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.introjs-arrow.top {
+    border-color: transparent !important;
+    border-right-color: white !important;
+    border-width: 10px !important;
+    left: -20px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+}
+
+.introjs-arrow.bottom {
+    border-color: transparent !important;
+    border-right-color: white !important;
+    border-width: 10px !important;
+    left: -20px !important;
+    top: 50% !important;
+    bottom: auto !important;
+    transform: translateY(-50%) !important;
+}
+
+.introjs-tooltipbuttons {
+    text-align: center;
+    padding-top: 5px;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    margin-top: 5px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: nowrap;
+    flex-direction: row;
+}
+
+.introjs-button {
+    background: var(--ncrc-dark-blue);
+    border-color: var(--ncrc-dark-blue);
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    margin: 0;
+    min-width: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
+
+.introjs-button:hover {
+    background: var(--ncrc-secondary-blue);
+    border-color: var(--ncrc-secondary-blue);
+}
+
+.introjs-skipbutton {
+    font-size: 0.9rem !important;
+    padding: 8px 12px !important;
+    margin: 0 10px !important;
+    min-width: 80px !important;
+    width: auto !important;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    background: var(--ncrc-gray) !important;
+    border: 1px solid var(--ncrc-gray) !important;
+    border-radius: 4px;
+    color: white !important;
+    cursor: pointer;
+    position: relative !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    order: 2 !important;
+    height: auto !important;
+    line-height: 1.5 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+}
+
+/* Match skip button width to other buttons - make it the same as Back/Next */
+.introjs-tooltipbuttons .introjs-skipbutton {
+    min-width: 80px !important;
+    width: 80px !important;
+    flex: 0 0 80px !important;
+}
+
+/* Ensure all buttons in the container have consistent width and reduced padding */
+.introjs-tooltipbuttons .introjs-button,
+.introjs-tooltipbuttons .introjs-prevbutton,
+.introjs-tooltipbuttons .introjs-nextbutton {
+    min-width: 80px;
+    width: 80px;
+    flex: 0 0 80px;
+    padding: 8px 12px !important;
+}
+
+.introjs-skipbutton:hover {
+    background: var(--ncrc-dark-blue) !important;
+    border-color: var(--ncrc-dark-blue) !important;
+}
+
+/* Ensure skip button is in the button container and positioned correctly */
+.introjs-tooltipbuttons .introjs-skipbutton {
+    order: 3 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+/* Hide skip button if it's outside the button container */
+.introjs-tooltip > .introjs-skipbutton {
+    display: none !important;
+}
+
+.introjs-tooltipReferenceLayer {
+    position: relative;
+}
+
+.introjs-tooltiptext {
+    font-size: 0.95rem;
+    line-height: 1.5;
+    padding: 5px !important;
+    margin: 0 0 10px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .container {
+        flex-direction: column;
+    }
+    
+    .sidebar {
+        width: 100%;
+        position: relative;
+        top: 0;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+        flex-direction: column;
+    }
+    
+    .header {
+        padding: 40px 0 30px;
+    }
+    
+    .logo h1 {
+        font-size: 2rem;
+    }
+    
+    .analysis-card {
+        padding: 25px;
+    }
+    
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .doc-links {
+        grid-template-columns: 1fr;
+    }
+    
+    .footer-content {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+    
+    .card-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .sidebar {
+        width: 100%;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .logo h1 {
+        font-size: 1.8rem;
+    }
+    
+    .analysis-card {
+        padding: 20px;
+    }
+    
+    .form-group input {
+        padding: 12px 15px;
+    }
+    
+    .submit-btn {
+        padding: 15px 20px;
+    }
+} 
+        
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .dashboard-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .dashboard-header h1 {
+            color: var(--ncrc-dark-blue);
+            margin-bottom: 10px;
+        }
+        .dashboard-header p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: var(--ncrc-gray);
+        }
+        .chart-section {
+            margin-bottom: 40px;
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .chart-section h2 {
+            color: var(--ncrc-dark-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--ncrc-light-blue);
+        }
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        .chart-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+        }
+        .chart-card h3 {
+            color: var(--ncrc-dark-blue);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+        .chart-subtitle {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="https://ncrc.org/wp-content/uploads/2020/03/NCRC-Logo-300x300.png" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    </a>
+                </div>
+                <div class="header-title-section">
+                    <h1>LoanTrends</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Return to JustData Home Button -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
+        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+            <i class="fas fa-arrow-left"></i> Return to JustData Home
+        </a>
+    </div>
+
+    <div class="dashboard-container">
+        <div class="dashboard-header">
+            <h1><i class="fas fa-chart-line"></i> National Mortgage Lending Trends Dashboard</h1>
+            <p>Quarterly trends from CFPB HMDA Quarterly Data Graph API</p>
+            <p id="timePeriodDisplay" style="font-size: 0.9em; color: #666; margin-top: 10px;">Time Period: 2022-Q4 to 2025-Q3 (last 12 quarters)</p>
+            <p style="font-size: 0.85em; color: #999; margin-top: 5px;">Last updated: 2025-12-19</p>
+        </div>
+
+        <div id="loadingMessage" class="loading-message">
+            <i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <p>Loading dashboard data...</p>
+        </div>
+
+        <div id="dashboardContent" style="display: none;">
+            <!-- Charts will be dynamically inserted here -->
+        </div>
+    </div>
+
+    <script>
+        // NCRC Color Palette
+        const NCRC_COLORS = [
+            '#552d87',  // Primary Blue (Purple)
+            '#2fade3',  // Secondary Blue
+            '#e82e2e',  // Accent Red
+            '#eb2f89',  // Pink
+            '#034ea0',  // Dark Blue
+            '#ffc23a',  // Gold
+            '#818390'   // Gray
+        ];
+
+        let colorIndex = 0;
+        function getNextColor() {
+            const color = NCRC_COLORS[colorIndex % NCRC_COLORS.length];
+            colorIndex++;
+            return color;
+        }
+
+        function resetColorIndex() {
+            colorIndex = 0;
+        }
+
+        // Chart data loaded from JSON
+        const chartData = {"applications": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 341722.0, "2023-Q1": 319548.0, "2023-Q2": 379454.0, "2023-Q3": 364947.0, "2023-Q4": 298757.0, "2024-Q1": 298090.0, "2024-Q2": 375159.0, "2024-Q3": 399859.0, "2024-Q4": 392295.0, "2025-Q1": 315566.0, "2025-Q2": 392991.0}, "Conventional Non-Conforming": {"2022-Q4": 21092.0, "2023-Q1": 11718.0, "2023-Q2": 17677.0, "2023-Q3": 15635.0, "2023-Q4": 13546.0, "2024-Q1": 11394.0, "2024-Q2": 17778.0, "2024-Q3": 17383.0, "2024-Q4": 19913.0, "2025-Q1": 22042.0, "2025-Q2": 27964.0}, "FHA": {"2022-Q4": 129641.0, "2023-Q1": 125232.0, "2023-Q2": 153143.0, "2023-Q3": 160150.0, "2023-Q4": 139634.0, "2024-Q1": 142411.0, "2024-Q2": 159158.0, "2024-Q3": 175277.0, "2024-Q4": 182065.0, "2025-Q1": 159392.0, "2025-Q2": 191941.0}, "HELOC": {"2022-Q4": 132084.0, "2023-Q1": 126690.0, "2023-Q2": 128008.0, "2023-Q3": 127309.0, "2023-Q4": 107722.0, "2024-Q1": 106684.0, "2024-Q2": 128360.0, "2024-Q3": 149045.0, "2024-Q4": 133657.0, "2025-Q1": 120690.0, "2025-Q2": 141914.0}, "RHS/FSA": {"2022-Q4": 2695.0, "2023-Q1": 2733.0, "2023-Q2": 2936.0, "2023-Q3": 2578.0, "2023-Q4": 2029.0, "2024-Q1": 2310.0, "2024-Q2": 2497.0, "2024-Q3": 2476.0, "2024-Q4": 2686.0, "2025-Q1": 2567.0, "2025-Q2": 3138.0}, "VA": {"2022-Q4": 90791.0, "2023-Q1": 84526.0, "2023-Q2": 98511.0, "2023-Q3": 94515.0, "2023-Q4": 77618.0, "2024-Q1": 96129.0, "2024-Q2": 106374.0, "2024-Q3": 137878.0, "2024-Q4": 138300.0, "2025-Q1": 111690.0, "2025-Q2": 137801.0}}, "title": "How has the number of applications changed?", "subtitle": "", "yLabel": "Application Count"}, "loans": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 212464.0, "2023-Q1": 190171.0, "2023-Q2": 248481.0, "2023-Q3": 238605.0, "2023-Q4": 186965.0, "2024-Q1": 185923.0, "2024-Q2": 248795.0, "2024-Q3": 261564.0, "2024-Q4": 257819.0, "2025-Q1": 193768.0, "2025-Q2": 256598.0}, "Conventional Non-Conforming": {"2022-Q4": 13573.0, "2023-Q1": 6750.0, "2023-Q2": 11421.0, "2023-Q3": 10111.0, "2023-Q4": 8419.0, "2024-Q1": 6947.0, "2024-Q2": 11781.0, "2024-Q3": 11454.0, "2024-Q4": 13748.0, "2025-Q1": 14184.0, "2025-Q2": 19038.0}, "FHA": {"2022-Q4": 68486.0, "2023-Q1": 63803.0, "2023-Q2": 88155.0, "2023-Q3": 89847.0, "2023-Q4": 78023.0, "2024-Q1": 79975.0, "2024-Q2": 90843.0, "2024-Q3": 97631.0, "2024-Q4": 97550.0, "2025-Q1": 82562.0, "2025-Q2": 106933.0}, "HELOC": {"2022-Q4": 47594.0, "2023-Q1": 45919.0, "2023-Q2": 48629.0, "2023-Q3": 47162.0, "2023-Q4": 40546.0, "2024-Q1": 38633.0, "2024-Q2": 48957.0, "2024-Q3": 56267.0, "2024-Q4": 50109.0, "2025-Q1": 45077.0, "2025-Q2": 54491.0}, "RHS/FSA": {"2022-Q4": 1992.0, "2023-Q1": 1940.0, "2023-Q2": 2187.0, "2023-Q3": 1889.0, "2023-Q4": 1496.0, "2024-Q1": 1685.0, "2024-Q2": 1841.0, "2024-Q3": 1859.0, "2024-Q4": 2016.0, "2025-Q1": 1740.0, "2025-Q2": 2148.0}, "VA": {"2022-Q4": 53626.0, "2023-Q1": 48363.0, "2023-Q2": 59430.0, "2023-Q3": 57244.0, "2023-Q4": 45524.0, "2024-Q1": 56912.0, "2024-Q2": 64698.0, "2024-Q3": 84675.0, "2024-Q4": 82702.0, "2025-Q1": 61639.0, "2025-Q2": 82176.0}}, "title": "How has the number of loans changed?", "subtitle": "", "yLabel": "Loan Count"}, "credit-scores": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 754.0, "2023-Q1": 756.0, "2023-Q2": 761.0, "2023-Q3": 761.0, "2023-Q4": 761.0, "2024-Q1": 760.0, "2024-Q2": 762.0, "2024-Q3": 762.0, "2024-Q4": 763.0, "2025-Q1": 762.0, "2025-Q2": 765.0}, "Conventional Non-Conforming": {"2022-Q4": 776.0, "2023-Q1": 779.0, "2023-Q2": 781.0, "2023-Q3": 781.0, "2023-Q4": 778.0, "2024-Q1": 780.0, "2024-Q2": 781.0, "2024-Q3": 780.0, "2024-Q4": 780.0, "2025-Q1": 777.0, "2025-Q2": 780.0}, "FHA": {"2022-Q4": 662.0, "2023-Q1": 664.0, "2023-Q2": 669.0, "2023-Q3": 670.0, "2023-Q4": 671.0, "2024-Q1": 673.0, "2024-Q2": 672.0, "2024-Q3": 672.0, "2024-Q4": 673.0, "2025-Q1": 673.0, "2025-Q2": 672.0}, "HELOC": {"2022-Q4": 766.0, "2023-Q1": 763.0, "2023-Q2": 761.0, "2023-Q3": 756.0, "2023-Q4": 756.0, "2024-Q1": 759.0, "2024-Q2": 760.0, "2024-Q3": 754.0, "2024-Q4": 760.0, "2025-Q1": 767.0, "2025-Q2": 769.0}, "RHS/FSA": {"2022-Q4": 702.0, "2023-Q1": 704.0, "2023-Q2": 703.0, "2023-Q3": 703.0, "2023-Q4": 705.0, "2024-Q1": 708.0, "2024-Q2": 704.0, "2024-Q3": 707.0, "2024-Q4": 705.0, "2025-Q1": 709.0, "2025-Q2": 711.0}, "VA": {"2022-Q4": 710.0, "2023-Q1": 710.0, "2023-Q2": 718.0, "2023-Q3": 720.0, "2023-Q4": 717.0, "2024-Q1": 716.0, "2024-Q2": 724.0, "2024-Q3": 723.0, "2024-Q4": 722.0, "2025-Q1": 721.0, "2025-Q2": 726.0}}, "title": "How have median credit scores changed?", "subtitle": "", "yLabel": "Median Credit Score"}, "credit-scores-cc-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 763.0, "2023-Q1": 764.0, "2023-Q2": 769.0, "2023-Q3": 768.0, "2023-Q4": 769.0, "2024-Q1": 769.0, "2024-Q2": 771.0, "2024-Q3": 772.0, "2024-Q4": 773.0, "2025-Q1": 772.0, "2025-Q2": 773.0}, "Black": {"2022-Q4": 731.0, "2023-Q1": 733.0, "2023-Q2": 738.0, "2023-Q3": 737.0, "2023-Q4": 737.0, "2024-Q1": 734.0, "2024-Q2": 734.0, "2024-Q3": 735.0, "2024-Q4": 737.0, "2025-Q1": 736.0, "2025-Q2": 735.0}, "Hispanic": {"2022-Q4": 744.0, "2023-Q1": 745.0, "2023-Q2": 748.0, "2023-Q3": 749.0, "2023-Q4": 748.0, "2024-Q1": 748.0, "2024-Q2": 748.0, "2024-Q3": 747.0, "2024-Q4": 750.0, "2025-Q1": 749.0, "2025-Q2": 749.0}, "White": {"2022-Q4": 758.0, "2023-Q1": 760.0, "2023-Q2": 765.0, "2023-Q3": 764.0, "2023-Q4": 764.0, "2024-Q1": 764.0, "2024-Q2": 765.0, "2024-Q3": 765.0, "2024-Q4": 766.0, "2025-Q1": 765.0, "2025-Q2": 768.0}}, "title": "For conventional conforming loans, how have median credit scores differed by race/ethnicity?", "subtitle": "", "yLabel": "Median Credit Score"}, "credit-scores-fha-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 673.0, "2023-Q1": 675.0, "2023-Q2": 681.0, "2023-Q3": 686.0, "2023-Q4": 690.0, "2024-Q1": 691.0, "2024-Q2": 694.0, "2024-Q3": 693.0, "2024-Q4": 693.0, "2025-Q1": 697.0, "2025-Q2": 692.0}, "Black": {"2022-Q4": 660.0, "2023-Q1": 661.0, "2023-Q2": 664.0, "2023-Q3": 665.0, "2023-Q4": 666.0, "2024-Q1": 666.0, "2024-Q2": 664.0, "2024-Q3": 665.0, "2024-Q4": 665.0, "2025-Q1": 663.0, "2025-Q2": 663.0}, "Hispanic": {"2022-Q4": 669.0, "2023-Q1": 671.0, "2023-Q2": 675.0, "2023-Q3": 678.0, "2023-Q4": 680.0, "2024-Q1": 682.0, "2024-Q2": 681.0, "2024-Q3": 681.0, "2024-Q4": 681.0, "2025-Q1": 682.0, "2025-Q2": 681.0}, "White": {"2022-Q4": 661.0, "2023-Q1": 663.0, "2023-Q2": 670.0, "2023-Q3": 669.0, "2023-Q4": 669.0, "2024-Q1": 673.0, "2024-Q2": 671.0, "2024-Q3": 671.0, "2024-Q4": 671.0, "2025-Q1": 672.0, "2025-Q2": 671.0}}, "title": "For FHA loans, how have median credit scores differed by race/ethnicity?", "subtitle": "", "yLabel": "Median Credit Score"}, "ltv": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 80.0, "2023-Q1": 80.0, "2023-Q2": 80.0, "2023-Q3": 80.0, "2023-Q4": 80.0, "2024-Q1": 80.0, "2024-Q2": 80.0, "2024-Q3": 80.0, "2024-Q4": 80.0, "2025-Q1": 80.0, "2025-Q2": 80.0}, "Conventional Non-Conforming": {"2022-Q4": 80.0, "2023-Q1": 80.0, "2023-Q2": 80.0, "2023-Q3": 79.99, "2023-Q4": 80.0, "2024-Q1": 79.98, "2024-Q2": 79.95, "2024-Q3": 79.68, "2024-Q4": 78.31, "2025-Q1": 80.0, "2025-Q2": 79.87}, "FHA": {"2022-Q4": 96.5, "2023-Q1": 96.5, "2023-Q2": 96.5, "2023-Q3": 96.5, "2023-Q4": 96.5, "2024-Q1": 96.5, "2024-Q2": 96.5, "2024-Q3": 96.5, "2024-Q4": 96.5, "2025-Q1": 96.5, "2025-Q2": 96.5}, "HELOC": {"2022-Q4": 67.32, "2023-Q1": 66.73, "2023-Q2": 66.27, "2023-Q3": 66.37, "2023-Q4": 65.58, "2024-Q1": 65.18, "2024-Q2": 65.02, "2024-Q3": 65.88, "2024-Q4": 64.41, "2025-Q1": 63.36, "2025-Q2": 62.62}, "RHS/FSA": {"2022-Q4": 100.01, "2023-Q1": 100.0, "2023-Q2": 100.45, "2023-Q3": 100.59, "2023-Q4": 100.36, "2024-Q1": 100.42, "2024-Q2": 100.5, "2024-Q3": 100.42, "2024-Q4": 100.42, "2025-Q1": 100.32, "2025-Q2": 100.1}, "VA": {"2022-Q4": 100.0, "2023-Q1": 100.0, "2023-Q2": 100.0, "2023-Q3": 100.0, "2023-Q4": 100.0, "2024-Q1": 100.0, "2024-Q2": 100.0, "2024-Q3": 99.49, "2024-Q4": 99.51, "2025-Q1": 100.0, "2025-Q2": 100.0}}, "title": "How has median CLTV changed?", "subtitle": "", "yLabel": "Median CLTV"}, "ltv-cc-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 80.0, "2023-Q1": 80.0, "2023-Q2": 80.0, "2023-Q3": 80.0, "2023-Q4": 80.0, "2024-Q1": 80.0, "2024-Q2": 80.0, "2024-Q3": 80.0, "2024-Q4": 80.0, "2025-Q1": 80.0, "2025-Q2": 80.0}, "Black": {"2022-Q4": 80.0, "2023-Q1": 80.0, "2023-Q2": 80.0, "2023-Q3": 85.0, "2023-Q4": 85.0, "2024-Q1": 85.0, "2024-Q2": 87.9, "2024-Q3": 85.0, "2024-Q4": 80.0, "2025-Q1": 80.0, "2025-Q2": 80.0}, "Hispanic": {"2022-Q4": 81.0, "2023-Q1": 86.0, "2023-Q2": 85.59, "2023-Q3": 85.0, "2023-Q4": 85.0, "2024-Q1": 85.0, "2024-Q2": 88.51, "2024-Q3": 87.9, "2024-Q4": 83.74, "2025-Q1": 82.14, "2025-Q2": 85.0}, "White": {"2022-Q4": 80.0, "2023-Q1": 80.0, "2023-Q2": 80.0, "2023-Q3": 80.0, "2023-Q4": 80.0, "2024-Q1": 80.0, "2024-Q2": 80.0, "2024-Q3": 80.0, "2024-Q4": 78.0, "2025-Q1": 79.62, "2025-Q2": 80.0}}, "title": "For conventional conforming loans, how has median CLTV differed by race/ethnicity?", "subtitle": "", "yLabel": "Median CLTV"}, "ltv-fha-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 96.5, "2023-Q1": 96.5, "2023-Q2": 96.5, "2023-Q3": 96.5, "2023-Q4": 96.5, "2024-Q1": 96.5, "2024-Q2": 96.5, "2024-Q3": 96.5, "2024-Q4": 96.5, "2025-Q1": 96.5, "2025-Q2": 96.5}, "Black": {"2022-Q4": 96.5, "2023-Q1": 96.5, "2023-Q2": 96.5, "2023-Q3": 96.5, "2023-Q4": 96.5, "2024-Q1": 96.5, "2024-Q2": 96.5, "2024-Q3": 96.5, "2024-Q4": 96.5, "2025-Q1": 96.5, "2025-Q2": 96.5}, "Hispanic": {"2022-Q4": 96.5, "2023-Q1": 96.5, "2023-Q2": 96.5, "2023-Q3": 96.5, "2023-Q4": 96.5, "2024-Q1": 96.5, "2024-Q2": 96.5, "2024-Q3": 96.5, "2024-Q4": 96.5, "2025-Q1": 96.5, "2025-Q2": 96.5}, "White": {"2022-Q4": 95.0, "2023-Q1": 95.0, "2023-Q2": 95.43, "2023-Q3": 95.0, "2023-Q4": 95.0, "2024-Q1": 95.0, "2024-Q2": 96.29, "2024-Q3": 95.35, "2024-Q4": 94.67, "2025-Q1": 95.96, "2025-Q2": 96.5}}, "title": "For FHA loans, how has median CLTV differed by race/ethnicity?", "subtitle": "", "yLabel": "Median CLTV"}, "dti": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 39.67, "2023-Q1": 39.46, "2023-Q2": 39.05, "2023-Q3": 39.89, "2023-Q4": 40.31, "2024-Q1": 39.74, "2024-Q2": 39.8, "2024-Q3": 39.59, "2024-Q4": 39.4, "2025-Q1": 39.67, "2025-Q2": 39.51}, "Conventional Non-Conforming": {"2022-Q4": 37.98, "2023-Q1": 37.51, "2023-Q2": 36.98, "2023-Q3": 37.8, "2023-Q4": 38.8, "2024-Q1": 38.33, "2024-Q2": 38.35, "2024-Q3": 38.26, "2024-Q4": 38.82, "2025-Q1": 39.29, "2025-Q2": 38.39}, "FHA": {"2022-Q4": 46.52, "2023-Q1": 46.0, "2023-Q2": 45.99, "2023-Q3": 46.28, "2023-Q4": 46.48, "2024-Q1": 46.13, "2024-Q2": 46.29, "2024-Q3": 46.23, "2024-Q4": 46.11, "2025-Q1": 46.24, "2025-Q2": 46.2}, "HELOC": {"2022-Q4": 39.93, "2023-Q1": 40.17, "2023-Q2": 39.96, "2023-Q3": 40.96, "2023-Q4": 41.79, "2024-Q1": 41.06, "2024-Q2": 40.76, "2024-Q3": 41.02, "2024-Q4": 40.83, "2025-Q1": 40.18, "2025-Q2": 39.52}, "RHS/FSA": {"2022-Q4": 36.73, "2023-Q1": 36.68, "2023-Q2": 36.38, "2023-Q3": 36.39, "2023-Q4": 36.13, "2024-Q1": 36.66, "2024-Q2": 36.74, "2024-Q3": 36.34, "2024-Q4": 36.59, "2025-Q1": 37.28, "2025-Q2": 36.95}, "VA": {"2022-Q4": 44.92, "2023-Q1": 44.52, "2023-Q2": 44.37, "2023-Q3": 45.02, "2023-Q4": 45.42, "2024-Q1": 44.64, "2024-Q2": 44.79, "2024-Q3": 44.7, "2024-Q4": 44.62, "2025-Q1": 44.84, "2025-Q2": 44.51}}, "title": "How have median DTIs changed?", "subtitle": "", "yLabel": "Median DTI"}, "dti-cc-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 40.39, "2023-Q1": 40.29, "2023-Q2": 40.01, "2023-Q3": 40.86, "2023-Q4": 41.29, "2024-Q1": 40.49, "2024-Q2": 40.75, "2024-Q3": 40.38, "2024-Q4": 40.18, "2025-Q1": 40.55, "2025-Q2": 40.42}, "Black": {"2022-Q4": 41.05, "2023-Q1": 40.8, "2023-Q2": 40.66, "2023-Q3": 41.57, "2023-Q4": 41.9, "2024-Q1": 41.32, "2024-Q2": 41.46, "2024-Q3": 41.1, "2024-Q4": 41.07, "2025-Q1": 41.3, "2025-Q2": 41.33}, "Hispanic": {"2022-Q4": 42.11, "2023-Q1": 41.97, "2023-Q2": 42.0, "2023-Q3": 42.67, "2023-Q4": 42.71, "2024-Q1": 42.34, "2024-Q2": 42.57, "2024-Q3": 42.52, "2024-Q4": 42.14, "2025-Q1": 42.17, "2025-Q2": 42.41}, "White": {"2022-Q4": 38.77, "2023-Q1": 38.5, "2023-Q2": 38.1, "2023-Q3": 38.94, "2023-Q4": 39.31, "2024-Q1": 38.76, "2024-Q2": 38.79, "2024-Q3": 38.54, "2024-Q4": 38.44, "2025-Q1": 38.73, "2025-Q2": 38.55}}, "title": "For conventional conforming loans, how has median DTI differed by race/ethnicity?", "subtitle": "", "yLabel": "Median DTI"}, "dti-fha-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 48.33, "2023-Q1": 47.24, "2023-Q2": 47.4, "2023-Q3": 47.79, "2023-Q4": 47.99, "2024-Q1": 47.0, "2024-Q2": 47.7, "2024-Q3": 47.5, "2024-Q4": 47.39, "2025-Q1": 47.41, "2025-Q2": 47.42}, "Black": {"2022-Q4": 47.33, "2023-Q1": 46.84, "2023-Q2": 46.87, "2023-Q3": 46.98, "2023-Q4": 47.15, "2024-Q1": 46.91, "2024-Q2": 47.0, "2024-Q3": 46.96, "2024-Q4": 46.81, "2025-Q1": 46.93, "2025-Q2": 47.08}, "Hispanic": {"2022-Q4": 48.52, "2023-Q1": 47.88, "2023-Q2": 48.18, "2023-Q3": 48.39, "2023-Q4": 48.54, "2024-Q1": 48.12, "2024-Q2": 48.26, "2024-Q3": 48.02, "2024-Q4": 47.9, "2025-Q1": 48.05, "2025-Q2": 47.97}, "White": {"2022-Q4": 44.93, "2023-Q1": 44.64, "2023-Q2": 44.45, "2023-Q3": 44.77, "2023-Q4": 44.87, "2024-Q1": 44.59, "2024-Q2": 44.59, "2024-Q3": 44.71, "2024-Q4": 44.72, "2025-Q1": 44.8, "2025-Q2": 44.72}}, "title": "For FHA loans, how has median DTI differed by race/ethnicity?", "subtitle": "", "yLabel": "Median DTI"}, "denials": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 17.74, "2023-Q1": 18.33, "2023-Q2": 14.64, "2023-Q3": 14.85, "2023-Q4": 15.98, "2024-Q1": 17.85, "2024-Q2": 15.23, "2024-Q3": 15.78, "2024-Q4": 15.62, "2025-Q1": 17.74, "2025-Q2": 14.31}, "Conventional Non-Conforming": {"2022-Q4": 14.04, "2023-Q1": 16.68, "2023-Q2": 12.51, "2023-Q3": 12.98, "2023-Q4": 13.26, "2024-Q1": 14.55, "2024-Q2": 11.55, "2024-Q3": 12.04, "2024-Q4": 11.78, "2025-Q1": 12.85, "2025-Q2": 9.96}, "FHA": {"2022-Q4": 27.59, "2023-Q1": 27.38, "2023-Q2": 22.61, "2023-Q3": 23.69, "2023-Q4": 23.75, "2024-Q1": 25.34, "2024-Q2": 25.13, "2024-Q3": 24.94, "2024-Q4": 26.18, "2025-Q1": 27.46, "2025-Q2": 24.06}, "HELOC": {"2022-Q4": 53.87, "2023-Q1": 53.2, "2023-Q2": 49.55, "2023-Q3": 48.97, "2023-Q4": 47.46, "2024-Q1": 46.62, "2024-Q2": 42.2, "2024-Q3": 40.07, "2024-Q4": 39.47, "2025-Q1": 40.51, "2025-Q2": 38.29}, "RHS/FSA": {"2022-Q4": 13.46, "2023-Q1": 14.15, "2023-Q2": 12.82, "2023-Q3": 13.8, "2023-Q4": 12.23, "2024-Q1": 11.71, "2024-Q2": 12.02, "2024-Q3": 11.95, "2024-Q4": 11.88, "2025-Q1": 14.11, "2025-Q2": 14.2}, "VA": {"2022-Q4": 17.52, "2023-Q1": 17.94, "2023-Q2": 15.68, "2023-Q3": 16.11, "2023-Q4": 17.38, "2024-Q1": 16.3, "2024-Q2": 14.98, "2024-Q3": 13.59, "2024-Q4": 14.66, "2025-Q1": 17.88, "2025-Q2": 14.84}}, "title": "How have denial rates changed?", "subtitle": "", "yLabel": "Denial Rate Percentage"}, "denials-cc-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 13.41, "2023-Q1": 13.34, "2023-Q2": 11.74, "2023-Q3": 12.07, "2023-Q4": 13.32, "2024-Q1": 13.39, "2024-Q2": 11.95, "2024-Q3": 12.43, "2024-Q4": 12.71, "2025-Q1": 14.33, "2025-Q2": 12.21}, "Black": {"2022-Q4": 30.4, "2023-Q1": 32.07, "2023-Q2": 28.67, "2023-Q3": 28.7, "2023-Q4": 28.65, "2024-Q1": 29.97, "2024-Q2": 26.8, "2024-Q3": 27.95, "2024-Q4": 27.58, "2025-Q1": 29.98, "2025-Q2": 26.89}, "Hispanic": {"2022-Q4": 22.01, "2023-Q1": 23.61, "2023-Q2": 20.64, "2023-Q3": 20.68, "2023-Q4": 20.94, "2024-Q1": 22.41, "2024-Q2": 19.62, "2024-Q3": 19.7, "2024-Q4": 19.59, "2025-Q1": 21.44, "2025-Q2": 18.05}, "White": {"2022-Q4": 13.86, "2023-Q1": 14.22, "2023-Q2": 11.22, "2023-Q3": 11.42, "2023-Q4": 12.48, "2024-Q1": 13.86, "2024-Q2": 11.7, "2024-Q3": 12.28, "2024-Q4": 12.31, "2025-Q1": 14.33, "2025-Q2": 11.38}}, "title": "For conventional conforming loans, how have denial rates differed by race/ethnicity?", "subtitle": "", "yLabel": "Denial Rate Percentage"}, "denials-fha-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 25.79, "2023-Q1": 26.59, "2023-Q2": 22.24, "2023-Q3": 22.81, "2023-Q4": 20.94, "2024-Q1": 22.27, "2024-Q2": 23.12, "2024-Q3": 22.02, "2024-Q4": 23.76, "2025-Q1": 24.76, "2025-Q2": 22.96}, "Black": {"2022-Q4": 31.35, "2023-Q1": 30.96, "2023-Q2": 27.38, "2023-Q3": 27.8, "2023-Q4": 28.11, "2024-Q1": 28.54, "2024-Q2": 29.29, "2024-Q3": 29.73, "2024-Q4": 30.16, "2025-Q1": 32.42, "2025-Q2": 29.62}, "Hispanic": {"2022-Q4": 23.04, "2023-Q1": 23.25, "2023-Q2": 19.77, "2023-Q3": 21.28, "2023-Q4": 20.19, "2024-Q1": 19.73, "2024-Q2": 19.91, "2024-Q3": 21.0, "2024-Q4": 21.56, "2025-Q1": 22.39, "2025-Q2": 19.81}, "White": {"2022-Q4": 24.32, "2023-Q1": 23.71, "2023-Q2": 19.48, "2023-Q3": 20.79, "2023-Q4": 21.18, "2024-Q1": 21.91, "2024-Q2": 21.1, "2024-Q3": 21.1, "2024-Q4": 21.64, "2025-Q1": 23.45, "2025-Q2": 20.81}}, "title": "For FHA loans, how have denial rates differed by race/ethnicity?", "subtitle": "", "yLabel": "Denial Rate Percentage"}, "interest-rates": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 6.35, "2023-Q1": 6.12, "2023-Q2": 6.38, "2023-Q3": 6.88, "2023-Q4": 7.25, "2024-Q1": 6.62, "2024-Q2": 6.99, "2024-Q3": 6.62, "2024-Q4": 6.38, "2025-Q1": 6.75, "2025-Q2": 6.62}, "Conventional Non-Conforming": {"2022-Q4": 5.5, "2023-Q1": 5.5, "2023-Q2": 5.88, "2023-Q3": 6.5, "2023-Q4": 7.0, "2024-Q1": 6.62, "2024-Q2": 6.75, "2024-Q3": 6.5, "2024-Q4": 6.15, "2025-Q1": 6.62, "2025-Q2": 6.38}, "FHA": {"2022-Q4": 6.0, "2023-Q1": 5.99, "2023-Q2": 6.0, "2023-Q3": 6.5, "2023-Q4": 6.88, "2024-Q1": 6.25, "2024-Q2": 6.5, "2024-Q3": 6.25, "2024-Q4": 5.99, "2025-Q1": 6.25, "2025-Q2": 6.25}, "HELOC": {"2022-Q4": 7.15, "2023-Q1": 7.85, "2023-Q2": 8.5, "2023-Q3": 9.25, "2023-Q4": 9.5, "2024-Q1": 9.59, "2024-Q2": 9.28, "2024-Q3": 9.18, "2024-Q4": 8.49, "2025-Q1": 7.86, "2025-Q2": 7.75}, "RHS/FSA": {"2022-Q4": 6.12, "2023-Q1": 6.12, "2023-Q2": 6.25, "2023-Q3": 6.62, "2023-Q4": 7.12, "2024-Q1": 6.25, "2024-Q2": 6.62, "2024-Q3": 6.25, "2024-Q4": 6.08, "2025-Q1": 6.25, "2025-Q2": 6.25}, "VA": {"2022-Q4": 6.0, "2023-Q1": 5.88, "2023-Q2": 5.99, "2023-Q3": 6.25, "2023-Q4": 6.75, "2024-Q1": 6.19, "2024-Q2": 6.38, "2024-Q3": 5.99, "2024-Q4": 5.75, "2025-Q1": 6.25, "2025-Q2": 6.12}}, "title": "How have median interest rates changed?", "subtitle": "", "yLabel": "Median Interest Rates"}, "interest-rates-cc-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 5.99, "2023-Q1": 5.99, "2023-Q2": 6.08, "2023-Q3": 6.62, "2023-Q4": 7.0, "2024-Q1": 6.5, "2024-Q2": 6.75, "2024-Q3": 6.49, "2024-Q4": 6.12, "2025-Q1": 6.5, "2025-Q2": 6.5}, "Black": {"2022-Q4": 6.38, "2023-Q1": 6.12, "2023-Q2": 6.25, "2023-Q3": 6.75, "2023-Q4": 7.25, "2024-Q1": 6.62, "2024-Q2": 6.88, "2024-Q3": 6.58, "2024-Q4": 6.38, "2025-Q1": 6.75, "2025-Q2": 6.62}, "Hispanic": {"2022-Q4": 6.38, "2023-Q1": 6.12, "2023-Q2": 6.38, "2023-Q3": 6.88, "2023-Q4": 7.25, "2024-Q1": 6.62, "2024-Q2": 6.92, "2024-Q3": 6.62, "2024-Q4": 6.38, "2025-Q1": 6.75, "2025-Q2": 6.62}, "White": {"2022-Q4": 6.38, "2023-Q1": 6.12, "2023-Q2": 6.38, "2023-Q3": 6.88, "2023-Q4": 7.38, "2024-Q1": 6.62, "2024-Q2": 6.99, "2024-Q3": 6.62, "2024-Q4": 6.38, "2025-Q1": 6.75, "2025-Q2": 6.69}}, "title": "For conventional conforming loans, how have median interest rates differed by race/ethnicity?", "subtitle": "", "yLabel": "Median Interest Rates"}, "interest-rates-fha-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 5.88, "2023-Q1": 5.75, "2023-Q2": 5.83, "2023-Q3": 6.25, "2023-Q4": 6.62, "2024-Q1": 6.0, "2024-Q2": 6.25, "2024-Q3": 6.0, "2024-Q4": 5.75, "2025-Q1": 6.12, "2025-Q2": 6.12}, "Black": {"2022-Q4": 6.0, "2023-Q1": 5.99, "2023-Q2": 6.0, "2023-Q3": 6.5, "2023-Q4": 6.75, "2024-Q1": 6.25, "2024-Q2": 6.5, "2024-Q3": 6.25, "2024-Q4": 5.99, "2025-Q1": 6.25, "2025-Q2": 6.25}, "Hispanic": {"2022-Q4": 5.99, "2023-Q1": 5.75, "2023-Q2": 5.99, "2023-Q3": 6.38, "2023-Q4": 6.75, "2024-Q1": 6.12, "2024-Q2": 6.25, "2024-Q3": 6.12, "2024-Q4": 5.75, "2025-Q1": 6.12, "2025-Q2": 6.12}, "White": {"2022-Q4": 6.12, "2023-Q1": 5.99, "2023-Q2": 6.1, "2023-Q3": 6.62, "2023-Q4": 6.99, "2024-Q1": 6.25, "2024-Q2": 6.62, "2024-Q3": 6.25, "2024-Q4": 6.12, "2025-Q1": 6.38, "2025-Q2": 6.38}}, "title": "For FHA loans, how have median interest rates differed by race/ethnicity?", "subtitle": "", "yLabel": "Median Interest Rates"}, "tlc": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Conventional Conforming": {"2022-Q4": 5844.83, "2023-Q1": 5713.0, "2023-Q2": 5787.0, "2023-Q3": 6056.47, "2023-Q4": 5878.97, "2024-Q1": 5807.8, "2024-Q2": 5965.76, "2024-Q3": 5793.0, "2024-Q4": 5912.56, "2025-Q1": 5902.85, "2025-Q2": 5823.55}, "Conventional Non-Conforming": {"2022-Q4": 7703.3, "2023-Q1": 7743.84, "2023-Q2": 7654.26, "2023-Q3": 8414.68, "2023-Q4": 8920.65, "2024-Q1": 8656.43, "2024-Q2": 8691.5, "2024-Q3": 8310.52, "2024-Q4": 8059.07, "2025-Q1": 8775.92, "2025-Q2": 8386.41}, "FHA": {"2022-Q4": 10890.42, "2023-Q1": 10758.1, "2023-Q2": 11429.15, "2023-Q3": 11831.91, "2023-Q4": 11566.64, "2024-Q1": 11285.67, "2024-Q2": 11835.83, "2024-Q3": 11480.92, "2024-Q4": 11447.39, "2025-Q1": 11434.05, "2025-Q2": 11257.39}, "RHS/FSA": {"2022-Q4": 6695.21, "2023-Q1": 6406.48, "2023-Q2": 6786.95, "2023-Q3": 6754.44, "2023-Q4": 6723.76, "2024-Q1": 6714.35, "2024-Q2": 6773.77, "2024-Q3": 6717.7, "2024-Q4": 6752.8, "2025-Q1": 6818.07, "2025-Q2": 6733.93}, "VA": {"2022-Q4": 8081.56, "2023-Q1": 7467.81, "2023-Q2": 7828.3, "2023-Q3": 8166.0, "2023-Q4": 7384.64, "2024-Q1": 6457.6, "2024-Q2": 7422.34, "2024-Q3": 6040.86, "2024-Q4": 6195.68, "2025-Q1": 6193.67, "2025-Q2": 6157.8}}, "title": "How have median total loan costs changed?", "subtitle": "", "yLabel": "Median Total Loan Costs"}, "tlc-cc-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 6039.68, "2023-Q1": 5815.2, "2023-Q2": 6006.44, "2023-Q3": 6248.69, "2023-Q4": 6140.63, "2024-Q1": 5849.82, "2024-Q2": 6062.44, "2024-Q3": 5830.62, "2024-Q4": 5679.24, "2025-Q1": 5949.27, "2025-Q2": 5856.54}, "Black": {"2022-Q4": 6215.2, "2023-Q1": 5730.65, "2023-Q2": 5516.98, "2023-Q3": 6143.24, "2023-Q4": 6065.09, "2024-Q1": 5939.89, "2024-Q2": 6219.44, "2024-Q3": 5920.06, "2024-Q4": 6235.55, "2025-Q1": 6164.38, "2025-Q2": 6090.75}, "Hispanic": {"2022-Q4": 6444.53, "2023-Q1": 6339.55, "2023-Q2": 6507.98, "2023-Q3": 6826.39, "2023-Q4": 6537.13, "2024-Q1": 6592.33, "2024-Q2": 6877.62, "2024-Q3": 6549.29, "2024-Q4": 6840.02, "2025-Q1": 6652.09, "2025-Q2": 6617.86}, "White": {"2022-Q4": 5531.06, "2023-Q1": 5464.45, "2023-Q2": 5555.42, "2023-Q3": 5768.68, "2023-Q4": 5587.23, "2024-Q1": 5527.0, "2024-Q2": 5687.53, "2024-Q3": 5545.28, "2024-Q4": 5671.33, "2025-Q1": 5643.75, "2025-Q2": 5585.77}}, "title": "For conventional conforming loans, how have median total loan costs differed by race/ethnicity?", "subtitle": "", "yLabel": "Median Total Loan Costs"}, "tlc-fha-re": {"quarters": ["2022-Q4", "2023-Q1", "2023-Q2", "2023-Q3", "2023-Q4", "2024-Q1", "2024-Q2", "2024-Q3", "2024-Q4", "2025-Q1", "2025-Q2"], "series_data": {"Asian": {"2022-Q4": 13440.78, "2023-Q1": 12765.93, "2023-Q2": 13754.51, "2023-Q3": 14116.06, "2023-Q4": 13255.11, "2024-Q1": 12877.24, "2024-Q2": 13473.57, "2024-Q3": 13273.27, "2024-Q4": 13043.74, "2025-Q1": 13138.46, "2025-Q2": 12551.51}, "Black": {"2022-Q4": 11110.08, "2023-Q1": 10724.53, "2023-Q2": 11257.34, "2023-Q3": 11628.64, "2023-Q4": 11505.17, "2024-Q1": 10921.35, "2024-Q2": 11508.48, "2024-Q3": 11268.06, "2024-Q4": 11085.97, "2025-Q1": 11108.57, "2025-Q2": 11003.66}, "Hispanic": {"2022-Q4": 12189.44, "2023-Q1": 11813.71, "2023-Q2": 12433.98, "2023-Q3": 12889.55, "2023-Q4": 12421.36, "2024-Q1": 12104.72, "2024-Q2": 12711.43, "2024-Q3": 12209.3, "2024-Q4": 12326.32, "2025-Q1": 12114.39, "2025-Q2": 11974.44}, "White": {"2022-Q4": 10014.12, "2023-Q1": 10087.83, "2023-Q2": 10692.01, "2023-Q3": 11044.91, "2023-Q4": 10792.42, "2024-Q1": 10652.09, "2024-Q2": 11168.77, "2024-Q3": 10846.25, "2024-Q4": 10799.05, "2025-Q1": 10797.91, "2025-Q2": 10679.64}}, "title": "For FHA loans, how have median total loan costs differed by race/ethnicity?", "subtitle": "", "yLabel": "Median Total Loan Costs"}};
+        const categories = {"Loan & Application Counts": ["applications", "loans"], "Credit Score": ["credit-scores", "credit-scores-cc-re", "credit-scores-fha-re"], "Loan-to-Value (LTV)": ["ltv", "ltv-cc-re", "ltv-fha-re"], "Debt-to-Income (DTI)": ["dti", "dti-cc-re", "dti-fha-re"], "Denial Rates": ["denials", "denials-cc-re", "denials-fha-re"], "Interest Rates": ["interest-rates", "interest-rates-cc-re", "interest-rates-fha-re"], "Total Loan Costs (TLC)": ["tlc", "tlc-cc-re", "tlc-fha-re"]};
+
+        // Load dashboard data on page load
+        $(document).ready(function() {
+            console.log('Loading dashboard data...');
+            $('#loadingMessage').hide();
+            $('#dashboardContent').show();
+            renderDashboard({ chart_data: chartData, categories: categories });
+        });
+
+        function renderDashboard(data) {
+            const chartData = data.chart_data;
+            const categories = data.categories;
+            const dashboardContent = $('#dashboardContent');
+            
+            // Render charts by category
+            Object.keys(categories).forEach(categoryName => {
+                const endpoints = categories[categoryName];
+                const sectionDiv = $('<div class="chart-section"></div>');
+                sectionDiv.append(`<h2>${categoryName}</h2>`);
+                
+                const chartGrid = $('<div class="chart-grid"></div>');
+                
+                endpoints.forEach(endpoint => {
+                    if (chartData[endpoint]) {
+                        const chartCard = createChartCard(endpoint, chartData[endpoint]);
+                        chartGrid.append(chartCard);
+                    }
+                });
+                
+                if (chartGrid.children().length > 0) {
+                    sectionDiv.append(chartGrid);
+                    dashboardContent.append(sectionDiv);
+                }
+            });
+        }
+
+        function createChartCard(endpoint, chartInfo) {
+            resetColorIndex();
+            
+            const card = $('<div class="chart-card"></div>');
+            const title = chartInfo.title || endpoint.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            card.append(`<h3>${title}</h3>`);
+            
+            if (chartInfo.subtitle) {
+                card.append(`<p class="chart-subtitle">${chartInfo.subtitle}</p>`);
+            }
+            
+            const canvas = $('<canvas></canvas>');
+            const container = $('<div class="chart-container"></div>');
+            container.append(canvas);
+            card.append(container);
+            
+            // Prepare Chart.js data - support both quarterly and yearly
+            const quarters = chartInfo.quarters || [];
+            const years = chartInfo.years || [];
+            const seriesData = chartInfo.series_data || {};
+            const seriesNames = Object.keys(seriesData);
+            
+            // Determine if we're using quarters or years
+            const isQuarterly = quarters.length > 0;
+            const labels = isQuarterly ? quarters : years;
+            const xAxisLabel = isQuarterly ? 'Quarter' : 'Year';
+            
+            const datasets = seriesNames.map(seriesName => {
+                const data = labels.map(label => seriesData[seriesName][label] || null);
+                return {
+                    label: seriesName,
+                    data: data,
+                    borderColor: getNextColor(),
+                    backgroundColor: getNextColor() + '20', // Add transparency
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                };
+            });
+            
+            const chart = new Chart(canvas[0], {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: xAxisLabel,
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                color: '#e0e0e0'
+                            },
+                            ticks: {
+                                maxRotation: isQuarterly ? 45 : 0,
+                                minRotation: isQuarterly ? 45 : 0
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: chartInfo.yLabel || 'Value',
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            },
+                            grid: {
+                                display: true,
+                                color: '#e0e0e0'
+                            },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+            
+            return card;
+        }
+    </script>
+</body>
+</html>

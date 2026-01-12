@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Report - DataExplorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .progress-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .logo-container {
+            margin-bottom: 40px;
+        }
+        
+        .pulsing-logo {
+            max-height: 120px;
+            width: auto;
+            margin: 0 auto;
+            display: block;
+            animation: pulse 1.5s ease-in-out infinite;
+            filter: brightness(0); /* Make logo black */
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+        
+        h1 {
+            color: #034ea0;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #034ea0 0%, #0066cc 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .progress-text {
+            color: #034ea0;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            min-height: 24px;
+        }
+        
+        .progress-percent {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .error-message {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .back-link {
+            margin-top: 30px;
+            display: inline-block;
+            color: #034ea0;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-container">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" 
+                 alt="NCRC Logo" 
+                 class="pulsing-logo"
+                 onerror="this.style.display='none';">
+        </div>
+        
+        <h1>Generating Your Report</h1>
+        <p class="subtitle">Please wait while we analyze your data...</p>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="progress-text" id="progressText">Initializing...</div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <a href="/" class="back-link" id="backLink" style="display: none;">Return to Home</a>
+    </div>
+    
+    <script>
+        const jobId = '{{ job_id }}';
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const errorMessage = document.getElementById('errorMessage');
+        const backLink = document.getElementById('backLink');
+        let eventSource = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 10;
+        let reconnectTimeout = null;
+        
+        function updateProgress(percent, step) {
+            progressBar.style.width = percent + '%';
+            progressText.textContent = step || 'Processing...';
+            progressPercent.textContent = percent + '%';
+        }
+        
+        function showError(error) {
+            errorMessage.textContent = 'Error: ' + error;
+            errorMessage.classList.add('show');
+            backLink.style.display = 'inline-block';
+            if (eventSource) {
+                eventSource.close();
+            }
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+        }
+        
+        function connectProgressStream() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            
+            eventSource = new EventSource(`/progress/${jobId}`);
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    updateProgress(data.percent || 0, data.step || 'Processing...');
+                    
+                    // Reset reconnect attempts on successful message
+                    reconnectAttempts = 0;
+                    
+                    if (data.done) {
+                        eventSource.close();
+                        if (reconnectTimeout) {
+                            clearTimeout(reconnectTimeout);
+                        }
+                        if (data.error) {
+                            showError(data.error);
+                        } else {
+                            // Success - redirect to report
+                            progressText.textContent = 'Report ready! Redirecting...';
+                            setTimeout(() => {
+                                window.location.href = `/report/${jobId}`;
+                            }, 1000);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error parsing progress data:', e);
+                }
+            };
+            
+            eventSource.onerror = function(error) {
+                // Only handle if connection is actually closed
+                if (eventSource.readyState === EventSource.CLOSED) {
+                    console.warn('Progress stream closed, attempting to reconnect...');
+                    
+                    // Clear any existing reconnect timeout
+                    if (reconnectTimeout) {
+                        clearTimeout(reconnectTimeout);
+                    }
+                    
+                    // Try to reconnect if we haven't exceeded max attempts
+                    if (reconnectAttempts < maxReconnectAttempts) {
+                        reconnectAttempts++;
+                        const delay = Math.min(1000 * reconnectAttempts, 10000); // Exponential backoff, max 10s
+                        reconnectTimeout = setTimeout(function() {
+                            console.log(`Reconnecting to progress stream (attempt ${reconnectAttempts}/${maxReconnectAttempts})...`);
+                            connectProgressStream();
+                        }, delay);
+                    } else {
+                        // Max reconnection attempts reached, check if report is ready
+                        console.warn('Max reconnection attempts reached, checking if report is ready...');
+                        fetch(`/report/${jobId}`)
+                            .then(response => {
+                                if (response.ok) {
+                                    // Report is ready, redirect
+                                    window.location.href = `/report/${jobId}`;
+                                } else {
+                                    // Report not ready, show error
+                                    showError('Connection lost. The report may still be generating. Please check back in a moment.');
+                                    backLink.style.display = 'inline-block';
+                                }
+                            })
+                            .catch(() => {
+                                // Can't check, show error
+                                showError('Connection lost. The report may still be generating. Please check back in a moment.');
+                                backLink.style.display = 'inline-block';
+                            });
+                    }
+                }
+                // For other states (CONNECTING, OPEN), just wait - connection might recover
+            };
+        }
+        
+        // Start progress tracking
+        connectProgressStream();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            if (eventSource) {
+                eventSource.close();
+            }
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+            }
+        });
+    </script>
+</body>
+</html>
+
+

@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Report - DataExplorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .progress-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .logo-container {
+            margin-bottom: 40px;
+        }
+        
+        .logo {
+            width: 120px;
+            height: auto;
+            margin: 0 auto;
+            display: block;
+            animation: pulse 2s ease-in-out infinite;
+            filter: brightness(0); /* Make logo black */
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.7;
+                transform: scale(1.05);
+            }
+        }
+        
+        h1 {
+            color: #034ea0;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+        
+        .progress-bar-container {
+            background: #e5e7eb;
+            border-radius: 10px;
+            height: 12px;
+            margin: 30px 0;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-bar-fill {
+            background: linear-gradient(90deg, #034ea0 0%, #0066cc 100%);
+            height: 100%;
+            width: 0%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.3),
+                transparent
+            );
+            animation: shimmer 2s infinite;
+        }
+        
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-100%);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+        
+        .progress-text {
+            color: #6b7280;
+            font-size: 16px;
+            margin-top: 20px;
+            min-height: 24px;
+        }
+        
+        .error-message {
+            color: #dc2626;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .back-link {
+            margin-top: 30px;
+            display: inline-block;
+            color: #034ea0;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        
+        .back-link:hover {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-container">
+        <div class="logo-container">
+            <img src="/static/img/ncrc-logo.png" alt="NCRC Logo" class="logo" id="ncrcLogo">
+        </div>
+        
+        <h1>Generating Your Report</h1>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" id="progressFill"></div>
+        </div>
+        
+        <div class="progress-text" id="progressText">Initializing analysis...</div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <a href="/" class="back-link" id="backLink" style="display: none;">Return to Home</a>
+    </div>
+    
+    <script>
+        const jobId = '{{ job_id }}';
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const errorMessage = document.getElementById('errorMessage');
+        const backLink = document.getElementById('backLink');
+        
+        console.log('[Progress] Starting progress listener for job:', jobId);
+        
+        const evtSource = new EventSource(`/progress/${jobId}`);
+        
+        console.log('[Progress] Starting progress tracking for job:', jobId);
+        
+        evtSource.onopen = function(event) {
+            console.log('[Progress] SSE connection opened');
+        };
+        
+        evtSource.onmessage = function(event) {
+            try {
+                const data = JSON.parse(event.data);
+                console.log('[Progress] Update received:', data);
+                
+                // Update progress bar
+                progressFill.style.width = data.percent + '%';
+                
+                // Update progress text
+                if (data.step) {
+                    progressText.textContent = data.step;
+                }
+                
+                // Handle completion
+                if (data.done) {
+                    console.log('[Progress] Analysis completed, redirecting to report...');
+                    evtSource.close();
+                    // Small delay to show 100% completion
+                    setTimeout(() => {
+                        window.location.href = `/report/${jobId}`;
+                    }, 500);
+                }
+                
+                // Handle errors
+                if (data.error) {
+                    console.error('[Progress] Error received:', data.error);
+                    evtSource.close();
+                    progressText.textContent = 'An error occurred';
+                    errorMessage.textContent = data.error;
+                    errorMessage.classList.add('show');
+                    backLink.style.display = 'inline-block';
+                }
+                
+            } catch (e) {
+                console.error('[Progress] Error parsing progress data:', e);
+            }
+        };
+        
+        evtSource.onerror = function(event) {
+            console.error('[Progress] SSE error:', event);
+            // Don't close immediately - might be temporary network issue
+            // Only show error if connection is clearly dead
+            setTimeout(async () => {
+                if (evtSource.readyState === EventSource.CLOSED) {
+                    // Before showing error, check if report is already complete
+                    try {
+                        const response = await fetch(`/report/${jobId}`);
+                        if (response.ok) {
+                            // Report is ready! Redirect to it
+                            console.log('[Progress] Report is ready, redirecting...');
+                            window.location.href = `/report/${jobId}`;
+                            return;
+                        }
+                    } catch (e) {
+                        console.log('[Progress] Could not check report status:', e);
+                    }
+                    
+                    // Report not ready yet - show connection error
+                    progressText.textContent = 'Connection lost. Please refresh the page.';
+                    errorMessage.textContent = 'Lost connection to server. The report may still be generating. Please refresh in a moment.';
+                    errorMessage.classList.add('show');
+                    backLink.style.display = 'inline-block';
+                }
+            }, 5000);
+        };
+        
+        // Keep logo pulsing
+        const logo = document.getElementById('ncrcLogo');
+        logo.style.animation = 'pulse 2s ease-in-out infinite';
+    </script>
+</body>
+</html>
+
+

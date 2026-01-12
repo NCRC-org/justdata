@@ -1,0 +1,65 @@
+{
+  "generated_at": "2025-12-19T16:49:31.595228",
+  "time_period": "2022-Q4 to 2025-Q3 (last 12 quarters)",
+  "start_quarter": "2022-Q4",
+  "end_quarter": "2025-Q3",
+  "endpoints": [
+    "applications",
+    "loans",
+    "credit-scores",
+    "credit-scores-cc-re",
+    "credit-scores-fha-re",
+    "ltv",
+    "ltv-cc-re",
+    "ltv-fha-re",
+    "dti",
+    "dti-cc-re",
+    "dti-fha-re",
+    "denials",
+    "denials-cc-re",
+    "denials-fha-re",
+    "interest-rates",
+    "interest-rates-cc-re",
+    "interest-rates-fha-re",
+    "tlc",
+    "tlc-cc-re",
+    "tlc-fha-re"
+  ],
+  "categories": {
+    "Loan & Application Counts": [
+      "applications",
+      "loans"
+    ],
+    "Credit Score": [
+      "credit-scores",
+      "credit-scores-cc-re",
+      "credit-scores-fha-re"
+    ],
+    "Loan-to-Value (LTV)": [
+      "ltv",
+      "ltv-cc-re",
+      "ltv-fha-re"
+    ],
+    "Debt-to-Income (DTI)": [
+      "dti",
+      "dti-cc-re",
+      "dti-fha-re"
+    ],
+    "Denial Rates": [
+      "denials",
+      "denials-cc-re",
+      "denials-fha-re"
+    ],
+    "Interest Rates": [
+      "interest-rates",
+      "interest-rates-cc-re",
+      "interest-rates-fha-re"
+    ],
+    "Total Loan Costs (TLC)": [
+      "tlc",
+      "tlc-cc-re",
+      "tlc-fha-re"
+    ]
+  },
+  "version": "1.0.0"
+}

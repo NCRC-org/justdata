@@ -185,4 +185,28 @@ def register_blueprints(app: Flask):
         app.register_blueprint(branchmapper_bp, url_prefix='/branchmapper')
     except ImportError:
         print("⚠️  BranchMapper blueprint not yet created")
+    
+    try:
+        from justdata.apps.dataexplorer.blueprint import dataexplorer_bp
+        app.register_blueprint(dataexplorer_bp, url_prefix='/dataexplorer')
+    except ImportError:
+        print("⚠️  DataExplorer blueprint not yet created")
+    
+    try:
+        from justdata.apps.lenderprofile.blueprint import lenderprofile_bp
+        app.register_blueprint(lenderprofile_bp, url_prefix='/lenderprofile')
+    except ImportError:
+        print("⚠️  LenderProfile blueprint not yet created")
+    
+    try:
+        from justdata.apps.loantrends.blueprint import loantrends_bp
+        app.register_blueprint(loantrends_bp, url_prefix='/loantrends')
+    except ImportError:
+        print("⚠️  LoanTrends blueprint not yet created")
+    
+    try:
+        from justdata.apps.memberview.blueprint import memberview_bp
+        app.register_blueprint(memberview_bp, url_prefix='/memberview')
+    except ImportError:
+        print("⚠️  MemberView blueprint not yet created")
 

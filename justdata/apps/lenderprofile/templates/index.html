@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LenderProfile - NCRC Intelligence Tool</title>
+    <meta name="description" content="Comprehensive lender intelligence reports for NCRC staff">
+    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        :root {
+            --ncrc-primary-blue: #1a8fc9;
+            --ncrc-secondary-blue: #1a8fc9;
+            --ncrc-dark-blue: #1a8fc9;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --ncrc-gray: #666666;
+            --ncrc-gold: #FFD700;
+            --ncrc-pink: #e91e63;
+        }
+        
+        body {
+            background: var(--ncrc-gray-light);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Header Styles (matching DataExplorer) */
+        .header {
+            background: var(--ncrc-dark-blue);
+            text-align: center;
+            padding: 40px 20px 30px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .header-layout {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            position: relative;
+            width: 100%;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            flex: 0 0 auto;
+        }
+        
+        .logo img {
+            max-height: 90px;
+            width: auto;
+            border-radius: 8px;
+        }
+        
+        .header-title-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+        }
+        
+        .header-title-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+        
+        .just-data-subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.95);
+            margin: 10px 0 0 0;
+            text-align: center;
+        }
+        
+        .header-tagline {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            flex: 0 0 auto;
+        }
+        
+        .tagline-box {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            height: 90px;
+            width: 256px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+        
+        .header-tagline p {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            margin: 0;
+            font-style: normal;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.3;
+            max-width: 100%;
+        }
+        
+        .header-tagline p em {
+            font-style: italic;
+            color: var(--ncrc-pink);
+        }
+        
+        .main-container {
+            max-width: 800px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+        
+        .description-card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .description-card p {
+            font-size: 16px;
+            line-height: 1.7;
+            color: #333;
+            margin: 0;
+        }
+        
+        .search-card {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: 'Inter', sans-serif;
+            transition: border-color 0.2s;
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #1a8fc9;
+        }
+
+        .search-btn {
+            padding: 14px 32px;
+            background: #1a8fc9;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #1580b5;
+        }
+        
+        .search-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .error-message {
+            margin-top: 20px;
+            padding: 12px 16px;
+            background: #fee;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            color: #c33;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .candidates-list {
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .candidates-list.show {
+            display: block;
+        }
+        
+        .candidate-item {
+            padding: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .candidate-item:hover {
+            border-color: #1a8fc9;
+            background: #f8f9fa;
+        }
+
+        .candidate-item.selected {
+            border-color: #1a8fc9;
+            background: #e6f4fa;
+        }
+
+        .candidate-name {
+            font-weight: 600;
+            color: #1a8fc9;
+            margin-bottom: 4px;
+        }
+        
+        .candidate-location {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        /* Footer Styles (matching DataExplorer) */
+        .footer {
+            background: var(--ncrc-dark-blue);
+            padding: 2rem 0 0.5rem 0;
+            border-radius: 0;
+            margin: 2rem 0 0 0;
+            width: 100%;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 3rem;
+        }
+        
+        .footer-col {
+            flex: 1 1 0;
+            min-width: 200px;
+            max-width: 300px;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-col.footer-logo {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: auto;
+            max-width: none;
+            margin-left: auto;
+        }
+        
+        .footer-logo-img {
+            height: 90px;
+            width: auto;
+            border-radius: 8px;
+        }
+        
+        .footer-col h4 {
+            color: var(--ncrc-gold);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .footer-col p {
+            color: #fff;
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .footer-col a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .footer-col a:hover {
+            color: var(--ncrc-gold);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            color: #ccc;
+            font-size: 0.95rem;
+            margin-top: 1.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .version-text {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header (matching DataExplorer) -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" onerror="this.style.display='none';">
+                    </a>
+                </div>
+                <div class="header-title-section">
+                    <h1>LenderProfile</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Description -->
+        <div class="description-card">
+            <p>
+                LenderProfile is an intelligence tool for NCRC staff that generates comprehensive reports on financial institutions. 
+                Each report includes corporate structure, financial performance, regulatory compliance history, branch network analysis, 
+                SEC filings analysis, analyst ratings, and strategic positioning. Reports are generated using data from multiple sources 
+                including FDIC, SEC, GLEIF, and other regulatory databases, and include AI-generated insights and visualizations.
+            </p>
+        </div>
+
+        <!-- Search -->
+        <div class="search-card">
+            <form id="search-form" class="search-form">
+                <input 
+                    type="text" 
+                    id="company-name" 
+                    class="search-input"
+                    placeholder="Enter company name (e.g., Fifth Third Bank, JPMorgan Chase)"
+                    autocomplete="off"
+                    required
+                >
+                <button type="submit" class="search-btn" id="search-btn">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            
+            <div id="error-message" class="error-message"></div>
+            
+            <div id="candidates-list" class="candidates-list">
+                <h3 style="margin: 20px 0 10px 0; color: #333;">Select the correct institution:</h3>
+                <div id="candidates-container"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const searchForm = document.getElementById('search-form');
+        const companyInput = document.getElementById('company-name');
+        const searchBtn = document.getElementById('search-btn');
+        const errorMessage = document.getElementById('error-message');
+        const candidatesList = document.getElementById('candidates-list');
+        const candidatesContainer = document.getElementById('candidates-container');
+        
+        let selectedCandidate = null;
+        
+        searchForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const companyName = companyInput.value.trim();
+            if (!companyName) return;
+            
+            // Reset UI
+            errorMessage.classList.remove('show');
+            candidatesList.classList.remove('show');
+            candidatesContainer.innerHTML = '';
+            selectedCandidate = null;
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
+            
+            try {
+                const response = await fetch('/api/search-lender', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: companyName,
+                        exclude: []
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || data.message || 'Search failed');
+                }
+                
+                if (data.multiple && data.candidates) {
+                    // Show candidates for selection
+                    displayCandidates(data.candidates);
+                } else if (data.success) {
+                    // Single result - proceed directly
+                    generateReport(data);
+                } else {
+                    throw new Error('No results found');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message || 'An error occurred. Please try again.';
+                errorMessage.classList.add('show');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
+            }
+        });
+        
+        function displayCandidates(candidates) {
+            candidatesContainer.innerHTML = '';
+            
+            candidates.forEach(candidate => {
+                const item = document.createElement('div');
+                item.className = 'candidate-item';
+                item.innerHTML = `
+                    <div class="candidate-name">${candidate.name}</div>
+                    <div class="candidate-location">${candidate.location || 'Location unknown'}</div>
+                `;
+                
+                item.addEventListener('click', () => {
+                    // Remove previous selection
+                    document.querySelectorAll('.candidate-item').forEach(i => i.classList.remove('selected'));
+                    item.classList.add('selected');
+                    selectedCandidate = candidate;
+                    
+                    // Generate report after short delay
+                    setTimeout(() => {
+                        generateReport({
+                            success: true,
+                            name: candidate.name,
+                            identifiers: {
+                                lei: candidate.lei,
+                                rssd_id: candidate.rssd_id,
+                                fdic_cert: candidate.fdic_cert
+                            }
+                        });
+                    }, 300);
+                });
+                
+                candidatesContainer.appendChild(item);
+            });
+            
+            candidatesList.classList.add('show');
+        }
+        
+        function generateReport(lenderData) {
+            // Redirect to report generation with progress tracking
+            const reportFocus = ''; // Can add optional focus field later
+            
+            fetch('/api/generate-report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: lenderData.name,
+                    identifiers: lenderData.identifiers || {},
+                    report_focus: reportFocus
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.report_id) {
+                    // Redirect to progress page
+                    window.location.href = `/report/${data.report_id}`;
+                } else {
+                    throw new Error(data.error || 'Failed to generate report');
+                }
+            })
+            .catch(error => {
+                errorMessage.textContent = error.message || 'Failed to generate report. Please try again.';
+                errorMessage.classList.add('show');
+            });
+        }
+    </script>
+    
+    <!-- Footer (matching DataExplorer) -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>LenderProfile</h4>
+                <p>Comprehensive lender intelligence platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - LenderProfile. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version if version else '1.0.0' }}</span>
+        </div>
+    </footer>
+</body>
+</html>

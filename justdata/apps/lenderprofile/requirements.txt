@@ -1,0 +1,46 @@
+# LenderProfile Dependencies
+# Python 3.11 required
+
+# Web Framework
+flask>=2.3.0
+werkzeug>=2.3.0
+
+# Production Server (for Render)
+gunicorn>=21.0.0
+
+# Data Processing
+pandas>=1.5.0
+numpy>=1.21.0
+
+# BigQuery
+google-cloud-bigquery>=3.0.0
+google-auth>=2.0.0
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.1.0
+db-dtypes>=1.2.0
+
+# Excel Generation
+openpyxl>=3.0.0
+xlsxwriter>=3.0.0
+
+# HTTP Requests
+requests>=2.28.0
+
+# Redis (optional, with fallback)
+redis>=4.5.0
+
+# PDF Parsing (for CRA documents)
+pypdf>=3.0.0
+
+# Web Scraping & XML/HTML Parsing
+beautifulsoup4>=4.11.0
+lxml>=4.9.0
+
+# Environment Variables
+python-dotenv>=1.0.0
+
+# AI Integration
+anthropic>=0.18.0
+
+# Date/Time Utilities
+python-dateutil>=2.8.0

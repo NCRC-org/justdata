@@ -1,0 +1,2581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lender Analysis Report - DataExplorer</title>
+    <meta name="description" content="HMDA Lender Analysis Report - Lender performance with peer comparison">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Excel Export Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-dark-blue: #1a8fc9;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --ncrc-gray: #666666;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ncrc-gray-light);
+            min-height: 100vh;
+            color: var(--ncrc-gray-dark);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .report-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--ncrc-dark-blue);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .report-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .version-text {
+            color: #999;
+            font-size: 0.85rem;
+        }
+        
+        .report-actions {
+            text-align: right;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .action-btn {
+            text-decoration: none;
+            cursor: pointer;
+            margin-right: 10px;
+            padding: 10px 20px;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        .action-btn:hover {
+            background: var(--ncrc-dark-blue);
+        }
+        
+        .report-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ncrc-dark-blue);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--ncrc-dark-blue);
+            padding-bottom: 10px;
+        }
+        
+        .lender-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .table-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .table-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .table-card-header h4 {
+            margin: 0;
+            font-size: 0.95em;
+            font-weight: 600;
+            color: var(--ncrc-dark-blue);
+        }
+        
+        .table-card-body {
+            padding: 10px;
+        }
+        
+        .lender-info p {
+            margin: 5px 0;
+        }
+        
+        .purpose-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .tab-button {
+            padding: 10px 20px;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--ncrc-gray);
+            transition: all 0.3s;
+        }
+        
+        .tab-button:hover {
+            color: var(--ncrc-dark-blue);
+        }
+        
+        .tab-button.active {
+            color: var(--ncrc-dark-blue);
+            border-bottom-color: var(--ncrc-dark-blue);
+            font-weight: 600;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            font-size: 0.8rem;
+        }
+        
+        thead {
+            background: var(--ncrc-gray-light);
+        }
+        
+        th {
+            padding: 6px 4px;
+            text-align: center;
+            font-weight: 600;
+            border: 1px solid #ddd;
+            font-size: 0.75rem;
+        }
+        
+        .year-header-row {
+            background: #e8e9ea;
+            font-weight: 700;
+            font-size: 0.8rem;
+        }
+        
+        .metric-header {
+            text-align: left !important;
+            font-weight: 700;
+        }
+        
+        td {
+            padding: 6px 4px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-size: 0.8rem;
+        }
+        
+        .metric-cell {
+            text-align: left !important;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .diff-positive {
+            color: #28a745;
+            font-weight: 600;
+        }
+        
+        .diff-negative {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        
+        .diff-zero {
+            color: #000;
+            font-weight: 600;
+        }
+        
+        .table-caption {
+            margin-top: 5px;
+            font-size: 0.75rem;
+            color: #666;
+            line-height: 1.3;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--ncrc-gray);
+        }
+        
+        .sortable th {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .sortable th:hover {
+            background-color: #e8e9ea;
+        }
+        
+        .sortable th.sort-asc::after {
+            content: ' ▲';
+            font-size: 0.8em;
+        }
+        
+        .sortable th.sort-desc::after {
+            content: ' ▼';
+            font-size: 0.8em;
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <div class="report-header">
+            <h1>Lender Analysis Report</h1>
+        </div>
+        
+        <div class="report-actions">
+            <button class="action-btn" onclick="exportToExcel()" style="background: #28a745; margin-left: 10px;">
+                <i class="fas fa-file-excel"></i> Export Full Report to Excel
+            </button>
+            <button class="action-btn" onclick="exportAllTablesToPDF()" style="background: #dc3545; margin-left: 10px;">
+                <i class="fas fa-file-pdf"></i> Export All Tables to PDF
+            </button>
+            <a href="/" class="action-btn">Return to Home</a>
+        </div>
+        
+        <div id="loadingState" class="loading">
+            <p>Loading report data...</p>
+        </div>
+        
+        <div id="main-content" style="display: none;">
+            <!-- Lender Information (not a numbered section) -->
+            <div class="report-section">
+                <h2 class="section-title">Lender Information</h2>
+                <div class="lender-info" id="lenderInfo">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Section 1: Lender Performance Over Time -->
+            <div class="report-section">
+                <h2 class="section-title">Section 1: Lender Performance Over Time</h2>
+                
+                <!-- Table 1: Loans by Loan Purpose Over Time -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4 id="table1Header">Table 1: Loans by Loan Purpose Over Time</h4>
+                    </div>
+                    <div class="table-card-body">
+                        <div style="position: relative; height: 400px; margin-bottom: 1rem;">
+                            <canvas id="loanPurposeChart"></canvas>
+                        </div>
+                        <p class="table-caption">
+                            <strong>Source:</strong> NCRC - Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Table 2: Loan Amounts by Loan Purpose Over Time -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4 id="table2Header">Table 2: Loan Amounts by Loan Purpose Over Time</h4>
+                    </div>
+                    <div class="table-card-body">
+                        <div style="position: relative; height: 400px; margin-bottom: 1rem;">
+                            <canvas id="loanAmountPurposeChart"></canvas>
+                        </div>
+                        <p class="table-caption">
+                            <strong>Source:</strong> NCRC - Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Table 3: Top Metros by Loan Purpose -->
+                <!-- Hide this table when custom geography is selected (handled by JavaScript) -->
+                <div class="table-card" id="topMetrosTableCard">
+                    <div class="table-card-header">
+                        <h4 id="table3Header">Table 3: Top Metros by Loan Purpose</h4>
+                    </div>
+                    <div class="table-card-body">
+                        <div class="table-container">
+                            <table class="data-table sortable" id="topMetrosTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left; cursor: pointer;" onclick="sortTable('topMetrosTable', 0)">Metro <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 1, 'number')">All Loans <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 2, 'number')">Home Purchase <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 3, 'number')">Refinance <i class="fas fa-sort"></i></th>
+                                        <th style="text-align: center; cursor: pointer;" onclick="sortTable('topMetrosTable', 4, 'number')">Home Equity <i class="fas fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="topMetrosTableBody">
+                                    <!-- Populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption">
+                            <strong>Source:</strong> NCRC - Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Shows top 10 metros (CBSAs) by loan volume. If less than 10 metros, all metros in the selected geography are shown. <span id="topMetrosYears"></span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Section 2: Comparison Tables by Loan Purpose -->
+            <div class="report-section">
+                <h2 class="section-title">Section 2: Lender Performance Comparison</h2>
+                
+                <!-- Purpose Tabs -->
+                <div class="purpose-tabs">
+                    <button class="tab-button active" data-purpose="all">All Loans</button>
+                    <button class="tab-button" data-purpose="purchase">Home Purchase</button>
+                    <button class="tab-button" data-purpose="refinance">Refinance</button>
+                    <button class="tab-button" data-purpose="equity">Home Equity</button>
+                </div>
+                
+                <!-- All Loans Tab -->
+                <div class="tab-content active" data-purpose="all">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="allLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="allLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Purchase Tab -->
+                <div class="tab-content" data-purpose="purchase">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="purchaseLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="purchaseLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Refinance Tab -->
+                <div class="tab-content" data-purpose="refinance">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="refinanceLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="refinanceLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Equity Tab -->
+                <div class="tab-content" data-purpose="equity">
+                    <!-- Table 1: Loans by Race and Ethnicity -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 1: Loans by Race and Ethnicity</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityRaceEthnicityTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityRaceEthnicityCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 2: Loans by Borrower Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 2: Loans by Borrower Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityBorrowerIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityBorrowerIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 3: Loans by Neighborhood Income -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 3: Loans by Neighborhood Income</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityNeighborhoodIncomeTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityNeighborhoodIncomeCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 4: Loans by Neighborhood Demographics -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 4: Loans by Neighborhood Demographics</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityNeighborhoodDemographicsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityNeighborhoodDemographicsCaption"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Table 5: Loan Costs -->
+                    <div class="table-card">
+                        <div class="table-card-header">
+                            <h4>Table 5: Loan Costs</h4>
+                        </div>
+                        <div class="table-card-body">
+                            <table id="equityLoanCostsTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                            <div class="table-caption" id="equityLoanCostsCaption"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Get report data from template
+        const reportData = {{ report_data | tojson }};
+        const metadata = {{ metadata | tojson }};
+        
+        console.log('[Lender Report] Report data:', reportData);
+        console.log('[Lender Report] Metadata:', metadata);
+        
+        // Populate lender info
+        function populateLenderInfo() {
+            const lenderInfo = document.getElementById('lenderInfo');
+            const lender = metadata.lender || reportData.lender_info || {};
+            const lenderName = lender.name || 'N/A';
+            
+            // Get additional metadata
+            const peerMethod = metadata.peer_selection_method || 
+                (metadata.peer_min_percent && metadata.peer_max_percent ? 
+                    `${(metadata.peer_min_percent * 100).toFixed(0)}% to ${(metadata.peer_max_percent * 100).toFixed(0)}% of subject lender volume` : 
+                    'N/A');
+            const geography = metadata.geography || metadata.geographic_selection_method || 'N/A';
+            let geographicMethod = metadata.geographic_selection_method || 'N/A';
+            // Format geographic method: capitalize CBSAs properly
+            if (geographicMethod && typeof geographicMethod === 'string') {
+                geographicMethod = geographicMethod.replace(/cbsas/gi, 'CBSAs').replace(/cbsa/gi, 'CBSA');
+            }
+            const hmdaFilters = metadata.hmda_filters || {};
+            const assets = lender.assets || metadata.assets || 'N/A';
+            
+            // Format lender type: use type_name if available, otherwise type, capitalize first letter
+            let lenderType = lender.type_name || lender.type || 'N/A';
+            if (lenderType !== 'N/A' && typeof lenderType === 'string') {
+                lenderType = lenderType.charAt(0).toUpperCase() + lenderType.slice(1).toLowerCase();
+            }
+            
+            // Format RSSD: remove leading zeros
+            let rssdDisplay = lender.rssd || 'N/A';
+            if (rssdDisplay !== 'N/A' && typeof rssdDisplay === 'string') {
+                // Remove leading zeros but keep at least one digit
+                rssdDisplay = rssdDisplay.replace(/^0+/, '') || '0';
+            }
+            
+            // Format years as range (e.g., "2022-2024" instead of "2022, 2023, 2024")
+            let yearsDisplay = 'N/A';
+            if (reportData.years && Array.isArray(reportData.years) && reportData.years.length > 0) {
+                const sortedYears = [...reportData.years].sort((a, b) => a - b);
+                if (sortedYears.length === 1) {
+                    yearsDisplay = sortedYears[0].toString();
+                } else {
+                    // Check if years are consecutive
+                    const firstYear = sortedYears[0];
+                    const lastYear = sortedYears[sortedYears.length - 1];
+                    const isConsecutive = sortedYears.every((year, index) => year === firstYear + index);
+                    if (isConsecutive) {
+                        yearsDisplay = `${firstYear}-${lastYear}`;
+                    } else {
+                        yearsDisplay = sortedYears.join(', ');
+                    }
+                }
+            }
+            
+            // Format data type: capitalize first letter
+            let dataType = reportData.data_type || 'originations';
+            if (typeof dataType === 'string') {
+                dataType = dataType.charAt(0).toUpperCase() + dataType.slice(1);
+            }
+            
+            // Format HMDA filters
+            let filtersText = [];
+            if (hmdaFilters.action_taken && hmdaFilters.action_taken.length > 0) {
+                const actionNames = {
+                    '1': 'Originations',
+                    '2': 'Approved but not accepted',
+                    '3': 'Denied',
+                    '4': 'Withdrawn',
+                    '5': 'File closed',
+                    '6': 'Purchased',
+                    '7': 'Preapproved denied',
+                    '8': 'Preapproved approved not accepted'
+                };
+                const actionLabels = hmdaFilters.action_taken.map(a => actionNames[a] || a).join(', ');
+                filtersText.push(`Action Taken: ${actionLabels}`);
+            }
+            if (hmdaFilters.occupancy_type && hmdaFilters.occupancy_type.length > 0) {
+                const occupancyNames = {
+                    '1': 'Owner-occupied',
+                    '2': 'Second residence',
+                    '3': 'Investment'
+                };
+                const occupancyLabels = hmdaFilters.occupancy_type.map(o => occupancyNames[o] || o).join(', ');
+                filtersText.push(`Occupancy: ${occupancyLabels}`);
+            }
+            if (hmdaFilters.total_units && hmdaFilters.total_units.length > 0) {
+                filtersText.push(`Total Units: ${hmdaFilters.total_units.join(', ')}`);
+            }
+            if (hmdaFilters.construction_method && hmdaFilters.construction_method.length > 0) {
+                const constructionNames = {
+                    '1': 'Site-built',
+                    '2': 'Manufactured'
+                };
+                const constructionLabels = hmdaFilters.construction_method.map(c => constructionNames[c] || c).join(', ');
+                filtersText.push(`Construction: ${constructionLabels}`);
+            }
+            if (hmdaFilters.loan_type && hmdaFilters.loan_type.length > 0) {
+                const loanTypeNames = {
+                    '1': 'Conventional',
+                    '2': 'FHA',
+                    '3': 'VA',
+                    '4': 'USDA'
+                };
+                const loanTypeLabels = hmdaFilters.loan_type.map(l => loanTypeNames[l] || l).join(', ');
+                filtersText.push(`Loan Type: ${loanTypeLabels}`);
+            }
+            if (hmdaFilters.reverse_mortgage === 'excluded' || hmdaFilters.reverse_mortgage === false) {
+                filtersText.push('Reverse Mortgages: Excluded');
+            }
+            const filtersDisplay = filtersText.length > 0 ? filtersText.join('; ') : 'Default filters applied';
+            
+            // Format assets
+            let assetsDisplay = 'N/A';
+            if (assets && assets !== 'N/A' && typeof assets === 'number') {
+                if (assets >= 1000000000) {
+                    assetsDisplay = `$${(assets / 1000000000).toFixed(2)}B`;
+                } else if (assets >= 1000000) {
+                    assetsDisplay = `$${(assets / 1000000).toFixed(2)}M`;
+                } else if (assets >= 1000) {
+                    assetsDisplay = `$${(assets / 1000).toFixed(2)}K`;
+                } else {
+                    assetsDisplay = `$${assets.toLocaleString()}`;
+                }
+            } else if (assets && assets !== 'N/A') {
+                assetsDisplay = assets;
+            }
+            
+            // Get GLEIF addresses
+            const legalAddress = lender.legal_address || lender.gleif_data?.legal_address || {};
+            const hqAddress = lender.headquarters_address || lender.gleif_data?.headquarters_address || {};
+            const legalCity = legalAddress.city || '';
+            const legalState = legalAddress.state || '';
+            const hqCity = hqAddress.city || '';
+            const hqState = hqAddress.state || '';
+            
+            // Clean state codes (remove "US-" prefix if present)
+            const cleanLegalState = legalState.startsWith('US-') ? legalState.substring(3) : legalState;
+            const cleanHqState = hqState.startsWith('US-') ? hqState.substring(3) : hqState;
+            
+            const legalLocation = [legalCity, cleanLegalState].filter(Boolean).join(', ') || 'Not available';
+            const hqLocation = [hqCity, cleanHqState].filter(Boolean).join(', ') || 'Not available';
+            
+            // Get parent/child relationships
+            const directParent = lender.direct_parent || lender.gleif_data?.direct_parent;
+            const ultimateParent = lender.ultimate_parent || lender.gleif_data?.ultimate_parent;
+            const directChildren = lender.direct_children || lender.gleif_data?.direct_children || [];
+            const ultimateChildren = lender.ultimate_children || lender.gleif_data?.ultimate_children || [];
+            
+            // Build relationships HTML
+            let relationshipsHTML = '';
+            if (directParent || ultimateParent || directChildren.length > 0 || ultimateChildren.length > 0) {
+                relationshipsHTML = '<div style="margin-top: 16px; padding-top: 16px; border-top: 2px solid #e0e0e0;"><strong>Corporate Structure:</strong><div style="margin-top: 8px; font-size: 0.9rem;">';
+                
+                if (directParent) {
+                    const parentName = directParent.name || 'N/A';
+                    const parentLei = directParent.lei || '';
+                    relationshipsHTML += `<p style="margin: 4px 0;"><strong>Direct Parent:</strong> ${parentName}${parentLei ? ` (LEI: ${parentLei})` : ''}</p>`;
+                }
+                
+                if (ultimateParent && (!directParent || ultimateParent.lei !== directParent.lei)) {
+                    const ultimateName = ultimateParent.name || 'N/A';
+                    const ultimateLei = ultimateParent.lei || '';
+                    relationshipsHTML += `<p style="margin: 4px 0;"><strong>Ultimate Parent:</strong> ${ultimateName}${ultimateLei ? ` (LEI: ${ultimateLei})` : ''}</p>`;
+                }
+                
+                if (directChildren.length > 0) {
+                    relationshipsHTML += `<p style="margin: 4px 0;"><strong>Direct Children (${directChildren.length}):</strong></p><ul style="margin: 4px 0 8px 20px; padding-left: 16px;">`;
+                    directChildren.slice(0, 5).forEach(child => {
+                        const childName = child.name || child.lei || 'Unknown';
+                        relationshipsHTML += `<li>${childName}</li>`;
+                    });
+                    if (directChildren.length > 5) {
+                        relationshipsHTML += `<li style="font-style: italic;">... and ${directChildren.length - 5} more</li>`;
+                    }
+                    relationshipsHTML += '</ul>';
+                }
+                
+                relationshipsHTML += '</div></div>';
+            }
+            
+            lenderInfo.innerHTML = `
+                <p><strong>Lender Name:</strong> ${lenderName}</p>
+                <p><strong>Type:</strong> ${lenderType}</p>
+                <p><strong>Legal Address:</strong> ${legalLocation}</p>
+                <p><strong>Headquarters Address:</strong> ${hqLocation}</p>
+                <p><strong>LEI:</strong> ${lender.lei || 'N/A'}</p>
+                <p><strong>RSSD:</strong> ${rssdDisplay}</p>
+                ${assetsDisplay !== 'N/A' ? `<p><strong>Assets:</strong> ${assetsDisplay}</p>` : ''}
+                ${relationshipsHTML}
+                <p><strong>Years Analyzed:</strong> ${yearsDisplay}</p>
+                <p><strong>Peer Selection Method:</strong> ${peerMethod}</p>
+                <p><strong>Geographic Selection Method:</strong> ${geographicMethod}</p>
+                <p><strong>HMDA Filters:</strong> ${filtersDisplay}</p>
+            `;
+            
+            // Update table headers with lender name
+            const table1Header = document.getElementById('table1Header');
+            const table2Header = document.getElementById('table2Header');
+            const table3Header = document.getElementById('table3Header');
+            
+            if (table1Header) {
+                table1Header.textContent = `Table 1: Loans by Loan Purpose Over Time - ${lenderName}`;
+            }
+            if (table2Header) {
+                table2Header.textContent = `Table 2: Loan Amounts by Loan Purpose Over Time - ${lenderName}`;
+            }
+            if (table3Header) {
+                table3Header.textContent = `Table 3: Top Metros by Loan Purpose - ${lenderName}`;
+            }
+        }
+        
+        // Data should already be in dict format from the backend
+        // No need to parse DataFrame strings
+        
+        // Helper function to extract and remove parentheses content from metric names
+        function extractParenthesesContent(metric) {
+            const regex = /\(([^)]+)\)/g;
+            const matches = [];
+            let match;
+            let cleanedMetric = metric;
+            
+            // Extract all parenthetical content
+            while ((match = regex.exec(metric)) !== null) {
+                matches.push(match[1]);
+            }
+            
+            // Remove all parenthetical content from metric
+            cleanedMetric = metric.replace(/\([^)]+\)/g, '').trim();
+            
+            return { cleanedMetric, parentheticalContent: matches };
+        }
+        
+        // Populate table with Subject/Peer/Diff format
+        function populateLenderTable(tableId, data, captionId) {
+            const table = document.getElementById(tableId);
+            if (!table || !data || data.length === 0) {
+                console.warn(`[Lender Report] No data for table ${tableId}`);
+                return;
+            }
+            
+            const thead = table.querySelector('thead');
+            const tbody = table.querySelector('tbody');
+            
+            // Extract years from column names (e.g., "2022_Subject", "2022_Peer", "2022_Diff")
+            const columns = Object.keys(data[0]);
+            const years = [];
+            const yearSet = new Set();
+            
+            columns.forEach(col => {
+                const match = col.match(/^(\d{4})_(Subject|Peer|Diff)$/);
+                if (match) {
+                    yearSet.add(parseInt(match[1]));
+                }
+            });
+            
+            years.push(...Array.from(yearSet).sort());
+            
+            if (years.length === 0) {
+                console.warn(`[Lender Report] No year columns found in ${tableId}`);
+                return;
+            }
+            
+            // Determine metric column width - use narrower width to fit "Low to Moderate Income Census Tracts"
+            // and allocate more space to data columns
+            const isRaceEthnicityTable = tableId.includes('RaceEthnicity');
+            const metricWidth = isRaceEthnicityTable ? '220px' : '260px';  // Further reduced for compactness
+            const dataColumnWidth = '65px';  // Reduced for compactness
+            
+            // Collect all parenthetical content from metrics for caption
+            const allParentheticalContent = new Set();
+            
+            // Build header with year labels
+            let headerHTML = '<tr class="year-header-row">';
+            headerHTML += `<th class="metric-header" style="text-align: left; white-space: nowrap; min-width: ${metricWidth}; width: ${metricWidth};" rowspan="2">Metric</th>`;
+            years.forEach(year => {
+                headerHTML += `<th colspan="3" style="text-align: center;">---${year}---</th>`;
+            });
+            headerHTML += '</tr>';
+            
+            headerHTML += '<tr class="year-header-row">';
+            years.forEach(() => {
+                headerHTML += `<th style="text-align: center; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">Subject</th>`;
+                headerHTML += `<th style="text-align: center; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">Peer</th>`;
+                headerHTML += `<th style="text-align: center; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">Diff</th>`;
+            });
+            headerHTML += '</tr>';
+            
+            thead.innerHTML = headerHTML;
+            
+            // Check if this is an income table or neighborhood demographics table that needs special styling
+            const isIncomeTable = tableId.includes('BorrowerIncome') || tableId.includes('NeighborhoodIncome');
+            const isNeighborhoodDemographicsTable = tableId.includes('NeighborhoodDemographics');
+            
+            // Build data rows
+            tbody.innerHTML = data.map(row => {
+                const originalMetric = row.Metric || '';
+                const isTotalLoans = originalMetric === 'Total Loans';
+                
+                // Extract and remove parentheses content from metric name
+                const { cleanedMetric, parentheticalContent } = extractParenthesesContent(originalMetric);
+                const metric = cleanedMetric;
+                
+                // Collect parenthetical content for caption (skip "Total Loans")
+                if (!isTotalLoans && parentheticalContent.length > 0) {
+                    parentheticalContent.forEach(content => allParentheticalContent.add(content));
+                }
+                
+                // Determine row styling for income tables
+                let rowBgColor = '';
+                let metricPadding = '';
+                if (isIncomeTable && !isTotalLoans) {
+                    // Check metric name to determine styling
+                    const isLowToModerate = metric.includes('Low to Moderate Income');
+                    const isLowIncome = metric.includes('Low Income') && !isLowToModerate;
+                    const isModerateIncome = metric.includes('Moderate Income') && !isLowToModerate;
+                    const isMiddleIncome = metric.includes('Middle Income');
+                    const isUpperIncome = metric.includes('Upper Income');
+                    
+                    if (isLowIncome || isModerateIncome) {
+                        // White background, indent metric name
+                        rowBgColor = 'background-color: white;';
+                        metricPadding = 'padding-left: 20px;';
+                    } else if (isLowToModerate || isMiddleIncome || isUpperIncome) {
+                        // Light grey background for Low to Moderate, Middle, and Upper Income
+                        rowBgColor = 'background-color: #f5f5f5;';
+                    }
+                }
+                
+                // Determine row styling for neighborhood demographics table
+                if (isNeighborhoodDemographicsTable && !isTotalLoans) {
+                    const isMajorityMinority = metric.includes('Majority Minority');
+                    const isHighMinority = metric.includes('High Minority');
+                    const isMiddleMinority = metric.includes('Middle Minority');
+                    
+                    if (isMajorityMinority) {
+                        // Light grey background for Majority Minority
+                        rowBgColor = 'background-color: #f5f5f5;';
+                    } else if (isHighMinority || isMiddleMinority) {
+                        // Light grey background and indent for High and Middle Minority
+                        rowBgColor = 'background-color: #f5f5f5;';
+                        metricPadding = 'padding-left: 20px;';
+                    }
+                }
+                
+                let cells = `<td style="text-align: left; font-weight: 600; white-space: nowrap; min-width: ${metricWidth}; width: ${metricWidth}; ${metricPadding}">${metric}</td>`;
+                
+                years.forEach(year => {
+                    const subjectCol = `${year}_Subject`;
+                    const peerCol = `${year}_Peer`;
+                    const diffCol = `${year}_Diff`;
+                    
+                    let subject = row[subjectCol] || 'N/A';
+                    let peer = row[peerCol] || 'N/A';
+                    let diff = row[diffCol] || 'N/A';
+                    
+                    // Remove % symbol from values (except Total Loans which doesn't have %)
+                    if (!isTotalLoans) {
+                        if (typeof subject === 'string' && subject.includes('%')) {
+                            subject = subject.replace('%', '');
+                        }
+                        if (typeof peer === 'string' && peer.includes('%')) {
+                            peer = peer.replace('%', '');
+                        }
+                    }
+                    
+                    // Format Total Loans with bold
+                    if (isTotalLoans) {
+                        cells += `<td style="text-align: center; font-weight: 600; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">${subject}</td>`;
+                        cells += `<td style="text-align: center; font-weight: 600; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">${peer}</td>`;
+                    } else {
+                        cells += `<td style="text-align: center; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">${subject}</td>`;
+                        cells += `<td style="text-align: center; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">${peer}</td>`;
+                    }
+                    
+                    // Color code the Diff column based on significance
+                    let diffColor = 'black';
+                    let diffWeight = '600';
+                    if (diff !== 'N/A' && diff !== '' && diff !== '—') {
+                        const diffStr = String(diff);
+                        const isPositive = diffStr.startsWith('+') && !diffStr.match(/^\+?0\.?0*pp?$/i);
+                        const isNegative = diffStr.startsWith('-') && !diffStr.match(/^-?0\.?0*pp?$/i);
+                        
+                        // Check significance flags from backend
+                        const significantCol = `${year}_Diff_Significant`;
+                        const isNegativeCol = `${year}_Diff_IsNegative`;
+                        const isSignificant = row[significantCol] === true || row[significantCol] === 'true';
+                        const isNegativeFlag = row[isNegativeCol] === true || row[isNegativeCol] === 'true';
+                        
+                        if (isPositive) {
+                            diffColor = '#28a745'; // Green for positive
+                        } else if (isNegative || isNegativeFlag) {
+                            // Negative differences
+                            if (isSignificant) {
+                                // Significant and negative: keep red (asterisk already added in backend)
+                                diffColor = '#dc3545'; // Red for significant negative
+                            } else {
+                                // Not significant and negative: bold black
+                                diffColor = '#000000'; // Black for non-significant negative
+                                diffWeight = '700'; // Bold
+                            }
+                        }
+                    }
+                    
+                    cells += `<td style="text-align: center; color: ${diffColor}; font-weight: ${diffWeight}; width: ${dataColumnWidth}; min-width: ${dataColumnWidth};">${diff}</td>`;
+                });
+                
+                // Apply row background color if needed
+                const rowStyle = rowBgColor ? ` style="${rowBgColor}"` : '';
+                return `<tr${rowStyle}>${cells}</tr>`;
+            }).join('');
+            
+            // Update caption with source and definitions
+            if (captionId) {
+                const caption = document.getElementById(captionId);
+                if (caption) {
+                    let captionText = '<strong>Source:</strong> NCRC - Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases. ';
+                    
+                    // Add parenthetical content from metrics to caption
+                    if (allParentheticalContent.size > 0) {
+                        const parentheticalText = Array.from(allParentheticalContent).join('; ');
+                        // Check if this is specifically the multi-racial definition
+                        if (parentheticalText.includes('non-Hispanic and two or more races')) {
+                            captionText += ` <strong>Multi-Racial Definition:</strong> ${parentheticalText}.`;
+                        } else {
+                            captionText += ` <strong>Definitions:</strong> ${parentheticalText}.`;
+                        }
+                    }
+                    
+                    const years = reportData.years || [];
+                    if (years.length > 0) {
+                        const yearRange = years.length > 1 
+                            ? `${Math.min(...years)}-${Math.max(...years)}`
+                            : years[0].toString();
+                        captionText += ` | <strong>Years:</strong> ${yearRange}`;
+                    }
+                    
+                    caption.innerHTML = captionText;
+                }
+            }
+        }
+        
+        // Populate all tables for a loan purpose
+        function populatePurposeTables(purpose) {
+            const section2 = reportData.section2;
+            if (!section2 || !section2.by_purpose || !section2.by_purpose[purpose]) {
+                return;
+            }
+            
+            const purposeData = section2.by_purpose[purpose];
+            
+            // Parse and populate each table
+            const tables = [
+                { key: 'loans_by_race_ethnicity', id: `${purpose}RaceEthnicityTable`, caption: `${purpose}RaceEthnicityCaption` },
+                { key: 'loans_by_borrower_income', id: `${purpose}BorrowerIncomeTable`, caption: `${purpose}BorrowerIncomeCaption` },
+                { key: 'loans_by_neighborhood_income', id: `${purpose}NeighborhoodIncomeTable`, caption: `${purpose}NeighborhoodIncomeCaption` },
+                { key: 'loans_by_neighborhood_demographics', id: `${purpose}NeighborhoodDemographicsTable`, caption: `${purpose}NeighborhoodDemographicsCaption` },
+                { key: 'loans_by_loan_costs', id: `${purpose}LoanCostsTable`, caption: `${purpose}LoanCostsCaption` }
+            ];
+            
+            tables.forEach(({ key, id, caption }) => {
+                const tableData = purposeData[key];
+                if (tableData && Array.isArray(tableData) && tableData.length > 0) {
+                    populateLenderTable(id, tableData, caption);
+                } else {
+                    console.warn(`[Lender Report] No data for ${key} in ${purpose}`);
+                }
+            });
+        }
+        
+        // Tab switching
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const purpose = button.dataset.purpose;
+                
+                // Update active tab
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update active content
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                    if (content.dataset.purpose === purpose) {
+                        content.classList.add('active');
+                    }
+                });
+            });
+        });
+        
+        // Function to initialize loan purpose chart
+        function initializeLoanPurposeChart(data) {
+            const canvas = document.getElementById('loanPurposeChart');
+            if (!canvas || !data || data.length === 0) {
+                console.warn('[Loan Purpose Chart] No data provided or canvas not found');
+                return;
+            }
+            
+            console.log('[Loan Purpose Chart] Initializing with data:', data);
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Sort data by year
+            const sortedData = [...data].sort((a, b) => a.year - b.year);
+            const years = sortedData.map(d => d.year.toString());
+            const homePurchase = sortedData.map(d => d['Home Purchase'] || 0);
+            const refinance = sortedData.map(d => d['Refinance'] || 0);
+            const homeEquity = sortedData.map(d => d['Home Equity'] || 0);
+            
+            console.log('[Loan Purpose Chart] Home Purchase values:', homePurchase);
+            console.log('[Loan Purpose Chart] Refinance values:', refinance);
+            console.log('[Loan Purpose Chart] Home Equity values:', homeEquity);
+            
+            const datasets = [
+                {
+                    label: 'Home Purchase',
+                    data: homePurchase,
+                    backgroundColor: 'rgba(3, 78, 160, 1.0)', // NCRC dark blue
+                    borderColor: '#000000',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Refinance',
+                    data: refinance,
+                    backgroundColor: 'rgba(102, 102, 102, 1.0)', // NCRC grey
+                    borderColor: '#000000',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Home Equity',
+                    data: homeEquity,
+                    backgroundColor: 'rgba(255, 215, 0, 1.0)', // Yellow
+                    borderColor: '#000000',
+                    borderWidth: 1
+                }
+            ];
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                filter: function(item, chart) {
+                                    // Always show all legend items
+                                    return true;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            itemSort: function(a, b) {
+                                const order = ['Home Purchase', 'Refinance', 'Home Equity'];
+                                const aIndex = order.indexOf(a.dataset.label);
+                                const bIndex = order.indexOf(b.dataset.label);
+                                if (aIndex === -1 && bIndex === -1) return 0;
+                                if (aIndex === -1) return 1;
+                                if (bIndex === -1) return -1;
+                                return aIndex - bIndex;
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const dataIndex = context.dataIndex;
+                                    const homePurchaseVal = homePurchase[dataIndex] || 0;
+                                    const refinanceVal = refinance[dataIndex] || 0;
+                                    const homeEquityVal = homeEquity[dataIndex] || 0;
+                                    const total = homePurchaseVal + refinanceVal + homeEquityVal;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                    return context.dataset.label + ': ' + value.toLocaleString() + ' (' + percentage + '%)';
+                                },
+                                footer: function(tooltipItems) {
+                                    let total = 0;
+                                    tooltipItems.forEach(function(tooltipItem) {
+                                        total += tooltipItem.parsed.y;
+                                    });
+                                    return 'Total: ' + total.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            // Grouped bars are default when multiple datasets are present
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Function to initialize loan amount purpose chart
+        function initializeLoanAmountPurposeChart(data) {
+            const canvas = document.getElementById('loanAmountPurposeChart');
+            if (!canvas || !data || data.length === 0) {
+                console.warn('[Loan Amount Purpose Chart] No data provided or canvas not found');
+                return;
+            }
+            
+            console.log('[Loan Amount Purpose Chart] Initializing with data:', data);
+            
+            const ctx = canvas.getContext('2d');
+            
+            // Sort data by year
+            const sortedData = [...data].sort((a, b) => a.year - b.year);
+            const years = sortedData.map(d => d.year.toString());
+            const homePurchase = sortedData.map(d => d['Home Purchase'] || 0);
+            const refinance = sortedData.map(d => d['Refinance'] || 0);
+            const homeEquity = sortedData.map(d => d['Home Equity'] || 0);
+            
+            console.log('[Loan Amount Purpose Chart] Home Purchase values:', homePurchase);
+            console.log('[Loan Amount Purpose Chart] Refinance values:', refinance);
+            console.log('[Loan Amount Purpose Chart] Home Equity values:', homeEquity);
+            
+            const datasets = [
+                {
+                    label: 'Home Purchase',
+                    data: homePurchase,
+                    backgroundColor: 'rgba(3, 78, 160, 1.0)', // NCRC dark blue
+                    borderColor: '#000000',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Refinance',
+                    data: refinance,
+                    backgroundColor: 'rgba(102, 102, 102, 1.0)', // NCRC grey
+                    borderColor: '#000000',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Home Equity',
+                    data: homeEquity,
+                    backgroundColor: 'rgba(255, 215, 0, 1.0)', // Yellow
+                    borderColor: '#000000',
+                    borderWidth: 1
+                }
+            ];
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: years,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                filter: function(item, chart) {
+                                    // Always show all legend items
+                                    return true;
+                                }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            itemSort: function(a, b) {
+                                const order = ['Home Purchase', 'Refinance', 'Home Equity'];
+                                const aIndex = order.indexOf(a.dataset.label);
+                                const bIndex = order.indexOf(b.dataset.label);
+                                if (aIndex === -1 && bIndex === -1) return 0;
+                                if (aIndex === -1) return 1;
+                                if (bIndex === -1) return -1;
+                                return aIndex - bIndex;
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.parsed.y;
+                                    const dataIndex = context.dataIndex;
+                                    const homePurchaseVal = homePurchase[dataIndex] || 0;
+                                    const refinanceVal = refinance[dataIndex] || 0;
+                                    const homeEquityVal = homeEquity[dataIndex] || 0;
+                                    const total = homePurchaseVal + refinanceVal + homeEquityVal;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                                    return context.dataset.label + ': $' + value.toLocaleString() + ' (' + percentage + '%)';
+                                },
+                                footer: function(tooltipItems) {
+                                    let total = 0;
+                                    tooltipItems.forEach(function(tooltipItem) {
+                                        total += tooltipItem.parsed.y;
+                                    });
+                                    return 'Total: $' + total.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            // Grouped bars are default when multiple datasets are present
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    // Format as currency with abbreviations (matching area analysis)
+                                    if (value >= 1000000000) {
+                                        // Billions: $4B (not $4000M)
+                                        return '$' + (value / 1000000000).toFixed(0) + 'B';
+                                    } else if (value >= 1000000) {
+                                        // Millions: $25M
+                                        return '$' + (value / 1000000).toFixed(0) + 'M';
+                                    } else if (value >= 1000) {
+                                        // Thousands: $25k
+                                        return '$' + (value / 1000).toFixed(0) + 'k';
+                                    } else {
+                                        // Less than 1000: $500
+                                        return '$' + value.toFixed(0);
+                                    }
+                                },
+                                maxTicksLimit: 8  // Shorten y-axis by limiting number of ticks
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Populate top metros table
+        function populateTopMetrosTable() {
+            // Hide table card if custom geography is selected
+            const tableCard = document.getElementById('topMetrosTableCard');
+            if (tableCard && typeof metadata !== 'undefined' && metadata.geography_scope === 'custom') {
+                tableCard.style.display = 'none';
+                return;
+            }
+            // Show table card if it was hidden
+            if (tableCard) {
+                tableCard.style.display = 'block';
+            }
+            
+            const tbody = document.getElementById('topMetrosTableBody');
+            if (!tbody) return;
+            
+            // Update years in caption - use all years from metadata if available, otherwise use reportData.years
+            const yearsEl = document.getElementById('topMetrosYears');
+            if (yearsEl) {
+                let yearsToShow = [];
+                // Try to get all years from metadata first (top metros aggregates across all years)
+                if (typeof metadata !== 'undefined' && metadata.years && metadata.years.length > 0) {
+                    yearsToShow = metadata.years;
+                } else if (reportData && reportData.years && reportData.years.length > 0) {
+                    yearsToShow = reportData.years;
+                }
+                if (yearsToShow.length > 0) {
+                    yearsEl.textContent = `Years included: ${yearsToShow.join(', ')}.`;
+                }
+            }
+            
+            if (!reportData || !reportData.top_metros) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No metro data available.</td></tr>';
+                return;
+            }
+            
+            const metros = reportData.top_metros;
+            if (!metros || metros.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">No metro data available.</td></tr>';
+                return;
+            }
+            
+            // Sort by all loans descending (default)
+            let sortedMetros = [...metros].sort((a, b) => (b.all_loans || 0) - (a.all_loans || 0));
+            
+            tbody.innerHTML = sortedMetros.map(metro => {
+                return `
+                    <tr>
+                        <td style="text-align: left;">${metro.cbsa_name || metro.cbsa_code || 'N/A'}</td>
+                        <td style="text-align: center;">${(metro.all_loans || 0).toLocaleString()}</td>
+                        <td style="text-align: center;">${(metro.home_purchase || 0).toLocaleString()}</td>
+                        <td style="text-align: center;">${(metro.refinance || 0).toLocaleString()}</td>
+                        <td style="text-align: center;">${(metro.home_equity || 0).toLocaleString()}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // Sortable table function
+        function sortTable(tableId, columnIndex, type = 'string') {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+            
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Skip if no data rows
+            if (rows.length === 0 || rows[0].cells.length === 0) return;
+            
+            // Determine sort direction
+            const header = table.querySelectorAll('thead th')[columnIndex];
+            const isAscending = !header.classList.contains('sort-asc');
+            
+            // Remove sort classes from all headers
+            table.querySelectorAll('thead th').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+            });
+            
+            // Add sort class to current header
+            header.classList.add(isAscending ? 'sort-asc' : 'sort-desc');
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aText = a.cells[columnIndex].textContent.trim();
+                const bText = b.cells[columnIndex].textContent.trim();
+                
+                let aVal, bVal;
+                if (type === 'number') {
+                    aVal = parseFloat(aText.replace(/,/g, '')) || 0;
+                    bVal = parseFloat(bText.replace(/,/g, '')) || 0;
+                } else {
+                    aVal = aText.toLowerCase();
+                    bVal = bText.toLowerCase();
+                }
+                
+                if (aVal < bVal) return isAscending ? -1 : 1;
+                if (aVal > bVal) return isAscending ? 1 : -1;
+                return 0;
+            });
+            
+            // Re-append sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        // Initialize report
+        function initializeReport() {
+            populateLenderInfo();
+            
+            // Initialize Section 1 charts
+            if (reportData && reportData.loan_purpose_over_time && reportData.loan_purpose_over_time.length > 0) {
+                console.log('[Lender Report] Initializing loan purpose chart');
+                initializeLoanPurposeChart(reportData.loan_purpose_over_time);
+            }
+            
+            if (reportData && reportData.loan_amount_purpose_over_time && reportData.loan_amount_purpose_over_time.length > 0) {
+                console.log('[Lender Report] Initializing loan amount purpose chart');
+                initializeLoanAmountPurposeChart(reportData.loan_amount_purpose_over_time);
+            }
+            
+            // Populate top metros table
+            populateTopMetrosTable();
+            
+            populatePurposeTables('all');
+            populatePurposeTables('purchase');
+            populatePurposeTables('refinance');
+            populatePurposeTables('equity');
+            
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            
+            // Populate header metadata
+            populateHeaderMetadata();
+        }
+        
+        function populateHeaderMetadata() {
+            if (!reportData || !reportData.lender_overview) return;
+            
+            const overview = reportData.lender_overview;
+            // Use the metadata variable that's already defined in the script
+            const meta = typeof metadata !== 'undefined' ? metadata : {};
+            
+            // Lender name
+            const lenderNameEl = document.getElementById('lenderName');
+            if (lenderNameEl && overview.lender_name) {
+                lenderNameEl.textContent = overview.lender_name;
+            }
+            
+            // Years
+            const yearsEl = document.getElementById('years');
+            if (yearsEl && overview.years && overview.years.length > 0) {
+                yearsEl.textContent = `Years: ${overview.years.join(', ')}`;
+            }
+            
+            // Geography (if available in metadata)
+            const geographyEl = document.getElementById('geography');
+            if (geographyEl && meta.geography) {
+                geographyEl.textContent = `Geography: ${meta.geography}`;
+            }
+            
+            // Peer info (if available in metadata)
+            const peerInfoEl = document.getElementById('peerInfo');
+            if (peerInfoEl && meta.peer_count !== undefined) {
+                peerInfoEl.textContent = `Peer Comparison: ${meta.peer_count} peer lenders`;
+            }
+        }
+        
+        // Function to export full report to Excel
+        async function exportToExcel() {
+            try {
+                if (!window.XLSX) {
+                    alert('Excel library not loaded. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Show loading
+                const loadingMsg = document.createElement('div');
+                loadingMsg.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10000;';
+                loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating Excel file with all data...<br><small>This may take a moment...</small>';
+                document.body.appendChild(loadingMsg);
+                
+                // Use metadata from the page to reconstruct the original request
+                if (!metadata || !metadata.lender || !metadata.lender.lei) {
+                    alert('Unable to export: Report metadata not available. Please regenerate the report.');
+                    document.body.removeChild(loadingMsg);
+                    return;
+                }
+                
+                // Prepare request data
+                const requestData = {
+                    job_id: metadata.job_id || null,
+                    lender: metadata.lender || {},
+                    wizard_data: {
+                        lender: metadata.lender || {},
+                        geography_scope: metadata.geography_scope || 'all_cbsas',
+                        comparison_group: metadata.comparison_group || 'all',
+                        years: metadata.years || reportData.years || [],
+                        filters: metadata.hmda_filters || {}
+                    }
+                };
+                
+                console.log('[Excel Export] Sending request:', requestData);
+                
+                const exportResponse = await fetch('/api/export-lender-report-excel', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                if (!exportResponse.ok) {
+                    let errorMessage = 'Failed to fetch export data from server';
+                    try {
+                        const errorData = await exportResponse.json();
+                        errorMessage = errorData.error || errorMessage;
+                        console.error('[Excel Export] Server error:', errorData);
+                    } catch (e) {
+                        console.error('[Excel Export] HTTP error:', exportResponse.status, exportResponse.statusText);
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                const exportData = await exportResponse.json();
+                console.log('[Excel Export] Received response:', exportData);
+                
+                if (!exportData.success) {
+                    throw new Error(exportData.error || 'Failed to generate export data');
+                }
+                
+                // Use the full report data
+                const fullReportData = exportData.report_data;
+                const allMetrosData = exportData.all_metros_data || [];
+                const peerData = exportData.peer_data || [];
+                
+                const workbook = XLSX.utils.book_new();
+                
+                // Helper function to convert table data to worksheet
+                function dataToSheet(data, sheetName) {
+                    if (!data || data.length === 0) {
+                        return XLSX.utils.aoa_to_sheet([['No data available']]);
+                    }
+                    
+                    // Convert array of objects to array of arrays
+                    const headers = Object.keys(data[0]);
+                    const rows = [headers];
+                    
+                    data.forEach(row => {
+                        const values = headers.map(header => {
+                            const value = row[header];
+                            // Convert formatted strings to numbers where possible
+                            if (typeof value === 'string') {
+                                // Try to extract numbers from formatted strings like "54,978" or "32.2%"
+                                const numMatch = value.replace(/,/g, '').match(/^([\d.]+)/);
+                                if (numMatch && !isNaN(parseFloat(numMatch[1]))) {
+                                    return parseFloat(numMatch[1]);
+                                }
+                            }
+                            return value;
+                        });
+                        rows.push(values);
+                    });
+                    
+                    return XLSX.utils.aoa_to_sheet(rows);
+                }
+                
+                // Helper function to truncate sheet names to 30 characters
+                function truncateSheetName(name) {
+                    return name.length > 30 ? name.substring(0, 30) : name;
+                }
+                
+                // Section 1: Loan Purpose Over Time
+                if (fullReportData.loan_purpose_over_time && fullReportData.loan_purpose_over_time.length > 0) {
+                    const ws = dataToSheet(fullReportData.loan_purpose_over_time, 'Loan Purpose');
+                    XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName('S1-Loan Purpose'));
+                }
+                
+                // Section 1: Loan Amount Purpose Over Time
+                if (fullReportData.loan_amount_purpose_over_time && fullReportData.loan_amount_purpose_over_time.length > 0) {
+                    const ws = dataToSheet(fullReportData.loan_amount_purpose_over_time, 'Loan Amount');
+                    XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName('S1-Loan Amounts'));
+                }
+                
+                // Section 1: Top Metros (ALL metros, not just top 10)
+                if (allMetrosData && allMetrosData.length > 0) {
+                    const ws = dataToSheet(allMetrosData, 'Top Metros');
+                    XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName('S1-All Metros'));
+                }
+                
+                // Section 2: Tables by loan purpose
+                if (fullReportData.section2 && fullReportData.section2.by_purpose) {
+                    const section2 = fullReportData.section2;
+                    const purposes = ['all', 'purchase', 'refinance', 'equity'];
+                    const purposeLabels = {
+                        'all': 'All Loans',
+                        'purchase': 'Purchase',
+                        'refinance': 'Refinance',
+                        'equity': 'Equity'
+                    };
+                    
+                    for (const purpose of purposes) {
+                        const purposeData = section2.by_purpose[purpose];
+                        if (!purposeData) continue;
+                        
+                        const purposeLabel = purposeLabels[purpose];
+                        
+                        // Table 1: Race/Ethnicity
+                        if (purposeData.loans_by_race_ethnicity && purposeData.loans_by_race_ethnicity.length > 0) {
+                            const ws = dataToSheet(purposeData.loans_by_race_ethnicity, 'Race/Ethnicity');
+                            XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName(`S2-${purposeLabel}-Race`));
+                        }
+                        
+                        // Table 2: Borrower Income
+                        if (purposeData.loans_by_borrower_income && purposeData.loans_by_borrower_income.length > 0) {
+                            const ws = dataToSheet(purposeData.loans_by_borrower_income, 'Borrower Income');
+                            XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName(`S2-${purposeLabel}-Borrower`));
+                        }
+                        
+                        // Table 3: Neighborhood Income
+                        if (purposeData.loans_by_neighborhood_income && purposeData.loans_by_neighborhood_income.length > 0) {
+                            const ws = dataToSheet(purposeData.loans_by_neighborhood_income, 'Neighborhood Income');
+                            XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName(`S2-${purposeLabel}-Tract Inc`));
+                        }
+                        
+                        // Table 4: Neighborhood Demographics
+                        if (purposeData.loans_by_neighborhood_demographics && purposeData.loans_by_neighborhood_demographics.length > 0) {
+                            const ws = dataToSheet(purposeData.loans_by_neighborhood_demographics, 'Neighborhood Demo');
+                            XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName(`S2-${purposeLabel}-Tract Demo`));
+                        }
+                        
+                        // Table 5: Loan Costs
+                        if (purposeData.loans_by_loan_costs && purposeData.loans_by_loan_costs.length > 0) {
+                            const ws = dataToSheet(purposeData.loans_by_loan_costs, 'Loan Costs');
+                            XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName(`S2-${purposeLabel}-Loan Costs`));
+                        }
+                    }
+                }
+                
+                // Peer Sheet: All peers by CBSA and Year
+                if (peerData && peerData.length > 0) {
+                    const ws = dataToSheet(peerData, 'Peers');
+                    XLSX.utils.book_append_sheet(workbook, ws, truncateSheetName('Peers by CBSA & Year'));
+                }
+                
+                // Notes Sheet with Methods and Definitions
+                const notesSheet = [];
+                notesSheet.push(['LENDER ANALYSIS REPORT - NOTES AND METHODOLOGY']);
+                notesSheet.push([]);
+                
+                // Lender Information
+                notesSheet.push(['LENDER INFORMATION']);
+                if (metadata.lender) {
+                    const lender = metadata.lender;
+                    notesSheet.push(['Lender Name:', lender.name || 'N/A']);
+                    notesSheet.push(['Type:', lender.type_name || lender.type || 'N/A']);
+                    notesSheet.push(['Location:', `${lender.city || ''}${lender.city && lender.state ? ', ' : ''}${lender.state || ''}`]);
+                    notesSheet.push(['LEI:', lender.lei || 'N/A']);
+                    notesSheet.push(['RSSD:', lender.rssd || 'N/A']);
+                    if (lender.assets && lender.assets !== 'N/A') {
+                        notesSheet.push(['Assets:', typeof lender.assets === 'number' ? `$${lender.assets.toLocaleString()}` : lender.assets]);
+                    }
+                }
+                notesSheet.push(['Years Analyzed:', (reportData.years || []).join(', ')]);
+                notesSheet.push(['Data Type:', (reportData.data_type || 'originations').charAt(0).toUpperCase() + (reportData.data_type || 'originations').slice(1)]);
+                notesSheet.push(['Peer Selection Method:', metadata.peer_selection_method || 'N/A']);
+                notesSheet.push(['Geographic Selection Method:', metadata.geographic_selection_method || 'N/A']);
+                notesSheet.push([]);
+                
+                // HMDA Filters
+                notesSheet.push(['HMDA FILTERS']);
+                const hmdaFilters = metadata.hmda_filters || {};
+                if (hmdaFilters.action_taken) {
+                    notesSheet.push(['Action Taken:', hmdaFilters.action_taken.join(', ')]);
+                }
+                if (hmdaFilters.occupancy_type) {
+                    notesSheet.push(['Occupancy:', hmdaFilters.occupancy_type.join(', ')]);
+                }
+                if (hmdaFilters.total_units) {
+                    notesSheet.push(['Total Units:', hmdaFilters.total_units.join(', ')]);
+                }
+                if (hmdaFilters.construction_method) {
+                    notesSheet.push(['Construction:', hmdaFilters.construction_method.join(', ')]);
+                }
+                if (hmdaFilters.loan_type) {
+                    notesSheet.push(['Loan Type:', hmdaFilters.loan_type.join(', ')]);
+                }
+                notesSheet.push([]);
+                
+                // Data Sources
+                notesSheet.push(['DATA SOURCES']);
+                notesSheet.push(['HMDA Data:', 'Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases']);
+                notesSheet.push(['Census Data:', 'U.S. Census Bureau - American Community Survey (ACS) 5-year estimates, 2020 Decennial Census, 2010 Decennial Census']);
+                notesSheet.push(['Income Benchmarks:', 'HUD Low/Moderate Income data and FFIEC MSA/MD Median Family Income']);
+                notesSheet.push(['Branch Data:', 'FDIC Summary of Deposits (SOD) data for branch location information']);
+                notesSheet.push(['Lender Information:', 'HMDA Lenders18 table and CFPB API for lender metadata']);
+                notesSheet.push([]);
+                
+                // Peer Selection Method
+                notesSheet.push(['PEER SELECTION METHOD']);
+                notesSheet.push(['Volume-Based Peer Selection:', 'Peer lenders are selected based on loan volume within the selected geography']);
+                notesSheet.push(['Default Range:', '50% to 200% of subject lender volume']);
+                notesSheet.push(['Expanded Range:', 'If no peers found, expands to 25% to 400% of subject lender volume']);
+                notesSheet.push(['Fallback:', 'If still no peers, uses top 20 lenders by volume in selected geography']);
+                notesSheet.push([]);
+                
+                // Geographic Selection Methods
+                notesSheet.push(['GEOGRAPHIC SELECTION METHODS']);
+                notesSheet.push(['All CBSAs:', 'Includes all counties (CBSAs) where the subject lender has originated loans']);
+                notesSheet.push(['Branch CBSAs:', 'Includes counties within CBSAs where the subject lender has >1% of its total branches']);
+                notesSheet.push(['Loan CBSAs:', 'Includes counties where the subject lender has >1% of total loan originations']);
+                notesSheet.push([]);
+                
+                // Definitions (abbreviated for Excel)
+                notesSheet.push(['DEFINITIONS']);
+                notesSheet.push(['Low Income Borrowers:', '≤50% of Area Median Family Income (AMFI)']);
+                notesSheet.push(['Moderate Income Borrowers:', '>50% and ≤80% of AMFI']);
+                notesSheet.push(['Middle Income Borrowers:', '>80% and ≤120% of AMFI']);
+                notesSheet.push(['Upper Income Borrowers:', '>120% of AMFI']);
+                notesSheet.push(['Low to Moderate Income (LMI):', 'Combined Low and Moderate Income (≤80% of AMFI)']);
+                notesSheet.push([]);
+                notesSheet.push(['Neighborhood Demographics:']);
+                notesSheet.push(['Majority Minority Census Tracts (MMCT):', 'Census tracts where minority population ≥50%']);
+                notesSheet.push(['Minority Population:', 'Population that is not non-Hispanic White']);
+                notesSheet.push(['High Minority Census Tracts:', 'Census tracts where minority population ≥80%']);
+                notesSheet.push(['Middle Minority Census Tracts:', 'Census tracts where minority population is 50-80%']);
+                notesSheet.push(['Moderate Minority Census Tracts:', 'Census tracts where minority population is 20-50%']);
+                notesSheet.push(['Low Minority Census Tracts:', 'Census tracts where minority population <20%']);
+                notesSheet.push(['Note:', 'Lender analysis uses fixed percentage thresholds (not quartiles) because the analysis may span dozens of CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts.']);
+                notesSheet.push([]);
+                notesSheet.push(['Race/Ethnicity Classification:', 'NCRC methodology - Hispanic borrowers counted in Hispanic category regardless of race']);
+                notesSheet.push(['Multi-Racial Borrowers:', 'Non-Hispanic borrowers who selected 2+ distinct main race categories']);
+                notesSheet.push([]);
+                
+                // Calculations
+                notesSheet.push(['CALCULATIONS']);
+                notesSheet.push(['Subject Lender Percentages:', '(metric count / total originations) × 100 for each year']);
+                notesSheet.push(['Peer Averages:', 'Weighted average across all peer lenders, weighted by loan volume']);
+                notesSheet.push(['Difference:', 'Subject percentage - Peer average percentage, shown in percentage points (pp)']);
+                notesSheet.push(['Statistical Significance:', 'Chi-squared tests performed. Asterisk (*) indicates significant negative difference (p < 0.05)']);
+                notesSheet.push(['Loan Costs:', 'Weighted averages where each loan is weighted by number of originations']);
+                notesSheet.push([]);
+                
+                // Methodology
+                notesSheet.push(['METHODOLOGY']);
+                notesSheet.push(['Minority Population Calculation:', '(total_persons - total_white) / total_persons × 100, where total_white is non-Hispanic White population']);
+                notesSheet.push(['Minority Tract Categorization:', 'Lender analysis uses fixed percentage thresholds (≥80%, 50-80%, 20-50%, <20%) because the analysis may span multiple CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts.']);
+                notesSheet.push([]);
+                
+                // Data Notes
+                notesSheet.push(['DATA NOTES']);
+                notesSheet.push(['All Metros Sheet:', 'Shows ALL CBSAs where the subject lender has originated loans, not limited to selected geography']);
+                notesSheet.push(['Peer Sheet:', 'Shows all peer lenders with loan counts by CBSA and year']);
+                notesSheet.push(['Section 2 Tables:', 'Available for All Loans, Home Purchase, Refinance, and Home Equity separately']);
+                notesSheet.push(['Year Filtering:', 'Section 1 tables show all selected years. Section 2 tables show most recent 3 years']);
+                
+                const notesWs = XLSX.utils.aoa_to_sheet(notesSheet);
+                notesWs['!cols'] = [{wch: 40}, {wch: 80}];
+                XLSX.utils.book_append_sheet(workbook, notesWs, 'Notes & Methodology');
+                
+                // Generate filename
+                const lenderName = (metadata.lender && metadata.lender.name) ? metadata.lender.name.replace(/[^a-z0-9]/gi, '_') : 'Lender';
+                const yearRange = reportData.years && reportData.years.length > 0
+                    ? `${Math.min(...reportData.years)}-${Math.max(...reportData.years)}`
+                    : 'Report';
+                const filename = `Lender_Analysis_${lenderName}_${yearRange}_${new Date().toISOString().split('T')[0]}.xlsx`;
+                
+                // Remove loading message
+                document.body.removeChild(loadingMsg);
+                
+                // Write file
+                XLSX.writeFile(workbook, filename);
+                console.log('[Excel Export] File generated:', filename);
+                
+            } catch (error) {
+                console.error('Error exporting to Excel:', error);
+                alert('Error generating Excel file: ' + error.message);
+                // Remove loading message if still present
+                const loadingMsg = document.querySelector('[style*="z-index: 10000"]');
+                if (loadingMsg) {
+                    document.body.removeChild(loadingMsg);
+                }
+            }
+        }
+        
+        // Function to export all tables to PDF in 4:3 format
+        async function exportAllTablesToPDF() {
+            try {
+                // Check if jsPDF and html2canvas are loaded
+                if (!window.jspdf) {
+                    alert('PDF library not loaded. Please refresh the page and try again.');
+                    return;
+                }
+                
+                if (!window.html2canvas) {
+                    alert('HTML2Canvas library not loaded. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Show loading indicator
+                const loadingOverlay = document.createElement('div');
+                loadingOverlay.id = 'pdf-loading-overlay';
+                loadingOverlay.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.9); z-index: 10000; display: flex; align-items: center; justify-content: center; flex-direction: column;';
+                loadingOverlay.innerHTML = '<i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i><div>Generating PDF with all tables...<br><small>This may take a moment...</small></div>';
+                document.body.appendChild(loadingOverlay);
+                
+                // 4:3 aspect ratio dimensions in points (72 points per inch)
+                // 10" x 7.5" = 720pt x 540pt for PowerPoint
+                const pdfWidthPt = 720;  // 10 inches at 72 DPI
+                const pdfHeightPt = 540;  // 7.5 inches at 72 DPI (4:3 ratio)
+                
+                // Convert to pixels for initial sizing (96 DPI for screen)
+                const pdfWidthPx = (pdfWidthPt / 72) * 96;  // ~960px
+                const pdfHeightPx = (pdfHeightPt / 72) * 96; // ~720px
+                
+                // Load and convert NCRC logo to black for PDF export
+                const logoImg = new Image();
+                logoImg.crossOrigin = 'anonymous';
+                let logoDataUrl = null;
+                
+                try {
+                    // Try black logo first, fallback to regular logo (which we'll convert to black)
+                    logoImg.src = '/static/img/ncrc-logo-black.png';
+                    await new Promise((resolve, reject) => {
+                        logoImg.onload = () => {
+                            // Create a canvas to convert image to data URL
+                            const canvas = document.createElement('canvas');
+                            canvas.width = logoImg.width;
+                            canvas.height = logoImg.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(logoImg, 0, 0);
+                            logoDataUrl = canvas.toDataURL('image/png');
+                            resolve();
+                        };
+                        logoImg.onerror = () => {
+                            // Fallback to regular logo and convert to black
+                            console.warn('Black NCRC logo not found, converting regular logo to black');
+                            logoImg.src = '/static/img/ncrc-logo.png';
+                            logoImg.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                canvas.width = logoImg.width;
+                                canvas.height = logoImg.height;
+                                const ctx = canvas.getContext('2d');
+                                
+                                // Draw the image first
+                                ctx.drawImage(logoImg, 0, 0);
+                                
+                                // Convert logo to black while preserving shape and transparency
+                                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                const data = imageData.data;
+                                
+                                for (let i = 0; i < data.length; i += 4) {
+                                    // If pixel has any opacity, convert to black
+                                    if (data[i + 3] > 0) { // Alpha channel > 0 means visible
+                                        // Convert to pure black, preserve original alpha for smooth edges
+                                        data[i] = 0;     // R = 0 (black)
+                                        data[i + 1] = 0; // G = 0 (black)
+                                        data[i + 2] = 0; // B = 0 (black)
+                                        // Keep alpha channel as is to preserve anti-aliasing
+                                    }
+                                }
+                                
+                                ctx.putImageData(imageData, 0, 0);
+                                logoDataUrl = canvas.toDataURL('image/png');
+                                resolve();
+                            };
+                            logoImg.onerror = () => {
+                                console.warn('Could not load NCRC logo, continuing without it');
+                                resolve(); // Continue without logo
+                            };
+                        };
+                    });
+                } catch (e) {
+                    console.warn('Error loading logo:', e);
+                }
+                
+                // Define all table cards to export
+                const tableCards = [];
+                
+                // Section 1 tables
+                // Find chart containers by finding the canvas and then its parent table-card
+                const loanPurposeChart = document.querySelector('#loanPurposeChart');
+                if (loanPurposeChart) {
+                    const card = loanPurposeChart.closest('.table-card');
+                    if (card) {
+                        tableCards.push({ element: card, title: 'Section 1 - Loan Purpose Over Time', isChart: true });
+                    }
+                }
+                
+                const loanAmountPurposeChart = document.querySelector('#loanAmountPurposeChart');
+                if (loanAmountPurposeChart) {
+                    const card = loanAmountPurposeChart.closest('.table-card');
+                    if (card) {
+                        tableCards.push({ element: card, title: 'Section 1 - Loan Amounts by Purpose', isChart: true });
+                    }
+                }
+                
+                // Top Metros table - find by table ID
+                const topMetrosTable = document.querySelector('#topMetrosTable');
+                if (topMetrosTable) {
+                    const card = topMetrosTable.closest('.table-card');
+                    if (card) {
+                        tableCards.push({ element: card, title: 'Section 1 - Top Metros by Loan Purpose', isChart: false });
+                    }
+                }
+                
+                // Section 2 tables - find all table-cards in all tab-content divs
+                const purposes = ['all', 'purchase', 'refinance', 'equity'];
+                const purposeLabels = {
+                    'all': 'All Loans',
+                    'purchase': 'Purchase',
+                    'refinance': 'Refinance',
+                    'equity': 'Equity'
+                };
+                
+                const tableNames = [
+                    { id: 'RaceEthnicity', title: 'Race/Ethnicity' },
+                    { id: 'BorrowerIncome', title: 'Borrower Income' },
+                    { id: 'NeighborhoodIncome', title: 'Neighborhood Income' },
+                    { id: 'NeighborhoodDemographics', title: 'Neighborhood Demographics' },
+                    { id: 'LoanCosts', title: 'Loan Costs' }
+                ];
+                
+                for (const purpose of purposes) {
+                    const purposeLabel = purposeLabels[purpose];
+                    const tabContent = document.querySelector(`.tab-content[data-purpose="${purpose}"]`);
+                    if (tabContent) {
+                        tableNames.forEach((tableInfo, index) => {
+                            const tableId = `${purpose}${tableInfo.id}Table`;
+                            const table = tabContent.querySelector(`#${tableId}`);
+                            if (table) {
+                                const card = table.closest('.table-card');
+                                if (card) {
+                                    tableCards.push({ 
+                                        element: card, 
+                                        title: `Section 2 - ${purposeLabel} - Table ${index + 1}: ${tableInfo.title}`,
+                                        isChart: false
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
+                
+                // Check if we found any tables to export
+                if (tableCards.length === 0) {
+                    alert('No tables found to export. Please ensure the report has loaded completely.');
+                    document.body.removeChild(loadingOverlay);
+                    return;
+                }
+                
+                console.log(`[PDF Export] Found ${tableCards.length} tables to export`);
+                
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('landscape', 'pt', [pdfWidthPt, pdfHeightPt]);
+                
+                let processedCount = 0;
+                
+                // Process each table
+                for (const cardInfo of tableCards) {
+                    try {
+                        const card = cardInfo.element;
+                        const cardTitle = cardInfo.title;
+                        const isChart = cardInfo.isChart;
+                        const isTable = !isChart; // Tables are non-chart elements
+                        
+                        if (!card) {
+                            console.warn(`[PDF Export] Card not found for: ${cardTitle}, skipping...`);
+                            continue;
+                        }
+                        
+                        console.log(`[PDF Export] Processing: ${cardTitle}`);
+                    
+                    // Clone the card element for capture
+                    const cardClone = card.cloneNode(true);
+                    
+                    // Remove interactive elements (tabs, buttons, etc.)
+                    // Remove purpose tabs at the section level (outside the card)
+                    const purposeTabs = cardClone.querySelectorAll('.purpose-tabs, .loan-purpose-tabs, .tab-buttons, .tab-button');
+                    purposeTabs.forEach(tab => tab.remove());
+                    
+                    const exportButtons = cardClone.querySelectorAll('.export-btn, button[onclick*="export"]');
+                    exportButtons.forEach(btn => btn.remove());
+                    
+                    // Remove any other interactive elements (but keep table structure)
+                    const interactiveElements = cardClone.querySelectorAll('input, select, button, a[href]');
+                    interactiveElements.forEach(el => {
+                        // Don't remove if it's part of a table
+                        if (el.tagName !== 'TABLE' && !el.closest('table') && el.tagName !== 'TH' && el.tagName !== 'TD') {
+                            el.remove();
+                        }
+                    });
+                    
+                    // Remove onclick handlers from table headers (sorting)
+                    const sortableHeaders = cardClone.querySelectorAll('th[onclick]');
+                    sortableHeaders.forEach(th => {
+                        th.removeAttribute('onclick');
+                        th.style.cursor = 'default';
+                        // Remove sort icons
+                        const icons = th.querySelectorAll('i.fa-sort');
+                        icons.forEach(icon => icon.remove());
+                    });
+                    
+                    // Style the clone for PDF export
+                    // For tables, use minimal padding to maximize height; for charts, use standard padding
+                    const padding = isTable ? '10px 40px' : '40px'; // Minimal top/bottom padding for tables
+                    cardClone.style.cssText = `position: absolute; left: -9999px; top: 0; width: ${pdfWidthPx}px; background: white; padding: ${padding}; box-shadow: none; visibility: visible;`;
+                    cardClone.style.maxWidth = 'none';
+                    cardClone.style.overflow = 'visible';
+                    
+                    // Add NCRC logo to the clone (upper right corner)
+                    if (logoDataUrl) {
+                        const logoContainer = document.createElement('div');
+                        logoContainer.style.cssText = 'position: absolute; top: 20px; right: 20px; z-index: 1000;';
+                        const logoImg = document.createElement('img');
+                        logoImg.src = logoDataUrl;
+                        logoImg.style.cssText = 'max-height: 60px; width: auto;';
+                        logoContainer.appendChild(logoImg);
+                        cardClone.insertBefore(logoContainer, cardClone.firstChild);
+                    }
+                    
+                    // Handle charts - need to recreate them on the clone
+                    const originalChartCanvas = card.querySelector('canvas');
+                    const clonedChartCanvas = cardClone.querySelector('canvas');
+                    
+                    if (originalChartCanvas && clonedChartCanvas && window.Chart) {
+                        const chartInstance = Chart.getChart(originalChartCanvas);
+                        if (chartInstance) {
+                            const chartContainer = clonedChartCanvas.parentElement;
+                            if (chartContainer) {
+                                chartContainer.style.width = `${pdfWidthPx - 120}px`; // Account for padding and logo
+                                chartContainer.style.height = `${Math.min(400, pdfHeightPx * 0.6)}px`;
+                            }
+                            
+                            clonedChartCanvas.width = (pdfWidthPx - 120) * 2; // 2x for high DPI
+                            clonedChartCanvas.height = Math.min(400, pdfHeightPx * 0.6) * 2;
+                            clonedChartCanvas.style.width = `${pdfWidthPx - 120}px`;
+                            clonedChartCanvas.style.height = `${Math.min(400, pdfHeightPx * 0.6)}px`;
+                            
+                            // Recreate chart with minimal, safe configuration
+                            // Deep clone the data to avoid references
+                            const chartData = JSON.parse(JSON.stringify(chartInstance.data));
+                            const originalOptions = chartInstance.options;
+                            
+                            // Create minimal options - avoid copying complex objects that might have functions
+                            const minimalOptions = {
+                                responsive: false,
+                                maintainAspectRatio: false,
+                                animation: false,
+                                plugins: {
+                                    legend: {
+                                        display: true,
+                                        position: 'top'
+                                    },
+                                    tooltip: {
+                                        enabled: false
+                                    }
+                                }
+                            };
+                            
+                            // Only copy basic scale configuration if it exists and is simple
+                            // Avoid any functions, callbacks, or complex objects
+                            if (originalOptions && originalOptions.scales && typeof originalOptions.scales === 'object') {
+                                minimalOptions.scales = {};
+                                // Use Object.keys() instead of hasOwnProperty to avoid Proxy issues
+                                try {
+                                    const scaleKeys = Object.keys(originalOptions.scales);
+                                    for (const scaleId of scaleKeys) {
+                                        const scale = originalOptions.scales[scaleId];
+                                        if (scale && typeof scale === 'object' && !Array.isArray(scale)) {
+                                            // Create a clean scale object with only safe properties
+                                            const cleanScale = {
+                                                display: scale.display !== false
+                                            };
+                                            
+                                            // Only add properties that are primitives (string, number, boolean)
+                                            ['position', 'type'].forEach(prop => {
+                                                if (typeof scale[prop] === 'string' && scale[prop]) {
+                                                    cleanScale[prop] = scale[prop];
+                                                }
+                                            });
+                                            
+                                            ['beginAtZero', 'stacked'].forEach(prop => {
+                                                if (typeof scale[prop] === 'boolean') {
+                                                    cleanScale[prop] = scale[prop];
+                                                }
+                                            });
+                                            
+                                            ['max', 'min', 'maxTicksLimit'].forEach(prop => {
+                                                if (typeof scale[prop] === 'number' && !isNaN(scale[prop])) {
+                                                    cleanScale[prop] = scale[prop];
+                                                }
+                                            });
+                                            
+                                            // Handle ticks separately - only copy maxTicksLimit if it's a number
+                                            if (scale.ticks && typeof scale.ticks === 'object' && !Array.isArray(scale.ticks)) {
+                                                if (typeof scale.ticks.maxTicksLimit === 'number' && !isNaN(scale.ticks.maxTicksLimit)) {
+                                                    cleanScale.ticks = {
+                                                        maxTicksLimit: scale.ticks.maxTicksLimit
+                                                    };
+                                                }
+                                            }
+                                            
+                                            minimalOptions.scales[scaleId] = cleanScale;
+                                        }
+                                    }
+                                } catch (scaleError) {
+                                    console.warn('[PDF Export] Error copying scale configuration:', scaleError);
+                                    // Continue without scale configuration
+                                }
+                            }
+                            
+                            try {
+                                new Chart(clonedChartCanvas, {
+                                    type: chartInstance.config.type,
+                                    data: chartData,
+                                    options: minimalOptions
+                                });
+                                
+                                // Wait for chart to render
+                                await new Promise(resolve => setTimeout(resolve, 500));
+                            } catch (chartError) {
+                                console.warn('Error recreating chart for PDF:', chartError);
+                                // If chart recreation fails, the canvas will just be blank/empty
+                                // html2canvas will still capture the rest of the card
+                            }
+                        }
+                    }
+                    
+                    // Adjust table font sizes and make tables taller
+                    const table = cardClone.querySelector('table');
+                    if (table) {
+                        // Make table fill available height with minimal margins
+                        table.style.width = `${pdfWidthPx - 120}px`;
+                        table.style.fontSize = '11pt';
+                        table.style.marginTop = '0';
+                        table.style.marginBottom = '0';
+                        
+                        // Make table cells taller to fill space
+                        const cells = table.querySelectorAll('td, th');
+                        cells.forEach(cell => {
+                            cell.style.padding = '8px 12px'; // Adequate padding but not excessive
+                        });
+                        
+                        // Make sure table headers are visible
+                        const headers = table.querySelectorAll('th');
+                        headers.forEach(th => {
+                            th.style.fontSize = '12pt';
+                            th.style.fontWeight = 'bold';
+                        });
+                        
+                        // Set table to use full available height
+                        const tableContainer = table.closest('.table-responsive') || table.parentElement;
+                        if (tableContainer) {
+                            tableContainer.style.height = `${pdfHeightPx - 100}px`; // Account for minimal padding and logo
+                            tableContainer.style.overflow = 'visible';
+                        }
+                    }
+                    
+                    // Append clone to body temporarily
+                    document.body.appendChild(cardClone);
+                    
+                    // Wait a bit for rendering
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    
+                    // Capture with html2canvas
+                    const canvas = await html2canvas(cardClone, {
+                        scale: 2, // High resolution
+                        useCORS: true,
+                        logging: false,
+                        backgroundColor: '#ffffff',
+                        allowTaint: true,
+                        width: cardClone.scrollWidth,
+                        height: cardClone.scrollHeight
+                    });
+                    
+                    // Remove clone
+                    document.body.removeChild(cardClone);
+                    
+                    // Calculate scaling to fit 4:3 format with minimal white space
+                    const imgWidth = canvas.width;
+                    const imgHeight = canvas.height;
+                    const imgAspectRatio = imgWidth / imgHeight;
+                    const pdfAspectRatio = pdfWidthPt / pdfHeightPt;
+                    
+                    let finalWidth, finalHeight, offsetX = 0, offsetY = 0;
+                    
+                    // For tables, prioritize filling height with minimal top/bottom white space
+                    if (isTable) {
+                        // Fill height first, then adjust width
+                        finalHeight = pdfHeightPt;
+                        finalWidth = pdfHeightPt * imgAspectRatio;
+                        
+                        // If resulting width exceeds PDF width, scale down proportionally
+                        if (finalWidth > pdfWidthPt) {
+                            const scale = pdfWidthPt / finalWidth;
+                            finalWidth = pdfWidthPt;
+                            finalHeight = finalHeight * scale;
+                            offsetY = (pdfHeightPt - finalHeight) / 2; // Center vertically if needed
+                        } else {
+                            // Center horizontally, minimal vertical offset
+                            offsetX = (pdfWidthPt - finalWidth) / 2;
+                            offsetY = 0; // No top/bottom white space for tables
+                        }
+                    } else {
+                        // For charts, use standard centering
+                        if (imgAspectRatio > pdfAspectRatio) {
+                            // Image is wider - fit to width
+                            finalWidth = pdfWidthPt;
+                            finalHeight = pdfWidthPt / imgAspectRatio;
+                            offsetY = (pdfHeightPt - finalHeight) / 2;
+                        } else {
+                            // Image is taller - fit to height
+                            finalHeight = pdfHeightPt;
+                            finalWidth = pdfHeightPt * imgAspectRatio;
+                            offsetX = (pdfWidthPt - finalWidth) / 2;
+                        }
+                    }
+                    
+                    // Add new page if not first
+                    if (processedCount > 0) {
+                        pdf.addPage();
+                    }
+                    
+                    // Add image to PDF
+                    const imgData = canvas.toDataURL('image/png', 1.0);
+                    pdf.addImage(imgData, 'PNG', offsetX, offsetY, finalWidth, finalHeight);
+                    
+                    // Add NCRC logo to PDF page (upper right corner)
+                    if (logoDataUrl) {
+                        const logoWidth = 50; // 50 points
+                        const logoHeight = (logoWidth * logoImg.height) / logoImg.width;
+                        pdf.addImage(logoDataUrl, 'PNG', pdfWidthPt - logoWidth - 20, 20, logoWidth, logoHeight);
+                    }
+                    
+                        processedCount++;
+                        
+                        // Update progress
+                        loadingOverlay.innerHTML = `<i class="fas fa-spinner fa-spin" style="font-size: 2rem; margin-bottom: 1rem;"></i><div>Generating PDF...<br><small>Processing table ${processedCount} of ${tableCards.length}</small></div>`;
+                    } catch (cardError) {
+                        console.error(`[PDF Export] Error processing card "${cardInfo.title}":`, cardError);
+                        // Continue with next card instead of failing completely
+                        // Remove any clone that might have been added
+                        const failedClone = document.querySelector('[style*="left: -9999px"]');
+                        if (failedClone && failedClone.closest('.table-card')) {
+                            try {
+                                document.body.removeChild(failedClone);
+                            } catch (e) {
+                                // Ignore cleanup errors
+                            }
+                        }
+                    }
+                }
+                
+                // Remove loading overlay
+                document.body.removeChild(loadingOverlay);
+                
+                // Check if PDF has any pages
+                if (processedCount === 0) {
+                    alert('No tables were successfully exported. Please try again or contact support if the issue persists.');
+                    return;
+                }
+                
+                // Generate filename
+                const lenderName = (metadata && metadata.lender && metadata.lender.name) 
+                    ? metadata.lender.name.replace(/[^a-z0-9]/gi, '_') 
+                    : 'Lender';
+                const yearRange = reportData.years && reportData.years.length > 0
+                    ? `${Math.min(...reportData.years)}-${Math.max(...reportData.years)}`
+                    : 'Report';
+                const filename = `Lender_Analysis_${lenderName}_${yearRange}_${new Date().toISOString().split('T')[0]}.pdf`;
+                
+                // Save PDF
+                pdf.save(filename);
+                console.log(`[PDF Export] File generated: ${filename} with ${processedCount} pages`);
+                
+            } catch (error) {
+                console.error('Error exporting to PDF:', error);
+                alert('Error generating PDF: ' + error.message);
+                // Remove loading overlay if still present
+                const loadingOverlay = document.getElementById('pdf-loading-overlay');
+                if (loadingOverlay) {
+                    document.body.removeChild(loadingOverlay);
+                }
+            }
+        }
+        
+        // Start initialization
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeReport);
+        } else {
+            initializeReport();
+        }
+    </script>
+    
+    <!-- Methods and Definitions Section -->
+    <div class="report-section" style="margin-top: 3rem; padding: 2rem; background-color: #f9f9f9; border-top: 2px solid #ddd;">
+        <h2 class="section-title">Methods and Definitions</h2>
+        
+        <div style="max-width: 1200px; margin: 0 auto;">
+            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Data Sources</h3>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>HMDA Data:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Data includes loan-level information on mortgage applications and originations.</li>
+                <li><strong>Census Data:</strong> U.S. Census Bureau - American Community Survey (ACS) 5-year estimates for most recent available year, 2020 Decennial Census, and 2010 Decennial Census for historical comparisons.</li>
+                <li><strong>Income Benchmarks:</strong> HUD Low/Moderate Income data and FFIEC MSA/MD Median Family Income for borrower and neighborhood income classifications.</li>
+                <li><strong>Branch Data:</strong> FDIC Summary of Deposits (SOD) data for branch location information used in geographic selection methods.</li>
+                <li><strong>Lender Information:</strong> HMDA Lenders18 table and CFPB API for lender metadata including assets, type, and location.</li>
+            </ul>
+            
+            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Peer Selection Method</h3>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Volume-Based Peer Selection:</strong> Peer lenders are selected based on loan volume within the selected geography. By default, peers are lenders with loan volumes between 50% and 200% of the subject lender's volume in the selected geographic area.</li>
+                <li><strong>Comparison Group:</strong> The analysis can be filtered by lender type (All Lenders, Banks Only, or Mortgage Companies Only) to ensure appropriate peer comparisons.</li>
+                <li><strong>Geographic Scope:</strong> Peer volume is calculated using the same geographic area selected for the subject lender analysis.</li>
+            </ul>
+            
+            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Geographic Selection Methods</h3>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>All CBSAs:</strong> Includes all counties (CBSAs) where the subject lender has originated loans in the selected years.</li>
+                <li><strong>Branch CBSAs:</strong> Includes counties within CBSAs where the subject lender has more than 1% of its total branches (based on FDIC Summary of Deposits data). All counties within those CBSAs are included.</li>
+                <li><strong>Loan CBSAs:</strong> Includes counties where the subject lender has more than 1% of total loan originations in that county for the selected years.</li>
+            </ul>
+            
+            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Definitions</h3>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Borrower Income Categories</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Low Income Borrowers:</strong> Borrowers with income ≤50% of Area Median Family Income (AMFI)</li>
+                <li><strong>Moderate Income Borrowers:</strong> Borrowers with income >50% and ≤80% of AMFI</li>
+                <li><strong>Middle Income Borrowers:</strong> Borrowers with income >80% and ≤120% of AMFI</li>
+                <li><strong>Upper Income Borrowers:</strong> Borrowers with income >120% of AMFI</li>
+                <li><strong>Low to Moderate Income (LMI):</strong> Combined Low and Moderate Income (≤80% of AMFI)</li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Neighborhood Income Categories</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Low Income Census Tracts:</strong> Census tracts where median family income ≤50% of AMFI</li>
+                <li><strong>Moderate Income Census Tracts:</strong> Census tracts where median family income >50% and ≤80% of AMFI</li>
+                <li><strong>Middle Income Census Tracts:</strong> Census tracts where median family income >80% and ≤120% of AMFI</li>
+                <li><strong>Upper Income Census Tracts:</strong> Census tracts where median family income >120% of AMFI</li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Race and Ethnicity Classifications</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Hispanic:</strong> Borrowers who indicated Hispanic or Latino ethnicity (codes 1, 11, 12, 13, 14) in any ethnicity field, regardless of race selection. Uses NCRC methodology where Hispanic borrowers are counted in the Hispanic category regardless of race.</li>
+                <li><strong>Black or African American:</strong> Non-Hispanic borrowers whose first valid race selection is Black (code 3)</li>
+                <li><strong>Asian:</strong> Non-Hispanic borrowers whose first valid race selection is Asian (codes 2, 21-27)</li>
+                <li><strong>Native American:</strong> Non-Hispanic borrowers whose first valid race selection is American Indian or Alaska Native (code 1)</li>
+                <li><strong>Hawaiian/Pacific Islander (HoPI):</strong> Non-Hispanic borrowers whose first valid race selection is Native Hawaiian or Other Pacific Islander (codes 4, 41-44)</li>
+                <li><strong>White:</strong> Non-Hispanic borrowers whose first valid race selection is White (code 5)</li>
+                <li><strong>Multi-Racial:</strong> Non-Hispanic borrowers who selected 2 or more distinct main race categories (not just multiple subcategories of the same race). Main categories are: 1=Native American, 2=Asian (includes subcategories), 3=Black, 4=HoPI (includes subcategories), 5=White</li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Neighborhood Demographics</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Majority Minority Census Tracts (MMCT):</strong> Census tracts where minority population ≥50%</li>
+                <li><strong>Minority Population:</strong> Population that is not non-Hispanic White</li>
+                <li><strong>High Minority Census Tracts:</strong> Census tracts where minority population ≥80%</li>
+                <li><strong>Middle Minority Census Tracts:</strong> Census tracts where minority population is 50-80%</li>
+                <li><strong>Moderate Minority Census Tracts:</strong> Census tracts where minority population is 20-50%</li>
+                <li><strong>Low Minority Census Tracts:</strong> Census tracts where minority population <20%</li>
+                <li style="margin-top: 0.5rem; font-style: italic; color: #777;"><strong>Note:</strong> Lender analysis uses fixed percentage thresholds (not quartiles) because the analysis may span dozens of CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts.</li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Loan Purpose Categories</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Home Purchase:</strong> Loans for the purchase of a home (loan purpose code 1)</li>
+                <li><strong>Refinance:</strong> Loans that refinance existing mortgages (loan purpose codes 31, 32)</li>
+                <li><strong>Home Equity:</strong> Home equity loans and lines of credit (loan purpose codes 2, 4)</li>
+            </ul>
+            
+            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Calculations and Methods</h3>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Minority Population Categorization</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Minority Population Calculation:</strong> Minority population percentage is calculated as <code>(total_persons - total_white) / total_persons × 100</code>, where <code>total_white</code> is the non-Hispanic White population in the census tract.</li>
+                <li><strong>Categorization Method:</strong> Lender analysis uses <strong>fixed percentage thresholds</strong> (not quartiles) because the analysis may span dozens of CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts, allowing meaningful comparison of lender performance across different markets.</li>
+                <li><strong>Fixed Thresholds:</strong>
+                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
+                        <li>High Minority: ≥80%</li>
+                        <li>Middle Minority: 50%-<80%</li>
+                        <li>Moderate Minority: 20%-<50%</li>
+                        <li>Low Minority: <20%</li>
+                    </ul>
+                </li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Percentage Calculations</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Subject Lender Percentages:</strong> Calculated as (metric count / total originations) × 100 for each year</li>
+                <li><strong>Peer Averages:</strong> Weighted average across all peer lenders, where each peer's percentage is weighted by their total loan volume</li>
+                <li><strong>Difference:</strong> Calculated as Subject percentage - Peer average percentage, shown in percentage points (pp)</li>
+                <li><strong>Statistical Significance:</strong> Chi-squared tests are performed for demographic and income metrics. An asterisk (*) indicates a statistically significant negative difference (p < 0.05) where the subject lender's percentage is significantly lower than peers.</li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Loan Costs Calculations</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Weighted Averages:</strong> All loan cost metrics (Property Value, Loan Amount, Interest Rate, Closing Costs, Origination Fees) are calculated as weighted averages, where each loan is weighted by the number of originations in that tract/loan purpose combination</li>
+                <li><strong>Downpayment/Equity:</strong> Calculated as Property Value - Loan Amount</li>
+                <li><strong>Subject vs Peer:</strong> Subject lender values are weighted averages across all loans. Peer values are weighted averages across all peer lenders, where each peer's average is weighted by their total loan volume</li>
+                <li><strong>Difference:</strong> Calculated as Subject value - Peer average value. For currency values, shown in dollars. For interest rates, shown in percentage points (pp)</li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Top Metros Table</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Metro Selection:</strong> Shows all CBSAs (metropolitan statistical areas) where the subject lender has originated loans, regardless of the selected geographic scope for the main analysis</li>
+                <li><strong>Ranking:</strong> Metros are ranked by total loan volume across all years in the analysis</li>
+                <li><strong>Display:</strong> Shows top 10 metros by total loan volume, or all metros if fewer than 10</li>
+            </ul>
+            
+            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Data Aggregation</h4>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Aggregation Level:</strong> Data is aggregated at the census tract and loan purpose level. Each row in the source data represents loans aggregated by: lender, year, county, tract, and loan purpose</li>
+                <li><strong>Year Filtering:</strong> Section 1 tables show all selected years. Section 2 tables show the most recent 3 years of data</li>
+                <li><strong>Loan Purpose Filtering:</strong> Section 2 tables are available for All Loans, Home Purchase, Refinance, and Home Equity separately</li>
+            </ul>
+            
+            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">HMDA Filters Applied</h3>
+            <ul style="line-height: 1.8; color: #555;">
+                <li><strong>Action Taken:</strong> The report can analyze either Originations (action taken = 1) or Applications (action taken = 1, 2, 3, 4, 5) based on user selection</li>
+                <li><strong>Occupancy:</strong> Can be filtered to Owner-occupied, Second residence, or Investment properties</li>
+                <li><strong>Total Units:</strong> Can be filtered to 1-4 units or 5+ units</li>
+                <li><strong>Construction:</strong> Can be filtered to Site-built or Manufactured homes</li>
+                <li><strong>Loan Type:</strong> Can be filtered to Conventional, FHA, VA, USDA, or combinations thereof</li>
+                <li><strong>Reverse Mortgages:</strong> Excluded by default, but can be included if selected</li>
+            </ul>
+            
+            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Notes</h3>
+            <ul style="line-height: 1.8; color: #555;">
+                <li>All dollar amounts are rounded to the nearest dollar for display purposes</li>
+                <li>Percentages are rounded to one decimal place, except interest rates which are shown to two decimal places</li>
+                <li>Differences are calculated as Subject - Peer, so positive values indicate the subject lender has higher values than peers, and negative values indicate lower values</li>
+                <li>Statistical significance testing uses chi-squared tests with a significance level of p < 0.05</li>
+                <li>Peer averages are weighted by loan volume to ensure larger lenders have appropriate influence on the peer average</li>
+                <li>Data may be suppressed or shown as "N/A" when there are insufficient loans for reliable calculation or when data is not available</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div>
+            &copy; 2025 JustData - DataExplorer. Powered by BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
+</div>
+</body>
+</html>
+

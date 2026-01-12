@@ -1,0 +1,83 @@
+# DataExplorer Docker Compose Example
+# Use this as a template for deploying DataExplorer with Docker Compose
+# Copy to docker-compose.yml and customize as needed
+
+version: '3.8'
+
+services:
+  dataexplorer:
+    build:
+      context: ../..  # Build from repository root
+      dockerfile: apps/dataexplorer/Dockerfile
+    container_name: dataexplorer
+    ports:
+      - "8085:8085"
+    environment:
+      # Flask Configuration
+      - FLASK_APP=apps.dataexplorer.app
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key}
+      
+      # Python Configuration
+      - PYTHONPATH=/app
+      - PYTHONUNBUFFERED=1
+      
+      # Port Configuration
+      - PORT=8085
+      
+      # BigQuery Configuration (set these in your .env file)
+      - GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}
+      - GOOGLE_APPLICATION_CREDENTIALS=${GOOGLE_APPLICATION_CREDENTIALS}
+      - GOOGLE_CLOUD_CREDENTIALS_JSON=${GOOGLE_CLOUD_CREDENTIALS_JSON}
+      
+      # Optional: AI Configuration
+      - AI_PROVIDER=${AI_PROVIDER:-claude}
+      - CLAUDE_API_KEY=${CLAUDE_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      
+      # Optional: Feature Flags
+      - DEBUG_MODE=${DEBUG_MODE:-false}
+      - LOG_QUERIES=${LOG_QUERIES:-false}
+      
+    volumes:
+      # Mount shared directory for development (optional)
+      - ../../shared:/app/shared:ro
+      
+      # Mount data directory if needed (optional)
+      - ../../data:/app/data:rw
+      
+      # Mount logs directory (optional)
+      - ./logs:/app/logs:rw
+      
+    restart: unless-stopped
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8085/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    
+    # Resource limits (adjust based on your hosting)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # Optional: Add a reverse proxy (nginx) for production
+  # nginx:
+  #   image: nginx:alpine
+  #   ports:
+  #     - "80:80"
+  #     - "443:443"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - dataexplorer
+  #   restart: unless-stopped

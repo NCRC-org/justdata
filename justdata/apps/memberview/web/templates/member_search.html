@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Search - MemberView</title>
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/member_search.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1>MemberView</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Left Sidebar: Filters -->
+        <aside class="filter-sidebar">
+            <h2><i class="fas fa-filter"></i> Filters</h2>
+            
+            <div class="filter-group">
+                <label for="state-filter">State:</label>
+                <select id="state-filter" class="filter-select">
+                    <option value="">All States</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="metro-filter">Metro Area:</label>
+                <select id="metro-filter" class="filter-select" disabled>
+                    <option value="">All Metro Areas</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="status-filter">Membership Status:</label>
+                <select id="status-filter" class="filter-select">
+                    <option value="">All Statuses</option>
+                    <option value="CURRENT">Current</option>
+                    <option value="GRACE PERIOD">Grace Period</option>
+                    <option value="LAPSED">Lapsed</option>
+                </select>
+            </div>
+            
+            <button id="search-btn" class="search-button">Search</button>
+            <button id="clear-btn" class="clear-button">Clear Filters</button>
+        </aside>
+
+        <!-- Center: Member List / Detail View -->
+        <div class="content-wrapper">
+            <!-- Member List View -->
+            <div id="member-list-view" class="member-list-view">
+                <div id="results-header" class="results-header">
+                    <h3>Members</h3>
+                    <div id="results-count" class="results-count">0 members found</div>
+                </div>
+                
+                <div id="loading" class="loading" style="display: none;">
+                    <p>Loading members...</p>
+                </div>
+                
+                <div id="member-list" class="member-list">
+                    <p class="empty-state">Select filters and click Search to find members.</p>
+                </div>
+            </div>
+
+            <!-- Member Detail View -->
+            <div id="member-detail-view" class="member-detail-view" style="display: none;">
+                <div class="detail-header">
+                    <button id="back-to-list" class="back-button">
+                        <i class="fas fa-arrow-left"></i> Back to List
+                    </button>
+                    <h2 id="detail-member-name">Member Name</h2>
+                </div>
+                
+                <div id="member-detail-content" class="member-detail-content">
+                    <div id="detail-loading" class="loading" style="display: none;">
+                        <p>Loading member details...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar: Data Info -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-info-circle"></i> Data Available</h3>
+            <div class="sidebar-features">
+                <div class="feature-card" data-tooltip="<strong>HubSpot Member Data</strong><br><br>Member information is synced from HubSpot CRM and includes:<br><br>• <strong>Company Information:</strong> Company name, membership status (Current, Grace Period, Lapsed), location (city, state, county, country), phone number, industry<br><br>• <strong>Contact Information:</strong> Associated contacts for each member company, including email addresses and names<br><br>• <strong>Deal Information:</strong> Membership deals with amounts, close dates, and deal stages. Includes company address and zip code from deal records<br><br>• <strong>Membership Status:</strong> Track active members, those in grace period, and lapsed memberships">
+                    <i class="fas fa-database"></i>
+                    <h4>HubSpot Data</h4>
+                    <p>Company info, contacts, deals, and membership status from HubSpot CRM</p>
+                </div>
+                
+                <div class="feature-card" data-tooltip="<strong>Geographic Filtering</strong><br><br>Filter members by geographic location:<br><br>• <strong>State:</strong> Filter by any U.S. state or District of Columbia<br><br>• <strong>Metro Area:</strong> Filter by Core Based Statistical Area (CBSA). Counties not in a metro area are labeled as '{State Name} non-metro'<br><br>• <strong>County Matching:</strong> Members are matched to metro areas based on their county location using BigQuery geo.cbsa_to_county data">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <h4>Geographic Filters</h4>
+                    <p>Filter by state and metro area (CBSA) with non-metro county support</p>
+                </div>
+                
+                <div class="feature-card" data-tooltip="<strong>Membership Status</strong><br><br>Three membership categories are tracked:<br><br>• <strong>Current:</strong> Active members with valid membership<br><br>• <strong>Grace Period:</strong> Members whose membership has expired but are still within a grace period<br><br>• <strong>Lapsed:</strong> Members whose membership has expired<br><br>Filter results by one or more status categories to analyze membership retention and engagement">
+                    <i class="fas fa-users"></i>
+                    <h4>Membership Status</h4>
+                    <p>Track Current, Grace Period, and Lapsed memberships</p>
+                </div>
+                
+                <div class="feature-card" data-tooltip="<strong>Member Details</strong><br><br>For each member, you can view:<br><br>• <strong>Company Name:</strong> Full organization name<br><br>• <strong>Location:</strong> City, state, and county (when available)<br><br>• <strong>Metro Area:</strong> Associated CBSA metro area or non-metro designation<br><br>• <strong>Status:</strong> Current membership status with color-coded badges<br><br>• <strong>Associated Data:</strong> Links to contacts and deals (available in detailed member view)">
+                    <i class="fas fa-building"></i>
+                    <h4>Member Details</h4>
+                    <p>View company information, location, metro area, and status for each member</p>
+                </div>
+            </div>
+            
+            <div class="feature-card" style="margin-top: 30px;" data-tooltip="Current development version. Version 1.0 will be released when the product is ready for production use.">
+                <i class="fas fa-code-branch"></i>
+                <h4>Version</h4>
+                <p>0.1.0 (Development)</p>
+            </div>
+        </aside>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/member_search.js') }}"></script>
+    
+    <!-- Tooltip script for feature cards -->
+    <script>
+        // Add tooltip functionality for feature cards
+        document.addEventListener('DOMContentLoaded', function() {
+            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+            
+            featureCards.forEach(card => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                if (!tooltipText) return;
+                
+                card.addEventListener('mouseenter', function(e) {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'feature-card-tooltip';
+                    tooltip.innerHTML = tooltipText;
+                    document.body.appendChild(tooltip);
+                    
+                    const rect = card.getBoundingClientRect();
+                    tooltip.style.left = rect.right + 10 + 'px';
+                    tooltip.style.top = rect.top + 'px';
+                    
+                    // Adjust if tooltip goes off screen
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    if (tooltipRect.right > window.innerWidth) {
+                        tooltip.style.left = (rect.left - tooltipRect.width - 10) + 'px';
+                    }
+                    if (tooltipRect.bottom > window.innerHeight) {
+                        tooltip.style.top = (window.innerHeight - tooltipRect.height - 10) + 'px';
+                    }
+                    
+                    card._tooltip = tooltip;
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    if (card._tooltip) {
+                        card._tooltip.remove();
+                        card._tooltip = null;
+                    }
+                });
+            });
+        });
+    </script>
+    
+    <style>
+        .feature-card-tooltip {
+            position: fixed;
+            background: white;
+            color: #333;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            max-width: 350px;
+            min-width: 250px;
+            z-index: 99999;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            pointer-events: none;
+            border: 1px solid #ddd;
+            text-align: left;
+            word-wrap: break-word;
+        }
+        
+        .feature-card-tooltip strong {
+            color: var(--ncrc-primary-blue);
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</body>
+</html>
+

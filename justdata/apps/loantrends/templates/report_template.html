@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoanTrends - National Quarterly Trends Report</title>
+    <meta name="description" content="National HMDA Quarterly Trends Analysis Report - Comprehensive mortgage lending trends intelligence">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <style>
+        .report-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+        }
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        .report-section {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 1.5em;
+            color: var(--ncrc-dark-blue);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .table-introduction {
+            font-size: 1em;
+            line-height: 1.6;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .table-narrative {
+            font-size: 1em;
+            line-height: 1.8;
+            margin-top: 20px;
+            color: #555;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 0.9em;
+        }
+        .data-table th {
+            background: var(--ncrc-primary-blue);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+        .data-table td {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .data-table tr:hover {
+            background: #f5f5f5;
+        }
+        .ai-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-left: 4px solid var(--ncrc-secondary-blue);
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+        @media print {
+            .no-print { display: none; }
+            .report-section { page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body style="background: #f5f5f5;">
+    <div class="report-container">
+        <!-- Report Header -->
+        <div class="report-header">
+            <h1>National Mortgage Lending Quarterly Trends Report</h1>
+            <p>Generated from CFPB HMDA Quarterly Data Graph API</p>
+            <p style="font-size: 0.9em; color: #666;">Time Period: <span id="timePeriodDisplay"></span> <span id="timePeriodNote" style="font-size: 0.85em; font-style: italic;">(calculated dynamically based on most recent complete quarter)</span></p>
+            
+            <!-- Global Toggle: Applications vs Originations -->
+            <div style="margin: 20px 0; padding: 15px; background-color: #f5f5f5; border-radius: 5px; display: inline-block;">
+                <label style="font-weight: bold; margin-right: 20px; font-size: 1.1em;">View Data As:</label>
+                <label style="margin-right: 15px; cursor: pointer; font-size: 1em;">
+                    <input type="radio" name="globalDataView" value="applications" checked style="margin-right: 5px;">
+                    Applications
+                </label>
+                <label style="cursor: pointer; font-size: 1em;">
+                    <input type="radio" name="globalDataView" value="originations" style="margin-right: 5px;">
+                    Originations (Loans)
+                </label>
+            </div>
+        </div>
+
+        <!-- Overall Trends Introduction -->
+        <div class="report-section" id="overallIntroSection">
+            <h2 class="section-title">Overall Trends</h2>
+            <div class="ai-content" id="overallIntroContent">
+                <!-- AI-generated overall intro will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Key Findings -->
+        <div class="report-section" id="keyFindingsSection" style="display: none;">
+            <h2 class="section-title">Key Findings</h2>
+            <div class="ai-content" id="keyFindingsContent">
+                <!-- AI-generated key findings will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Section 1: Loan & Application Counts -->
+        <div class="report-section" id="section1" style="display: none;">
+            <h2 class="section-title">Section 1: Loan & Application Counts</h2>
+            <div class="ai-content" id="section1Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Table 1: Loan & Application Counts -->
+            <div id="loanCountsTable1" style="display: none;">
+                <h3 style="margin-top: 20px; color: var(--ncrc-dark-blue);">Table 1: Loan & Application Counts</h3>
+                <p style="font-style: italic; color: #666; margin-bottom: 15px;">
+                    <span id="loanCountsTable1ViewLabel">Applications</span> - Use the toggle at the top to switch between Applications and Originations
+                </p>
+                
+                <p class="table-introduction" id="loanCountsTable1Intro">
+                    <!-- Chart intro will be populated by JavaScript -->
+                </p>
+                <div class="chart-container" style="position: relative; height: 500px; margin: 20px 0;">
+                    <canvas id="loanCountsTable1Chart"></canvas>
+                </div>
+                <div class="table-narrative" id="loanCountsTable1Narrative">
+                    <!-- Narrative will be populated by JavaScript -->
+                </div>
+            </div>
+            
+        </div>
+
+        <!-- Section 2: Credit Metrics -->
+        <div class="report-section" id="section2" style="display: none;">
+            <h2 class="section-title">Section 2: Credit Metrics</h2>
+            <div class="ai-content" id="section2Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Credit Scores Tables will be populated dynamically -->
+        </div>
+
+        <!-- Section 3: Loan Characteristics -->
+        <div class="report-section" id="section3" style="display: none;">
+            <h2 class="section-title">Section 3: Loan Characteristics</h2>
+            <div class="ai-content" id="section3Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- LTV and DTI Tables will be populated dynamically -->
+        </div>
+
+        <!-- Section 4: Market Dynamics -->
+        <div class="report-section" id="section4" style="display: none;">
+            <h2 class="section-title">Section 4: Market Dynamics</h2>
+            <div class="ai-content" id="section4Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Interest Rates, Denials, TLC Tables will be populated dynamically -->
+        </div>
+
+        <!-- Section 5: Demographic Analysis -->
+        <div class="report-section" id="section5" style="display: none;">
+            <h2 class="section-title">Section 5: Demographic Analysis</h2>
+            <div class="ai-content" id="section5Intro">
+                <!-- Section intro will be populated by JavaScript -->
+            </div>
+            
+            <!-- Race/Ethnicity Tables will be populated dynamically -->
+        </div>
+
+        <!-- Overall Summary -->
+        <div class="report-section" id="overallSummarySection" style="display: none;">
+            <h2 class="section-title">Overall Summary</h2>
+            <div class="ai-content" id="overallSummaryContent">
+                <!-- AI-generated overall summary will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Data Source Footer -->
+        <div class="report-section" style="margin-top: 50px; padding-top: 20px; border-top: 2px solid #e0e0e0;">
+            <p style="font-size: 0.9em; color: #666; line-height: 1.6;">
+                <strong>Data Source:</strong> This report uses data from the CFPB HMDA Quarterly Data Graph API 
+                (<a href="https://ffiec.cfpb.gov/documentation/api/graphs/" target="_blank">https://ffiec.cfpb.gov/documentation/api/graphs/</a>). 
+                The data represents national-level quarterly aggregations of mortgage lending activity.
+            </p>
+            <p style="font-size: 0.9em; color: #666; line-height: 1.6; margin-top: 10px;">
+                <strong>AI-Generated Content:</strong> This report was generated using AI assistance (primarily Claude Sonnet 4). 
+                AI-generated content includes narrative analysis, introductory paragraphs, key findings, and table discussions. 
+                All data points, statistics, and figures are pulled directly from the CFPB Quarterly Data Graph API—AI is used only 
+                to interpret patterns and generate written summaries.
+            </p>
+            <p style="font-size: 0.85em; color: #999; margin-top: 15px;">
+                Generated on <span id="generatedDate"></span> | Version {{ version }}
+            </p>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Report rendering script -->
+    <script>
+        // Report data from Flask template
+        const reportData = {{ result | tojson }};
+        
+        // DEBUG: Log raw report data
+        console.log('=== LOANTRENDS REPORT DEBUG ===');
+        console.log('Full reportData object:', reportData);
+        console.log('Report data type:', typeof reportData);
+        console.log('Report data keys:', Object.keys(reportData || {}));
+        
+        // Populate report when page loads
+        $(document).ready(function() {
+            console.log('\n=== DOCUMENT READY ===');
+            console.log('Report data exists:', !!reportData);
+            console.log('Report success:', reportData?.success);
+            
+            if (reportData && reportData.success) {
+                console.log('\n=== REPORT DATA STRUCTURE ===');
+                console.log('Metadata:', reportData.metadata);
+                console.log('Selected endpoints:', reportData.metadata?.selected_endpoints);
+                console.log('Time period:', reportData.metadata?.time_period);
+                console.log('\n=== TABLES DATA ===');
+                console.log('Tables object:', reportData.tables);
+                console.log('Tables keys:', Object.keys(reportData.tables || {}));
+                console.log('Tables count:', Object.keys(reportData.tables || {}).length);
+                Object.keys(reportData.tables || {}).forEach(key => {
+                    console.log(`  - Table "${key}":`, {
+                        exists: !!reportData.tables[key],
+                        isArray: Array.isArray(reportData.tables[key]),
+                        length: reportData.tables[key]?.length || 0,
+                        firstRow: reportData.tables[key]?.[0] || 'N/A'
+                    });
+                });
+                console.log('\n=== AI INSIGHTS ===');
+                console.log('AI insights object:', reportData.ai_insights);
+                console.log('AI insights enabled:', reportData.ai_insights_enabled);
+                console.log('Overall intro exists:', !!reportData.ai_insights?.overall_intro);
+                console.log('Overall intro length:', reportData.ai_insights?.overall_intro?.length || 0);
+                console.log('Section intros:', reportData.ai_insights?.section_intros);
+                console.log('Table intros:', reportData.ai_insights?.table_intros);
+                console.log('Table narratives:', reportData.ai_insights?.table_narratives);
+                console.log('\n=== GRAPH DATA ===');
+                console.log('Graph data object:', reportData.graph_data);
+                console.log('Graph data keys:', Object.keys(reportData.graph_data || {}));
+                
+                console.log('\n=== STARTING RENDER ===');
+                renderReport(reportData);
+                console.log('\n=== RENDER COMPLETE ===');
+            } else {
+                console.error('\n=== ERROR: REPORT DATA INVALID ===');
+                console.error('Report data:', reportData);
+                console.error('Success flag:', reportData?.success);
+                console.error('Error message:', reportData?.error);
+                $('.report-container').html('<div class="error-message"><h2>Error</h2><p>Unable to load report data.</p><pre>' + JSON.stringify(reportData, null, 2) + '</pre></div>');
+            }
+        });
+        
+        // NCRC Color Palette
+        const NCRC_COLORS = [
+            '#552d87',  // Primary Blue (Purple)
+            '#2fade3',  // Secondary Blue
+            '#e82e2e',  // Accent Red
+            '#eb2f89',  // Pink
+            '#034ea0',  // Dark Blue
+            '#ffc23a',  // Gold
+            '#818390'   // Gray
+        ];
+        let colorIndex = 0;
+        function getNextColor() {
+            const color = NCRC_COLORS[colorIndex % NCRC_COLORS.length];
+            colorIndex++;
+            return color;
+        }
+        function resetColorIndex() {
+            colorIndex = 0;
+        }
+        
+        // Loan type to NCRC color mapping (consistent colors for each loan type)
+        const LOAN_TYPE_COLORS = {
+            'Conventional Conforming': '#552d87',  // Primary Purple
+            'Conventional Non-Conforming': '#2fade3',  // Secondary Blue
+            'FHA': '#e82e2e',  // Accent Red
+            'HELOC': '#eb2f89',  // Pink
+            'RHS/FSA': '#ffc23a',  // Gold
+            'VA': '#034ea0'  // Dark Blue
+        };
+        
+        function getLoanTypeColor(loanType) {
+            return LOAN_TYPE_COLORS[loanType] || getNextColor();
+        }
+        
+        // Global data view state
+        let currentDataView = 'applications'; // 'applications' or 'originations'
+        let originalReportData = null;
+        
+        function getDataForCurrentView(chartData, tables, graphData) {
+            /**
+             * Get the appropriate data based on current view toggle.
+             * Switches between 'applications' and 'loans' endpoints.
+             */
+            const viewEndpoint = currentDataView === 'applications' ? 'applications' : 'loans';
+            const altEndpoint = currentDataView === 'applications' ? 'loans' : 'applications';
+            
+            // Create a copy of chartData with swapped applications/loans
+            const viewChartData = {...chartData};
+            if (viewChartData[viewEndpoint] && viewChartData[altEndpoint]) {
+                // Use the selected endpoint's data
+                viewChartData['current'] = viewChartData[viewEndpoint];
+            } else if (viewChartData[viewEndpoint]) {
+                viewChartData['current'] = viewChartData[viewEndpoint];
+            } else if (viewChartData[altEndpoint]) {
+                viewChartData['current'] = viewChartData[altEndpoint];
+            }
+            
+            // Same for tables
+            const viewTables = {...tables};
+            if (viewTables[viewEndpoint] && viewTables[altEndpoint]) {
+                viewTables['current'] = viewTables[viewEndpoint];
+            } else if (viewTables[viewEndpoint]) {
+                viewTables['current'] = viewTables[viewEndpoint];
+            } else if (viewTables[altEndpoint]) {
+                viewTables['current'] = viewTables[altEndpoint];
+            }
+            
+            return {
+                chartData: viewChartData,
+                tables: viewTables,
+                endpoint: viewEndpoint
+            };
+        }
+        
+        function renderReport(data) {
+            console.log('\n--- renderReport() called ---');
+            
+            // Store original data
+            if (!originalReportData) {
+                originalReportData = data;
+            }
+            
+            const metadata = data.metadata || {};
+            const aiInsights = data.ai_insights || {};
+            const tables = data.tables || {};
+            const graphData = data.graph_data || {};
+            let chartData = data.chart_data || {};  // Year-based chart data
+            
+            console.log('Extracted metadata:', metadata);
+            console.log('Extracted aiInsights keys:', Object.keys(aiInsights));
+            console.log('Extracted tables keys:', Object.keys(tables));
+            console.log('Extracted graphData keys:', Object.keys(graphData));
+            console.log('Extracted chartData keys:', Object.keys(chartData));
+            console.log('ChartData object:', chartData);
+            
+            // If chartData is empty, generate it from tables (fallback)
+            if (Object.keys(chartData).length === 0 && Object.keys(tables).length > 0) {
+                console.warn('Chart data is empty, generating from tables as fallback');
+                chartData = generateChartDataFromTables(tables);
+                console.log('Generated chartData keys:', Object.keys(chartData));
+            }
+            
+            // Set time period
+            const timePeriod = metadata.time_period || 'Last 12 quarters';
+            console.log('Setting time period:', timePeriod);
+            $('#timePeriodDisplay').text(timePeriod);
+            $('#generatedDate').text(new Date().toLocaleDateString());
+            
+            // Setup global toggle handler (only once)
+            if (!$('input[name="globalDataView"]').data('handler-attached')) {
+                $('input[name="globalDataView"]').on('change', function() {
+                    const newView = $(this).val();
+                    console.log('Global view changed to:', newView);
+                    currentDataView = newView;
+                    
+                    // Re-render the entire report with new view
+                    if (originalReportData) {
+                        renderReport(originalReportData);
+                    }
+                }).data('handler-attached', true);
+            }
+            
+            // Set initial toggle state (only on first render)
+            if (!originalReportData) {
+                const hasApplications = selectedEndpoints.includes('applications') && chartData.applications;
+                const hasLoans = selectedEndpoints.includes('loans') && chartData.loans;
+                
+                if (hasApplications && !hasLoans) {
+                    $('input[name="globalDataView"][value="applications"]').prop('checked', true);
+                    currentDataView = 'applications';
+                } else if (hasLoans && !hasApplications) {
+                    $('input[name="globalDataView"][value="originations"]').prop('checked', true);
+                    currentDataView = 'originations';
+                } else if (hasApplications && hasLoans) {
+                    // Default to applications if both available
+                    $('input[name="globalDataView"][value="applications"]').prop('checked', true);
+                    currentDataView = 'applications';
+                }
+            }
+            
+            // Get data for current view (applications vs originations)
+            const viewData = getDataForCurrentView(chartData, tables, graphData);
+            const viewChartData = viewData.chartData;
+            const viewTables = viewData.tables;
+            const viewEndpoint = viewData.endpoint;
+            
+            // Render overall intro
+            console.log('\n--- Rendering Overall Intro ---');
+            console.log('Overall intro exists:', !!aiInsights.overall_intro);
+            console.log('Overall intro value:', aiInsights.overall_intro);
+            if (aiInsights.overall_intro) {
+                const formatted = formatMarkdown(aiInsights.overall_intro);
+                console.log('Formatted overall intro:', formatted);
+                $('#overallIntroContent').html(formatted);
+                console.log('Overall intro element after update:', $('#overallIntroContent').html());
+            } else {
+                console.warn('No overall intro available');
+            }
+            
+            // Render key findings
+            console.log('\n--- Rendering Key Findings ---');
+            console.log('Key findings exists:', !!aiInsights.key_findings);
+            if (aiInsights.key_findings) {
+                $('#keyFindingsSection').show();
+                $('#keyFindingsContent').html(formatMarkdown(aiInsights.key_findings));
+                console.log('Key findings rendered');
+            } else {
+                console.warn('No key findings available');
+            }
+            
+            // Render sections based on available endpoints
+            // Note: selectedEndpoints may include both 'applications' and 'loans', but we'll use the toggle to determine which to display
+            const selectedEndpoints = metadata.selected_endpoints || [];
+            console.log('\n--- Processing Selected Endpoints ---');
+            console.log('Selected endpoints:', selectedEndpoints);
+            console.log('Selected endpoints count:', selectedEndpoints.length);
+            console.log('Current data view:', currentDataView);
+            
+            // Section 1: Loan & Application Counts
+            console.log('\n--- Section 1: Loan & Application Counts ---');
+            const loanCountEndpoints = selectedEndpoints.filter(ep => ['applications', 'loans'].includes(ep));
+            console.log('Loan count endpoints:', loanCountEndpoints);
+            if (loanCountEndpoints.length > 0) {
+                console.log('Showing section 1');
+                $('#section1').show();
+                if (aiInsights.section_intros && aiInsights.section_intros['Loan & Application Counts']) {
+                    console.log('Rendering section 1 intro');
+                    $('#section1Intro').html(formatMarkdown(aiInsights.section_intros['Loan & Application Counts']));
+                } else {
+                    console.warn('No section 1 intro available');
+                }
+                
+                // Table 1: Loan & Application Counts - uses current view
+                const currentData = viewChartData.current || viewChartData[viewEndpoint] || viewChartData.applications || viewChartData.loans;
+                
+                if (currentData) {
+                    console.log('Rendering Table 1: Loan & Application Counts');
+                    $('#loanCountsTable1').show();
+                    
+                    // Update view label
+                    $('#loanCountsTable1ViewLabel').text(currentDataView === 'applications' ? 'Applications' : 'Originations (Loans)');
+                    
+                    // Render chart with current view data
+                    renderLoanCountsColumnChart('loanCountsTable1Chart', currentData, null);
+                    
+                    // Set intro and narrative based on current view
+                    const introKey = viewEndpoint;
+                    if (aiInsights.table_intros && aiInsights.table_intros[introKey]) {
+                        $('#loanCountsTable1Intro').text(aiInsights.table_intros[introKey]);
+                    }
+                    if (aiInsights.table_narratives && aiInsights.table_narratives[introKey]) {
+                        $('#loanCountsTable1Narrative').html(formatMarkdown(aiInsights.table_narratives[introKey]));
+                    }
+                }
+                
+            }
+            
+            // Section 2: Credit Metrics
+            const creditEndpoints = selectedEndpoints.filter(ep => ep.includes('credit'));
+            if (creditEndpoints.length > 0) {
+                $('#section2').show();
+                if (aiInsights.section_intros && aiInsights.section_intros['Credit Metrics']) {
+                    $('#section2Intro').html(formatMarkdown(aiInsights.section_intros['Credit Metrics']));
+                }
+                creditEndpoints.forEach(endpoint => {
+                    console.log(`Checking credit endpoint ${endpoint}:`, {
+                        'chartData exists': !!chartData[endpoint],
+                        'chartData value': chartData[endpoint]
+                    });
+                    if (chartData[endpoint]) {
+                        const sectionId = endpoint.replace(/[^a-zA-Z0-9]/g, '-');
+                        const chartHtml = `
+                            <div style="margin-top: 30px;">
+                                <h3 style="color: var(--ncrc-dark-blue);">${endpoint.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
+                                <p class="table-introduction" id="${sectionId}Intro"></p>
+                                <div class="chart-container" style="position: relative; height: 400px; margin: 20px 0;">
+                                    <canvas id="${sectionId}Chart"></canvas>
+                                </div>
+                                <div class="table-narrative" id="${sectionId}Narrative"></div>
+                            </div>
+                        `;
+                        $('#section2').append(chartHtml);
+                        renderYearChart(sectionId + 'Chart', chartData[endpoint]);
+                        if (aiInsights.table_intros && aiInsights.table_intros[endpoint]) {
+                            $('#' + sectionId + 'Intro').text(aiInsights.table_intros[endpoint]);
+                        }
+                        if (aiInsights.table_narratives && aiInsights.table_narratives[endpoint]) {
+                            $('#' + sectionId + 'Narrative').html(formatMarkdown(aiInsights.table_narratives[endpoint]));
+                        }
+                    } else {
+                        console.warn(`Chart data not available for ${endpoint}`);
+                    }
+                });
+            }
+            
+            // Section 3: Loan Characteristics
+            const loanCharEndpoints = selectedEndpoints.filter(ep => ['ltv', 'dti'].includes(ep));
+            if (loanCharEndpoints.length > 0) {
+                $('#section3').show();
+                if (aiInsights.section_intros && aiInsights.section_intros['Loan Characteristics']) {
+                    $('#section3Intro').html(formatMarkdown(aiInsights.section_intros['Loan Characteristics']));
+                }
+                loanCharEndpoints.forEach(endpoint => {
+                    console.log(`Checking loan char endpoint ${endpoint}:`, {
+                        'chartData exists': !!chartData[endpoint],
+                        'chartData value': chartData[endpoint]
+                    });
+                    if (chartData[endpoint]) {
+                        const sectionId = endpoint.replace(/[^a-zA-Z0-9]/g, '-');
+                        const chartHtml = `
+                            <div style="margin-top: 30px;">
+                                <h3 style="color: var(--ncrc-dark-blue);">${endpoint.toUpperCase()}</h3>
+                                <p class="table-introduction" id="${sectionId}Intro"></p>
+                                <div class="chart-container" style="position: relative; height: 400px; margin: 20px 0;">
+                                    <canvas id="${sectionId}Chart"></canvas>
+                                </div>
+                                <div class="table-narrative" id="${sectionId}Narrative"></div>
+                            </div>
+                        `;
+                        $('#section3').append(chartHtml);
+                        renderYearChart(sectionId + 'Chart', chartData[endpoint]);
+                        if (aiInsights.table_intros && aiInsights.table_intros[endpoint]) {
+                            $('#' + sectionId + 'Intro').text(aiInsights.table_intros[endpoint]);
+                        }
+                        if (aiInsights.table_narratives && aiInsights.table_narratives[endpoint]) {
+                            $('#' + sectionId + 'Narrative').html(formatMarkdown(aiInsights.table_narratives[endpoint]));
+                        }
+                    } else {
+                        console.warn(`Chart data not available for ${endpoint}`);
+                    }
+                });
+            }
+            
+            // Section 4: Market Dynamics
+            const marketEndpoints = selectedEndpoints.filter(ep => ['interest-rates', 'denials', 'tlc'].includes(ep));
+            if (marketEndpoints.length > 0) {
+                $('#section4').show();
+                if (aiInsights.section_intros && aiInsights.section_intros['Market Dynamics']) {
+                    $('#section4Intro').html(formatMarkdown(aiInsights.section_intros['Market Dynamics']));
+                }
+                marketEndpoints.forEach(endpoint => {
+                    console.log(`Checking market endpoint ${endpoint}:`, {
+                        'chartData exists': !!chartData[endpoint],
+                        'chartData value': chartData[endpoint]
+                    });
+                    if (chartData[endpoint]) {
+                        const sectionId = endpoint.replace(/[^a-zA-Z0-9]/g, '-');
+                        const chartHtml = `
+                            <div style="margin-top: 30px;">
+                                <h3 style="color: var(--ncrc-dark-blue);">${endpoint.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
+                                <p class="table-introduction" id="${sectionId}Intro"></p>
+                                <div class="chart-container" style="position: relative; height: 400px; margin: 20px 0;">
+                                    <canvas id="${sectionId}Chart"></canvas>
+                                </div>
+                                <div class="table-narrative" id="${sectionId}Narrative"></div>
+                            </div>
+                        `;
+                        $('#section4').append(chartHtml);
+                        renderYearChart(sectionId + 'Chart', chartData[endpoint]);
+                        if (aiInsights.table_intros && aiInsights.table_intros[endpoint]) {
+                            $('#' + sectionId + 'Intro').text(aiInsights.table_intros[endpoint]);
+                        }
+                        if (aiInsights.table_narratives && aiInsights.table_narratives[endpoint]) {
+                            $('#' + sectionId + 'Narrative').html(formatMarkdown(aiInsights.table_narratives[endpoint]));
+                        }
+                    } else {
+                        console.warn(`Chart data not available for ${endpoint}`);
+                    }
+                });
+            }
+            
+            // Section 5: Demographic Analysis
+            const demoEndpoints = selectedEndpoints.filter(ep => ep.includes('re'));
+            if (demoEndpoints.length > 0) {
+                $('#section5').show();
+                if (aiInsights.section_intros && aiInsights.section_intros['Demographic Analysis']) {
+                    $('#section5Intro').html(formatMarkdown(aiInsights.section_intros['Demographic Analysis']));
+                }
+                demoEndpoints.forEach(endpoint => {
+                    if (chartData[endpoint]) {
+                        const sectionId = endpoint.replace(/[^a-zA-Z0-9]/g, '-');
+                        const chartHtml = `
+                            <div style="margin-top: 30px;">
+                                <h3 style="color: var(--ncrc-dark-blue);">${endpoint.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h3>
+                                <p class="table-introduction" id="${sectionId}Intro"></p>
+                                <div class="chart-container" style="position: relative; height: 400px; margin: 20px 0;">
+                                    <canvas id="${sectionId}Chart"></canvas>
+                                </div>
+                                <div class="table-narrative" id="${sectionId}Narrative"></div>
+                            </div>
+                        `;
+                        $('#section5').append(chartHtml);
+                        renderYearChart(sectionId + 'Chart', chartData[endpoint]);
+                        if (aiInsights.table_intros && aiInsights.table_intros[endpoint]) {
+                            $('#' + sectionId + 'Intro').text(aiInsights.table_intros[endpoint]);
+                        }
+                        if (aiInsights.table_narratives && aiInsights.table_narratives[endpoint]) {
+                            $('#' + sectionId + 'Narrative').html(formatMarkdown(aiInsights.table_narratives[endpoint]));
+                        }
+                    }
+                });
+            }
+            
+            // Render any remaining endpoints that don't fit into categories
+            const renderedEndpoints = new Set(['applications', 'loans', ...creditEndpoints, ...loanCharEndpoints, ...marketEndpoints, ...demoEndpoints]);
+            selectedEndpoints.forEach(endpoint => {
+                if (chartData[endpoint] && !renderedEndpoints.has(endpoint)) {
+                    console.log('Rendering uncategorized endpoint:', endpoint);
+                    const sectionId = endpoint.replace(/[^a-zA-Z0-9]/g, '-');
+                    const sectionHtml = `
+                        <div class="report-section">
+                            <h2 class="section-title">${endpoint.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</h2>
+                            <p class="table-introduction" id="${sectionId}Intro"></p>
+                            <div class="chart-container" style="position: relative; height: 400px; margin: 20px 0;">
+                                <canvas id="${sectionId}Chart"></canvas>
+                            </div>
+                            <div class="table-narrative" id="${sectionId}Narrative"></div>
+                        </div>
+                    `;
+                    $('#section5').after(sectionHtml);
+                    renderYearChart(sectionId + 'Chart', chartData[endpoint]);
+                    if (aiInsights.table_intros && aiInsights.table_intros[endpoint]) {
+                        $('#' + sectionId + 'Intro').text(aiInsights.table_intros[endpoint]);
+                    }
+                    if (aiInsights.table_narratives && aiInsights.table_narratives[endpoint]) {
+                        $('#' + sectionId + 'Narrative').html(formatMarkdown(aiInsights.table_narratives[endpoint]));
+                    }
+                }
+            });
+            
+            // Render overall summary
+            if (aiInsights.overall_summary) {
+                $('#overallSummarySection').show();
+                $('#overallSummaryContent').html(formatMarkdown(aiInsights.overall_summary));
+            }
+        }
+        
+        function generateChartDataFromTables(tables) {
+            console.log('Generating chart data from tables...');
+            const chartData = {};
+            
+            Object.keys(tables).forEach(endpoint => {
+                const table = tables[endpoint];
+                if (!table || table.length === 0) return;
+                
+                // Extract quarters from Quarter column (preserve quarterly data)
+                const quarters = [];
+                const seriesData = {};
+                
+                // Get all column names (excluding Quarter)
+                const firstRow = table[0];
+                const columns = Object.keys(firstRow).filter(key => key !== 'Quarter');
+                
+                // Initialize series
+                columns.forEach(col => {
+                    seriesData[col] = {};
+                });
+                
+                // Process each row - preserve quarterly data
+                table.forEach(row => {
+                    const quarter = row.Quarter;
+                    if (quarter) {
+                        quarters.push(quarter);
+                        
+                        columns.forEach(col => {
+                            if (row[col] !== null && row[col] !== undefined) {
+                                seriesData[col][quarter] = row[col];
+                            }
+                        });
+                    }
+                });
+                
+                // Sort quarters chronologically
+                function quarterSortKey(q) {
+                    const parts = q.split('-Q');
+                    return parseInt(parts[0]) * 10 + parseInt(parts[1]);
+                }
+                const sortedQuarters = quarters.sort((a, b) => quarterSortKey(a) - quarterSortKey(b));
+                
+                chartData[endpoint] = {
+                    quarters: sortedQuarters,
+                    series_data: seriesData,
+                    title: endpoint.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    yLabel: 'Value'
+                };
+                
+                console.log(`Generated chart data for ${endpoint}: ${sortedQuarters.length} quarters, ${columns.length} series`);
+            });
+            
+            return chartData;
+        }
+        
+        function renderYearChart(canvasId, chartInfo) {
+            console.log(`\n--- renderYearChart(${canvasId}) ---`);
+            console.log('Chart info:', chartInfo);
+            resetColorIndex();
+            
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.error(`Canvas element #${canvasId} not found!`);
+                return;
+            }
+            
+            // Support both quarterly and yearly data
+            const quarters = chartInfo.quarters || [];
+            const years = chartInfo.years || [];
+            const seriesData = chartInfo.series_data || {};
+            const seriesNames = Object.keys(seriesData);
+            
+            // Determine if we're using quarters or years
+            const isQuarterly = quarters.length > 0;
+            const labels = isQuarterly ? quarters : years;
+            const xAxisLabel = isQuarterly ? 'Quarter' : 'Year';
+            
+            console.log('Data type:', isQuarterly ? 'Quarterly' : 'Yearly');
+            console.log('Labels:', labels);
+            console.log('Series names:', seriesNames);
+            
+            const datasets = seriesNames.map(seriesName => {
+                const data = labels.map(label => {
+                    // For quarterly: seriesData[seriesName][quarter]
+                    // For yearly: seriesData[seriesName][year]
+                    return seriesData[seriesName][label] || null;
+                });
+                return {
+                    label: seriesName,
+                    data: data,
+                    borderColor: getNextColor(),
+                    backgroundColor: getNextColor() + '20',
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.1
+                };
+            });
+            
+            const chart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: xAxisLabel,
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { display: true, color: '#e0e0e0' },
+                            ticks: {
+                                maxRotation: isQuarterly ? 45 : 0,
+                                minRotation: isQuarterly ? 45 : 0
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: chartInfo.yLabel || 'Value',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { display: true, color: '#e0e0e0' },
+                            beginAtZero: false
+                        }
+                    }
+                }
+            });
+            
+            console.log(`Chart ${canvasId} rendered successfully with ${labels.length} ${isQuarterly ? 'quarters' : 'years'}`);
+        }
+        
+        function renderLoanCountsColumnChart(canvasId, chartData, unused) {
+            console.log(`\n--- renderLoanCountsColumnChart(${canvasId}) ---`);
+            console.log('Current data view:', currentDataView);
+            console.log('Chart data provided:', chartData);
+            resetColorIndex();
+            
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) {
+                console.error(`Canvas element #${canvasId} not found!`);
+                return;
+            }
+            
+            // Use the provided chart data (already filtered by global toggle)
+            const chartTitle = currentDataView === 'applications' ? 'Applications' : 'Originations (Loans)';
+            
+            if (!chartData) {
+                console.warn(`No chart data available for ${currentDataView}`);
+                return;
+            }
+            
+            // Destroy existing chart if it exists
+            if (window.loanCountsChart) {
+                window.loanCountsChart.destroy();
+                window.loanCountsChart = null;
+            }
+            
+            const quarters = chartData.quarters || [];
+            const seriesData = chartData.series_data || {};
+            const seriesNames = Object.keys(seriesData);
+            
+            console.log('Chart type:', chartTitle);
+            console.log('Quarters:', quarters.length);
+            console.log('Series names:', seriesNames);
+            
+            // Create datasets for each loan type (each will be a series in grouped columns)
+            const datasets = seriesNames.map(seriesName => {
+                const data = quarters.map(quarter => seriesData[seriesName][quarter] || null);
+                return {
+                    label: seriesName,
+                    data: data,
+                    backgroundColor: getLoanTypeColor(seriesName),
+                    borderColor: getLoanTypeColor(seriesName),
+                    borderWidth: 1
+                };
+            });
+            
+            window.loanCountsChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: quarters,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15,
+                                font: { size: 11 }
+                            }
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('en-US').format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: chartTitle,
+                            font: { size: 16, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Quarter',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { display: true, color: '#e0e0e0' },
+                            ticks: {
+                                maxRotation: 45,
+                                minRotation: 45
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: chartData.yLabel || 'Count',
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { display: true, color: '#e0e0e0' },
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return new Intl.NumberFormat('en-US').format(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            console.log(`Column chart ${canvasId} rendered successfully with ${quarters.length} quarters and ${seriesNames.length} loan types`);
+        }
+        
+        function renderTable(tableId, tableData, graphData) {
+            console.log(`\n--- renderTable(${tableId}) ---`);
+            console.log('Table ID:', tableId);
+            console.log('Table data:', tableData);
+            console.log('Table data type:', typeof tableData);
+            console.log('Table data is array:', Array.isArray(tableData));
+            console.log('Table data length:', tableData?.length);
+            console.log('Graph data:', graphData);
+            
+            if (!tableData || tableData.length === 0) {
+                console.warn(`Table ${tableId}: No data or empty array`);
+                return;
+            }
+            
+            const $table = $('#' + tableId);
+            console.log('Table element found:', $table.length > 0);
+            if ($table.length === 0) {
+                console.error(`Table element #${tableId} not found in DOM!`);
+                return;
+            }
+            $table.empty();
+            
+            // Get column headers (all keys from first row except 'Quarter')
+            const firstRow = tableData[0];
+            console.log('First row:', firstRow);
+            console.log('First row keys:', Object.keys(firstRow));
+            const columns = Object.keys(firstRow).filter(key => key !== 'Quarter');
+            console.log('Columns (excluding Quarter):', columns);
+            
+            // Create header
+            let headerHtml = '<thead><tr><th>Quarter</th>';
+            columns.forEach(col => {
+                headerHtml += `<th>${col}</th>`;
+            });
+            headerHtml += '</tr></thead>';
+            console.log('Header HTML length:', headerHtml.length);
+            
+            // Create body
+            let bodyHtml = '<tbody>';
+            tableData.forEach((row, idx) => {
+                if (idx < 3) console.log(`Row ${idx}:`, row);
+                bodyHtml += '<tr>';
+                bodyHtml += `<td>${row.Quarter || ''}</td>`;
+                columns.forEach(col => {
+                    const value = row[col];
+                    bodyHtml += `<td>${value !== null && value !== undefined ? formatNumber(value) : '—'}</td>`;
+                });
+                bodyHtml += '</tr>';
+            });
+            bodyHtml += '</tbody>';
+            console.log(`Body HTML created for ${tableData.length} rows`);
+            
+            const fullHtml = headerHtml + bodyHtml;
+            console.log('Full HTML length:', fullHtml.length);
+            $table.html(fullHtml);
+            console.log(`Table ${tableId} rendered successfully`);
+            console.log(`Table element HTML length after render:`, $table.html().length);
+        }
+        
+        function formatNumber(value) {
+            if (typeof value === 'number') {
+                if (value >= 1000000) {
+                    return (value / 1000000).toFixed(2) + 'M';
+                } else if (value >= 1000) {
+                    return (value / 1000).toFixed(2) + 'K';
+                } else {
+                    return value.toFixed(2);
+                }
+            }
+            return value;
+        }
+        
+        function formatMarkdown(text) {
+            if (!text) return '';
+            // Simple markdown formatting
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+                .replace(/\n/g, '<br>');
+        }
+    </script>
+</body>
+</html>
+
+
+
+

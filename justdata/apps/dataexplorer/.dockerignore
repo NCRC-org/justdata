@@ -1,0 +1,95 @@
+# DataExplorer Docker Ignore File
+# Excludes unnecessary files from Docker build context
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.hypothesis/
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Documentation (not needed in container)
+*.md
+!README.md
+
+# Development files
+*.bat
+*.sh
+!build-docker.sh
+!build-docker.bat
+
+# Data files (should be mounted as volumes)
+data/
+*.xlsx
+*.csv
+*.json
+!**/templates/**/*.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Debug files
+*.debug
+debug.log
+
+# Coverage reports
+.coverage
+coverage.xml
+*.cover
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb
+
+# Local development
+.local/
+local_settings.py
+
+# Docker files (don't need to copy into container)
+Dockerfile
+.dockerignore
+docker-compose*.yml
+DOCKER_DEPLOYMENT.md

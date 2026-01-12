@@ -78,6 +78,30 @@ ACCESS_MATRIX = {
         'partner': 'hidden',
         'staff': 'hidden',
         'developer': 'full'
+    },
+    'dataexplorer': {
+        'public': 'hidden',
+        'economy': 'hidden',
+        'member': 'full',
+        'partner': 'full',
+        'staff': 'full',
+        'developer': 'full'
+    },
+    'lenderprofile': {
+        'public': 'hidden',
+        'economy': 'hidden',
+        'member': 'full',
+        'partner': 'full',
+        'staff': 'full',
+        'developer': 'full'
+    },
+    'loantrends': {
+        'public': 'hidden',
+        'economy': 'hidden',
+        'member': 'full',
+        'partner': 'full',
+        'staff': 'full',
+        'developer': 'full'
     }
 }
 

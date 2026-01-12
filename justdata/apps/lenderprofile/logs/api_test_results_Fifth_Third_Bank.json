@@ -1,0 +1,720 @@
+{
+  "lender_name": "Fifth Third Bank",
+  "resolved_name": "FIFTH THIRD BANK",
+  "identifiers": {
+    "name": "FIFTH THIRD BANK",
+    "fdic_cert": "6672",
+    "rssd_id": "723112",
+    "lei": "QFROUN1UWUYU0DVIWD51",
+    "confidence": 0.9
+  },
+  "fdic_institution": {},
+  "fdic_financials": {
+    "data": []
+  },
+  "fdic_branches": {
+    "data": []
+  },
+  "gleif": {
+    "entity": {
+      "lei": "QFROUN1UWUYU0DVIWD51",
+      "entity": {
+        "legalName": {
+          "name": "Fifth Third Bank, National Association",
+          "language": "en"
+        },
+        "otherNames": [
+          {
+            "name": "Fifth Third Bank",
+            "language": "en",
+            "type": "PREVIOUS_LEGAL_NAME"
+          }
+        ],
+        "transliteratedOtherNames": [],
+        "legalAddress": {
+          "language": "en",
+          "addressLines": [
+            "38 Fountain Square Plaza"
+          ],
+          "addressNumber": null,
+          "addressNumberWithinBuilding": null,
+          "mailRouting": null,
+          "city": "Cincinnati",
+          "region": "US-OH",
+          "country": "US",
+          "postalCode": "45202"
+        },
+        "headquartersAddress": {
+          "language": "en",
+          "addressLines": [
+            "38 Fountain Square Plaza"
+          ],
+          "addressNumber": null,
+          "addressNumberWithinBuilding": null,
+          "mailRouting": null,
+          "city": "Cincinnati",
+          "region": "US-OH",
+          "country": "US",
+          "postalCode": "45202"
+        },
+        "registeredAt": {
+          "id": "RA000744",
+          "other": null
+        },
+        "registeredAs": "6672",
+        "jurisdiction": "US-OH",
+        "category": "GENERAL",
+        "legalForm": {
+          "id": "N566",
+          "other": null
+        },
+        "associatedEntity": {
+          "lei": null,
+          "name": null
+        },
+        "status": "ACTIVE",
+        "expiration": {
+          "date": null,
+          "reason": null
+        },
+        "successorEntity": {
+          "lei": null,
+          "name": null
+        },
+        "successorEntities": [],
+        "creationDate": "1865-01-01T00:00:00Z",
+        "subCategory": null,
+        "otherAddresses": [],
+        "eventGroups": []
+      },
+      "registration": {
+        "initialRegistrationDate": "2012-06-06T15:56:00Z",
+        "lastUpdateDate": "2025-10-06T16:20:22Z",
+        "status": "ISSUED",
+        "nextRenewalDate": "2026-10-26T15:39:47Z",
+        "managingLou": "5493001KJTIIGC8Y1R12",
+        "corroborationLevel": "FULLY_CORROBORATED",
+        "validatedAt": {
+          "id": "RA000744",
+          "other": null
+        },
+        "validatedAs": "6672",
+        "otherValidationAuthorities": []
+      },
+      "bic": [
+        "FTBCUS3CXXX"
+      ],
+      "mic": null,
+      "ocid": null,
+      "qcc": "QUS1RJ0C4H",
+      "spglobal": [
+        "1549694"
+      ],
+      "conformityFlag": "CONFORMING"
+    },
+    "parent": {
+      "type": "lei-records",
+      "id": "THRNG6BD57P9QWTQLG42",
+      "attributes": {
+        "lei": "THRNG6BD57P9QWTQLG42",
+        "entity": {
+          "legalName": {
+            "name": "FIFTH THIRD BANCORP",
+            "language": "en"
+          },
+          "otherNames": [],
+          "transliteratedOtherNames": [],
+          "legalAddress": {
+            "language": "en",
+            "addressLines": [
+              "C/O CORPORATION SERVICE COMPANY",
+              "1160 DUBLIN ROAD",
+              "SUITE 400"
+            ],
+            "addressNumber": null,
+            "addressNumberWithinBuilding": null,
+            "mailRouting": null,
+            "city": "COLUMBUS",
+            "region": "US-OH",
+            "country": "US",
+            "postalCode": "43215"
+          },
+          "headquartersAddress": {
+            "language": "en",
+            "addressLines": [
+              "38 Fountain Square Plaza"
+            ],
+            "addressNumber": null,
+            "addressNumberWithinBuilding": null,
+            "mailRouting": null,
+            "city": "Cincinnati",
+            "region": "US-OH",
+            "country": "US",
+            "postalCode": "45202"
+          },
+          "registeredAt": {
+            "id": "RA000629",
+            "other": null
+          },
+          "registeredAs": "458715",
+          "jurisdiction": "US-OH",
+          "category": "GENERAL",
+          "legalForm": {
+            "id": "BTQ1",
+            "other": null
+          },
+          "associatedEntity": {
+            "lei": null,
+            "name": null
+          },
+          "status": "ACTIVE",
+          "expiration": {
+            "date": null,
+            "reason": null
+          },
+          "successorEntity": {
+            "lei": null,
+            "name": null
+          },
+          "successorEntities": [],
+          "creationDate": "1974-10-07T00:00:00Z",
+          "subCategory": null,
+          "otherAddresses": [],
+          "eventGroups": [
+            {
+              "groupType": "STANDALONE",
+              "events": [
+                {
+                  "validationDocuments": "SUPPORTING_DOCUMENTS",
+                  "effectiveDate": "2022-04-18T00:00:00Z",
+                  "recordedDate": "2022-08-01T10:28:59Z",
+                  "type": "CHANGE_LEGAL_ADDRESS",
+                  "status": "COMPLETED"
+                }
+              ]
+            }
+          ]
+        },
+        "registration": {
+          "initialRegistrationDate": "2012-06-06T15:51:00Z",
+          "lastUpdateDate": "2025-10-06T16:20:23Z",
+          "status": "ISSUED",
+          "nextRenewalDate": "2026-10-19T16:03:28Z",
+          "managingLou": "5493001KJTIIGC8Y1R12",
+          "corroborationLevel": "FULLY_CORROBORATED",
+          "validatedAt": {
+            "id": "RA000629",
+            "other": null
+          },
+          "validatedAs": "458715",
+          "otherValidationAuthorities": []
+        },
+        "bic": null,
+        "mic": null,
+        "ocid": "us_oh/458715",
+        "qcc": "QUS8NNEQ2R",
+        "spglobal": [
+          "270961"
+        ],
+        "conformityFlag": "CONFORMING"
+      },
+      "relationships": {
+        "managing-lou": {
+          "links": {
+            "related": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/managing-lou"
+          }
+        },
+        "lei-issuer": {
+          "links": {
+            "related": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/lei-issuer"
+          }
+        },
+        "field-modifications": {
+          "links": {
+            "related": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/field-modifications"
+          }
+        },
+        "direct-parent": {
+          "links": {
+            "reporting-exception": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/direct-parent-reporting-exception"
+          }
+        },
+        "ultimate-parent": {
+          "links": {
+            "reporting-exception": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/ultimate-parent-reporting-exception"
+          }
+        },
+        "direct-children": {
+          "links": {
+            "relationship-records": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/direct-child-relationships",
+            "related": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/direct-children"
+          }
+        },
+        "ultimate-children": {
+          "links": {
+            "relationship-records": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/ultimate-child-relationships",
+            "related": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/ultimate-children"
+          }
+        },
+        "isins": {
+          "links": {
+            "related": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42/isins"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.gleif.org/api/v1/lei-records/THRNG6BD57P9QWTQLG42"
+      }
+    },
+    "children": []
+  },
+  "sec": {
+    "cik": "0001557636",
+    "company_name": "0001557636",
+    "ticker": "FIFTH",
+    "submissions": {
+      "cik": "0001557636",
+      "entityType": "other",
+      "sic": "",
+      "sicDescription": "",
+      "ownerOrg": null,
+      "insiderTransactionForOwnerExists": 0,
+      "insiderTransactionForIssuerExists": 0,
+      "name": "Fifth & Pacific Companies Cosmetics, Inc.",
+      "tickers": [],
+      "exchanges": [],
+      "ein": "133351609",
+      "lei": null,
+      "description": "",
+      "website": "",
+      "investorWebsite": "",
+      "category": "",
+      "fiscalYearEnd": "1231",
+      "stateOfIncorporation": "DE",
+      "stateOfIncorporationDescription": "DE",
+      "addresses": {
+        "mailing": {
+          "street1": "1441 BROADWAY",
+          "street2": null,
+          "city": "NEW YORK",
+          "stateOrCountry": "NY",
+          "zipCode": "10018",
+          "stateOrCountryDescription": "NY",
+          "isForeignLocation": null,
+          "foreignStateTerritory": null,
+          "country": null,
+          "countryCode": null
+        },
+        "business": {
+          "street1": "1441 BROADWAY",
+          "street2": null,
+          "city": "NEW YORK",
+          "stateOrCountry": "NY",
+          "zipCode": "10018",
+          "stateOrCountryDescription": "NY",
+          "isForeignLocation": null,
+          "foreignStateTerritory": null,
+          "country": null,
+          "countryCode": null
+        }
+      },
+      "phone": "201-295-6000",
+      "flags": "",
+      "formerNames": [],
+      "filings": {
+        "recent": {
+          "accessionNumber": [
+            "0001047469-13-000951",
+            "9999999995-13-000467",
+            "0001104659-13-009242",
+            "0001104659-13-009020",
+            "0001104659-13-009017",
+            "0001047469-13-000813",
+            "0000000000-13-007374",
+            "0001047469-13-000315"
+          ],
+          "filingDate": [
+            "2013-02-13",
+            "2013-02-12",
+            "2013-02-11",
+            "2013-02-11",
+            "2013-02-11",
+            "2013-02-11",
+            "2013-02-08",
+            "2013-01-18"
+          ],
+          "reportDate": [
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "acceptanceDateTime": [
+            "2013-02-13T12:31:17.000Z",
+            "2013-02-13T00:15:14.000Z",
+            "2013-02-11T14:23:00.000Z",
+            "2013-02-11T06:11:17.000Z",
+            "2013-02-11T06:09:32.000Z",
+            "2013-02-11T06:06:42.000Z",
+            "2013-02-08T09:15:50.000Z",
+            "2013-01-18T16:22:02.000Z"
+          ],
+          "act": [
+            "33",
+            "33",
+            "",
+            "",
+            "",
+            "33",
+            "",
+            "33"
+          ],
+          "form": [
+            "424B3",
+            "EFFECT",
+            "CORRESP",
+            "CORRESP",
+            "CORRESP",
+            "S-4/A",
+            "UPLOAD",
+            "S-4"
+          ],
+          "fileNumber": [
+            "333-186094-13",
+            "333-186094-13",
+            "",
+            "",
+            "",
+            "333-186094-13",
+            "",
+            "333-186094-13"
+          ],
+          "filmNumber": [
+            "13601299",
+            "13599427",
+            "",
+            "",
+            "",
+            "13588742",
+            "",
+            "13537813"
+          ],
+          "items": [
+            "",
+            "S-4,,2013-02-12 15:00:00",
+            "",
+            "",
+            "",
+            "",
+            "",
+            ""
+          ],
+          "core_type": [
+            "424B3",
+            "EFFECT",
+            "CORRESP",
+            "CORRESP",
+            "CORRESP",
+            "S-4/A",
+            "LETTER",
+            "S-4"
+          ],
+          "size": [
+            1194753,
+            11837,
+            30450,
+            23797,
+            27663,
+            1501032,
+            273640,
+            3694703
+          ],
+          "isXBRL": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "isInlineXBRL": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ],
+          "primaryDocument": [
+            "a2212872z424b3.htm",
+            "xslEFFECTX01/primary_doc.xml",
+            "filename1.htm",
+            "filename1.htm",
+            "filename1.htm",
+            "a2212792zs-4a.htm",
+            "filename1.pdf",
+            "a2211259zs-4.htm"
+          ],
+          "primaryDocDescription": [
+            "424B3",
+            "",
+            "",
+            "",
+            "",
+            "S-4/A",
+            "",
+            "S-4"
+          ]
+        },
+        "files": []
+      }
+    },
+    "filings": {
+      "10k": [],
+      "10q": [],
+      "8k": [],
+      "def14a": []
+    },
+    "financials": null
+  },
+  "litigation": {
+    "cases": [],
+    "total_cases": 0
+  },
+  "news": {
+    "articles": [
+      {
+        "source": {
+          "id": "business-insider",
+          "name": "Business Insider"
+        },
+        "author": "Kaja Whitehouse",
+        "title": "Tricolor's founder compared the auto lender to Enron in private call: Feds",
+        "description": "Manhattan federal prosecutors have charged Tricolor execs Daniel Chu and David Goodgame of scheming to defraud banks and private credit lenders.",
+        "url": "https://www.businessinsider.com/tricolors-founder-compared-auto-lender-enron-private-call-feds-2025-12",
+        "urlToImage": "https://i.insider.com/6942d992832e0ef1ead661ef?width=1200&format=jpeg",
+        "publishedAt": "2025-12-17T17:37:59Z",
+        "content": "A scene outside of Enron's offices following its 2001 bankruptcyJames Nielsen/Getty Images\r\n<ul><li>On Wednesday, Manhattan federal prosecutors unsealed an indictment against two Tricolor executives.\u2026 [+3012 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Barchart.com"
+        },
+        "author": "Neha Panjwani",
+        "title": "Fifth Third Bancorp Stock: Is FITB Underperforming the Financial Sector?",
+        "description": "Fifth Third Bancorp has underperformed the Financial sector over the past year, but analysts are cautiously optimistic about the stock\u2019s prospects.",
+        "url": "https://www.barchart.com/story/news/36528678/fifth-third-bancorp-stock-is-fitb-underperforming-the-financial-sector",
+        "urlToImage": "https://s.yimg.com/ny/api/res/1.2/fj3wa8C5yhaZ1GwXxdXQ1g--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04MDA-/https://media.zenfs.com/en/barchart_com_477/c05583566f6d059c5968478805b05567",
+        "publishedAt": "2025-12-09T13:59:15Z",
+        "content": "Cincinnati, Ohio-based Fifth Third Bancorp (FITB) operates as the bank holding company for Fifth Third Bank, National Association, which offers a wide range of financial products and services. Valued\u2026 [+2097 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Barchart.com"
+        },
+        "author": "Sohini Mondal",
+        "title": "Fifth Third Bancorp's Quarterly Earnings Preview: What You Need to Know",
+        "description": "Fifth Third Bancorp is poised to announce its fourth-quarter results soon, and analysts predict a double-digit growth in the company\u2019s bottom-line figure.",
+        "url": "https://www.barchart.com/story/news/36741905/fifth-third-bancorp-s-quarterly-earnings-preview-what-you-need-to-know",
+        "urlToImage": "https://media.zenfs.com/en/barchart_com_477/880841bc5989741feb0554626726335b",
+        "publishedAt": "2025-12-22T12:56:51Z",
+        "content": "With a market cap of\u00a0$31.6 billion, Fifth Third Bancorp (FITB) is a U.S.-based bank holding company that provides a broad range of financial products and services through its primary subsidiary, Fift\u2026 [+2039 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Yahoo Entertainment"
+        },
+        "author": "Hal Bundrick, CFP\u00ae",
+        "title": "HELOC rates today, December 12, 2025: Lenders begin HELOC discounts",
+        "description": "These are today's HELOC rates. Home equity line of credit rates have drifted lower for most of the year and are currently at 2025 lows. Start shopping today.",
+        "url": "https://finance.yahoo.com/personal-finance/mortgages/article/heloc-interest-rates-today-friday-december-12-2025-110057774.html",
+        "urlToImage": "https://s.yimg.com/ny/api/res/1.2/.s_eK2TthYlP26Fzb3LEMQ--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD02NzU-/https://s.yimg.com/os/creatr-uploaded-images/2025-06/eb4e4990-4262-11f0-b61f-fecabc8eb879",
+        "publishedAt": "2025-12-12T11:00:57Z",
+        "content": "The average national rate on a home equity line of credit remains under 7.5%, according to the analytics company Curinos. However, following the Federal Reserve's quarter-point rate cut this week, le\u2026 [+4154 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Yahoo Entertainment"
+        },
+        "author": "David Hollerith",
+        "title": "America's biggest banks are ending 2025 on top with big growth goals and markets 'wide open'",
+        "description": "America's biggest banks are looking to accelerate growth in the year ahead as stocks reach record highs and looser rules push the industry into a new chapter...",
+        "url": "https://finance.yahoo.com/news/americas-biggest-banks-are-ending-2025-on-top-with-big-growth-goals-and-markets-wide-open-070002408.html",
+        "urlToImage": "https://s.yimg.com/ny/api/res/1.2/ZQ3wpMDFoSR2WIXQLMRUyg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04MDA-/https://s.yimg.com/os/creatr-uploaded-images/2025-12/2e70cb30-da9d-11f0-bff5-4a18ce4ddee3",
+        "publishedAt": "2025-12-17T10:00:02Z",
+        "content": "America's biggest banks are ending 2025 with their stock prices at record highs, more assets on their balance sheet, and a level of regulatory freedom they haven't seen in 15 years.\r\nIn the year ahea\u2026 [+6054 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Biztoc.com"
+        },
+        "author": "barchart.com",
+        "title": "Fifth Third Bancorp Stock: Is FITB Underperforming the Financial Sector?",
+        "description": "Cincinnati, Ohio-based Fifth Third Bancorp (FITB) operates as the bank holding company for Fifth Third Bank, National Association, which offers a wide range of financial products and services. Valued at $30 billion by market cap, the company\u2019s principal busin\u2026",
+        "url": "https://biztoc.com/x/e2fdd9580cf1d515",
+        "urlToImage": "https://biztoc.com/cdn/e2fdd9580cf1d515_s.webp",
+        "publishedAt": "2025-12-09T14:12:37Z",
+        "content": "Cincinnati, Ohio-based Fifth Third Bancorp (FITB) operates as the bank holding company for Fifth Third Bank, National Association, which offers a wide range of financial products and services. Valued\u2026 [+146 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Biztoc.com"
+        },
+        "author": "pymnts.com",
+        "title": "Fifth Third to Offer Commercial Card and Financial Technology Powered by Brex",
+        "description": "Fifth Third Bank and Brex have partnered on a commercial card that will enable the bank\u2019s commercial banking clients to access Brex\u2019s intelligent finance platform.\n \n \n \n \nWith access to the platform and the Fifth Third Commercial Card powered by Brex, these \u2026",
+        "url": "https://biztoc.com/x/25f80930b7a26b80",
+        "urlToImage": "https://biztoc.com/cdn/955/og.png",
+        "publishedAt": "2025-12-09T18:30:18Z",
+        "content": "Fifth Third Bank and Brex have partnered on a commercial card that will enable the banks commercial banking clients to access Brexs intelligent finance platform.\r\nWith access to the platform and the \u2026 [+136 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "pymnts.com"
+        },
+        "author": "PYMNTS",
+        "title": "Fifth Third to Offer Commercial Card and Financial Technology Powered by Brex",
+        "description": "Fifth Third Bank and Brex have partnered on a commercial card that will enable the bank\u2019s commercial banking clients to access Brex\u2019s intelligent finance platform. With access to the platform and the Fifth Third Commercial Card powered by Brex, these clients \u2026",
+        "url": "https://www.pymnts.com/partnerships/2025/fifth-third-to-offer-commercial-card-and-financial-technology-powered-by-brex/",
+        "urlToImage": "https://www.pymnts.com/wp-content/uploads/2025/12/fifth-third-brex-partnerships-commercial-card-banking-intelligent-finance-e1765302224822.jpeg",
+        "publishedAt": "2025-12-09T18:02:07Z",
+        "content": "Fifth Third Bank and Brex have partnered on a commercial card that will enable the banks commercial banking clients to access Brexs intelligent finance platform.With access to the platform and the Fi\u2026 [+2338 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "GlobeNewswire"
+        },
+        "author": "National Healthcare Properties",
+        "title": "National Healthcare Properties Announces Closing of New $550 Million Senior Unsecured Credit Facility",
+        "description": "NEW YORK, Dec. 11, 2025 (GLOBE NEWSWIRE) -- National Healthcare Properties, Inc. (Nasdaq: NHPAP / NHPBP) (the \u201cCompany\u201d or \u201cNHP\u201d) announced that it has closed a $550 million senior unsecured credit facility (\u201cCredit Facility\u201d), comprised of a $400 million rev\u2026",
+        "url": "https://www.globenewswire.com/news-release/2025/12/11/3204321/0/en/National-Healthcare-Properties-Announces-Closing-of-New-550-Million-Senior-Unsecured-Credit-Facility.html",
+        "urlToImage": "https://ml.globenewswire.com/Resource/Download/f0a30cde-19dd-4862-9209-0596ab4fb414",
+        "publishedAt": "2025-12-11T21:30:00Z",
+        "content": "NEW YORK, Dec. 11, 2025 (GLOBE NEWSWIRE) -- National Healthcare Properties, Inc. (Nasdaq: NHPAP / NHPBP) (the Company or NHP) announced that it has closed a $550 million senior unsecured credit facil\u2026 [+4417 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Biztoc.com"
+        },
+        "author": "cnbc.com",
+        "title": "Fifth Third signs deal making fintech firm Brex the provider of its commercial cards",
+        "description": "",
+        "url": "https://biztoc.com/x/f743eac10a41f46d",
+        "urlToImage": "https://biztoc.com/cdn/955/og.png",
+        "publishedAt": "2025-12-09T16:49:55Z",
+        "content": "{ window.open(this.href, '_blank'); }, 200); return false;\"&gt;Why is the EU investigating Google's AI content use? { window.open(this.href, '_blank'); }, 200); return false;\"&gt;What impact will Mic\u2026 [+777 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "GlobeNewswire"
+        },
+        "author": "Stock Yards Bancorp, Inc.",
+        "title": "Stock Yards Bancorp Announces Promotion of William Otten to Chief Credit Officer of the Company as William Dishman Sets Retirement Date",
+        "description": "LOUISVILLE, Ky., Dec. 08, 2025 (GLOBE NEWSWIRE) -- Stock Yards Bancorp, Inc. (NASDAQ: SYBT), parent company of Stock Yards Bank & Trust Company, with offices in the Louisville, central, eastern and northern Kentucky markets, as well as the Indianapolis, India\u2026",
+        "url": "https://www.globenewswire.com/news-release/2025/12/08/3201425/0/en/Stock-Yards-Bancorp-Announces-Promotion-of-William-Otten-to-Chief-Credit-Officer-of-the-Company-as-William-Dishman-Sets-Retirement-Date.html",
+        "urlToImage": "https://ml.globenewswire.com/Resource/Download/6b25af33-bfdf-4091-8aa8-67142484a0d5",
+        "publishedAt": "2025-12-08T12:30:00Z",
+        "content": "LOUISVILLE, Ky., Dec. 08, 2025 (GLOBE NEWSWIRE) -- Stock Yards Bancorp, Inc. (NASDAQ: SYBT), parent company of Stock Yards Bank &amp; Trust Company, with offices in the Louisville, central, eastern a\u2026 [+3123 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "CNBC"
+        },
+        "author": null,
+        "title": "Tricolor CEO received a $6.25 million bonus weeks before company\u2019s bankruptcy, prosecutors say",
+        "description": "Tricolor's collapse was one of a string of defaults that churned the U.S. banking industry this fall, sparking concerns over risks in the financial system.",
+        "url": "https://www.cnbc.com/2025/12/17/tricolor-ceo-bonus-bankruptcy-indictment.html",
+        "urlToImage": "https://image.cnbcfm.com/api/v1/image/108242891-1765977615868-gettyimages-2234195958-TRICOLOR_LENDER.jpeg?v=1765977637&w=1920&h=1080",
+        "publishedAt": "2025-12-17T17:51:08Z",
+        "content": "The CEO of subprime auto firm Tricolor directed a deputy to send him $6.25 million in bonuses in August as fraudulent schemes propping up the company unraveled, U.S. prosecutors alleged.\r\nDaniel Chu,\u2026 [+2386 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "GlobeNewswire"
+        },
+        "author": "Ataccama",
+        "title": "Ataccama solidifies data trust leadership with investment from Snowflake Ventures",
+        "description": "Investment deepens partnership with Snowflake and enables organizations to deliver compliant, AI-ready pipelines across Snowflake Cortex AI, Snowflake Intelligence, and their most demanding workloads Investment deepens partnership with Snowflake and enables o\u2026",
+        "url": "https://www.globenewswire.com/news-release/2025/12/09/3202458/0/en/Ataccama-solidifies-data-trust-leadership-with-investment-from-Snowflake-Ventures.html",
+        "urlToImage": "https://ml.globenewswire.com/Resource/Download/469812ba-d34e-44ca-8281-4a5c4bd12bfe",
+        "publishedAt": "2025-12-09T14:01:00Z",
+        "content": "BOSTON, Dec. 09, 2025 (GLOBE NEWSWIRE) -- Ataccama\r\n, the agentic data trust company, today announced a strategic investment from Snowflake Ventures\r\n. The funding deepens the companies existing part\u2026 [+6417 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "Statementstosheets.com"
+        },
+        "author": "spiked",
+        "title": "Show HN: Statements to Sheets \u2013 Convert Bank Statement PDFs to CSV",
+        "description": "I built a small web app that converts bank statement PDFs into clean CSV files for Excel and QuickBooks.It started when a friend couldn\u2019t export multi-year transaction history from his bank and every converter we tried choked on scanned pages or odd formattin\u2026",
+        "url": "https://statementstosheets.com",
+        "urlToImage": null,
+        "publishedAt": "2025-11-27T00:47:16Z",
+        "content": "Why Choose Our Converter?\r\nThe smarter way to convert statements to spreadsheets\r\nSuperior Accuracy\r\nAdvanced parsing handles complex formats, multi-line transactions, and edge cases that break other\u2026 [+1222 chars]"
+      },
+      {
+        "source": {
+          "id": null,
+          "name": "WLOS"
+        },
+        "author": "Katie Killen",
+        "title": "Ask 13: What is under construction next to the new Novant Health facility?",
+        "description": "Bravo Fonda wrote to News 13, asking: \"What is the building under construction in the parking lot of the new Novant medical center on Hendersonville Road?\"",
+        "url": "https://wlos.com/news/ask-13/ask-13-under-construction-next-new-novant-health-facility-south-asheville-wnc-medical-golds-gym-site-location-rusty-pulliam-clinic-hendersonville-road",
+        "urlToImage": "https://wlos.com/resources/media2/16x9/1280/1320/center/90/e9dbfda5-a480-4e43-ac6a-a320c240d97b-VO1ASK13NOVANT_BANK.movframe1202.png",
+        "publishedAt": "2025-12-16T16:26:11Z",
+        "content": "ASHEVILLE, N.C. (WLOS) Many residents have watched construction take shape at the new Novant Health facility in South Asheville. But there's more than just a medical facility moving in. Find out what\u2026 [+1502 chars]"
+      }
+    ],
+    "total_articles": 15
+  },
+  "theorg": {
+    "available": false
+  },
+  "cfpb_metadata": {},
+  "enforcement": {
+    "actions": [],
+    "total_actions": 0,
+    "recent_actions": []
+  },
+  "cfpb_complaints": {
+    "total": 0,
+    "complaints": [],
+    "aggregations": {},
+    "trends": {},
+    "main_topics": [],
+    "main_products": []
+  },
+  "ffiec_cra": {
+    "evaluations": [],
+    "current_rating": "N/A",
+    "exam_date": null,
+    "rating_history": []
+  },
+  "federal_reserve": {
+    "structure": null,
+    "historical_mergers": []
+  },
+  "seeking_alpha": {}
+}

@@ -1,0 +1,396 @@
+========== get_bigquery_client() CALLED - VERSION 2025-12-17-EXTENSIVE-DEBUGGING ==========
+project_id parameter: None
+[UNIFIED_ENV] Loaded shared .env file from: C:\Code\JustData\.env
+[UNIFIED_ENV] Loaded shared .env file from: C:\Code\JustData\.env
+[ENV] CLAUDE_API_KEY found (length: 108, preview: sk-ant-a...HgAA)
+[ENV] CENSUS_API_KEY found (length: 40, preview: df3f4daa...3640)
+[ENV] OPENAI_API_KEY found (length: 167, preview: sk-svcac...yVwA)
+[UNIFIED_ENV] Configuration loaded:
+  - GCP_PROJECT_ID: hdma1-242116
+  - BigQuery credentials: Set
+  - CLAUDE_API_KEY: Set
+  - CENSUS_API_KEY: Set
+  - Environment: Local
+[CRITICAL] get_bigquery_client() CALLED - VERSION 2025-12-17
+[DEBUG] Checking for JSON credentials in environment variables...
+[DEBUG]   Checking GOOGLE_APPLICATION_CREDENTIALS_JSON...
+[INFO] Found credentials in environment variable: GOOGLE_APPLICATION_CREDENTIALS_JSON
+[DEBUG]   Value length: 2267
+[DEBUG] Attempting to parse JSON credentials from GOOGLE_APPLICATION_CREDENTIALS_JSON (length: 2267 chars)...
+[DEBUG] Successfully parsed credentials JSON. Project: hdma1-242116, Client email: apiclient@hdma1-242116.iam.gserviceaccount.com...
+[DEBUG] Creating service account credentials from JSON...
+[INFO] Successfully using credentials from GOOGLE_APPLICATION_CREDENTIALS_JSON
+Searching for queries in the last 168 hours...
+Looking for LEI: WWB2V0FCW3A0EE3ZJN75
+Looking for lender: Manufacturers and Traders Trust
+--------------------------------------------------------------------------------
+Executing query...
+
+Found 58 matching queries
+
+
+================================================================================
+QUERY #1
+================================================================================
+Job ID: fdf9e906-2131-4f2a-b9b3-43a0e1befc44
+Creation Time: 2025-12-22T22:24:19.854000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 80,251,522
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: False
+  has_owner_occupied: False
+  has_site_built: False
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+    SELECT
+        job_id,
+        creation_time,
+        start_time,
+        end_time,
+        state,
+        total_bytes_processed,
+        user_email,
+        query,
+        statement_type,
+        error_result
+    FROM `hdma1-242116`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+    WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 168 HOUR)
+        AND job_type = 'QUERY'
+        AND state = 'DONE'
+        AND (
+            UPPER(query) LIKE UPPER('%WWB2V0FCW3A0EE3ZJN75%')
+            OR UPPER(query) LIKE UPPER('%Manufacturers%and%Traders%Trust%')
+        )
+    ORDER BY creation_time DESC
+    LIMIT 50
+    
+================================================================================
+
+
+================================================================================
+QUERY #2
+================================================================================
+Job ID: 57b5e668-e829-4981-a090-04cbd5996cbd
+Creation Time: 2025-12-22T22:09:25.111000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: True
+  has_owner_occupied: True
+  has_site_built: True
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+            SELECT DISTINCT
+                CAST(h.county_code AS STRING) as geoid5
+            FROM `hdma1-242116.hmda.hmda` h
+            WHERE h.lei = 'WWB2V0FCW3A0EE3ZJN75'
+              AND h.activity_year IN ('2022', '2023', '2024')
+              AND h.action_taken = '1'
+              AND h.occupancy_type = '1'
+              AND h.total_units IN ('1', '2', '3', '4')
+              AND h.construction_method = '1'
+              AND h.loan_type IN ('1', '2', '3', '4')
+              AND (h.reverse_mortgage IS NULL OR h.reverse_mortgage != '1')
+              AND h.county_code IS NOT NULL
+            
+================================================================================
+
+
+================================================================================
+QUERY #3
+================================================================================
+Job ID: 782be18b-12ff-415c-bf31-9e271ab962c1
+Creation Time: 2025-12-22T22:09:22.419000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: True
+  has_owner_occupied: True
+  has_site_built: True
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+            SELECT DISTINCT
+                CAST(h.county_code AS STRING) as geoid5
+            FROM `hdma1-242116.hmda.hmda` h
+            WHERE h.lei = 'WWB2V0FCW3A0EE3ZJN75'
+              AND h.activity_year IN ('2022', '2023', '2024')
+              AND h.action_taken = '1'
+              AND h.occupancy_type = '1'
+              AND h.total_units IN ('1', '2', '3', '4')
+              AND h.construction_method = '1'
+              AND h.loan_type IN ('1', '2', '3', '4')
+              AND (h.reverse_mortgage IS NULL OR h.reverse_mortgage != '1')
+              AND h.county_code IS NOT NULL
+            
+================================================================================
+
+
+================================================================================
+QUERY #4
+================================================================================
+Job ID: c8260438-03ed-49f2-a002-fd8a64b251a7
+Creation Time: 2025-12-22T22:09:21.358000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: False
+  has_owner_occupied: False
+  has_site_built: False
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+        SELECT DISTINCT
+            respondent_rssd as rssd,
+            type_name,
+            respondent_name,
+            respondent_city,
+            respondent_state
+        FROM `hdma1-242116.hmda.lenders18`
+        WHERE lei = 'WWB2V0FCW3A0EE3ZJN75'
+        LIMIT 1
+        
+================================================================================
+
+
+================================================================================
+QUERY #5
+================================================================================
+Job ID: bdab25be-f706-4c63-8bb7-01104cacf934
+Creation Time: 2025-12-22T22:09:18.616000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: False
+  has_owner_occupied: False
+  has_site_built: False
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+        SELECT DISTINCT
+            respondent_rssd as rssd,
+            type_name,
+            respondent_name,
+            respondent_city,
+            respondent_state
+        FROM `hdma1-242116.hmda.lenders18`
+        WHERE lei = 'WWB2V0FCW3A0EE3ZJN75'
+        LIMIT 1
+        
+================================================================================
+
+
+================================================================================
+QUERY #6
+================================================================================
+Job ID: c96a3397-0b1c-40d9-bace-574b1dbb31c3
+Creation Time: 2025-12-22T22:09:11.580000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: True
+  has_owner_occupied: True
+  has_site_built: True
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+            SELECT DISTINCT
+                CAST(h.county_code AS STRING) as geoid5
+            FROM `hdma1-242116.hmda.hmda` h
+            WHERE h.lei = 'WWB2V0FCW3A0EE3ZJN75'
+              AND h.activity_year IN ('2022', '2023', '2024')
+              AND h.action_taken = '1'
+              AND h.occupancy_type = '1'
+              AND h.total_units IN ('1', '2', '3', '4')
+              AND h.construction_method = '1'
+              AND h.loan_type IN ('1', '2', '3', '4')
+              AND (h.reverse_mortgage IS NULL OR h.reverse_mortgage != '1')
+              AND h.county_code IS NOT NULL
+            
+================================================================================
+
+
+================================================================================
+QUERY #7
+================================================================================
+Job ID: 919b1a04-6ca6-4dec-b34f-fe8d104e0da6
+Creation Time: 2025-12-22T22:09:07.491000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: False
+  has_owner_occupied: False
+  has_site_built: False
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+        SELECT DISTINCT
+            respondent_rssd as rssd,
+            type_name,
+            respondent_name,
+            respondent_city,
+            respondent_state
+        FROM `hdma1-242116.hmda.lenders18`
+        WHERE lei = 'WWB2V0FCW3A0EE3ZJN75'
+        LIMIT 1
+        
+================================================================================
+
+
+================================================================================
+QUERY #8
+================================================================================
+Job ID: 38deae2c-e0f4-41d6-bb8e-43d7800b1a97
+Creation Time: 2025-12-22T22:07:15.661000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 6,581,748,766
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: True
+  has_owner_occupied: True
+  has_site_built: True
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+            SELECT DISTINCT
+                CAST(h.county_code AS STRING) as geoid5
+            FROM `hdma1-242116.hmda.hmda` h
+            WHERE h.lei = 'WWB2V0FCW3A0EE3ZJN75'
+              AND h.activity_year IN ('2022', '2023', '2024')
+              AND h.action_taken = '1'
+              AND h.occupancy_type = '1'
+              AND h.total_units IN ('1', '2', '3', '4')
+              AND h.construction_method = '1'
+              AND h.loan_type IN ('1', '2', '3', '4')
+              AND (h.reverse_mortgage IS NULL OR h.reverse_mortgage != '1')
+              AND h.county_code IS NOT NULL
+            
+================================================================================
+
+
+================================================================================
+QUERY #9
+================================================================================
+Job ID: f7c40615-61d6-48dc-be87-9cef43fb1da2
+Creation Time: 2025-12-22T22:07:12.281000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: False
+  has_owner_occupied: False
+  has_site_built: False
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+        SELECT DISTINCT
+            respondent_rssd as rssd,
+            type_name,
+            respondent_name,
+            respondent_city,
+            respondent_state
+        FROM `hdma1-242116.hmda.lenders18`
+        WHERE lei = 'WWB2V0FCW3A0EE3ZJN75'
+        LIMIT 1
+        
+================================================================================
+
+
+================================================================================
+QUERY #10
+================================================================================
+Job ID: 2a691ae0-2d31-4892-aeab-732109414cbd
+Creation Time: 2025-12-22T22:06:22.627000+00:00
+User: apiclient@hdma1-242116.iam.gserviceaccount.com
+Bytes Processed: 0
+
+Match Criteria:
+  has_lei: True
+  has_lender_name: False
+  has_originations: False
+  has_owner_occupied: False
+  has_site_built: False
+  has_1_4_units: False
+  is_simple_aggregation: False
+
+================================================================================
+FULL SQL QUERY:
+================================================================================
+
+        SELECT DISTINCT
+            respondent_rssd as rssd,
+            type_name,
+            respondent_name,
+            respondent_city,
+            respondent_state
+        FROM `hdma1-242116.hmda.lenders18`
+        WHERE lei = 'WWB2V0FCW3A0EE3ZJN75'
+        LIMIT 1
+        
+================================================================================
+
+
+Saved most recent query to: C:\Code\JustData\apps\dataexplorer\tableau_query_reference.sql

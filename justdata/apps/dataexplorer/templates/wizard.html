@@ -1,0 +1,1741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataExplorer - JustData</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/wizard-enhancements.css') }}?v={{ version }}">
+    <style>
+        /* Header Styles (from LendSight) */
+        .header {
+            background: var(--ncrc-dark-blue);
+            text-align: center;
+            padding: 40px 20px 30px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .header-layout {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            position: relative;
+            width: 100%;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            flex: 0 0 auto;
+        }
+        
+        .header-title-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+        }
+        
+        .header-tagline {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            flex: 0 0 auto;
+        }
+        
+        .logo img {
+            max-height: 90px;
+            width: auto;
+            border-radius: 8px;
+        }
+        
+        .header-title-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+        
+        .just-data-subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.95);
+            margin: 10px 0 0 0;
+            text-align: center;
+        }
+        
+        .tagline-box {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            height: 90px;
+            width: 256px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+        
+        .header-tagline p {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            margin: 0;
+            font-style: normal;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.3;
+            max-width: 100%;
+        }
+        
+        .header-tagline p em {
+            font-style: italic;
+            color: var(--ncrc-pink);
+        }
+        
+        /* Footer Styles (from LendSight) */
+        .footer {
+            background: var(--ncrc-dark-blue);
+            padding: 2rem 0 0.5rem 0;
+            border-radius: 0;
+            margin: 2rem 0 0 0;
+            width: 100%;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 3rem;
+        }
+        
+        .footer-col {
+            flex: 1 1 0;
+            min-width: 200px;
+            max-width: 300px;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-col.footer-logo {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: auto;
+            max-width: none;
+            margin-left: auto;
+        }
+        
+        .footer-logo-img {
+            height: 90px;
+            width: auto;
+            border-radius: 8px;
+        }
+        
+        .footer-col h4 {
+            color: var(--ncrc-gold);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .footer-col p {
+            color: #fff;
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .footer-col a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .footer-col a:hover {
+            color: var(--ncrc-gold);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            color: #ccc;
+            font-size: 0.95rem;
+            margin-top: 1.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .version-text {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+        
+        /* Wizard Container Adjustments */
+        .wizard-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* Ensure body doesn't have extra padding that conflicts with header */
+        body {
+            padding-top: 0 !important;
+        }
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-dark-blue: #1a8fc9;
+            --ncrc-accent-red: #e82e2e;
+            --ncrc-pink: #eb2f89;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --success-green: #4CAF50;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--ncrc-gray-light);
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Wizard Container */
+        .wizard-wrapper {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .wizard-container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+            min-height: 400px;
+            position: relative;
+        }
+        
+        /* Step Cards - Simplified form-based layout */
+        .step-card {
+            width: 100%;
+            max-width: 1000px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: opacity 0.3s ease;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            margin: 0 auto;
+        }
+        
+        .step-card .card-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 18px;
+            min-height: 0;
+        }
+
+        /* Compact layout for step2A - minimal top padding */
+        .step-card[data-step="step2A"] .card-body {
+            padding: 8px 16px 16px 16px;
+            overflow: visible;
+        }
+
+        /* Compact layout for step3A - prevent page scrolling */
+        .step-card[data-step="step3A"] .card-body {
+            padding: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        /* Compact layout for step5A - reduce spacing between title and disclaimer box */
+        .step-card[data-step="step5A"] .card-header {
+            padding-bottom: 8px;
+            margin-bottom: 0;
+        }
+
+        .step-card[data-step="step5A"] .card-header h3 {
+            margin-bottom: 0;
+        }
+
+        .step-card[data-step="step5A"] .card-body {
+            padding: 4px 16px 16px 16px;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .step-card[data-step="step5A"] .disclaimer-box {
+            margin-top: 0;
+            margin-bottom: 12px;
+        }
+        
+        /* Hide scrollbar but keep functionality */
+        .step-card .card-body {
+            scrollbar-width: thin;
+            scrollbar-color: transparent transparent;
+        }
+        
+        .step-card .card-body::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+        
+        /* Ensure content fits without scrolling */
+        .step-card .card-body > * {
+            max-height: 100%;
+        }
+        
+        /* Reduce spacing in card body to fit more content */
+        .step-card .card-body .form-group {
+            margin-bottom: 14px;
+        }
+        
+        .step-card .card-body p {
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+        
+        .step-card .card-body > p:first-child {
+            margin-bottom: 12px;
+        }
+        
+        /* Card States - Simplified */
+        .step-card.upcoming {
+            display: none;
+        }
+        
+        .step-card.active {
+            display: flex;
+            opacity: 1;
+            border: 2px solid var(--ncrc-primary-blue);
+        }
+        
+        .step-card.completed {
+            display: none;
+        }
+        
+        .step-card.exiting {
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .step-card.entering {
+            opacity: 0;
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        /* Card Header - Simplified */
+        .card-header {
+            padding: 20px 24px;
+            border-bottom: 2px solid #e0e0e0;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            position: relative;
+        }
+        
+        .card-header-buttons {
+            position: absolute;
+            top: 75px; /* Position below progress dots (40px dot + 12px gap + 8px padding + 15px spacing) */
+            right: 24px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+        
+        /* Hide the old step-number dot */
+        .step-number {
+            display: none;
+        }
+        
+        /* Progress Dots - Now larger with numbers inside */
+        .progress-dots {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding: 8px 0;
+            width: 100%;
+        }
+        
+        .progress-dot {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            cursor: default;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: white;
+        }
+        
+        .progress-dot.completed {
+            background: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+        }
+        
+        .progress-dot.completed.clickable {
+            cursor: pointer;
+        }
+        
+        .progress-dot.completed.clickable:hover {
+            background: #45a049;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.5);
+        }
+        
+        .progress-dot.completed.clickable:active {
+            transform: scale(1.05);
+        }
+        
+        .progress-dot.completed.clickable:focus {
+            outline: 2px solid #4CAF50;
+            outline-offset: 2px;
+        }
+        
+        .progress-dot.current {
+            background: #034ea0;
+            box-shadow: 0 0 0 3px rgba(3, 78, 160, 0.4);
+            transform: scale(1.1);
+        }
+        
+        .progress-dot.upcoming {
+            background: #999999;
+            opacity: 0.5;
+        }
+        
+        /* Screen reader only text */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+        
+        .card-header h3 {
+            margin: 0 0 8px 0;
+            color: var(--ncrc-dark-blue);
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .step-summary {
+            margin-top: 8px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        /* Card Body - Simplified */
+        .card-body {
+            padding: 24px;
+            overflow-y: auto;
+        }
+        
+        /* Analysis Type Buttons */
+        .analysis-type-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        
+        .analysis-btn {
+            padding: 12px 20px;
+            border: 3px solid #e0e0e0;
+            border-radius: 12px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            position: relative;
+            min-height: auto;
+        }
+        
+        .analysis-btn:hover {
+            border-color: var(--ncrc-secondary-blue);
+            background: #f0f7fa;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .analysis-btn-text {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #333;
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        .analysis-btn-description {
+            font-size: 0.85rem;
+            color: #666;
+            line-height: 1.4;
+            margin-top: 4px;
+        }
+
+        .analysis-btn-description div {
+            margin: 2px 0;
+        }
+        
+        /* Tooltip Popup */
+        .tooltip-popup {
+            position: absolute;
+            bottom: calc(100% + 10px);
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            pointer-events: none;
+            z-index: 1000;
+            width: 300px;
+        }
+        
+        .analysis-btn:hover .tooltip-popup {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .tooltip-content {
+            background: white;
+            border: 2px solid var(--ncrc-dark-blue);
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            position: relative;
+        }
+        
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: var(--ncrc-dark-blue);
+        }
+        
+        .tooltip-content strong {
+            display: block;
+            font-size: 1.1rem;
+            color: var(--ncrc-dark-blue);
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .tooltip-content p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        /* Metro Select Container */
+        .metro-select-container {
+            position: relative;
+        }
+
+        /* Metro Select Button (replaces native select visually) */
+        .metro-select-button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .metro-select-button:hover {
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        .metro-select-button:focus {
+            outline: none;
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        .metro-select-text {
+            flex: 1;
+            text-align: left;
+            color: #333;
+        }
+
+        /* Metro Dropdown Wrapper */
+        .metro-dropdown-wrapper {
+            position: fixed;
+            background: white;
+            border: 2px solid var(--ncrc-primary-blue);
+            border-radius: 8px;
+            z-index: 99999;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* Ensure only search box and dropdown list are visible */
+        .metro-dropdown-wrapper > * {
+            display: block;
+        }
+        
+        .metro-dropdown-wrapper .btn-group {
+            display: none !important;
+        }
+
+        /* Metro Search Box */
+        .metro-search-box {
+            position: relative;
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+            display: block !important;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .metro-search-box input {
+            width: 100%;
+            padding: 6px 28px 6px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .metro-search-box input:focus {
+            outline: none;
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        .metro-search-box i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            pointer-events: none;
+            font-size: 0.85rem;
+        }
+
+        .metro-dropdown {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .metro-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .metro-dropdown::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .metro-dropdown::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .metro-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        .metro-dropdown-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        .metro-dropdown-item:hover,
+        .metro-dropdown-item.selected {
+            background-color: #f0f7fa;
+        }
+
+        .metro-dropdown-item.selected {
+            background-color: #e3f2fd;
+            border-left: 3px solid var(--ncrc-primary-blue);
+        }
+
+        .metro-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .metro-dropdown-item.no-results {
+            color: #999;
+            cursor: default;
+        }
+
+        .metro-dropdown-item.no-results:hover {
+            background-color: transparent;
+        }
+        
+        /* Lender Select Container (similar to metro selector) */
+        .lender-select-container {
+            position: relative;
+        }
+
+        .lender-select-button {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .lender-select-button:hover {
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        .lender-select-button:focus {
+            outline: none;
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        .lender-select-text {
+            flex: 1;
+            text-align: left;
+            color: #333;
+        }
+
+        .lender-dropdown-wrapper {
+            position: fixed;
+            background: white;
+            border: 2px solid var(--ncrc-primary-blue);
+            border-radius: 8px;
+            z-index: 99999;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            display: none !important; /* Hidden by default */
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .lender-dropdown-wrapper.show {
+            display: flex !important; /* Show when active */
+        }
+
+        .lender-search-box {
+            position: relative;
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fafafa;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+
+        .lender-search-box input {
+            width: 100%;
+            padding: 6px 28px 6px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .lender-search-box input:focus {
+            outline: none;
+            border-color: var(--ncrc-primary-blue);
+        }
+
+        .lender-search-box i {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            pointer-events: none;
+            font-size: 0.85rem;
+        }
+
+        .lender-dropdown {
+            flex: 1;
+            overflow-y: auto;
+            min-height: 0;
+        }
+
+        .lender-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .lender-dropdown::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .lender-dropdown::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+
+        .lender-dropdown::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        .lender-dropdown-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+            font-size: 0.9rem;
+            line-height: 1.3;
+        }
+
+        .lender-dropdown-item:hover,
+        .lender-dropdown-item.selected {
+            background-color: #f0f7fa;
+        }
+
+        .lender-dropdown-item.selected {
+            background-color: #e3f2fd;
+            border-left: 3px solid var(--ncrc-primary-blue);
+        }
+
+        .lender-dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .lender-dropdown-item.no-results {
+            color: #999;
+            cursor: default;
+        }
+
+        .lender-dropdown-item.no-results:hover {
+            background-color: transparent;
+        }
+        
+        /* Autocomplete Dropdown */
+        .autocomplete-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid var(--ncrc-primary-blue);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: -2px;
+        }
+        
+        .autocomplete-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s ease;
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        
+        .autocomplete-item:hover,
+        .autocomplete-item.selected {
+            background-color: #f0f7fa;
+        }
+        
+        .autocomplete-item-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+        
+        .autocomplete-item-location {
+            font-size: 0.85rem;
+            color: #666;
+        }
+        
+        .autocomplete-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        
+        .autocomplete-item-name {
+            flex: 1;
+        }
+        
+        .verification-badge {
+            font-size: 0.75rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        
+        .verification-badge.high {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .verification-badge.medium {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .verification-badge.low {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .autocomplete-item-distinguishing {
+            font-size: 0.8rem;
+            color: #555;
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .verification-warnings {
+            font-size: 0.75rem;
+            color: #856404;
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .verification-warnings i {
+            font-size: 0.7rem;
+        }
+        
+        .autocomplete-item.verified-high {
+            border-left: 3px solid #28a745;
+        }
+        
+        .autocomplete-item.verified-medium {
+            border-left: 3px solid #ffc107;
+        }
+        
+        .autocomplete-item.verified-low {
+            border-left: 3px solid #dc3545;
+        }
+        
+        .autocomplete-item.loading,
+        .autocomplete-item.no-results,
+        .autocomplete-item.error {
+            padding: 16px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            cursor: default;
+        }
+        
+        .autocomplete-item.error {
+            color: #e82e2e;
+        }
+        
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--ncrc-primary-blue);
+            color: white;
+        }
+        
+        .btn-primary:hover:not(:disabled) {
+            background: var(--ncrc-dark-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(3, 78, 160, 0.3);
+        }
+        
+        .btn-primary:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+            justify-content: flex-end;
+        }
+        
+        /* Checkbox Groups */
+        /* County Chips Container - scrollable box within feature card */
+        .county-tiles-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+            min-height: 40px;
+            max-height: 120px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 6px;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            background: #fafafa;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+            flex-shrink: 0;
+            align-content: flex-start;
+        }
+
+        .county-tiles-container::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .county-tiles-container::-webkit-scrollbar-track {
+            background: #e8e8e8;
+            border-radius: 6px;
+            border: 1px solid #d0d0d0;
+        }
+
+        .county-tiles-container::-webkit-scrollbar-thumb {
+            background: #999;
+            border-radius: 6px;
+            border: 2px solid #e8e8e8;
+        }
+
+        .county-tiles-container::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        /* Firefox scrollbar */
+        .county-tiles-container {
+            scrollbar-width: auto;
+            scrollbar-color: #999 #e8e8e8;
+        }
+
+        /* LOCKED: Part of Area Analysis Structure - County chip styling */
+        /* County Chip Style */
+        .county-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #e9ecef;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            color: #333;
+            flex-shrink: 0;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+        }
+        
+        .county-chip.selected {
+            background: #d1ecf1;
+            border: 1px solid var(--ncrc-primary-blue);
+            color: var(--ncrc-dark-blue);
+        }
+        
+        .county-chip:hover {
+            background: #dee2e6;
+        }
+        
+        .county-chip.selected:hover {
+            background: #bee5eb;
+        }
+
+        .county-chip-text {
+            white-space: nowrap;
+        }
+
+        .remove-chip {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            line-height: 1;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 16px;
+            height: 16px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .remove-chip:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .remove-chip:focus {
+            outline: 2px solid var(--ncrc-primary-blue);
+            outline-offset: 2px;
+        }
+
+        /* Filter Groups Container */
+        .filter-groups-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px 24px;
+            align-items: start;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 0;
+            min-width: 0;
+        }
+        
+        .filter-group-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--ncrc-dark-blue);
+            margin-bottom: 4px;
+        }
+        
+        .filter-toggle-container {
+            margin-top: 4px;
+        }
+        
+        .filter-toggle-wrapper {
+            display: inline-flex;
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 2px;
+            gap: 2px;
+        }
+        
+        .filter-toggle-option {
+            padding: 6px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        
+        .filter-toggle-option:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .filter-toggle-option.active {
+            background: white;
+            color: var(--ncrc-dark-blue);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-category {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .filter-category-label {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .filter-chips-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: #333;
+            flex-shrink: 0;
+            box-sizing: border-box;
+        }
+
+        .filter-chip-label {
+            white-space: nowrap;
+        }
+
+        .filter-chip-count {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .filter-chip-remove {
+            background: none;
+            border: none;
+            font-size: 0.9rem;
+            line-height: 1;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 18px;
+            height: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .filter-chip-remove:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .filter-chip-remove:focus {
+            outline: 2px solid var(--ncrc-primary-blue);
+            outline-offset: 2px;
+        }
+
+        .filter-editor-panel {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        /* Validation Feedback */
+        .validation-feedback {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            margin-top: 8px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .validation-feedback.valid {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+
+        .validation-feedback.invalid {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #f44336;
+        }
+
+        .validation-feedback i {
+            font-size: 1rem;
+        }
+
+        .checkbox-group {
+            display: grid;
+            gap: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .checkbox-group::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .checkbox-group::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+
+        .checkbox-group::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 4px;
+        }
+
+        .checkbox-group::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+        }
+
+        .checkbox-item:hover {
+            border-color: var(--ncrc-secondary-blue);
+            background: #f0f7fa;
+        }
+
+        .checkbox-item input[type="checkbox"],
+        .checkbox-item input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            cursor: pointer;
+        }
+        
+        /* Info Badge */
+        .info-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #e3f2fd;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #1976d2;
+            margin-top: 8px;
+        }
+        
+        /* Tooltip */
+        .tooltip-icon {
+            position: relative;
+            cursor: help;
+            color: var(--ncrc-secondary-blue);
+        }
+        
+        .tooltip-content {
+            display: none;
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #333;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            width: 250px;
+            font-size: 0.85rem;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        .tooltip-icon:hover .tooltip-content {
+            display: block;
+        }
+        
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loading-overlay.active {
+            display: flex;
+        }
+        
+        .loading-content {
+            text-align: center;
+        }
+        
+        .pulsating-logo {
+            width: 150px;
+            height: auto;
+            max-width: 150px;
+            max-height: 150px;
+            margin: 0 auto 24px;
+            animation: pulse 1.5s ease-in-out infinite;
+            object-fit: contain;
+            display: block;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
+        }
+        
+        .loading-text {
+            color: white;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+        
+        /* Disclaimer Box */
+        .disclaimer-box {
+            padding: 20px;
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .disclaimer-box h4 {
+            margin-top: 0;
+            color: #856404;
+        }
+        
+        .disclaimer-box p {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+        
+        .disclaimer-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 16px;
+        }
+        
+        .disclaimer-checkbox input {
+            width: 20px;
+            height: 20px;
+        }
+        
+        /* Lender Confirmation Card */
+        .lender-info-block {
+            background: #f8f9fa;
+            border: 2px solid var(--ncrc-primary-blue);
+            border-radius: 8px;
+            padding: 16px;
+            background: white;
+        }
+        
+        .lender-info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .lender-info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .lender-info-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .lender-info-value {
+            font-size: 0.9rem;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .lender-info-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .lender-info-status.active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .lender-info-status.inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .lender-info-status.unknown {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .lender-info-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .lender-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .lender-info-row:last-child {
+            border-bottom: none;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .wizard-container {
+                flex-direction: column;
+                gap: 20px;
+                padding: 20px 10px;
+            }
+            
+            .step-card {
+                width: 100%;
+                min-width: auto;
+                max-width: 400px;
+                height: 350px;
+            }
+            
+            .step-card.upcoming,
+            .step-card.completed {
+                display: none;
+            }
+            
+            .step-card.active {
+                display: flex;
+            }
+            
+            .analysis-type-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Header (same as LendSight) -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    </a>
+                </div>
+                <div class="header-title-section">
+                    <h1>DataExplorer</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite" aria-busy="false">
+        <div class="loading-content">
+            <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" 
+                 alt="NCRC Logo" 
+                 class="pulsating-logo">
+            <div class="loading-text" id="loadingText">Loading...</div>
+            <div class="loading-progress">
+                <div class="loading-progress-bar"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Wizard Container -->
+    <div class="wizard-wrapper">
+        <!-- Progressive Disclosure: Summary Bar (will be inserted by JS) -->
+        
+        <div class="wizard-container" id="wizardContainer">
+            <!-- Cards will be dynamically inserted here -->
+        </div>
+        
+        <!-- Mobile Swipe Indicator -->
+        <div class="swipe-indicator" id="swipeIndicator" aria-hidden="true">
+            <i class="fas fa-chevron-left"></i>
+            <span>Swipe to navigate</span>
+            <i class="fas fa-chevron-right"></i>
+        </div>
+    </div>
+    
+    <!-- Footer (same as LendSight) -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>DataExplorer</h4>
+                <p>Interactive financial data analysis platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - DataExplorer. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wizard-steps.js') }}"></script>
+    <script>
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all features
+            initializeSmartDefaults();
+            // createSummaryBar(); // Removed - summary bar not needed
+            initSwipeGestures();
+            initAccessibility();
+            initWizard();
+            
+            // Hide swipe indicator on desktop
+            if (window.innerWidth > 768) {
+                document.getElementById('swipeIndicator').style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

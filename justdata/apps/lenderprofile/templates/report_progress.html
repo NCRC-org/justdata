@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generating Report - LenderProfile</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .progress-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 60px 40px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .logo-container {
+            margin-bottom: 40px;
+        }
+        
+        .pulsing-logo {
+            max-height: 120px;
+            width: auto;
+            margin: 0 auto;
+            display: block;
+            animation: pulse 1.5s ease-in-out infinite;
+            filter: brightness(0); /* Make logo black */
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.9;
+            }
+        }
+        
+        h1 {
+            color: #034ea0;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        
+        .subtitle {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+        
+        .progress-bar-container {
+            width: 100%;
+            height: 8px;
+            background: #e0e0e0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #034ea0 0%, #0066cc 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        
+        .progress-text {
+            color: #034ea0;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            min-height: 24px;
+        }
+        
+        .progress-percent {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        
+        .error-message {
+            color: #dc3545;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .back-link {
+            margin-top: 30px;
+            display: inline-block;
+            color: #034ea0;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        
+        .back-link:hover {
+            color: #0066cc;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-container">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" 
+                 alt="NCRC Logo" 
+                 class="pulsing-logo"
+                 onerror="this.style.display='none';">
+        </div>
+        
+        <h1>Generating Intelligence Report</h1>
+        <p class="subtitle">Please wait while we collect and analyze data...</p>
+        
+        <div class="progress-bar-container">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="progress-text" id="progressText">Initializing...</div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+        
+        <div class="error-message" id="errorMessage"></div>
+        
+        <a href="/" class="back-link" id="backLink" style="display: none;">
+            <i class="fas fa-arrow-left"></i> Return to Search
+        </a>
+    </div>
+
+    <script>
+        const jobId = '{{ job_id }}';
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        const errorMessage = document.getElementById('errorMessage');
+        const backLink = document.getElementById('backLink');
+        
+        let eventSource = null;
+        
+        function connectProgress() {
+            eventSource = new EventSource(`/progress/${jobId}`);
+            
+            eventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.error) {
+                        showError(data.error);
+                        return;
+                    }
+                    
+                    if (data.done) {
+                        // Report is ready - redirect to report page
+                        window.location.href = `/report/${jobId}`;
+                        return;
+                    }
+                    
+                    // Update progress
+                    const percent = data.percent || 0;
+                    const step = data.step || 'Processing...';
+                    
+                    progressBar.style.width = percent + '%';
+                    progressText.textContent = step;
+                    progressPercent.textContent = percent + '%';
+                } catch (e) {
+                    console.error('Error parsing progress data:', e);
+                }
+            };
+            
+            eventSource.onerror = function(event) {
+                console.error('EventSource error:', event);
+                // Try to reconnect after a delay
+                setTimeout(() => {
+                    if (eventSource && eventSource.readyState === EventSource.CLOSED) {
+                        connectProgress();
+                    }
+                }, 2000);
+            };
+        }
+        
+        function showError(message) {
+            errorMessage.textContent = message || 'An error occurred while generating the report.';
+            errorMessage.classList.add('show');
+            backLink.style.display = 'inline-block';
+            
+            if (eventSource) {
+                eventSource.close();
+            }
+        }
+        
+        // Start progress tracking
+        connectProgress();
+        
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (eventSource) {
+                eventSource.close();
+            }
+        });
+    </script>
+</body>
+</html>
+

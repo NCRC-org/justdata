@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoanTrends - JustData</title>
+    <meta name="description" content="AI-powered national mortgage lending trends analyzer using CFPB Quarterly Data Graph API. Generate comprehensive quarterly trends reports with AI insights.">
+    <meta name="keywords" content="LoanTrends, mortgage, lending trends, HMDA, quarterly data, AI, CFPB, market intelligence">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    </a>
+                </div>
+                <div class="header-title-section">
+                    <h1>LoanTrends</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Return to JustData Home Button -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
+        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+            <i class="fas fa-arrow-left"></i> Return to JustData Home
+        </a>
+    </div>
+
+    <div class="container">
+        <!-- Main Content -->
+        <div class="content-wrapper">
+        <main class="main-content">
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-line"></i> Generate National Quarterly Trends Analysis</h2>
+                    <p>Select metrics and time period to analyze national mortgage lending trends</p>
+                </div>
+
+                <form id="analysisForm" class="analysis-form">
+                    <!-- Metric Selection -->
+                    <div class="form-group">
+                        <label style="display: block; margin-bottom: 12px; font-weight: 600; font-size: 1rem;">
+                            <i class="fas fa-chart-bar" style="margin-right: 8px; color: var(--ncrc-dark-blue);"></i>
+                            Select Metrics to Analyze <span style="color: red;">*</span>
+                        </label>
+                        <small class="help-text" style="margin-bottom: 15px; display: block;">
+                            <i class="fas fa-info-circle"></i>
+                            Select one or more metrics from the categories below. You can select metrics from multiple categories.
+                        </small>
+                        
+                        <!-- Loan & Application Counts -->
+                        <div class="metric-category" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--ncrc-dark-blue);">Loan & Application Counts</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="applications" style="margin-right: 8px;">
+                                    <span>Applications</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="loans" style="margin-right: 8px;">
+                                    <span>Loans (Originations)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Credit Metrics -->
+                        <div class="metric-category" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--ncrc-dark-blue);">Credit Metrics</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="credit-scores" style="margin-right: 8px;">
+                                    <span>Credit Scores</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="credit-scores-cc-re" style="margin-right: 8px;">
+                                    <span>Credit Scores (CC by Race/Ethnicity)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="credit-scores-fha-re" style="margin-right: 8px;">
+                                    <span>Credit Scores (FHA by Race/Ethnicity)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Loan Characteristics -->
+                        <div class="metric-category" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--ncrc-dark-blue);">Loan Characteristics</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="ltv" style="margin-right: 8px;">
+                                    <span>Loan-to-Value (LTV)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="dti" style="margin-right: 8px;">
+                                    <span>Debt-to-Income (DTI)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Market Dynamics -->
+                        <div class="metric-category" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <h4 style="margin: 0 0 10px 0; color: var(--ncrc-dark-blue);">Market Dynamics</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="interest-rates" style="margin-right: 8px;">
+                                    <span>Interest Rates</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="denials" style="margin-right: 8px;">
+                                    <span>Denial Rates</span>
+                                </label>
+                                <label style="display: flex; align-items: center; padding: 10px; background: white; border: 2px solid #e0e0e0; border-radius: 6px; cursor: pointer;">
+                                    <input type="checkbox" name="selected_endpoints" value="tlc" style="margin-right: 8px;">
+                                    <span>Total Loan Costs</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time Period Selection -->
+                    <div class="form-group">
+                        <label for="time_period" style="display: block; margin-bottom: 12px; font-weight: 600; font-size: 1rem;">
+                            <i class="fas fa-calendar-alt" style="margin-right: 8px; color: var(--ncrc-dark-blue);"></i>
+                            Time Period
+                        </label>
+                        <select id="time_period" name="time_period" style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1rem; margin-bottom: 10px;">
+                            <option value="all" selected>Last 12 Quarters (3 years, updates each quarter)</option>
+                            <option value="custom">Custom Range</option>
+                        </select>
+                        <small class="help-text" style="margin-top: 5px; display: block; font-size: 0.9rem; color: #666;">
+                            <i class="fas fa-info-circle"></i>
+                            The time period uses the most recent complete quarter as the end point, then goes back 12 quarters (3 years). It updates automatically each quarter as new data becomes available.
+                        </small>
+                        
+                        <!-- Custom Time Period (hidden by default) -->
+                        <div id="customTimePeriod" style="display: none; margin-top: 10px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <label for="start_quarter" style="display: block; margin-bottom: 5px; font-size: 0.9rem;">Start Quarter (e.g., 2020-Q1)</label>
+                                    <input type="text" id="start_quarter" name="start_quarter" placeholder="2020-Q1" style="width: 100%; padding: 10px; border: 2px solid #e1e5e9; border-radius: 6px;">
+                                </div>
+                                <div>
+                                    <label for="end_quarter" style="display: block; margin-bottom: 5px; font-size: 0.9rem;">End Quarter (e.g., 2024-Q4)</label>
+                                    <input type="text" id="end_quarter" name="end_quarter" placeholder="2024-Q4" style="width: 100%; padding: 10px; border: 2px solid #e1e5e9; border-radius: 6px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="submitBtn">
+                        <i class="fas fa-magic"></i>
+                        <span>Generate Analysis</span>
+                    </button>
+                    <small class="submit-info">
+                        <i class="fas fa-clock"></i>
+                        Analysis typically takes 1-3 minutes
+                    </small>
+                </form>
+
+                <!-- Progress Section -->
+                <div id="progressSection" class="progress-section" style="display: none;">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <h3>Analyzing Data...</h3>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">Initializing analysis...</p>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" class="results-section" style="display: none;">
+                    <div class="results-card">
+                        <div class="results-header">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>Analysis Complete!</h3>
+                        </div>
+                        <div class="results-content">
+                            <p>Your analysis is ready. Click the button below to view the full report.</p>
+                            <a id="viewReportBtn" href="#" class="btn btn-primary" style="display: inline-block; padding: 12px 24px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; margin-top: 15px;">
+                                <i class="fas fa-file-alt"></i> View Full Report
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="errorSection" class="error-section" style="display: none;">
+                    <div class="error-card">
+                        <div class="error-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Analysis Failed</h3>
+                        </div>
+                        <div class="error-content">
+                            <p id="errorMessage"></p>
+                            <button onclick="location.reload()" class="btn btn-primary">
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        </div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-star"></i> What You'll Get</h3>
+            <div class="sidebar-features">
+                <div class="feature-card" data-tooltip="National-level quarterly mortgage lending trends from CFPB HMDA Quarterly Data Graph API.">
+                    <h4>National Trends</h4>
+                </div>
+                <div class="feature-card" data-tooltip="AI-generated analysis of quarterly trends with 3-sentence intros and 2-paragraph narratives for each section.">
+                    <h4>AI Insights</h4>
+                </div>
+                <div class="feature-card" data-tooltip="Comprehensive tables showing quarterly data for selected metrics with trend analysis.">
+                    <h4>Data Tables</h4>
+                </div>
+                <div class="feature-card" data-tooltip="View formatted report with sections grouped by metric category.">
+                    <h4>Web Report</h4>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>LoanTrends</h4>
+                <p>AI-powered national mortgage trends intelligence platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - LoanTrends. Powered by AI and CFPB Quarterly Data API.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- app.js -->
+    <script src="{{ url_for('static', filename='js/app.js') }}?v={{ cache_buster }}"></script>
+</body>
+</html>
+
+
+
+

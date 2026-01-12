@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ institution_name | default('Lender') }} - Intelligence Report | LenderProfile</title>
+
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_v2.css') }}">
+</head>
+<body>
+    <!-- Compact Header -->
+    <header class="report-header">
+        <div class="header-inner">
+            <div class="header-left">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC" class="header-logo" onerror="this.style.display='none';">
+            </div>
+            <div class="header-center">
+                <span class="header-title">LenderProfile Intelligence</span>
+            </div>
+            <div class="header-right">
+                <button id="export-pdf-btn" class="btn-export"><i class="fas fa-file-pdf"></i> Export PDF</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Two-Column Layout -->
+    <main class="report-main">
+        <!-- Institution Header Bar -->
+        <div class="institution-header">
+            <h1 class="inst-name" id="inst-name">{{ institution_name | default('Loading...') }} <span class="inst-headquarters" id="inst-headquarters">{{ headquarters | default('') }}</span></h1>
+        </div>
+
+        <!-- Two Column Content -->
+        <div class="two-column-layout">
+            <!-- LEFT COLUMN: AI Summary, Strategy, Financials, M&A, Regulatory -->
+            <div class="col-left">
+
+                <!-- Executive Summary (AI generated) -->
+                <section id="sec-filings-section" class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-alt"></i> Executive Summary <span style="font-size: 0.6em; font-weight: normal;">(AI generated)</span></h2>
+                        <button id="view-summary-btn" class="btn-view-summary"><i class="fas fa-expand"></i> View Summary</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="sec-filings-findings" class="sec-findings">
+                            <!-- AI-generated bullet points populated by JS -->
+                        </div>
+                        <div id="sec-filings-no-data" class="no-data-message" style="display: none;">
+                            <em>No SEC filing data available for this institution.</em>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Executive Summary Modal -->
+                <div id="summary-modal" class="summary-modal">
+                    <div class="summary-modal-content">
+                        <div class="summary-modal-header">
+                            <h3>Executive Summary</h3>
+                            <div class="summary-modal-actions">
+                                <button id="copy-summary-btn" class="btn-copy-summary"><i class="fas fa-copy"></i> Copy</button>
+                                <button id="close-summary-modal" class="btn-close-modal"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                        <div id="summary-modal-body" class="summary-modal-body">
+                            <!-- Full summary text -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===================== DATA VISUALIZATIONS ===================== -->
+                <!-- Branch Network -->
+                <section id="branch-network-section" class="card visualization-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-map-marker-alt"></i> Branch Network</h2>
+                        <span class="badge">SOD Data</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="viz-row">
+                            <div class="viz-column">
+                                <h4>Branches by Year (click to select)</h4>
+                                <canvas id="branches-year-chart"></canvas>
+                            </div>
+                            <div class="viz-column">
+                                <h4>Branches by State</h4>
+                                <div id="branches-state-bubbles" class="bubble-chart">
+                                    <!-- Bubble chart populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Mortgage Loan Applications (HMDA) -->
+                <section id="hmda-section" class="card visualization-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-invoice-dollar"></i> Mortgage Loan Applications</h2>
+                        <span class="badge">HMDA Data</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="viz-row">
+                            <div class="viz-column">
+                                <h4>Applications by Year</h4>
+                                <canvas id="loans-year-chart" height="200"></canvas>
+                            </div>
+                            <div class="viz-column">
+                                <h4>Applications by State</h4>
+                                <div id="loans-state-bubbles" class="bubble-chart">
+                                    <!-- Bubble chart populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Small Business Lending (CRA) -->
+                <section id="sb-lending-section" class="card visualization-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-store"></i> Small Business Lending</h2>
+                        <span class="badge">CRA Data</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="viz-row">
+                            <div class="viz-column">
+                                <h4>Volume by Year <span style="color: #666; font-size: 0.8em;">(red line = national)</span></h4>
+                                <canvas id="sb-lending-year-chart" height="200"></canvas>
+                            </div>
+                            <div class="viz-column">
+                                <h4>Top States (% of Volume)</h4>
+                                <div id="sb-lending-state-bubbles" class="bubble-chart">
+                                    <!-- Bubble chart populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Consumer Complaints -->
+                <section id="complaints-section" class="card visualization-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-exclamation-circle"></i> Consumer Complaints <span id="complaints-as-of" style="font-size: 0.6em; font-weight: normal; color: #666;"></span></h2>
+                        <span class="badge">CFPB Data</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="viz-row">
+                            <div class="viz-column">
+                                <h4>Complaints by Year</h4>
+                                <canvas id="complaints-year-chart" height="200"></canvas>
+                            </div>
+                            <div class="viz-column">
+                                <h4>Complaints by Category</h4>
+                                <div id="complaints-category-bubbles" class="bubble-chart">
+                                    <!-- Bubble chart populated by JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- ===================== END VISUALIZATIONS ===================== -->
+
+                <!-- Business Strategy section removed -->
+                <!-- Risk Factors section removed -->
+                <!-- Financial Performance -->
+                <section id="fdic-financials-section" class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> Total Assets & Deposits</h2>
+                        <span class="badge">FDIC Call Reports - 5 Year Trend</span>
+                    </div>
+                    <div class="card-body" style="padding: 15px;">
+                        <canvas id="financial-chart" height="280"></canvas>
+                    </div>
+                </section>
+
+                <!-- M&A Activity section removed -->
+                <!-- Community Investment section removed -->
+            </div>
+
+            <!-- RIGHT COLUMN: Leadership, Congressional, Structure, News -->
+            <div class="col-right">
+
+                <!-- CEO / Leadership Card -->
+                <section class="card leadership-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-user-tie"></i> Executive Leadership</h2>
+                        <span class="badge">SEC DEF 14A</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="ceo-profile" id="ceo-profile">
+                            <div class="ceo-photo">
+                                <i class="fas fa-user-circle"></i>
+                            </div>
+                            <div class="ceo-info">
+                                <h3 class="ceo-name" id="ceo-name">{{ ceo_name | default('--') }}</h3>
+                                <span class="ceo-title" id="ceo-title">Chief Executive Officer</span>
+                                <span class="ceo-comp" id="ceo-comp">Total Comp: --</span>
+                            </div>
+                        </div>
+
+                        <div class="executives-table" id="executives-table">
+                            <h4>Top Executives</h4>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Title</th>
+                                        <th>Total Comp</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="executives-tbody">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="board-summary" id="board-summary">
+                            <h4>Board of Directors</h4>
+                            <p><span id="board-size">--</span> members</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Congressional Trading -->
+                <section class="card congressional-card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-landmark"></i> Congressional Trading</h2>
+                        <span class="badge">STOCK Act Data</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- Timeframe -->
+                        <div id="congress-timeframe" style="font-size: 0.85em; color: #666; margin-bottom: 10px;">
+                            Loading...
+                        </div>
+                        <!-- AI Sentiment Summary -->
+                        <div id="congress-ai-summary" class="ai-summary-box" style="background: #f8f9fa; border-left: 3px solid #007bff; padding: 10px 15px; margin-bottom: 15px; font-size: 0.9em; display: none;">
+                        </div>
+                        <!-- Politician Profiles -->
+                        <div class="congress-profiles" id="congress-profiles">
+                            <div class="profiles-list" id="politician-profiles-list">
+                                <p class="no-data">Loading...</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Corporate Structure -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-sitemap"></i> Corporate Structure</h2>
+                        <span class="badge">GLEIF + SEC</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="org-tree" id="org-tree">
+                            <!-- Parent company -->
+                            <div class="org-node parent" id="parent-company">
+                                <i class="fas fa-building"></i>
+                                <span class="org-name">{{ parent_name | default('Loading...') }}</span>
+                                {% if parent_ticker %}<span class="org-ticker">{{ parent_ticker }}</span>{% endif %}
+                            </div>
+                            <!-- Current entity -->
+                            <div class="org-node current" id="current-entity">
+                                <i class="fas fa-university"></i>
+                                <span class="org-name">{{ institution_name | default('') }}</span>
+                                <span class="org-badge">This Entity</span>
+                            </div>
+                            <!-- Subsidiaries -->
+                            <div class="subsidiaries-list" id="subsidiaries-list">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Recent News (categorized) -->
+                <section class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-newspaper"></i> Recent News</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="news-categories" id="news-categories">
+                            <span class="news-cat-badge regulatory" id="news-regulatory">0 Regulatory</span>
+                            <span class="news-cat-badge merger" id="news-merger">0 M&A</span>
+                            <span class="news-cat-badge leadership" id="news-leadership">0 Leadership</span>
+                        </div>
+                        <div class="news-feed" id="news-feed">
+                            <!-- News items populated by JS -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Seeking Alpha Analysis -->
+                <section class="card" id="seeking-alpha-section">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-line"></i> Seeking Alpha</h2>
+                        <span class="badge">Market Analysis</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="sa-ratings" id="sa-ratings" style="display: none; margin-bottom: 15px;">
+                            <span class="sa-rating-badge" id="sa-quant-rating"></span>
+                            <span class="sa-rating-badge" id="sa-wallst-rating"></span>
+                        </div>
+                        <div class="sa-articles" id="sa-articles">
+                            <p class="no-data">No Seeking Alpha articles available.</p>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="report-footer">
+        <div class="footer-inner">
+            <span>LenderProfile Intelligence by NCRC | Generated {{ generated_at | default('') }}</span>
+            <span>Data: SEC EDGAR, FDIC, GLEIF, CFPB, Quiver Quantitative, NewsAPI</span>
+        </div>
+    </footer>
+
+    <script>
+        // Report data from backend
+        window.reportData = {{ report | tojson if report else 'null' }};
+    </script>
+    <script src="{{ url_for('static', filename='js/report_v2.js') }}"></script>
+</body>
+</html>

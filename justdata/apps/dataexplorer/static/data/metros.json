@@ -1,0 +1,3774 @@
+{
+  "success": true,
+  "metros": [
+    {
+      "code": "10100",
+      "name": "Aberdeen, SD"
+    },
+    {
+      "code": "10140",
+      "name": "Aberdeen, WA"
+    },
+    {
+      "code": "10180",
+      "name": "Abilene, TX"
+    },
+    {
+      "code": "10220",
+      "name": "Ada, OK"
+    },
+    {
+      "code": "10300",
+      "name": "Adrian, MI"
+    },
+    {
+      "code": "10380",
+      "name": "Aguadilla-Isabela, PR"
+    },
+    {
+      "code": "10420",
+      "name": "Akron, OH"
+    },
+    {
+      "code": "10460",
+      "name": "Alamogordo, NM"
+    },
+    {
+      "code": "10500",
+      "name": "Albany, GA"
+    },
+    {
+      "code": "10540",
+      "name": "Albany-Lebanon, OR"
+    },
+    {
+      "code": "10580",
+      "name": "Albany-Schenectady-Troy, NY"
+    },
+    {
+      "code": "10620",
+      "name": "Albemarle, NC"
+    },
+    {
+      "code": "10660",
+      "name": "Albert Lea, MN"
+    },
+    {
+      "code": "10700",
+      "name": "Albertville, AL"
+    },
+    {
+      "code": "10740",
+      "name": "Albuquerque, NM"
+    },
+    {
+      "code": "10760",
+      "name": "Alexander City, AL"
+    },
+    {
+      "code": "10780",
+      "name": "Alexandria, LA"
+    },
+    {
+      "code": "10820",
+      "name": "Alexandria, MN"
+    },
+    {
+      "code": "10860",
+      "name": "Alice, TX"
+    },
+    {
+      "code": "10900",
+      "name": "Allentown-Bethlehem-Easton, PA-NJ"
+    },
+    {
+      "code": "10940",
+      "name": "Alma, MI"
+    },
+    {
+      "code": "10980",
+      "name": "Alpena, MI"
+    },
+    {
+      "code": "11020",
+      "name": "Altoona, PA"
+    },
+    {
+      "code": "11060",
+      "name": "Altus, OK"
+    },
+    {
+      "code": "11100",
+      "name": "Amarillo, TX"
+    },
+    {
+      "code": "11140",
+      "name": "Americus, GA"
+    },
+    {
+      "code": "11180",
+      "name": "Ames, IA"
+    },
+    {
+      "code": "11220",
+      "name": "Amsterdam, NY"
+    },
+    {
+      "code": "11260",
+      "name": "Anchorage, AK"
+    },
+    {
+      "code": "11380",
+      "name": "Andrews, TX"
+    },
+    {
+      "code": "11420",
+      "name": "Angola, IN"
+    },
+    {
+      "code": "11460",
+      "name": "Ann Arbor, MI"
+    },
+    {
+      "code": "11500",
+      "name": "Anniston-Oxford, AL"
+    },
+    {
+      "code": "11540",
+      "name": "Appleton, WI"
+    },
+    {
+      "code": "11580",
+      "name": "Arcadia, FL"
+    },
+    {
+      "code": "11620",
+      "name": "Ardmore, OK"
+    },
+    {
+      "code": "11640",
+      "name": "Arecibo, PR"
+    },
+    {
+      "code": "11660",
+      "name": "Arkadelphia, AR"
+    },
+    {
+      "code": "11700",
+      "name": "Asheville, NC"
+    },
+    {
+      "code": "11740",
+      "name": "Ashland, OH"
+    },
+    {
+      "code": "11780",
+      "name": "Ashtabula, OH"
+    },
+    {
+      "code": "11820",
+      "name": "Astoria, OR"
+    },
+    {
+      "code": "11860",
+      "name": "Atchison, KS"
+    },
+    {
+      "code": "11900",
+      "name": "Athens, OH"
+    },
+    {
+      "code": "11940",
+      "name": "Athens, TN"
+    },
+    {
+      "code": "11980",
+      "name": "Athens, TX"
+    },
+    {
+      "code": "12020",
+      "name": "Athens-Clarke County, GA"
+    },
+    {
+      "code": "12060",
+      "name": "Atlanta-Sandy Springs-Alpharetta, GA"
+    },
+    {
+      "code": "12100",
+      "name": "Atlantic City-Hammonton, NJ"
+    },
+    {
+      "code": "12120",
+      "name": "Atmore, AL"
+    },
+    {
+      "code": "12140",
+      "name": "Auburn, IN"
+    },
+    {
+      "code": "12180",
+      "name": "Auburn, NY"
+    },
+    {
+      "code": "12220",
+      "name": "Auburn-Opelika, AL"
+    },
+    {
+      "code": "12260",
+      "name": "Augusta-Richmond County, GA-SC"
+    },
+    {
+      "code": "12300",
+      "name": "Augusta-Waterville, ME"
+    },
+    {
+      "code": "12380",
+      "name": "Austin, MN"
+    },
+    {
+      "code": "12420",
+      "name": "Austin-Round Rock-Georgetown, TX"
+    },
+    {
+      "code": "12460",
+      "name": "Bainbridge, GA"
+    },
+    {
+      "code": "12540",
+      "name": "Bakersfield, CA"
+    },
+    {
+      "code": "12580",
+      "name": "Baltimore-Columbia-Towson, MD"
+    },
+    {
+      "code": "12620",
+      "name": "Bangor, ME"
+    },
+    {
+      "code": "12660",
+      "name": "Baraboo, WI"
+    },
+    {
+      "code": "12680",
+      "name": "Bardstown, KY"
+    },
+    {
+      "code": "12700",
+      "name": "Barnstable Town, MA"
+    },
+    {
+      "code": "12740",
+      "name": "Barre, VT"
+    },
+    {
+      "code": "12780",
+      "name": "Bartlesville, OK"
+    },
+    {
+      "code": "12860",
+      "name": "Batavia, NY"
+    },
+    {
+      "code": "12900",
+      "name": "Batesville, AR"
+    },
+    {
+      "code": "12940",
+      "name": "Baton Rouge, LA"
+    },
+    {
+      "code": "12980",
+      "name": "Battle Creek, MI"
+    },
+    {
+      "code": "13020",
+      "name": "Bay City, MI"
+    },
+    {
+      "code": "13060",
+      "name": "Bay City, TX"
+    },
+    {
+      "code": "13100",
+      "name": "Beatrice, NE"
+    },
+    {
+      "code": "13140",
+      "name": "Beaumont-Port Arthur, TX"
+    },
+    {
+      "code": "13180",
+      "name": "Beaver Dam, WI"
+    },
+    {
+      "code": "13220",
+      "name": "Beckley, WV"
+    },
+    {
+      "code": "13260",
+      "name": "Bedford, IN"
+    },
+    {
+      "code": "13300",
+      "name": "Beeville, TX"
+    },
+    {
+      "code": "13340",
+      "name": "Bellefontaine, OH"
+    },
+    {
+      "code": "13380",
+      "name": "Bellingham, WA"
+    },
+    {
+      "code": "13420",
+      "name": "Bemidji, MN"
+    },
+    {
+      "code": "13460",
+      "name": "Bend, OR"
+    },
+    {
+      "code": "13500",
+      "name": "Bennettsville, SC"
+    },
+    {
+      "code": "13540",
+      "name": "Bennington, VT"
+    },
+    {
+      "code": "13620",
+      "name": "Berlin, NH"
+    },
+    {
+      "code": "13660",
+      "name": "Big Rapids, MI"
+    },
+    {
+      "code": "13700",
+      "name": "Big Spring, TX"
+    },
+    {
+      "code": "13720",
+      "name": "Big Stone Gap, VA"
+    },
+    {
+      "code": "13740",
+      "name": "Billings, MT"
+    },
+    {
+      "code": "13780",
+      "name": "Binghamton, NY"
+    },
+    {
+      "code": "13820",
+      "name": "Birmingham-Hoover, AL"
+    },
+    {
+      "code": "13900",
+      "name": "Bismarck, ND"
+    },
+    {
+      "code": "13940",
+      "name": "Blackfoot, ID"
+    },
+    {
+      "code": "13980",
+      "name": "Blacksburg-Christiansburg, VA"
+    },
+    {
+      "code": "14010",
+      "name": "Bloomington, IL"
+    },
+    {
+      "code": "14020",
+      "name": "Bloomington, IN"
+    },
+    {
+      "code": "14100",
+      "name": "Bloomsburg-Berwick, PA"
+    },
+    {
+      "code": "14140",
+      "name": "Bluefield, WV-VA"
+    },
+    {
+      "code": "14160",
+      "name": "Bluffton, IN"
+    },
+    {
+      "code": "14180",
+      "name": "Blytheville, AR"
+    },
+    {
+      "code": "14220",
+      "name": "Bogalusa, LA"
+    },
+    {
+      "code": "14260",
+      "name": "Boise City, ID"
+    },
+    {
+      "code": "14300",
+      "name": "Bonham, TX"
+    },
+    {
+      "code": "14380",
+      "name": "Boone, NC"
+    },
+    {
+      "code": "14420",
+      "name": "Borger, TX"
+    },
+    {
+      "code": "14460",
+      "name": "Boston-Cambridge-Newton, MA-NH"
+    },
+    {
+      "code": "14500",
+      "name": "Boulder, CO"
+    },
+    {
+      "code": "14540",
+      "name": "Bowling Green, KY"
+    },
+    {
+      "code": "14580",
+      "name": "Bozeman, MT"
+    },
+    {
+      "code": "14620",
+      "name": "Bradford, PA"
+    },
+    {
+      "code": "14660",
+      "name": "Brainerd, MN"
+    },
+    {
+      "code": "14700",
+      "name": "Branson, MO"
+    },
+    {
+      "code": "14720",
+      "name": "Breckenridge, CO"
+    },
+    {
+      "code": "14740",
+      "name": "Bremerton-Silverdale-Port Orchard, WA"
+    },
+    {
+      "code": "14780",
+      "name": "Brenham, TX"
+    },
+    {
+      "code": "14820",
+      "name": "Brevard, NC"
+    },
+    {
+      "code": "14860",
+      "name": "Bridgeport-Stamford-Danbury, CT"
+    },
+    {
+      "code": "15020",
+      "name": "Brookhaven, MS"
+    },
+    {
+      "code": "15060",
+      "name": "Brookings, OR"
+    },
+    {
+      "code": "15100",
+      "name": "Brookings, SD"
+    },
+    {
+      "code": "15140",
+      "name": "Brownsville, TN"
+    },
+    {
+      "code": "15180",
+      "name": "Brownsville-Harlingen, TX"
+    },
+    {
+      "code": "15220",
+      "name": "Brownwood, TX"
+    },
+    {
+      "code": "15260",
+      "name": "Brunswick, GA"
+    },
+    {
+      "code": "15340",
+      "name": "Bucyrus-Galion, OH"
+    },
+    {
+      "code": "15380",
+      "name": "Buffalo-Cheektowaga, NY"
+    },
+    {
+      "code": "15420",
+      "name": "Burley, ID"
+    },
+    {
+      "code": "15460",
+      "name": "Burlington, IA-IL"
+    },
+    {
+      "code": "15500",
+      "name": "Burlington, NC"
+    },
+    {
+      "code": "15540",
+      "name": "Burlington-South Burlington, VT"
+    },
+    {
+      "code": "15580",
+      "name": "Butte-Silver Bow, MT"
+    },
+    {
+      "code": "15620",
+      "name": "Cadillac, MI"
+    },
+    {
+      "code": "15660",
+      "name": "Calhoun, GA"
+    },
+    {
+      "code": "15680",
+      "name": "California-Lexington Park, MD"
+    },
+    {
+      "code": "15700",
+      "name": "Cambridge, MD"
+    },
+    {
+      "code": "15740",
+      "name": "Cambridge, OH"
+    },
+    {
+      "code": "15780",
+      "name": "Camden, AR"
+    },
+    {
+      "code": "15820",
+      "name": "Campbellsville, KY"
+    },
+    {
+      "code": "15940",
+      "name": "Canton-Massillon, OH"
+    },
+    {
+      "code": "15980",
+      "name": "Cape Coral-Fort Myers, FL"
+    },
+    {
+      "code": "16020",
+      "name": "Cape Girardeau, MO-IL"
+    },
+    {
+      "code": "16060",
+      "name": "Carbondale-Marion, IL"
+    },
+    {
+      "code": "16100",
+      "name": "Carlsbad-Artesia, NM"
+    },
+    {
+      "code": "16140",
+      "name": "Carroll, IA"
+    },
+    {
+      "code": "16180",
+      "name": "Carson City, NV"
+    },
+    {
+      "code": "16220",
+      "name": "Casper, WY"
+    },
+    {
+      "code": "15860",
+      "name": "Ca–on City, CO"
+    },
+    {
+      "code": "16260",
+      "name": "Cedar City, UT"
+    },
+    {
+      "code": "16300",
+      "name": "Cedar Rapids, IA"
+    },
+    {
+      "code": "16340",
+      "name": "Cedartown, GA"
+    },
+    {
+      "code": "16380",
+      "name": "Celina, OH"
+    },
+    {
+      "code": "16420",
+      "name": "Central City, KY"
+    },
+    {
+      "code": "16460",
+      "name": "Centralia, IL"
+    },
+    {
+      "code": "16500",
+      "name": "Centralia, WA"
+    },
+    {
+      "code": "16540",
+      "name": "Chambersburg-Waynesboro, PA"
+    },
+    {
+      "code": "16580",
+      "name": "Champaign-Urbana, IL"
+    },
+    {
+      "code": "16620",
+      "name": "Charleston, WV"
+    },
+    {
+      "code": "16660",
+      "name": "Charleston-Mattoon, IL"
+    },
+    {
+      "code": "16700",
+      "name": "Charleston-North Charleston, SC"
+    },
+    {
+      "code": "16740",
+      "name": "Charlotte-Concord-Gastonia, NC-SC"
+    },
+    {
+      "code": "16820",
+      "name": "Charlottesville, VA"
+    },
+    {
+      "code": "16860",
+      "name": "Chattanooga, TN-GA"
+    },
+    {
+      "code": "16940",
+      "name": "Cheyenne, WY"
+    },
+    {
+      "code": "16980",
+      "name": "Chicago-Naperville-Elgin, IL-IN-WI"
+    },
+    {
+      "code": "17020",
+      "name": "Chico, CA"
+    },
+    {
+      "code": "17060",
+      "name": "Chillicothe, OH"
+    },
+    {
+      "code": "17140",
+      "name": "Cincinnati, OH-KY-IN"
+    },
+    {
+      "code": "17220",
+      "name": "Clarksburg, WV"
+    },
+    {
+      "code": "17260",
+      "name": "Clarksdale, MS"
+    },
+    {
+      "code": "17300",
+      "name": "Clarksville, TN-KY"
+    },
+    {
+      "code": "17340",
+      "name": "Clearlake, CA"
+    },
+    {
+      "code": "17380",
+      "name": "Cleveland, MS"
+    },
+    {
+      "code": "17420",
+      "name": "Cleveland, TN"
+    },
+    {
+      "code": "17460",
+      "name": "Cleveland-Elyria, OH"
+    },
+    {
+      "code": "17500",
+      "name": "Clewiston, FL"
+    },
+    {
+      "code": "17540",
+      "name": "Clinton, IA"
+    },
+    {
+      "code": "17580",
+      "name": "Clovis, NM"
+    },
+    {
+      "code": "17620",
+      "name": "Coamo, PR"
+    },
+    {
+      "code": "17640",
+      "name": "Coco, PR"
+    },
+    {
+      "code": "17660",
+      "name": "Coeur d'Alene, ID"
+    },
+    {
+      "code": "17700",
+      "name": "Coffeyville, KS"
+    },
+    {
+      "code": "17740",
+      "name": "Coldwater, MI"
+    },
+    {
+      "code": "17780",
+      "name": "College Station-Bryan, TX"
+    },
+    {
+      "code": "17820",
+      "name": "Colorado Springs, CO"
+    },
+    {
+      "code": "17860",
+      "name": "Columbia, MO"
+    },
+    {
+      "code": "17900",
+      "name": "Columbia, SC"
+    },
+    {
+      "code": "17980",
+      "name": "Columbus, GA-AL"
+    },
+    {
+      "code": "18020",
+      "name": "Columbus, IN"
+    },
+    {
+      "code": "18060",
+      "name": "Columbus, MS"
+    },
+    {
+      "code": "18100",
+      "name": "Columbus, NE"
+    },
+    {
+      "code": "18140",
+      "name": "Columbus, OH"
+    },
+    {
+      "code": "18180",
+      "name": "Concord, NH"
+    },
+    {
+      "code": "18220",
+      "name": "Connersville, IN"
+    },
+    {
+      "code": "18260",
+      "name": "Cookeville, TN"
+    },
+    {
+      "code": "18300",
+      "name": "Coos Bay, OR"
+    },
+    {
+      "code": "18380",
+      "name": "Cordele, GA"
+    },
+    {
+      "code": "18420",
+      "name": "Corinth, MS"
+    },
+    {
+      "code": "18460",
+      "name": "Cornelia, GA"
+    },
+    {
+      "code": "18500",
+      "name": "Corning, NY"
+    },
+    {
+      "code": "18580",
+      "name": "Corpus Christi, TX"
+    },
+    {
+      "code": "18620",
+      "name": "Corsicana, TX"
+    },
+    {
+      "code": "18660",
+      "name": "Cortland, NY"
+    },
+    {
+      "code": "18700",
+      "name": "Corvallis, OR"
+    },
+    {
+      "code": "18740",
+      "name": "Coshocton, OH"
+    },
+    {
+      "code": "18780",
+      "name": "Craig, CO"
+    },
+    {
+      "code": "18820",
+      "name": "Crawfordsville, IN"
+    },
+    {
+      "code": "18860",
+      "name": "Crescent City, CA"
+    },
+    {
+      "code": "18880",
+      "name": "Crestview-Fort Walton Beach-Destin, FL"
+    },
+    {
+      "code": "18900",
+      "name": "Crossville, TN"
+    },
+    {
+      "code": "18980",
+      "name": "Cullman, AL"
+    },
+    {
+      "code": "19000",
+      "name": "Cullowhee, NC"
+    },
+    {
+      "code": "19060",
+      "name": "Cumberland, MD-WV"
+    },
+    {
+      "code": "19100",
+      "name": "Dallas-Fort Worth-Arlington, TX"
+    },
+    {
+      "code": "19140",
+      "name": "Dalton, GA"
+    },
+    {
+      "code": "19180",
+      "name": "Danville, IL"
+    },
+    {
+      "code": "19220",
+      "name": "Danville, KY"
+    },
+    {
+      "code": "19260",
+      "name": "Danville, VA"
+    },
+    {
+      "code": "19300",
+      "name": "Daphne-Fairhope-Foley, AL"
+    },
+    {
+      "code": "19340",
+      "name": "Davenport-Moline-Rock Island, IA-IL"
+    },
+    {
+      "code": "19420",
+      "name": "Dayton, TN"
+    },
+    {
+      "code": "19430",
+      "name": "Dayton-Kettering, OH"
+    },
+    {
+      "code": "19760",
+      "name": "DeRidder, LA"
+    },
+    {
+      "code": "19460",
+      "name": "Decatur, AL"
+    },
+    {
+      "code": "19500",
+      "name": "Decatur, IL"
+    },
+    {
+      "code": "19540",
+      "name": "Decatur, IN"
+    },
+    {
+      "code": "19580",
+      "name": "Defiance, OH"
+    },
+    {
+      "code": "19620",
+      "name": "Del Rio, TX"
+    },
+    {
+      "code": "19660",
+      "name": "Deltona-Daytona Beach-Ormond Beach, FL"
+    },
+    {
+      "code": "19700",
+      "name": "Deming, NM"
+    },
+    {
+      "code": "19740",
+      "name": "Denver-Aurora-Lakewood, CO"
+    },
+    {
+      "code": "19780",
+      "name": "Des Moines-West Des Moines, IA"
+    },
+    {
+      "code": "19820",
+      "name": "Detroit-Warren-Dearborn, MI"
+    },
+    {
+      "code": "19860",
+      "name": "Dickinson, ND"
+    },
+    {
+      "code": "19940",
+      "name": "Dixon, IL"
+    },
+    {
+      "code": "19980",
+      "name": "Dodge City, KS"
+    },
+    {
+      "code": "20020",
+      "name": "Dothan, AL"
+    },
+    {
+      "code": "20060",
+      "name": "Douglas, GA"
+    },
+    {
+      "code": "20100",
+      "name": "Dover, DE"
+    },
+    {
+      "code": "20180",
+      "name": "DuBois, PA"
+    },
+    {
+      "code": "20140",
+      "name": "Dublin, GA"
+    },
+    {
+      "code": "20220",
+      "name": "Dubuque, IA"
+    },
+    {
+      "code": "20260",
+      "name": "Duluth, MN-WI"
+    },
+    {
+      "code": "20300",
+      "name": "Dumas, TX"
+    },
+    {
+      "code": "20340",
+      "name": "Duncan, OK"
+    },
+    {
+      "code": "20420",
+      "name": "Durango, CO"
+    },
+    {
+      "code": "20460",
+      "name": "Durant, OK"
+    },
+    {
+      "code": "20500",
+      "name": "Durham-Chapel Hill, NC"
+    },
+    {
+      "code": "20540",
+      "name": "Dyersburg, TN"
+    },
+    {
+      "code": "20580",
+      "name": "Eagle Pass, TX"
+    },
+    {
+      "code": "20700",
+      "name": "East Stroudsburg, PA"
+    },
+    {
+      "code": "20660",
+      "name": "Easton, MD"
+    },
+    {
+      "code": "20740",
+      "name": "Eau Claire, WI"
+    },
+    {
+      "code": "20780",
+      "name": "Edwards, CO"
+    },
+    {
+      "code": "20820",
+      "name": "Effingham, IL"
+    },
+    {
+      "code": "20900",
+      "name": "El Campo, TX"
+    },
+    {
+      "code": "20940",
+      "name": "El Centro, CA"
+    },
+    {
+      "code": "20980",
+      "name": "El Dorado, AR"
+    },
+    {
+      "code": "21340",
+      "name": "El Paso, TX"
+    },
+    {
+      "code": "21020",
+      "name": "Elizabeth City, NC"
+    },
+    {
+      "code": "21060",
+      "name": "Elizabethtown-Fort Knox, KY"
+    },
+    {
+      "code": "21120",
+      "name": "Elk City, OK"
+    },
+    {
+      "code": "21140",
+      "name": "Elkhart-Goshen, IN"
+    },
+    {
+      "code": "21180",
+      "name": "Elkins, WV"
+    },
+    {
+      "code": "21220",
+      "name": "Elko, NV"
+    },
+    {
+      "code": "21260",
+      "name": "Ellensburg, WA"
+    },
+    {
+      "code": "21300",
+      "name": "Elmira, NY"
+    },
+    {
+      "code": "21380",
+      "name": "Emporia, KS"
+    },
+    {
+      "code": "21420",
+      "name": "Enid, OK"
+    },
+    {
+      "code": "21460",
+      "name": "Enterprise, AL"
+    },
+    {
+      "code": "21500",
+      "name": "Erie, PA"
+    },
+    {
+      "code": "21540",
+      "name": "Escanaba, MI"
+    },
+    {
+      "code": "21580",
+      "name": "Espa–ola, NM"
+    },
+    {
+      "code": "21640",
+      "name": "Eufaula, AL-GA"
+    },
+    {
+      "code": "21660",
+      "name": "Eugene-Springfield, OR"
+    },
+    {
+      "code": "21700",
+      "name": "Eureka-Arcata, CA"
+    },
+    {
+      "code": "21740",
+      "name": "Evanston, WY"
+    },
+    {
+      "code": "21780",
+      "name": "Evansville, IN-KY"
+    },
+    {
+      "code": "21820",
+      "name": "Fairbanks, AK"
+    },
+    {
+      "code": "21840",
+      "name": "Fairfield, IA"
+    },
+    {
+      "code": "21860",
+      "name": "Fairmont, MN"
+    },
+    {
+      "code": "21900",
+      "name": "Fairmont, WV"
+    },
+    {
+      "code": "21980",
+      "name": "Fallon, NV"
+    },
+    {
+      "code": "22020",
+      "name": "Fargo, ND-MN"
+    },
+    {
+      "code": "22060",
+      "name": "Faribault-Northfield, MN"
+    },
+    {
+      "code": "22100",
+      "name": "Farmington, MO"
+    },
+    {
+      "code": "22140",
+      "name": "Farmington, NM"
+    },
+    {
+      "code": "22180",
+      "name": "Fayetteville, NC"
+    },
+    {
+      "code": "22220",
+      "name": "Fayetteville-Springdale-Rogers, AR"
+    },
+    {
+      "code": "22260",
+      "name": "Fergus Falls, MN"
+    },
+    {
+      "code": "22280",
+      "name": "Fernley, NV"
+    },
+    {
+      "code": "22300",
+      "name": "Findlay, OH"
+    },
+    {
+      "code": "22340",
+      "name": "Fitzgerald, GA"
+    },
+    {
+      "code": "22380",
+      "name": "Flagstaff, AZ"
+    },
+    {
+      "code": "22420",
+      "name": "Flint, MI"
+    },
+    {
+      "code": "22500",
+      "name": "Florence, SC"
+    },
+    {
+      "code": "22520",
+      "name": "Florence-Muscle Shoals, AL"
+    },
+    {
+      "code": "22540",
+      "name": "Fond du Lac, WI"
+    },
+    {
+      "code": "22580",
+      "name": "Forest City, NC"
+    },
+    {
+      "code": "22620",
+      "name": "Forrest City, AR"
+    },
+    {
+      "code": "22660",
+      "name": "Fort Collins, CO"
+    },
+    {
+      "code": "22700",
+      "name": "Fort Dodge, IA"
+    },
+    {
+      "code": "22780",
+      "name": "Fort Leonard Wood, MO"
+    },
+    {
+      "code": "22800",
+      "name": "Fort Madison-Keokuk, IA-IL-MO"
+    },
+    {
+      "code": "22820",
+      "name": "Fort Morgan, CO"
+    },
+    {
+      "code": "22840",
+      "name": "Fort Payne, AL"
+    },
+    {
+      "code": "22860",
+      "name": "Fort Polk South, LA"
+    },
+    {
+      "code": "22900",
+      "name": "Fort Smith, AR-OK"
+    },
+    {
+      "code": "23060",
+      "name": "Fort Wayne, IN"
+    },
+    {
+      "code": "23140",
+      "name": "Frankfort, IN"
+    },
+    {
+      "code": "23180",
+      "name": "Frankfort, KY"
+    },
+    {
+      "code": "23240",
+      "name": "Fredericksburg, TX"
+    },
+    {
+      "code": "23300",
+      "name": "Freeport, IL"
+    },
+    {
+      "code": "23340",
+      "name": "Fremont, NE"
+    },
+    {
+      "code": "23380",
+      "name": "Fremont, OH"
+    },
+    {
+      "code": "23420",
+      "name": "Fresno, CA"
+    },
+    {
+      "code": "23460",
+      "name": "Gadsden, AL"
+    },
+    {
+      "code": "23500",
+      "name": "Gaffney, SC"
+    },
+    {
+      "code": "23540",
+      "name": "Gainesville, FL"
+    },
+    {
+      "code": "23580",
+      "name": "Gainesville, GA"
+    },
+    {
+      "code": "23620",
+      "name": "Gainesville, TX"
+    },
+    {
+      "code": "23660",
+      "name": "Galesburg, IL"
+    },
+    {
+      "code": "23700",
+      "name": "Gallup, NM"
+    },
+    {
+      "code": "23780",
+      "name": "Garden City, KS"
+    },
+    {
+      "code": "23820",
+      "name": "Gardnerville Ranchos, NV"
+    },
+    {
+      "code": "23860",
+      "name": "Georgetown, SC"
+    },
+    {
+      "code": "23900",
+      "name": "Gettysburg, PA"
+    },
+    {
+      "code": "23940",
+      "name": "Gillette, WY"
+    },
+    {
+      "code": "23980",
+      "name": "Glasgow, KY"
+    },
+    {
+      "code": "24020",
+      "name": "Glens Falls, NY"
+    },
+    {
+      "code": "24060",
+      "name": "Glenwood Springs, CO"
+    },
+    {
+      "code": "24100",
+      "name": "Gloversville, NY"
+    },
+    {
+      "code": "24140",
+      "name": "Goldsboro, NC"
+    },
+    {
+      "code": "24180",
+      "name": "Granbury, TX"
+    },
+    {
+      "code": "24220",
+      "name": "Grand Forks, ND-MN"
+    },
+    {
+      "code": "24260",
+      "name": "Grand Island, NE"
+    },
+    {
+      "code": "24300",
+      "name": "Grand Junction, CO"
+    },
+    {
+      "code": "24330",
+      "name": "Grand Rapids, MN"
+    },
+    {
+      "code": "24340",
+      "name": "Grand Rapids-Kentwood, MI"
+    },
+    {
+      "code": "24420",
+      "name": "Grants Pass, OR"
+    },
+    {
+      "code": "24380",
+      "name": "Grants, NM"
+    },
+    {
+      "code": "24460",
+      "name": "Great Bend, KS"
+    },
+    {
+      "code": "24500",
+      "name": "Great Falls, MT"
+    },
+    {
+      "code": "24540",
+      "name": "Greeley, CO"
+    },
+    {
+      "code": "24580",
+      "name": "Green Bay, WI"
+    },
+    {
+      "code": "24620",
+      "name": "Greeneville, TN"
+    },
+    {
+      "code": "24660",
+      "name": "Greensboro-High Point, NC"
+    },
+    {
+      "code": "24700",
+      "name": "Greensburg, IN"
+    },
+    {
+      "code": "24740",
+      "name": "Greenville, MS"
+    },
+    {
+      "code": "24780",
+      "name": "Greenville, NC"
+    },
+    {
+      "code": "24820",
+      "name": "Greenville, OH"
+    },
+    {
+      "code": "24860",
+      "name": "Greenville-Anderson, SC"
+    },
+    {
+      "code": "24900",
+      "name": "Greenwood, MS"
+    },
+    {
+      "code": "24940",
+      "name": "Greenwood, SC"
+    },
+    {
+      "code": "24980",
+      "name": "Grenada, MS"
+    },
+    {
+      "code": "25020",
+      "name": "Guayama, PR"
+    },
+    {
+      "code": "25060",
+      "name": "Gulfport-Biloxi, MS"
+    },
+    {
+      "code": "25100",
+      "name": "Guymon, OK"
+    },
+    {
+      "code": "25180",
+      "name": "Hagerstown-Martinsburg, MD-WV"
+    },
+    {
+      "code": "25200",
+      "name": "Hailey, ID"
+    },
+    {
+      "code": "25220",
+      "name": "Hammond, LA"
+    },
+    {
+      "code": "25260",
+      "name": "Hanford-Corcoran, CA"
+    },
+    {
+      "code": "25300",
+      "name": "Hannibal, MO"
+    },
+    {
+      "code": "25420",
+      "name": "Harrisburg-Carlisle, PA"
+    },
+    {
+      "code": "25460",
+      "name": "Harrison, AR"
+    },
+    {
+      "code": "25500",
+      "name": "Harrisonburg, VA"
+    },
+    {
+      "code": "25540",
+      "name": "Hartford-West Hartford-East Hartford, CT"
+    },
+    {
+      "code": "25580",
+      "name": "Hastings, NE"
+    },
+    {
+      "code": "25620",
+      "name": "Hattiesburg, MS"
+    },
+    {
+      "code": "25700",
+      "name": "Hays, KS"
+    },
+    {
+      "code": "25720",
+      "name": "Heber, UT"
+    },
+    {
+      "code": "25740",
+      "name": "Helena, MT"
+    },
+    {
+      "code": "25760",
+      "name": "Helena-West Helena, AR"
+    },
+    {
+      "code": "25780",
+      "name": "Henderson, NC"
+    },
+    {
+      "code": "25820",
+      "name": "Hereford, TX"
+    },
+    {
+      "code": "25840",
+      "name": "Hermiston-Pendleton, OR"
+    },
+    {
+      "code": "25860",
+      "name": "Hickory-Lenoir-Morganton, NC"
+    },
+    {
+      "code": "25880",
+      "name": "Hillsdale, MI"
+    },
+    {
+      "code": "25900",
+      "name": "Hilo, HI"
+    },
+    {
+      "code": "25940",
+      "name": "Hilton Head Island-Bluffton, SC"
+    },
+    {
+      "code": "25980",
+      "name": "Hinesville, GA"
+    },
+    {
+      "code": "26020",
+      "name": "Hobbs, NM"
+    },
+    {
+      "code": "26090",
+      "name": "Holland, MI"
+    },
+    {
+      "code": "26140",
+      "name": "Homosassa Springs, FL"
+    },
+    {
+      "code": "26220",
+      "name": "Hood River, OR"
+    },
+    {
+      "code": "26260",
+      "name": "Hope, AR"
+    },
+    {
+      "code": "26300",
+      "name": "Hot Springs, AR"
+    },
+    {
+      "code": "26340",
+      "name": "Houghton, MI"
+    },
+    {
+      "code": "26380",
+      "name": "Houma-Thibodaux, LA"
+    },
+    {
+      "code": "26420",
+      "name": "Houston-The Woodlands-Sugar Land, TX"
+    },
+    {
+      "code": "26460",
+      "name": "Hudson, NY"
+    },
+    {
+      "code": "26500",
+      "name": "Huntingdon, PA"
+    },
+    {
+      "code": "26540",
+      "name": "Huntington, IN"
+    },
+    {
+      "code": "26580",
+      "name": "Huntington-Ashland, WV-KY-OH"
+    },
+    {
+      "code": "26620",
+      "name": "Huntsville, AL"
+    },
+    {
+      "code": "26660",
+      "name": "Huntsville, TX"
+    },
+    {
+      "code": "26700",
+      "name": "Huron, SD"
+    },
+    {
+      "code": "26740",
+      "name": "Hutchinson, KS"
+    },
+    {
+      "code": "26780",
+      "name": "Hutchinson, MN"
+    },
+    {
+      "code": "26820",
+      "name": "Idaho Falls, ID"
+    },
+    {
+      "code": "26860",
+      "name": "Indiana, PA"
+    },
+    {
+      "code": "26900",
+      "name": "Indianapolis-Carmel-Anderson, IN"
+    },
+    {
+      "code": "26940",
+      "name": "Indianola, MS"
+    },
+    {
+      "code": "26980",
+      "name": "Iowa City, IA"
+    },
+    {
+      "code": "27020",
+      "name": "Iron Mountain, MI-WI"
+    },
+    {
+      "code": "27060",
+      "name": "Ithaca, NY"
+    },
+    {
+      "code": "27100",
+      "name": "Jackson, MI"
+    },
+    {
+      "code": "27140",
+      "name": "Jackson, MS"
+    },
+    {
+      "code": "27160",
+      "name": "Jackson, OH"
+    },
+    {
+      "code": "27180",
+      "name": "Jackson, TN"
+    },
+    {
+      "code": "27220",
+      "name": "Jackson, WY-ID"
+    },
+    {
+      "code": "27260",
+      "name": "Jacksonville, FL"
+    },
+    {
+      "code": "27300",
+      "name": "Jacksonville, IL"
+    },
+    {
+      "code": "27340",
+      "name": "Jacksonville, NC"
+    },
+    {
+      "code": "27380",
+      "name": "Jacksonville, TX"
+    },
+    {
+      "code": "27420",
+      "name": "Jamestown, ND"
+    },
+    {
+      "code": "27460",
+      "name": "Jamestown-Dunkirk-Fredonia, NY"
+    },
+    {
+      "code": "27500",
+      "name": "Janesville-Beloit, WI"
+    },
+    {
+      "code": "27530",
+      "name": "Jasper, AL"
+    },
+    {
+      "code": "27540",
+      "name": "Jasper, IN"
+    },
+    {
+      "code": "27580",
+      "name": "Jayuya, PR"
+    },
+    {
+      "code": "27620",
+      "name": "Jefferson City, MO"
+    },
+    {
+      "code": "27600",
+      "name": "Jefferson, GA"
+    },
+    {
+      "code": "27660",
+      "name": "Jennings, LA"
+    },
+    {
+      "code": "27700",
+      "name": "Jesup, GA"
+    },
+    {
+      "code": "27740",
+      "name": "Johnson City, TN"
+    },
+    {
+      "code": "27780",
+      "name": "Johnstown, PA"
+    },
+    {
+      "code": "27860",
+      "name": "Jonesboro, AR"
+    },
+    {
+      "code": "27900",
+      "name": "Joplin, MO"
+    },
+    {
+      "code": "27940",
+      "name": "Juneau, AK"
+    },
+    {
+      "code": "27980",
+      "name": "Kahului-Wailuku-Lahaina, HI"
+    },
+    {
+      "code": "28020",
+      "name": "Kalamazoo-Portage, MI"
+    },
+    {
+      "code": "28060",
+      "name": "Kalispell, MT"
+    },
+    {
+      "code": "28100",
+      "name": "Kankakee, IL"
+    },
+    {
+      "code": "28140",
+      "name": "Kansas City, MO-KS"
+    },
+    {
+      "code": "28180",
+      "name": "Kapaa, HI"
+    },
+    {
+      "code": "28260",
+      "name": "Kearney, NE"
+    },
+    {
+      "code": "28300",
+      "name": "Keene, NH"
+    },
+    {
+      "code": "28340",
+      "name": "Kendallville, IN"
+    },
+    {
+      "code": "28380",
+      "name": "Kennett, MO"
+    },
+    {
+      "code": "28420",
+      "name": "Kennewick-Richland, WA"
+    },
+    {
+      "code": "28500",
+      "name": "Kerrville, TX"
+    },
+    {
+      "code": "28540",
+      "name": "Ketchikan, AK"
+    },
+    {
+      "code": "28580",
+      "name": "Key West, FL"
+    },
+    {
+      "code": "28620",
+      "name": "Kill Devil Hills, NC"
+    },
+    {
+      "code": "28660",
+      "name": "Killeen-Temple, TX"
+    },
+    {
+      "code": "28700",
+      "name": "Kingsport-Bristol, TN-VA"
+    },
+    {
+      "code": "28740",
+      "name": "Kingston, NY"
+    },
+    {
+      "code": "28780",
+      "name": "Kingsville, TX"
+    },
+    {
+      "code": "28820",
+      "name": "Kinston, NC"
+    },
+    {
+      "code": "28860",
+      "name": "Kirksville, MO"
+    },
+    {
+      "code": "28900",
+      "name": "Klamath Falls, OR"
+    },
+    {
+      "code": "28940",
+      "name": "Knoxville, TN"
+    },
+    {
+      "code": "29020",
+      "name": "Kokomo, IN"
+    },
+    {
+      "code": "29100",
+      "name": "La Crosse-Onalaska, WI-MN"
+    },
+    {
+      "code": "29260",
+      "name": "La Grande, OR"
+    },
+    {
+      "code": "29300",
+      "name": "LaGrange, GA-AL"
+    },
+    {
+      "code": "29060",
+      "name": "Laconia, NH"
+    },
+    {
+      "code": "29180",
+      "name": "Lafayette, LA"
+    },
+    {
+      "code": "29200",
+      "name": "Lafayette-West Lafayette, IN"
+    },
+    {
+      "code": "29340",
+      "name": "Lake Charles, LA"
+    },
+    {
+      "code": "29380",
+      "name": "Lake City, FL"
+    },
+    {
+      "code": "29420",
+      "name": "Lake Havasu City-Kingman, AZ"
+    },
+    {
+      "code": "29460",
+      "name": "Lakeland-Winter Haven, FL"
+    },
+    {
+      "code": "29500",
+      "name": "Lamesa, TX"
+    },
+    {
+      "code": "29540",
+      "name": "Lancaster, PA"
+    },
+    {
+      "code": "29620",
+      "name": "Lansing-East Lansing, MI"
+    },
+    {
+      "code": "29660",
+      "name": "Laramie, WY"
+    },
+    {
+      "code": "29700",
+      "name": "Laredo, TX"
+    },
+    {
+      "code": "29740",
+      "name": "Las Cruces, NM"
+    },
+    {
+      "code": "29780",
+      "name": "Las Vegas, NM"
+    },
+    {
+      "code": "29820",
+      "name": "Las Vegas-Henderson-Paradise, NV"
+    },
+    {
+      "code": "29860",
+      "name": "Laurel, MS"
+    },
+    {
+      "code": "29900",
+      "name": "Laurinburg, NC"
+    },
+    {
+      "code": "29940",
+      "name": "Lawrence, KS"
+    },
+    {
+      "code": "29980",
+      "name": "Lawrenceburg, TN"
+    },
+    {
+      "code": "30020",
+      "name": "Lawton, OK"
+    },
+    {
+      "code": "30060",
+      "name": "Lebanon, MO"
+    },
+    {
+      "code": "30100",
+      "name": "Lebanon, NH-VT"
+    },
+    {
+      "code": "30140",
+      "name": "Lebanon, PA"
+    },
+    {
+      "code": "30220",
+      "name": "Levelland, TX"
+    },
+    {
+      "code": "30260",
+      "name": "Lewisburg, PA"
+    },
+    {
+      "code": "30280",
+      "name": "Lewisburg, TN"
+    },
+    {
+      "code": "30300",
+      "name": "Lewiston, ID-WA"
+    },
+    {
+      "code": "30340",
+      "name": "Lewiston-Auburn, ME"
+    },
+    {
+      "code": "30380",
+      "name": "Lewistown, PA"
+    },
+    {
+      "code": "30420",
+      "name": "Lexington, NE"
+    },
+    {
+      "code": "30460",
+      "name": "Lexington-Fayette, KY"
+    },
+    {
+      "code": "30580",
+      "name": "Liberal, KS"
+    },
+    {
+      "code": "30620",
+      "name": "Lima, OH"
+    },
+    {
+      "code": "30660",
+      "name": "Lincoln, IL"
+    },
+    {
+      "code": "30700",
+      "name": "Lincoln, NE"
+    },
+    {
+      "code": "30780",
+      "name": "Little Rock-North Little Rock-Conway, AR"
+    },
+    {
+      "code": "30820",
+      "name": "Lock Haven, PA"
+    },
+    {
+      "code": "30860",
+      "name": "Logan, UT-ID"
+    },
+    {
+      "code": "30900",
+      "name": "Logansport, IN"
+    },
+    {
+      "code": "30940",
+      "name": "London, KY"
+    },
+    {
+      "code": "30980",
+      "name": "Longview, TX"
+    },
+    {
+      "code": "31020",
+      "name": "Longview, WA"
+    },
+    {
+      "code": "31060",
+      "name": "Los Alamos, NM"
+    },
+    {
+      "code": "31080",
+      "name": "Los Angeles-Long Beach-Anaheim, CA"
+    },
+    {
+      "code": "31140",
+      "name": "Louisville/Jefferson County, KY-IN"
+    },
+    {
+      "code": "31180",
+      "name": "Lubbock, TX"
+    },
+    {
+      "code": "31220",
+      "name": "Ludington, MI"
+    },
+    {
+      "code": "31260",
+      "name": "Lufkin, TX"
+    },
+    {
+      "code": "31300",
+      "name": "Lumberton, NC"
+    },
+    {
+      "code": "31340",
+      "name": "Lynchburg, VA"
+    },
+    {
+      "code": "31380",
+      "name": "Macomb, IL"
+    },
+    {
+      "code": "31420",
+      "name": "Macon-Bibb County, GA"
+    },
+    {
+      "code": "31460",
+      "name": "Madera, CA"
+    },
+    {
+      "code": "31500",
+      "name": "Madison, IN"
+    },
+    {
+      "code": "31540",
+      "name": "Madison, WI"
+    },
+    {
+      "code": "31580",
+      "name": "Madisonville, KY"
+    },
+    {
+      "code": "31620",
+      "name": "Magnolia, AR"
+    },
+    {
+      "code": "31660",
+      "name": "Malone, NY"
+    },
+    {
+      "code": "31680",
+      "name": "Malvern, AR"
+    },
+    {
+      "code": "31700",
+      "name": "Manchester-Nashua, NH"
+    },
+    {
+      "code": "31740",
+      "name": "Manhattan, KS"
+    },
+    {
+      "code": "31820",
+      "name": "Manitowoc, WI"
+    },
+    {
+      "code": "31860",
+      "name": "Mankato, MN"
+    },
+    {
+      "code": "31900",
+      "name": "Mansfield, OH"
+    },
+    {
+      "code": "31930",
+      "name": "Marietta, OH"
+    },
+    {
+      "code": "31940",
+      "name": "Marinette, WI-MI"
+    },
+    {
+      "code": "31980",
+      "name": "Marion, IN"
+    },
+    {
+      "code": "32000",
+      "name": "Marion, NC"
+    },
+    {
+      "code": "32020",
+      "name": "Marion, OH"
+    },
+    {
+      "code": "32100",
+      "name": "Marquette, MI"
+    },
+    {
+      "code": "32140",
+      "name": "Marshall, MN"
+    },
+    {
+      "code": "32180",
+      "name": "Marshall, MO"
+    },
+    {
+      "code": "32260",
+      "name": "Marshalltown, IA"
+    },
+    {
+      "code": "32280",
+      "name": "Martin, TN"
+    },
+    {
+      "code": "32300",
+      "name": "Martinsville, VA"
+    },
+    {
+      "code": "32340",
+      "name": "Maryville, MO"
+    },
+    {
+      "code": "32380",
+      "name": "Mason City, IA"
+    },
+    {
+      "code": "32420",
+      "name": "MayagŸez, PR"
+    },
+    {
+      "code": "32460",
+      "name": "Mayfield, KY"
+    },
+    {
+      "code": "32500",
+      "name": "Maysville, KY"
+    },
+    {
+      "code": "32540",
+      "name": "McAlester, OK"
+    },
+    {
+      "code": "32580",
+      "name": "McAllen-Edinburg-Mission, TX"
+    },
+    {
+      "code": "32620",
+      "name": "McComb, MS"
+    },
+    {
+      "code": "32660",
+      "name": "McMinnville, TN"
+    },
+    {
+      "code": "32700",
+      "name": "McPherson, KS"
+    },
+    {
+      "code": "32740",
+      "name": "Meadville, PA"
+    },
+    {
+      "code": "32780",
+      "name": "Medford, OR"
+    },
+    {
+      "code": "32820",
+      "name": "Memphis, TN-MS-AR"
+    },
+    {
+      "code": "32860",
+      "name": "Menomonie, WI"
+    },
+    {
+      "code": "32900",
+      "name": "Merced, CA"
+    },
+    {
+      "code": "32940",
+      "name": "Meridian, MS"
+    },
+    {
+      "code": "33020",
+      "name": "Mexico, MO"
+    },
+    {
+      "code": "33060",
+      "name": "Miami, OK"
+    },
+    {
+      "code": "33100",
+      "name": "Miami-Fort Lauderdale-Pompano Beach, FL"
+    },
+    {
+      "code": "33140",
+      "name": "Michigan City-La Porte, IN"
+    },
+    {
+      "code": "33180",
+      "name": "Middlesborough, KY"
+    },
+    {
+      "code": "33220",
+      "name": "Midland, MI"
+    },
+    {
+      "code": "33260",
+      "name": "Midland, TX"
+    },
+    {
+      "code": "33300",
+      "name": "Milledgeville, GA"
+    },
+    {
+      "code": "33340",
+      "name": "Milwaukee-Waukesha, WI"
+    },
+    {
+      "code": "33380",
+      "name": "Minden, LA"
+    },
+    {
+      "code": "33420",
+      "name": "Mineral Wells, TX"
+    },
+    {
+      "code": "33460",
+      "name": "Minneapolis-St. Paul-Bloomington, MN-WI"
+    },
+    {
+      "code": "33500",
+      "name": "Minot, ND"
+    },
+    {
+      "code": "33540",
+      "name": "Missoula, MT"
+    },
+    {
+      "code": "33580",
+      "name": "Mitchell, SD"
+    },
+    {
+      "code": "33620",
+      "name": "Moberly, MO"
+    },
+    {
+      "code": "33660",
+      "name": "Mobile, AL"
+    },
+    {
+      "code": "33700",
+      "name": "Modesto, CA"
+    },
+    {
+      "code": "33740",
+      "name": "Monroe, LA"
+    },
+    {
+      "code": "33780",
+      "name": "Monroe, MI"
+    },
+    {
+      "code": "33860",
+      "name": "Montgomery, AL"
+    },
+    {
+      "code": "33940",
+      "name": "Montrose, CO"
+    },
+    {
+      "code": "33980",
+      "name": "Morehead City, NC"
+    },
+    {
+      "code": "34020",
+      "name": "Morgan City, LA"
+    },
+    {
+      "code": "34060",
+      "name": "Morgantown, WV"
+    },
+    {
+      "code": "34100",
+      "name": "Morristown, TN"
+    },
+    {
+      "code": "34140",
+      "name": "Moscow, ID"
+    },
+    {
+      "code": "34180",
+      "name": "Moses Lake, WA"
+    },
+    {
+      "code": "34220",
+      "name": "Moultrie, GA"
+    },
+    {
+      "code": "34340",
+      "name": "Mount Airy, NC"
+    },
+    {
+      "code": "34350",
+      "name": "Mount Gay-Shamrock, WV"
+    },
+    {
+      "code": "34380",
+      "name": "Mount Pleasant, MI"
+    },
+    {
+      "code": "34420",
+      "name": "Mount Pleasant, TX"
+    },
+    {
+      "code": "34460",
+      "name": "Mount Sterling, KY"
+    },
+    {
+      "code": "34500",
+      "name": "Mount Vernon, IL"
+    },
+    {
+      "code": "34540",
+      "name": "Mount Vernon, OH"
+    },
+    {
+      "code": "34580",
+      "name": "Mount Vernon-Anacortes, WA"
+    },
+    {
+      "code": "34260",
+      "name": "Mountain Home, AR"
+    },
+    {
+      "code": "34300",
+      "name": "Mountain Home, ID"
+    },
+    {
+      "code": "34620",
+      "name": "Muncie, IN"
+    },
+    {
+      "code": "34660",
+      "name": "Murray, KY"
+    },
+    {
+      "code": "34700",
+      "name": "Muscatine, IA"
+    },
+    {
+      "code": "34740",
+      "name": "Muskegon, MI"
+    },
+    {
+      "code": "34780",
+      "name": "Muskogee, OK"
+    },
+    {
+      "code": "34820",
+      "name": "Myrtle Beach-Conway-North Myrtle Beach, SC-NC"
+    },
+    {
+      "code": "34860",
+      "name": "Nacogdoches, TX"
+    },
+    {
+      "code": "34900",
+      "name": "Napa, CA"
+    },
+    {
+      "code": "34940",
+      "name": "Naples-Marco Island, FL"
+    },
+    {
+      "code": "34980",
+      "name": "Nashville-Davidson--Murfreesboro--Franklin, TN"
+    },
+    {
+      "code": "35020",
+      "name": "Natchez, MS-LA"
+    },
+    {
+      "code": "35060",
+      "name": "Natchitoches, LA"
+    },
+    {
+      "code": "35100",
+      "name": "New Bern, NC"
+    },
+    {
+      "code": "35220",
+      "name": "New Castle, IN"
+    },
+    {
+      "code": "35260",
+      "name": "New Castle, PA"
+    },
+    {
+      "code": "35300",
+      "name": "New Haven, CT"
+    },
+    {
+      "code": "35380",
+      "name": "New Orleans-Metairie, LA"
+    },
+    {
+      "code": "35420",
+      "name": "New Philadelphia-Dover, OH"
+    },
+    {
+      "code": "35580",
+      "name": "New Ulm, MN"
+    },
+    {
+      "code": "35620",
+      "name": "New York-Newark-Jersey City, NY-NJ-PA"
+    },
+    {
+      "code": "35140",
+      "name": "Newberry, SC"
+    },
+    {
+      "code": "35440",
+      "name": "Newport, OR"
+    },
+    {
+      "code": "35460",
+      "name": "Newport, TN"
+    },
+    {
+      "code": "35660",
+      "name": "Niles, MI"
+    },
+    {
+      "code": "35700",
+      "name": "Nogales, AZ"
+    },
+    {
+      "code": "35740",
+      "name": "Norfolk, NE"
+    },
+    {
+      "code": "35820",
+      "name": "North Platte, NE"
+    },
+    {
+      "code": "35840",
+      "name": "North Port-Sarasota-Bradenton, FL"
+    },
+    {
+      "code": "35860",
+      "name": "North Vernon, IN"
+    },
+    {
+      "code": "35900",
+      "name": "North Wilkesboro, NC"
+    },
+    {
+      "code": "35940",
+      "name": "Norwalk, OH"
+    },
+    {
+      "code": "35980",
+      "name": "Norwich-New London-Willimantic, CT"
+    },
+    {
+      "code": "36020",
+      "name": "Oak Harbor, WA"
+    },
+    {
+      "code": "36100",
+      "name": "Ocala, FL"
+    },
+    {
+      "code": "36140",
+      "name": "Ocean City, NJ"
+    },
+    {
+      "code": "36220",
+      "name": "Odessa, TX"
+    },
+    {
+      "code": "36260",
+      "name": "Ogden-Clearfield, UT"
+    },
+    {
+      "code": "36300",
+      "name": "Ogdensburg-Massena, NY"
+    },
+    {
+      "code": "36340",
+      "name": "Oil City, PA"
+    },
+    {
+      "code": "36380",
+      "name": "Okeechobee, FL"
+    },
+    {
+      "code": "36420",
+      "name": "Oklahoma City, OK"
+    },
+    {
+      "code": "36460",
+      "name": "Olean, NY"
+    },
+    {
+      "code": "36500",
+      "name": "Olympia-Lacey-Tumwater, WA"
+    },
+    {
+      "code": "36540",
+      "name": "Omaha-Council Bluffs, NE-IA"
+    },
+    {
+      "code": "36580",
+      "name": "Oneonta, NY"
+    },
+    {
+      "code": "36620",
+      "name": "Ontario, OR-ID"
+    },
+    {
+      "code": "36660",
+      "name": "Opelousas, LA"
+    },
+    {
+      "code": "36700",
+      "name": "Orangeburg, SC"
+    },
+    {
+      "code": "36740",
+      "name": "Orlando-Kissimmee-Sanford, FL"
+    },
+    {
+      "code": "36780",
+      "name": "Oshkosh-Neenah, WI"
+    },
+    {
+      "code": "36820",
+      "name": "Oskaloosa, IA"
+    },
+    {
+      "code": "36830",
+      "name": "Othello, WA"
+    },
+    {
+      "code": "36837",
+      "name": "Ottawa, IL"
+    },
+    {
+      "code": "36840",
+      "name": "Ottawa, KS"
+    },
+    {
+      "code": "36900",
+      "name": "Ottumwa, IA"
+    },
+    {
+      "code": "36940",
+      "name": "Owatonna, MN"
+    },
+    {
+      "code": "36980",
+      "name": "Owensboro, KY"
+    },
+    {
+      "code": "37060",
+      "name": "Oxford, MS"
+    },
+    {
+      "code": "37100",
+      "name": "Oxnard-Thousand Oaks-Ventura, CA"
+    },
+    {
+      "code": "37120",
+      "name": "Ozark, AL"
+    },
+    {
+      "code": "37140",
+      "name": "Paducah, KY-IL"
+    },
+    {
+      "code": "37220",
+      "name": "Pahrump, NV"
+    },
+    {
+      "code": "37260",
+      "name": "Palatka, FL"
+    },
+    {
+      "code": "37300",
+      "name": "Palestine, TX"
+    },
+    {
+      "code": "37340",
+      "name": "Palm Bay-Melbourne-Titusville, FL"
+    },
+    {
+      "code": "37420",
+      "name": "Pampa, TX"
+    },
+    {
+      "code": "37460",
+      "name": "Panama City, FL"
+    },
+    {
+      "code": "37500",
+      "name": "Paragould, AR"
+    },
+    {
+      "code": "37540",
+      "name": "Paris, TN"
+    },
+    {
+      "code": "37580",
+      "name": "Paris, TX"
+    },
+    {
+      "code": "37620",
+      "name": "Parkersburg-Vienna, WV"
+    },
+    {
+      "code": "37660",
+      "name": "Parsons, KS"
+    },
+    {
+      "code": "37740",
+      "name": "Payson, AZ"
+    },
+    {
+      "code": "37770",
+      "name": "Pearsall, TX"
+    },
+    {
+      "code": "37780",
+      "name": "Pecos, TX"
+    },
+    {
+      "code": "37800",
+      "name": "Pella, IA"
+    },
+    {
+      "code": "37860",
+      "name": "Pensacola-Ferry Pass-Brent, FL"
+    },
+    {
+      "code": "37900",
+      "name": "Peoria, IL"
+    },
+    {
+      "code": "37940",
+      "name": "Peru, IN"
+    },
+    {
+      "code": "37980",
+      "name": "Philadelphia-Camden-Wilmington, PA-NJ-DE-MD"
+    },
+    {
+      "code": "38060",
+      "name": "Phoenix-Mesa-Chandler, AZ"
+    },
+    {
+      "code": "38100",
+      "name": "Picayune, MS"
+    },
+    {
+      "code": "38180",
+      "name": "Pierre, SD"
+    },
+    {
+      "code": "38220",
+      "name": "Pine Bluff, AR"
+    },
+    {
+      "code": "38240",
+      "name": "Pinehurst-Southern Pines, NC"
+    },
+    {
+      "code": "38260",
+      "name": "Pittsburg, KS"
+    },
+    {
+      "code": "38300",
+      "name": "Pittsburgh, PA"
+    },
+    {
+      "code": "38340",
+      "name": "Pittsfield, MA"
+    },
+    {
+      "code": "38380",
+      "name": "Plainview, TX"
+    },
+    {
+      "code": "38420",
+      "name": "Platteville, WI"
+    },
+    {
+      "code": "38460",
+      "name": "Plattsburgh, NY"
+    },
+    {
+      "code": "38500",
+      "name": "Plymouth, IN"
+    },
+    {
+      "code": "38540",
+      "name": "Pocatello, ID"
+    },
+    {
+      "code": "38580",
+      "name": "Point Pleasant, WV-OH"
+    },
+    {
+      "code": "38620",
+      "name": "Ponca City, OK"
+    },
+    {
+      "code": "38660",
+      "name": "Ponce, PR"
+    },
+    {
+      "code": "38700",
+      "name": "Pontiac, IL"
+    },
+    {
+      "code": "38740",
+      "name": "Poplar Bluff, MO"
+    },
+    {
+      "code": "38820",
+      "name": "Port Angeles, WA"
+    },
+    {
+      "code": "38920",
+      "name": "Port Lavaca, TX"
+    },
+    {
+      "code": "38940",
+      "name": "Port St. Lucie, FL"
+    },
+    {
+      "code": "38780",
+      "name": "Portales, NM"
+    },
+    {
+      "code": "38860",
+      "name": "Portland-South Portland, ME"
+    },
+    {
+      "code": "38900",
+      "name": "Portland-Vancouver-Hillsboro, OR-WA"
+    },
+    {
+      "code": "39020",
+      "name": "Portsmouth, OH"
+    },
+    {
+      "code": "39060",
+      "name": "Pottsville, PA"
+    },
+    {
+      "code": "39100",
+      "name": "Poughkeepsie-Newburgh-Middletown, NY"
+    },
+    {
+      "code": "39150",
+      "name": "Prescott Valley-Prescott, AZ"
+    },
+    {
+      "code": "39220",
+      "name": "Price, UT"
+    },
+    {
+      "code": "39260",
+      "name": "Prineville, OR"
+    },
+    {
+      "code": "39300",
+      "name": "Providence-Warwick, RI-MA"
+    },
+    {
+      "code": "39340",
+      "name": "Provo-Orem, UT"
+    },
+    {
+      "code": "39380",
+      "name": "Pueblo, CO"
+    },
+    {
+      "code": "39420",
+      "name": "Pullman, WA"
+    },
+    {
+      "code": "39460",
+      "name": "Punta Gorda, FL"
+    },
+    {
+      "code": "39480",
+      "name": "Putnam, CT"
+    },
+    {
+      "code": "39500",
+      "name": "Quincy, IL-MO"
+    },
+    {
+      "code": "39540",
+      "name": "Racine, WI"
+    },
+    {
+      "code": "39580",
+      "name": "Raleigh-Cary, NC"
+    },
+    {
+      "code": "39660",
+      "name": "Rapid City, SD"
+    },
+    {
+      "code": "39700",
+      "name": "Raymondville, TX"
+    },
+    {
+      "code": "39740",
+      "name": "Reading, PA"
+    },
+    {
+      "code": "39780",
+      "name": "Red Bluff, CA"
+    },
+    {
+      "code": "39860",
+      "name": "Red Wing, MN"
+    },
+    {
+      "code": "39820",
+      "name": "Redding, CA"
+    },
+    {
+      "code": "39900",
+      "name": "Reno, NV"
+    },
+    {
+      "code": "39940",
+      "name": "Rexburg, ID"
+    },
+    {
+      "code": "39980",
+      "name": "Richmond, IN"
+    },
+    {
+      "code": "40060",
+      "name": "Richmond, VA"
+    },
+    {
+      "code": "40080",
+      "name": "Richmond-Berea, KY"
+    },
+    {
+      "code": "40100",
+      "name": "Rio Grande City-Roma, TX"
+    },
+    {
+      "code": "40140",
+      "name": "Riverside-San Bernardino-Ontario, CA"
+    },
+    {
+      "code": "40180",
+      "name": "Riverton, WY"
+    },
+    {
+      "code": "40260",
+      "name": "Roanoke Rapids, NC"
+    },
+    {
+      "code": "40220",
+      "name": "Roanoke, VA"
+    },
+    {
+      "code": "40300",
+      "name": "Rochelle, IL"
+    },
+    {
+      "code": "40340",
+      "name": "Rochester, MN"
+    },
+    {
+      "code": "40380",
+      "name": "Rochester, NY"
+    },
+    {
+      "code": "40540",
+      "name": "Rock Springs, WY"
+    },
+    {
+      "code": "40420",
+      "name": "Rockford, IL"
+    },
+    {
+      "code": "40460",
+      "name": "Rockingham, NC"
+    },
+    {
+      "code": "40530",
+      "name": "Rockport, TX"
+    },
+    {
+      "code": "40580",
+      "name": "Rocky Mount, NC"
+    },
+    {
+      "code": "40620",
+      "name": "Rolla, MO"
+    },
+    {
+      "code": "40660",
+      "name": "Rome, GA"
+    },
+    {
+      "code": "40700",
+      "name": "Roseburg, OR"
+    },
+    {
+      "code": "40740",
+      "name": "Roswell, NM"
+    },
+    {
+      "code": "40760",
+      "name": "Ruidoso, NM"
+    },
+    {
+      "code": "99999",
+      "name": "Rural Texas"
+    },
+    {
+      "code": "40780",
+      "name": "Russellville, AR"
+    },
+    {
+      "code": "40820",
+      "name": "Ruston, LA"
+    },
+    {
+      "code": "40860",
+      "name": "Rutland, VT"
+    },
+    {
+      "code": "40900",
+      "name": "Sacramento-Roseville-Folsom, CA"
+    },
+    {
+      "code": "40940",
+      "name": "Safford, AZ"
+    },
+    {
+      "code": "40980",
+      "name": "Saginaw, MI"
+    },
+    {
+      "code": "41400",
+      "name": "Salem, OH"
+    },
+    {
+      "code": "41420",
+      "name": "Salem, OR"
+    },
+    {
+      "code": "41460",
+      "name": "Salina, KS"
+    },
+    {
+      "code": "41500",
+      "name": "Salinas, CA"
+    },
+    {
+      "code": "41540",
+      "name": "Salisbury, MD-DE"
+    },
+    {
+      "code": "41620",
+      "name": "Salt Lake City, UT"
+    },
+    {
+      "code": "41660",
+      "name": "San Angelo, TX"
+    },
+    {
+      "code": "41700",
+      "name": "San Antonio-New Braunfels, TX"
+    },
+    {
+      "code": "41740",
+      "name": "San Diego-Chula Vista-Carlsbad, CA"
+    },
+    {
+      "code": "41860",
+      "name": "San Francisco-Oakland-Berkeley, CA"
+    },
+    {
+      "code": "41900",
+      "name": "San Germ‡n, PR"
+    },
+    {
+      "code": "41940",
+      "name": "San Jose-Sunnyvale-Santa Clara, CA"
+    },
+    {
+      "code": "41980",
+      "name": "San Juan-Bayam—n-Caguas, PR"
+    },
+    {
+      "code": "42020",
+      "name": "San Luis Obispo-Paso Robles, CA"
+    },
+    {
+      "code": "41760",
+      "name": "Sandpoint, ID"
+    },
+    {
+      "code": "41780",
+      "name": "Sandusky, OH"
+    },
+    {
+      "code": "41820",
+      "name": "Sanford, NC"
+    },
+    {
+      "code": "42100",
+      "name": "Santa Cruz-Watsonville, CA"
+    },
+    {
+      "code": "42140",
+      "name": "Santa Fe, NM"
+    },
+    {
+      "code": "42180",
+      "name": "Santa Isabel, PR"
+    },
+    {
+      "code": "42200",
+      "name": "Santa Maria-Santa Barbara, CA"
+    },
+    {
+      "code": "42220",
+      "name": "Santa Rosa-Petaluma, CA"
+    },
+    {
+      "code": "42300",
+      "name": "Sault Ste. Marie, MI"
+    },
+    {
+      "code": "42340",
+      "name": "Savannah, GA"
+    },
+    {
+      "code": "42380",
+      "name": "Sayre, PA"
+    },
+    {
+      "code": "42420",
+      "name": "Scottsbluff, NE"
+    },
+    {
+      "code": "42460",
+      "name": "Scottsboro, AL"
+    },
+    {
+      "code": "42500",
+      "name": "Scottsburg, IN"
+    },
+    {
+      "code": "42540",
+      "name": "Scranton--Wilkes-Barre, PA"
+    },
+    {
+      "code": "42620",
+      "name": "Searcy, AR"
+    },
+    {
+      "code": "42660",
+      "name": "Seattle-Tacoma-Bellevue, WA"
+    },
+    {
+      "code": "42680",
+      "name": "Sebastian-Vero Beach, FL"
+    },
+    {
+      "code": "42700",
+      "name": "Sebring-Avon Park, FL"
+    },
+    {
+      "code": "42740",
+      "name": "Sedalia, MO"
+    },
+    {
+      "code": "42780",
+      "name": "Selinsgrove, PA"
+    },
+    {
+      "code": "42820",
+      "name": "Selma, AL"
+    },
+    {
+      "code": "42900",
+      "name": "Seneca Falls, NY"
+    },
+    {
+      "code": "42860",
+      "name": "Seneca, SC"
+    },
+    {
+      "code": "42940",
+      "name": "Sevierville, TN"
+    },
+    {
+      "code": "42980",
+      "name": "Seymour, IN"
+    },
+    {
+      "code": "43020",
+      "name": "Shawano, WI"
+    },
+    {
+      "code": "43060",
+      "name": "Shawnee, OK"
+    },
+    {
+      "code": "43100",
+      "name": "Sheboygan, WI"
+    },
+    {
+      "code": "43140",
+      "name": "Shelby, NC"
+    },
+    {
+      "code": "43180",
+      "name": "Shelbyville, TN"
+    },
+    {
+      "code": "43220",
+      "name": "Shelton, WA"
+    },
+    {
+      "code": "43260",
+      "name": "Sheridan, WY"
+    },
+    {
+      "code": "43300",
+      "name": "Sherman-Denison, TX"
+    },
+    {
+      "code": "43320",
+      "name": "Show Low, AZ"
+    },
+    {
+      "code": "43340",
+      "name": "Shreveport-Bossier City, LA"
+    },
+    {
+      "code": "43380",
+      "name": "Sidney, OH"
+    },
+    {
+      "code": "43420",
+      "name": "Sierra Vista-Douglas, AZ"
+    },
+    {
+      "code": "43460",
+      "name": "Sikeston, MO"
+    },
+    {
+      "code": "43500",
+      "name": "Silver City, NM"
+    },
+    {
+      "code": "43580",
+      "name": "Sioux City, IA-NE-SD"
+    },
+    {
+      "code": "43620",
+      "name": "Sioux Falls, SD"
+    },
+    {
+      "code": "43660",
+      "name": "Snyder, TX"
+    },
+    {
+      "code": "43700",
+      "name": "Somerset, KY"
+    },
+    {
+      "code": "43740",
+      "name": "Somerset, PA"
+    },
+    {
+      "code": "43760",
+      "name": "Sonora, CA"
+    },
+    {
+      "code": "43780",
+      "name": "South Bend-Mishawaka, IN-MI"
+    },
+    {
+      "code": "43900",
+      "name": "Spartanburg, SC"
+    },
+    {
+      "code": "43940",
+      "name": "Spearfish, SD"
+    },
+    {
+      "code": "43980",
+      "name": "Spencer, IA"
+    },
+    {
+      "code": "44020",
+      "name": "Spirit Lake, IA"
+    },
+    {
+      "code": "44060",
+      "name": "Spokane-Spokane Valley, WA"
+    },
+    {
+      "code": "44100",
+      "name": "Springfield, IL"
+    },
+    {
+      "code": "44140",
+      "name": "Springfield, MA"
+    },
+    {
+      "code": "44180",
+      "name": "Springfield, MO"
+    },
+    {
+      "code": "44220",
+      "name": "Springfield, OH"
+    },
+    {
+      "code": "41060",
+      "name": "St. Cloud, MN"
+    },
+    {
+      "code": "41100",
+      "name": "St. George, UT"
+    },
+    {
+      "code": "41140",
+      "name": "St. Joseph, MO-KS"
+    },
+    {
+      "code": "41180",
+      "name": "St. Louis, MO-IL"
+    },
+    {
+      "code": "41220",
+      "name": "St. Marys, GA"
+    },
+    {
+      "code": "41260",
+      "name": "St. Marys, PA"
+    },
+    {
+      "code": "44260",
+      "name": "Starkville, MS"
+    },
+    {
+      "code": "44300",
+      "name": "State College, PA"
+    },
+    {
+      "code": "44340",
+      "name": "Statesboro, GA"
+    },
+    {
+      "code": "44420",
+      "name": "Staunton, VA"
+    },
+    {
+      "code": "44460",
+      "name": "Steamboat Springs, CO"
+    },
+    {
+      "code": "44500",
+      "name": "Stephenville, TX"
+    },
+    {
+      "code": "44540",
+      "name": "Sterling, CO"
+    },
+    {
+      "code": "44580",
+      "name": "Sterling, IL"
+    },
+    {
+      "code": "44620",
+      "name": "Stevens Point, WI"
+    },
+    {
+      "code": "44660",
+      "name": "Stillwater, OK"
+    },
+    {
+      "code": "44700",
+      "name": "Stockton, CA"
+    },
+    {
+      "code": "44740",
+      "name": "Storm Lake, IA"
+    },
+    {
+      "code": "44780",
+      "name": "Sturgis, MI"
+    },
+    {
+      "code": "44860",
+      "name": "Sulphur Springs, TX"
+    },
+    {
+      "code": "44900",
+      "name": "Summerville, GA"
+    },
+    {
+      "code": "44940",
+      "name": "Sumter, SC"
+    },
+    {
+      "code": "44980",
+      "name": "Sunbury, PA"
+    },
+    {
+      "code": "45000",
+      "name": "Susanville, CA"
+    },
+    {
+      "code": "45020",
+      "name": "Sweetwater, TX"
+    },
+    {
+      "code": "45060",
+      "name": "Syracuse, NY"
+    },
+    {
+      "code": "45140",
+      "name": "Tahlequah, OK"
+    },
+    {
+      "code": "45180",
+      "name": "Talladega-Sylacauga, AL"
+    },
+    {
+      "code": "45220",
+      "name": "Tallahassee, FL"
+    },
+    {
+      "code": "45300",
+      "name": "Tampa-St. Petersburg-Clearwater, FL"
+    },
+    {
+      "code": "45340",
+      "name": "Taos, NM"
+    },
+    {
+      "code": "45380",
+      "name": "Taylorville, IL"
+    },
+    {
+      "code": "45460",
+      "name": "Terre Haute, IN"
+    },
+    {
+      "code": "45500",
+      "name": "Texarkana, TX-AR"
+    },
+    {
+      "code": "45520",
+      "name": "The Dalles, OR"
+    },
+    {
+      "code": "45540",
+      "name": "The Villages, FL"
+    },
+    {
+      "code": "45580",
+      "name": "Thomaston, GA"
+    },
+    {
+      "code": "45620",
+      "name": "Thomasville, GA"
+    },
+    {
+      "code": "45660",
+      "name": "Tiffin, OH"
+    },
+    {
+      "code": "45700",
+      "name": "Tifton, GA"
+    },
+    {
+      "code": "45740",
+      "name": "Toccoa, GA"
+    },
+    {
+      "code": "45780",
+      "name": "Toledo, OH"
+    },
+    {
+      "code": "45820",
+      "name": "Topeka, KS"
+    },
+    {
+      "code": "45860",
+      "name": "Torrington, CT"
+    },
+    {
+      "code": "45900",
+      "name": "Traverse City, MI"
+    },
+    {
+      "code": "45940",
+      "name": "Trenton-Princeton, NJ"
+    },
+    {
+      "code": "45980",
+      "name": "Troy, AL"
+    },
+    {
+      "code": "46020",
+      "name": "Truckee-Grass Valley, CA"
+    },
+    {
+      "code": "46060",
+      "name": "Tucson, AZ"
+    },
+    {
+      "code": "46100",
+      "name": "Tullahoma-Manchester, TN"
+    },
+    {
+      "code": "46140",
+      "name": "Tulsa, OK"
+    },
+    {
+      "code": "46180",
+      "name": "Tupelo, MS"
+    },
+    {
+      "code": "46220",
+      "name": "Tuscaloosa, AL"
+    },
+    {
+      "code": "46300",
+      "name": "Twin Falls, ID"
+    },
+    {
+      "code": "46340",
+      "name": "Tyler, TX"
+    },
+    {
+      "code": "46380",
+      "name": "Ukiah, CA"
+    },
+    {
+      "code": "46460",
+      "name": "Union City, TN"
+    },
+    {
+      "code": "46420",
+      "name": "Union, SC"
+    },
+    {
+      "code": "46520",
+      "name": "Urban Honolulu, HI"
+    },
+    {
+      "code": "46500",
+      "name": "Urbana, OH"
+    },
+    {
+      "code": "46540",
+      "name": "Utica-Rome, NY"
+    },
+    {
+      "code": "46620",
+      "name": "Uvalde, TX"
+    },
+    {
+      "code": "46660",
+      "name": "Valdosta, GA"
+    },
+    {
+      "code": "46700",
+      "name": "Vallejo, CA"
+    },
+    {
+      "code": "46780",
+      "name": "Van Wert, OH"
+    },
+    {
+      "code": "46820",
+      "name": "Vermillion, SD"
+    },
+    {
+      "code": "46860",
+      "name": "Vernal, UT"
+    },
+    {
+      "code": "46900",
+      "name": "Vernon, TX"
+    },
+    {
+      "code": "46980",
+      "name": "Vicksburg, MS"
+    },
+    {
+      "code": "47020",
+      "name": "Victoria, TX"
+    },
+    {
+      "code": "47080",
+      "name": "Vidalia, GA"
+    },
+    {
+      "code": "47180",
+      "name": "Vincennes, IN"
+    },
+    {
+      "code": "47220",
+      "name": "Vineland-Bridgeton, NJ"
+    },
+    {
+      "code": "47240",
+      "name": "Vineyard Haven, MA"
+    },
+    {
+      "code": "47260",
+      "name": "Virginia Beach-Norfolk-Newport News, VA-NC"
+    },
+    {
+      "code": "47300",
+      "name": "Visalia, CA"
+    },
+    {
+      "code": "47340",
+      "name": "Wabash, IN"
+    },
+    {
+      "code": "47380",
+      "name": "Waco, TX"
+    },
+    {
+      "code": "47420",
+      "name": "Wahpeton, ND-MN"
+    },
+    {
+      "code": "47460",
+      "name": "Walla Walla, WA"
+    },
+    {
+      "code": "47540",
+      "name": "Wapakoneta, OH"
+    },
+    {
+      "code": "47580",
+      "name": "Warner Robins, GA"
+    },
+    {
+      "code": "47620",
+      "name": "Warren, PA"
+    },
+    {
+      "code": "47660",
+      "name": "Warrensburg, MO"
+    },
+    {
+      "code": "47700",
+      "name": "Warsaw, IN"
+    },
+    {
+      "code": "47920",
+      "name": "Washington Court House, OH"
+    },
+    {
+      "code": "47780",
+      "name": "Washington, IN"
+    },
+    {
+      "code": "47820",
+      "name": "Washington, NC"
+    },
+    {
+      "code": "47900",
+      "name": "Washington-Arlington-Alexandria, DC-VA-MD-WV"
+    },
+    {
+      "code": "47930",
+      "name": "Waterbury-Shelton, CT"
+    },
+    {
+      "code": "47940",
+      "name": "Waterloo-Cedar Falls, IA"
+    },
+    {
+      "code": "47980",
+      "name": "Watertown, SD"
+    },
+    {
+      "code": "48020",
+      "name": "Watertown-Fort Atkinson, WI"
+    },
+    {
+      "code": "48060",
+      "name": "Watertown-Fort Drum, NY"
+    },
+    {
+      "code": "48100",
+      "name": "Wauchula, FL"
+    },
+    {
+      "code": "48140",
+      "name": "Wausau-Weston, WI"
+    },
+    {
+      "code": "48180",
+      "name": "Waycross, GA"
+    },
+    {
+      "code": "48220",
+      "name": "Weatherford, OK"
+    },
+    {
+      "code": "48260",
+      "name": "Weirton-Steubenville, WV-OH"
+    },
+    {
+      "code": "48300",
+      "name": "Wenatchee, WA"
+    },
+    {
+      "code": "48460",
+      "name": "West Plains, MO"
+    },
+    {
+      "code": "48500",
+      "name": "West Point, MS"
+    },
+    {
+      "code": "48540",
+      "name": "Wheeling, WV-OH"
+    },
+    {
+      "code": "48580",
+      "name": "Whitewater, WI"
+    },
+    {
+      "code": "48660",
+      "name": "Wichita Falls, TX"
+    },
+    {
+      "code": "48620",
+      "name": "Wichita, KS"
+    },
+    {
+      "code": "48700",
+      "name": "Williamsport, PA"
+    },
+    {
+      "code": "48780",
+      "name": "Williston, ND"
+    },
+    {
+      "code": "48820",
+      "name": "Willmar, MN"
+    },
+    {
+      "code": "48900",
+      "name": "Wilmington, NC"
+    },
+    {
+      "code": "48940",
+      "name": "Wilmington, OH"
+    },
+    {
+      "code": "48980",
+      "name": "Wilson, NC"
+    },
+    {
+      "code": "49020",
+      "name": "Winchester, VA-WV"
+    },
+    {
+      "code": "49060",
+      "name": "Winfield, KS"
+    },
+    {
+      "code": "49080",
+      "name": "Winnemucca, NV"
+    },
+    {
+      "code": "49100",
+      "name": "Winona, MN"
+    },
+    {
+      "code": "49180",
+      "name": "Winston-Salem, NC"
+    },
+    {
+      "code": "49220",
+      "name": "Wisconsin Rapids-Marshfield, WI"
+    },
+    {
+      "code": "49260",
+      "name": "Woodward, OK"
+    },
+    {
+      "code": "49300",
+      "name": "Wooster, OH"
+    },
+    {
+      "code": "49340",
+      "name": "Worcester, MA-CT"
+    },
+    {
+      "code": "49380",
+      "name": "Worthington, MN"
+    },
+    {
+      "code": "49420",
+      "name": "Yakima, WA"
+    },
+    {
+      "code": "49460",
+      "name": "Yankton, SD"
+    },
+    {
+      "code": "49500",
+      "name": "Yauco, PR"
+    },
+    {
+      "code": "49620",
+      "name": "York-Hanover, PA"
+    },
+    {
+      "code": "49660",
+      "name": "Youngstown-Warren-Boardman, OH-PA"
+    },
+    {
+      "code": "49700",
+      "name": "Yuba City, CA"
+    },
+    {
+      "code": "49740",
+      "name": "Yuma, AZ"
+    },
+    {
+      "code": "49780",
+      "name": "Zanesville, OH"
+    },
+    {
+      "code": "49820",
+      "name": "Zapata, TX"
+    }
+  ],
+  "count": 942
+}
