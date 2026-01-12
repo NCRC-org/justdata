@@ -31,9 +31,14 @@
                     <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
                     {% block header_subtitle %}{% endblock %}
                 </div>
+                <div class="header-nav-wrapper">
+                    {% include 'nav_menu.html' %}
+                </div>
             </div>
         </div>
     </header>
+    <!-- Overlay for menu (outside header for proper z-index) -->
+    <div class="nav-overlay" id="navOverlay"></div>
 
     {% block before_content %}{% endblock %}
 
@@ -74,5 +79,72 @@
     </footer>
 
     {% block extra_js %}{% endblock %}
+    
+    <!-- Hamburger Menu Functionality -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize hamburger menu
+            const navToggle = document.getElementById('navToggle');
+            const navMenu = document.querySelector('.nav-menu');
+            const navOverlay = document.getElementById('navOverlay');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    navMenu.classList.toggle('active');
+                    if (navOverlay) navOverlay.classList.toggle('active');
+                    this.classList.toggle('active');
+                });
+                
+                // Close menu when clicking overlay
+                if (navOverlay) {
+                    navOverlay.addEventListener('click', function() {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        navOverlay.classList.remove('active');
+                        navToggle.classList.remove('active');
+                    });
+                }
+                
+                // Handle dropdown toggles in menu
+                const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+                dropdownToggles.forEach(toggle => {
+                    toggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const parentItem = this.closest('.nav-item-dropdown');
+                        const isOpen = this.getAttribute('aria-expanded') === 'true';
+                        this.setAttribute('aria-expanded', !isOpen);
+                        if (parentItem) {
+                            parentItem.classList.toggle('active');
+                        }
+                    });
+                });
+                
+                // Close menu when clicking on a nav link (but not dropdown toggle)
+                const navLinks = document.querySelectorAll('.nav-link:not(.dropdown-toggle)');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        if (navOverlay) navOverlay.classList.remove('active');
+                        navToggle.classList.remove('active');
+                    });
+                });
+                
+                // Close menu on Escape key
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        if (navOverlay) navOverlay.classList.remove('active');
+                        navToggle.classList.remove('active');
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>
