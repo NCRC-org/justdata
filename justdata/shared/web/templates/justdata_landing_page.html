@@ -2206,7 +2206,6 @@
             });
             
             // Update visible app count (only main apps grid, not Coming Soon)
-            const mainGrid = document.querySelector('.apps-grid:not(.coming-soon-grid)');
             const visibleCards = mainGrid ? mainGrid.querySelectorAll('.app-card:not([style*="display: none"])').length : 0;
             const titleP = document.querySelector('.page-title p');
             if (titleP) {
@@ -2240,16 +2239,15 @@
             const selector = document.getElementById('userTypeSelect');
             if (selector) {
                 selector.value = savedUserType;
-                // Sync with server immediately on page load
+                // Apply user type immediately
+                switchUserType(savedUserType);
+                // Sync with server in background
                 fetch('/api/set-user-type', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ user_type: savedUserType })
-                }).then(() => {
-                    switchUserType(savedUserType);
                 }).catch(err => {
                     console.log('Could not sync user type with server:', err);
-                    switchUserType(savedUserType);
                 });
             }
         });
@@ -2507,9 +2505,9 @@
             }
         }
 
-        // Initialize apps on page load (developer mode - all apps visible)
+        // Initialize page on load
         document.addEventListener('DOMContentLoaded', function() {
-            initializeApps();
+            // Note: Don't call initializeApps() - let switchUserType handle app visibility
             
             // Initialize hamburger menu
             const navToggle = document.getElementById('navToggle');
