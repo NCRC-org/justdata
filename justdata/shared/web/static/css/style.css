@@ -152,7 +152,11 @@ body:has(.nav-menu.active) .sidebar,
 body:has(.nav-menu.active) .documentation-card,
 body:has(.nav-menu.active) .content-wrapper,
 body:has(.nav-menu.active) .main-content > *,
-body:has(.nav-menu.active) .feature-card {
+body:has(.nav-menu.active) .feature-card,
+body:has(.nav-menu.active) aside,
+body:has(.nav-menu.active) main,
+body:has(.nav-menu.active) .app-card,
+body:has(.nav-menu.active) .coming-soon-section {
     z-index: 1 !important;
     position: relative;
 }
@@ -162,7 +166,13 @@ body:has(.nav-menu.active) .feature-card {
 .nav-overlay.active ~ * .main-content,
 .nav-overlay.active ~ * .analysis-card,
 .nav-overlay.active ~ * .sidebar,
-.nav-overlay.active ~ * .documentation-card {
+.nav-overlay.active ~ * .documentation-card,
+body:has(.nav-overlay.active) .container,
+body:has(.nav-overlay.active) .main-content,
+body:has(.nav-overlay.active) .analysis-card,
+body:has(.nav-overlay.active) .sidebar,
+body:has(.nav-overlay.active) aside,
+body:has(.nav-overlay.active) main {
     z-index: 1 !important;
 }
 
@@ -203,21 +213,43 @@ body:has(.nav-menu.active) .feature-card {
 /* Override z-index after animations complete when nav menu is active */
 /* Force content below overlay even after animations create stacking contexts */
 .nav-menu.active ~ * .sidebar,
-body:has(.nav-menu.active) .sidebar {
+body:has(.nav-menu.active) .sidebar,
+.nav-overlay.active ~ * .sidebar,
+body:has(.nav-overlay.active) .sidebar {
     z-index: 1 !important;
     isolation: isolate; /* Create new stacking context below overlay */
 }
 
 .nav-menu.active ~ * .analysis-card,
-body:has(.nav-menu.active) .analysis-card {
+body:has(.nav-menu.active) .analysis-card,
+.nav-overlay.active ~ * .analysis-card,
+body:has(.nav-overlay.active) .analysis-card {
     z-index: 1 !important;
     isolation: isolate; /* Create new stacking context below overlay */
 }
 
 .nav-menu.active ~ * .container,
-body:has(.nav-menu.active) .container {
+body:has(.nav-menu.active) .container,
+.nav-overlay.active ~ * .container,
+body:has(.nav-overlay.active) .container {
     z-index: 1 !important;
     isolation: isolate;
+}
+
+/* Ensure complementary/sidebar elements are below overlay */
+.nav-menu.active ~ * aside,
+body:has(.nav-menu.active) aside,
+.nav-overlay.active ~ * aside,
+body:has(.nav-overlay.active) aside {
+    z-index: 1 !important;
+}
+
+/* Ensure main content is below overlay */
+.nav-menu.active ~ * main,
+body:has(.nav-menu.active) main,
+.nav-overlay.active ~ * main,
+body:has(.nav-overlay.active) main {
+    z-index: 1 !important;
 }
 
 @keyframes slideInRightCard {
@@ -617,10 +649,13 @@ body:has(.nav-menu.active) .container {
     z-index: 10002;
     transition: all 0.3s ease;
     align-items: center;
+    position: relative;
 }
 
 .nav-menu.active .nav-toggle {
     z-index: 10002;
+    background: transparent;
+    border: none;
 }
 
 .nav-toggle:hover {
@@ -639,24 +674,35 @@ body:has(.nav-menu.active) .container {
     background-color: white;
     border-radius: 2px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: center;
+    position: relative;
+    display: block;
 }
 
-.nav-menu.active .nav-toggle {
-    background: transparent;
-    border: none;
+/* Transform hamburger to X when active */
+.nav-menu.active .hamburger-line:nth-child(1),
+.nav-menu.active .hamburger-line:nth-child(3) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 36px;
+    height: 5px;
+    margin: 0;
+    transform-origin: center center;
 }
 
 .nav-menu.active .hamburger-line:nth-child(1) {
-    transform: rotate(45deg) translate(10px, 10px);
+    transform: translate(-50%, -50%) rotate(45deg);
 }
 
 .nav-menu.active .hamburger-line:nth-child(2) {
     opacity: 0;
-    transform: translateX(-10px);
+    transform: scaleX(0);
+    width: 0;
 }
 
 .nav-menu.active .hamburger-line:nth-child(3) {
-    transform: rotate(-45deg) translate(10px, -10px);
+    transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 /* Overlay */
@@ -669,8 +715,8 @@ body:has(.nav-menu.active) .container {
     bottom: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 9998;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
     opacity: 0;
     transition: opacity 0.3s ease;
     backdrop-filter: blur(2px);
@@ -685,7 +731,7 @@ body:has(.nav-menu.active) .container {
 .nav-overlay.active {
     display: block;
     opacity: 1;
-    z-index: 9998;
+    z-index: 9999 !important;
 }
 
 /* Mobile Navigation Styles */

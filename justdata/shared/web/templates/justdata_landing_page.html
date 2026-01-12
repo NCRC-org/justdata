@@ -1440,9 +1440,74 @@
                 transform: none;
             }
         }
+
+        /* Body-level overlay - direct child of body for proper z-index stacking */
+        .body-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 9998;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: auto;
+        }
+
+        .body-overlay.active {
+            display: block;
+            opacity: 1;
+        }
+
+        /* Hide the nav-overlay since we're using body-overlay */
+        .nav-overlay {
+            display: none !important;
+        }
+
+        /* Nav menu and toggle always on top */
+        .nav-menu {
+            z-index: 10001 !important;
+        }
+
+        .nav-menu.active {
+            z-index: 10001 !important;
+        }
+
+        .nav-toggle {
+            z-index: 10002 !important;
+        }
+
+        .nav-list {
+            z-index: 10001 !important;
+        }
+
+        /* When menu is active, lower all content below overlay */
+        body.menu-open .container,
+        body.menu-open .content-wrapper,
+        body.menu-open .main-content,
+        body.menu-open .sidebar,
+        body.menu-open .footer,
+        body.menu-open .app-card,
+        body.menu-open .coming-soon-section,
+        body.menu-open aside {
+            z-index: 1 !important;
+            position: relative;
+        }
+
+        /* Ensure header stays above content but below overlay */
+        body.menu-open .header {
+            z-index: 10000 !important;
+        }
     </style>
 </head>
 <body>
+    <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
+    <div class="body-overlay" id="bodyOverlay"></div>
+    
     <!-- Skip to main content link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <!-- Header -->
@@ -2512,22 +2577,24 @@
             // Initialize hamburger menu
             const navToggle = document.getElementById('navToggle');
             const navMenu = document.querySelector('.nav-menu');
-            const navOverlay = document.getElementById('navOverlay');
+            const bodyOverlay = document.getElementById('bodyOverlay');
             
             if (navToggle && navMenu) {
                 navToggle.addEventListener('click', function() {
                     const isExpanded = this.getAttribute('aria-expanded') === 'true';
                     this.setAttribute('aria-expanded', !isExpanded);
                     navMenu.classList.toggle('active');
-                    if (navOverlay) navOverlay.classList.toggle('active');
+                    if (bodyOverlay) bodyOverlay.classList.toggle('active');
+                    document.body.classList.toggle('menu-open');
                 });
                 
                 // Close menu when clicking overlay
-                if (navOverlay) {
-                    navOverlay.addEventListener('click', function() {
+                if (bodyOverlay) {
+                    bodyOverlay.addEventListener('click', function() {
                         navToggle.setAttribute('aria-expanded', 'false');
                         navMenu.classList.remove('active');
-                        navOverlay.classList.remove('active');
+                        bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
                     });
                 }
                 
@@ -2552,7 +2619,8 @@
                     link.addEventListener('click', function() {
                         navToggle.setAttribute('aria-expanded', 'false');
                         navMenu.classList.remove('active');
-                        if (navOverlay) navOverlay.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
                     });
                 });
                 
@@ -2561,7 +2629,8 @@
                     if (e.key === 'Escape' && navMenu.classList.contains('active')) {
                         navToggle.setAttribute('aria-expanded', 'false');
                         navMenu.classList.remove('active');
-                        if (navOverlay) navOverlay.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
                     }
                 });
             }
