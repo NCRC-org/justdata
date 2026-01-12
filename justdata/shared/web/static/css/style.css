@@ -363,6 +363,13 @@ body:has(.nav-menu.active) .container {
     line-height: 1.1;
 }
 
+.header-title-section .tagline-text {
+    margin-top: 0.5rem;
+    margin-bottom: 0;
+    display: block;
+    white-space: normal;
+}
+
 .app-name-part1 {
     color: white;
     display: inline-block;
