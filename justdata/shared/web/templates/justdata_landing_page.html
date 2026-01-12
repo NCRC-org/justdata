@@ -277,27 +277,40 @@
             letter-spacing: 0.3px;
         }
 
+        /* Header Controls Container */
+        .header-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 10px;
+            margin-left: auto;
+            position: relative;
+            z-index: 1000;
+        }
+
         /* User Type Selector */
         .user-type-selector {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 8px 12px;
+            border-radius: 6px;
         }
 
         .user-type-selector label {
             color: white;
             font-size: 0.85rem;
-            margin-right: 8px;
             font-weight: 500;
+            white-space: nowrap;
         }
 
         .user-type-selector select {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
-            padding: 8px 12px;
+            background: var(--ncrc-gold);
+            color: var(--ncrc-gray-dark);
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
             font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
@@ -305,12 +318,11 @@
         }
 
         .user-type-selector select:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
+            background: #e6c21a;
         }
 
         .user-type-selector select:focus {
-            outline: 2px solid var(--ncrc-gold);
+            outline: 2px solid white;
             outline-offset: 2px;
         }
 
@@ -1018,6 +1030,15 @@
             color: rgba(255, 255, 255, 0.8);
         }
 
+        /* Action Buttons Row */
+        .action-buttons-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
         /* User Types Button */
         .user-types-button {
             display: inline-flex;
@@ -1032,8 +1053,6 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin: 20px auto;
-            display: block;
             box-shadow: 0 2px 8px rgba(85, 45, 135, 0.2);
         }
 
@@ -1050,6 +1069,37 @@
 
         .user-types-button i {
             font-size: 0.9rem;
+        }
+
+        /* Coming Soon Section */
+        .coming-soon-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px dashed var(--ncrc-gold);
+        }
+
+        .coming-soon-section .section-title {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .coming-soon-section .section-title h3 {
+            font-size: 1.5rem;
+            color: var(--ncrc-gray-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .coming-soon-section .section-title h3 i {
+            color: var(--ncrc-gold);
+        }
+
+        .coming-soon-section .section-title p {
+            color: var(--ncrc-gray);
+            font-size: 0.95rem;
+            margin-top: 8px;
         }
 
         /* Modal Overlay */
@@ -1405,21 +1455,23 @@
                         <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
                     </div>
                 </div>
-                <div class="header-nav-wrapper">
-                    {% include 'nav_menu.html' %}
-                </div>
-                <!-- User Type Selector -->
-                <div class="user-type-selector" style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 8px 12px; border-radius: 6px; margin-left: auto;">
-                    <label for="userTypeSelect" style="color: white; font-size: 0.85rem; white-space: nowrap;">View as:</label>
-                    <select id="userTypeSelect" onchange="switchUserType(this.value)" aria-label="Select user type to view" style="padding: 6px 10px; border-radius: 4px; border: none; background: var(--ncrc-gold); color: var(--ncrc-gray-dark); font-weight: 500; cursor: pointer;">
-                        <option value="public" selected>Public (Free)</option>
-                        <option value="economy">Just Economy Club (Free)</option>
-                        <option value="member">Member ($900/yr)</option>
-                        <option value="member_plus">Member Plus ($500-750/yr)</option>
-                        <option value="institutional">Institutional ($5K-15K/yr)</option>
-                        <option value="staff">Staff (Free)</option>
-                        <option value="admin">Admin (Free)</option>
-                    </select>
+                <div class="header-controls">
+                    <div class="header-nav-wrapper">
+                        {% include 'nav_menu.html' %}
+                    </div>
+                    <!-- User Type Selector - positioned below hamburger -->
+                    <div class="user-type-selector">
+                        <label for="userTypeSelect">View as:</label>
+                        <select id="userTypeSelect" onchange="switchUserType(this.value)" aria-label="Select user type to view">
+                            <option value="public" selected>Public (Free)</option>
+                            <option value="economy">Just Economy Club (Free)</option>
+                            <option value="member">Member ($900/yr)</option>
+                            <option value="member_plus">Member Plus ($500-750/yr)</option>
+                            <option value="institutional">Institutional ($5K-15K/yr)</option>
+                            <option value="staff">Staff (Free)</option>
+                            <option value="admin">Admin (Free)</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1428,11 +1480,17 @@
     <div class="container">
         <div class="content-wrapper">
             <main class="main-content" id="main-content" role="main">
-                <!-- User Types Button -->
-                <button class="user-types-button" onclick="openUserTypesModal()" aria-label="View user access types and permissions">
-                    <i class="fas fa-users-cog" aria-hidden="true"></i>
-                    <span>User Types</span>
-                </button>
+                <!-- User Types and Expected Income Buttons - Side by Side -->
+                <div class="action-buttons-row">
+                    <button class="user-types-button" onclick="openUserTypesModal()" aria-label="View user access types and permissions">
+                        <i class="fas fa-users-cog" aria-hidden="true"></i>
+                        <span>User Types</span>
+                    </button>
+                    <button class="user-types-button" onclick="openIncomeSourcesModal()" aria-label="View expected income and funding sources">
+                        <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+                        <span>Expected Income & Sources</span>
+                    </button>
+                </div>
 
                 <div class="page-title">
                     <h2><i class="fas fa-th-large" aria-hidden="true"></i> Available Applications</h2>
@@ -1566,42 +1624,6 @@
                         </div>
                     </div>
 
-                    <!-- CommentMaker Card -->
-                    <div class="app-card app-commentmaker" data-app="commentmaker" role="button" tabindex="0" aria-label="CommentMaker - Public comment generation (In Development)" onclick="handleCardClick('CommentMaker')" onkeydown="handleCardKeyDown(event, 'CommentMaker')">
-                        <div class="app-card-header">
-                            <div class="app-card-icon" aria-hidden="true">
-                                <i class="fas fa-comment-dots"></i>
-                            </div>
-                            <h3 class="app-card-title">CommentMaker</h3>
-                        </div>
-                        <p class="app-card-description">
-                            A free tool to help everyone write and submit public comments for federal rulemakings and regulatory agencies.
-                        </p>
-                        <span class="app-card-status status-dev">In Development</span>
-                        <div class="app-card-launch-btn" aria-hidden="true">
-                            <i class="fas fa-arrow-right"></i>
-                            <span>Launch</span>
-                        </div>
-                    </div>
-
-                    <!-- JustPolicy Card -->
-                    <div class="app-card app-justpolicy" data-app="justpolicy" role="button" tabindex="0" aria-label="JustPolicy - AI-driven policy discovery tool (In Development)" onclick="handleCardClick('JustPolicy')" onkeydown="handleCardKeyDown(event, 'JustPolicy')">
-                        <div class="app-card-header">
-                            <div class="app-card-icon" aria-hidden="true">
-                                <i class="fas fa-gavel"></i>
-                            </div>
-                            <h3 class="app-card-title">JustPolicy</h3>
-                        </div>
-                        <p class="app-card-description">
-                            AI-driven interactive tool providing personalized policy overviews based on your organization's mission and service area.
-                        </p>
-                        <span class="app-card-status status-dev">In Development</span>
-                        <div class="app-card-launch-btn" aria-hidden="true">
-                            <i class="fas fa-arrow-right"></i>
-                            <span>Launch</span>
-                        </div>
-                    </div>
-
                     <!-- MemberView Card -->
                     <div class="app-card app-memberview" data-app="memberview" role="button" tabindex="0" aria-label="MemberView - Member management application (In Development)" onclick="handleCardClick('MemberView')" onkeydown="handleCardKeyDown(event, 'MemberView')">
                         <div class="app-card-header">
@@ -1653,6 +1675,43 @@
                         <div class="app-card-launch-btn" aria-hidden="true">
                             <i class="fas fa-arrow-right"></i>
                             <span>Launch</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coming Soon Section -->
+                <div class="coming-soon-section">
+                    <div class="section-title">
+                        <h3><i class="fas fa-rocket" aria-hidden="true"></i> Coming Soon</h3>
+                        <p>Free tools currently in development - available to everyone when released</p>
+                    </div>
+                    <div class="apps-grid coming-soon-grid">
+                        <!-- CommentMaker Card -->
+                        <div class="app-card app-commentmaker" data-app="commentmaker" role="button" tabindex="0" aria-label="CommentMaker - Public comment generation (Coming Soon)">
+                            <div class="app-card-header">
+                                <div class="app-card-icon" aria-hidden="true">
+                                    <i class="fas fa-comment-dots"></i>
+                                </div>
+                                <h3 class="app-card-title">CommentMaker</h3>
+                            </div>
+                            <p class="app-card-description">
+                                A free tool to help everyone write and submit public comments for federal rulemakings and regulatory agencies.
+                            </p>
+                            <span class="app-card-status status-dev">Coming Soon</span>
+                        </div>
+
+                        <!-- JustPolicy Card -->
+                        <div class="app-card app-justpolicy" data-app="justpolicy" role="button" tabindex="0" aria-label="JustPolicy - AI-driven policy discovery tool (Coming Soon)">
+                            <div class="app-card-header">
+                                <div class="app-card-icon" aria-hidden="true">
+                                    <i class="fas fa-gavel"></i>
+                                </div>
+                                <h3 class="app-card-title">JustPolicy</h3>
+                            </div>
+                            <p class="app-card-description">
+                                AI-driven interactive tool providing personalized policy overviews based on your organization's mission and service area.
+                            </p>
+                            <span class="app-card-status status-dev">Coming Soon</span>
                         </div>
                     </div>
                 </div>
@@ -1753,6 +1812,83 @@
             </div>
             <div class="modal-body" id="launchModalBody">
                 <!-- Content populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Expected Income & Sources Modal -->
+    <div class="modal-overlay" id="incomeSourcesModal" role="dialog" aria-labelledby="incomeModalTitle" aria-modal="true">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="incomeModalTitle">
+                    <i class="fas fa-dollar-sign" aria-hidden="true"></i>
+                    Expected Income & Funding Sources
+                </h3>
+                <button class="modal-close" onclick="closeIncomeSourcesModal()" aria-label="Close income sources modal">
+                    <i class="fas fa-times" aria-hidden="true"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-chart-line"></i> Revenue Projections</h4>
+                    <p><strong>Annual Revenue Targets:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>Member Plus Add-ons:</strong> $500-750/year per member (premium features)</li>
+                        <li><strong>Institutional Subscriptions:</strong> $5,000-15,000/year per organization</li>
+                        <li><strong>Projected Year 2 Revenue:</strong> $50,000 - $100,000</li>
+                        <li><strong>Projected Year 3 Revenue:</strong> $150,000 - $250,000</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-hand-holding-usd"></i> Primary Funding Sources</h4>
+                    <p><strong>Revenue Streams:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>NCRC Membership Integration:</strong> JustData access included with $900/year NCRC organizational membership</li>
+                        <li><strong>Premium Tier Subscriptions:</strong> Member Plus ($500-750/year) and Institutional ($5K-15K/year) add-on subscriptions</li>
+                        <li><strong>Grant Funding:</strong> Foundation grants supporting data transparency and community reinvestment initiatives</li>
+                        <li><strong>Corporate Sponsorships:</strong> Financial institution partnerships and corporate social responsibility programs</li>
+                        <li><strong>Federal/State Contracts:</strong> Government contracts for data analysis and reporting services</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-building"></i> Institutional Partnerships</h4>
+                    <p><strong>Target Markets:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>Community Development Organizations:</strong> CDFIs, housing counseling agencies, and advocacy groups</li>
+                        <li><strong>Financial Institutions:</strong> Banks, credit unions, and fintech companies seeking market analysis</li>
+                        <li><strong>Consulting Firms:</strong> Fair lending consultants and compliance advisors</li>
+                        <li><strong>Academic Institutions:</strong> Universities and research organizations</li>
+                        <li><strong>Government Agencies:</strong> Federal and state regulatory agencies</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-seedling"></i> Growth Strategy</h4>
+                    <p><strong>Expansion Plans:</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>Year 1:</strong> Focus on NCRC member base conversion and platform stabilization (target: 50-100 active users)</li>
+                        <li><strong>Year 2:</strong> Expand to non-member organizations and institutional clients (target: 10-20 institutional subscriptions)</li>
+                        <li><strong>Year 3:</strong> Scale premium features and add new data sources (target: 200-300 total users)</li>
+                        <li><strong>Long-term:</strong> Develop API access, white-label solutions, and custom enterprise packages</li>
+                    </ul>
+                </div>
+
+                <div class="feature-detail-section">
+                    <h4><i class="fas fa-code-branch"></i> Applications in Development</h4>
+                    <p><strong>AI-Driven Reports (Coming Soon):</strong></p>
+                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
+                        <li><strong>CommentMaker:</strong> Free tool for writing and submitting public comments to federal regulatory agencies. Will be available to all users when released.</li>
+                        <li><strong>JustPolicy:</strong> AI-driven interactive tool that asks questions about your mission and service area to provide personalized policy overviews scaled to your niche, with plain-language explanations and supporting data. Will be available to all users when released.</li>
+                    </ul>
+                    <p class="feature-note">These applications are currently in development and will be released in future updates. Check back for availability announcements.</p>
+                </div>
+
+                <div class="upgrade-notice">
+                    <h4><i class="fas fa-info-circle"></i> Sustainability Model</h4>
+                    <p>JustData is designed to be self-sustaining through subscription revenue while maintaining free access to core tools like CommentMaker and JustPolicy (coming soon). Premium features and advanced analytics support the platform's development and maintenance costs.</p>
+                </div>
             </div>
         </div>
     </div>
@@ -2019,8 +2155,9 @@
                 body: JSON.stringify({ user_type: userType })
             }).catch(err => console.log('Could not sync user type with server:', err));
             
-            // Update UI based on user type
-            const cards = document.querySelectorAll('.app-card');
+            // Update UI based on user type (only main apps grid, not Coming Soon)
+            const mainGrid = document.querySelector('.apps-grid:not(.coming-soon-grid)');
+            const cards = mainGrid ? mainGrid.querySelectorAll('.app-card') : [];
             cards.forEach(card => {
                 const appName = card.getAttribute('data-app');
                 const accessLevel = getAppAccess(appName, userType);
@@ -2068,8 +2205,9 @@
                 }
             });
             
-            // Update visible app count
-            const visibleCards = document.querySelectorAll('.app-card:not([style*="display: none"])').length;
+            // Update visible app count (only main apps grid, not Coming Soon)
+            const mainGrid = document.querySelector('.apps-grid:not(.coming-soon-grid)');
+            const visibleCards = mainGrid ? mainGrid.querySelectorAll('.app-card:not([style*="display: none"])').length : 0;
             const titleP = document.querySelector('.page-title p');
             if (titleP) {
                 titleP.textContent = `Select an application to begin your data analysis (${visibleCards} available)`;
@@ -2086,8 +2224,7 @@
                 'dataexplorer': { public: 'locked', economy: 'locked', member: 'locked', member_plus: 'full', institutional: 'full', staff: 'full', admin: 'full' },
                 'mergermeter': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
                 'lenderprofile': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
-                'commentmaker': { public: 'full', economy: 'full', member: 'full', member_plus: 'full', institutional: 'full', staff: 'full', admin: 'full' },
-                'justpolicy': { public: 'full', economy: 'full', member: 'full', member_plus: 'full', institutional: 'full', staff: 'full', admin: 'full' },
+                // Note: commentmaker and justpolicy are in Coming Soon section
                 'memberview': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
                 'analytics': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
                 'admin': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'hidden', admin: 'full' }
@@ -2098,8 +2235,8 @@
         
         // Initialize user type from localStorage on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Default to 'staff' for development - shows most apps
-            const savedUserType = localStorage.getItem('justdata_user_type') || 'staff';
+            // Default to 'public' - standard public view
+            const savedUserType = localStorage.getItem('justdata_user_type') || 'public';
             const selector = document.getElementById('userTypeSelect');
             if (selector) {
                 selector.value = savedUserType;
@@ -2130,8 +2267,7 @@
                 'LenderProfile': '/lenderprofile/',
                 'LoanTrends': '/loantrends/',
                 'MemberView': '/memberview/',
-                'CommentMaker': '/commentmaker/',
-                'JustPolicy': '/justpolicy/',
+                // Note: CommentMaker and JustPolicy are Coming Soon
                 'Analytics': '/analytics/',
                 'Admin': '/admin/',
                 'Administration': '/admin/'
@@ -2345,9 +2481,70 @@
             document.querySelector('.user-types-button').focus();
         }
 
+        // Expected Income & Sources Modal Functions
+        function openIncomeSourcesModal() {
+            const modal = document.getElementById('incomeSourcesModal');
+            modal.classList.add('active');
+            modal.setAttribute('aria-hidden', 'false');
+            document.body.style.overflow = 'hidden';
+            
+            // Focus on close button for accessibility
+            setTimeout(() => {
+                modal.querySelector('.modal-close').focus();
+            }, 100);
+        }
+
+        function closeIncomeSourcesModal() {
+            const modal = document.getElementById('incomeSourcesModal');
+            modal.classList.remove('active');
+            modal.setAttribute('aria-hidden', 'true');
+            document.body.style.overflow = '';
+            
+            // Return focus to button that opened modal
+            const buttons = document.querySelectorAll('.user-types-button');
+            if (buttons.length > 1) {
+                buttons[1].focus();
+            }
+        }
+
         // Initialize apps on page load (developer mode - all apps visible)
         document.addEventListener('DOMContentLoaded', function() {
             initializeApps();
+            
+            // Initialize hamburger menu
+            const navToggle = document.getElementById('navToggle');
+            const navMenu = document.querySelector('.nav-menu');
+            const navOverlay = document.getElementById('navOverlay');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function() {
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    navMenu.classList.toggle('active');
+                    if (navOverlay) navOverlay.classList.toggle('active');
+                });
+                
+                // Close menu when clicking overlay
+                if (navOverlay) {
+                    navOverlay.addEventListener('click', function() {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        navOverlay.classList.remove('active');
+                    });
+                }
+                
+                // Handle dropdown toggles in menu
+                const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+                dropdownToggles.forEach(toggle => {
+                    toggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const dropdown = this.nextElementSibling;
+                        const isOpen = this.getAttribute('aria-expanded') === 'true';
+                        this.setAttribute('aria-expanded', !isOpen);
+                        dropdown.classList.toggle('show');
+                    });
+                });
+            }
         });
 
         // Close modal on Escape key
@@ -2355,11 +2552,15 @@
             if (event.key === 'Escape') {
                 const userTypesModal = document.getElementById('userTypesModal');
                 const launchModal = document.getElementById('launchModal');
+                const incomeSourcesModal = document.getElementById('incomeSourcesModal');
                 if (userTypesModal.classList.contains('active')) {
                     closeUserTypesModal();
                 }
                 if (launchModal.classList.contains('active')) {
                     closeLaunchModal();
+                }
+                if (incomeSourcesModal.classList.contains('active')) {
+                    closeIncomeSourcesModal();
                 }
             }
         });
@@ -2374,6 +2575,12 @@
         document.getElementById('launchModal').addEventListener('click', function(event) {
             if (event.target === this) {
                 closeLaunchModal();
+            }
+        });
+
+        document.getElementById('incomeSourcesModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeIncomeSourcesModal();
             }
         });
     </script>
