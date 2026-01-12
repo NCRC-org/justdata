@@ -173,16 +173,13 @@
         <div class="header-content">
             <div class="header-layout">
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-logo.jpg') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
                 </div>
                 <div class="header-title-section">
-                    <h1>BizSight</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                    <h1><span class="app-name-part1">BIZ</span><span class="app-name-part2">SIGHT</span></h1>
                 </div>
                 <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
+                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
                 </div>
             </div>
         </div>
@@ -378,15 +375,17 @@
             <div class="footer-col">
                 <h4>Developed by</h4>
                 <p>NCRC - National Community Reinvestment Coalition<br>
-                JustData Team</p>
+                Jad Edlebi &amp; Jason Richardson</p>
             </div>
             <div class="footer-col">
-                <h4>Data Source</h4>
-                <p>HMDA Section 1071<br>
-                Small Business Lending Data</p>
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
             </div>
             <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.jpg') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
             </div>
         </div>
         <div class="footer-bottom">

@@ -19,18 +19,13 @@
         <div class="header-content">
             <div class="header-layout">
                 <div class="logo">
-                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                    </a>
+                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
                 </div>
                 <div class="header-title-section">
-                    <h1>LoanTrends</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                    <h1><span class="app-name-part1">LOAN</span><span class="app-name-part2">TRENDS</span></h1>
                 </div>
                 <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
+                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
                 </div>
             </div>
         </div>
@@ -38,7 +33,7 @@
 
     <!-- Return to JustData Home Button -->
     <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
-        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+        <a href="/" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
             <i class="fas fa-arrow-left"></i> Return to JustData Home
         </a>
     </div>
@@ -252,11 +247,13 @@
             </div>
             <div class="footer-col">
                 <h4>Developed by</h4>
-                <p>NCRC - National Community Reinvestment Coalition</p>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
             </div>
             <div class="footer-col">
                 <h4>Links</h4>
                 <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
                     <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
                 </p>
             </div>
