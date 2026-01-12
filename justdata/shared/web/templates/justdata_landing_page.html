@@ -467,40 +467,67 @@
             box-shadow: 0 6px 16px rgba(85, 45, 135, 0.4);
         }
 
-        /* Locked app styles */
+        /* Locked app styles - matching Render version */
         .app-card.app-locked {
-            opacity: 0.7;
+            opacity: 0.6;
             position: relative;
+            cursor: not-allowed;
+            pointer-events: auto;
         }
-        
+
         .app-card.app-locked::after {
-            content: '🔒 Membership Required';
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .app-card.app-locked .lock-overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(85, 45, 135, 0.9);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            z-index: 10;
+            z-index: 2;
+            text-align: center;
+            color: var(--ncrc-gray);
+            pointer-events: none;
         }
-        
-        .app-card.app-locked .app-card-description,
-        .app-card.app-locked .app-card-status,
+
+        .app-card.app-locked .lock-overlay i {
+            font-size: 2.5rem;
+            color: var(--ncrc-primary-blue);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .app-card.app-locked .lock-overlay p {
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            margin: 0;
+            font-size: 0.95rem;
+        }
+
         .app-card.app-locked .app-card-launch-btn {
-            filter: blur(2px);
+            display: none;
+        }
+
+        .app-card.app-hidden {
+            display: none !important;
         }
         
         /* Limited access styles */
         .app-card.app-limited {
             border: 2px solid var(--ncrc-gold);
+            position: relative;
         }
         
-        .app-card.app-limited::before {
-            content: '⚠️ Limited Access';
+        .app-card.app-limited .limited-badge {
             position: absolute;
             top: 10px;
             right: 10px;
@@ -748,60 +775,6 @@
         .app-admin .app-card-icon {
             background: rgba(232, 46, 46, 0.1);
             color: var(--ncrc-accent-red);
-        }
-
-        /* Locked App States */
-        .app-card.app-locked {
-            opacity: 0.6;
-            position: relative;
-            cursor: not-allowed;
-            pointer-events: auto;
-        }
-
-        .app-card.app-locked::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.85);
-            border-radius: 12px;
-            z-index: 1;
-            pointer-events: none;
-        }
-
-        .app-card.app-locked .lock-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 2;
-            text-align: center;
-            color: var(--ncrc-gray);
-            pointer-events: none;
-        }
-
-        .app-card.app-locked .lock-overlay i {
-            font-size: 2.5rem;
-            color: var(--ncrc-primary-blue);
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        .app-card.app-locked .lock-overlay p {
-            font-weight: 600;
-            color: var(--ncrc-primary-blue);
-            margin: 0;
-            font-size: 0.95rem;
-        }
-
-        .app-card.app-locked .app-card-launch-btn {
-            display: none;
-        }
-
-        .app-card.app-hidden {
-            display: none !important;
         }
 
         /* Sidebar */
@@ -2052,19 +2025,46 @@
                 const appName = card.getAttribute('data-app');
                 const accessLevel = getAppAccess(appName, userType);
                 
-                // Reset classes
+                // Reset classes and remove existing overlays
                 card.classList.remove('app-locked', 'app-hidden', 'app-limited');
+                const existingOverlay = card.querySelector('.lock-overlay');
+                if (existingOverlay) existingOverlay.remove();
+                const existingBadge = card.querySelector('.limited-badge');
+                if (existingBadge) existingBadge.remove();
                 
                 if (accessLevel === 'hidden') {
                     card.style.display = 'none';
+                    card.style.visibility = 'hidden';
                 } else if (accessLevel === 'locked') {
                     card.style.display = '';
+                    card.style.visibility = 'visible';
                     card.classList.add('app-locked');
+                    
+                    // Add lock overlay
+                    const lockOverlay = document.createElement('div');
+                    lockOverlay.className = 'lock-overlay';
+                    let lockMessage = 'NCRC Member access required';
+                    if (appName === 'dataexplorer') {
+                        lockMessage = 'Member Plus tier required';
+                    }
+                    lockOverlay.innerHTML = `
+                        <i class="fas fa-lock"></i>
+                        <p>${lockMessage}</p>
+                    `;
+                    card.appendChild(lockOverlay);
                 } else if (accessLevel === 'partial') {
                     card.style.display = '';
+                    card.style.visibility = 'visible';
                     card.classList.add('app-limited');
+                    
+                    // Add limited badge
+                    const badge = document.createElement('div');
+                    badge.className = 'limited-badge';
+                    badge.textContent = '⚠️ Limited Access';
+                    card.appendChild(badge);
                 } else {
                     card.style.display = '';
+                    card.style.visibility = 'visible';
                 }
             });
             
