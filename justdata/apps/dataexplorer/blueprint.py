@@ -39,8 +39,8 @@ dataexplorer_bp = Blueprint(
 @dataexplorer_bp.route('/')
 @require_access('dataexplorer', 'full')
 def index():
-    """Main DataExplorer page."""
-    return render_template('dataexplorer_template.html', version=__version__)
+    """Main DataExplorer page - renders wizard."""
+    return render_template('wizard.html', version=__version__)
 
 
 @dataexplorer_bp.route('/dashboard')

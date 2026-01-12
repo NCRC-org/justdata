@@ -37,7 +37,7 @@ def index():
     cache_buster = int(time.time())  # Timestamp for cache-busting
     # Set base URL for JavaScript API calls
     app_base_url = url_for('lendsight.index').rstrip('/')
-    response = make_response(render_template('lendsight_template.html', 
+    response = make_response(render_template('analysis_template.html', 
                                            permissions=user_permissions, 
                                            cache_buster=cache_buster,
                                            app_base_url=app_base_url))

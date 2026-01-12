@@ -33,7 +33,7 @@ loantrends_bp = Blueprint(
 @require_access('loantrends', 'full')
 def index():
     """Main LoanTrends page."""
-    return render_template('loantrends_template.html', version=__version__)
+    return render_template('analysis_template.html', version=__version__)
 
 
 @loantrends_bp.route('/api/dashboard-data', methods=['GET'])

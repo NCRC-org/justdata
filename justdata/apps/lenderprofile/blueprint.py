@@ -33,7 +33,7 @@ lenderprofile_bp = Blueprint(
 @require_access('lenderprofile', 'full')
 def index():
     """Main LenderProfile page."""
-    return render_template('lenderprofile_template.html', version=__version__)
+    return render_template('index.html', version=__version__)
 
 
 @lenderprofile_bp.route('/api/search-lender', methods=['POST'])
