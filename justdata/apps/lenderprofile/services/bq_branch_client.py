@@ -8,7 +8,7 @@ import os
 import logging
 from typing import List, Dict, Any, Optional, Tuple
 from google.cloud import bigquery
-from shared.utils.bigquery_client import get_bigquery_client
+from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ class BigQueryBranchClient:
             
             # RSSD in SOD tables is stored as STRING - try both padded and unpadded formats
             # Use string interpolation (like data_utils.py) to avoid type issues
-            from shared.utils.bigquery_client import escape_sql_string
+            from justdata.shared.utils.bigquery_client import escape_sql_string
             
             rssd_str = str(rssd).strip()
             try:
@@ -105,7 +105,7 @@ class BigQueryBranchClient:
             
             # Get client and execute query
             client = self._get_client()
-            from shared.utils.bigquery_client import execute_query
+            from justdata.shared.utils.bigquery_client import execute_query
             results = execute_query(client, query)
             
             branches = []

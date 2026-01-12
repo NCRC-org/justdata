@@ -4,7 +4,7 @@ File-based Persistent Cache for LenderProfile Development
 Saves all API responses to JSON files for offline iteration and debugging.
 
 Usage:
-    from apps.lenderprofile.cache.file_cache import FileCache
+    from justdata.apps.lenderprofile.cache.file_cache import FileCache
 
     cache = FileCache("fifth_third")
 
@@ -319,7 +319,7 @@ class CachingDataCollector:
             use_cache: Whether to use cached data if available
             cache_dir: Optional custom cache directory
         """
-        from apps.lenderprofile.processors.data_collector import DataCollector
+        from justdata.apps.lenderprofile.processors.data_collector import DataCollector
 
         self.institution_name = institution_name
         self.use_cache = use_cache

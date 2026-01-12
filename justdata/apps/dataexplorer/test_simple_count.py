@@ -11,8 +11,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from shared.utils.bigquery_client import get_bigquery_client, execute_query
-from shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
 
 # Load environment
 ensure_unified_env_loaded(verbose=True)

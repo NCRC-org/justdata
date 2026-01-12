@@ -8,9 +8,9 @@ import logging
 from typing import Optional, Dict, Any, List
 from difflib import SequenceMatcher
 
-from apps.lenderprofile.services.fdic_client import FDICClient
-from apps.lenderprofile.services.gleif_client import GLEIFClient
-from apps.lenderprofile.services.sec_client import SECClient
+from justdata.apps.lenderprofile.services.fdic_client import FDICClient
+from justdata.apps.lenderprofile.services.gleif_client import GLEIFClient
+from justdata.apps.lenderprofile.services.sec_client import SECClient
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class IdentifierResolver:
         # NOTE: We do NOT make external API calls here to keep search fast
         # FDIC cert and other enrichment happens after user selects a candidate
         try:
-            from apps.dataexplorer.data_utils import search_lenders18
+            from justdata.apps.dataexplorer.data_utils import search_lenders18
             logger.info(f"Searching BigQuery Lenders18 for candidates: '{name}'")
             bq_results = search_lenders18(name, limit=limit, include_verification=False)
 
@@ -229,7 +229,7 @@ class IdentifierResolver:
                 # Try to get RSSD and FDIC cert from other sources
                 # GLEIF doesn't provide RSSD, so we'll try BigQuery or FDIC
                 try:
-                    from apps.dataexplorer.data_utils import search_lenders18
+                    from justdata.apps.dataexplorer.data_utils import search_lenders18
                     if result['lei']:
                         # Search BigQuery by LEI to get RSSD
                         bq_results = search_lenders18(name, limit=5, include_verification=False)
@@ -266,7 +266,7 @@ class IdentifierResolver:
         
         # Fallback to BigQuery Lenders18 table (like DataExplorer)
         try:
-            from apps.dataexplorer.data_utils import search_lenders18
+            from justdata.apps.dataexplorer.data_utils import search_lenders18
             logger.info(f"Searching BigQuery Lenders18 for: '{name}'")
             bq_results = search_lenders18(name, limit=5, include_verification=False)
             logger.info(f"BigQuery search returned {len(bq_results) if bq_results else 0} results")
@@ -494,7 +494,7 @@ class IdentifierResolver:
         fdic_data = details.get('fdic_data') or {}
         if not fdic_data.get('ASSET') and identifier.get('lei'):
             try:
-                from apps.dataexplorer.utils.cfpb_client import CFPBClient
+                from justdata.apps.dataexplorer.utils.cfpb_client import CFPBClient
                 cfpb_client = CFPBClient()
                 if cfpb_client._is_enabled():
                     logger.info(f"FDIC assets not available, trying CFPB API for LEI {identifier['lei']}")

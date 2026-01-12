@@ -5,7 +5,7 @@ Report builder module for creating data tables from Quarterly API data.
 
 import pandas as pd
 from typing import Dict, List, Any, Optional
-from apps.loantrends.data_utils import parse_quarterly_data
+from justdata.apps.loantrends.data_utils import parse_quarterly_data
 
 
 def build_trends_report(graph_data: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:

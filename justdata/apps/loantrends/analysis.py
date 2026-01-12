@@ -6,7 +6,7 @@ Similar structure to LendSight but for national-level quarterly data.
 
 import json
 from typing import Dict, Any
-from shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
+from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
 
 
 class LoanTrendsAnalyzer(AIAnalyzer):

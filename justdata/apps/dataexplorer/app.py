@@ -22,18 +22,18 @@ import logging
 from pathlib import Path
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from shared.web.app_factory import create_app, register_standard_routes
-from shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
-from apps.dataexplorer.config import TEMPLATES_DIR, STATIC_DIR
-from apps.dataexplorer.version import __version__
-from apps.dataexplorer.data_utils import (
+from justdata.shared.web.app_factory import create_app, register_standard_routes
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+from justdata.apps.dataexplorer.config import TEMPLATES_DIR, STATIC_DIR
+from justdata.apps.dataexplorer.version import __version__
+from justdata.apps.dataexplorer.data_utils import (
     validate_years, validate_geoids, lookup_lender
 )
-from apps.dataexplorer.cache_utils import clear_cache
-from apps.dataexplorer.area_analysis_processor import (
+from justdata.apps.dataexplorer.cache_utils import clear_cache
+from justdata.apps.dataexplorer.area_analysis_processor import (
     process_hmda_area_analysis, process_sb_area_analysis, process_branch_area_analysis
 )
-from apps.dataexplorer.lender_analysis_processor import process_lender_analysis
+from justdata.apps.dataexplorer.lender_analysis_processor import process_lender_analysis
 
 # Get repo root for shared static files
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
@@ -330,7 +330,7 @@ def lender_lookup():
 def get_all_lenders():
     """Get all lenders from Lenders18 table."""
     try:
-        from apps.dataexplorer.data_utils import load_all_lenders18
+        from justdata.apps.dataexplorer.data_utils import load_all_lenders18
         lenders = load_all_lenders18()
         logger.info(f"Returning {len(lenders)} lenders")
         return jsonify({
@@ -352,7 +352,7 @@ def lookup_lender_by_lei():
         if not lei:
             return jsonify({'error': 'LEI is required'}), 400
         
-        from apps.dataexplorer.data_utils import get_lender_details_by_lei
+        from justdata.apps.dataexplorer.data_utils import get_lender_details_by_lei
         details = get_lender_details_by_lei(lei)
         
         if details:
@@ -381,7 +381,7 @@ def get_lender_gleif_data():
         if not lei:
             return jsonify({'error': 'LEI is required'}), 400
         
-        from apps.dataexplorer.data_utils import get_gleif_data_by_lei
+        from justdata.apps.dataexplorer.data_utils import get_gleif_data_by_lei
         gleif_data = get_gleif_data_by_lei(lei)
         
         if gleif_data:
@@ -413,7 +413,7 @@ def verify_gleif():
         
         # Import GLEIF client
         try:
-            from apps.dataexplorer.utils.gleif_client import GLEIFClient
+            from justdata.apps.dataexplorer.utils.gleif_client import GLEIFClient
             gleif_client = GLEIFClient()
             result = gleif_client.verify_lei(lei, name)
             
@@ -466,7 +466,7 @@ def search_lender():
         
         # Use Lenders18 table directly
         try:
-            from apps.dataexplorer.data_utils import search_lenders18
+            from justdata.apps.dataexplorer.data_utils import search_lenders18
             results = search_lenders18(query, limit=20)
             logger.info(f"Found {len(results)} lenders from Lenders18 for query: {query}")
         except Exception as bq_error:
@@ -498,7 +498,7 @@ def get_lender_assets():
         # Try to get assets from CFPB API
         assets = None
         try:
-            from apps.dataexplorer.utils.cfpb_client import CFPBClient
+            from justdata.apps.dataexplorer.utils.cfpb_client import CFPBClient
             cfpb_client = CFPBClient()
             
             if cfpb_client._is_enabled():
@@ -548,8 +548,8 @@ def get_lender_assets():
 def get_states():
     """Get list of all US states."""
     try:
-        from shared.utils.bigquery_client import get_bigquery_client, execute_query
-        from apps.dataexplorer.config import PROJECT_ID
+        from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+        from justdata.apps.dataexplorer.config import PROJECT_ID
         
         # Query geo.cbsa_to_county table for distinct states
         query = f"""
@@ -585,8 +585,8 @@ def get_metros():
     3. Higher CBSA codes (typically newer definitions)
     """
     try:
-        from shared.utils.bigquery_client import get_bigquery_client, execute_query
-        from apps.dataexplorer.config import PROJECT_ID
+        from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+        from justdata.apps.dataexplorer.config import PROJECT_ID
         
         # Query to get distinct CBSAs, preferring current definitions
         # For duplicates (same CBSA code with different names), prefer names with more counties and CT planning regions
@@ -649,8 +649,8 @@ def get_metros():
 def get_counties_by_metro(cbsa_code):
     """Get counties for a specific metro area (CBSA)."""
     try:
-        from shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
-        from apps.dataexplorer.config import PROJECT_ID
+        from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
+        from justdata.apps.dataexplorer.config import PROJECT_ID
         
         # Escape CBSA code for SQL safety
         escaped_cbsa = escape_sql_string(cbsa_code)
@@ -701,8 +701,8 @@ def get_counties():
         if not state_code:
             return jsonify({'error': 'State code is required'}), 400
         
-        from shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
-        from apps.dataexplorer.config import PROJECT_ID
+        from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
+        from justdata.apps.dataexplorer.config import PROJECT_ID
         
         # Escape state code for SQL safety
         escaped_state = escape_sql_string(state_code)
@@ -745,7 +745,7 @@ def get_counties():
 @app.route('/api/config/data-types', methods=['GET'])
 def get_data_types():
     """Get available data types and their configurations."""
-    from apps.dataexplorer.config import (
+    from justdata.apps.dataexplorer.config import (
         HMDA_YEARS, SB_YEARS, BRANCH_YEARS
     )
     
@@ -826,13 +826,13 @@ def test_lender_analysis():
         import uuid
         import threading
         import pandas as pd
-        from shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
-        from apps.dataexplorer.lender_report_builder import build_lender_report
-        from apps.lendsight.core import load_sql_template
-        from apps.dataexplorer.data_utils import get_peer_lenders
-        from shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
-        from shared.utils.unified_env import get_unified_config
-        from apps.lendsight.mortgage_report_builder import clean_mortgage_data
+        from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
+        from justdata.apps.dataexplorer.lender_report_builder import build_lender_report
+        from justdata.apps.lendsight.core import load_sql_template
+        from justdata.apps.dataexplorer.data_utils import get_peer_lenders
+        from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
+        from justdata.shared.utils.unified_env import get_unified_config
+        from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
     except ImportError as e:
         logger.error(f"Import error in test_lender_analysis: {e}", exc_info=True)
         return jsonify({
@@ -847,7 +847,7 @@ def test_lender_analysis():
         # Try to get assets from CFPB API if available
         assets = None
         try:
-            from apps.dataexplorer.utils.cfpb_client import CFPBClient
+            from justdata.apps.dataexplorer.utils.cfpb_client import CFPBClient
             cfpb_client = CFPBClient()
             if cfpb_client and cfpb_client._is_enabled():
                 # Get institution by LEI to get detailed info including assets
@@ -909,7 +909,7 @@ def test_lender_analysis():
                 
                 # Use Orange County, California only
                 target_county = "Orange County, California"
-                from apps.lendsight.data_utils import find_exact_county_match, escape_sql_string as ls_escape_sql_string
+                from justdata.apps.lendsight.data_utils import find_exact_county_match, escape_sql_string as ls_escape_sql_string
                 
                 county_matches = find_exact_county_match(target_county)
                 if not county_matches:
@@ -1105,8 +1105,8 @@ def generate_lender_report():
     try:
         import uuid
         import threading
-        from shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
-        from apps.dataexplorer.lender_analysis_core import run_lender_analysis
+        from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
+        from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis
         
         data = request.get_json()
         
@@ -1172,8 +1172,8 @@ def generate_area_report():
     try:
         import uuid
         import threading
-        from shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
-        from apps.dataexplorer.core import run_area_analysis
+        from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
+        from justdata.apps.dataexplorer.core import run_area_analysis
         
         data = request.get_json()
         
@@ -1242,7 +1242,7 @@ def generate_area_report():
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events."""
     from flask import Response
-    from shared.utils.progress_tracker import get_progress
+    from justdata.shared.utils.progress_tracker import get_progress
     import time
     import json
     import sys
@@ -1427,7 +1427,7 @@ def export_lender_report_excel():
         wizard_data = data.get('wizard_data', {})
         
         # Try to get cached data first
-        from shared.utils.progress_tracker import get_analysis_result
+        from justdata.shared.utils.progress_tracker import get_analysis_result
         cached_result = None
         if job_id:
             cached_result = get_analysis_result(job_id)
@@ -1442,7 +1442,7 @@ def export_lender_report_excel():
         else:
             # Need to regenerate - use wizard_data to run analysis
             logger.info("No cached data found, running analysis for Excel export")
-            from apps.dataexplorer.lender_analysis_core import run_lender_analysis
+            from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis
             
             # Run analysis to get all data
             result = run_lender_analysis(wizard_data, job_id=None, progress_tracker=None)
@@ -1505,7 +1505,7 @@ def export_area_report_excel():
         filters = data.get('filters', {})
         
         # Try to get cached data first
-        from shared.utils.progress_tracker import get_analysis_result
+        from justdata.shared.utils.progress_tracker import get_analysis_result
         cached_result = None
         if job_id:
             cached_result = get_analysis_result(job_id)
@@ -1520,7 +1520,7 @@ def export_area_report_excel():
         else:
             # Need to regenerate - reconstruct wizard_data from request
             logger.info("No cached data found, running analysis for Excel export")
-            from apps.dataexplorer.core import run_area_analysis
+            from justdata.apps.dataexplorer.core import run_area_analysis
             
             # Reconstruct wizard_data from the request
             wizard_data = {
@@ -1572,7 +1572,7 @@ def clear_cache_endpoint():
         # Optionally clear old analysis result files
         if clear_results:
             from pathlib import Path
-            from shared.utils.progress_tracker import _get_progress_storage_dir
+            from justdata.shared.utils.progress_tracker import _get_progress_storage_dir
             storage_dir = _get_progress_storage_dir()
             if storage_dir:
                 result_files = list(storage_dir.glob("result_*.pkl")) + list(storage_dir.glob("result_*.json"))
@@ -1601,7 +1601,7 @@ def clear_cache_endpoint():
 @app.route('/report/<job_id>', methods=['GET'])
 def show_report(job_id):
     """Display the analysis report (area or lender)."""
-    from shared.utils.progress_tracker import get_analysis_result, get_progress
+    from justdata.shared.utils.progress_tracker import get_analysis_result, get_progress
     
     try:
         result = get_analysis_result(job_id)
@@ -1690,7 +1690,7 @@ def show_report(job_id):
 def get_bigquery_job_history():
     """Query BigQuery job history to see recent queries."""
     try:
-        from shared.utils.bigquery_client import get_bigquery_client
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
         from google.cloud import bigquery
         from datetime import datetime, timedelta
         

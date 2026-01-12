@@ -187,7 +187,7 @@ class SECTopicExtractor:
         if sec_client:
             self.sec_client = sec_client
         else:
-            from apps.lenderprofile.services.sec_client import SECClient
+            from justdata.apps.lenderprofile.services.sec_client import SECClient
             self.sec_client = SECClient()
 
     def get_last_4_quarters_filings(self, cik: str) -> List[Dict[str, Any]]:
@@ -601,7 +601,7 @@ REQUIREMENTS:
 Write the 2-paragraph narrative now:"""
 
         try:
-            from shared.analysis.ai_provider import ask_ai
+            from justdata.shared.analysis.ai_provider import ask_ai
             narrative = ask_ai(
                 prompt,
                 max_tokens=600,

@@ -23,8 +23,8 @@ from openpyxl.utils.dataframe import dataframe_to_rows
 
 def collect_data(lender_name: str) -> dict:
     """Collect all data for a lender."""
-    from apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
-    from apps.lenderprofile.processors.data_collector import DataCollector
+    from justdata.apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
+    from justdata.apps.lenderprofile.processors.data_collector import DataCollector
 
     # First resolve identifiers
     resolver = IdentifierResolver()

@@ -33,7 +33,7 @@ sys.path.insert(0, str(REPO_ROOT))
 from dotenv import load_dotenv
 load_dotenv(REPO_ROOT / '.env')
 
-from apps.lenderprofile.cache.file_cache import FileCache, CachingDataCollector
+from justdata.apps.lenderprofile.cache.file_cache import FileCache, CachingDataCollector
 
 
 # Fifth Third Bank identifiers (pre-resolved)

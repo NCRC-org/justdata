@@ -6,10 +6,10 @@ Aggregates branch data across parent/child corporate hierarchy.
 
 import logging
 from typing import Dict, Any, List, Optional
-from apps.lenderprofile.services.bq_branch_client import BigQueryBranchClient
-from apps.lenderprofile.services.bq_credit_union_branch_client import BigQueryCreditUnionBranchClient
-from apps.lenderprofile.processors.corporate_hierarchy import CorporateHierarchy
-from apps.dataexplorer.data_utils import get_gleif_data_by_lei
+from justdata.apps.lenderprofile.services.bq_branch_client import BigQueryBranchClient
+from justdata.apps.lenderprofile.services.bq_credit_union_branch_client import BigQueryCreditUnionBranchClient
+from justdata.apps.lenderprofile.processors.corporate_hierarchy import CorporateHierarchy
+from justdata.apps.dataexplorer.data_utils import get_gleif_data_by_lei
 
 logger = logging.getLogger(__name__)
 

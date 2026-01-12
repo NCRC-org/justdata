@@ -13,8 +13,8 @@ from pathlib import Path
 repo_root = Path(__file__).parent.parent.parent.parent.absolute()
 sys.path.insert(0, str(repo_root))
 
-from shared.utils.bigquery_client import get_bigquery_client, execute_query
-from apps.dataexplorer.config import PROJECT_ID, STATIC_DIR
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.apps.dataexplorer.config import PROJECT_ID, STATIC_DIR
 
 def generate_metros_json():
     """Fetch all metros from BigQuery and save to JSON file.

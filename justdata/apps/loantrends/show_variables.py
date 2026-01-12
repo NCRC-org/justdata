@@ -11,8 +11,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from apps.loantrends.config import GRAPH_ENDPOINTS
-from apps.loantrends.data_utils import fetch_graph_data, parse_quarterly_data
+from justdata.apps.loantrends.config import GRAPH_ENDPOINTS
+from justdata.apps.loantrends.data_utils import fetch_graph_data, parse_quarterly_data
 
 def show_variable_info():
     """Display all variables and sample data."""

@@ -14,10 +14,10 @@ from datetime import datetime
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from apps.loantrends.config import GRAPH_ENDPOINTS
-from apps.loantrends.data_utils import fetch_multiple_graphs
-from apps.loantrends.chart_builder import build_chart_data
-from apps.loantrends.data_utils import get_recent_12_quarters
+from justdata.apps.loantrends.config import GRAPH_ENDPOINTS
+from justdata.apps.loantrends.data_utils import fetch_multiple_graphs
+from justdata.apps.loantrends.chart_builder import build_chart_data
+from justdata.apps.loantrends.data_utils import get_recent_12_quarters
 
 def build_static_site():
     """Build the static site by fetching data and generating HTML."""
@@ -91,7 +91,7 @@ def build_static_site():
     print()
     
     # Generate static HTML
-    from apps.loantrends.generate_static_html import generate_static_html
+    from justdata.apps.loantrends.generate_static_html import generate_static_html
     generate_static_html()
     
     print()

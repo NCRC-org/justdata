@@ -6,11 +6,11 @@ Processes lender-specific queries with peer comparison.
 
 from typing import Dict, List, Any, Optional
 import pandas as pd
-from apps.dataexplorer.data_utils import (
+from justdata.apps.dataexplorer.data_utils import (
     execute_hmda_query, execute_sb_query, execute_branch_query,
     get_peer_lenders, get_lender_target_counties
 )
-from apps.dataexplorer.config import (
+from justdata.apps.dataexplorer.config import (
     PEER_VOLUME_MIN_PERCENT, PEER_VOLUME_MAX_PERCENT, DEFAULT_PEER_COUNT
 )
 import logging

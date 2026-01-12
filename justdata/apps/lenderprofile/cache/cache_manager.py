@@ -18,7 +18,7 @@ except ImportError:
     REDIS_AVAILABLE = False
     logging.warning("Redis not available, using in-memory cache only")
 
-from apps.lenderprofile.config import (
+from justdata.apps.lenderprofile.config import (
     CACHE_TTL_GLEIF, CACHE_TTL_FINANCIAL, CACHE_TTL_BRANCH,
     CACHE_TTL_CRA, CACHE_TTL_COURT_SEARCH, CACHE_TTL_COURT_DETAILS,
     CACHE_TTL_NEWS, CACHE_TTL_ORG_CHART, CACHE_TTL_SEC, CACHE_TTL_ENFORCEMENT

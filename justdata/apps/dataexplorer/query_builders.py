@@ -5,8 +5,8 @@ Fixed query logic with proper SQL injection protection and correct filters.
 """
 
 from typing import List, Optional, Dict, Any
-from shared.utils.bigquery_client import escape_sql_string
-from apps.dataexplorer.config import (
+from justdata.shared.utils.bigquery_client import escape_sql_string
+from justdata.apps.dataexplorer.config import (
     PROJECT_ID, HMDA_DATASET, HMDA_TABLE,
     SB_DATASET, SB_DISCLOSURE_TABLE, SB_AGGREGATE_TABLE,
     BRANCHES_DATASET, BRANCHES_TABLE,

@@ -7,7 +7,7 @@ Uses justdata.credit_union_branches table.
 import os
 import logging
 from typing import List, Dict, Any, Optional, Tuple
-from shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
 
 logger = logging.getLogger(__name__)
 

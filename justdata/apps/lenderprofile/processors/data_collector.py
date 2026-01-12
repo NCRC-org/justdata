@@ -9,29 +9,29 @@ from typing import Dict, Any, Optional, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 
-from apps.lenderprofile.services.fdic_client import FDICClient
-from apps.lenderprofile.services.ncua_client import NCUAClient
-from apps.lenderprofile.services.sec_client import SECClient
-from apps.lenderprofile.services.gleif_client import GLEIFClient
-from apps.lenderprofile.services.courtlistener_client import CourtListenerClient
-from apps.lenderprofile.services.newsapi_client import NewsAPIClient
-from apps.lenderprofile.services.google_news_client import GoogleNewsClient
-from apps.lenderprofile.services.duckduckgo_client import DuckDuckGoClient
+from justdata.apps.lenderprofile.services.fdic_client import FDICClient
+from justdata.apps.lenderprofile.services.ncua_client import NCUAClient
+from justdata.apps.lenderprofile.services.sec_client import SECClient
+from justdata.apps.lenderprofile.services.gleif_client import GLEIFClient
+from justdata.apps.lenderprofile.services.courtlistener_client import CourtListenerClient
+from justdata.apps.lenderprofile.services.newsapi_client import NewsAPIClient
+from justdata.apps.lenderprofile.services.google_news_client import GoogleNewsClient
+from justdata.apps.lenderprofile.services.duckduckgo_client import DuckDuckGoClient
 # TheOrg API removed - not using organizational data
-from apps.lenderprofile.services.cfpb_client import CFPBClient
-from apps.lenderprofile.services.federal_register_client import FederalRegisterClient
-from apps.lenderprofile.services.regulations_client import RegulationsGovClient
-from apps.lenderprofile.services.federal_reserve_client import FederalReserveClient
-from apps.lenderprofile.services.seeking_alpha_client import SeekingAlphaClient
-from apps.lenderprofile.services.bq_hmda_client import BigQueryHMDAClient
-from apps.lenderprofile.services.bq_cra_client import BigQueryCRAClient
-from apps.lenderprofile.services.congress_trading_client import CongressTradingClient
-from apps.lenderprofile.cache.cache_manager import CacheManager
-from apps.lenderprofile.processors.corporate_hierarchy import CorporateHierarchy
-from apps.lenderprofile.processors.ai_entity_resolver import AIEntityResolver
-from apps.lenderprofile.processors.data_analysts import DataSourceAnalysts, compile_analyst_summaries
+from justdata.apps.lenderprofile.services.cfpb_client import CFPBClient
+from justdata.apps.lenderprofile.services.federal_register_client import FederalRegisterClient
+from justdata.apps.lenderprofile.services.regulations_client import RegulationsGovClient
+from justdata.apps.lenderprofile.services.federal_reserve_client import FederalReserveClient
+from justdata.apps.lenderprofile.services.seeking_alpha_client import SeekingAlphaClient
+from justdata.apps.lenderprofile.services.bq_hmda_client import BigQueryHMDAClient
+from justdata.apps.lenderprofile.services.bq_cra_client import BigQueryCRAClient
+from justdata.apps.lenderprofile.services.congress_trading_client import CongressTradingClient
+from justdata.apps.lenderprofile.cache.cache_manager import CacheManager
+from justdata.apps.lenderprofile.processors.corporate_hierarchy import CorporateHierarchy
+from justdata.apps.lenderprofile.processors.ai_entity_resolver import AIEntityResolver
+from justdata.apps.lenderprofile.processors.data_analysts import DataSourceAnalysts, compile_analyst_summaries
 
-from apps.lenderprofile.processors.ixbrl_parser import IXBRLParser
+from justdata.apps.lenderprofile.processors.ixbrl_parser import IXBRLParser
 
 logger = logging.getLogger(__name__)
 
@@ -894,32 +894,32 @@ class DataCollector:
                 logger.info(f"Entity '{institution_name}' is subsidiary of '{primary_name}' - keeping original name for report")
         
         # Process GLEIF data using code-based processor
-        from apps.lenderprofile.processors.data_processors import GLEIFDataProcessor
+        from justdata.apps.lenderprofile.processors.data_processors import GLEIFDataProcessor
         gleif_raw = institution_data.get('gleif', {})
         gleif_processed = GLEIFDataProcessor.build_corporate_structure(gleif_raw)
         institution_data['corporate_structure'] = gleif_processed
         
         # Process complaints using code-based processor
-        from apps.lenderprofile.processors.data_processors import ComplaintDataProcessor
+        from justdata.apps.lenderprofile.processors.data_processors import ComplaintDataProcessor
         complaints_raw = institution_data.get('cfpb_complaints', {}).get('complaints', [])
         complaints_processed = ComplaintDataProcessor.analyze_complaints(complaints_raw)
         institution_data['complaints_processed'] = complaints_processed
         
         # Process analyst ratings using code-based processor
-        from apps.lenderprofile.processors.data_processors import AnalystRatingsProcessor
+        from justdata.apps.lenderprofile.processors.data_processors import AnalystRatingsProcessor
         seeking_alpha_raw = institution_data.get('seeking_alpha', {})
         ratings_processed = AnalystRatingsProcessor.process_analyst_ratings(seeking_alpha_raw)
         institution_data['analyst_ratings'] = ratings_processed
         
         # Process litigation using code-based processor
-        from apps.lenderprofile.processors.data_processors import LitigationProcessor
+        from justdata.apps.lenderprofile.processors.data_processors import LitigationProcessor
         litigation_raw = institution_data.get('litigation', {}).get('cases', [])
         litigation_processed = LitigationProcessor.process_litigation(litigation_raw)
         institution_data['litigation_processed'] = litigation_processed
         
         # Process news using code-based processor
         # Filter to articles where company (or parent/subsidiaries) is primary subject
-        from apps.lenderprofile.processors.data_processors import NewsProcessor
+        from justdata.apps.lenderprofile.processors.data_processors import NewsProcessor
         newsapi_articles = institution_data.get('news', {}).get('articles', [])
         # Get leading story and news articles from Seeking Alpha
         seeking_alpha_news = seeking_alpha_raw.get('leading_story', []) if isinstance(seeking_alpha_raw.get('leading_story'), list) else []
@@ -941,8 +941,8 @@ class DataCollector:
         institution_data['news_processed'] = news_processed
         
         # Process SEC filings using code-based parser and XBRL API
-        from apps.lenderprofile.processors.sec_parser import SECFilingParser
-        from apps.lenderprofile.services.sec_client import SECClient
+        from justdata.apps.lenderprofile.processors.sec_parser import SECFilingParser
+        from justdata.apps.lenderprofile.services.sec_client import SECClient
         sec_data = institution_data.get('sec', {})
         ten_k_content = sec_data.get('filings', {}).get('10k_content', [])
         sec_parsed = {}
@@ -1072,7 +1072,7 @@ class DataCollector:
             logger.info(f"Updated institution data: assets={assets}, type={institution_type}, location={location}")
         
         # Process financial data using code-based processor
-        from apps.lenderprofile.processors.data_processors import FinancialDataProcessor
+        from justdata.apps.lenderprofile.processors.data_processors import FinancialDataProcessor
         fdic_financials_raw = institution_data.get('fdic_financials', {}).get('data', [])
         financial_processed = FinancialDataProcessor.process_fdic_financials(fdic_financials_raw)
         
@@ -1086,7 +1086,7 @@ class DataCollector:
         }
         
         # Analyze branch network using BigQuery SOD data
-        from apps.lenderprofile.branch_network_analyzer import BranchNetworkAnalyzer
+        from justdata.apps.lenderprofile.branch_network_analyzer import BranchNetworkAnalyzer
         branch_analysis = None
         
         # Determine institution type (bank vs credit union)
@@ -1713,7 +1713,7 @@ class DataCollector:
         """
         try:
             # Try to use LenderProfile's CFPB client (which wraps DataExplorer's)
-            from apps.lenderprofile.services.cfpb_client import CFPBClient
+            from justdata.apps.lenderprofile.services.cfpb_client import CFPBClient
             cfpb_client = CFPBClient()
             
             if not cfpb_client._is_enabled():
@@ -1781,7 +1781,7 @@ class DataCollector:
             # Fallback: Get LAR counts from BigQuery HMDA data if CFPB API not available
             if not result.get('transmittal_sheet') and lei:
                 try:
-                    from shared.utils.bigquery_client import get_bigquery_client, execute_query
+                    from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
                     import os
                     project_id = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
                     client = get_bigquery_client(project_id)

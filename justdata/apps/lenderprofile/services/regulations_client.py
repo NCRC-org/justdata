@@ -10,7 +10,7 @@ Base URL: https://api.regulations.gov/v4/
 import requests
 import logging
 from typing import Optional, Dict, Any, List
-from shared.utils.unified_env import get_unified_config
+from justdata.shared.utils.unified_env import get_unified_config
 
 logger = logging.getLogger(__name__)
 

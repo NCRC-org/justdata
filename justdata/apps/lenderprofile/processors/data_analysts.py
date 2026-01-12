@@ -25,7 +25,7 @@ from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
 
-from shared.analysis.ai_provider import ask_ai
+from justdata.shared.analysis.ai_provider import ask_ai
 
 # Path to context files
 CONTEXT_DIR = Path(__file__).parent / 'context'

@@ -22,14 +22,14 @@ except ImportError:
     logger.warning("scipy not available. Chi-squared testing will be disabled.")
 
 # Import LendSight's proven table building functions
-from apps.lendsight.mortgage_report_builder import (
+from justdata.apps.lendsight.mortgage_report_builder import (
     create_demographic_overview_table,
     create_income_borrowers_table,
     create_income_tracts_table,
     create_minority_tracts_table,
     calculate_mortgage_hhi_for_year
 )
-from apps.lendsight.hud_processor import get_hud_data_for_counties
+from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
 
 
 def chi_squared_test_significant(
@@ -950,7 +950,7 @@ def build_lender_report(
             logger.info(f"[build_lender_report] all_metros_data contains {metros_total:,} total loans (should be ~61,756 for national)")
     
     # Clean and prepare data - use LendSight's cleaning function
-    from apps.lendsight.mortgage_report_builder import clean_mortgage_data
+    from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
     subject_df = clean_mortgage_data(subject_df)
     if not peer_df.empty:
         peer_df = clean_mortgage_data(peer_df)
@@ -983,7 +983,7 @@ def build_lender_report(
         # Use all metros data for national totals
         table1_df = pd.DataFrame(all_metros_data)
         # Clean the data
-        from apps.lendsight.mortgage_report_builder import clean_mortgage_data
+        from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
         table1_df = clean_mortgage_data(table1_df)
         # Ensure numeric columns
         if 'total_originations' in table1_df.columns:
@@ -1123,8 +1123,8 @@ def build_lender_report(
         # Look up CBSA information from county codes using BigQuery
         # We need to query geo.cbsa_to_county to get CBSA codes and names
         try:
-            from shared.utils.bigquery_client import get_bigquery_client, execute_query
-            from shared.utils.unified_env import get_unified_config
+            from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+            from justdata.shared.utils.unified_env import get_unified_config
             
             config = get_unified_config(load_env=False, verbose=False)
             PROJECT_ID = config.get('GCP_PROJECT_ID')
@@ -1135,7 +1135,7 @@ def build_lender_report(
             if all_metros_data and len(all_metros_data) > 0:
                 metros_df = pd.DataFrame(all_metros_data)
                 # Clean the data using LendSight's cleaning function
-                from apps.lendsight.mortgage_report_builder import clean_mortgage_data
+                from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
                 metros_df = clean_mortgage_data(metros_df)
             else:
                 # Fall back to subject_df if all_metros_data not provided
@@ -1199,7 +1199,7 @@ def build_lender_report(
                                 top_cbsa_codes = total_loans_by_cbsa.index.tolist()
                             
                             # Aggregate all loans by CBSA
-                            from apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
+                            from justdata.apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
                             all_df = filter_df_by_loan_purpose(cbsa_df, 'all')
                             purchase_df = filter_df_by_loan_purpose(cbsa_df, 'purchase')
                             refinance_df = filter_df_by_loan_purpose(cbsa_df, 'refinance')
@@ -1267,7 +1267,7 @@ def build_lender_report(
     section2_tables = {}
     
     # Import filter function from area_report_builder
-    from apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
+    from justdata.apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
     
     for purpose in loan_purposes:
         logger.info(f"[DEBUG] Building Section 2 tables for loan purpose: {purpose}")

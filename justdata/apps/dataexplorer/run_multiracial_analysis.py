@@ -11,7 +11,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 
 PROJECT_ID = "hdma1-242116"
 

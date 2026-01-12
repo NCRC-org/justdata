@@ -5,7 +5,7 @@ This module ensures all apps use the same environment variables,
 whether running locally (from .env file) or on Render (from environment variables).
 
 Usage:
-    from shared.utils.unified_env import get_unified_config
+    from justdata.shared.utils.unified_env import get_unified_config
     config = get_unified_config()
     claude_key = config.get('CLAUDE_API_KEY')
 """
@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 from typing import Dict, Optional, Any
 try:
-    from shared.utils.env_utils import (
+    from justdata.shared.utils.env_utils import (
         is_local_development,
         get_env_file_path,
         load_env_file,
@@ -26,7 +26,7 @@ except ImportError:
     import sys
     from pathlib import Path
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-    from shared.utils.env_utils import (
+    from justdata.shared.utils.env_utils import (
         is_local_development,
         get_env_file_path,
         load_env_file,

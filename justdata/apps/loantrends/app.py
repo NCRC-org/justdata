@@ -13,14 +13,14 @@ import time
 import json
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from shared.web.app_factory import create_app, register_standard_routes
-from shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
-from shared.utils.env_utils import is_local_development
-from shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+from justdata.shared.web.app_factory import create_app, register_standard_routes
+from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
+from justdata.shared.utils.env_utils import is_local_development
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
 from pathlib import Path
-from apps.loantrends.config import TEMPLATES_DIR, STATIC_DIR
-from apps.loantrends.core import run_analysis
-from apps.loantrends.version import __version__
+from justdata.apps.loantrends.config import TEMPLATES_DIR, STATIC_DIR
+from justdata.apps.loantrends.core import run_analysis
+from justdata.apps.loantrends.version import __version__
 
 # Get repo root for shared static files
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
@@ -93,9 +93,9 @@ def index():
 def get_dashboard_data():
     """Get dashboard data for all endpoints"""
     try:
-        from apps.loantrends.config import GRAPH_ENDPOINTS
-        from apps.loantrends.data_utils import fetch_multiple_graphs
-        from apps.loantrends.chart_builder import build_chart_data
+        from justdata.apps.loantrends.config import GRAPH_ENDPOINTS
+        from justdata.apps.loantrends.data_utils import fetch_multiple_graphs
+        from justdata.apps.loantrends.chart_builder import build_chart_data
         
         # Get all endpoints from config
         all_endpoints = []
@@ -111,7 +111,7 @@ def get_dashboard_data():
         chart_data = build_chart_data(graph_data, time_period="all")
         
         # Get time period info
-        from apps.loantrends.data_utils import get_recent_12_quarters
+        from justdata.apps.loantrends.data_utils import get_recent_12_quarters
         start_quarter, end_quarter = get_recent_12_quarters()
         
         return jsonify({
@@ -282,7 +282,7 @@ def analyze():
                     return
                 
                 # Store the analysis results
-                from shared.utils.progress_tracker import store_analysis_result
+                from justdata.shared.utils.progress_tracker import store_analysis_result
                 store_analysis_result(job_id, result)
                 
                 # Mark analysis as completed
@@ -314,7 +314,7 @@ def analyze():
 def get_results(job_id):
     """Get analysis results"""
     try:
-        from shared.utils.progress_tracker import get_analysis_result
+        from justdata.shared.utils.progress_tracker import get_analysis_result
         result = get_analysis_result(job_id)
         
         if not result:
@@ -333,7 +333,7 @@ def show_report(job_id):
     """Display the full report"""
     try:
         print(f"[DEBUG show_report] Loading report for job_id: {job_id}")
-        from shared.utils.progress_tracker import get_analysis_result
+        from justdata.shared.utils.progress_tracker import get_analysis_result
         result = get_analysis_result(job_id)
         
         print(f"[DEBUG show_report] Result retrieved: {result is not None}")
@@ -396,7 +396,7 @@ def show_report(job_id):
 def get_available_graphs():
     """Get list of available graphs from Quarterly API"""
     try:
-        from apps.loantrends.data_utils import fetch_available_graphs
+        from justdata.apps.loantrends.data_utils import fetch_available_graphs
         graphs_data = fetch_available_graphs()
         return jsonify(graphs_data)
     except Exception as e:

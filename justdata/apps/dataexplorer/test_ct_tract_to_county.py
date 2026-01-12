@@ -7,8 +7,8 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from shared.utils.bigquery_client import get_bigquery_client, execute_query
-from shared.utils.unified_env import get_unified_config
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.shared.utils.unified_env import get_unified_config
 
 config = get_unified_config(load_env=False, verbose=False)
 PROJECT_ID = config.get('GCP_PROJECT_ID')

@@ -7,7 +7,7 @@ import requests
 import json
 import time
 from typing import Dict, List, Optional, Any
-from apps.loantrends.config import QUARTERLY_API_BASE_URL, QUARTERLY_API_TIMEOUT
+from justdata.apps.loantrends.config import QUARTERLY_API_BASE_URL, QUARTERLY_API_TIMEOUT
 
 # Simple in-memory cache (quarterly data updates infrequently)
 _cache = {}

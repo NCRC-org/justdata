@@ -8,13 +8,13 @@ import pandas as pd
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
-from apps.dataexplorer.config import PROJECT_ID
-from apps.dataexplorer.data_utils import validate_years, get_peer_lenders
-from apps.dataexplorer.lender_report_builder import build_lender_report
-from shared.utils.progress_tracker import ProgressTracker, store_analysis_result
-from shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
-from shared.utils.unified_env import get_unified_config
-from apps.lendsight.core import load_sql_template
+from justdata.apps.dataexplorer.config import PROJECT_ID
+from justdata.apps.dataexplorer.data_utils import validate_years, get_peer_lenders
+from justdata.apps.dataexplorer.lender_report_builder import build_lender_report
+from justdata.shared.utils.progress_tracker import ProgressTracker, store_analysis_result
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
+from justdata.shared.utils.unified_env import get_unified_config
+from justdata.apps.lendsight.core import load_sql_template
 import logging
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,7 @@ def _format_all_metros_for_excel(metros_df: pd.DataFrame, years: List[int], PROJ
             return []
         
         # Get CBSA information for counties
-        from apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
+        from justdata.apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
         
         # Get unique counties
         if 'geoid5' not in metros_df.columns and 'county_code' in metros_df.columns:
@@ -504,7 +504,7 @@ def run_lender_analysis(
         # Fetch additional lender details from lenders18 (type_name, city, state, etc.)
         if subject_lei:
             try:
-                from apps.dataexplorer.data_utils import get_lender_details_by_lei, get_gleif_data_by_lei
+                from justdata.apps.dataexplorer.data_utils import get_lender_details_by_lei, get_gleif_data_by_lei
                 lender_details = get_lender_details_by_lei(subject_lei)
                 if lender_details:
                     # Update lender_info with details from lenders18
@@ -1745,7 +1745,7 @@ def run_lender_analysis(
         # Try to get assets from CFPB API if available
         assets = None
         try:
-            from apps.dataexplorer.utils.cfpb_client import CFPBClient
+            from justdata.apps.dataexplorer.utils.cfpb_client import CFPBClient
             cfpb_client = CFPBClient()
             if cfpb_client and cfpb_client._is_enabled():
                 logger.info(f"CFPB client is enabled, attempting to fetch assets for LEI: {subject_lei}")

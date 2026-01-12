@@ -8,7 +8,7 @@ for fetching 2010 and 2020 census data, then aggregates the results back to plan
 
 import logging
 from typing import Dict, List, Any, Optional
-from shared.utils.connecticut_county_mapper import PLANNING_REGION_TO_COUNTIES
+from justdata.shared.utils.connecticut_county_mapper import PLANNING_REGION_TO_COUNTIES
 
 logger = logging.getLogger(__name__)
 

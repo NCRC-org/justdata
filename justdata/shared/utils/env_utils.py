@@ -80,7 +80,7 @@ def load_env_file(repo_root: Optional[Path] = None, verbose: bool = False) -> bo
     [DEPRECATED/BACKUP] Load .env file if it exists and we're in local development.
     
     NOTE: This function is now a backup/fallback. New code should use:
-    from shared.utils.unified_env import ensure_unified_env_loaded
+    from justdata.shared.utils.unified_env import ensure_unified_env_loaded
     ensure_unified_env_loaded(verbose=True)
     
     This function delegates to the unified environment system for consistency.
@@ -94,7 +94,7 @@ def load_env_file(repo_root: Optional[Path] = None, verbose: bool = False) -> bo
     """
     # Delegate to unified environment system (primary method)
     try:
-        from shared.utils.unified_env import ensure_unified_env_loaded
+        from justdata.shared.utils.unified_env import ensure_unified_env_loaded
         return ensure_unified_env_loaded(verbose=verbose)
     except ImportError:
         # Fallback to old method if unified_env not available
@@ -181,7 +181,7 @@ def get_config_summary() -> dict:
     [DEPRECATED/BACKUP] Get a summary of current environment configuration.
     
     NOTE: This function is now a backup/fallback. New code should use:
-    from shared.utils.unified_env import get_unified_config
+    from justdata.shared.utils.unified_env import get_unified_config
     config = get_unified_config(verbose=True)
     
     This function delegates to the unified environment system for consistency.
@@ -191,7 +191,7 @@ def get_config_summary() -> dict:
     """
     # Try to use unified config first (primary method)
     try:
-        from shared.utils.unified_env import get_unified_config, find_shared_env_file
+        from justdata.shared.utils.unified_env import get_unified_config, find_shared_env_file
         config = get_unified_config(load_env=False, verbose=False)
         env_path = find_shared_env_file()
         return {

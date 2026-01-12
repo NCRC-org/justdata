@@ -223,7 +223,7 @@ def get_tracts_for_connecticut_selection(
     
     try:
         if bq_client is None:
-            from shared.utils.bigquery_client import get_bigquery_client
+            from justdata.shared.utils.bigquery_client import get_bigquery_client
             from apps.branchseeker.config import PROJECT_ID
             bq_client = get_bigquery_client(PROJECT_ID)
         

@@ -4,7 +4,7 @@ Chart builder module for creating quarterly line chart data from quarterly data.
 """
 
 from typing import Dict, List, Any
-from apps.loantrends.data_utils import parse_quarterly_data, filter_quarters, get_recent_5_years_quarters
+from justdata.apps.loantrends.data_utils import parse_quarterly_data, filter_quarters, get_recent_5_years_quarters
 
 
 def prepare_quarterly_chart_data(parsed_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -124,7 +124,7 @@ def build_chart_data(graph_data: Dict[str, Dict[str, Any]], time_period: str = "
     Returns:
         Dictionary containing chart data for each endpoint with quarterly data
     """
-    from apps.loantrends.data_utils import get_recent_12_quarters, get_recent_complete_quarter
+    from justdata.apps.loantrends.data_utils import get_recent_12_quarters, get_recent_complete_quarter
     
     # Determine filter params
     filter_params = None

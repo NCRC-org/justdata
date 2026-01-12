@@ -37,7 +37,7 @@ def get_most_recent_acs_year() -> str:
     # 2024 ACS 5-year (2020-2024 data) will be released Jan 2026
     # Try to use shared utility's function if available, otherwise default to 2023
     try:
-        from shared.utils.census_adult_demographics import get_most_recent_acs_year as get_shared_acs_year
+        from justdata.shared.utils.census_adult_demographics import get_most_recent_acs_year as get_shared_acs_year
         return str(get_shared_acs_year())
     except ImportError:
         return "2023"
@@ -179,7 +179,7 @@ def get_census_data_for_county(
         
         # 1. Fetch most recent ACS estimates using shared utility for adult population (18+)
         try:
-            from shared.utils.census_adult_demographics import get_adult_population_demographics_for_county
+            from justdata.shared.utils.census_adult_demographics import get_adult_population_demographics_for_county
             
             logger.info(f"Fetching adult population (18+) demographics from ACS for {display_name}...")
             acs_adult_data = get_adult_population_demographics_for_county(

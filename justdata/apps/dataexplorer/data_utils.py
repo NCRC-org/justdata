@@ -5,11 +5,11 @@ Includes input validation, deterministic queries, and proper error handling.
 """
 
 from typing import List, Dict, Any, Optional
-from shared.utils.bigquery_client import get_bigquery_client, escape_sql_string, execute_query
-from apps.dataexplorer.config import (
+from justdata.shared.utils.bigquery_client import get_bigquery_client, escape_sql_string, execute_query
+from justdata.apps.dataexplorer.config import (
     PROJECT_ID, MAX_YEARS, MAX_GEOIDS, MAX_LENDERS
 )
-from apps.dataexplorer.query_builders import (
+from justdata.apps.dataexplorer.query_builders import (
     build_hmda_query, build_sb_query, build_branch_query, build_lender_lookup_query
 )
 import logging
@@ -499,7 +499,7 @@ def lookup_lender(lender_name: str, exact_match: bool = False) -> List[Dict[str,
         
         # Try CFPB API first to get authoritative institution data
         try:
-            from apps.dataexplorer.utils.cfpb_client import CFPBClient
+            from justdata.apps.dataexplorer.utils.cfpb_client import CFPBClient
             cfpb_client = CFPBClient()
             
             if cfpb_client._is_enabled():
@@ -656,7 +656,7 @@ def verify_lender_with_external_sources(
     
     # Verify with GLEIF
     try:
-        from apps.dataexplorer.utils.gleif_client import GLEIFClient
+        from justdata.apps.dataexplorer.utils.gleif_client import GLEIFClient
         gleif_client = GLEIFClient()
         
         if gleif_client._is_enabled():
@@ -703,7 +703,7 @@ def verify_lender_with_external_sources(
     
     # Verify with CFPB API
     try:
-        from apps.dataexplorer.utils.cfpb_client import CFPBClient
+        from justdata.apps.dataexplorer.utils.cfpb_client import CFPBClient
         cfpb_client = CFPBClient()
         
         if cfpb_client._is_enabled():
@@ -1111,9 +1111,9 @@ def execute_mortgage_query_with_filters(
         List of dictionaries containing query results
     """
     try:
-        from apps.lendsight.data_utils import find_exact_county_match, escape_sql_string as ls_escape_sql_string
-        from shared.utils.bigquery_client import get_bigquery_client, execute_query
-        from shared.utils.unified_env import get_unified_config
+        from justdata.apps.lendsight.data_utils import find_exact_county_match, escape_sql_string as ls_escape_sql_string
+        from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+        from justdata.shared.utils.unified_env import get_unified_config
         
         config = get_unified_config(load_env=False, verbose=False)
         PROJECT_ID = config.get('GCP_PROJECT_ID')

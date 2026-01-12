@@ -84,7 +84,7 @@ def get_comprehensive_demographics_for_county(
     
     try:
         # 1. Get adult population and race/ethnicity (from existing utility)
-        from shared.utils.census_adult_demographics import get_adult_population_demographics_for_county
+        from justdata.shared.utils.census_adult_demographics import get_adult_population_demographics_for_county
         
         adult_demo = get_adult_population_demographics_for_county(
             state_fips=state_fips,

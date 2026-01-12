@@ -9,7 +9,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..
 if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
-from shared.utils.bigquery_client import get_bigquery_client
+from justdata.shared.utils.bigquery_client import get_bigquery_client
 import json
 
 def main():

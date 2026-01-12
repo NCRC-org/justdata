@@ -8,7 +8,7 @@ in code first, then AI synthesizes pre-processed structured data.
 import json
 import re
 from typing import Dict, Any, Optional, List
-from shared.analysis.ai_provider import AIAnalyzer
+from justdata.shared.analysis.ai_provider import AIAnalyzer
 
 
 class StrategicAICalls:

@@ -6,10 +6,10 @@ Processes area-based queries for HMDA, Small Business, and Branch data.
 
 from typing import Dict, List, Any, Optional
 import pandas as pd
-from apps.dataexplorer.data_utils import (
+from justdata.apps.dataexplorer.data_utils import (
     execute_hmda_query, execute_sb_query, execute_branch_query
 )
-from apps.dataexplorer.config import (
+from justdata.apps.dataexplorer.config import (
     HMDA_YEARS, SB_YEARS, BRANCH_YEARS
 )
 import logging

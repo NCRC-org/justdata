@@ -10,7 +10,7 @@ allowing us to determine their geographic footprint based on lending patterns.
 import os
 import logging
 from typing import List, Dict, Any, Optional
-from shared.utils.bigquery_client import get_bigquery_client, escape_sql_string
+from justdata.shared.utils.bigquery_client import get_bigquery_client, escape_sql_string
 
 logger = logging.getLogger(__name__)
 
@@ -733,7 +733,7 @@ class BigQueryHMDAClient:
 
 def test_hmda_client():
     """Test the HMDA client with a sample lender."""
-    from shared.utils.unified_env import ensure_unified_env_loaded
+    from justdata.shared.utils.unified_env import ensure_unified_env_loaded
     ensure_unified_env_loaded(verbose=True)
 
     client = BigQueryHMDAClient()

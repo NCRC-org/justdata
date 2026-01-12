@@ -12,7 +12,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(project_root))
 
-from apps.lenderprofile.app import app, application
+from justdata.apps.lenderprofile.app import app, application
 
 # Export application for gunicorn (required for Docker/production)
 # This allows: gunicorn apps.lenderprofile.run:application

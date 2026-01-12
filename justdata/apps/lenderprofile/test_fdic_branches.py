@@ -8,9 +8,9 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from shared.utils.unified_env import ensure_unified_env_loaded
-from apps.lenderprofile.services.fdic_client import FDICClient
-from apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded
+from justdata.apps.lenderprofile.services.fdic_client import FDICClient
+from justdata.apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
 
 ensure_unified_env_loaded(verbose=True)
 

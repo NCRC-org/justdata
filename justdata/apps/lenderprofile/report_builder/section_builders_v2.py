@@ -52,7 +52,7 @@ def _verify_executive_names_with_ai(
     logger.info(f"Found {len(incomplete_names)} potentially incomplete executive names, using AI to verify")
 
     try:
-        from shared.analysis.ai_provider import ask_ai
+        from justdata.shared.analysis.ai_provider import ask_ai
 
         # Build prompt with executive data
         exec_list = []
@@ -1387,7 +1387,7 @@ def _collect_comprehensive_data(institution_data: Dict[str, Any]) -> Dict[str, A
 
     if cik:
         try:
-            from apps.lenderprofile.processors.sec_topic_extractor import SECTopicExtractor
+            from justdata.apps.lenderprofile.processors.sec_topic_extractor import SECTopicExtractor
             extractor = SECTopicExtractor()
             sec_results = extractor.analyze_filings(cik)
             if sec_results.get('has_data'):
@@ -1683,7 +1683,7 @@ FORMAT:
 """
 
     try:
-        from shared.analysis.ai_provider import ask_ai
+        from justdata.shared.analysis.ai_provider import ask_ai
         logger.info(f"SEC ANALYSIS PROMPT for {company_name} (first 2000 chars):\n{prompt[:2000]}")
 
         # Use Sonnet 4.5 with temperature=0

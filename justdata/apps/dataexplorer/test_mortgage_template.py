@@ -10,10 +10,10 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from apps.lendsight.core import load_sql_template
-from apps.dataexplorer.data_utils import execute_mortgage_query_with_filters
-from shared.utils.bigquery_client import get_bigquery_client, execute_query
-from shared.utils.unified_env import get_unified_config
+from justdata.apps.lendsight.core import load_sql_template
+from justdata.apps.dataexplorer.data_utils import execute_mortgage_query_with_filters
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.shared.utils.unified_env import get_unified_config
 import logging
 
 logging.basicConfig(level=logging.INFO)

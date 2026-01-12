@@ -8,7 +8,7 @@ Follows NCRC style guide and LendSight narrative prompt patterns.
 import json
 import re
 from typing import Dict, Any, Optional, List
-from shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
+from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
 
 
 class LenderProfileAnalyzer(AIAnalyzer):

@@ -18,7 +18,7 @@ import json
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 
-from shared.analysis.ai_provider import ask_ai
+from justdata.shared.analysis.ai_provider import ask_ai
 
 logger = logging.getLogger(__name__)
 

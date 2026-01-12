@@ -141,7 +141,7 @@ def get_congressional_data_client():
     global _congressional_data_client
     if _congressional_data_client is None:
         try:
-            from apps.lenderprofile.services.congressional_data_client import CongressionalDataClient
+            from justdata.apps.lenderprofile.services.congressional_data_client import CongressionalDataClient
             _congressional_data_client = CongressionalDataClient()
         except Exception as e:
             logger.warning(f"Could not load Congressional Data client: {e}")

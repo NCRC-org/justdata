@@ -7,8 +7,8 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
-from shared.utils.unified_env import get_unified_config
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
+from justdata.shared.utils.unified_env import get_unified_config
 
 # Expected Tableau totals
 expected_totals = {

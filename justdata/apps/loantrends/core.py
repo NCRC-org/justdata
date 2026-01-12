@@ -8,12 +8,12 @@ import os
 import json
 from typing import Dict, List, Optional
 from datetime import datetime
-from apps.loantrends.config import OUTPUT_DIR
-from apps.loantrends.data_utils import fetch_multiple_graphs, parse_quarterly_data, filter_quarters, get_recent_12_quarters
-from apps.loantrends.report_builder import build_trends_report
-from apps.loantrends.analysis import LoanTrendsAnalyzer
-from apps.loantrends.version import __version__
-from shared.utils.unified_env import get_unified_config
+from justdata.apps.loantrends.config import OUTPUT_DIR
+from justdata.apps.loantrends.data_utils import fetch_multiple_graphs, parse_quarterly_data, filter_quarters, get_recent_12_quarters
+from justdata.apps.loantrends.report_builder import build_trends_report
+from justdata.apps.loantrends.analysis import LoanTrendsAnalyzer
+from justdata.apps.loantrends.version import __version__
+from justdata.shared.utils.unified_env import get_unified_config
 
 
 def run_analysis(selected_endpoints: List[str], time_period: str = "all", 
@@ -132,7 +132,7 @@ def run_analysis(selected_endpoints: List[str], time_period: str = "all",
         
         # Build quarterly chart data (preserving all quarterly data points)
         print(f"[DEBUG] Building quarterly chart data from {len(parsed_data_for_charts)} endpoints...")
-        from apps.loantrends.chart_builder import prepare_quarterly_chart_data
+        from justdata.apps.loantrends.chart_builder import prepare_quarterly_chart_data
         chart_data = {}
         for endpoint, parsed in parsed_data_for_charts.items():
             if parsed and parsed.get('parsed_series'):

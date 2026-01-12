@@ -12,7 +12,7 @@ import logging
 # Add parent paths for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from shared.utils.unified_env import ensure_unified_env_loaded
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded
 ensure_unified_env_loaded(verbose=True)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -25,7 +25,7 @@ def test_ticker_resolver():
     print("TESTING TICKER RESOLVER")
     print("="*60)
 
-    from apps.lenderprofile.services.ticker_resolver import TickerResolver
+    from justdata.apps.lenderprofile.services.ticker_resolver import TickerResolver
 
     resolver = TickerResolver()
 
@@ -65,7 +65,7 @@ def test_identifier_resolution():
     print("TESTING IDENTIFIER RESOLUTION")
     print("="*60)
 
-    from apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
+    from justdata.apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
 
     resolver = IdentifierResolver()
 
@@ -98,7 +98,7 @@ def test_data_collection(identifiers):
         print("  No identifiers provided, skipping...")
         return None
 
-    from apps.lenderprofile.processors.data_collector import DataCollector
+    from justdata.apps.lenderprofile.processors.data_collector import DataCollector
 
     collector = DataCollector()
 
@@ -129,7 +129,7 @@ def test_section_builders_v2():
     print("TESTING SECTION BUILDERS V2")
     print("="*60)
 
-    from apps.lenderprofile.report_builder import section_builders_v2 as sb
+    from justdata.apps.lenderprofile.report_builder import section_builders_v2 as sb
 
     # Create sample data
     sample_data = {

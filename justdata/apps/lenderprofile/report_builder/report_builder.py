@@ -9,8 +9,8 @@ import logging
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from apps.lenderprofile.processors.ai_summarizer import LenderProfileAnalyzer
-from apps.lenderprofile.report_builder.section_builders_v2 import build_complete_report_v2
+from justdata.apps.lenderprofile.processors.ai_summarizer import LenderProfileAnalyzer
+from justdata.apps.lenderprofile.report_builder.section_builders_v2 import build_complete_report_v2
 
 logger = logging.getLogger(__name__)
 

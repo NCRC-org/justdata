@@ -12,7 +12,7 @@ sys.path.insert(0, str(repo_root))
 os.environ['PYTHONPATH'] = str(repo_root)
 os.environ['PORT'] = os.getenv('PORT', '8085')
 
-from apps.dataexplorer.app import app
+from justdata.apps.dataexplorer.app import app
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 8085))

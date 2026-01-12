@@ -10,12 +10,12 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime
 from pathlib import Path
 
-from apps.dataexplorer.config import OUTPUT_DIR, PROJECT_ID, HMDA_YEARS
-from apps.dataexplorer.data_utils import execute_hmda_query, validate_geoids, validate_years
-from apps.dataexplorer.area_analysis_processor import process_hmda_area_analysis
-from shared.utils.progress_tracker import ProgressTracker
-from shared.utils.census_adult_demographics import get_adult_population_demographics_for_geoids
-from shared.utils.census_historical_utils import get_census_data_for_geoids
+from justdata.apps.dataexplorer.config import OUTPUT_DIR, PROJECT_ID, HMDA_YEARS
+from justdata.apps.dataexplorer.data_utils import execute_hmda_query, validate_geoids, validate_years
+from justdata.apps.dataexplorer.area_analysis_processor import process_hmda_area_analysis
+from justdata.shared.utils.progress_tracker import ProgressTracker
+from justdata.shared.utils.census_adult_demographics import get_adult_population_demographics_for_geoids
+from justdata.shared.utils.census_historical_utils import get_census_data_for_geoids
 import logging
 
 logger = logging.getLogger(__name__)
@@ -168,7 +168,7 @@ def run_area_analysis(
             progress_tracker.update_progress('connecting_db', 10, 'Connecting to database...')
         
         # Import cache utilities
-        from apps.dataexplorer.cache_utils import (
+        from justdata.apps.dataexplorer.cache_utils import (
             load_hmda_data, save_hmda_data,
             load_census_data, save_census_data,
             load_historical_census_data, save_historical_census_data,
@@ -269,7 +269,7 @@ def run_area_analysis(
                     logger.info(f"[DEBUG] About to fetch historical census data for {len(validated_geoids)} geoids: {validated_geoids}")
                     
                     # Normalize Connecticut planning regions to counties for census API
-                    from apps.dataexplorer.connecticut_census_normalizer import normalize_connecticut_census_data
+                    from justdata.apps.dataexplorer.connecticut_census_normalizer import normalize_connecticut_census_data
                     logger.info(f"[DEBUG] Calling normalize_connecticut_census_data with geoids: {validated_geoids}")
                     historical_census_data = normalize_connecticut_census_data(
                         validated_geoids,
@@ -430,7 +430,7 @@ def run_area_analysis(
         # Try to load from cache (raw list of dicts, not DataFrame)
         import pickle
         from pathlib import Path
-        from apps.dataexplorer.cache_utils import _get_cache_key, CACHE_DIR
+        from justdata.apps.dataexplorer.cache_utils import _get_cache_key, CACHE_DIR
         
         # Import the cache key function
         def _get_cache_key(geoids, years, filters):
@@ -475,11 +475,11 @@ def run_area_analysis(
             
             # Query HMDA data using LendSight's proven SQL template
             # We'll query each county separately and combine results (like LendSight does)
-            from apps.lendsight.core import load_sql_template
-            from apps.dataexplorer.data_utils import get_county_names_from_geoids, execute_mortgage_query_with_filters
-            from shared.utils.bigquery_client import get_bigquery_client, execute_query
-            from apps.lendsight.data_utils import find_exact_county_match, escape_sql_string
-            from shared.utils.unified_env import get_unified_config
+            from justdata.apps.lendsight.core import load_sql_template
+            from justdata.apps.dataexplorer.data_utils import get_county_names_from_geoids, execute_mortgage_query_with_filters
+            from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+            from justdata.apps.lendsight.data_utils import find_exact_county_match, escape_sql_string
+            from justdata.shared.utils.unified_env import get_unified_config
             
             sql_template = load_sql_template()
             
@@ -608,7 +608,7 @@ def run_area_analysis(
             # We'll convert to DataFrame in the report builder, just like LendSight does
             import pickle
             from pathlib import Path
-            from apps.dataexplorer.cache_utils import CACHE_DIR
+            from justdata.apps.dataexplorer.cache_utils import CACHE_DIR
             
             def _get_cache_key(geoids, years, filters):
                 import json
@@ -636,7 +636,7 @@ def run_area_analysis(
         if progress_tracker:
             progress_tracker.update_progress('building_report', 65, 'Building report tables...')
         
-        from apps.dataexplorer.area_report_builder import build_area_report
+        from justdata.apps.dataexplorer.area_report_builder import build_area_report
         import pandas as pd
         import numpy as np
         

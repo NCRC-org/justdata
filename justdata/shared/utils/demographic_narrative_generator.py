@@ -163,7 +163,7 @@ def generate_demographic_narrative(
         return "AI narrative generation is disabled."
     
     try:
-        from shared.analysis.ai_provider import AIAnalyzer
+        from justdata.shared.analysis.ai_provider import AIAnalyzer
         
         prompt = generate_demographic_analysis_prompt(historical_census_data)
         

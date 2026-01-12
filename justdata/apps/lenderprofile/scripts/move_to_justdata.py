@@ -8,8 +8,8 @@ import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 
-from shared.utils.unified_env import ensure_unified_env_loaded
-from shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 from google.cloud import bigquery
 from google.cloud.exceptions import NotFound
 

@@ -6,7 +6,7 @@ Manages parent/child relationships from GLEIF data for comprehensive analysis.
 
 import logging
 from typing import Dict, Any, List, Optional, Set
-from apps.lenderprofile.services.gleif_client import GLEIFClient
+from justdata.apps.lenderprofile.services.gleif_client import GLEIFClient
 
 logger = logging.getLogger(__name__)
 

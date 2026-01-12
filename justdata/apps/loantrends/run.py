@@ -28,7 +28,7 @@ print(f"Shared module found at: {shared_path}")
 
 # Import app using absolute import (don't change directory - breaks package structure)
 try:
-    from apps.loantrends.app import app
+    from justdata.apps.loantrends.app import app
     print("Successfully imported LoanTrends app")
 except ImportError as e:
     print(f"ERROR importing app: {e}")

@@ -7,7 +7,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
-from shared.utils.progress_tracker import analysis_results_store, get_analysis_result
+from justdata.shared.utils.progress_tracker import analysis_results_store, get_analysis_result
 import pandas as pd
 
 # Job ID from the latest logs

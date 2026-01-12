@@ -11,13 +11,13 @@ import logging
 from pathlib import Path
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from shared.web.app_factory import create_app, register_standard_routes
-from shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
-from apps.lenderprofile.config import TEMPLATES_DIR, STATIC_DIR
-from apps.lenderprofile.version import __version__
-from apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
-from apps.lenderprofile.processors.data_collector import DataCollector
-from apps.lenderprofile.report_builder.report_builder import ReportBuilder
+from justdata.shared.web.app_factory import create_app, register_standard_routes
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+from justdata.apps.lenderprofile.config import TEMPLATES_DIR, STATIC_DIR
+from justdata.apps.lenderprofile.version import __version__
+from justdata.apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
+from justdata.apps.lenderprofile.processors.data_collector import DataCollector
+from justdata.apps.lenderprofile.report_builder.report_builder import ReportBuilder
 
 # Get repo root for shared static files
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
@@ -114,7 +114,7 @@ def test_route():
 @app.route('/report/<report_id>')
 def view_report(report_id: str):
     """View a generated report or show progress if still generating."""
-    from shared.utils.progress_tracker import get_analysis_result, get_progress
+    from justdata.shared.utils.progress_tracker import get_analysis_result, get_progress
     
     try:
         result = get_analysis_result(report_id)
@@ -169,7 +169,7 @@ def view_report(report_id: str):
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events."""
     from flask import Response
-    from shared.utils.progress_tracker import get_progress
+    from justdata.shared.utils.progress_tracker import get_progress
     import time
     import json
     import sys
@@ -415,7 +415,7 @@ def generate_report():
     try:
         import uuid
         import threading
-        from shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
+        from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
         
         data = request.get_json()
         institution_name = data.get('name', '').strip()
