@@ -1,0 +1,64 @@
+{
+  "status": "valid",
+  "last_updated": "2026-01-10T20:45:27.489317",
+  "last_updated_display": "January 10, 2026 at 08:45 PM",
+  "data_window": {
+    "start": "January 10, 2025",
+    "end": "January 10, 2026"
+  },
+  "next_update": "2026-01-11T00:00:00",
+  "next_update_display": "January 11, 2026 at midnight",
+  "data_sources": {
+    "fmp": {
+      "status": "success",
+      "house_trades": 594,
+      "senate_trades": 51,
+      "total_trades": 645,
+      "officials": 56,
+      "timestamp": "2026-01-10T20:47:21.378741"
+    },
+    "fec": {
+      "status": "success",
+      "officials_enriched": 48,
+      "total_contributions": 48,
+      "api_calls": 100,
+      "timestamp": "2026-01-10T20:49:45.861236"
+    },
+    "financial_pacs": {
+      "status": "success",
+      "matched_officials": 35,
+      "total_financial_contributions": 4806932.42,
+      "timestamp": "2026-01-10T21:06:53.607577"
+    },
+    "congress": {
+      "status": "success",
+      "bills_found": 40,
+      "timestamp": "2026-01-10T21:06:54.374852"
+    },
+    "finnhub": {
+      "status": "success",
+      "firms": 10,
+      "news_articles": 90,
+      "timestamp": "2026-01-10T21:07:07.441347"
+    },
+    "sec": {
+      "status": "success",
+      "filings_found": 4,
+      "timestamp": "2026-01-10T21:07:09.864328"
+    },
+    "newsapi": {
+      "status": "success",
+      "articles": 63,
+      "timestamp": "2026-01-10T21:07:13.740669"
+    }
+  },
+  "counts": {
+    "officials": 55,
+    "firms": 10,
+    "industries": 9,
+    "committees": 4,
+    "news_articles": 63
+  },
+  "errors": [],
+  "warnings": []
+}

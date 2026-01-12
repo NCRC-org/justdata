@@ -1,0 +1,58 @@
+{
+  "start_time": "2026-01-10T09:23:12.371185",
+  "sources": {
+    "quiver": {
+      "status": "success",
+      "records": 986,
+      "last_trade_date": "2025-12-31",
+      "timestamp": "2026-01-10T09:23:14.632108"
+    },
+    "fec": {
+      "status": "success",
+      "candidates_found": 1,
+      "committees_found": 5,
+      "timestamp": "2026-01-10T09:23:15.739863"
+    },
+    "congress": {
+      "status": "success",
+      "bills_found": 5,
+      "timestamp": "2026-01-10T09:23:16.948089"
+    },
+    "finnhub": {
+      "status": "success",
+      "news_articles": 50,
+      "quotes_retrieved": 5,
+      "symbols_checked": [
+        "WFC",
+        "JPM",
+        "BAC",
+        "COIN",
+        "GS"
+      ],
+      "timestamp": "2026-01-10T09:23:20.189937"
+    },
+    "sec": {
+      "status": "success",
+      "filings_found": 0,
+      "tickers_checked": [
+        "WFC",
+        "JPM",
+        "COIN"
+      ],
+      "timestamp": "2026-01-10T09:23:20.945080"
+    },
+    "newsapi": {
+      "status": "success",
+      "articles_found": 20,
+      "timestamp": "2026-01-10T09:23:22.453199"
+    }
+  },
+  "errors": [],
+  "summary": {
+    "successful": 6,
+    "failed": 0,
+    "total": 6,
+    "end_time": "2026-01-10T09:23:22.453199",
+    "duration_seconds": 10.082014
+  }
+}

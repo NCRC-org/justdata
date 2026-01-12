@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Analysis | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray: #818390;
+            --ncrc-white: #FFFFFF;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --party-r: #dc2626;
+            --party-d: #2563eb;
+            --party-i: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --conflict: #dc2626;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover { opacity: 1; }
+
+        .header-title { font-size: 1.25rem; font-weight: 600; }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Bill Header */
+        .bill-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .bill-id {
+            display: inline-block;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+
+        .bill-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 8px;
+        }
+
+        .bill-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+            color: var(--ncrc-gray);
+        }
+
+        .meta-item i { color: var(--ncrc-justdata-blue); }
+
+        .industry-tags {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .industry-tag {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .industry-tag.crypto { background: #fef3c7; color: #d97706; }
+        .industry-tag.banking { background: #dbeafe; color: #1e40af; }
+        .industry-tag.fintech { background: #cffafe; color: #0891b2; }
+        .industry-tag.mortgage { background: #d1fae5; color: #059669; }
+        .industry-tag.investment { background: #ede9fe; color: #7c3aed; }
+        .industry-tag.consumer_lending { background: #ffedd5; color: #c2410c; }
+        .industry-tag.insurance { background: #fee2e2; color: #dc2626; }
+
+        /* Conflict Alert */
+        .conflict-alert {
+            background: linear-gradient(135deg, #fee2e2 0%, #fef2f2 100%);
+            border: 2px solid var(--danger);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .conflict-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--danger);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+
+        .conflict-content { flex: 1; }
+        .conflict-title { font-weight: 700; color: var(--danger); margin-bottom: 4px; }
+        .conflict-detail { color: var(--ncrc-gray-dark); }
+
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--ncrc-gold); }
+
+        .card-body { padding: 20px; }
+
+        /* Vote Results */
+        .vote-result {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 10px;
+        }
+
+        .vote-outcome {
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .vote-outcome.passed { background: #d1fae5; color: #059669; }
+        .vote-outcome.failed { background: #fee2e2; color: #dc2626; }
+
+        .vote-counts {
+            display: flex;
+            gap: 24px;
+        }
+
+        .vote-count {
+            text-align: center;
+        }
+
+        .vote-count .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .vote-count .label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+        }
+
+        .vote-count.yea .value { color: var(--success); }
+        .vote-count.nay .value { color: var(--danger); }
+
+        /* Officials List */
+        .officials-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .official-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .official-item:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .official-item.has-conflict {
+            border-left: 4px solid var(--danger);
+            background: linear-gradient(90deg, #fef2f2 0%, var(--ncrc-gray-light) 20%);
+        }
+
+        .official-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: white;
+        }
+
+        .party-badge.R { background: var(--party-r); }
+        .party-badge.D { background: var(--party-d); }
+        .party-badge.I { background: var(--party-i); }
+
+        .official-name { font-weight: 600; color: var(--ncrc-gray-dark); }
+        .official-role { font-size: 0.8rem; color: var(--ncrc-gray); }
+
+        .vote-position {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .vote-position.yea { background: #d1fae5; color: #059669; }
+        .vote-position.nay { background: #fee2e2; color: #dc2626; }
+        .vote-position.not-voting { background: #f3f4f6; color: #6b7280; }
+
+        .involvement-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .involvement-amount {
+            font-weight: 600;
+            font-family: monospace;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .conflict-indicator {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--danger);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+
+        /* Summary Section */
+        .bill-summary {
+            font-size: 0.95rem;
+            color: var(--ncrc-gray-dark);
+            line-height: 1.7;
+        }
+
+        /* Two Column */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ncrc-gray);
+        }
+
+        .loading::after {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--ncrc-justdata-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Footer */
+        .footer {
+            background: var(--ncrc-justdata-blue);
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .footer a { color: var(--ncrc-gold); text-decoration: none; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .two-columns { grid-template-columns: 1fr; }
+            .vote-result { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+            <span class="header-title">Bill Analysis</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div id="bill-loading" class="loading">Loading bill details...</div>
+
+        <div id="bill-content" style="display: none;">
+            <!-- Bill Header -->
+            <div class="bill-header">
+                <span id="bill-id-badge" class="bill-id">H.R. 4763</span>
+                <h1 id="bill-title" class="bill-title">Loading...</h1>
+                <p id="bill-summary" class="bill-summary"></p>
+                <div id="industry-tags" class="industry-tags"></div>
+                <div class="bill-meta">
+                    <span class="meta-item">
+                        <i class="fas fa-calendar"></i>
+                        <span id="bill-date">Introduced: --</span>
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-flag"></i>
+                        <span id="bill-status">Status: --</span>
+                    </span>
+                    <span class="meta-item">
+                        <i class="fas fa-gavel"></i>
+                        <span id="bill-committees">Committees: --</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Conflict Alert (shown when relevant) -->
+            <div id="conflict-alert" class="conflict-alert" style="display: none;">
+                <div class="conflict-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="conflict-content">
+                    <div class="conflict-title">Financial Conflict Analysis</div>
+                    <div id="conflict-detail" class="conflict-detail"></div>
+                </div>
+            </div>
+
+            <!-- Vote Results -->
+            <div id="vote-section" class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-vote-yea"></i> Vote Results</h2>
+                </div>
+                <div class="card-body">
+                    <div id="vote-results"></div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="two-columns">
+                <!-- Sponsors -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-user-edit"></i> Sponsors & Cosponsors</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="sponsors-list" class="officials-list"></div>
+                    </div>
+                </div>
+
+                <!-- Voters with Conflicts -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-exclamation-circle"></i> Voters with Industry Ties</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="conflict-voters-list" class="officials-list"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- All Voters -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> All Recorded Votes</h2>
+                    <div style="display: flex; gap: 12px;">
+                        <button onclick="filterVotes('all')" class="filter-btn active" id="filter-all">All</button>
+                        <button onclick="filterVotes('yea')" class="filter-btn" id="filter-yea">Yea</button>
+                        <button onclick="filterVotes('nay')" class="filter-btn" id="filter-nay">Nay</button>
+                        <button onclick="filterVotes('conflict')" class="filter-btn" id="filter-conflict">With Ties</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="all-voters-list" class="officials-list"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p><strong>ElectWatch</strong> by <a href="https://ncrc.org">NCRC</a></p>
+    </footer>
+
+    <style>
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid #e5e7eb;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .filter-btn:hover { background: var(--ncrc-gray-light); }
+        .filter-btn.active {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            border-color: var(--ncrc-justdata-blue);
+        }
+    </style>
+
+    <script>
+        const billId = '{{ bill_id }}';
+        let billData = null;
+        let currentFilter = 'all';
+
+        async function loadBill() {
+            try {
+                const response = await fetch(`/api/bills/${encodeURIComponent(billId)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    billData = data.bill;
+                    renderBill(data.bill);
+                } else {
+                    document.getElementById('bill-loading').innerHTML = `
+                        <div style="text-align: center; color: var(--danger);">
+                            <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 12px;"></i>
+                            <p>${data.error || 'Bill not found'}</p>
+                            <a href="/" style="color: var(--ncrc-justdata-blue);">Return to Dashboard</a>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading bill:', error);
+                document.getElementById('bill-loading').innerHTML = '<p style="color: var(--danger);">Error loading bill. Please try again.</p>';
+            }
+        }
+
+        function renderBill(bill) {
+            document.getElementById('bill-loading').style.display = 'none';
+            document.getElementById('bill-content').style.display = 'block';
+
+            // Header
+            document.getElementById('bill-id-badge').textContent = bill.bill_id;
+            document.getElementById('bill-title').textContent = bill.title;
+            document.getElementById('bill-summary').textContent = bill.summary || '';
+            document.getElementById('bill-date').textContent = `Introduced: ${formatDate(bill.introduced_date)}`;
+            document.getElementById('bill-status').textContent = bill.latest_action?.text || 'Status unknown';
+            document.getElementById('bill-committees').textContent = (bill.committees || []).join(', ') || 'N/A';
+
+            // Industry tags
+            const tagsContainer = document.getElementById('industry-tags');
+            tagsContainer.innerHTML = (bill.industries || []).map(ind =>
+                `<span class="industry-tag ${ind}">${formatIndustryName(ind)}</span>`
+            ).join('');
+
+            // Conflict alert
+            const conflictSummary = bill.conflict_summary || {};
+            if (conflictSummary.voters_with_industry_ties > 0) {
+                document.getElementById('conflict-alert').style.display = 'flex';
+                document.getElementById('conflict-detail').innerHTML = `
+                    <strong>${conflictSummary.voters_with_industry_ties} voters</strong> have significant financial ties to
+                    <strong>${(conflictSummary.industries_affected || []).map(formatIndustryName).join(', ')}</strong> industries,
+                    totaling <strong>${formatAmount(conflictSummary.total_industry_involvement)}</strong> in contributions and stock trades.
+                `;
+            }
+
+            // Vote results
+            renderVotes(bill.votes);
+
+            // Sponsors
+            renderSponsors(bill.sponsors, bill.cosponsors);
+
+            // Conflict voters
+            renderConflictVoters(bill.votes);
+
+            // All voters
+            renderAllVoters(bill.votes);
+        }
+
+        function renderVotes(votes) {
+            const container = document.getElementById('vote-results');
+            if (!votes || votes.length === 0) {
+                container.innerHTML = '<p style="color: var(--ncrc-gray); text-align: center;">No recorded votes yet</p>';
+                return;
+            }
+
+            container.innerHTML = votes.map(vote => `
+                <div class="vote-result">
+                    <span class="vote-outcome ${vote.result.toLowerCase()}">${vote.result}</span>
+                    <div class="vote-counts">
+                        <div class="vote-count yea">
+                            <div class="value">${vote.yea}</div>
+                            <div class="label">Yea</div>
+                        </div>
+                        <div class="vote-count nay">
+                            <div class="value">${vote.nay}</div>
+                            <div class="label">Nay</div>
+                        </div>
+                        <div class="vote-count">
+                            <div class="value">${vote.not_voting || 0}</div>
+                            <div class="label">Not Voting</div>
+                        </div>
+                    </div>
+                    <span class="meta-item" style="margin-left: auto;">
+                        <i class="fas fa-calendar"></i> ${formatDate(vote.date)}
+                        &nbsp;&bull;&nbsp; ${vote.chamber === 'house' ? 'House' : 'Senate'}
+                    </span>
+                </div>
+            `).join('');
+        }
+
+        function renderSponsors(sponsors, cosponsors) {
+            const container = document.getElementById('sponsors-list');
+            const all = [
+                ...(sponsors || []).map(s => ({...s, role: 'Sponsor'})),
+                ...(cosponsors || []).map(c => ({...c, role: 'Cosponsor'}))
+            ];
+
+            if (all.length === 0) {
+                container.innerHTML = '<p style="color: var(--ncrc-gray); text-align: center;">No sponsors listed</p>';
+                return;
+            }
+
+            container.innerHTML = all.map(official => renderOfficialItem(official, official.role)).join('');
+        }
+
+        function renderConflictVoters(votes) {
+            const container = document.getElementById('conflict-voters-list');
+            const conflictVoters = [];
+
+            (votes || []).forEach(vote => {
+                (vote.positions || []).forEach(pos => {
+                    if (pos.has_conflict) {
+                        conflictVoters.push({...pos, chamber: vote.chamber});
+                    }
+                });
+            });
+
+            // Sort by involvement amount
+            conflictVoters.sort((a, b) => (b.relevant_involvement || 0) - (a.relevant_involvement || 0));
+
+            if (conflictVoters.length === 0) {
+                container.innerHTML = '<p style="color: var(--ncrc-gray); text-align: center;">No voters with significant industry ties</p>';
+                return;
+            }
+
+            container.innerHTML = conflictVoters.map(official =>
+                renderOfficialItem(official, `Voted ${official.vote}`)
+            ).join('');
+        }
+
+        function renderAllVoters(votes) {
+            const container = document.getElementById('all-voters-list');
+            let allVoters = [];
+
+            (votes || []).forEach(vote => {
+                (vote.positions || []).forEach(pos => {
+                    allVoters.push({...pos, chamber: vote.chamber});
+                });
+            });
+
+            // Apply filter
+            if (currentFilter === 'yea') {
+                allVoters = allVoters.filter(v => v.vote === 'Yea');
+            } else if (currentFilter === 'nay') {
+                allVoters = allVoters.filter(v => v.vote === 'Nay');
+            } else if (currentFilter === 'conflict') {
+                allVoters = allVoters.filter(v => v.has_conflict);
+            }
+
+            if (allVoters.length === 0) {
+                container.innerHTML = '<p style="color: var(--ncrc-gray); text-align: center;">No votes match this filter</p>';
+                return;
+            }
+
+            container.innerHTML = allVoters.map(official =>
+                renderOfficialItem(official, `Voted ${official.vote}`)
+            ).join('');
+        }
+
+        function renderOfficialItem(official, role) {
+            const hasConflict = official.has_conflict;
+            const involvement = official.relevant_involvement || 0;
+
+            return `
+                <div class="official-item ${hasConflict ? 'has-conflict' : ''}" onclick="window.location='/official/${official.official_id || ''}'">
+                    <div class="official-info">
+                        <div class="party-badge ${official.party}">${official.party}</div>
+                        <div>
+                            <div class="official-name">${official.name}</div>
+                            <div class="official-role">${official.state || ''} &bull; ${role}</div>
+                        </div>
+                    </div>
+                    <div class="involvement-badge">
+                        ${official.vote ? `<span class="vote-position ${official.vote.toLowerCase()}">${official.vote}</span>` : ''}
+                        ${hasConflict ? `
+                            <span class="involvement-amount">${formatAmount(involvement)}</span>
+                            <span class="conflict-indicator" title="Financial ties to bill's industries"><i class="fas fa-exclamation"></i></span>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        function filterVotes(filter) {
+            currentFilter = filter;
+
+            // Update button states
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`filter-${filter}`).classList.add('active');
+
+            // Re-render voters
+            if (billData) {
+                renderAllVoters(billData.votes);
+            }
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatIndustryName(code) {
+            const names = {
+                banking: 'Banking',
+                crypto: 'Crypto',
+                investment: 'Investment',
+                mortgage: 'Mortgage',
+                insurance: 'Insurance',
+                fintech: 'FinTech',
+                consumer_lending: 'Consumer Lending'
+            };
+            return names[code] || code;
+        }
+
+        // Load on page ready
+        loadBill();
+    </script>
+</body>
+</html>

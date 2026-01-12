@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Official Profile | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* NCRC Brand Colors */
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray: #818390;
+            --ncrc-white: #FFFFFF;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --party-r: #dc2626;
+            --party-d: #2563eb;
+            --party-i: #7c3aed;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            padding: 16px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            opacity: 0.9;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover { opacity: 1; }
+
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Profile Header Card */
+        .profile-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .profile-banner {
+            height: 100px;
+            background: linear-gradient(135deg, var(--ncrc-primary-blue) 0%, var(--ncrc-justdata-blue) 100%);
+        }
+
+        .profile-info {
+            padding: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+
+        .party-badge-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 2.5rem;
+            color: white;
+            margin-top: -60px;
+            border: 5px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .party-badge-large.R { background: var(--party-r); }
+        .party-badge-large.D { background: var(--party-d); }
+        .party-badge-large.I { background: var(--party-i); }
+
+        .official-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-top: -60px;
+            border: 5px solid white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            object-fit: cover;
+        }
+
+        .profile-details { flex: 1; min-width: 250px; }
+        .profile-name { font-size: 2rem; font-weight: 700; color: var(--ncrc-gray-dark); }
+        .profile-title { font-size: 1.1rem; color: var(--ncrc-gray); margin-top: 4px; }
+
+        .profile-meta {
+            display: flex;
+            gap: 20px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+            color: var(--ncrc-gray);
+        }
+
+        .meta-item i { color: var(--ncrc-justdata-blue); }
+
+        .profile-links {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .profile-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: var(--ncrc-gray-light);
+            border-radius: 6px;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .profile-link:hover {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+        }
+
+        .profile-link i {
+            font-size: 0.9rem;
+        }
+
+        .profile-score {
+            text-align: center;
+            padding: 20px 30px;
+            background: var(--ncrc-gray-light);
+            border-radius: 12px;
+        }
+
+        .score-value {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--danger);
+        }
+
+        .score-label {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .stat-card.highlight {
+            background: linear-gradient(135deg, var(--ncrc-primary-blue) 0%, var(--ncrc-justdata-blue) 100%);
+            color: white;
+        }
+
+        .stat-card.highlight .stat-value { color: white; }
+        .stat-card.highlight .stat-label { color: rgba(255,255,255,0.8); }
+        .stat-card.highlight .stat-sub { color: rgba(255,255,255,0.7); }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        .stat-sub {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            margin-top: 4px;
+        }
+
+        /* Card */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--ncrc-gold); }
+
+        .card-body { padding: 20px; }
+
+        /* Industry Bars */
+        .industry-bars { display: flex; flex-direction: column; gap: 16px; }
+
+        .industry-bar {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .industry-bar:hover {
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 4px 12px rgba(26, 143, 201, 0.15);
+        }
+
+        .industry-bar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .industry-name {
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .industry-total {
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+            font-family: 'SF Mono', monospace;
+        }
+
+        .progress-bar {
+            height: 10px;
+            background: #e5e7eb;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-fill.banking { background: linear-gradient(90deg, #1e40af, #3b82f6); }
+        .progress-fill.crypto { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .progress-fill.investment { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+        .progress-fill.mortgage { background: linear-gradient(90deg, #059669, #34d399); }
+        .progress-fill.insurance { background: linear-gradient(90deg, #dc2626, #f87171); }
+        .progress-fill.fintech { background: linear-gradient(90deg, #0891b2, #22d3ee); }
+        .progress-fill.consumer_lending { background: linear-gradient(90deg, #c2410c, #fb923c); }
+
+        .industry-breakdown {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* Firms List */
+        .firms-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .firm-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .firm-item:hover {
+            background: var(--ncrc-light-blue, #e6f2ff);
+            transform: translateX(4px);
+        }
+
+        .firm-info { display: flex; align-items: center; gap: 12px; }
+        .firm-name { font-weight: 600; color: var(--ncrc-gray-dark); }
+        .firm-ticker { font-size: 0.8rem; color: var(--ncrc-gray); padding: 2px 8px; background: white; border-radius: 4px; }
+        .firm-type { font-size: 0.75rem; color: var(--ncrc-gray); }
+        .firm-amount { font-weight: 600; color: var(--ncrc-justdata-blue); font-family: monospace; }
+
+        /* Activity Filters */
+        .filter-select {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            background: var(--ncrc-gray-light);
+        }
+
+        .filter-btn.active {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            border-color: var(--ncrc-justdata-blue);
+        }
+
+        /* Activity Timeline */
+        .timeline { display: flex; flex-direction: column; gap: 16px; }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            padding: 14px;
+            border-left: 4px solid var(--ncrc-justdata-blue);
+            background: var(--ncrc-gray-light);
+            border-radius: 0 10px 10px 0;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .timeline-item:hover {
+            background: #e5e7eb;
+            border-left-color: var(--ncrc-primary-blue);
+            transform: translateX(4px);
+        }
+
+        .timeline-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .timeline-icon.contribution { background: var(--ncrc-primary-blue); }
+        .timeline-icon.trade { background: var(--ncrc-gold); color: var(--ncrc-gray-dark); }
+        .timeline-icon.buy { background: #10b981; color: white; }
+        .timeline-icon.sell { background: #ef4444; color: white; }
+
+        .trade-type-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .trade-type-badge.buy { background: #d1fae5; color: #059669; }
+        .trade-type-badge.sell { background: #fee2e2; color: #dc2626; }
+
+        .sector-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            background: var(--ncrc-gray-light);
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: var(--ncrc-gray);
+            margin-left: 8px;
+        }
+
+        .timeline-content { flex: 1; }
+        .timeline-title { font-weight: 600; color: var(--ncrc-gray-dark); }
+        .timeline-detail { font-size: 0.85rem; color: var(--ncrc-gray); margin-top: 2px; }
+        .timeline-date { font-size: 0.75rem; color: var(--ncrc-gray); margin-top: 4px; }
+        .timeline-amount { font-weight: 700; color: var(--ncrc-justdata-blue); font-family: monospace; font-size: 1.1rem; }
+
+        /* Legislation List */
+        .legislation-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .legislation-item {
+            padding: 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            border-left: 4px solid var(--ncrc-primary-blue);
+        }
+
+        .legislation-title { font-weight: 600; color: var(--ncrc-gray-dark); margin-bottom: 8px; }
+        .legislation-meta { font-size: 0.85rem; color: var(--ncrc-gray); display: flex; gap: 16px; flex-wrap: wrap; }
+        .legislation-meta span { display: flex; align-items: center; gap: 4px; }
+
+        .status-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-badge.passed { background: #d1fae5; color: #059669; }
+        .status-badge.committee { background: #fef3c7; color: #d97706; }
+
+        /* News List */
+        .news-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .news-item {
+            padding: 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .news-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .news-content { flex: 1; }
+        .news-headline { font-weight: 600; color: var(--ncrc-gray-dark); margin-bottom: 4px; }
+        .news-meta { font-size: 0.8rem; color: var(--ncrc-gray); }
+
+        /* Two Column Layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Three Column Layout */
+        .three-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ncrc-gray);
+        }
+
+        .loading::after {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--ncrc-justdata-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Footer */
+        .footer {
+            background: var(--ncrc-justdata-blue);
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .footer a { color: var(--ncrc-gold); text-decoration: none; }
+        .footer a:hover { text-decoration: underline; }
+
+        /* Mobile */
+        @media (max-width: 900px) {
+            .profile-info { flex-direction: column; align-items: center; text-align: center; }
+            .profile-meta { justify-content: center; }
+            .two-columns { grid-template-columns: 1fr; }
+            .three-columns { grid-template-columns: 1fr; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+            <span class="header-title">Official Profile</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div id="profile-loading" class="loading">Loading official profile...</div>
+
+        <div id="profile-content" style="display: none;">
+            <!-- Profile Header -->
+            <div class="profile-header">
+                <div class="profile-banner"></div>
+                <div class="profile-info">
+                    <img id="official-photo" class="official-photo" style="display: none;" alt="Official photo">
+                    <div id="party-badge" class="party-badge-large">R</div>
+                    <div class="profile-details">
+                        <h1 id="official-name" class="profile-name">Loading...</h1>
+                        <p id="official-title" class="profile-title"></p>
+                        <div class="profile-meta">
+                            <span id="official-state" class="meta-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span></span>
+                            </span>
+                            <span id="official-chamber" class="meta-item">
+                                <i class="fas fa-building-columns"></i>
+                                <span></span>
+                            </span>
+                            <span id="official-years" class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span></span>
+                            </span>
+                        </div>
+                        <div class="profile-links" id="profile-links">
+                            <!-- Links populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="profile-score">
+                        <div id="involvement-score" class="score-value">--</div>
+                        <div class="score-label">Involvement Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Key Stats Grid -->
+            <div class="stats-grid">
+                <div class="stat-card highlight">
+                    <div id="stat-total" class="stat-value">--</div>
+                    <div class="stat-label">Total Involvement</div>
+                    <div class="stat-sub">Contributions + Trades</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-contributions" class="stat-value">--</div>
+                    <div class="stat-label">PAC Contributions</div>
+                    <div id="stat-contributions-count" class="stat-sub">-- records</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-trades" class="stat-value">--</div>
+                    <div class="stat-label">Stock Trades</div>
+                    <div id="stat-trades-count" class="stat-sub">-- trades</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-net-worth" class="stat-value">--</div>
+                    <div class="stat-label">Est. Net Worth</div>
+                    <div class="stat-sub">Financial disclosure</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-years" class="stat-value">--</div>
+                    <div class="stat-label">Years in Congress</div>
+                    <div id="stat-first-elected" class="stat-sub">First elected --</div>
+                </div>
+            </div>
+
+            <!-- Committees Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-gavel"></i> Committee Assignments</h2>
+                </div>
+                <div class="card-body">
+                    <div id="committees-list" style="display: flex; flex-wrap: wrap; gap: 12px;">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Two Column Layout -->
+            <div class="two-columns">
+                <!-- Industry Breakdown -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-chart-pie"></i> Involvement by Industry</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="industry-bars" class="industry-bars">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Firms -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-building"></i> Top Firm Connections</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="firms-list" class="firms-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                    <h2><i class="fas fa-clock"></i> Recent Financial Activity</h2>
+                    <div class="activity-filters" style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+                        <select id="activity-firm-filter" class="filter-select" style="min-width: 150px;">
+                            <option value="">All Firms</option>
+                        </select>
+                        <div class="filter-buttons" style="display: flex; gap: 4px;">
+                            <button class="filter-btn active" data-filter="all">All</button>
+                            <button class="filter-btn" data-filter="buy" style="color: var(--success);">Buys</button>
+                            <button class="filter-btn" data-filter="sell" style="color: var(--danger);">Sells</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="activity-timeline" class="timeline">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Legislation Section -->
+            <div class="card" id="legislation-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-scroll"></i> Finance-Related Legislation</h2>
+                </div>
+                <div class="card-body">
+                    <div id="legislation-list" class="legislation-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent News Section -->
+            <div class="card" id="news-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-newspaper"></i> Recent News</h2>
+                </div>
+                <div class="card-body">
+                    <div id="news-list" class="news-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p><strong>ElectWatch</strong> by <a href="https://ncrc.org">NCRC</a></p>
+    </footer>
+
+    <script>
+        const officialId = '{{ official_id }}';
+
+        async function loadProfile() {
+            try {
+                const response = await fetch(`/api/official/${officialId}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderProfile(data.official);
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                document.getElementById('profile-loading').innerHTML = '<p style="color: var(--danger);">Error loading profile. Please try again.</p>';
+            }
+        }
+
+        function renderProfile(official) {
+            document.getElementById('profile-loading').style.display = 'none';
+            document.getElementById('profile-content').style.display = 'block';
+
+            // Basic info
+            document.getElementById('party-badge').textContent = official.party;
+            document.getElementById('party-badge').className = `party-badge-large ${official.party}`;
+            document.getElementById('official-name').textContent = official.name;
+
+            // Show photo if available, otherwise show party badge
+            if (official.photo_url) {
+                const photoEl = document.getElementById('official-photo');
+                photoEl.src = official.photo_url;
+                photoEl.alt = `Photo of ${official.name}`;
+                photoEl.style.display = 'block';
+                photoEl.onerror = () => {
+                    photoEl.style.display = 'none';
+                    document.getElementById('party-badge').style.display = 'flex';
+                };
+                document.getElementById('party-badge').style.display = 'none';
+            }
+
+            // Title based on role
+            let title = official.chamber === 'house' ? 'Representative' : 'Senator';
+            if (official.leadership_roles && official.leadership_roles.length > 0) {
+                title = official.leadership_roles[0];
+            } else if (official.is_chair) {
+                title = 'Committee Chair';
+            }
+            document.getElementById('official-title').textContent = title;
+
+            // Meta info
+            document.querySelector('#official-state span').textContent = official.state + (official.district ? `-${official.district}` : '');
+            document.querySelector('#official-chamber span').textContent = official.chamber === 'house' ? 'House' : 'Senate';
+            document.querySelector('#official-years span').textContent = `${official.years_in_congress || '--'} years in Congress`;
+
+            // Profile links (official websites)
+            const linksContainer = document.getElementById('profile-links');
+            let linksHtml = '';
+
+            // Congress.gov profile (if we have bioguide_id)
+            if (official.bioguide_id) {
+                linksHtml += `<a href="https://bioguide.congress.gov/search/bio/${official.bioguide_id}" target="_blank" class="profile-link" title="Official Congressional Biography">
+                    <i class="fas fa-landmark"></i> Congress.gov
+                </a>`;
+            }
+
+            // FEC profile (if we have fec_candidate_id)
+            if (official.fec_candidate_id) {
+                linksHtml += `<a href="https://www.fec.gov/data/candidate/${official.fec_candidate_id}/" target="_blank" class="profile-link" title="FEC Campaign Finance Records">
+                    <i class="fas fa-dollar-sign"></i> FEC Filings
+                </a>`;
+            }
+
+            // Official House/Senate website
+            if (official.state && official.name) {
+                const lastName = official.name.split(' ').pop().toLowerCase();
+                if (official.chamber === 'house') {
+                    linksHtml += `<a href="https://${lastName}.house.gov" target="_blank" class="profile-link" title="Official House Website">
+                        <i class="fas fa-globe"></i> Official Website
+                    </a>`;
+                } else {
+                    linksHtml += `<a href="https://www.${lastName}.senate.gov" target="_blank" class="profile-link" title="Official Senate Website">
+                        <i class="fas fa-globe"></i> Official Website
+                    </a>`;
+                }
+            }
+
+            // Quiver Quant trade history
+            if (official.name) {
+                const encodedName = encodeURIComponent(official.name);
+                linksHtml += `<a href="https://www.quiverquant.com/congresstrading/politician/${encodedName}" target="_blank" class="profile-link" title="Stock Trade History on Quiver">
+                    <i class="fas fa-chart-line"></i> Trade History
+                </a>`;
+            }
+
+            linksContainer.innerHTML = linksHtml;
+
+            // Score
+            document.getElementById('involvement-score').textContent = official.involvement_score || '--';
+            const scoreEl = document.getElementById('involvement-score');
+            if (official.involvement_score >= 70) scoreEl.style.color = 'var(--danger)';
+            else if (official.involvement_score >= 40) scoreEl.style.color = 'var(--warning)';
+            else scoreEl.style.color = 'var(--success)';
+
+            // Stats
+            document.getElementById('stat-total').textContent = formatAmount(official.total_amount);
+            document.getElementById('stat-contributions').textContent = formatAmount(official.contributions);
+            document.getElementById('stat-trades').textContent = formatAmount(official.stock_trades);
+            document.getElementById('stat-contributions-count').textContent = (official.contributions_count || 0) + ' records';
+            document.getElementById('stat-trades-count').textContent = (official.trades_count || 0) + ' trades';
+
+            // Net worth (supports both old net_worth_estimate and new net_worth field)
+            const netWorth = official.net_worth || official.net_worth_estimate;
+            if (netWorth) {
+                document.getElementById('stat-net-worth').textContent = netWorth.display || '--';
+            }
+
+            // Years in Congress
+            document.getElementById('stat-years').textContent = official.years_in_congress || '--';
+            document.getElementById('stat-first-elected').textContent = 'First elected ' + (official.first_elected || '--');
+
+            // Committees
+            renderCommittees(official.committees, official.subcommittees);
+
+            // Industry breakdown
+            renderIndustryBars(official.involvement_by_industry);
+
+            // Firms
+            renderFirms(official.firms);
+
+            // Activity (combine contributions and trades)
+            renderActivity(official.contributions_list, official.trades_list);
+
+            // Legislation
+            renderLegislation(official.legislation);
+
+            // News
+            renderNews(official.recent_news);
+        }
+
+        function renderCommittees(committees, subcommittees) {
+            const container = document.getElementById('committees-list');
+            const all = [...(committees || []), ...(subcommittees || []).map(s => '• ' + s)];
+
+            if (all.length === 0) {
+                container.innerHTML = '<p style="color: var(--ncrc-gray);">No committee assignments listed</p>';
+                return;
+            }
+
+            container.innerHTML = all.map(c => `
+                <div style="padding: 10px 16px; background: var(--ncrc-gray-light); border-radius: 8px; font-weight: 500;">
+                    <i class="fas fa-gavel" style="color: var(--ncrc-gold); margin-right: 8px;"></i>
+                    ${c}
+                </div>
+            `).join('');
+        }
+
+        function renderIndustryBars(involvement) {
+            const container = document.getElementById('industry-bars');
+            if (!involvement || Object.keys(involvement).length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--ncrc-gray);">No industry data available</p>';
+                return;
+            }
+
+            const maxTotal = Math.max(...Object.values(involvement).map(v => v.total || 0));
+
+            container.innerHTML = Object.entries(involvement)
+                .sort((a, b) => (b[1].total || 0) - (a[1].total || 0))
+                .map(([industry, data]) => {
+                    const percent = maxTotal > 0 ? ((data.total || 0) / maxTotal * 100) : 0;
+                    return `
+                        <div class="industry-bar" onclick="window.location='/industry/${industry}'">
+                            <div class="industry-bar-header">
+                                <span class="industry-name">
+                                    ${getIndustryIcon(industry)}
+                                    ${formatIndustryName(industry)}
+                                </span>
+                                <span class="industry-total">${formatAmount(data.total)}</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill ${industry}" style="width: ${percent}%"></div>
+                            </div>
+                            <div class="industry-breakdown">
+                                <span><i class="fas fa-hand-holding-dollar"></i> ${formatAmount(data.contributions)}</span>
+                                <span><i class="fas fa-chart-line"></i> ${formatAmount(data.stock_trades)}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function renderFirms(firms) {
+            const container = document.getElementById('firms-list');
+            if (!firms || firms.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--ncrc-gray);">No firm connections available</p>';
+                return;
+            }
+
+            container.innerHTML = firms.slice(0, 10).map(firm => `
+                <div class="firm-item" onclick="window.location='/firm/${encodeURIComponent(firm.name)}'">
+                    <div class="firm-info">
+                        <span class="firm-name">${firm.name}</span>
+                        ${firm.ticker ? `<span class="firm-ticker">${firm.ticker}</span>` : ''}
+                        <span class="firm-type">${firm.type === 'mixed' ? 'PAC + Stock' : firm.type === 'trades' ? 'Stock Only' : 'PAC Only'}</span>
+                    </div>
+                    <span class="firm-amount">${formatAmount(firm.total)}</span>
+                </div>
+            `).join('');
+        }
+
+        // Global storage for activity filtering
+        let allActivities = [];
+        let currentFilters = { firm: '', type: 'all' };
+
+        function renderActivity(contributions, trades) {
+            const container = document.getElementById('activity-timeline');
+
+            // Combine and sort by date
+            allActivities = [];
+            (contributions || []).forEach(c => allActivities.push({...c, activityType: 'contribution'}));
+            (trades || []).forEach(t => allActivities.push({...t, activityType: 'trade'}));
+            allActivities.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            // Populate firm filter dropdown
+            populateFirmFilter(allActivities);
+
+            // Setup filter event listeners
+            setupActivityFilters();
+
+            // Render with current filters
+            renderFilteredActivities();
+        }
+
+        function populateFirmFilter(activities) {
+            const firmSelect = document.getElementById('activity-firm-filter');
+            const firms = new Map();
+
+            activities.forEach(a => {
+                if (a.activityType === 'trade' && a.ticker) {
+                    const ticker = a.ticker;
+                    const company = a.company || getCompanyName(ticker) || ticker;
+                    if (!firms.has(ticker)) {
+                        firms.set(ticker, company);
+                    }
+                }
+            });
+
+            // Sort by company name
+            const sortedFirms = [...firms.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+
+            firmSelect.innerHTML = '<option value="">All Firms</option>' +
+                sortedFirms.map(([ticker, company]) =>
+                    `<option value="${ticker}">${company} (${ticker})</option>`
+                ).join('');
+        }
+
+        function setupActivityFilters() {
+            // Firm filter
+            document.getElementById('activity-firm-filter').addEventListener('change', (e) => {
+                currentFilters.firm = e.target.value;
+                renderFilteredActivities();
+            });
+
+            // Type filter buttons
+            document.querySelectorAll('.filter-btn[data-filter]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-btn[data-filter]').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentFilters.type = btn.dataset.filter;
+                    renderFilteredActivities();
+                });
+            });
+        }
+
+        function renderFilteredActivities() {
+            const container = document.getElementById('activity-timeline');
+
+            // Apply filters
+            let filtered = allActivities;
+
+            // Filter by firm (ticker)
+            if (currentFilters.firm) {
+                filtered = filtered.filter(a => a.ticker === currentFilters.firm);
+            }
+
+            // Filter by transaction type
+            if (currentFilters.type !== 'all') {
+                filtered = filtered.filter(a => {
+                    if (a.activityType === 'contribution') return false; // PAC contributions excluded when filtering by buy/sell
+                    const tradeType = (a.transaction_type || a.type || '').toLowerCase();
+                    if (currentFilters.type === 'buy') {
+                        return tradeType === 'purchase' || tradeType === 'buy';
+                    } else if (currentFilters.type === 'sell') {
+                        return tradeType === 'sale' || tradeType === 'sell';
+                    }
+                    return true;
+                });
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--ncrc-gray);">No activity matches current filters</p>';
+                return;
+            }
+
+            container.innerHTML = filtered.slice(0, 50).map(activity => {
+                if (activity.activityType === 'contribution') {
+                    // PAC Contribution
+                    const firmName = activity.source || 'Unknown PAC';
+                    const firmUrl = `/firm/${encodeURIComponent(firmName)}`;
+                    return `
+                    <div class="timeline-item" style="cursor: pointer;" onclick="window.location='${firmUrl}'">
+                        <div class="timeline-icon contribution">
+                            <i class="fas fa-hand-holding-dollar"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title" style="color: var(--ncrc-justdata-blue);">${firmName} <i class="fas fa-external-link-alt" style="font-size: 0.7rem; opacity: 0.6;"></i></div>
+                            <div class="timeline-detail">PAC Contribution</div>
+                            <div class="timeline-date"><i class="fas fa-calendar-alt"></i> ${formatDate(activity.date)}</div>
+                        </div>
+                        <div class="timeline-amount">${formatAmount(activity.amount)}</div>
+                    </div>`;
+                } else {
+                    // Stock Trade - show buy/sell with company name and sector
+                    // Check both 'transaction_type' and 'type' fields (FMP uses 'type')
+                    const tradeType = (activity.transaction_type || activity.type || '').toLowerCase();
+                    const isBuy = tradeType === 'purchase' || tradeType === 'buy';
+                    const isSell = tradeType === 'sale' || tradeType === 'sell';
+                    const tradeClass = isBuy ? 'buy' : (isSell ? 'sell' : 'trade');
+                    const tradeIcon = isBuy ? 'arrow-trend-up' : (isSell ? 'arrow-trend-down' : 'chart-line');
+                    const tradeLabel = isBuy ? 'BUY' : (isSell ? 'SELL' : 'TRADE');
+
+                    // Get company name - use lookup for known tickers, fall back to stored company name
+                    const ticker = activity.ticker || '';
+                    // If activity.company is the same as ticker, look up the proper name
+                    const storedCompany = activity.company || '';
+                    const companyName = (storedCompany && storedCompany.toUpperCase() !== ticker.toUpperCase())
+                        ? storedCompany
+                        : (getCompanyName(ticker) || storedCompany || ticker || 'Unknown');
+                    const sector = getSectorForTicker(ticker);
+                    const sectorDisplay = sector ? formatIndustryName(sector) : '';
+                    const sectorIcon = sector ? getIndustryIcon(sector) : '';
+
+                    return `
+                    <div class="timeline-item">
+                        <div class="timeline-icon ${tradeClass}">
+                            <i class="fas fa-${tradeIcon}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-title">
+                                ${companyName}
+                                ${ticker ? `<span style="background: var(--ncrc-gray-light); padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-size: 0.8rem; color: var(--ncrc-gray);">${ticker}</span>` : ''}
+                            </div>
+                            <div class="timeline-detail">
+                                <span class="trade-type-badge ${tradeClass}">${tradeLabel}</span>
+                                ${sectorDisplay ? `<span class="sector-badge">${sectorIcon} ${sectorDisplay}</span>` : ''}
+                            </div>
+                            <div class="timeline-date"><i class="fas fa-calendar-alt"></i> ${formatDate(activity.date)}</div>
+                        </div>
+                        <div class="timeline-amount">${formatAmount(activity.amount)}</div>
+                    </div>`;
+                }
+            }).join('');
+        }
+
+        function renderLegislation(legislation) {
+            const container = document.getElementById('legislation-list');
+            const section = document.getElementById('legislation-section');
+
+            if (!legislation || legislation.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = legislation.map(bill => `
+                <div class="legislation-item">
+                    <div class="legislation-title">${bill.title}</div>
+                    <div class="legislation-meta">
+                        <span><i class="fas fa-user"></i> ${bill.role}</span>
+                        <span class="status-badge ${bill.status.includes('Passed') ? 'passed' : 'committee'}">${bill.status}</span>
+                        <span><i class="fas fa-calendar"></i> ${formatDate(bill.date)}</span>
+                        <span><i class="fas fa-industry"></i> ${formatIndustryName(bill.relevance)}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderNews(news) {
+            const container = document.getElementById('news-list');
+            const section = document.getElementById('news-section');
+
+            if (!news || news.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            container.innerHTML = news.map(item => `
+                <div class="news-item">
+                    <div class="news-icon"><i class="fas fa-newspaper"></i></div>
+                    <div class="news-content">
+                        <div class="news-headline">${item.headline}</div>
+                        <div class="news-meta">
+                            <span>${item.source}</span> &bull; <span>${formatDate(item.date)}</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatAmount(amount) {
+            if (typeof amount === 'object' && amount !== null) {
+                return amount.display || `$${(amount.min / 1000).toFixed(0)}K-$${(amount.max / 1000).toFixed(0)}K`;
+            }
+            if (!amount) return '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown date';
+            return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatIndustryName(code) {
+            const names = {
+                banking: 'Banking',
+                crypto: 'Crypto & Digital Assets',
+                investment: 'Investment & Securities',
+                mortgage: 'Mortgage & Real Estate',
+                insurance: 'Insurance',
+                fintech: 'Financial Technology',
+                consumer_lending: 'Consumer Lending',
+                payments: 'Payments & Fintech',
+                consumer_finance: 'Consumer Finance'
+            };
+            return names[code] || code;
+        }
+
+        function getIndustryIcon(code) {
+            const icons = {
+                banking: '<i class="fas fa-university"></i>',
+                crypto: '<i class="fab fa-bitcoin"></i>',
+                investment: '<i class="fas fa-chart-line"></i>',
+                mortgage: '<i class="fas fa-home"></i>',
+                insurance: '<i class="fas fa-shield-alt"></i>',
+                fintech: '<i class="fas fa-mobile-alt"></i>',
+                consumer_lending: '<i class="fas fa-credit-card"></i>',
+                payments: '<i class="fas fa-credit-card"></i>',
+                consumer_finance: '<i class="fas fa-wallet"></i>'
+            };
+            return icons[code] || '<i class="fas fa-industry"></i>';
+        }
+
+        // Company name lookup by ticker
+        function getCompanyName(ticker) {
+            const companies = {
+                // Banks
+                'WFC': 'Wells Fargo', 'JPM': 'JPMorgan Chase', 'BAC': 'Bank of America',
+                'C': 'Citigroup', 'GS': 'Goldman Sachs', 'MS': 'Morgan Stanley',
+                'USB': 'U.S. Bancorp', 'PNC': 'PNC Financial', 'TFC': 'Truist Financial',
+                'COF': 'Capital One', 'FITB': 'Fifth Third', 'KEY': 'KeyCorp',
+                'RF': 'Regions Financial', 'HBAN': 'Huntington Bancshares', 'CFG': 'Citizens Financial',
+                'MTB': 'M&T Bank', 'ZION': 'Zions Bancorp', 'CMA': 'Comerica',
+                'FCNCA': 'First Citizens BancShares', 'FHN': 'First Horizon', 'ALLY': 'Ally Financial',
+                'WAL': 'Western Alliance',
+                // Investment
+                'BLK': 'BlackRock', 'SCHW': 'Charles Schwab', 'BX': 'Blackstone',
+                'KKR': 'KKR & Co', 'APO': 'Apollo Global', 'ARES': 'Ares Management',
+                'CG': 'Carlyle Group', 'TROW': 'T. Rowe Price', 'IVZ': 'Invesco',
+                'BEN': 'Franklin Resources', 'NTRS': 'Northern Trust', 'STT': 'State Street',
+                'BK': 'Bank of New York Mellon', 'RJF': 'Raymond James', 'LPLA': 'LPL Financial',
+                // Payments
+                'V': 'Visa', 'MA': 'Mastercard', 'AXP': 'American Express',
+                'PYPL': 'PayPal', 'SQ': 'Block (Square)', 'FIS': 'Fidelity National Info',
+                'FISV': 'Fiserv', 'GPN': 'Global Payments', 'ADP': 'ADP',
+                'PAYX': 'Paychex', 'DFS': 'Discover Financial', 'SYF': 'Synchrony Financial',
+                'AFRM': 'Affirm', 'SOFI': 'SoFi Technologies',
+                // Insurance
+                'MET': 'MetLife', 'PRU': 'Prudential', 'AIG': 'AIG',
+                'ALL': 'Allstate', 'TRV': 'Travelers', 'AFL': 'Aflac',
+                'PGR': 'Progressive', 'CB': 'Chubb', 'HIG': 'Hartford Financial',
+                'LNC': 'Lincoln National', 'PFG': 'Principal Financial', 'EQH': 'Equitable Holdings',
+                'VOYA': 'Voya Financial',
+                // Mortgage
+                'RKT': 'Rocket Companies', 'UWMC': 'UWM Holdings', 'PFSI': 'PennyMac Financial',
+                'NLY': 'Annaly Capital', 'AGNC': 'AGNC Investment',
+                // Crypto
+                'COIN': 'Coinbase', 'HOOD': 'Robinhood', 'MSTR': 'MicroStrategy',
+                'RIOT': 'Riot Platforms', 'MARA': 'Marathon Digital',
+                // Consumer Finance
+                'OMF': 'OneMain Financial', 'SLM': 'Sallie Mae', 'NAVI': 'Navient'
+            };
+            return companies[ticker?.toUpperCase()] || null;
+        }
+
+        // Sector lookup by ticker
+        function getSectorForTicker(ticker) {
+            const sectorMap = {
+                // Banking
+                'WFC': 'banking', 'JPM': 'banking', 'BAC': 'banking', 'C': 'banking',
+                'GS': 'banking', 'MS': 'banking', 'USB': 'banking', 'PNC': 'banking',
+                'TFC': 'banking', 'COF': 'banking', 'FITB': 'banking', 'KEY': 'banking',
+                'RF': 'banking', 'HBAN': 'banking', 'CFG': 'banking', 'MTB': 'banking',
+                'ZION': 'banking', 'CMA': 'banking', 'FCNCA': 'banking', 'FHN': 'banking',
+                'ALLY': 'banking', 'WAL': 'banking',
+                // Investment
+                'BLK': 'investment', 'SCHW': 'investment', 'BX': 'investment', 'KKR': 'investment',
+                'APO': 'investment', 'ARES': 'investment', 'CG': 'investment', 'TROW': 'investment',
+                'IVZ': 'investment', 'BEN': 'investment', 'NTRS': 'investment', 'STT': 'investment',
+                'BK': 'investment', 'RJF': 'investment', 'LPLA': 'investment',
+                // Payments
+                'V': 'payments', 'MA': 'payments', 'AXP': 'payments', 'PYPL': 'payments',
+                'SQ': 'payments', 'FIS': 'payments', 'FISV': 'payments', 'GPN': 'payments',
+                'ADP': 'payments', 'PAYX': 'payments', 'DFS': 'payments', 'SYF': 'payments',
+                'AFRM': 'payments', 'SOFI': 'payments',
+                // Insurance
+                'MET': 'insurance', 'PRU': 'insurance', 'AIG': 'insurance', 'ALL': 'insurance',
+                'TRV': 'insurance', 'AFL': 'insurance', 'PGR': 'insurance', 'CB': 'insurance',
+                'HIG': 'insurance', 'LNC': 'insurance', 'PFG': 'insurance', 'EQH': 'insurance',
+                'VOYA': 'insurance',
+                // Mortgage
+                'RKT': 'mortgage', 'UWMC': 'mortgage', 'PFSI': 'mortgage', 'NLY': 'mortgage',
+                'AGNC': 'mortgage',
+                // Crypto
+                'COIN': 'crypto', 'HOOD': 'crypto', 'MSTR': 'crypto', 'RIOT': 'crypto',
+                'MARA': 'crypto',
+                // Consumer Finance
+                'OMF': 'consumer_finance', 'SLM': 'consumer_finance', 'NAVI': 'consumer_finance'
+            };
+            return sectorMap[ticker?.toUpperCase()] || null;
+        }
+
+        // Load on page ready
+        loadProfile();
+    </script>
+</body>
+</html>

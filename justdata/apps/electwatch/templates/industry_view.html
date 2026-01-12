@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ sector_info.name }} | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray: #818390;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --party-r: #dc2626;
+            --party-d: #2563eb;
+            --party-i: #7c3aed;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            padding: 16px 20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.9;
+        }
+
+        .back-link:hover { opacity: 1; }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Industry Header */
+        .industry-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .industry-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .industry-icon.banking { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+        .industry-icon.crypto { background: linear-gradient(135deg, #d97706, #fbbf24); }
+        .industry-icon.investment { background: linear-gradient(135deg, #7c3aed, #a78bfa); }
+        .industry-icon.mortgage { background: linear-gradient(135deg, #059669, #34d399); }
+        .industry-icon.insurance { background: linear-gradient(135deg, #dc2626, #f87171); }
+        .industry-icon.fintech { background: linear-gradient(135deg, #0891b2, #22d3ee); }
+        .industry-icon.consumer_lending { background: linear-gradient(135deg, #c2410c, #fb923c); }
+
+        .industry-info { flex: 1; min-width: 200px; }
+        .industry-name { font-size: 1.75rem; font-weight: 700; color: var(--ncrc-gray-dark); }
+        .industry-desc { color: var(--ncrc-gray); margin-top: 4px; }
+
+        .industry-keywords {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .keyword {
+            padding: 4px 10px;
+            background: var(--ncrc-gray-light);
+            border-radius: 16px;
+            font-size: 0.75rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--ncrc-gold); }
+        .card-body { padding: 20px; }
+
+        /* Official Table */
+        .officials-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .officials-table th,
+        .officials-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .officials-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+        }
+
+        .officials-table tr:hover { background: #f8fafc; }
+
+        .official-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .party-badge.R { background: var(--party-r); }
+        .party-badge.D { background: var(--party-d); }
+        .party-badge.I { background: var(--party-i); }
+
+        .official-name {
+            font-weight: 600;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+        }
+
+        .official-name:hover { text-decoration: underline; }
+        .official-meta { font-size: 0.75rem; color: var(--ncrc-gray); }
+
+        .amount-cell {
+            text-align: right;
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+        }
+
+        /* Firms Grid */
+        .firms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .firm-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .firm-card:hover {
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 4px 12px rgba(26, 143, 201, 0.15);
+        }
+
+        .firm-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .firm-name { font-weight: 600; color: var(--ncrc-gray-dark); }
+        .firm-ticker { padding: 2px 8px; background: var(--ncrc-gray-light); border-radius: 4px; font-size: 0.75rem; color: var(--ncrc-gray); }
+
+        .firm-stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .firm-stat {
+            text-align: center;
+        }
+
+        .firm-stat-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .firm-stat-label {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+        }
+
+        /* Two columns */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Committees Table */
+        .committee-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background 0.2s;
+        }
+
+        .committee-row:hover {
+            background: #f8fafc;
+        }
+
+        .committee-row:last-child {
+            border-bottom: none;
+        }
+
+        .committee-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .chamber-badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .chamber-badge.house {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .chamber-badge.senate {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .committee-name {
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .committee-chair {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .focus-bar {
+            width: 80px;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .focus-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--ncrc-justdata-blue), var(--ncrc-primary-blue));
+            border-radius: 4px;
+        }
+
+        .focus-label {
+            font-size: 0.75rem;
+            color: var(--ncrc-gray);
+            text-align: right;
+            min-width: 40px;
+        }
+
+        /* Legislation List */
+        .bill-item {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bill-item:hover {
+            background: #f8fafc;
+        }
+
+        .bill-item:last-child {
+            border-bottom: none;
+        }
+
+        .bill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .bill-id {
+            font-weight: 700;
+            color: var(--ncrc-primary-blue);
+            font-size: 0.9rem;
+        }
+
+        .bill-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .bill-status.passed {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .bill-status.committee {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .bill-title {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+        }
+
+        .bill-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* News List */
+        .news-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .news-item:hover {
+            background: #f8fafc;
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-title {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .news-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            display: flex;
+            gap: 12px;
+        }
+
+        .news-source {
+            font-weight: 500;
+        }
+
+        /* Section grid */
+        .three-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .three-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Party Split */
+        .party-split {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .party-bar {
+            flex: 1;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .party-fill-r {
+            background: var(--party-r);
+            height: 100%;
+        }
+
+        .party-fill-d {
+            background: var(--party-d);
+            height: 100%;
+        }
+
+        .party-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            margin-top: 8px;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ncrc-gray);
+        }
+
+        .loading::after {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--ncrc-justdata-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .footer {
+            background: var(--ncrc-justdata-blue);
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .footer a { color: var(--ncrc-gold); text-decoration: none; }
+
+        @media (max-width: 768px) {
+            .two-columns { grid-template-columns: 1fr; }
+            .industry-header { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+            <span style="font-weight: 600;">{{ sector_info.name }}</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Industry Header -->
+        <div class="industry-header">
+            <div class="industry-icon {{ sector }}">
+                {% if sector == 'banking' %}<i class="fas fa-university"></i>
+                {% elif sector == 'crypto' %}<i class="fab fa-bitcoin"></i>
+                {% elif sector == 'investment' %}<i class="fas fa-chart-line"></i>
+                {% elif sector == 'mortgage' %}<i class="fas fa-home"></i>
+                {% elif sector == 'insurance' %}<i class="fas fa-shield-alt"></i>
+                {% elif sector == 'fintech' %}<i class="fas fa-mobile-alt"></i>
+                {% elif sector == 'consumer_lending' %}<i class="fas fa-credit-card"></i>
+                {% else %}<i class="fas fa-industry"></i>
+                {% endif %}
+            </div>
+            <div class="industry-info">
+                <h1 class="industry-name">{{ sector_info.name }}</h1>
+                <p class="industry-desc">{{ sector_info.description }}</p>
+                <div class="industry-keywords">
+                    {% for kw in sector_info.keywords[:5] %}
+                    <span class="keyword">{{ kw }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="stats-row">
+            <div class="stat-card">
+                <div id="stat-officials" class="stat-value">--</div>
+                <div class="stat-label">Officials Connected</div>
+            </div>
+            <div class="stat-card">
+                <div id="stat-total" class="stat-value">--</div>
+                <div class="stat-label">Total $ Involved</div>
+            </div>
+            <div class="stat-card">
+                <div id="stat-contributions" class="stat-value">--</div>
+                <div class="stat-label">Contributions</div>
+            </div>
+            <div class="stat-card">
+                <div id="stat-trades" class="stat-value">--</div>
+                <div class="stat-label">Stock Trades</div>
+            </div>
+            <div class="stat-card">
+                <div id="stat-firms" class="stat-value">--</div>
+                <div class="stat-label">Firms</div>
+            </div>
+        </div>
+
+        <!-- Party Split -->
+        <div class="card">
+            <div class="card-header">
+                <h2><i class="fas fa-balance-scale"></i> Contribution Split by Party</h2>
+            </div>
+            <div class="card-body">
+                <div class="party-split">
+                    <span style="font-weight: 600; color: var(--party-r);">R</span>
+                    <div class="party-bar">
+                        <div id="party-r-fill" class="party-fill-r" style="width: 50%"></div>
+                        <div id="party-d-fill" class="party-fill-d" style="width: 50%"></div>
+                    </div>
+                    <span style="font-weight: 600; color: var(--party-d);">D</span>
+                </div>
+                <div class="party-labels">
+                    <span id="party-r-pct">50%</span>
+                    <span id="party-d-pct">50%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="two-columns">
+            <!-- Top Officials -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-trophy"></i> Top Officials in {{ sector_info.name }}</h2>
+                </div>
+                <div class="card-body">
+                    <table class="officials-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Official</th>
+                                <th style="text-align: right;">Total $</th>
+                            </tr>
+                        </thead>
+                        <tbody id="officials-body">
+                            <tr><td colspan="3" class="loading">Loading officials...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Top Firms -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-building"></i> Top Firms in {{ sector_info.name }}</h2>
+                </div>
+                <div class="card-body">
+                    <div id="firms-grid" class="firms-grid">
+                        <div class="loading">Loading firms...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Committees, Legislation, News Row -->
+        <div class="three-columns">
+            <!-- Committees -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-building-columns"></i> Key Committees</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="committees-list">
+                        <div class="loading">Loading committees...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Related Legislation -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-scroll"></i> Related Legislation</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="legislation-list">
+                        <div class="loading">Loading legislation...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Industry News -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-newspaper"></i> Industry News</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="news-list">
+                        <div class="loading">Loading news...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p><strong>ElectWatch</strong> by <a href="https://ncrc.org">NCRC</a></p>
+    </footer>
+
+    <script>
+        const sector = '{{ sector }}';
+
+        async function loadIndustryData() {
+            try {
+                const response = await fetch(`/api/industry/${sector}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderIndustryData(data);
+                }
+            } catch (error) {
+                console.error('Error loading industry data:', error);
+            }
+        }
+
+        function renderIndustryData(data) {
+            // Update stats
+            document.getElementById('stat-officials').textContent = data.officials?.length || 0;
+            document.getElementById('stat-total').textContent = formatAmount(data.total_amount || 0);
+            document.getElementById('stat-contributions').textContent = formatAmount(data.total_contributions || 0);
+            document.getElementById('stat-trades').textContent = formatAmount(data.total_trades || 0);
+            document.getElementById('stat-firms').textContent = data.firms?.length || 0;
+
+            // Party split
+            const rPct = data.party_split?.r || 50;
+            const dPct = data.party_split?.d || 50;
+            document.getElementById('party-r-fill').style.width = rPct + '%';
+            document.getElementById('party-d-fill').style.width = dPct + '%';
+            document.getElementById('party-r-pct').textContent = rPct + '%';
+            document.getElementById('party-d-pct').textContent = dPct + '%';
+
+            // Officials table
+            renderOfficials(data.officials);
+
+            // Firms grid
+            renderFirms(data.firms);
+
+            // Committees
+            renderCommittees(data.committees);
+
+            // Legislation
+            renderLegislation(data.legislation);
+
+            // News
+            renderNews(data.news);
+        }
+
+        function renderOfficials(officials) {
+            const tbody = document.getElementById('officials-body');
+
+            if (!officials || officials.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--ncrc-gray);">No officials found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = officials.slice(0, 15).map((official, i) => `
+                <tr>
+                    <td style="font-weight: 700; color: var(--ncrc-primary-blue);">${i + 1}</td>
+                    <td>
+                        <div class="official-cell">
+                            <div class="party-badge ${official.party}">${official.party}</div>
+                            <div>
+                                <a href="/official/${official.id}" class="official-name">${official.name}</a>
+                                <div class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="amount-cell">${formatAmount(official.total)}</td>
+                </tr>
+            `).join('');
+        }
+
+        function renderFirms(firms) {
+            const container = document.getElementById('firms-grid');
+
+            if (!firms || firms.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--ncrc-gray);">No firms found</p>';
+                return;
+            }
+
+            container.innerHTML = firms.slice(0, 8).map(firm => `
+                <div class="firm-card" onclick="window.location='/firm/${encodeURIComponent(firm.name)}'">
+                    <div class="firm-header">
+                        <span class="firm-name">${firm.name}</span>
+                        ${firm.ticker ? `<span class="firm-ticker">${firm.ticker}</span>` : ''}
+                    </div>
+                    <div class="firm-stats">
+                        <div class="firm-stat">
+                            <div class="firm-stat-value">${formatAmount(firm.total)}</div>
+                            <div class="firm-stat-label">Total</div>
+                        </div>
+                        <div class="firm-stat">
+                            <div class="firm-stat-value">${firm.officials_count || 0}</div>
+                            <div class="firm-stat-label">Officials</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function renderCommittees(committees) {
+            const container = document.getElementById('committees-list');
+
+            if (!committees || committees.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No committees data available</p>';
+                return;
+            }
+
+            container.innerHTML = committees.map(committee => `
+                <div class="committee-row">
+                    <div class="committee-info">
+                        <span class="chamber-badge ${committee.chamber.toLowerCase()}">${committee.chamber}</span>
+                        <div>
+                            <div class="committee-name">${committee.name}</div>
+                            <div class="committee-chair">Chair: ${committee.chair}</div>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="focus-bar">
+                            <div class="focus-fill" style="width: ${committee.industry_focus}%"></div>
+                        </div>
+                        <span class="focus-label">${committee.industry_focus}%</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderLegislation(legislation) {
+            const container = document.getElementById('legislation-list');
+
+            if (!legislation || legislation.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No related legislation found</p>';
+                return;
+            }
+
+            container.innerHTML = legislation.map(bill => `
+                <div class="bill-item" onclick="window.location='/bill/${bill.bill_id.replace(/[.\s]/g, '').toLowerCase()}'">
+                    <div class="bill-header">
+                        <span class="bill-id">${bill.bill_id}</span>
+                        <span class="bill-status ${bill.status.includes('Passed') ? 'passed' : 'committee'}">${bill.status}</span>
+                    </div>
+                    <div class="bill-title">${bill.title}</div>
+                    <div class="bill-meta">
+                        <span>${bill.sponsor}</span> &bull; <span>${bill.date}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderNews(news) {
+            const container = document.getElementById('news-list');
+
+            if (!news || news.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No recent news available</p>';
+                return;
+            }
+
+            container.innerHTML = news.map(item => `
+                <div class="news-item" onclick="window.open('${item.url}', '_blank')">
+                    <div class="news-title">${item.title}</div>
+                    <div class="news-meta">
+                        <span class="news-source">${item.source}</span>
+                        <span>${item.date}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        loadIndustryData();
+    </script>
+</body>
+</html>

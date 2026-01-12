@@ -1,0 +1,16 @@
+{
+  "insights": [
+    {
+      "title": "Financial Sector Trading Activity",
+      "summary": "Analysis of congressional trading in financial sector stocks shows concentrated activity among certain members with oversight responsibilities.",
+      "category": "trading_pattern",
+      "severity": "medium",
+      "evidence": "Based on STOCK Act disclosures and FEC filings through Jan 2026",
+      "firms": [],
+      "officials": [],
+      "industries": []
+    }
+  ],
+  "generated_at": "2026-01-12T13:21:05.209124",
+  "version": "1.0"
+}

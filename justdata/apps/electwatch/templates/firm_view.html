@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ firm_name }} | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray: #818390;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --party-r: #dc2626;
+            --party-d: #2563eb;
+            --party-i: #7c3aed;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            padding: 16px 20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.9;
+        }
+
+        .back-link:hover { opacity: 1; }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Firm Header */
+        .firm-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .firm-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--ncrc-primary-blue), var(--ncrc-justdata-blue));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .firm-info { flex: 1; min-width: 200px; }
+        .firm-name { font-size: 1.75rem; font-weight: 700; color: var(--ncrc-gray-dark); }
+        .firm-ticker { display: inline-block; margin-left: 10px; padding: 4px 10px; background: var(--ncrc-gray-light); border-radius: 4px; font-size: 0.9rem; color: var(--ncrc-gray); font-weight: 600; }
+
+        .firm-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            color: var(--ncrc-gray);
+        }
+
+        .meta-item i { color: var(--ncrc-justdata-blue); }
+
+        .industry-tags {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        .industry-tag {
+            padding: 4px 12px;
+            border-radius: 16px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .industry-tag.banking { background: #dbeafe; color: #1e40af; }
+        .industry-tag.crypto { background: #fef3c7; color: #d97706; }
+        .industry-tag.investment { background: #ede9fe; color: #7c3aed; }
+        .industry-tag.mortgage { background: #d1fae5; color: #059669; }
+        .industry-tag.insurance { background: #fee2e2; color: #dc2626; }
+        .industry-tag.fintech { background: #cffafe; color: #0891b2; }
+        .industry-tag.consumer_lending { background: #ffedd5; color: #c2410c; }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--ncrc-gold); }
+        .card-body { padding: 20px; }
+
+        /* Officials Table */
+        .officials-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .officials-table th,
+        .officials-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .officials-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+        }
+
+        .officials-table tr:hover { background: #f8fafc; }
+
+        .official-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .party-badge.R { background: var(--party-r); }
+        .party-badge.D { background: var(--party-d); }
+        .party-badge.I { background: var(--party-i); }
+
+        .official-name {
+            font-weight: 600;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+        }
+
+        .official-name:hover { text-decoration: underline; }
+        .official-meta { font-size: 0.75rem; color: var(--ncrc-gray); }
+
+        .amount-cell {
+            text-align: right;
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+        }
+
+        .type-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .type-badge.pac { background: #ede9fe; color: #7c3aed; }
+        .type-badge.stock { background: #fef3c7; color: #d97706; }
+        .type-badge.both { background: #d1fae5; color: #059669; }
+
+        /* Party Split */
+        .party-split-section { margin-bottom: 24px; }
+
+        .party-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-bar {
+            flex: 1;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .party-fill-r { background: var(--party-r); height: 100%; }
+        .party-fill-d { background: var(--party-d); height: 100%; }
+
+        .party-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .party-legend span { font-weight: 600; }
+        .party-legend .r-label { color: var(--party-r); }
+        .party-legend .d-label { color: var(--party-d); }
+
+        /* Activity Timeline */
+        .timeline { display: flex; flex-direction: column; gap: 12px; }
+
+        .timeline-item {
+            display: flex;
+            gap: 16px;
+            padding: 12px;
+            border-left: 3px solid var(--ncrc-justdata-blue);
+            background: var(--ncrc-gray-light);
+            border-radius: 0 8px 8px 0;
+        }
+
+        .timeline-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .timeline-icon.contribution { background: var(--ncrc-primary-blue); }
+        .timeline-icon.trade { background: var(--ncrc-gold); color: var(--ncrc-gray-dark); }
+
+        .timeline-content { flex: 1; }
+        .timeline-title { font-weight: 600; color: var(--ncrc-gray-dark); }
+        .timeline-detail { font-size: 0.85rem; color: var(--ncrc-gray); }
+        .timeline-date { font-size: 0.75rem; color: var(--ncrc-gray); margin-top: 4px; }
+        .timeline-amount { font-weight: 700; color: var(--ncrc-justdata-blue); font-family: monospace; }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ncrc-gray);
+        }
+
+        /* SEC Filings */
+        .filing-item {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filing-item:hover {
+            background: #f8fafc;
+        }
+
+        .filing-item:last-child {
+            border-bottom: none;
+        }
+
+        .filing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .filing-form {
+            font-weight: 700;
+            color: var(--ncrc-primary-blue);
+            padding: 4px 10px;
+            background: #ede9fe;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .filing-date {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .filing-highlights {
+            margin-top: 10px;
+            padding-left: 16px;
+        }
+
+        .filing-highlights li {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .filing-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+        }
+
+        .filing-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Regulatory/Litigation */
+        .reg-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .reg-item:last-child {
+            border-bottom: none;
+        }
+
+        .reg-agency {
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            min-width: 60px;
+        }
+
+        .reg-matter {
+            flex: 1;
+            margin: 0 16px;
+            font-size: 0.9rem;
+        }
+
+        .reg-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .reg-status.ongoing {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .reg-status.settled {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .reg-status.pending {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .litigation-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .litigation-item:last-child {
+            border-bottom: none;
+        }
+
+        .litigation-case {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .litigation-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 6px;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* News */
+        .news-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .news-item:hover {
+            background: #f8fafc;
+        }
+
+        .news-item:last-child {
+            border-bottom: none;
+        }
+
+        .news-title {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .news-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .news-source {
+            font-weight: 500;
+        }
+
+        .source-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Three columns layout */
+        .three-columns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 1100px) {
+            .three-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* AI Summary */
+        .ai-summary {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .ai-summary-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            color: var(--ncrc-justdata-blue);
+            margin-bottom: 8px;
+        }
+
+        .ai-summary-text {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .footer {
+            background: var(--ncrc-justdata-blue);
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .footer a { color: var(--ncrc-gold); text-decoration: none; }
+
+        @media (max-width: 768px) {
+            .firm-header { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+            <span style="font-weight: 600;">Firm Analysis</span>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div id="loading" class="loading">Loading firm data...</div>
+
+        <div id="content" style="display: none;">
+            <!-- Firm Header -->
+            <div class="firm-header">
+                <div class="firm-logo">
+                    <i class="fas fa-building"></i>
+                </div>
+                <div class="firm-info">
+                    <h1 class="firm-name">{{ firm_name }}<span id="firm-ticker" class="firm-ticker" style="display: none;"></span></h1>
+                    <div class="firm-meta">
+                        <span id="firm-pac" class="meta-item">
+                            <i class="fas fa-hand-holding-dollar"></i>
+                            <span>-- PAC Contributions</span>
+                        </span>
+                        <span id="firm-trades" class="meta-item">
+                            <i class="fas fa-chart-line"></i>
+                            <span>-- Stock Trades</span>
+                        </span>
+                    </div>
+                    <div id="industry-tags" class="industry-tags">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div id="stat-officials" class="stat-value">--</div>
+                    <div class="stat-label">Officials Connected</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-total" class="stat-value">--</div>
+                    <div class="stat-label">Total $ Involved</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-contributions" class="stat-value">--</div>
+                    <div class="stat-label">PAC Contributions</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-stock" class="stat-value">--</div>
+                    <div class="stat-label">Stock Trades</div>
+                </div>
+            </div>
+
+            <!-- Party Split -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-balance-scale"></i> Contribution Split by Party</h2>
+                </div>
+                <div class="card-body">
+                    <div class="party-bar-container">
+                        <span style="font-weight: 700; color: var(--party-r);">R</span>
+                        <div class="party-bar">
+                            <div id="party-r-fill" class="party-fill-r" style="width: 50%;"></div>
+                            <div id="party-d-fill" class="party-fill-d" style="width: 50%;"></div>
+                        </div>
+                        <span style="font-weight: 700; color: var(--party-d);">D</span>
+                    </div>
+                    <div class="party-legend">
+                        <span class="r-label" id="r-amount">$0 (50%)</span>
+                        <span class="d-label" id="d-amount">$0 (50%)</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Connected Officials -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> Connected Officials</h2>
+                </div>
+                <div class="card-body">
+                    <table class="officials-table">
+                        <thead>
+                            <tr>
+                                <th>Official</th>
+                                <th>Type</th>
+                                <th>Committee</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="officials-body">
+                            <tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No officials found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-clock"></i> Recent Activity</h2>
+                </div>
+                <div class="card-body">
+                    <div id="timeline" class="timeline">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEC Filings, Regulatory, Litigation Row -->
+            <div class="three-columns">
+                <!-- SEC Filings -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-file-alt"></i> SEC Filings</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="sec-filings">
+                            <div class="loading">Loading filings...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Regulatory Matters -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-gavel"></i> Regulatory Matters</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="regulatory-list">
+                            <div class="loading">Loading regulatory data...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Litigation -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-balance-scale-right"></i> Litigation</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="litigation-list">
+                            <div class="loading">Loading litigation data...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-newspaper"></i> Recent News</h2>
+                </div>
+                <div class="card-body" style="padding: 0;">
+                    <div id="news-list">
+                        <div class="loading">Loading news...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p><strong>ElectWatch</strong> by <a href="https://ncrc.org">NCRC</a></p>
+    </footer>
+
+    <script>
+        const firmName = '{{ firm_name }}';
+
+        async function loadFirmData() {
+            try {
+                const response = await fetch(`/api/firm/${encodeURIComponent(firmName)}`);
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                if (data.success && data.firm) {
+                    renderFirmData(data.firm);
+                } else {
+                    // Show placeholder data for now
+                    renderPlaceholder();
+                }
+            } catch (error) {
+                console.error('Error loading firm data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                renderPlaceholder();
+            }
+        }
+
+        function renderPlaceholder() {
+            // Show placeholder until real data is available
+            document.getElementById('stat-officials').textContent = '--';
+            document.getElementById('stat-total').textContent = '--';
+            document.getElementById('stat-contributions').textContent = '--';
+            document.getElementById('stat-stock').textContent = '--';
+
+            document.getElementById('officials-body').innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--ncrc-gray); padding: 40px;">
+                        <i class="fas fa-info-circle" style="font-size: 1.5rem; display: block; margin-bottom: 8px;"></i>
+                        Firm data analysis coming soon. Connect real FEC and Quiver data to see officials connected to ${firmName}.
+                    </td>
+                </tr>
+            `;
+
+            document.getElementById('timeline').innerHTML = `
+                <p style="text-align: center; color: var(--ncrc-gray); padding: 20px;">
+                    No recent activity data available yet.
+                </p>
+            `;
+
+            document.getElementById('sec-filings').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No SEC filings data available</p>';
+            document.getElementById('regulatory-list').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No regulatory data available</p>';
+            document.getElementById('litigation-list').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No litigation data available</p>';
+            document.getElementById('news-list').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No news available</p>';
+        }
+
+        function renderFirmData(firm) {
+            if (firm.ticker) {
+                const tickerEl = document.getElementById('firm-ticker');
+                tickerEl.textContent = firm.ticker;
+                tickerEl.style.display = 'inline-block';
+            }
+
+            // Stats
+            document.getElementById('stat-officials').textContent = firm.officials_count || 0;
+            document.getElementById('stat-total').textContent = formatAmount(firm.total || 0);
+            document.getElementById('stat-contributions').textContent = formatAmount(firm.contributions || 0);
+            document.getElementById('stat-stock').textContent = formatAmount(firm.stock_trades || 0);
+
+            // Industries
+            if (firm.industries && firm.industries.length > 0) {
+                document.getElementById('industry-tags').innerHTML = firm.industries.map(ind =>
+                    `<span class="industry-tag ${ind}">${formatIndustry(ind)}</span>`
+                ).join('');
+            }
+
+            // Party split
+            const rPct = firm.party_split?.r || 50;
+            const dPct = firm.party_split?.d || 50;
+            document.getElementById('party-r-fill').style.width = rPct + '%';
+            document.getElementById('party-d-fill').style.width = dPct + '%';
+            document.getElementById('r-amount').textContent = `${formatAmount(firm.r_amount || 0)} (${rPct}%)`;
+            document.getElementById('d-amount').textContent = `${formatAmount(firm.d_amount || 0)} (${dPct}%)`;
+
+            // Officials
+            renderOfficials(firm.officials);
+
+            // Timeline
+            renderTimeline(firm.activity);
+
+            // SEC Filings
+            renderSECFilings(firm.sec_filings);
+
+            // Regulatory Matters
+            renderRegulatory(firm.regulatory_mentions);
+
+            // Litigation
+            renderLitigation(firm.litigation);
+
+            // News
+            renderNews(firm.news);
+        }
+
+        function renderOfficials(officials) {
+            const tbody = document.getElementById('officials-body');
+
+            if (!officials || officials.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No officials found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = officials.map(official => {
+                let typeClass = 'pac';
+                let typeLabel = 'PAC';
+                if (official.has_stock && official.has_pac) {
+                    typeClass = 'both';
+                    typeLabel = 'Both';
+                } else if (official.has_stock) {
+                    typeClass = 'stock';
+                    typeLabel = 'Stock';
+                }
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="official-cell">
+                                <div class="party-badge ${official.party}">${official.party}</div>
+                                <div>
+                                    <a href="/official/${official.id}" class="official-name">${official.name}</a>
+                                    <div class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+                        <td style="font-size: 0.85rem; color: var(--ncrc-gray);">${official.committee || 'N/A'}</td>
+                        <td class="amount-cell">${formatAmount(official.total)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderTimeline(activity) {
+            const container = document.getElementById('timeline');
+
+            if (!activity || activity.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--ncrc-gray);">No recent activity</p>';
+                return;
+            }
+
+            container.innerHTML = activity.slice(0, 15).map(item => `
+                <div class="timeline-item">
+                    <div class="timeline-icon ${item.type}">
+                        <i class="fas fa-${item.type === 'contribution' ? 'hand-holding-dollar' : 'chart-line'}"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">${item.official_name}</div>
+                        <div class="timeline-detail">${item.type === 'contribution' ? 'PAC Contribution' : `Stock ${item.transaction || 'Trade'}`}</div>
+                        <div class="timeline-date">${formatDate(item.date)}</div>
+                    </div>
+                    <div class="timeline-amount">${formatAmount(item.amount)}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '$0';
+            if (typeof amount === 'object') return amount.display || '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatIndustry(code) {
+            const names = {
+                banking: 'Banking',
+                crypto: 'Crypto',
+                investment: 'Investment',
+                mortgage: 'Mortgage',
+                insurance: 'Insurance',
+                fintech: 'Fintech',
+                consumer_lending: 'Consumer Lending'
+            };
+            return names[code] || code;
+        }
+
+        function renderSECFilings(filings) {
+            const container = document.getElementById('sec-filings');
+
+            if (!filings || filings.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No SEC filings data available</p>';
+                return;
+            }
+
+            container.innerHTML = filings.map(filing => `
+                <div class="filing-item" onclick="window.open('${filing.url || '#'}', '_blank')">
+                    <div class="filing-header">
+                        <span class="filing-form">${filing.form}</span>
+                        <span class="filing-date">${filing.filing_date}</span>
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--ncrc-gray-dark);">${filing.description || ''}</div>
+                    ${filing.highlights && filing.highlights.length > 0 ? `
+                        <ul class="filing-highlights">
+                            ${filing.highlights.map(h => `<li>${h}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    <a href="${filing.url || '#'}" class="filing-link" onclick="event.stopPropagation()">
+                        <i class="fas fa-external-link-alt"></i> View on SEC EDGAR
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function renderRegulatory(regulatory) {
+            const container = document.getElementById('regulatory-list');
+
+            if (!regulatory || regulatory.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No active regulatory matters</p>';
+                return;
+            }
+
+            container.innerHTML = regulatory.map(reg => {
+                let statusClass = 'ongoing';
+                if (reg.status.toLowerCase().includes('settled') || reg.status.toLowerCase().includes('satisfactory') || reg.status.toLowerCase().includes('passed')) {
+                    statusClass = 'settled';
+                } else if (reg.status.toLowerCase().includes('pending') || reg.status.toLowerCase().includes('active')) {
+                    statusClass = 'pending';
+                }
+
+                return `
+                    <div class="reg-item">
+                        <span class="reg-agency">${reg.agency}</span>
+                        <span class="reg-matter">${reg.matter}</span>
+                        <span class="reg-status ${statusClass}">${reg.status}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLitigation(litigation) {
+            const container = document.getElementById('litigation-list');
+
+            if (!litigation || litigation.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No active litigation</p>';
+                return;
+            }
+
+            container.innerHTML = litigation.map(lit => `
+                <div class="litigation-item">
+                    <div class="litigation-case">${lit.case}</div>
+                    <div class="litigation-meta">
+                        <span><i class="fas fa-balance-scale"></i> ${lit.status}</span>
+                        ${lit.amount ? `<span><i class="fas fa-dollar-sign"></i> ${lit.amount}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderNews(news) {
+            const container = document.getElementById('news-list');
+
+            if (!news || news.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No recent news</p>';
+                return;
+            }
+
+            container.innerHTML = news.map(item => `
+                <div class="news-item" onclick="window.open('${item.url}', '_blank')">
+                    <div class="news-title">${item.title}</div>
+                    <div class="news-meta">
+                        <span class="news-source">${item.source}</span>
+                        ${item.reliable ? '<span class="source-badge">Verified Source</span>' : ''}
+                        <span>${item.date}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        loadFirmData();
+    </script>
+</body>
+</html>
