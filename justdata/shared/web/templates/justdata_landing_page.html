@@ -2098,8 +2098,8 @@
         
         // Initialize user type from localStorage on page load
         document.addEventListener('DOMContentLoaded', function() {
-            // Default to 'admin' for testing - full access to all apps
-            const savedUserType = localStorage.getItem('justdata_user_type') || 'admin';
+            // Default to 'staff' for development - shows most apps
+            const savedUserType = localStorage.getItem('justdata_user_type') || 'staff';
             const selector = document.getElementById('userTypeSelect');
             if (selector) {
                 selector.value = savedUserType;
