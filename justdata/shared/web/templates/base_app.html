@@ -19,6 +19,9 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
+    <div class="body-overlay" id="bodyOverlay"></div>
+    
     <!-- Standardized Header -->
     <header class="header">
         <div class="header-content">
@@ -37,8 +40,6 @@
             </div>
         </div>
     </header>
-    <!-- Overlay for menu (outside header for proper z-index) -->
-    <div class="nav-overlay" id="navOverlay"></div>
 
     {% block before_content %}{% endblock %}
 
@@ -86,7 +87,7 @@
             // Initialize hamburger menu
             const navToggle = document.getElementById('navToggle');
             const navMenu = document.querySelector('.nav-menu');
-            const navOverlay = document.getElementById('navOverlay');
+            const bodyOverlay = document.getElementById('bodyOverlay');
             
             if (navToggle && navMenu) {
                 navToggle.addEventListener('click', function(e) {
@@ -94,16 +95,18 @@
                     const isExpanded = this.getAttribute('aria-expanded') === 'true';
                     this.setAttribute('aria-expanded', !isExpanded);
                     navMenu.classList.toggle('active');
-                    if (navOverlay) navOverlay.classList.toggle('active');
+                    if (bodyOverlay) bodyOverlay.classList.toggle('active');
+                    document.body.classList.toggle('menu-open');
                     this.classList.toggle('active');
                 });
                 
                 // Close menu when clicking overlay
-                if (navOverlay) {
-                    navOverlay.addEventListener('click', function() {
+                if (bodyOverlay) {
+                    bodyOverlay.addEventListener('click', function() {
                         navToggle.setAttribute('aria-expanded', 'false');
                         navMenu.classList.remove('active');
-                        navOverlay.classList.remove('active');
+                        bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
                         navToggle.classList.remove('active');
                     });
                 }
@@ -129,7 +132,8 @@
                     link.addEventListener('click', function() {
                         navToggle.setAttribute('aria-expanded', 'false');
                         navMenu.classList.remove('active');
-                        if (navOverlay) navOverlay.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
                         navToggle.classList.remove('active');
                     });
                 });
@@ -139,7 +143,8 @@
                     if (e.key === 'Escape' && navMenu.classList.contains('active')) {
                         navToggle.setAttribute('aria-expanded', 'false');
                         navMenu.classList.remove('active');
-                        if (navOverlay) navOverlay.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
                         navToggle.classList.remove('active');
                     }
                 });

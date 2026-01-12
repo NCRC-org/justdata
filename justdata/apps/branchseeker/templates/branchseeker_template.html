@@ -1,9 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ app_title|default('BranchSeeker') }} - AI-Powered Banking Insights</title>
+{% extends "base_app.html" %}
+
+{% set app_name = "BranchSeeker" %}
+{% set app_name_part1 = "BRANCH" %}
+{% set app_name_part2 = "SEEKER" %}
+{% set app_description = "AI-powered banking market intelligence platform" %}
+
+{% block title %}{{ app_title|default('BranchSeeker') }} - AI-Powered Banking Insights{% endblock %}
+
+{% block extra_head %}
     <meta name="description" content="AI-powered bank branch data analyzer with BigQuery integration. Generate comprehensive banking market analysis reports.">
     <meta name="keywords" content="{{ app_title|default('BranchSeeker') }}, banking, branch analysis, AI, BigQuery, market intelligence">
     <meta name="author" content="JustData - National Community Reinvestment Coalition">
@@ -22,32 +26,12 @@
     <meta property="twitter:description" content="Generate comprehensive banking market analysis reports with AI-powered insights.">
     <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Intro.js for onboarding tour -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
-</head>
-<body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                </div>
-                <div class="header-title-section">
-                    <h1><span class="app-name-part1">BRANCH</span><span class="app-name-part2">SEEKER</span></h1>
-                </div>
-                <div class="header-tagline">
-                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
-                </div>
-            </div>
-        </div>
-    </header>
+{% endblock %}
 
+{% block content %}
     <div class="container">
         <!-- Sidebar -->
         <aside class="sidebar">
@@ -294,36 +278,9 @@
         </main>
         </div> <!-- End content-wrapper -->
     </div> <!-- End container -->
+{% endblock %}
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-col">
-                <h4>BranchSeeker</h4>
-                <p>AI-powered banking market intelligence platform</p>
-            </div>
-            <div class="footer-col">
-                <h4>Developed by</h4>
-                <p>NCRC - National Community Reinvestment Coalition<br>
-                Jad Edlebi &amp; Jason Richardson</p>
-            </div>
-            <div class="footer-col">
-                <h4>Links</h4>
-                <p>
-                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
-                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
-                </p>
-            </div>
-            <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2025 JustData - BranchSeeker. Powered by AI and BigQuery.<br>
-            <span class="version-text">Version {{ version }}</span>
-        </div>
-    </footer>
-
+{% block extra_js %}
     <!-- jQuery (must be first) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
@@ -523,5 +480,4 @@
             loadCounties();
         });
     </script>
-</body>
-</html> 
+{% endblock %}

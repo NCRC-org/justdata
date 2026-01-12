@@ -27,9 +27,10 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--ncrc-gray-light);
     min-height: 100vh;
+    width: 100%;
     color: var(--ncrc-gray-dark);
     line-height: 1.6;
-    overflow-x: visible !important;
+    overflow-x: hidden;
     overflow-y: auto;
     opacity: 0;
     animation: fadeInBody 0.6s ease-in-out forwards;
@@ -37,7 +38,9 @@ body {
 }
 
 html {
-    overflow-x: visible !important;
+    width: 100%;
+    min-height: 100vh;
+    overflow-x: hidden;
     position: relative;
 }
 
@@ -51,15 +54,16 @@ html {
 }
 
 .container {
+    width: 100%;
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 20px;
     display: flex;
     flex-direction: row;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     gap: 30px;
     align-items: flex-start;
-    overflow: visible !important;
+    overflow: visible;
     opacity: 0;
     transform: translateY(30px);
     animation: slideUpFadeIn 0.8s ease-out 0.8s forwards;
@@ -265,6 +269,7 @@ body:has(.nav-overlay.active) main {
 
 /* Header */
 .header {
+    width: 100%;
     background: var(--ncrc-dark-blue);
     text-align: center;
     padding: 2.5rem 20px 2rem;
@@ -547,7 +552,7 @@ body:has(.nav-overlay.active) main {
                 visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1),
                 transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 10000;
-    display: none !important;
+    display: none;
     flex-direction: column;
     align-items: stretch;
     gap: 0;
@@ -732,6 +737,47 @@ body:has(.nav-overlay.active) main {
     display: block;
     opacity: 1;
     z-index: 9999 !important;
+}
+
+/* Body-level overlay - direct child of body for proper z-index stacking */
+.body-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9998;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: auto;
+}
+
+.body-overlay.active {
+    display: block;
+    opacity: 1;
+}
+
+/* When menu is open, lower all content below overlay */
+body.menu-open .container,
+body.menu-open .content-wrapper,
+body.menu-open .main-content,
+body.menu-open .sidebar,
+body.menu-open .footer,
+body.menu-open .app-card,
+body.menu-open .coming-soon-section,
+body.menu-open aside,
+body.menu-open main {
+    z-index: 1 !important;
+    position: relative;
+}
+
+/* Ensure header stays above content but below overlay */
+body.menu-open .header {
+    z-index: 10000 !important;
 }
 
 /* Mobile Navigation Styles */

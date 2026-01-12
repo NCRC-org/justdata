@@ -1439,6 +1439,9 @@
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
+    <div class="body-overlay" id="bodyOverlay"></div>
+    
     <!-- Header -->
     <header class="header">
         <div class="header-content">
@@ -1448,9 +1451,10 @@
                 </div>
                 <div class="header-title-section">
                     <h1><span class="app-name-part1">DATA</span><span class="app-name-part2">EXPLORER</span></h1>
+                    <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
                 </div>
-                <div class="header-tagline">
-                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
+                <div class="header-nav-wrapper">
+                    {% include 'nav_menu.html' %}
                 </div>
             </div>
         </div>
@@ -1531,6 +1535,64 @@
             // Hide swipe indicator on desktop
             if (window.innerWidth > 768) {
                 document.getElementById('swipeIndicator').style.display = 'none';
+            }
+            
+            // Initialize hamburger menu
+            const navToggle = document.getElementById('navToggle');
+            const navMenu = document.querySelector('.nav-menu');
+            const bodyOverlay = document.getElementById('bodyOverlay');
+            
+            if (navToggle && navMenu) {
+                navToggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
+                    this.setAttribute('aria-expanded', !isExpanded);
+                    navMenu.classList.toggle('active');
+                    if (bodyOverlay) bodyOverlay.classList.toggle('active');
+                    document.body.classList.toggle('menu-open');
+                    this.classList.toggle('active');
+                });
+                
+                if (bodyOverlay) {
+                    bodyOverlay.addEventListener('click', function() {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                        navToggle.classList.remove('active');
+                    });
+                }
+                
+                const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
+                dropdownToggles.forEach(toggle => {
+                    toggle.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        const parentItem = this.closest('.nav-item-dropdown');
+                        if (parentItem) parentItem.classList.toggle('active');
+                    });
+                });
+                
+                const navLinks = document.querySelectorAll('.nav-link:not(.dropdown-toggle)');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', function() {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                        navToggle.classList.remove('active');
+                    });
+                });
+                
+                document.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+                        navToggle.setAttribute('aria-expanded', 'false');
+                        navMenu.classList.remove('active');
+                        if (bodyOverlay) bodyOverlay.classList.remove('active');
+                        document.body.classList.remove('menu-open');
+                        navToggle.classList.remove('active');
+                    }
+                });
             }
         });
     </script>

@@ -1,9 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LendSight - AI-Powered Mortgage Insights</title>
+{% extends "base_app.html" %}
+
+{% set app_name = "LendSight" %}
+{% set app_name_part1 = "LEND" %}
+{% set app_name_part2 = "SIGHT" %}
+{% set app_description = "AI-powered mortgage market intelligence platform" %}
+
+{% block title %}LendSight - AI-Powered Mortgage Insights{% endblock %}
+
+{% block extra_head %}
     <meta name="description" content="AI-powered mortgage lending data analyzer with BigQuery integration. Generate comprehensive mortgage market analysis reports from HMDA data.">
     <meta name="keywords" content="LendSight, mortgage, lending analysis, HMDA, AI, BigQuery, market intelligence">
     <meta name="author" content="JustData - National Community Reinvestment Coalition">
@@ -22,32 +26,12 @@
     <meta property="twitter:description" content="Generate comprehensive mortgage market analysis reports with AI-powered insights from HMDA data.">
     <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <!-- Intro.js for onboarding tour -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
-</head>
-<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                </div>
-                <div class="header-title-section">
-                    <h1><span class="app-name-part1">LEND</span><span class="app-name-part2">SIGHT</span></h1>
-                </div>
-                <div class="header-tagline">
-                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
-                </div>
-            </div>
-        </div>
-    </header>
+{% endblock %}
 
+{% block content %}
     <div class="container">
         <!-- Main Content -->
         <div class="content-wrapper">
@@ -271,36 +255,9 @@
             </div>
         </aside>
     </div> <!-- End container -->
+{% endblock %}
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-col">
-                <h4>LendSight</h4>
-                <p>AI-powered mortgage market intelligence platform</p>
-            </div>
-            <div class="footer-col">
-                <h4>Developed by</h4>
-                <p>NCRC - National Community Reinvestment Coalition<br>
-                Jad Edlebi &amp; Jason Richardson</p>
-            </div>
-            <div class="footer-col">
-                <h4>Links</h4>
-                <p>
-                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
-                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
-                </p>
-            </div>
-            <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2025 JustData - LendSight. Powered by AI and BigQuery.<br>
-            <span class="version-text">Version {{ version }}</span>
-        </div>
-    </footer>
-
+{% block extra_js %}
     <!-- jQuery (must be first) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
@@ -762,12 +719,6 @@
         });
     </script>
     
-    <!-- jQuery (must be first) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- Select2 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Intro.js for onboarding tour -->
-    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
     <!-- Override progress steps for LendSight BEFORE app.js loads -->
     <script>
         // Override progress steps for LendSight (use lending terminology)
@@ -859,16 +810,6 @@
                         });
                         
                         console.log('[DEBUG] loadStates: Select2 reinitialized');
-                        
-                        // DON'T restore previous selection - this was causing automatic Arizona loads
-                        // Users should select their state fresh each time
-                        // if (currentValue && stateSelect.find(`option[value="${currentValue}"]`).length > 0) {
-                        //     console.log(`[DEBUG] loadStates: Restoring previous selection: ${currentValue}`);
-                        //     // Use setTimeout to ensure Select2 is fully initialized before setting value
-                        //     setTimeout(() => {
-                        //         stateSelect.val(currentValue).trigger('change');
-                        //     }, 100);
-                        // }
                         
                         statesLoaded = true;
                         isLoadingStates = false;
@@ -1328,6 +1269,4 @@
             }
         });
     </script>
-</body>
-</html>
-
+{% endblock %}
