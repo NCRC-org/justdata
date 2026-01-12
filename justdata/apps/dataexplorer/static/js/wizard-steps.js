@@ -952,7 +952,7 @@ async function loadMetros() {
         
         // Load from static JSON file first (fastest)
         try {
-            const response = await fetch('/static/data/metros.json');
+            const response = await fetch('/dataexplorer/static/data/metros.json');
             if (response.ok) {
                 const data = await response.json();
                 if (data.metros && data.metros.length > 0) {

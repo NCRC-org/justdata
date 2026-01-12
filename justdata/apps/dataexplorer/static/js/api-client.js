@@ -15,7 +15,7 @@
 // DataExplorer API Client
 // Handles all API communication with Flask backend
 
-const API_BASE = '/api';
+const API_BASE = '/dataexplorer/api';
 
 class APIClient {
     constructor() {
