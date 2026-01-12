@@ -4,6 +4,7 @@ Converts the standalone DataExplorer app into a blueprint.
 """
 
 from flask import Blueprint, render_template, request, jsonify, send_from_directory, Response
+from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import json
 import logging
@@ -22,6 +23,7 @@ from .lender_analysis_processor import process_lender_analysis
 
 # Get repo root for shared static files
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -34,6 +36,19 @@ dataexplorer_bp = Blueprint(
     static_folder=str(STATIC_DIR),
     static_url_path='/dataexplorer/static'
 )
+
+
+@dataexplorer_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 
 @dataexplorer_bp.route('/')

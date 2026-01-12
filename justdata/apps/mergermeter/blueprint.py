@@ -4,6 +4,7 @@ Converts the standalone MergerMeter app into a blueprint.
 """
 
 from flask import Blueprint, render_template, request, jsonify, send_file, session, Response, url_for
+from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
 import zipfile
@@ -13,6 +14,7 @@ import threading
 import time
 import json
 from typing import List, Dict
+from pathlib import Path
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
@@ -22,6 +24,10 @@ from .version import __version__
 # Import functions from mergermeter modules
 from .branch_assessment_area_generator import generate_assessment_areas_from_branches as _generate_assessment_areas
 
+# Get shared templates directory
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
+
 # Create blueprint
 mergermeter_bp = Blueprint(
     'mergermeter',
@@ -30,6 +36,19 @@ mergermeter_bp = Blueprint(
     static_folder=STATIC_DIR,
     static_url_path='/mergermeter/static'
 )
+
+
+@mergermeter_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 # Set maximum file upload size to 10MB
 mergermeter_bp.config = {'MAX_CONTENT_LENGTH': 10 * 1024 * 1024}

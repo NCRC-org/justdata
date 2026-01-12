@@ -4,6 +4,7 @@ Converts the standalone BizSight app into a blueprint.
 """
 
 from flask import Blueprint, render_template, request, jsonify, session, Response, send_file, make_response, url_for
+from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import sys
 import uuid
@@ -22,6 +23,10 @@ from justdata.apps.bizsight.utils.progress_tracker import (
     get_progress, update_progress, create_progress_tracker
 )
 
+# Get shared templates directory
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
+
 # Create blueprint
 bizsight_bp = Blueprint(
     'bizsight',
@@ -30,6 +35,19 @@ bizsight_bp = Blueprint(
     static_folder=STATIC_DIR_STR,
     static_url_path='/bizsight/static'
 )
+
+
+@bizsight_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    blueprint_loader = FileSystemLoader(TEMPLATES_DIR_STR)
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 
 @bizsight_bp.route('/')

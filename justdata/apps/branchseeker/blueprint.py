@@ -4,6 +4,7 @@ Converts the standalone BranchSeeker app into a blueprint.
 """
 
 from flask import Blueprint, render_template, request, jsonify, send_file, Response, session, url_for
+from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
 import zipfile
@@ -12,6 +13,7 @@ import uuid
 import threading
 import time
 import json
+from pathlib import Path
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
@@ -21,6 +23,9 @@ from .data_utils import get_available_counties
 from .core import run_analysis, parse_web_parameters
 from .version import __version__
 
+# Get shared templates directory
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
 
 # Create blueprint
 branchseeker_bp = Blueprint(
@@ -30,6 +35,19 @@ branchseeker_bp = Blueprint(
     static_folder=STATIC_DIR,
     static_url_path='/branchseeker/static'
 )
+
+
+@branchseeker_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 
 @branchseeker_bp.route('/')

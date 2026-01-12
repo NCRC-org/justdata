@@ -4,6 +4,7 @@ Converts the standalone LendSight app into a blueprint with cache integration.
 """
 
 from flask import Blueprint, render_template, request, jsonify, session, Response, make_response, send_file, url_for
+from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import tempfile
 import uuid
@@ -11,6 +12,7 @@ import threading
 import time
 import json
 from datetime import datetime
+from pathlib import Path
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
@@ -18,6 +20,10 @@ from justdata.shared.utils.analysis_cache import get_cached_result, store_cached
 from justdata.core.config.app_config import LendSightConfig
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR
+
+# Get shared templates directory
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
 
 # Create blueprint
 lendsight_bp = Blueprint(
@@ -27,6 +33,19 @@ lendsight_bp = Blueprint(
     static_folder=STATIC_DIR,
     static_url_path='/lendsight/static'
 )
+
+
+@lendsight_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 
 @lendsight_bp.route('/')

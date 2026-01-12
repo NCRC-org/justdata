@@ -4,9 +4,11 @@ Converts the standalone BranchMapper app into a blueprint.
 """
 
 from flask import Blueprint, render_template, request, jsonify, url_for
+from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import numpy as np
 import re
+from pathlib import Path
 
 from justdata.main.auth import require_access, get_user_permissions
 from .config import TEMPLATES_DIR, STATIC_DIR
@@ -21,6 +23,10 @@ from .core import load_sql_template
 # Import from branchseeker for shared functionality
 from justdata.apps.branchseeker.data_utils import expand_state_to_counties
 
+# Get shared templates directory
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
+
 # Create blueprint
 branchmapper_bp = Blueprint(
     'branchmapper',
@@ -29,6 +35,19 @@ branchmapper_bp = Blueprint(
     static_folder=STATIC_DIR,
     static_url_path='/branchmapper/static'
 )
+
+
+@branchmapper_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 
 @branchmapper_bp.route('/')

@@ -4,6 +4,7 @@ Converts the standalone LoanTrends app into a blueprint.
 """
 
 from flask import Blueprint, render_template, request, jsonify, Response
+from jinja2 import ChoiceLoader, FileSystemLoader
 import json
 import time
 import logging
@@ -15,6 +16,7 @@ from .version import __version__
 
 # Get repo root for shared static files
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -27,6 +29,19 @@ loantrends_bp = Blueprint(
     static_folder=str(STATIC_DIR),
     static_url_path='/loantrends/static'
 )
+
+
+@loantrends_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 
 @loantrends_bp.route('/')
