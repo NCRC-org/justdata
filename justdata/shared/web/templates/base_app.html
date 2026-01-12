@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ app_name }} - JustData{% endblock %}</title>
+    <meta name="description" content="{{ app_description|default('JustData - AI-powered financial data analysis') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    
+    <!-- Shared CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Standardized Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1><span class="app-name-part1">{{ app_name_part1 }}</span><span class="app-name-part2">{{ app_name_part2 }}</span></h1>
+                    {% block header_subtitle %}{% endblock %}
+                </div>
+                <div class="header-tagline">
+                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    {% block before_content %}{% endblock %}
+
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    {% block after_content %}{% endblock %}
+
+    <!-- Standardized Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>{{ app_name }}</h4>
+                <p>{{ app_description }}</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - {{ app_name }}. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version|default('1.0.0') }}</span>
+        </div>
+    </footer>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

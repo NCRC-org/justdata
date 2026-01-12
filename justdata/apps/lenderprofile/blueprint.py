@@ -3,7 +3,8 @@ LenderProfile Blueprint for main JustData app.
 Converts the standalone LenderProfile app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, Response
+from flask import Blueprint, render_template, request, jsonify, Response, current_app
+from jinja2 import ChoiceLoader, FileSystemLoader
 import json
 import time
 import logging
@@ -15,6 +16,7 @@ from .version import __version__
 
 # Get repo root for shared static files
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -27,6 +29,21 @@ lenderprofile_bp = Blueprint(
     static_folder=str(STATIC_DIR),
     static_url_path='/lenderprofile/static'
 )
+
+
+@lenderprofile_bp.record_once
+def configure_template_loader(state):
+    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    app = state.app
+    # Add shared templates to the loader
+    blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
+    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+    # Create a choice loader that searches blueprint templates first, then shared
+    app.jinja_loader = ChoiceLoader([
+        app.jinja_loader,
+        blueprint_loader,
+        shared_loader
+    ])
 
 
 @lenderprofile_bp.route('/')

@@ -12,11 +12,11 @@ import os
 def create_app():
     """Create and configure the main Flask application."""
     
-    # Create app - blueprints handle their own templates
-    # Main app routes will explicitly load from shared templates
+    # Create app with shared templates folder as base
+    # This allows blueprints to extend base_app.html
     app = Flask(
         'justdata',
-        template_folder=None,  # Let blueprints handle their own templates
+        template_folder=MainConfig.TEMPLATES_DIR,  # Shared templates folder
         static_folder=MainConfig.STATIC_DIR
     )
     
