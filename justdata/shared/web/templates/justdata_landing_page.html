@@ -1695,6 +1695,25 @@
                         </div>
                     </div>
 
+
+                    <!-- ElectWatch Card -->
+                    <div class="app-card app-electwatch" data-app="electwatch" role="button" tabindex="0" aria-label="Launch ElectWatch - Congressional financial activity tracker" onclick="handleCardClick('ElectWatch')" onkeydown="handleCardKeyDown(event, 'ElectWatch')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-landmark"></i>
+                            </div>
+                            <h3 class="app-card-title">ElectWatch</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Monitor elected officials' financial relationships with the financial sector including PAC contributions, stock trades, and voting records.
+                        </p>
+                        <span class="app-card-status status-ready">Ready</span>
+                        <div class="app-card-launch-btn" aria-hidden="true">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Launch</span>
+                        </div>
+                    </div>
+
                     <!-- MemberView Card -->
                     <div class="app-card app-memberview" data-app="memberview" role="button" tabindex="0" aria-label="MemberView - Member management application (In Development)" onclick="handleCardClick('MemberView')" onkeydown="handleCardKeyDown(event, 'MemberView')">
                         <div class="app-card-header">
@@ -1796,13 +1815,13 @@
                 <div class="feature-card">
                     <i class="fas fa-mouse-pointer" aria-hidden="true"></i>
                     <h4>Select an Application</h4>
-                    <p>Click any card above to launch that data analysis tool. Use Tab key to navigate, Enter or Space to activate.</p>
+                    <p>Click any card to launch the JustData tool.</p>
                 </div>
 
                 <div class="feature-card">
                     <i class="fas fa-list" aria-hidden="true"></i>
                     <h4>What's Available</h4>
-                    <p>Six applications: banking, mortgage, mapping, mergers, small business, and member management.</p>
+                    <p>AI Generated reports. Data dashboards. Custom tools for custom projects.</p>
                 </div>
 
                 <div class="feature-card">
@@ -2294,6 +2313,7 @@
                 'dataexplorer': { public: 'locked', economy: 'locked', member: 'locked', member_plus: 'full', institutional: 'full', staff: 'full', admin: 'full' },
                 'mergermeter': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
                 'lenderprofile': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
+                'electwatch': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
                 // Note: commentmaker and justpolicy are in Coming Soon section
                 'memberview': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
                 'analytics': { public: 'hidden', economy: 'hidden', member: 'hidden', member_plus: 'hidden', institutional: 'hidden', staff: 'full', admin: 'full' },
@@ -2334,6 +2354,7 @@
                 'MergerMeter': '/mergermeter/',
                 'DataExplorer': '/dataexplorer/',
                 'LenderProfile': '/lenderprofile/',
+                'ElectWatch': '/electwatch/',
                 'LoanTrends': '/loantrends/',
                 'MemberView': '/memberview/',
                 // Note: CommentMaker and JustPolicy are Coming Soon
