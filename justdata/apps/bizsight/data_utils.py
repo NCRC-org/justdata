@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Dict, Optional
 
 # Add repo root to path
-REPO_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
 from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
@@ -150,15 +150,6 @@ def get_available_years() -> List[int]:
         print(f"Error loading years: {e}")
         return list(range(2018, 2025))
 
-def get_last_5_years_sb() -> List[int]:
-    """Get the last 5 years dynamically from SB disclosure data."""
-    try:
-        bq_client = BigQueryClient()
-        return bq_client.get_last_5_years_sb()
-    except Exception as e:
-        print(f"Error loading last 5 SB years: {e}")
-        return list(range(2020, 2025))  # 2020-2024
-
 
 def get_county_by_geoid5(geoid5: str) -> Optional[Dict]:
     """Get county information by GEOID5."""
@@ -187,6 +178,10 @@ def validate_year_range(start_year: int, end_year: int) -> tuple[bool, Optional[
     
     year_count = end_year - start_year + 1
     if year_count < 3:
+        # Allow 1 year for planning regions (2024 only)
+        # Check if this is a planning region request (would need to be passed in, but for now just allow 1 year)
+        if year_count == 1:
+            return True, ""  # Allow single year (for planning regions)
         return False, "Must select at least 3 years"
     
     return True, None

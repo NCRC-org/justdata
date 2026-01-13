@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BizSight - Small Business Lending Analysis Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+            padding: 20px;
+        }
+        .header {
+            background-color: #003366;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 18pt;
+        }
+        .header .metadata {
+            opacity: 0.9;
+            font-size: 11pt;
+        }
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #003366;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .ai-insight {
+            background-color: #f8f9fa;
+            border-left: 4px solid #003366;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 10pt;
+            line-height: 1.6;
+        }
+        .ai-insight p {
+            margin-bottom: 10px;
+        }
+        .ai-insight p:last-child {
+            margin-bottom: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+        th {
+            background-color: #003366;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #003366;
+        }
+        td {
+            padding: 6px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .table-caption {
+            font-size: 8pt;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 8pt;
+            color: #666;
+        }
+        .hhi-box {
+            background-color: #e7f3ff;
+            border: 1px solid #003366;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        .hhi-value {
+            font-size: 24pt;
+            font-weight: bold;
+            color: #003366;
+        }
+        .hhi-label {
+            font-size: 10pt;
+            color: #666;
+        }
+        .numeric {
+            text-align: right;
+        }
+        .percent {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Small Business Lending Analysis Report</h1>
+        <div class="metadata">
+            {% if metadata %}
+                {{ metadata.get('county', 'Unknown County') }}, {{ metadata.get('state', 'Unknown State') }} |
+                Years: {{ metadata.get('years', [])|join('-') if metadata.get('years') else 'N/A' }}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- County Summary Discussion -->
+    {% if ai_insights and ai_insights.get('county_summary_discussion') %}
+    <div class="section">
+        <h2 class="section-title">County Summary</h2>
+        <div class="ai-insight">
+            {{ ai_insights.get('county_summary_discussion')|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- County Summary Table -->
+    {% if report_data and report_data.get('county_summary_table') %}
+    <div class="section">
+        <h2 class="section-title">County Summary Data</h2>
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('county_summary_table')[0].keys() if report_data.get('county_summary_table') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('county_summary_table', []) %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {% if 'percent' in key|lower or '%' in key %}
+                                    {{ "{:.1f}%".format(value) }}
+                                {% else %}
+                                    {{ "{:,.0f}".format(value) if value == value|int else "{:,.2f}".format(value) }}
+                                {% endif %}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- HHI Market Concentration -->
+    {% if report_data and report_data.get('hhi') %}
+    <div class="section">
+        <h2 class="section-title">Market Concentration (HHI)</h2>
+        {% if ai_insights and ai_insights.get('hhi_trends_discussion') %}
+        <div class="ai-insight">
+            {{ ai_insights.get('hhi_trends_discussion')|safe }}
+        </div>
+        {% endif %}
+        <div class="hhi-box">
+            <div class="hhi-value">{{ "{:,.0f}".format(report_data.get('hhi', {}).get('value', 0)) }}</div>
+            <div class="hhi-label">
+                HHI Index ({{ report_data.get('hhi', {}).get('year', 'Latest') }}) -
+                {{ report_data.get('hhi', {}).get('concentration_level', 'Unknown') }}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- HHI Trends by Year -->
+    {% if report_data and report_data.get('hhi_by_year') %}
+    <div class="section">
+        <h2 class="section-title">HHI Trends Over Time</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Year</th>
+                    <th>HHI Value</th>
+                    <th>Concentration Level</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('hhi_by_year', []) %}
+                <tr>
+                    <td>{{ row.get('year', '-') }}</td>
+                    <td class="numeric">{{ "{:,.2f}".format(row.get('hhi', 0)) }}</td>
+                    <td>{{ row.get('concentration_level', '-') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Top Lenders -->
+    {% if report_data and report_data.get('top_lenders_table') %}
+    <div class="section">
+        <h2 class="section-title">Top Lenders</h2>
+        {% if ai_insights and ai_insights.get('top_lenders_discussion') %}
+        <div class="ai-insight">
+            {{ ai_insights.get('top_lenders_discussion')|safe }}
+        </div>
+        {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('top_lenders_table')[0].keys() if report_data.get('top_lenders_table') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('top_lenders_table', [])[:20] %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {% if 'percent' in key|lower or '%' in key or 'share' in key|lower %}
+                                    {{ "{:.1f}%".format(value) }}
+                                {% else %}
+                                    {{ "{:,.0f}".format(value) if value == value|int else "{:,.2f}".format(value) }}
+                                {% endif %}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if report_data.get('top_lenders_table')|length > 20 %}
+        <p class="table-caption">Showing top 20 of {{ report_data.get('top_lenders_table')|length }} lenders</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Comparison Discussion -->
+    {% if ai_insights and ai_insights.get('comparison_discussion') %}
+    <div class="section">
+        <h2 class="section-title">Comparison Analysis</h2>
+        <div class="ai-insight">
+            {{ ai_insights.get('comparison_discussion')|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tract Summary -->
+    {% if report_data and report_data.get('tract_summary') %}
+    <div class="section">
+        <h2 class="section-title">Census Tract Summary</h2>
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('tract_summary')[0].keys() if report_data.get('tract_summary') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('tract_summary', [])[:25] %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {% if 'percent' in key|lower or '%' in key %}
+                                    {{ "{:.1f}%".format(value) }}
+                                {% else %}
+                                    {{ "{:,.0f}".format(value) if value == value|int else "{:,.2f}".format(value) }}
+                                {% endif %}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if report_data.get('tract_summary')|length > 25 %}
+        <p class="table-caption">Showing 25 of {{ report_data.get('tract_summary')|length }} tracts</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Generated by NCRC JustData - BizSight</p>
+        <p>Data Source: FFIEC Small Business Lending Data (Section 1071)</p>
+        <p>Report generated: {{ metadata.get('generated_at', 'N/A') if metadata else 'N/A' }}</p>
+    </div>
+</body>
+</html>

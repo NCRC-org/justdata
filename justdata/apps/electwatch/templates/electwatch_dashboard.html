@@ -1,0 +1,3324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ElectWatch - Financial Influence Monitor | NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-accent-red: #e82e2e;
+            --ncrc-pink: #eb2f89;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-dark-blue: #1a8fc9;
+            --ncrc-light-blue: #E6F2FF;
+            --ncrc-gold: #ffc23a;
+            --ncrc-purple: #552d87;
+            --ncrc-gray: #818390;
+            --ncrc-white: #FFFFFF;
+            --ncrc-black: #000000;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+
+            /* Additional colors for data visualization */
+            --party-r: #dc2626;
+            --party-d: #2563eb;
+            --party-i: #6b7280;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* Header */
+        .header {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo img {
+            height: 50px;
+        }
+
+        .logo-text h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .logo-text .tagline {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        /* Navigation Tabs */
+        .nav-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(255,255,255,0.15);
+            padding: 4px;
+            border-radius: 8px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .nav-tab {
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-size: 0.9rem;
+            font-weight: 500;
+            border: none;
+            background: transparent;
+            color: white;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-tab:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.15);
+        }
+
+        .nav-tab.active {
+            background: white;
+            color: var(--ncrc-justdata-blue);
+            opacity: 1;
+        }
+
+        .nav-tab i {
+            font-size: 0.85rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Panels */
+        .panel {
+            display: none;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i {
+            color: var(--ncrc-gold);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.1);
+        }
+
+        .search-input {
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            background: white;
+            transition: all 0.2s;
+            min-width: 180px;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.1);
+        }
+
+        .search-input::placeholder {
+            color: #9ca3af;
+        }
+
+        /* Leaderboard Table */
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .leaderboard-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+            position: relative;
+        }
+
+        .leaderboard-table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+
+        .leaderboard-table th.sortable:hover {
+            background: #e5e7eb;
+        }
+
+        .leaderboard-table th.sortable::after {
+            content: '\f0dc';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-left: 6px;
+            font-size: 0.65rem;
+            opacity: 0.4;
+        }
+
+        .leaderboard-table th.sortable.sort-asc::after {
+            content: '\f0de';
+            opacity: 1;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .leaderboard-table th.sortable.sort-desc::after {
+            content: '\f0dd';
+            opacity: 1;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        /* Header Tooltips */
+        .header-tooltip {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .header-tooltip .tooltip-icon {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: rgba(0,0,0,0.1);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            cursor: help;
+        }
+
+        .header-tooltip .tooltip-content {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--ncrc-gray-dark);
+            color: white;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            text-transform: none;
+            white-space: normal;
+            width: 320px;
+            line-height: 1.5;
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            pointer-events: none;
+        }
+
+        .header-tooltip .tooltip-content::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 6px solid transparent;
+            border-bottom-color: var(--ncrc-gray-dark);
+        }
+
+        .header-tooltip:hover .tooltip-content {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .tooltip-source {
+            display: block;
+            margin-top: 6px;
+            font-size: 0.65rem;
+            opacity: 0.8;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            padding-top: 6px;
+        }
+
+        .leaderboard-table tr:hover {
+            background: var(--ncrc-light-blue);
+        }
+
+        .leaderboard-table .rank {
+            width: 50px;
+            text-align: center;
+            font-weight: 700;
+            color: var(--ncrc-primary-blue);
+        }
+
+        .official-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .official-photo-container {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .official-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e5e7eb;
+        }
+
+        .official-photo.placeholder {
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 1rem;
+        }
+
+        .party-indicator {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 2px solid white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .party-indicator.R { background: var(--party-r); }
+        .party-indicator.D { background: var(--party-d); }
+        .party-indicator.I { background: var(--party-i); }
+
+        .party-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .party-badge.R { background: var(--party-r); }
+        .party-badge.D { background: var(--party-d); }
+        .party-badge.I { background: var(--party-i); }
+
+        .official-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .official-name {
+            font-weight: 600;
+            color: var(--ncrc-justdata-blue);
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .official-name:hover {
+            text-decoration: underline;
+            color: var(--ncrc-primary-blue);
+        }
+
+        .official-meta {
+            font-size: 0.75rem;
+            color: var(--ncrc-gray);
+        }
+
+        .amount-cell {
+            text-align: right;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.85rem;
+            min-width: 90px;
+            white-space: nowrap;
+        }
+
+        .amount-cell .main {
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .amount-cell .sub {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .amount-cell .buy-amount {
+            color: #16a34a;  /* Green for purchases */
+        }
+
+        .amount-cell .sell-amount {
+            color: #dc2626;  /* Red for sales */
+        }
+
+        .score-cell {
+            text-align: center;
+        }
+
+        .score-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.875rem;
+        }
+
+        .score-badge.high { background: #fee2e2; color: #dc2626; }
+        .score-badge.medium { background: #fef3c7; color: #d97706; }
+        .score-badge.low { background: #d1fae5; color: #059669; }
+
+        /* Header Group Row */
+        .header-group-row th {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            padding: 10px 12px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 3px solid var(--ncrc-gold);
+        }
+
+        .header-group-row th.financial-sector-group {
+            text-align: center;
+        }
+
+        /* Financial sector column styling - emphasize these columns belong to the Financial Sector header */
+        .leaderboard-table th.financial-sector-col {
+            background: #e6f4f9;  /* Light blue tint matching Financial Sector header */
+            white-space: nowrap;  /* Prevent header text and sort icon from wrapping */
+        }
+
+        .leaderboard-table th.financial-sector-col:hover {
+            background: #d4ecf5;
+        }
+
+        .header-group-row .header-tooltip {
+            color: white;
+        }
+
+        .header-group-row .tooltip-icon {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        /* Industry Chips */
+        .industry-chips {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .industry-chip {
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .industry-chip.banking { background: #dbeafe; color: #1e40af; }
+        .industry-chip.crypto { background: #fef3c7; color: #d97706; }
+        .industry-chip.investment { background: #ede9fe; color: #7c3aed; }
+        .industry-chip.mortgage { background: #d1fae5; color: #059669; }
+        .industry-chip.insurance { background: #fee2e2; color: #dc2626; }
+        .industry-chip.fintech { background: #cffafe; color: #0891b2; }
+        .industry-chip.consumer_lending { background: #ffedd5; color: #c2410c; }
+
+        /* AI Insights Panel */
+        .insights-container {
+            display: grid;
+            gap: 16px;
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, var(--ncrc-primary-blue), var(--ncrc-justdata-blue));
+            color: white;
+            padding: 24px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(85, 45, 135, 0.3);
+        }
+
+        .insight-card h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+        }
+
+        .insight-card h3 i {
+            color: var(--ncrc-gold);
+        }
+
+        .insight-card p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            opacity: 0.95;
+        }
+
+        .insight-card .evidence {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255,255,255,0.2);
+            font-size: 0.8rem;
+            opacity: 0.75;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        /* Committee Two-Column Layout */
+        .committee-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        .committee-column {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .column-header {
+            font-size: 1.1rem;
+            font-weight: 700;
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .column-header.house {
+            background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%);
+            color: white;
+        }
+
+        .column-header.senate {
+            background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+            color: white;
+        }
+
+        .committee-leadership {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.8rem;
+            margin: 8px 0 12px 0;
+            padding: 8px 12px;
+            background: var(--ncrc-gray-light);
+            border-radius: 6px;
+        }
+
+        .committee-leadership .chair {
+            color: var(--party-r);
+        }
+
+        .committee-leadership .ranking {
+            color: var(--party-d);
+        }
+
+        @media (max-width: 900px) {
+            .committee-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Committee/Industry Grid */
+        .sector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .sector-card {
+            background: white;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            padding: 20px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .sector-card:hover {
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 4px 12px rgba(26, 143, 201, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .sector-card h4 {
+            font-size: 1rem;
+            color: var(--ncrc-primary-blue);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sector-card .description {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            margin-bottom: 16px;
+        }
+
+        .sector-stats {
+            display: flex;
+            gap: 20px;
+        }
+
+        .sector-stat {
+            text-align: center;
+        }
+
+        .sector-stat .value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .sector-stat .label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+        }
+
+        /* Search Box */
+        .search-box {
+            position: relative;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--ncrc-gray);
+        }
+
+        /* Loading State */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+        }
+
+        .loading::after {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--ncrc-justdata-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Refresh Button */
+        .refresh-btn {
+            padding: 10px 20px;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .refresh-btn:hover {
+            background: var(--ncrc-justdata-blue);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(85, 45, 135, 0.3);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ncrc-justdata-blue);
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .footer a {
+            color: var(--ncrc-gold);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        .support-links {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-left: auto;
+            padding-left: 20px;
+        }
+
+        .support-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            color: white !important;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+            font-size: 0.8rem;
+            white-space: nowrap;
+        }
+
+        .support-link:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
+            text-decoration: none !important;
+        }
+
+        .support-link i {
+            font-size: 1rem;
+        }
+
+        .slack-link i {
+            color: #E01E5A;
+        }
+
+        .version {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-top: 8px;
+        }
+
+        /* Bill Lookup Styles */
+        .bill-search-container {
+            margin-bottom: 24px;
+        }
+
+        .search-input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .bill-search-input {
+            flex: 1;
+            padding: 14px 18px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .bill-search-input:focus {
+            outline: none;
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.15);
+        }
+
+        .bill-search-btn {
+            padding: 14px 24px;
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bill-search-btn:hover {
+            background: var(--ncrc-primary-blue);
+            transform: translateY(-1px);
+        }
+
+        .search-suggestions {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .search-suggestions span {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray);
+        }
+
+        .search-suggestions button {
+            padding: 6px 12px;
+            background: var(--ncrc-gray-light);
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .search-suggestions button:hover {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            border-color: var(--ncrc-justdata-blue);
+        }
+
+        .bill-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .bill-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bill-card:hover {
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 4px 12px rgba(26, 143, 201, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .bill-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .bill-id-badge {
+            display: inline-block;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .bill-industries {
+            display: flex;
+            gap: 4px;
+        }
+
+        .bill-card h4 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 8px;
+        }
+
+        .bill-card p {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .bill-card-footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            padding-top: 12px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .bill-results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .bill-result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bill-result-item:hover {
+            background: white;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateX(4px);
+        }
+
+        .bill-result-info {
+            flex: 1;
+        }
+
+        .bill-result-id {
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            margin-right: 12px;
+        }
+
+        .bill-result-title {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .bill-result-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            margin-top: 4px;
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                align-items: stretch;
+                text-align: center;
+            }
+
+            .logo {
+                justify-content: center;
+            }
+
+            .nav-tabs {
+                justify-content: flex-start;
+                overflow-x: auto;
+            }
+
+            .nav-tab {
+                padding: 8px 12px;
+                font-size: 0.8rem;
+            }
+
+            .nav-tab span {
+                display: none;
+            }
+
+            .leaderboard-table {
+                font-size: 0.85rem;
+            }
+
+            .leaderboard-table th:nth-child(n+4),
+            .leaderboard-table td:nth-child(n+4) {
+                display: none;
+            }
+
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filters {
+                justify-content: center;
+            }
+
+            .sector-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Print Styles */
+        @media print {
+            .header, .nav-tabs, .filters, .refresh-btn, .footer, .data-freshness-banner {
+                display: none;
+            }
+            .main-content {
+                max-width: 100%;
+                padding: 0;
+            }
+            .card {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+
+        /* Data Freshness Banner */
+        .data-freshness-banner {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white;
+            padding: 12px 20px;
+            border-bottom: 3px solid var(--ncrc-gold);
+        }
+
+        .data-freshness-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .data-freshness-main {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .freshness-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 194, 58, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .freshness-icon i {
+            color: var(--ncrc-gold);
+            font-size: 1.1rem;
+        }
+
+        .freshness-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .freshness-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            opacity: 0.8;
+        }
+
+        .freshness-date {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .data-sources {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .data-source {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .data-source:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+
+        .data-source i {
+            font-size: 0.9rem;
+        }
+
+        .source-name {
+            font-weight: 600;
+        }
+
+        .source-date {
+            opacity: 0.8;
+            font-size: 0.75rem;
+        }
+
+        .source-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            margin-left: 4px;
+        }
+
+        .source-info-icon {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-left: 4px;
+        }
+
+        /* Data Source Info Modal */
+        .source-info-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(2px);
+        }
+
+        .source-info-modal.active {
+            display: flex;
+        }
+
+        .source-info-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .source-info-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .source-info-header i {
+            font-size: 1.5rem;
+            color: var(--ncrc-gold);
+        }
+
+        .source-info-header h3 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .source-info-header .close-btn {
+            margin-left: auto;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .source-info-header .close-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .source-info-body {
+            padding: 24px;
+        }
+
+        .source-info-section {
+            margin-bottom: 20px;
+        }
+
+        .source-info-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .source-info-section h4 {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #6c757d;
+            margin: 0 0 8px 0;
+        }
+
+        .source-info-section p {
+            margin: 0;
+            color: #333;
+            line-height: 1.5;
+        }
+
+        .source-info-section a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+
+        .source-info-section a:hover {
+            text-decoration: underline;
+        }
+
+        .source-info-meta {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .source-meta-item {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .source-meta-item i {
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+
+        .source-meta-item span {
+            font-size: 0.85rem;
+        }
+
+        .source-status.stale {
+            background: var(--warning);
+        }
+
+        .source-status.old {
+            background: var(--danger);
+        }
+
+        @media (max-width: 768px) {
+            .data-freshness-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            .data-sources {
+                justify-content: center;
+            }
+        }
+
+        /* Insight Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--ncrc-primary-blue), var(--ncrc-justdata-blue));
+            color: white;
+            padding: 24px;
+            border-radius: 16px 16px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .modal-header h2 {
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+        }
+
+        .modal-header h2 i {
+            color: var(--ncrc-gold);
+        }
+
+        .modal-close {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .modal-body {
+            padding: 24px;
+        }
+
+        .insight-summary {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 24px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .insight-section {
+            margin-bottom: 24px;
+        }
+
+        .insight-section h3 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .insight-section h3 i {
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .entity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .entity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .entity-item:hover {
+            background: var(--ncrc-light-blue);
+            transform: translateX(4px);
+        }
+
+        .entity-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .entity-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .entity-badge.firm { background: var(--ncrc-justdata-blue); }
+        .entity-badge.official { background: var(--ncrc-primary-blue); }
+        .entity-badge.industry { background: var(--ncrc-gold); color: var(--ncrc-gray-dark); }
+
+        .entity-name {
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .entity-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .entity-amount {
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+            font-family: monospace;
+        }
+
+        .insight-card {
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .insight-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(85, 45, 135, 0.4);
+        }
+
+        .insight-card::after {
+            content: "Click for details";
+            display: block;
+            margin-top: 12px;
+            font-size: 0.75rem;
+            opacity: 0.6;
+            text-align: right;
+        }
+
+        /* Insight summary rich formatting */
+        .insight-summary p {
+            margin-bottom: 12px;
+        }
+
+        .insight-summary p:last-child {
+            margin-bottom: 0;
+        }
+
+        .insight-summary strong {
+            color: var(--ncrc-gray-dark);
+            font-weight: 700;
+        }
+
+        /* Inline entity links */
+        .insight-link {
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 1px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .insight-link:hover {
+            text-decoration: underline;
+            background: var(--ncrc-light-blue);
+        }
+
+        .insight-link-official {
+            color: var(--ncrc-primary-blue);
+        }
+
+        .insight-link-firm {
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .insight-link-committee {
+            color: #6366f1;
+        }
+
+        .insight-link-industry {
+            color: #d97706;
+        }
+
+        /* Bullet lists in insights */
+        .insight-bullets {
+            margin: 12px 0;
+            padding-left: 24px;
+            list-style: none;
+        }
+
+        .insight-bullets li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 8px;
+        }
+
+        .insight-bullets li::before {
+            content: "•";
+            position: absolute;
+            left: -16px;
+            color: var(--ncrc-justdata-blue);
+            font-weight: bold;
+        }
+
+        /* Tables in insights */
+        .insight-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        .insight-table th,
+        .insight-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .insight-table th {
+            background: var(--ncrc-gray-light);
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .insight-table tr:hover td {
+            background: var(--ncrc-light-blue);
+        }
+
+        /* News sources list */
+        .sources-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .source-item {
+            padding: 12px 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .source-item:hover {
+            background: var(--ncrc-light-blue);
+        }
+
+        .source-link {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+
+        .source-link i {
+            flex-shrink: 0;
+            margin-top: 3px;
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .source-title {
+            flex: 1;
+        }
+
+        .source-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+            padding-left: 24px;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .source-name {
+            font-weight: 500;
+        }
+
+        .source-date {
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo-white.png') }}" alt="NCRC" onerror="this.style.display='none'">
+                <div class="logo-text">
+                    <h1>ElectWatch</h1>
+                    <div class="tagline">Financial Influence Monitor • A JustData Tool</div>
+                </div>
+            </div>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" data-panel="leaderboard">
+                    <i class="fas fa-trophy"></i>
+                    <span>Leaderboard</span>
+                </button>
+                <button class="nav-tab" data-panel="committees">
+                    <i class="fas fa-building-columns"></i>
+                    <span>Committees</span>
+                </button>
+                <button class="nav-tab" data-panel="industries">
+                    <i class="fas fa-industry"></i>
+                    <span>Industries</span>
+                </button>
+                <button class="nav-tab" data-panel="firms">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Firms</span>
+                </button>
+                <button class="nav-tab" data-panel="insights">
+                    <i class="fas fa-brain"></i>
+                    <span>AI Insights</span>
+                </button>
+                <button class="nav-tab" data-panel="bills">
+                    <i class="fas fa-scroll"></i>
+                    <span>Bill Lookup</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Data Freshness Banner -->
+    <div class="data-freshness-banner">
+        <div class="data-freshness-content">
+            <div class="data-freshness-main">
+                <div class="freshness-icon">
+                    <i class="fas fa-calendar-alt"></i>
+                </div>
+                <div class="freshness-text">
+                    <span class="freshness-label">Data Coverage Period</span>
+                    <span id="freshness-date" class="freshness-date">Loading...</span>
+                </div>
+            </div>
+            <div class="data-sources">
+                <div class="data-source" onclick="showSourceInfo('fec')" title="Click for details">
+                    <i class="fas fa-hand-holding-dollar"></i>
+                    <span class="source-name">FEC</span>
+                    <span id="fec-date" class="source-date">--</span>
+                    <span id="fec-status" class="source-status"></span>
+                    <i class="fas fa-info-circle source-info-icon"></i>
+                </div>
+                <div class="data-source" onclick="showSourceInfo('stock')" title="Click for details">
+                    <i class="fas fa-chart-line"></i>
+                    <span class="source-name">STOCK Act</span>
+                    <span id="stock-date" class="source-date">--</span>
+                    <span id="stock-status" class="source-status"></span>
+                    <i class="fas fa-info-circle source-info-icon"></i>
+                </div>
+                <div class="data-source" onclick="showSourceInfo('committee')" title="Click for details">
+                    <i class="fas fa-building-columns"></i>
+                    <span class="source-name">Committees</span>
+                    <span id="committee-date" class="source-date">--</span>
+                    <span id="committee-status" class="source-status"></span>
+                    <i class="fas fa-info-circle source-info-icon"></i>
+                </div>
+            </div>
+            <div class="support-links">
+                <a href="mailto:research@ncrc.org" class="support-link" title="Email Support">
+                    <i class="fas fa-envelope"></i> Email
+                </a>
+                <a href="https://ncrcgroup.slack.com/archives/C0A0BBWRT36" class="support-link slack-link" target="_blank" title="JustData Staff Slack Channel">
+                    <i class="fab fa-slack"></i> Slack
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Source Info Modal -->
+    <div id="source-info-modal" class="source-info-modal" onclick="if(event.target === this) closeSourceInfo()">
+        <div class="source-info-content">
+            <div class="source-info-header">
+                <i id="source-info-icon" class="fas fa-hand-holding-dollar"></i>
+                <h3 id="source-info-title">Data Source</h3>
+                <button class="close-btn" onclick="closeSourceInfo()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="source-info-body">
+                <div class="source-info-section">
+                    <h4>Description</h4>
+                    <p id="source-info-description">Loading...</p>
+                </div>
+                <div class="source-info-section">
+                    <h4>Data Source</h4>
+                    <p id="source-info-origin">Loading...</p>
+                </div>
+                <div class="source-info-section">
+                    <h4>Update Frequency</h4>
+                    <div class="source-info-meta">
+                        <div class="source-meta-item">
+                            <i class="fas fa-sync"></i>
+                            <span id="source-info-frequency">--</span>
+                        </div>
+                        <div class="source-meta-item">
+                            <i class="fas fa-clock"></i>
+                            <span id="source-info-delay">--</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="source-info-section">
+                    <h4>Notes</h4>
+                    <p id="source-info-notes">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Leaderboard Panel -->
+        <div id="leaderboard" class="panel active">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-ranking-star"></i> Officials by Financial Involvement</h2>
+                    <div class="filters">
+                        <input type="text" class="search-input" id="search-official" placeholder="Search by name...">
+                        <select class="filter-select" id="filter-chamber">
+                            <option value="">All Chambers</option>
+                            <option value="house">House</option>
+                            <option value="senate">Senate</option>
+                        </select>
+                        <select class="filter-select" id="filter-party">
+                            <option value="">All Parties</option>
+                            <option value="R">Republican</option>
+                            <option value="D">Democrat</option>
+                            <option value="I">Independent</option>
+                        </select>
+                        <select class="filter-select" id="filter-industry">
+                            <option value="">All Industries</option>
+                            {% for code, info in sectors.items() %}
+                            <option value="{{ code }}">{{ info.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <!-- Group header row -->
+                            <tr class="header-group-row">
+                                <th colspan="2"></th>
+                                <th colspan="4" class="financial-sector-group">
+                                    <span class="header-tooltip">
+                                        <i class="fas fa-landmark"></i> Financial Sector Involvement
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            <strong>What We Track:</strong><br>
+                                            PAC contributions and stock trades involving financial sector firms over the last 2 election cycles (4 years).<br><br>
+                                            <strong>PAC Contributions Include:</strong><br>
+                                            • Direct PAC-to-candidate contributions from financial firm PACs (e.g., "Wells Fargo PAC")<br>
+                                            • Industry association PACs (e.g., "American Bankers Association PAC")<br><br>
+                                            <strong>Industries Covered:</strong><br>
+                                            • Banking (WFC, JPM, BAC, C, GS, MS, USB, PNC...)<br>
+                                            • Investment (BLK, SCHW, BX, KKR, APO...)<br>
+                                            • Payments (V, MA, AXP, PYPL, SQ...)<br>
+                                            • Insurance (MET, PRU, AIG, ALL, TRV...)<br>
+                                            • Mortgage & Consumer Finance<br>
+                                            • Crypto & Fintech
+                                            <span class="tooltip-source">Source: FEC Schedule A (receipts), STOCK Act disclosures</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th></th>
+                            </tr>
+                            <!-- Column headers -->
+                            <tr>
+                                <th class="rank">#</th>
+                                <th class="sortable" data-sort="name" data-order="asc">
+                                    <span class="header-tooltip">
+                                        Official
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Federal elected officials including U.S. Representatives and Senators. Filtered to members on finance-related committees. Click to sort by last name.
+                                            <span class="tooltip-source">Source: Congress.gov, House Clerk, Senate.gov</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable active financial-sector-col" data-sort="financial_pac" data-order="desc">
+                                    <span class="header-tooltip">
+                                        PAC $
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            <strong>Financial Sector PAC $:</strong> Total contributions from financial sector PACs to this candidate's principal campaign committee over the last 2 election cycles.<br><br>
+                                            <strong>Includes:</strong><br>
+                                            • Company PACs (e.g., "JPMorgan Chase PAC")<br>
+                                            • Industry PACs (e.g., "American Bankers Assoc PAC")<br><br>
+                                            <strong>Does NOT include:</strong><br>
+                                            • Individual employee contributions<br>
+                                            • SuperPAC independent expenditures<br>
+                                            • Leadership PAC transfers<br><br>
+                                            <em>Note: FEC data has a 1-3 month reporting lag.</em>
+                                            <span class="tooltip-source">Source: FEC Schedule A Receipts (2 election cycles)</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="financial_pct" data-order="desc">
+                                    <span class="header-tooltip">
+                                        PAC %
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            <strong>Financial Sector %:</strong> What percentage of this official's total PAC contributions come from financial sector PACs.<br><br>
+                                            Higher % = more reliant on financial industry money relative to other PAC sources.
+                                            <span class="tooltip-source">Calculation: Financial Sector PAC $ ÷ Total PAC $ (2 election cycles)</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="buys" data-order="desc">
+                                    <span class="header-tooltip">
+                                        Buys
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Value range of stock PURCHASES in financial sector companies. Shown as STOCK Act disclosure buckets (e.g., $15K-$50K).
+                                            <span class="tooltip-source">Source: STOCK Act disclosures via House/Senate</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="sells" data-order="desc">
+                                    <span class="header-tooltip">
+                                        Sells
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Value range of stock SALES in financial sector companies. Shown as STOCK Act disclosure buckets (e.g., $15K-$50K).
+                                            <span class="tooltip-source">Source: STOCK Act disclosures via House/Senate</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th>
+                                    <span class="header-tooltip">
+                                        Top Industries
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Financial sectors with highest involvement for this official. Based on firm-to-industry mapping of contributions and stock trades.
+                                            <span class="tooltip-source">Method: Aggregated by industry classification</span>
+                                        </span>
+                                    </span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="leaderboard-loading" class="loading">Loading officials...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Committees Panel -->
+        <div id="committees" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-gavel"></i> Committee Financial Analysis</h2>
+                    <span style="font-size: 0.85rem; color: var(--ncrc-gray);">Finance-related committees monitored by ElectWatch</span>
+                </div>
+                <div class="card-body">
+                    <div class="committee-columns">
+                        <!-- House Committees - Left Column -->
+                        <div class="committee-column">
+                            <div class="column-header house">
+                                <i class="fas fa-landmark"></i> House Committees
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_financial_services')">
+                                <h4><i class="fas fa-university"></i> Financial Services</h4>
+                                <p class="description">Banking, securities, insurance, housing, crypto regulation</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> J. French Hill (R-AR)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Maxine Waters (D-CA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$4.2M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">71</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">156</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_ways_means')">
+                                <h4><i class="fas fa-coins"></i> Ways and Means</h4>
+                                <p class="description">Tax policy, trade, Social Security, Medicare</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Jason Smith (R-MO)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Richard Neal (D-MA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$3.1M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">43</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">112</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_budget')">
+                                <h4><i class="fas fa-calculator"></i> Budget</h4>
+                                <p class="description">Federal budget, spending oversight, fiscal policy</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Jodey Arrington (R-TX)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Brendan Boyle (D-PA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$1.8M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">36</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">67</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_small_business')">
+                                <h4><i class="fas fa-store"></i> Small Business</h4>
+                                <p class="description">Small business lending, SBA oversight, entrepreneurship</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Roger Williams (R-TX)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Nydia Velazquez (D-NY)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$1.2M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">27</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">34</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('house_appropriations')">
+                                <h4><i class="fas fa-money-check-alt"></i> Appropriations</h4>
+                                <p class="description">Federal spending, agency budgets, financial regulation funding</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Tom Cole (R-OK)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Rosa DeLauro (D-CT)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.9M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">51</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">98</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Senate Committees - Right Column -->
+                        <div class="committee-column">
+                            <div class="column-header senate">
+                                <i class="fas fa-building-columns"></i> Senate Committees
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_banking')">
+                                <h4><i class="fas fa-university"></i> Banking, Housing, and Urban Affairs</h4>
+                                <p class="description">Banking regulation, housing finance, CFPB oversight</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Tim Scott (R-SC)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Sherrod Brown (D-OH)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.8M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">24</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">89</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_finance')">
+                                <h4><i class="fas fa-file-invoice-dollar"></i> Finance</h4>
+                                <p class="description">Tax policy, trade, health programs, Social Security</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Mike Crapo (R-ID)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Ron Wyden (D-OR)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.4M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">28</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">78</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_budget')">
+                                <h4><i class="fas fa-calculator"></i> Budget</h4>
+                                <p class="description">Federal budget, fiscal policy, debt ceiling</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Lindsey Graham (R-SC)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Sheldon Whitehouse (D-RI)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$1.5M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">22</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">45</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_small_business')">
+                                <h4><i class="fas fa-store"></i> Small Business and Entrepreneurship</h4>
+                                <p class="description">SBA programs, small business lending, access to capital</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Joni Ernst (R-IA)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Jeanne Shaheen (D-NH)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$0.9M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">19</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">28</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="sector-card" onclick="showCommittee('senate_appropriations')">
+                                <h4><i class="fas fa-money-check-alt"></i> Appropriations</h4>
+                                <p class="description">Federal spending, agency budgets, discretionary funding</p>
+                                <div class="committee-leadership">
+                                    <span class="chair"><strong>Chair:</strong> Susan Collins (R-ME)</span>
+                                    <span class="ranking"><strong>Ranking:</strong> Patty Murray (D-WA)</span>
+                                </div>
+                                <div class="sector-stats">
+                                    <div class="sector-stat">
+                                        <div class="value">$2.2M</div>
+                                        <div class="label">Total PAC $</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">30</div>
+                                        <div class="label">Members</div>
+                                    </div>
+                                    <div class="sector-stat">
+                                        <div class="value">72</div>
+                                        <div class="label">Trades</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Industries Panel -->
+        <div id="industries" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-pie"></i> Industry Sector Analysis</h2>
+                </div>
+                <div class="card-body">
+                    <div class="sector-grid">
+                        {% for code, info in sectors.items() %}
+                        <div class="sector-card" onclick="showIndustryDetail('{{ code }}')">
+                            <h4>
+                                {% if code == 'banking' %}<i class="fas fa-university"></i>
+                                {% elif code == 'crypto' %}<i class="fab fa-bitcoin"></i>
+                                {% elif code == 'mortgage' %}<i class="fas fa-home"></i>
+                                {% elif code == 'investment' %}<i class="fas fa-chart-line"></i>
+                                {% elif code == 'insurance' %}<i class="fas fa-shield-alt"></i>
+                                {% elif code == 'fintech' %}<i class="fas fa-mobile-alt"></i>
+                                {% elif code == 'consumer_lending' %}<i class="fas fa-credit-card"></i>
+                                {% else %}<i class="fas fa-industry"></i>
+                                {% endif %}
+                                {{ info.name }}
+                            </h4>
+                            <p class="description">{{ info.description }}</p>
+                            <div class="sector-stats">
+                                <div class="sector-stat">
+                                    <div class="value" id="stat-{{ code }}-officials">--</div>
+                                    <div class="label">Officials</div>
+                                </div>
+                                <div class="sector-stat">
+                                    <div class="value" id="stat-{{ code }}-total">--</div>
+                                    <div class="label">Total $</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firms Panel -->
+        <div id="firms" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-building"></i> Top Firms & PACs by Total Contributions</h2>
+                    <div class="search-box" style="max-width: 300px;">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="firm-search" placeholder="Filter firms...">
+                    </div>
+                </div>
+                <div class="card-body">
+                    <table class="leaderboard-table" id="firms-table">
+                        <thead>
+                            <tr>
+                                <th class="rank">#</th>
+                                <th>Firm / PAC</th>
+                                <th>Industry</th>
+                                <th style="text-align: right;">Total Contributions</th>
+                                <th style="text-align: center;">Officials</th>
+                                <th style="text-align: center;">Stock Trades</th>
+                            </tr>
+                        </thead>
+                        <tbody id="firms-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div id="firms-loading" class="loading">Loading firms...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Insights Panel -->
+        <div id="insights" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-lightbulb"></i> AI Pattern Detection</h2>
+                    <button class="refresh-btn" onclick="refreshInsights(true)">
+                        <i class="fas fa-sync-alt"></i> Refresh Analysis
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="insights-container" id="insights-container">
+                        <!-- AI-generated insights -->
+                        <div class="insight-card">
+                            <h3><i class="fas fa-coins"></i> Crypto Industry Concentration</h3>
+                            <p>
+                                Coinbase and related crypto firms have contributed $1.2M to Republican members
+                                of the House Financial Services Committee in 2025. Simultaneously, 8 of these
+                                members have reported COIN stock purchases totaling $180K-$400K.
+                            </p>
+                            <div class="evidence">
+                                <i class="fas fa-database"></i>
+                                Based on FEC filings and STOCK Act disclosures through Jan 2026
+                            </div>
+                        </div>
+
+                        <div class="insight-card">
+                            <h3><i class="fas fa-chart-line"></i> Banking PAC Activity Spike</h3>
+                            <p>
+                                Wells Fargo and JPMorgan PAC contributions to Senate Banking Committee members
+                                increased 45% in Q4 2025 compared to Q3, correlating with upcoming CFPB oversight
+                                hearings scheduled for February 2026.
+                            </p>
+                            <div class="evidence">
+                                <i class="fas fa-database"></i>
+                                FEC data analysis comparing quarterly contribution trends
+                            </div>
+                        </div>
+
+                        <div class="insight-card">
+                            <h3><i class="fas fa-balance-scale"></i> Cross-Party Pattern: Fintech</h3>
+                            <p>
+                                Fintech firms (PayPal, Block, Stripe) show unusually balanced contributions
+                                across party lines, with 52% to Democrats and 48% to Republicans—significantly
+                                more balanced than traditional banking (68% R / 32% D).
+                            </p>
+                            <div class="evidence">
+                                <i class="fas fa-database"></i>
+                                Comparative analysis of contribution patterns by industry
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bill Lookup Panel -->
+        <div id="bills" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-scroll"></i> Bill Lookup & Conflict Analysis</h2>
+                    <span style="font-size: 0.85rem; color: var(--ncrc-gray);">Search for any bill to see voting records and financial conflicts</span>
+                </div>
+                <div class="card-body">
+                    <!-- Search Box -->
+                    <div class="bill-search-container">
+                        <div class="search-input-group">
+                            <input type="text" id="bill-search-input" placeholder="Enter bill ID (e.g., H.R. 4763) or search keywords (e.g., cryptocurrency, stablecoin)" class="bill-search-input">
+                            <button onclick="searchBills()" class="bill-search-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                        <div class="search-suggestions">
+                            <span>Try:</span>
+                            <button onclick="searchBills('crypto')">crypto</button>
+                            <button onclick="searchBills('stablecoin')">stablecoin</button>
+                            <button onclick="searchBills('H.R. 4763')">H.R. 4763</button>
+                            <button onclick="searchBills('banking')">banking</button>
+                            <button onclick="searchBills('consumer protection')">consumer protection</button>
+                        </div>
+                    </div>
+
+                    <!-- Search Results -->
+                    <div id="bill-search-results" style="display: none;">
+                        <h3 style="margin: 20px 0 16px; font-size: 1rem; color: var(--ncrc-gray-dark);">
+                            <i class="fas fa-list"></i> Search Results
+                            <span id="bill-results-count" style="font-weight: 400; color: var(--ncrc-gray);"></span>
+                        </h3>
+                        <div id="bill-results-list" class="bill-results-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Featured Bills -->
+                    <div id="featured-bills">
+                        <h3 style="margin: 30px 0 16px; font-size: 1rem; color: var(--ncrc-gray-dark);">
+                            <i class="fas fa-star"></i> Key Finance Bills (119th Congress)
+                        </h3>
+                        <div class="bill-grid">
+                            <div class="bill-card" onclick="window.location='/bill/hr4763'">
+                                <div class="bill-card-header">
+                                    <span class="bill-id-badge">H.R. 4763</span>
+                                    <div class="bill-industries">
+                                        <span class="industry-chip crypto">crypto</span>
+                                        <span class="industry-chip fintech">fintech</span>
+                                    </div>
+                                </div>
+                                <h4>FIT21 Act</h4>
+                                <p>Financial Innovation and Technology for the 21st Century Act - establishes regulatory framework for digital assets</p>
+                                <div class="bill-card-footer">
+                                    <span><i class="fas fa-check-circle" style="color: var(--success);"></i> Passed House 279-136</span>
+                                    <span><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> 8 voters with conflicts</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-card" onclick="window.location='/bill/hr5403'">
+                                <div class="bill-card-header">
+                                    <span class="bill-id-badge">H.R. 5403</span>
+                                    <div class="bill-industries">
+                                        <span class="industry-chip crypto">crypto</span>
+                                        <span class="industry-chip banking">banking</span>
+                                    </div>
+                                </div>
+                                <h4>CBDC Anti-Surveillance Act</h4>
+                                <p>Prohibits Federal Reserve from issuing a central bank digital currency directly to individuals</p>
+                                <div class="bill-card-footer">
+                                    <span><i class="fas fa-check-circle" style="color: var(--success);"></i> Passed House 216-192</span>
+                                    <span><i class="fas fa-exclamation-triangle" style="color: var(--danger);"></i> 6 voters with conflicts</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-card" onclick="searchBills('stablecoin')">
+                                <div class="bill-card-header">
+                                    <span class="bill-id-badge">H.R. 4766</span>
+                                    <div class="bill-industries">
+                                        <span class="industry-chip crypto">crypto</span>
+                                        <span class="industry-chip banking">banking</span>
+                                    </div>
+                                </div>
+                                <h4>Stablecoin Act</h4>
+                                <p>Clarity for Payment Stablecoins Act - regulatory framework for stablecoin issuers</p>
+                                <div class="bill-card-footer">
+                                    <span><i class="fas fa-clock" style="color: var(--warning);"></i> In Committee</span>
+                                </div>
+                            </div>
+
+                            <div class="bill-card" onclick="searchBills('cfpb')">
+                                <div class="bill-card-header">
+                                    <span class="bill-id-badge">H.R. 1112</span>
+                                    <div class="bill-industries">
+                                        <span class="industry-chip consumer_lending">consumer</span>
+                                        <span class="industry-chip banking">banking</span>
+                                    </div>
+                                </div>
+                                <h4>CFPB Accountability Act</h4>
+                                <p>Consumer Financial Protection Bureau Accountability Act - reforms CFPB funding and oversight</p>
+                                <div class="bill-card-footer">
+                                    <span><i class="fas fa-clock" style="color: var(--warning);"></i> In Committee</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Insight Detail Modal -->
+    <div id="insight-modal" class="modal-overlay" onclick="closeInsightModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modal-title"><i class="fas fa-lightbulb"></i> <span>Insight Title</span></h2>
+                <button class="modal-close" onclick="closeInsightModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-summary" class="insight-summary">
+                    Loading...
+                </div>
+
+                <div id="modal-firms" class="insight-section">
+                    <h3><i class="fas fa-building"></i> Firms Involved</h3>
+                    <div class="entity-list" id="modal-firms-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-officials" class="insight-section">
+                    <h3><i class="fas fa-user-tie"></i> Officials Involved</h3>
+                    <div class="entity-list" id="modal-officials-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-industries" class="insight-section">
+                    <h3><i class="fas fa-industry"></i> Industries</h3>
+                    <div class="entity-list" id="modal-industries-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-committees" class="insight-section">
+                    <h3><i class="fas fa-gavel"></i> Committees</h3>
+                    <div class="entity-list" id="modal-committees-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-sources" class="insight-section" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                    <h3><i class="fas fa-newspaper"></i> News & Sources</h3>
+                    <div class="sources-list" id="modal-sources-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="insight-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <h3><i class="fas fa-database"></i> Data Sources</h3>
+                    <p id="modal-evidence" style="font-size: 0.9rem; color: var(--ncrc-gray);">
+                        Based on FEC filings and STOCK Act disclosures
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>
+            <strong>ElectWatch</strong> • A JustData Tool by
+            <a href="https://ncrc.org" target="_blank">NCRC</a>
+        </p>
+        <p class="version">Version {{ version }}</p>
+    </footer>
+
+    <script>
+        // Tab Navigation
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const panelId = tab.dataset.panel;
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                document.getElementById(panelId).classList.add('active');
+            });
+        });
+
+        // Sorting state
+        let currentSort = { field: 'financial_pac', order: 'desc' };
+        let allOfficials = [];
+
+        // Load Leaderboard Data
+        async function loadLeaderboard() {
+            const chamber = document.getElementById('filter-chamber').value;
+            const party = document.getElementById('filter-party').value;
+            const industry = document.getElementById('filter-industry').value;
+
+            const params = new URLSearchParams();
+            params.append('limit', '535');  // Load all members of Congress
+            if (chamber) params.append('chamber', chamber);
+            if (party) params.append('party', party);
+            if (industry) params.append('industry', industry);
+
+            try {
+                const response = await fetch(`/api/officials?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    allOfficials = data.officials;
+                    sortAndRenderLeaderboard();
+                }
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+            }
+        }
+
+        function sortAndRenderLeaderboard() {
+            // Get search term
+            const searchTerm = (document.getElementById('search-official').value || '').trim().toLowerCase();
+
+            // Filter by search term if provided
+            let filtered = allOfficials;
+            if (searchTerm.length > 0) {
+                filtered = allOfficials.filter(official =>
+                    (official.name || '').toLowerCase().includes(searchTerm) ||
+                    (official.state || '').toLowerCase().includes(searchTerm)
+                );
+            }
+
+            const sorted = [...filtered].sort((a, b) => {
+                let aVal, bVal;
+
+                switch (currentSort.field) {
+                    case 'name':
+                        // Sort by last name (extract last word of name)
+                        const aLastName = (a.name || '').split(' ').pop().toLowerCase();
+                        const bLastName = (b.name || '').split(' ').pop().toLowerCase();
+                        const nameCompare = aLastName.localeCompare(bLastName);
+                        return currentSort.order === 'desc' ? -nameCompare : nameCompare;
+                    case 'contributions':
+                        // Sort by total PAC contributions
+                        aVal = a.contributions || 0;
+                        bVal = b.contributions || 0;
+                        break;
+                    case 'financial_pac':
+                        // Sort by financial sector PAC specifically
+                        aVal = a.financial_sector_pac || 0;
+                        bVal = b.financial_sector_pac || 0;
+                        break;
+                    case 'financial_pct':
+                        // Sort by percentage of PAC from financial sector
+                        const aTotalPac = a.contributions || 0;
+                        const aFinPac = a.financial_sector_pac || 0;
+                        aVal = aTotalPac > 0 ? (aFinPac / aTotalPac) * 100 : 0;
+                        const bTotalPac = b.contributions || 0;
+                        const bFinPac = b.financial_sector_pac || 0;
+                        bVal = bTotalPac > 0 ? (bFinPac / bTotalPac) * 100 : 0;
+                        break;
+                    case 'score':
+                        aVal = a.involvement_score || 0;
+                        bVal = b.involvement_score || 0;
+                        break;
+                    case 'trades':
+                        aVal = a.total_trades || 0;
+                        bVal = b.total_trades || 0;
+                        break;
+                    case 'buys':
+                        aVal = a.purchases_max || 0;
+                        bVal = b.purchases_max || 0;
+                        break;
+                    case 'sells':
+                        aVal = a.sales_max || 0;
+                        bVal = b.sales_max || 0;
+                        break;
+                    default:
+                        // Default sort by score
+                        aVal = a.involvement_score || 0;
+                        bVal = b.involvement_score || 0;
+                }
+
+                return currentSort.order === 'desc' ? bVal - aVal : aVal - bVal;
+            });
+
+            // Show top 50 unless searching
+            const displayList = searchTerm.length > 0 ? sorted : sorted.slice(0, 50);
+            renderLeaderboard(displayList);
+            updateSortIndicators();
+        }
+
+        function updateSortIndicators() {
+            document.querySelectorAll('.leaderboard-table th.sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                if (th.dataset.sort === currentSort.field) {
+                    th.classList.add(currentSort.order === 'asc' ? 'sort-asc' : 'sort-desc');
+                }
+            });
+        }
+
+        // Column sort click handler
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.leaderboard-table th.sortable').forEach(th => {
+                th.addEventListener('click', function() {
+                    const field = this.dataset.sort;
+
+                    if (currentSort.field === field) {
+                        currentSort.order = currentSort.order === 'desc' ? 'asc' : 'desc';
+                    } else {
+                        currentSort.field = field;
+                        currentSort.order = 'desc';
+                    }
+
+                    sortAndRenderLeaderboard();
+                });
+            });
+        });
+
+        function renderLeaderboard(officials) {
+            const tbody = document.getElementById('leaderboard-body');
+            const loading = document.getElementById('leaderboard-loading');
+
+            if (!officials || officials.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">No officials found matching filters</td></tr>';
+                loading.style.display = 'none';
+                return;
+            }
+
+            tbody.innerHTML = officials.map((official, index) => `
+                <tr>
+                    <td class="rank">${index + 1}</td>
+                    <td>
+                        <div class="official-cell">
+                            <div class="official-photo-container">
+                                ${official.photo_url
+                                    ? `<img class="official-photo" src="${official.photo_url}" alt="${official.name}" title="${(official.photo_attribution || 'Official portrait').replace(/"/g, '&quot;')}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
+                                    : `<div class="official-photo placeholder"><i class="fas fa-user"></i></div>`
+                                }
+                                <div class="party-indicator ${official.party}">${official.party}</div>
+                            </div>
+                            <div class="official-info">
+                                <a href="/official/${official.id}" class="official-name">${official.name}</a>
+                                <span class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}${official.district ? '-' + official.district : ''}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="amount-cell">
+                        <div class="sub">${formatPacAmount(official)}</div>
+                    </td>
+                    <td class="amount-cell" style="text-align: center;">
+                        <div class="sub">${formatFinancialPct(official)}</div>
+                    </td>
+                    <td class="amount-cell">
+                        <div class="sub buy-amount">${official.purchases_display || formatTradeAmount(official.purchases_min, official.purchases_max)}</div>
+                    </td>
+                    <td class="amount-cell">
+                        <div class="sub sell-amount">${official.sales_display || formatTradeAmount(official.sales_min, official.sales_max)}</div>
+                    </td>
+                    <td>
+                        <div class="industry-chips">
+                            ${(official.top_industries || []).map(ind => {
+                                // Handle both object format {code, name} and string format
+                                const code = typeof ind === 'object' ? ind.code : ind;
+                                const name = typeof ind === 'object' ? ind.name : ind.replace('_', ' ');
+                                return `<span class="industry-chip ${code}">${name}</span>`;
+                            }).join('')}
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+
+            loading.style.display = 'none';
+        }
+
+        function formatAmount(amount) {
+            if (typeof amount === 'object') {
+                return amount.display || `$${(amount.min / 1000).toFixed(0)}K-$${(amount.max / 1000).toFixed(0)}K`;
+            }
+            if (amount >= 1000000) {
+                return `$${(amount / 1000000).toFixed(1)}M`;
+            } else if (amount >= 1000) {
+                return `$${(amount / 1000).toFixed(0)}K`;
+            }
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function formatPacAmount(official) {
+            // Format Financial Sector PAC $ as primary (what we sort by)
+            // Show total PAC below for context
+            const totalPac = official.contributions || 0;
+            // Check for explicit 0 vs undefined/null (0 means confirmed no financial PAC)
+            const financialPac = official.financial_sector_pac;
+            const hasFinancialPacData = financialPac !== undefined && financialPac !== null;
+
+            // Format helper for full dollar format (e.g., $5,000 not $5K)
+            const formatDollars = (amount) => `$${Math.round(amount).toLocaleString()}`;
+            // Format helper for abbreviated format (for secondary/total display)
+            const formatAbbrev = (amount) => {
+                if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+                if (amount >= 1000) return `$${Math.round(amount / 1000)}K`;
+                return `$${Math.round(amount).toLocaleString()}`;
+            };
+
+            // If no financial sector PAC data at all (undefined/null), show dash with total
+            if (!hasFinancialPacData) {
+                if (totalPac === 0) return '<span style="color: var(--ncrc-gray);">-</span>';
+                return `<div style="line-height: 1.3;">
+                    <div style="color: var(--ncrc-gray);">-</div>
+                    <div style="font-size: 0.8em; color: var(--ncrc-gray);">Total: ${formatAbbrev(totalPac)}</div>
+                </div>`;
+            }
+
+            // If financial_sector_pac is explicitly 0, show $0
+            if (financialPac === 0) {
+                if (totalPac === 0) return '<span style="color: var(--ncrc-gray);">$0</span>';
+                return `<div style="line-height: 1.3;">
+                    <div style="font-weight: 600;">$0</div>
+                    <div style="font-size: 0.8em; color: var(--ncrc-gray);">of ${formatAbbrev(totalPac)} total</div>
+                </div>`;
+            }
+
+            // Format financial sector PAC amount (primary) - full dollar format
+            const finStr = formatDollars(financialPac);
+
+            return `<div style="line-height: 1.3;">
+                <div style="font-weight: 600;">${finStr}</div>
+                <div style="font-size: 0.8em; color: var(--ncrc-gray);">of ${formatAbbrev(totalPac)} total</div>
+            </div>`;
+        }
+
+        function formatFinancialPct(official) {
+            // Calculate and display the percentage of total PAC from financial sector
+            const totalPac = official.contributions || 0;
+            const financialPac = official.financial_sector_pac;
+            const hasFinancialPacData = financialPac !== undefined && financialPac !== null;
+
+            // No data at all - show dash
+            if (!hasFinancialPacData || totalPac === 0) {
+                return '<span style="color: var(--ncrc-gray);">-</span>';
+            }
+
+            // If financial_sector_pac is explicitly 0, show 0%
+            if (financialPac === 0) {
+                return '<span style="font-weight: 600;">0%</span>';
+            }
+
+            const pct = Math.round((financialPac / totalPac) * 100);
+            return `<span style="font-weight: 600;">${pct}%</span>`;
+        }
+
+        function formatTradeAmount(min, max) {
+            // Format stock trade ranges (min-max STOCK Act buckets)
+            if (!min && !max) return '-';
+            if (min === 0 && max === 0) return '-';
+
+            const formatK = (val) => {
+                if (val >= 1000000) return `$${(val / 1000000).toFixed(1)}M`;
+                if (val >= 1000) return `$${Math.round(val / 1000)}K`;
+                return `$${val.toLocaleString()}`;
+            };
+
+            return `${formatK(min)} - ${formatK(max)}`;
+        }
+
+        function getScoreClass(score) {
+            // Normalized Z-score scale: 1-100
+            // 75+ = high (top performers), 50-74 = medium (above average), <50 = low
+            if (score >= 75) return 'high';
+            if (score >= 50) return 'medium';
+            return 'low';
+        }
+
+        function showIndustryDetail(industryCode) {
+            window.location.href = `/industry/${industryCode}`;
+        }
+
+        function showCommittee(committeeId) {
+            // Navigate to committee detail page
+            // Convert underscore IDs to hyphenated format
+            const formattedId = committeeId.replace(/_/g, '-');
+            window.location.href = `/committee/${formattedId}`;
+        }
+
+        // Store insights globally for click handling
+        let insightsData = [];
+
+        async function refreshInsights(forceRegenerate = false) {
+            const container = document.getElementById('insights-container');
+            container.innerHTML = '<div class="loading">Loading AI insights...</div>';
+
+            try {
+                const url = forceRegenerate ? '/api/insights?refresh=true' : '/api/insights';
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success && data.insights) {
+                    insightsData = data.insights;
+                    container.innerHTML = data.insights.map((insight, index) => `
+                        <div class="insight-card" onclick="showInsightDetail(${index})">
+                            <h3><i class="fas fa-lightbulb"></i> ${insight.title}</h3>
+                            <p>${insight.summary}</p>
+                            <div class="evidence">
+                                <i class="fas fa-database"></i> ${insight.evidence}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger); text-align: center; padding: 20px;">Error loading insights. Please try again.</p>';
+            }
+        }
+
+        // Parse wiki-style links [[type:id|display text]] and convert to HTML links
+        function parseInsightLinks(text) {
+            if (!text) return '';
+
+            // Convert wiki-style links: [[type:id|display]] -> <a href="/type/id">display</a>
+            let parsed = text.replace(/\[\[(official|firm|committee|industry):([^\]|]+)\|([^\]]+)\]\]/g,
+                (match, type, id, display) => {
+                    let url;
+                    switch(type) {
+                        case 'official':
+                            url = `/official/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-official">${display}</a>`;
+                        case 'firm':
+                            url = `/firm/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-firm">${display}</a>`;
+                        case 'committee':
+                            url = `/committee/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-committee">${display}</a>`;
+                        case 'industry':
+                            url = `/industry/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-industry">${display}</a>`;
+                        default:
+                            return display;
+                    }
+                }
+            );
+
+            // Convert markdown bold **text** to <strong>
+            parsed = parsed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+            // Convert bullet points (• or - at start of line)
+            parsed = parsed.replace(/^[•\-]\s+(.+)$/gm, '<li>$1</li>');
+
+            // Wrap consecutive <li> items in <ul>
+            parsed = parsed.replace(/(<li>.*<\/li>\n?)+/g, '<ul class="insight-bullets">$&</ul>');
+
+            // Convert markdown tables to HTML (simple implementation)
+            const tableRegex = /\|(.+)\|\n\|[-|]+\|\n((?:\|.+\|\n?)+)/g;
+            parsed = parsed.replace(tableRegex, (match, header, rows) => {
+                const headers = header.split('|').filter(h => h.trim());
+                const headerHtml = headers.map(h => `<th>${h.trim()}</th>`).join('');
+
+                const rowsHtml = rows.trim().split('\n').map(row => {
+                    const cells = row.split('|').filter(c => c.trim());
+                    return `<tr>${cells.map(c => `<td>${c.trim()}</td>`).join('')}</tr>`;
+                }).join('');
+
+                return `<table class="insight-table"><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+            });
+
+            // Convert newlines to paragraphs (but not inside lists or tables)
+            parsed = parsed.split('\n\n').map(para => {
+                if (para.includes('<ul') || para.includes('<table') || para.includes('<li>')) {
+                    return para;
+                }
+                return `<p>${para}</p>`;
+            }).join('');
+
+            return parsed;
+        }
+
+        function showInsightDetail(index) {
+            const insight = insightsData[index];
+            if (!insight) return;
+
+            // Update modal content
+            document.querySelector('#modal-title span').textContent = insight.title;
+
+            // Parse and render detailed summary with inline links
+            const summaryHtml = parseInsightLinks(insight.detailed_summary || insight.summary);
+            document.getElementById('modal-summary').innerHTML = summaryHtml;
+
+            document.getElementById('modal-evidence').textContent = insight.evidence;
+
+            // Render firms
+            const firmsHtml = (insight.firms || []).map(firm => `
+                <div class="entity-item" onclick="window.location='/firm/${encodeURIComponent(firm.name)}'">
+                    <div class="entity-info">
+                        <div class="entity-badge firm"><i class="fas fa-building"></i></div>
+                        <div>
+                            <div class="entity-name">${firm.name}</div>
+                            <div class="entity-meta">${firm.ticker || ''} - ${firm.detail || ''}</div>
+                        </div>
+                    </div>
+                    <span class="entity-amount">${formatAmount(firm.amount)}</span>
+                </div>
+            `).join('') || '<p style="color: var(--ncrc-gray);">No specific firms identified</p>';
+            document.getElementById('modal-firms-list').innerHTML = firmsHtml;
+
+            // Render officials
+            const officialsHtml = (insight.officials || []).map(official => `
+                <div class="entity-item" onclick="window.location='/official/${official.id}'">
+                    <div class="entity-info">
+                        <div class="entity-badge official">${official.party}</div>
+                        <div>
+                            <div class="entity-name">${official.name}</div>
+                            <div class="entity-meta">${official.state} - ${official.detail || ''}</div>
+                        </div>
+                    </div>
+                    <span class="entity-amount">${formatAmount(official.amount)}</span>
+                </div>
+            `).join('') || '<p style="color: var(--ncrc-gray);">No specific officials identified</p>';
+            document.getElementById('modal-officials-list').innerHTML = officialsHtml;
+
+            // Render industries
+            const industriesHtml = (insight.industries || []).map(ind => `
+                <div class="entity-item" onclick="window.location='/industry/${ind.code}'">
+                    <div class="entity-info">
+                        <div class="entity-badge industry"><i class="fas fa-industry"></i></div>
+                        <div>
+                            <div class="entity-name">${ind.name}</div>
+                            <div class="entity-meta">${ind.detail || ''}</div>
+                        </div>
+                    </div>
+                    <span class="entity-amount">${formatAmount(ind.amount)}</span>
+                </div>
+            `).join('') || '<p style="color: var(--ncrc-gray);">No specific industries identified</p>';
+            document.getElementById('modal-industries-list').innerHTML = industriesHtml;
+
+            // Render committees
+            const committeesHtml = (insight.committees || []).map(cmte => `
+                <div class="entity-item" onclick="window.location='/committee/${cmte.id}'">
+                    <div class="entity-info">
+                        <div class="entity-badge" style="background: ${cmte.chamber === 'senate' ? 'var(--party-d)' : 'var(--party-r)'}">
+                            <i class="fas fa-gavel"></i>
+                        </div>
+                        <div>
+                            <div class="entity-name">${cmte.name}</div>
+                            <div class="entity-meta">${cmte.chamber === 'senate' ? 'Senate' : 'House'} - ${cmte.detail || ''}</div>
+                        </div>
+                    </div>
+                    <span class="entity-amount">${cmte.members || ''} members</span>
+                </div>
+            `).join('') || '<p style="color: var(--ncrc-gray);">No specific committees identified</p>';
+            document.getElementById('modal-committees-list').innerHTML = committeesHtml;
+
+            // Render news sources
+            const sourcesSection = document.getElementById('modal-sources');
+            const sourcesList = document.getElementById('modal-sources-list');
+            if (insight.sources && insight.sources.length > 0) {
+                sourcesSection.style.display = 'block';
+                const sourcesHtml = insight.sources.map(source => `
+                    <div class="source-item">
+                        <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source-link">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span class="source-title">${source.title}</span>
+                        </a>
+                        <div class="source-meta">
+                            <span class="source-name">${source.source}</span>
+                            ${source.date ? `<span class="source-date">${source.date}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                sourcesList.innerHTML = sourcesHtml;
+            } else {
+                sourcesSection.style.display = 'none';
+            }
+
+            // Show modal
+            document.getElementById('insight-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeInsightModal(event) {
+            if (event && event.target !== event.currentTarget) return;
+            document.getElementById('insight-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeInsightModal();
+        });
+
+        // Filter change handlers
+        document.getElementById('filter-chamber').addEventListener('change', loadLeaderboard);
+        document.getElementById('filter-party').addEventListener('change', loadLeaderboard);
+        document.getElementById('filter-industry').addEventListener('change', loadLeaderboard);
+
+        // Official name search - filter the loaded officials list
+        document.getElementById('search-official').addEventListener('input', (e) => {
+            sortAndRenderLeaderboard();
+        });
+
+        // Firm search - filter the loaded firms list
+        document.getElementById('firm-search').addEventListener('input', (e) => {
+            const query = e.target.value.trim().toLowerCase();
+
+            if (query.length === 0) {
+                renderFirms(allFirms);
+                return;
+            }
+
+            const filtered = allFirms.filter(firm =>
+                firm.name.toLowerCase().includes(query) ||
+                (firm.ticker && firm.ticker.toLowerCase().includes(query)) ||
+                firm.industry.toLowerCase().includes(query)
+            );
+            renderFirms(filtered);
+        });
+
+        // Load Data Freshness Info
+        async function loadDataFreshness() {
+            try {
+                const response = await fetch('/api/freshness');
+                const data = await response.json();
+
+                if (data.success) {
+                    // Show date range (e.g., "Jan 1, 2025 - Jan 10, 2026")
+                    if (data.data_window) {
+                        document.getElementById('freshness-date').textContent =
+                            `${data.data_window.start} - ${data.data_window.end}`;
+                    } else {
+                        document.getElementById('freshness-date').textContent = data.last_updated;
+                    }
+
+                    // Individual sources - show "Updated" date
+                    updateSourceStatus('fec', data.sources.fec);
+                    updateSourceStatus('stock', data.sources.stock_act);
+                    updateSourceStatus('committee', data.sources.committees);
+                }
+            } catch (error) {
+                console.error('Error loading freshness data:', error);
+                document.getElementById('freshness-date').textContent = 'Unable to load';
+            }
+        }
+
+        function updateSourceStatus(prefix, source) {
+            const dateEl = document.getElementById(`${prefix}-date`);
+            const statusEl = document.getElementById(`${prefix}-status`);
+
+            if (source) {
+                dateEl.textContent = source.date;
+
+                // Calculate staleness
+                const daysSince = source.days_old || 0;
+                statusEl.classList.remove('stale', 'old');
+                if (daysSince > 14) {
+                    statusEl.classList.add('old');
+                    statusEl.title = `Data is ${daysSince} days old - may need refresh`;
+                } else if (daysSince > 7) {
+                    statusEl.classList.add('stale');
+                    statusEl.title = `Data is ${daysSince} days old`;
+                } else {
+                    statusEl.title = 'Data is current';
+                }
+            }
+        }
+
+        // Data Source Info Configuration
+        const sourceInfo = {
+            fec: {
+                title: 'FEC Campaign Finance Data',
+                icon: 'fa-hand-holding-dollar',
+                description: 'Campaign contributions from Political Action Committees (PACs) and individual donors to elected officials. Includes data on who is contributing to campaigns and how much.',
+                origin: 'Data sourced from the <a href="https://www.fec.gov/data/" target="_blank">Federal Election Commission (FEC)</a> public API. The FEC is an independent federal agency that regulates campaign finance in United States elections.',
+                frequency: 'Weekly',
+                delay: '1-2 days after filing',
+                notes: 'FEC data reflects contributions as reported by campaigns. Campaigns must file periodic reports (quarterly for most committees), so some recent contributions may not yet appear. Large contributions ($200+) are itemized with donor details.'
+            },
+            stock: {
+                title: 'STOCK Act Trading Data',
+                icon: 'fa-chart-line',
+                description: 'Stock trades by members of Congress and their spouses, as required by the Stop Trading on Congressional Knowledge (STOCK) Act of 2012. Shows which stocks officials are buying and selling.',
+                origin: 'Data sourced from <a href="https://api.quiverquant.com/" target="_blank">Quiver Quantitative</a>, which aggregates STOCK Act disclosures from the House and Senate Financial Disclosure websites.',
+                frequency: 'Daily',
+                delay: 'Up to 45 days',
+                notes: 'By law, members must report trades within 45 days of the transaction. Trades are reported in value ranges (e.g., $1,001-$15,000) rather than exact amounts. Some trades may be disclosed late or amended after initial filing.'
+            },
+            committee: {
+                title: 'Congressional Committee Data',
+                icon: 'fa-building-columns',
+                description: 'Committee assignments, membership, and leadership positions for the current Congress. Shows which officials sit on key committees overseeing financial regulation.',
+                origin: 'Data sourced from <a href="https://api.congress.gov/" target="_blank">Congress.gov API</a>, the official source for legislative information from the Library of Congress.',
+                frequency: 'When Congress updates',
+                delay: 'Same day',
+                notes: 'Committee assignments are typically set at the beginning of each Congress (every 2 years) but can change mid-session due to resignations, special elections, or reshuffling. Subcommittee assignments may update more frequently.'
+            }
+        };
+
+        function showSourceInfo(sourceKey) {
+            const info = sourceInfo[sourceKey];
+            if (!info) return;
+
+            document.getElementById('source-info-icon').className = `fas ${info.icon}`;
+            document.getElementById('source-info-title').textContent = info.title;
+            document.getElementById('source-info-description').textContent = info.description;
+            document.getElementById('source-info-origin').innerHTML = info.origin;
+            document.getElementById('source-info-frequency').textContent = info.frequency;
+            document.getElementById('source-info-delay').textContent = info.delay;
+            document.getElementById('source-info-notes').textContent = info.notes;
+
+            document.getElementById('source-info-modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSourceInfo() {
+            document.getElementById('source-info-modal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        // Close modals on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeSourceInfo();
+            }
+        });
+
+        // Load Firms List
+        let allFirms = [];
+        async function loadFirms() {
+            try {
+                const response = await fetch('/api/firms?limit=100');
+                const data = await response.json();
+
+                if (data.success) {
+                    allFirms = data.firms;
+                    renderFirms(allFirms);
+                }
+            } catch (error) {
+                console.error('Error loading firms:', error);
+            }
+        }
+
+        function renderFirms(firms) {
+            const tbody = document.getElementById('firms-body');
+            const loading = document.getElementById('firms-loading');
+
+            if (!firms || firms.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">No firms found</td></tr>';
+                loading.style.display = 'none';
+                return;
+            }
+
+            tbody.innerHTML = firms.map((firm, index) => `
+                <tr style="cursor: pointer;" onclick="window.location='/firm/${encodeURIComponent(firm.name)}'">
+                    <td class="rank">${index + 1}</td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 600; color: var(--ncrc-justdata-blue);">${firm.name}</span>
+                            ${firm.ticker ? `<span style="font-size: 0.75rem; color: var(--ncrc-gray); background: var(--ncrc-gray-light); padding: 2px 6px; border-radius: 4px;">${firm.ticker}</span>` : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <span class="industry-chip ${firm.industry}">${formatIndustryName(firm.industry)}</span>
+                    </td>
+                    <td class="amount-cell">
+                        <div class="main">${formatAmount(firm.total)}</div>
+                    </td>
+                    <td style="text-align: center; font-weight: 600;">${firm.officials}</td>
+                    <td style="text-align: center;">
+                        ${firm.stock_trades > 0 ? `<span style="color: var(--ncrc-gold); font-weight: 600;">${firm.stock_trades}</span>` : '<span style="color: var(--ncrc-gray);">0</span>'}
+                    </td>
+                </tr>
+            `).join('');
+
+            loading.style.display = 'none';
+        }
+
+        function formatIndustryName(code) {
+            const names = {
+                banking: 'Banking',
+                crypto: 'Crypto',
+                investment: 'Investment',
+                mortgage: 'Mortgage',
+                insurance: 'Insurance',
+                fintech: 'Fintech',
+                consumer_lending: 'Consumer'
+            };
+            return names[code] || code;
+        }
+
+        // Load Industry Summary Stats
+        async function loadIndustrySummary() {
+            try {
+                const response = await fetch('/api/sectors');
+                const data = await response.json();
+
+                if (data.success && data.sectors) {
+                    for (const [code, info] of Object.entries(data.sectors)) {
+                        const officialsEl = document.getElementById(`stat-${code}-officials`);
+                        const totalEl = document.getElementById(`stat-${code}-total`);
+
+                        if (officialsEl && info.sample_officials) {
+                            officialsEl.textContent = info.sample_officials;
+                        }
+                        if (totalEl && info.sample_total) {
+                            totalEl.textContent = formatAmount(info.sample_total);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading industry summary:', error);
+            }
+        }
+
+        // Bill Search Functions
+        async function searchBills(query) {
+            if (!query) {
+                query = document.getElementById('bill-search-input').value.trim();
+            } else {
+                document.getElementById('bill-search-input').value = query;
+            }
+
+            if (!query) {
+                alert('Please enter a bill ID or search term');
+                return;
+            }
+
+            // Check if it looks like a bill ID (H.R. 4763, S. 1234, etc.)
+            const billIdPattern = /^[HS]\.?\s*R?\.?\s*\d+$/i;
+            if (billIdPattern.test(query.replace(/\s/g, ''))) {
+                // Navigate directly to bill page
+                const cleanId = query.replace(/\./g, '').replace(/\s+/g, '').toLowerCase();
+                window.location.href = `/bill/${cleanId}`;
+                return;
+            }
+
+            // Otherwise, search for bills
+            try {
+                const response = await fetch(`/api/bills/search?q=${encodeURIComponent(query)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    renderBillSearchResults(data.bills, query);
+                } else {
+                    alert(data.error || 'Search failed');
+                }
+            } catch (error) {
+                console.error('Error searching bills:', error);
+                alert('Error searching bills. Please try again.');
+            }
+        }
+
+        function renderBillSearchResults(bills, query) {
+            const resultsContainer = document.getElementById('bill-search-results');
+            const resultsList = document.getElementById('bill-results-list');
+            const countSpan = document.getElementById('bill-results-count');
+
+            if (!bills || bills.length === 0) {
+                resultsList.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: var(--ncrc-gray);">
+                        <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 12px;"></i>
+                        <p>No bills found matching "${query}"</p>
+                    </div>
+                `;
+            } else {
+                resultsList.innerHTML = bills.map(bill => `
+                    <div class="bill-result-item" onclick="window.location='/bill/${bill.bill_id.replace(/[.\s]/g, '').toLowerCase()}'">
+                        <div class="bill-result-info">
+                            <div>
+                                <span class="bill-result-id">${bill.bill_id}</span>
+                                <span class="bill-result-title">${bill.short_title || bill.title}</span>
+                            </div>
+                            <div class="bill-result-meta">
+                                <span>${bill.sponsor}</span>
+                                &bull; <span>${bill.latest_action || 'No action yet'}</span>
+                            </div>
+                        </div>
+                        <div class="bill-industries">
+                            ${(bill.industries || []).map(ind =>
+                                `<span class="industry-chip ${ind}">${ind}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            countSpan.textContent = `(${bills.length} results)`;
+            resultsContainer.style.display = 'block';
+        }
+
+        // Handle enter key in search input
+        document.addEventListener('DOMContentLoaded', function() {
+            const billSearchInput = document.getElementById('bill-search-input');
+            if (billSearchInput) {
+                billSearchInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        searchBills();
+                    }
+                });
+            }
+        });
+
+        // Initial load
+        loadDataFreshness();
+        loadLeaderboard();
+        loadIndustrySummary();
+        loadFirms();
+        refreshInsights();
+    </script>
+</body>
+</html>

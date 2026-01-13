@@ -19,10 +19,40 @@ def convert_numpy_types(obj):
     elif isinstance(obj, np.ndarray):
         return obj.tolist()
     elif isinstance(obj, dict):
-        return {key: convert_numpy_types(value) for key, value in obj.items()}
+        # Convert dictionary, ensuring keys are strings (JSON requirement)
+        # and values are properly converted
+        # CRITICAL: JSON requires ALL keys to be strings to avoid comparison errors
+        result = {}
+        for key, value in obj.items():
+            # Convert key to string if it's not already a string (JSON requires string keys)
+            if isinstance(key, str):
+                key_str = key
+            elif isinstance(key, (int, np.integer)):
+                key_str = str(int(key))
+            elif isinstance(key, (float, np.floating)):
+                key_str = str(float(key))
+            elif isinstance(key, bool):
+                key_str = str(key)
+            else:
+                # For any other type, convert to string
+                key_str = str(key)
+            result[key_str] = convert_numpy_types(value)
+        return result
     elif isinstance(obj, list):
         return [convert_numpy_types(item) for item in obj]
+    elif isinstance(obj, (int, float, str, bool, type(None))):
+        # Already a native Python type
+        return obj
     else:
+        # For any other type, try to convert to string as fallback
+        try:
+            # If it's a numeric type, try to convert
+            if hasattr(obj, '__int__'):
+                return int(obj)
+            elif hasattr(obj, '__float__'):
+                return float(obj)
+        except:
+            pass
         return obj
 
 def ask_ai(prompt: str, ai_provider: str = "claude", model: str = None, api_key: str = None) -> str:
@@ -49,7 +79,10 @@ def ask_ai(prompt: str, ai_provider: str = "claude", model: str = None, api_key:
             )
             return response.choices[0].message.content
         elif ai_provider == "claude":
-            import anthropic
+            try:
+                import anthropic
+            except ImportError:
+                raise Exception("anthropic module not installed. Install it with: pip install anthropic")
             client = anthropic.Anthropic(api_key=api_key)
             if not model:
                 model = "claude-sonnet-4-20250514"
@@ -98,7 +131,10 @@ class AIAnalyzer:
                 )
                 return response.choices[0].message.content.strip()
             elif self.provider == "claude":
-                import anthropic
+                try:
+                    import anthropic
+                except ImportError:
+                    raise Exception("anthropic module not installed. Install it with: pip install anthropic")
                 client = anthropic.Anthropic(api_key=self.api_key)
                 response = client.messages.create(
                     model=self.model,

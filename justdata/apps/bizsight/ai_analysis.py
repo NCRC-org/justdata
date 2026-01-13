@@ -129,8 +129,8 @@ class BizSightAnalyzer:
             hhi_change = None
             pct_change = None
         
-        # Identify PPP years (2020-2021)
-        pre_ppp_hhi = hhi_values.get(2018, {}).get('value') if 2018 in hhi_values else None
+        # Identify baseline and most recent years (2020-2024)
+        baseline_hhi = hhi_values.get(2020, {}).get('value') if 2020 in hhi_values else None
         post_ppp_hhi = hhi_values.get(2024, {}).get('value') if 2024 in hhi_values else None
         
         prompt = f"""
@@ -140,10 +140,10 @@ class BizSightAnalyzer:
         {json.dumps(hhi_values, indent=2)}
         
         Key Trends:
-        - First year (2018) HHI: {first_hhi if first_hhi else 'Not available'}
+        - First year (2020) HHI: {first_hhi if first_hhi else 'Not available'}
         - Last year (2024) HHI: {last_hhi if last_hhi else 'Not available'}
         - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
-        - Pre-PPP (2018) HHI: {pre_ppp_hhi if pre_ppp_hhi else 'Not available'}
+        - Baseline (2020) HHI: {baseline_hhi if baseline_hhi else 'Not available'}
         - Post-PPP (2024) HHI: {post_ppp_hhi if post_ppp_hhi else 'Not available'}
         
         HHI Scale:
@@ -156,7 +156,7 @@ class BizSightAnalyzer:
         - Lower HHI = more competitive market (more lenders sharing the market)
         - Higher HHI = more concentrated market (fewer lenders dominate)
         - The Paycheck Protection Program (PPP) in 2020-2021 may have affected market concentration patterns
-        - Compare pre-PPP (2018) to post-PPP (2024) to see underlying trends
+        - Compare 2020 (baseline) to 2024 (most recent) to see underlying trends
         
         CRITICAL WRITING REQUIREMENTS:
         - Write in PLAIN ENGLISH - avoid jargon and technical terms
@@ -171,7 +171,7 @@ class BizSightAnalyzer:
         - Use professional, analytical tone
         - EXACTLY 2 PARAGRAPHS (required)
         - First paragraph: Discuss overall trends from 2020 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
-        - Second paragraph: Compare pre-PPP (2018) to post-PPP (2024) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
+        - Second paragraph: Compare 2020 (baseline) to 2024 (most recent) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
         - Focus on trends and patterns rather than listing every year's value
         - If HHI increased, the market became more concentrated (less competitive)
         - If HHI decreased, the market became more competitive (less concentrated)
@@ -257,7 +257,7 @@ class BizSightAnalyzer:
         - NO policy recommendations
         - EXACTLY 2 PARAGRAPHS (required)
         - First paragraph: Compare county to state and national in 2024
-        - Second paragraph: Discuss changes since 2018 (if % change data available)
+        - Second paragraph: Discuss changes since 2020 (if % change data available)
         - Accurately identify which values are HIGHER, LOWER, or SIMILAR
         - Use mathematical comparisons: if county value > state value, say "higher"
         - If county value < state value, say "lower"
@@ -317,8 +317,8 @@ class BizSightAnalyzer:
             hhi_change = None
             pct_change = None
         
-        # Identify PPP years (2020-2021)
-        pre_ppp_hhi = hhi_values.get(2018, {}).get('value') if 2018 in hhi_values else None
+        # Identify baseline and most recent years (2020-2024)
+        baseline_hhi = hhi_values.get(2020, {}).get('value') if 2020 in hhi_values else None
         post_ppp_hhi = hhi_values.get(2024, {}).get('value') if 2024 in hhi_values else None
         
         prompt = f"""
@@ -328,10 +328,10 @@ class BizSightAnalyzer:
         {json.dumps(hhi_values, indent=2)}
         
         Key Trends:
-        - First year (2018) HHI: {first_hhi if first_hhi else 'Not available'}
+        - First year (2020) HHI: {first_hhi if first_hhi else 'Not available'}
         - Last year (2024) HHI: {last_hhi if last_hhi else 'Not available'}
         - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
-        - Pre-PPP (2018) HHI: {pre_ppp_hhi if pre_ppp_hhi else 'Not available'}
+        - Baseline (2020) HHI: {baseline_hhi if baseline_hhi else 'Not available'}
         - Post-PPP (2024) HHI: {post_ppp_hhi if post_ppp_hhi else 'Not available'}
         
         HHI Scale:
@@ -344,7 +344,7 @@ class BizSightAnalyzer:
         - Lower HHI = more competitive market (more lenders sharing the market)
         - Higher HHI = more concentrated market (fewer lenders dominate)
         - The Paycheck Protection Program (PPP) in 2020-2021 may have affected market concentration patterns
-        - Compare pre-PPP (2018) to post-PPP (2024) to see underlying trends
+        - Compare 2020 (baseline) to 2024 (most recent) to see underlying trends
         
         CRITICAL WRITING REQUIREMENTS:
         - Write in PLAIN ENGLISH - avoid jargon and technical terms
@@ -359,7 +359,7 @@ class BizSightAnalyzer:
         - Use professional, analytical tone
         - EXACTLY 2 PARAGRAPHS (required)
         - First paragraph: Discuss overall trends from 2020 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
-        - Second paragraph: Compare pre-PPP (2018) to post-PPP (2024) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
+        - Second paragraph: Compare 2020 (baseline) to 2024 (most recent) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
         - Focus on trends and patterns rather than listing every year's value
         - If HHI increased, the market became more concentrated (less competitive)
         - If HHI decreased, the market became more competitive (less concentrated)
@@ -473,8 +473,8 @@ class BizSightAnalyzer:
             hhi_change = None
             pct_change = None
         
-        # Identify PPP years (2020-2021)
-        pre_ppp_hhi = hhi_values.get(2018, {}).get('value') if 2018 in hhi_values else None
+        # Identify baseline and most recent years (2020-2024)
+        baseline_hhi = hhi_values.get(2020, {}).get('value') if 2020 in hhi_values else None
         post_ppp_hhi = hhi_values.get(2024, {}).get('value') if 2024 in hhi_values else None
         
         prompt = f"""
@@ -484,10 +484,10 @@ class BizSightAnalyzer:
         {json.dumps(hhi_values, indent=2)}
         
         Key Trends:
-        - First year (2018) HHI: {first_hhi if first_hhi else 'Not available'}
+        - First year (2020) HHI: {first_hhi if first_hhi else 'Not available'}
         - Last year (2024) HHI: {last_hhi if last_hhi else 'Not available'}
         - Change from 2020 to 2024: {hhi_change if hhi_change is not None else 'Not available'} ({pct_change:.1f}% change if available)
-        - Pre-PPP (2018) HHI: {pre_ppp_hhi if pre_ppp_hhi else 'Not available'}
+        - Baseline (2020) HHI: {baseline_hhi if baseline_hhi else 'Not available'}
         - Post-PPP (2024) HHI: {post_ppp_hhi if post_ppp_hhi else 'Not available'}
         
         HHI Scale:
@@ -500,7 +500,7 @@ class BizSightAnalyzer:
         - Lower HHI = more competitive market (more lenders sharing the market)
         - Higher HHI = more concentrated market (fewer lenders dominate)
         - The Paycheck Protection Program (PPP) in 2020-2021 may have affected market concentration patterns
-        - Compare pre-PPP (2018) to post-PPP (2024) to see underlying trends
+        - Compare 2020 (baseline) to 2024 (most recent) to see underlying trends
         
         CRITICAL WRITING REQUIREMENTS:
         - Write in PLAIN ENGLISH - avoid jargon and technical terms
@@ -515,7 +515,7 @@ class BizSightAnalyzer:
         - Use professional, analytical tone
         - EXACTLY 2 PARAGRAPHS (required)
         - First paragraph: Discuss overall trends from 2020 to 2024, whether the market is becoming more or less competitive, and the impact of PPP years (2020-2021)
-        - Second paragraph: Compare pre-PPP (2018) to post-PPP (2024) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
+        - Second paragraph: Compare 2020 (baseline) to 2024 (most recent) to identify underlying trends, and explain what the HHI values mean for the small business lending market in the county
         - Focus on trends and patterns rather than listing every year's value
         - If HHI increased, the market became more concentrated (less competitive)
         - If HHI decreased, the market became more competitive (less concentrated)

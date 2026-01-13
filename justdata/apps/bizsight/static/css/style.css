@@ -4,7 +4,8 @@
     --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
     --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
     --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
-    --ncrc-dark-blue: #034ea0;          /* Dark Blue for headers */
+    --ncrc-justdata-blue: #1a8fc9;      /* JustData Blue - primary brand color */
+    --ncrc-dark-blue: #1a8fc9;          /* Header blue (using JustData Blue) */
     --ncrc-light-blue: #E6F2FF;         /* Light blue background (custom, not in palette) */
     --ncrc-gold: #ffc23a;               /* Golden Yellow */
     --ncrc-purple: #552d87;             /* Deep Purple (same as primary blue) */
@@ -49,16 +50,11 @@ body {
     min-width: 0;
     position: relative;
     z-index: 1;
-    order: 1; /* Always first in flex order */
-    display: flex;
-    flex-direction: column; /* Stack analysis card and documentation card vertically */
 }
 
 .analysis-card {
     position: relative;
     z-index: 1;
-    margin-top: 20px; /* Reduced top margin */
-    margin-bottom: 60px; /* Increased bottom margin for better centering */
 }
 
 .sidebar {
@@ -79,42 +75,6 @@ body {
     overflow-y: auto !important;
     max-height: calc(100vh - 40px) !important;
     z-index: 100;
-    order: 2; /* Always second (right side) in flex order */
-}
-
-.documentation-card {
-    /* Inside content-wrapper, so it's in the same column as analysis card on desktop */
-    width: 100%; /* Match analysis card width */
-    margin-top: 0; /* Remove top margin since it's directly below analysis card */
-    padding: 20px 30px !important; /* More compact padding */
-    margin-bottom: 30px !important; /* Reduced bottom margin */
-}
-
-.documentation-card .card-header {
-    margin-bottom: 15px; /* Reduced margin below header */
-}
-
-.documentation-card .card-header h2 {
-    font-size: 1.3rem; /* Slightly smaller header */
-    margin-bottom: 0;
-}
-
-/* Make documentation links horizontal on desktop */
-.documentation-card .sidebar-docs {
-    display: flex !important;
-    flex-direction: row; /* Horizontal layout on desktop */
-    gap: 15px;
-    margin-top: 0;
-    flex-wrap: wrap; /* Allow wrapping if needed */
-}
-
-.documentation-card .doc-link {
-    flex: 1; /* Equal width buttons */
-    min-width: 0; /* Allow shrinking */
-    padding: 10px 15px; /* More compact padding */
-    font-size: 0.85rem; /* Slightly smaller text */
-    justify-content: center; /* Center content */
-    text-align: center;
 }
 
 /* Header */
@@ -129,6 +89,7 @@ body {
 .header-content {
     max-width: 1200px;
     margin: 0 auto;
+    position: relative;
 }
 
 .header-layout {
@@ -493,8 +454,7 @@ body {
     border-radius: 20px;
     box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     padding: 40px;
-    margin-top: 20px; /* Reduced top margin */
-    margin-bottom: 60px; /* Increased bottom margin for better centering */
+    margin-bottom: 40px;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,0.2);
 }
@@ -1305,25 +1265,29 @@ body {
 }
 
 .progress-step.pending {
-    background: #f5f5f5;
+    background: white;
     color: #999;
+    border: 1px solid #e0e0e0;
 }
 
 .progress-step.active {
     background: var(--ncrc-light-blue);
     color: var(--ncrc-dark-blue);
     font-weight: 600;
-    border-left: 3px solid var(--ncrc-dark-blue);
+    border-left: 3px solid var(--ncrc-secondary-blue);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .progress-step.completed {
-    background: #efe;
-    color: #3c3;
+    background: #e8f5e9;
+    color: #388e3c;
+    border: 1px solid #c8e6c9;
 }
 
 .progress-step i {
     width: 20px;
     text-align: center;
+    font-size: 1rem;
 }
 
 .progress-step.pending i {
@@ -1331,14 +1295,32 @@ body {
 }
 
 .progress-step.active i {
-    color: var(--ncrc-dark-blue);
+    color: var(--ncrc-secondary-blue);
 }
 
 .progress-step.completed i {
-    color: #3c3;
+    color: #388e3c;
 }
 
 /* Intro.js Custom Styling */
+/* Ensure overlay covers entire viewport */
+.introjs-overlay {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 100vw !important;
+    min-height: 100vh !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    z-index: 999998 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    box-sizing: border-box !important;
+}
+
 .introjs-tooltip {
     font-family: 'Inter', sans-serif;
     min-width: 400px;
@@ -1505,39 +1487,12 @@ body {
 @media (max-width: 1024px) {
     .container {
         flex-direction: column;
-        display: flex;
-    }
-    
-    .content-wrapper {
-        order: 1; /* Analysis cards first on mobile */
-        min-width: 100%; /* Full width on mobile */
-        display: contents; /* Flatten content-wrapper so children can be reordered */
     }
     
     .sidebar {
-        order: 2; /* Sidebar below analysis cards on mobile */
         width: 100%;
         position: relative;
         top: 0;
-    }
-    
-    /* Reorder children of content-wrapper on mobile */
-    .content-wrapper > .analysis-card {
-        order: 1; /* Analysis card first */
-    }
-    
-    .content-wrapper > .documentation-card {
-        order: 3; /* Documentation card below sidebar on mobile */
-    }
-    
-    /* Make documentation links vertical on mobile */
-    .documentation-card .sidebar-docs {
-        flex-direction: column; /* Vertical layout on mobile */
-    }
-    
-    .documentation-card .doc-link {
-        flex: none; /* Don't stretch on mobile */
-        width: 100%; /* Full width on mobile */
     }
 }
 

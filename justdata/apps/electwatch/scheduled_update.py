@@ -99,7 +99,7 @@ class DataUpdateRunner:
         """Update congressional trading data from Quiver."""
         logger.info("\n--- Updating Quiver Congressional Trading ---")
         try:
-            from apps.electwatch.services.quiver_client import QuiverClient
+            from justdata.apps.electwatch.services.quiver_client import QuiverClient
             client = QuiverClient()
 
             if not client.test_connection():
@@ -129,7 +129,7 @@ class DataUpdateRunner:
         """Update campaign finance data from FEC."""
         logger.info("\n--- Updating FEC Campaign Finance ---")
         try:
-            from apps.electwatch.services.fec_client import FECClient
+            from justdata.apps.electwatch.services.fec_client import FECClient
             client = FECClient()
 
             if not client.test_connection():
@@ -160,7 +160,7 @@ class DataUpdateRunner:
         """Update bills and members from Congress.gov."""
         logger.info("\n--- Updating Congress.gov ---")
         try:
-            from apps.electwatch.services.congress_api_client import CongressAPIClient
+            from justdata.apps.electwatch.services.congress_api_client import CongressAPIClient
             client = CongressAPIClient()
 
             # Test with sample bill queries
@@ -189,7 +189,7 @@ class DataUpdateRunner:
         """Update news and stock data from Finnhub."""
         logger.info("\n--- Updating Finnhub ---")
         try:
-            from apps.electwatch.services.finnhub_client import FinnhubClient
+            from justdata.apps.electwatch.services.finnhub_client import FinnhubClient
             client = FinnhubClient()
 
             if not client.test_connection():
@@ -229,7 +229,7 @@ class DataUpdateRunner:
         """Update SEC EDGAR filings."""
         logger.info("\n--- Updating SEC EDGAR ---")
         try:
-            from apps.electwatch.services.sec_client import SECClient
+            from justdata.apps.electwatch.services.sec_client import SECClient
             client = SECClient()
 
             # Test with sample tickers
@@ -261,7 +261,7 @@ class DataUpdateRunner:
         """Update news from NewsAPI with quality filtering."""
         logger.info("\n--- Updating NewsAPI ---")
         try:
-            from apps.electwatch.services.news_client import NewsClient
+            from justdata.apps.electwatch.services.news_client import NewsClient
             client = NewsClient()
 
             if not client.test_connection():

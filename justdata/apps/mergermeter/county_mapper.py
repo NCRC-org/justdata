@@ -8,7 +8,7 @@ Example: 12057 = State 12 (Florida) + County 057 (Hillsborough) = Hillsborough C
 
 from typing import List, Dict, Tuple, Optional, Union
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
-from .config import PROJECT_ID
+from justdata.apps.mergermeter.config import PROJECT_ID
 
 
 def map_counties_to_geoids(
@@ -108,7 +108,27 @@ def map_counties_to_geoids(
         elif identifier['type'] == 'name':
             name_pairs.append((identifier.get('county_name', ''), identifier.get('state_name', '')))
     
-    # Build query conditions
+    # OPTIMIZATION: If all counties have GEOIDs or codes, skip BigQuery lookup entirely
+    if geoid5_list and not name_pairs:
+        # All counties have GEOIDs - return immediately (fastest path)
+        # Convert code_pairs to GEOIDs
+        for state_code, county_code in code_pairs:
+            geoid5 = f"{state_code}{county_code}"
+            if geoid5 not in geoid5_list:
+                geoid5_list.append(geoid5)
+        
+        # Return unique GEOIDs (already validated as 5-digit)
+        return list(set(geoid5_list)), []
+    
+    # If we have code pairs but no name lookups needed, convert codes to GEOIDs
+    if code_pairs and not name_pairs:
+        for state_code, county_code in code_pairs:
+            geoid5 = f"{state_code}{county_code}"
+            if geoid5 not in geoid5_list:
+                geoid5_list.append(geoid5)
+        return list(set(geoid5_list)), []
+    
+    # Build query conditions (only needed if we have name lookups)
     conditions = []
     
     # Direct GEOID5 matches (most precise)
@@ -131,8 +151,9 @@ def map_counties_to_geoids(
         name_conditions = []
         for county_name, state_name in name_pairs:
             if county_name and state_name:
-                county_escaped = county_name.replace("'", "''")
-                state_escaped = state_name.replace("'", "''")
+                from justdata.shared.utils.bigquery_client import escape_sql_string
+                county_escaped = escape_sql_string(county_name)
+                state_escaped = escape_sql_string(state_name)
                 name_conditions.append(f"(County = '{county_escaped}' AND State = '{state_escaped}')")
         if name_conditions:
             conditions.append("(" + " OR ".join(name_conditions) + ")")

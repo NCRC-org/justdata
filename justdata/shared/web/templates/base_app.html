@@ -7,7 +7,9 @@
     <meta name="description" content="{{ app_description|default('JustData - AI-powered financial data analysis') }}">
     
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
     
     <!-- Shared CSS -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -22,18 +24,20 @@
     <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
     <div class="body-overlay" id="bodyOverlay"></div>
     
-    <!-- Standardized Header -->
+    <!-- Standardized Header - ElectWatch-style clean layout -->
     <header class="header">
         <div class="header-content">
             <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                </div>
-                <div class="header-title-section">
-                    <h1><span class="app-name-part1">{{ app_name_part1 }}</span><span class="app-name-part2">{{ app_name_part2 }}</span></h1>
-                    <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
-                    {% block header_subtitle %}{% endblock %}
-                </div>
+                <a href="/" class="logo-link" title="Back to JustData Home">
+                    <div class="logo">
+                        <img src="{{ url_for('static', filename='img/ncrc-logo-white.png') }}" alt="NCRC Logo" style="height: 50px; width: auto;" onerror="this.src='{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}'; this.style.maxHeight='60px';">
+                    </div>
+                    <div class="header-title-section">
+                        <h1><span class="app-name-part1">{{ app_name_part1 }}</span><span class="app-name-part2">{{ app_name_part2 }}</span></h1>
+                        <p class="tagline-text">{{ app_tagline|default('A JustData Tool by NCRC') }}</p>
+                        {% block header_subtitle %}{% endblock %}
+                    </div>
+                </a>
                 <div class="header-nav-wrapper">
                     {% include 'nav_menu.html' %}
                 </div>
@@ -65,6 +69,7 @@
             <div class="footer-col">
                 <h4>Links</h4>
                 <p>
+                    <a href="/"><i class="fas fa-home"></i> JustData Home</a><br>
                     <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
                     <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
                 </p>

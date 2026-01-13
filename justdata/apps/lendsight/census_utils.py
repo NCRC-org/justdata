@@ -49,15 +49,17 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
     """
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from apps.lendsight.config import PROJECT_ID
+        from justdata.apps.lendsight.config import PROJECT_ID
         
         client = get_bigquery_client(PROJECT_ID)
         
+        from justdata.shared.utils.bigquery_client import escape_sql_string
         # Query to get geoid5 from county_state
+        escaped_county_state = escape_sql_string(county_state)
         query = f"""
         SELECT DISTINCT geoid5
         FROM geo.cbsa_to_county
-        WHERE county_state = '{county_state}'
+        WHERE county_state = '{escaped_county_state}'
         LIMIT 1
         """
         
@@ -154,12 +156,14 @@ def get_census_demographics_for_county(
             'B03002_005E',  # American Indian/Alaska Native alone (not Hispanic)
             'B03002_006E',  # Asian alone (not Hispanic)
             'B03002_007E',  # Native Hawaiian/Pacific Islander alone (not Hispanic)
+            'B03002_009E',  # Two or more races (not Hispanic)
             'B03002_012E',  # Hispanic or Latino (of any race)
         ]
         
         # Try ACS 5-year estimates first
         try:
             print(f"Fetching ACS {acs_year} 5-year estimates for {display_name} (State: {state_fips}, County: {county_fips})...")
+            print(f"  [DEBUG] Census API parameters: for=county:{county_fips}, in=state:{state_fips}, year={acs_year_int}")
             if progress_tracker and total_counties > 0:
                 base_pct = 50 + int((county_index - 1) / total_counties * 10)
                 progress_tracker.update_progress('fetching_census_data', base_pct + 1, 
@@ -172,6 +176,7 @@ def get_census_demographics_for_county(
                 },
                 year=acs_year_int
             )
+            print(f"  [DEBUG] ACS API response: {len(acs_data) if acs_data else 0} records returned")
             
             if acs_data and len(acs_data) > 0:
                 record = acs_data[0]
@@ -183,6 +188,7 @@ def get_census_demographics_for_county(
                     asian = _safe_int(record.get('B03002_006E', 0))
                     native_am = _safe_int(record.get('B03002_005E', 0))
                     hopi = _safe_int(record.get('B03002_007E', 0))
+                    multi_racial = _safe_int(record.get('B03002_009E', 0))
                     hispanic = _safe_int(record.get('B03002_012E', 0))
                     
                     result['time_periods']['acs'] = {
@@ -195,6 +201,7 @@ def get_census_demographics_for_county(
                             'asian_percentage': (asian / total_pop * 100) if asian else 0,
                             'native_american_percentage': (native_am / total_pop * 100) if native_am else 0,
                             'hopi_percentage': (hopi / total_pop * 100) if hopi else 0,
+                            'multi_racial_percentage': (multi_racial / total_pop * 100) if multi_racial else 0,
                             'hispanic_percentage': (hispanic / total_pop * 100) if hispanic else 0
                         }
                     }
@@ -231,6 +238,7 @@ def get_census_demographics_for_county(
                         asian = _safe_int(record.get('B03002_006E', 0))
                         native_am = _safe_int(record.get('B03002_005E', 0))
                         hopi = _safe_int(record.get('B03002_007E', 0))
+                        multi_racial = _safe_int(record.get('B03002_009E', 0))
                         hispanic = _safe_int(record.get('B03002_012E', 0))
                         
                         result['time_periods']['acs'] = {
@@ -243,6 +251,7 @@ def get_census_demographics_for_county(
                                 'asian_percentage': (asian / total_pop * 100) if asian else 0,
                                 'native_american_percentage': (native_am / total_pop * 100) if native_am else 0,
                                 'hopi_percentage': (hopi / total_pop * 100) if hopi else 0,
+                                'multi_racial_percentage': (multi_racial / total_pop * 100) if multi_racial else 0,
                                 'hispanic_percentage': (hispanic / total_pop * 100) if hispanic else 0
                             }
                         }
@@ -273,6 +282,7 @@ def get_census_demographics_for_county(
                             asian = _safe_int(record.get('B03002_006E', 0))
                             native_am = _safe_int(record.get('B03002_005E', 0))
                             hopi = _safe_int(record.get('B03002_007E', 0))
+                            multi_racial = _safe_int(record.get('B03002_009E', 0))
                             hispanic = _safe_int(record.get('B03002_012E', 0))
                             
                             result['time_periods']['acs'] = {
@@ -285,6 +295,7 @@ def get_census_demographics_for_county(
                                     'asian_percentage': (asian / total_pop * 100) if asian else 0,
                                     'native_american_percentage': (native_am / total_pop * 100) if native_am else 0,
                                     'hopi_percentage': (hopi / total_pop * 100) if hopi else 0,
+                                    'multi_racial_percentage': (multi_racial / total_pop * 100) if multi_racial else 0,
                                     'hispanic_percentage': (hispanic / total_pop * 100) if hispanic else 0
                                 }
                             }
@@ -303,7 +314,7 @@ def get_census_demographics_for_county(
             # Use direct API call for 2020 PL94-171 data
             url = f"https://api.census.gov/data/2020/dec/pl"
             params = {
-                'get': 'NAME,P1_001N,P2_001N,P2_002N,P2_005N,P2_006N,P2_007N,P2_008N,P2_009N',
+                'get': 'NAME,P1_001N,P2_001N,P2_002N,P2_005N,P2_006N,P2_007N,P2_008N,P2_009N,P2_011N',
                 'for': f'county:{county_fips}',
                 'in': f'state:{state_fips}',
                 'key': api_key
@@ -316,8 +327,12 @@ def get_census_demographics_for_county(
             # P2_007N = American Indian/Alaska Native alone (not Hispanic)
             # P2_008N = Asian alone (not Hispanic)
             # P2_009N = Native Hawaiian/Pacific Islander alone (not Hispanic)
+            # P2_011N = Two or more races (not Hispanic)
             
+            print(f"  [DEBUG] 2020 Census API URL: {url}")
+            print(f"  [DEBUG] 2020 Census API params: for=county:{county_fips}, in=state:{state_fips}")
             response = requests.get(url, params=params, timeout=30)
+            print(f"  [DEBUG] 2020 Census API response status: {response.status_code}")
             response.raise_for_status()
             data = response.json()
             
@@ -334,6 +349,7 @@ def get_census_demographics_for_county(
                 native_am_idx = headers.index('P2_007N')
                 asian_idx = headers.index('P2_008N')
                 hopi_idx = headers.index('P2_009N')
+                multi_racial_idx = headers.index('P2_011N')
                 
                 total_pop = _safe_int(row[total_pop_idx])
                 
@@ -343,6 +359,7 @@ def get_census_demographics_for_county(
                     asian = _safe_int(row[asian_idx])
                     native_am = _safe_int(row[native_am_idx])
                     hopi = _safe_int(row[hopi_idx])
+                    multi_racial = _safe_int(row[multi_racial_idx])
                     hispanic = _safe_int(row[hispanic_idx])
                     
                     result['time_periods']['census2020'] = {
@@ -355,6 +372,7 @@ def get_census_demographics_for_county(
                             'asian_percentage': (asian / total_pop * 100) if asian else 0,
                             'native_american_percentage': (native_am / total_pop * 100) if native_am else 0,
                             'hopi_percentage': (hopi / total_pop * 100) if hopi else 0,
+                            'multi_racial_percentage': (multi_racial / total_pop * 100) if multi_racial else 0,
                             'hispanic_percentage': (hispanic / total_pop * 100) if hispanic else 0
                         }
                     }
@@ -377,19 +395,24 @@ def get_census_demographics_for_county(
             # P005005 = Not Hispanic or Latino!!American Indian/Alaska Native alone
             # P005006 = Not Hispanic or Latino!!Asian alone
             # P005007 = Not Hispanic or Latino!!Native Hawaiian/Pacific Islander alone
+            # P005009 = Not Hispanic or Latino!!Two or more races
             # P004003 = Hispanic or Latino (of any race)
             
             url = f"https://api.census.gov/data/2010/dec/sf1"
             params = {
-                'get': 'NAME,P001001,P005001,P005003,P005004,P005005,P005006,P005007',
+                'get': 'NAME,P001001,P005001,P005003,P005004,P005005,P005006,P005007,P005009,P004003',  # Include P004003 (Hispanic) and P005009 (Two or more races) in main call
                 'for': f'county:{county_fips}',
                 'in': f'state:{state_fips}',
                 'key': api_key
             }
             
+            print(f"  [DEBUG] 2010 Census API URL: {url}")
+            print(f"  [DEBUG] 2010 Census API params: for=county:{county_fips}, in=state:{state_fips}")
             response = requests.get(url, params=params, timeout=30)
+            print(f"  [DEBUG] 2010 Census API response status: {response.status_code}")
             response.raise_for_status()
             data = response.json()
+            print(f"  [DEBUG] 2010 Census API response: {len(data) if data else 0} records returned")
             
             if data and len(data) > 1:
                 headers = data[0]
@@ -403,6 +426,15 @@ def get_census_demographics_for_county(
                 native_am_idx = headers.index('P005005')
                 asian_idx = headers.index('P005006')
                 hopi_idx = headers.index('P005007')
+                multi_racial_idx = headers.index('P005009')
+                
+                # Try to get Hispanic from main call (P004003), fallback to separate call if not present
+                hispanic_idx = None
+                try:
+                    hispanic_idx = headers.index('P004003')
+                except ValueError:
+                    # P004003 not in headers, will fetch separately
+                    pass
                 
                 total_pop = _safe_int(row[total_pop_idx])
                 
@@ -412,22 +444,31 @@ def get_census_demographics_for_county(
                     asian = _safe_int(row[asian_idx])
                     native_am = _safe_int(row[native_am_idx])
                     hopi = _safe_int(row[hopi_idx])
+                    multi_racial = _safe_int(row[multi_racial_idx])
                     
-                    # Get Hispanic separately
-                    try:
-                        url_hispanic = f"https://api.census.gov/data/2010/dec/sf1"
-                        params_hispanic = {
-                            'get': 'P004003',  # Hispanic or Latino (of any race)
-                            'for': f'county:{county_fips}',
-                            'in': f'state:{state_fips}',
-                            'key': api_key
-                        }
-                        response_hispanic = requests.get(url_hispanic, params=params_hispanic, timeout=30)
-                        response_hispanic.raise_for_status()
-                        data_hispanic = response_hispanic.json()
-                        hispanic = _safe_int(data_hispanic[1][0]) if data_hispanic and len(data_hispanic) > 1 else 0
-                    except:
-                        hispanic = 0
+                    # Get Hispanic - prefer from main call, fallback to separate call
+                    if hispanic_idx is not None:
+                        hispanic = _safe_int(row[hispanic_idx])
+                        print(f"  [DEBUG] Hispanic data from main 2010 Census call: {hispanic}")
+                    else:
+                        # Get Hispanic separately (fallback)
+                        try:
+                            print(f"  [DEBUG] Fetching Hispanic data separately for 2010 Census...")
+                            url_hispanic = f"https://api.census.gov/data/2010/dec/sf1"
+                            params_hispanic = {
+                                'get': 'P004003',  # Hispanic or Latino (of any race)
+                                'for': f'county:{county_fips}',
+                                'in': f'state:{state_fips}',
+                                'key': api_key
+                            }
+                            response_hispanic = requests.get(url_hispanic, params=params_hispanic, timeout=30)
+                            response_hispanic.raise_for_status()
+                            data_hispanic = response_hispanic.json()
+                            hispanic = _safe_int(data_hispanic[1][0]) if data_hispanic and len(data_hispanic) > 1 else 0
+                            print(f"  [DEBUG] Hispanic data from separate 2010 Census call: {hispanic}")
+                        except Exception as e:
+                            print(f"  [WARNING] Failed to fetch Hispanic data separately: {e}")
+                            hispanic = 0
                     
                     result['time_periods']['census2010'] = {
                         'year': '2010 Census',
@@ -439,6 +480,7 @@ def get_census_demographics_for_county(
                             'asian_percentage': (asian / total_pop * 100) if asian else 0,
                             'native_american_percentage': (native_am / total_pop * 100) if native_am else 0,
                             'hopi_percentage': (hopi / total_pop * 100) if hopi else 0,
+                            'multi_racial_percentage': (multi_racial / total_pop * 100) if multi_racial else 0,
                             'hispanic_percentage': (hispanic / total_pop * 100) if hispanic else 0
                         }
                     }
@@ -502,13 +544,31 @@ def get_census_data_for_multiple_counties(
         # Extract FIPS codes from county data
         if isinstance(county_info, dict):
             county_name = county_info.get('name', 'Unknown')
-            county_fips = county_info.get('county_fips') or (county_info.get('geoid5', '')[-3:] if county_info.get('geoid5') else None)
-            state_fips = county_info.get('state_fips') or state_code
+            # Extract county_fips: prefer explicit county_fips, otherwise extract from geoid5
+            # geoid5 format: SSCCC (2-digit state + 3-digit county)
+            if county_info.get('county_fips'):
+                county_fips = str(county_info.get('county_fips')).zfill(3)  # Ensure 3 digits
+            elif county_info.get('geoid5'):
+                geoid5_str = str(county_info.get('geoid5')).zfill(5)  # Ensure 5 digits
+                county_fips = geoid5_str[2:]  # Last 3 digits (positions 2, 3, 4)
+            else:
+                county_fips = None
+            
+            # Extract state_fips: prefer explicit state_fips, otherwise extract from geoid5 or use state_code
+            if county_info.get('state_fips'):
+                state_fips = str(county_info.get('state_fips')).zfill(2)  # Ensure 2 digits
+            elif county_info.get('geoid5'):
+                geoid5_str = str(county_info.get('geoid5')).zfill(5)  # Ensure 5 digits
+                state_fips = geoid5_str[:2]  # First 2 digits
+            elif state_code:
+                state_fips = str(state_code).zfill(2)
+            else:
+                state_fips = None
         else:
             # Fallback: if it's still a string, try to extract FIPS (backward compatibility)
             county_name = str(county_info)
             print(f"  [WARNING] County data is string format, attempting to extract FIPS codes...")
-            from .census_utils import extract_fips_from_county_state
+            # extract_fips_from_county_state is in the same module, no import needed
             fips_data = extract_fips_from_county_state(county_name)
             if fips_data:
                 state_fips = fips_data['state_fips']
@@ -517,7 +577,18 @@ def get_census_data_for_multiple_counties(
                 print(f"  [ERROR] Could not extract FIPS codes for {county_name}, skipping...")
                 continue
         
+        # Validate FIPS codes before making API call
+        if not state_fips or not county_fips:
+            print(f"    [ERROR] Invalid FIPS codes for {county_name}: state_fips={state_fips}, county_fips={county_fips}")
+            print(f"    [DEBUG] County info: {county_info}")
+            continue
+        
+        # Ensure FIPS codes are properly formatted (2 digits for state, 3 digits for county)
+        state_fips = str(state_fips).zfill(2)
+        county_fips = str(county_fips).zfill(3)
+        
         print(f"    [{idx}/{len(counties_data)}] Processing {county_name} (State: {state_fips}, County: {county_fips})...")
+        print(f"    [DEBUG] Census API will use: for=county:{county_fips}, in=state:{state_fips}")
         if progress_tracker:
             # Update progress: 50% base + up to 10% for Census (50-60% range)
             progress_pct = 50 + int((idx - 1) / len(counties_data) * 10)

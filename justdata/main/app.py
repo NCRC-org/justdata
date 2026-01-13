@@ -119,7 +119,7 @@ def create_app():
     def api_access_info():
         """Get access information for current user."""
         user_type = get_user_type()
-        apps = ['lendsight', 'branchseeker', 'branchmapper', 'bizsight', 
+        apps = ['lendsight', 'branchsight', 'branchmapper', 'bizsight', 
                 'mergermeter', 'memberview', 'analytics', 'admin']
         
         access_info = {}
@@ -156,8 +156,8 @@ def register_blueprints(app: Flask):
     # Import and register blueprints
     # We'll create these in the next steps
     try:
-        from justdata.apps.branchseeker.blueprint import branchseeker_bp
-        app.register_blueprint(branchseeker_bp, url_prefix='/branchseeker')
+        from justdata.apps.branchsight.blueprint import branchsight_bp
+        app.register_blueprint(branchsight_bp, url_prefix='/branchsight')
     except ImportError:
         print("[WARN] BranchSeeker blueprint not yet created")
     
@@ -228,4 +228,11 @@ def register_blueprints(app: Flask):
         app.register_blueprint(analytics_bp, url_prefix='/analytics')
     except ImportError:
         print("[WARN] Analytics blueprint not yet created")
+
+    # ElectWatch - Congressional financial tracking
+    try:
+        from justdata.apps.electwatch.blueprint import electwatch_bp
+        app.register_blueprint(electwatch_bp, url_prefix='/electwatch')
+    except ImportError:
+        print("[WARN] ElectWatch blueprint not yet created")
 

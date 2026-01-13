@@ -1,21 +1,40 @@
 """
 Excel generator for MergerMeter analysis output.
 
-Uses the simplified Excel format - simple table structures that are easy to populate and verify.
-No complex merged cells, no template dependencies.
-This is a standalone implementation copied from 1_Merger_Report for complete independence.
+Uses the shared Excel generator from justdata.shared.reporting.merger_excel_generator
+which provides a simplified, standardized format for merger analysis reports.
+
+This module acts as a wrapper that:
+1. Transforms query results using shared.reporting.merger_data_transformer
+2. Builds assessment_areas_data dictionary from enriched counties
+3. Calls the shared generator to create the Excel workbook
 """
 
-from openpyxl import Workbook, load_workbook
-from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from openpyxl.utils import get_column_letter
 from pathlib import Path
 import pandas as pd
 from typing import Dict, Optional, List
-from datetime import datetime
-from collections import defaultdict
-from .config import PROJECT_ID
+import logging
+from openpyxl import load_workbook
+from openpyxl.workbook import Workbook
+from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+from openpyxl.utils import get_column_letter
+from justdata.apps.mergermeter.config import PROJECT_ID
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+
+# Import shared modules
+try:
+    from justdata.shared.reporting.merger_data_transformer import (
+        transform_mortgage_data,
+        transform_sb_data,
+        transform_branch_data
+    )
+    from justdata.shared.reporting.merger_excel_generator import create_merger_excel as shared_create_merger_excel
+    SHARED_GENERATOR_AVAILABLE = True
+except ImportError as e:
+    SHARED_GENERATOR_AVAILABLE = False
+    logging.warning(f"Shared generator not available: {e}. Falling back to legacy implementation.")
+
+logger = logging.getLogger(__name__)
 
 
 def _get_cbsa_name_from_code(cbsa_code: str, cbsa_name_cache: Dict[str, str] = None) -> str:
@@ -73,99 +92,571 @@ def create_merger_excel(
     bank_b_branch: Optional[pd.DataFrame] = None,
     hhi_data: Optional[pd.DataFrame] = None,
     assessment_areas: Optional[Dict] = None,
-    metadata: Optional[Dict] = None
+    metadata: Optional[Dict] = None,
+    mortgage_goals_data: Optional[Dict] = None,
+    sb_goals_data: Optional[pd.DataFrame] = None
 ):
     """
-    Create Excel workbook with merger analysis data using simplified format.
+    Create Excel workbook with merger analysis data using shared generator.
     
-    Uses simple table structures - no template dependencies, no complex merges.
+    This function:
+    1. Transforms query results using shared transformer
+    2. Builds assessment_areas_data dictionary
+    3. Calls shared Excel generator
     
     Args:
         output_path: Path to save Excel file
         bank_a_name: Acquirer bank name
         bank_b_name: Target bank name
         All data DataFrames for HMDA, SB, Branch, and HHI
-        assessment_areas: Assessment area information
-        metadata: Additional metadata (years, loan purpose, etc.)
+        assessment_areas: Assessment area information (dict with 'acquirer' and 'target' keys)
+        metadata: Additional metadata (years, loan purpose, LEI, RSSD, etc.)
     """
     
-    # Convert years from metadata
+    if not SHARED_GENERATOR_AVAILABLE:
+        logger.error("Shared generator not available. Cannot create Excel file.")
+        raise ImportError("Shared Excel generator modules not found. Please ensure shared.reporting modules are available.")
+    
+    # Extract metadata
     hmda_years = metadata.get('hmda_years', []) if metadata else []
     sb_years = metadata.get('sb_years', []) if metadata else []
+    bank_a_lei = metadata.get('acquirer_lei', '') if metadata else ''
+    bank_b_lei = metadata.get('target_lei', '') if metadata else ''
+    bank_a_rssd = metadata.get('acquirer_rssd', '') if metadata else ''
+    bank_b_rssd = metadata.get('target_rssd', '') if metadata else ''
+    bank_a_sb_id = metadata.get('acquirer_sb_id', '') if metadata else ''
+    bank_b_sb_id = metadata.get('target_sb_id', '') if metadata else ''
     
-    # Convert assessment areas format if needed
-    aa_data = assessment_areas or {}
+    # Extract filter parameters
+    loan_purpose = metadata.get('loan_purpose', '') if metadata else ''
+    action_taken = metadata.get('action_taken', '') if metadata else ''
+    occupancy_type = metadata.get('occupancy_type', '') if metadata else ''
+    total_units = metadata.get('total_units', '') if metadata else ''
+    construction_method = metadata.get('construction_method', '') if metadata else ''
+    not_reverse = metadata.get('not_reverse', '') if metadata else ''
     
-    # Create workbook
-    wb = Workbook()
-    wb.remove(wb.active)  # Remove default sheet
+    # Build assessment_areas_data dictionary from assessment_areas
+    # Expected format: {'acquirer': {'counties': [...]}, 'target': {'counties': [...]}}
+    assessment_areas_data = {}
+    if assessment_areas:
+        # Get enriched counties from assessment_areas dict
+        acquirer_counties = assessment_areas.get('acquirer', {}).get('counties', [])
+        target_counties = assessment_areas.get('target', {}).get('counties', [])
+        
+        assessment_areas_data = {
+            'acquirer': {'counties': acquirer_counties},
+            'target': {'counties': target_counties}
+        }
+    else:
+        # Empty structure if no assessment areas provided
+        assessment_areas_data = {
+            'acquirer': {'counties': []},
+            'target': {'counties': []}
+        }
     
-    # Style definitions
-    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-    header_font = Font(bold=True, color="FFFFFF", size=11)
-    border_thin = Border(
-        left=Side(style='thin'),
-        right=Side(style='thin'),
-        top=Side(style='thin'),
-        bottom=Side(style='thin')
+    # Build CBSA name map and required CBSAs from assessment areas
+    # Also build reverse map from CBSA names to codes for matching
+    cbsa_name_map = {}
+    cbsa_name_to_code_map = {}  # Reverse mapping: name -> code
+    bank_a_required_cbsas = set()
+    bank_b_required_cbsas = set()
+    
+    def normalize_cbsa_for_matching(code_or_name):
+        """Normalize CBSA code or name for matching (handles special cases)."""
+        if not code_or_name:
+            return None
+        s = str(code_or_name).strip()
+        # Handle special cases
+        if s == '0' or s.lower() == 'nan' or s == '--':
+            return None
+        # Normalize "Rural *" to "NON-METRO-*"
+        if s.lower().startswith('rural '):
+            state = s[6:].strip()  # Remove "Rural " prefix
+            return f'NON-METRO-{state}'
+        # Normalize "State Non-Metro Area" to "NON-METRO-State"
+        if ' non-metro' in s.lower() or ' non-msa' in s.lower():
+            state = s.split()[0]  # Get first word (state name)
+            return f'NON-METRO-{state}'
+        return s
+    
+    for county in assessment_areas_data.get('acquirer', {}).get('counties', []):
+        cbsa_code = str(county.get('cbsa_code', '')).strip()
+        cbsa_name = county.get('cbsa_name', '').strip()
+        state_name = county.get('state_name', '').strip()
+
+        # Handle rural counties (CBSA code 99999) - these are valid, not invalid
+        if cbsa_code == '99999':
+            # Add the literal '99999' code since HMDA queries return this for rural areas
+            bank_a_required_cbsas.add('99999')
+            # Also add state-specific rural identifier for better matching
+            if state_name:
+                rural_name = f"Rural {state_name}"
+                normalized_name = normalize_cbsa_for_matching(rural_name)
+                if normalized_name:
+                    bank_a_required_cbsas.add(normalized_name)
+                    cbsa_name_map['99999'] = rural_name
+                    cbsa_name_map[normalized_name] = rural_name
+            elif cbsa_name and cbsa_name != '--' and cbsa_name != '0':
+                normalized_name = normalize_cbsa_for_matching(cbsa_name)
+                if normalized_name:
+                    bank_a_required_cbsas.add(normalized_name)
+                    cbsa_name_map['99999'] = cbsa_name
+            continue
+
+        # Skip truly invalid CBSA codes (but not 99999 which is valid for rural)
+        if cbsa_code in ['0', '--', ''] or cbsa_code.lower() == 'nan':
+            # If code is invalid but name exists, use name
+            if cbsa_name and cbsa_name != '--' and cbsa_name != '0':
+                normalized_name = normalize_cbsa_for_matching(cbsa_name)
+                if normalized_name:
+                    bank_a_required_cbsas.add(normalized_name)
+                    cbsa_name_map[normalized_name] = cbsa_name
+            continue
+        
+        # Normalize code
+        normalized_code = normalize_cbsa_for_matching(cbsa_code)
+        if normalized_code:
+            bank_a_required_cbsas.add(normalized_code)
+            if cbsa_name and cbsa_name != '--' and cbsa_name != '0':
+                cbsa_name_map[normalized_code] = cbsa_name
+                # Also map name to code for reverse lookup
+                normalized_name = normalize_cbsa_for_matching(cbsa_name)
+                if normalized_name:
+                    cbsa_name_to_code_map[normalized_name] = normalized_code
+        
+        # Also add by name if code is missing but name exists
+        if not normalized_code and cbsa_name and cbsa_name != '0':
+            normalized_name = normalize_cbsa_for_matching(cbsa_name)
+            if normalized_name:
+                bank_a_required_cbsas.add(normalized_name)  # Use name as key if no code
+                cbsa_name_map[normalized_name] = cbsa_name
+    
+    for county in assessment_areas_data.get('target', {}).get('counties', []):
+        cbsa_code = str(county.get('cbsa_code', '')).strip()
+        cbsa_name = county.get('cbsa_name', '').strip()
+        state_name = county.get('state_name', '').strip()
+
+        # Handle rural counties (CBSA code 99999) - these are valid, not invalid
+        if cbsa_code == '99999':
+            # Add the literal '99999' code since HMDA queries return this for rural areas
+            bank_b_required_cbsas.add('99999')
+            # Also add state-specific rural identifier for better matching
+            if state_name:
+                rural_name = f"Rural {state_name}"
+                normalized_name = normalize_cbsa_for_matching(rural_name)
+                if normalized_name:
+                    bank_b_required_cbsas.add(normalized_name)
+                    cbsa_name_map['99999'] = rural_name
+                    cbsa_name_map[normalized_name] = rural_name
+            elif cbsa_name and cbsa_name != '--' and cbsa_name != '0':
+                normalized_name = normalize_cbsa_for_matching(cbsa_name)
+                if normalized_name:
+                    bank_b_required_cbsas.add(normalized_name)
+                    cbsa_name_map['99999'] = cbsa_name
+            continue
+
+        # Skip truly invalid CBSA codes (but not 99999 which is valid for rural)
+        if cbsa_code in ['0', '--', ''] or cbsa_code.lower() == 'nan':
+            # If code is invalid but name exists, use name
+            if cbsa_name and cbsa_name != '--' and cbsa_name != '0':
+                normalized_name = normalize_cbsa_for_matching(cbsa_name)
+                if normalized_name:
+                    bank_b_required_cbsas.add(normalized_name)
+                    cbsa_name_map[normalized_name] = cbsa_name
+            continue
+        
+        # Normalize code
+        normalized_code = normalize_cbsa_for_matching(cbsa_code)
+        if normalized_code:
+            bank_b_required_cbsas.add(normalized_code)
+            if cbsa_name and cbsa_name != '--' and cbsa_name != '0':
+                cbsa_name_map[normalized_code] = cbsa_name
+                # Also map name to code for reverse lookup
+                normalized_name = normalize_cbsa_for_matching(cbsa_name)
+                if normalized_name:
+                    cbsa_name_to_code_map[normalized_name] = normalized_code
+        
+        # Also add by name if code is missing but name exists
+        if not normalized_code and cbsa_name and cbsa_name != '0':
+            normalized_name = normalize_cbsa_for_matching(cbsa_name)
+            if normalized_name:
+                bank_b_required_cbsas.add(normalized_name)  # Use name as key if no code
+                cbsa_name_map[normalized_name] = cbsa_name
+    
+    # Also extract CBSA names from query results if available
+    # Filter out invalid CBSA codes like '0', '99999', etc.
+    for df in [bank_a_hmda_subject, bank_a_hmda_peer, bank_b_hmda_subject, bank_b_hmda_peer,
+                bank_a_sb_subject, bank_a_sb_peer, bank_b_sb_subject, bank_b_sb_peer,
+                bank_a_branch, bank_b_branch]:
+        if df is not None and not df.empty and 'cbsa_code' in df.columns and 'cbsa_name' in df.columns:
+            for _, row in df.iterrows():
+                cbsa_code = str(row.get('cbsa_code', '')).strip()
+                cbsa_name = str(row.get('cbsa_name', '')).strip()
+                # Filter out invalid CBSA codes
+                if cbsa_code and cbsa_code != '--' and cbsa_code.lower() != 'nan' and cbsa_code != '0' and cbsa_code != '99999':
+                    if cbsa_name and cbsa_name != '--' and cbsa_name.lower() not in ['nan', 'none', ''] and cbsa_name != '0':
+                        cbsa_name_map[cbsa_code] = cbsa_name
+    
+    logger.info(f"Built CBSA name map with {len(cbsa_name_map)} entries")
+    logger.info(f"Bank A required CBSAs: {len(bank_a_required_cbsas)}")
+    logger.info(f"Bank B required CBSAs: {len(bank_b_required_cbsas)}")
+
+    # Transform data using shared transformer
+    # Ensure DataFrames are not None (use empty DataFrame instead)
+    bank_a_mortgage_transformed = transform_mortgage_data(
+        subject_df=bank_a_hmda_subject if bank_a_hmda_subject is not None and not bank_a_hmda_subject.empty else pd.DataFrame(),
+        peer_df=bank_a_hmda_peer if bank_a_hmda_peer is not None and not bank_a_hmda_peer.empty else pd.DataFrame(),
+        cbsa_name_map=cbsa_name_map,
+        required_cbsas=bank_a_required_cbsas
     )
     
-    # 1. Assessment Areas Sheet
-    create_simple_assessment_areas_sheet(
-        wb, bank_a_name, bank_b_name, aa_data,
-        header_fill, header_font, border_thin
+    bank_b_mortgage_transformed = transform_mortgage_data(
+        subject_df=bank_b_hmda_subject if bank_b_hmda_subject is not None and not bank_b_hmda_subject.empty else pd.DataFrame(),
+        peer_df=bank_b_hmda_peer if bank_b_hmda_peer is not None and not bank_b_hmda_peer.empty else pd.DataFrame(),
+        cbsa_name_map=cbsa_name_map,
+        required_cbsas=bank_b_required_cbsas
     )
     
-    # 2. Mortgage Data Sheets
-    if bank_a_hmda_subject is not None:
-        create_simple_mortgage_sheet(
-            wb, bank_a_name, bank_a_hmda_subject, bank_a_hmda_peer,
-            header_fill, header_font, border_thin, None
+    # Rename SB columns to match transformer expectations
+    # MergerMeter uses: sb_loans_count, lmict_loans_count, loans_rev_under_1m, lmict_loans_amount, amount_rev_under_1m
+    # Transformer expects: sb_loans_total, lmict_count, loans_rev_under_1m_count, avg_sb_lmict_loan_amount, avg_loan_amt_rum_sb
+    def rename_sb_columns(df):
+        """Rename SB DataFrame columns to match transformer expectations."""
+        if df is None or df.empty:
+            return pd.DataFrame()  # Return empty DataFrame with correct structure
+        
+        df = df.copy()
+        
+        # Log original columns for debugging
+        print(f"[DEBUG] rename_sb_columns - Original columns: {list(df.columns)}")
+        logger.debug(f"Original SB DataFrame columns: {list(df.columns)}")
+        
+        # Rename columns - check if they exist first
+        rename_map = {}
+        if 'sb_loans_count' in df.columns:
+            rename_map['sb_loans_count'] = 'sb_loans_total'
+            print(f"[DEBUG] Will rename sb_loans_count -> sb_loans_total")
+        elif 'sb_loans_total' not in df.columns:
+            warning_msg = "Neither sb_loans_count nor sb_loans_total found in SB DataFrame"
+            print(f"[WARNING] {warning_msg}")
+            logger.warning(warning_msg)
+        
+        if 'lmict_loans_count' in df.columns:
+            rename_map['lmict_loans_count'] = 'lmict_count'
+            print(f"[DEBUG] Will rename lmict_loans_count -> lmict_count")
+        elif 'lmict_count' not in df.columns:
+            warning_msg = "Neither lmict_loans_count nor lmict_count found in SB DataFrame"
+            print(f"[WARNING] {warning_msg}")
+            logger.warning(warning_msg)
+        
+        if 'loans_rev_under_1m' in df.columns:
+            rename_map['loans_rev_under_1m'] = 'loans_rev_under_1m_count'
+            print(f"[DEBUG] Will rename loans_rev_under_1m -> loans_rev_under_1m_count")
+        elif 'loans_rev_under_1m_count' not in df.columns:
+            warning_msg = "Neither loans_rev_under_1m nor loans_rev_under_1m_count found in SB DataFrame"
+            print(f"[WARNING] {warning_msg}")
+            logger.warning(warning_msg)
+        
+        if rename_map:
+            df = df.rename(columns=rename_map)
+        
+        # Calculate averages from raw amounts and counts (before aggregation)
+        # The transformer will aggregate across years, so we calculate per-row averages first
+        if 'lmict_loans_amount' in df.columns and 'lmict_count' in df.columns:
+            # Calculate avg_sb_lmict_loan_amount per row
+            df['avg_sb_lmict_loan_amount'] = df.apply(
+                lambda row: row['lmict_loans_amount'] / row['lmict_count'] 
+                if pd.notna(row['lmict_count']) and row['lmict_count'] > 0 else None, axis=1
+            )
+        elif 'avg_sb_lmict_loan_amount' not in df.columns:
+            # If we don't have the data to calculate, set to None
+            logger.warning("Cannot calculate avg_sb_lmict_loan_amount - missing required columns")
+            df['avg_sb_lmict_loan_amount'] = None
+        
+        if 'amount_rev_under_1m' in df.columns and 'loans_rev_under_1m_count' in df.columns:
+            # Calculate avg_loan_amt_rum_sb per row
+            df['avg_loan_amt_rum_sb'] = df.apply(
+                lambda row: row['amount_rev_under_1m'] / row['loans_rev_under_1m_count']
+                if pd.notna(row['loans_rev_under_1m_count']) and row['loans_rev_under_1m_count'] > 0 else None, axis=1
+            )
+        elif 'avg_loan_amt_rum_sb' not in df.columns:
+            # If we don't have the data to calculate, set to None
+            logger.warning("Cannot calculate avg_loan_amt_rum_sb - missing required columns")
+            df['avg_loan_amt_rum_sb'] = None
+        
+        print(f"[DEBUG] rename_sb_columns - Final columns: {list(df.columns)}")
+        logger.debug(f"Renamed SB DataFrame columns: {list(df.columns)}")
+        
+        # Verify required columns exist
+        required_cols = ['sb_loans_total', 'lmict_count', 'loans_rev_under_1m_count']
+        missing_cols = [col for col in required_cols if col not in df.columns]
+        if missing_cols:
+            error_msg = f"Missing required columns after rename: {missing_cols}. Available columns: {list(df.columns)}"
+            print(f"[ERROR] {error_msg}")
+            logger.error(error_msg)
+            raise ValueError(error_msg)
+        
+        return df
+    
+    try:
+        # Log original column names for debugging
+        if bank_a_sb_subject is not None and not bank_a_sb_subject.empty:
+            print(f"[DEBUG] Bank A SB subject original columns: {list(bank_a_sb_subject.columns)}")
+            logger.info(f"Bank A SB subject original columns: {list(bank_a_sb_subject.columns)}")
+        if bank_a_sb_peer is not None and not bank_a_sb_peer.empty:
+            print(f"[DEBUG] Bank A SB peer original columns: {list(bank_a_sb_peer.columns)}")
+            logger.info(f"Bank A SB peer original columns: {list(bank_a_sb_peer.columns)}")
+        if bank_b_sb_subject is not None and not bank_b_sb_subject.empty:
+            print(f"[DEBUG] Bank B SB subject original columns: {list(bank_b_sb_subject.columns)}")
+            logger.info(f"Bank B SB subject original columns: {list(bank_b_sb_subject.columns)}")
+        if bank_b_sb_peer is not None and not bank_b_sb_peer.empty:
+            print(f"[DEBUG] Bank B SB peer original columns: {list(bank_b_sb_peer.columns)}")
+            logger.info(f"Bank B SB peer original columns: {list(bank_b_sb_peer.columns)}")
+        
+        bank_a_sb_subject_renamed = rename_sb_columns(
+            bank_a_sb_subject.copy() if bank_a_sb_subject is not None and not bank_a_sb_subject.empty else pd.DataFrame()
         )
-    
-    if bank_b_hmda_subject is not None:
-        create_simple_mortgage_sheet(
-            wb, bank_b_name, bank_b_hmda_subject, bank_b_hmda_peer,
-            header_fill, header_font, border_thin, None
+        bank_a_sb_peer_renamed = rename_sb_columns(
+            bank_a_sb_peer.copy() if bank_a_sb_peer is not None and not bank_a_sb_peer.empty else pd.DataFrame()
         )
-    
-    # 3. Small Business Sheets
-    if bank_a_sb_subject is not None:
-        create_simple_sb_sheet(
-            wb, bank_a_name, bank_a_sb_subject, bank_a_sb_peer,
-            header_fill, header_font, border_thin
+        bank_b_sb_subject_renamed = rename_sb_columns(
+            bank_b_sb_subject.copy() if bank_b_sb_subject is not None and not bank_b_sb_subject.empty else pd.DataFrame()
         )
-    
-    if bank_b_sb_subject is not None:
-        create_simple_sb_sheet(
-            wb, bank_b_name, bank_b_sb_subject, bank_b_sb_peer,
-            header_fill, header_font, border_thin
+        bank_b_sb_peer_renamed = rename_sb_columns(
+            bank_b_sb_peer.copy() if bank_b_sb_peer is not None and not bank_b_sb_peer.empty else pd.DataFrame()
         )
-    
-    # 4. Branch Sheets
-    if bank_a_branch is not None:
-        create_simple_branch_sheet(
-            wb, bank_a_name, bank_a_branch,
-            header_fill, header_font, border_thin
+        
+        # Log column names after rename for debugging
+        if not bank_a_sb_subject_renamed.empty:
+            print(f"[DEBUG] Bank A SB subject columns after rename: {list(bank_a_sb_subject_renamed.columns)}")
+            logger.info(f"Bank A SB subject columns after rename: {list(bank_a_sb_subject_renamed.columns)}")
+        else:
+            print(f"[DEBUG] Bank A SB subject DataFrame is empty after rename")
+        if not bank_a_sb_peer_renamed.empty:
+            print(f"[DEBUG] Bank A SB peer columns after rename: {list(bank_a_sb_peer_renamed.columns)}")
+            logger.info(f"Bank A SB peer columns after rename: {list(bank_a_sb_peer_renamed.columns)}")
+        else:
+            print(f"[DEBUG] Bank A SB peer DataFrame is empty after rename")
+        
+        bank_a_sb_transformed = transform_sb_data(
+            subject_df=bank_a_sb_subject_renamed,
+            peer_df=bank_a_sb_peer_renamed,
+            cbsa_name_map=cbsa_name_map,
+            required_cbsas=bank_a_required_cbsas
         )
-    
-    if bank_b_branch is not None:
-        create_simple_branch_sheet(
-            wb, bank_b_name, bank_b_branch,
-            header_fill, header_font, border_thin
+        
+        bank_b_sb_transformed = transform_sb_data(
+            subject_df=bank_b_sb_subject_renamed,
+            peer_df=bank_b_sb_peer_renamed,
+            cbsa_name_map=cbsa_name_map,
+            required_cbsas=bank_b_required_cbsas
         )
+    except Exception as e:
+        error_msg = f"Error transforming SB data: {e}"
+        print(f"[ERROR] {error_msg}")
+        print(f"[ERROR] Exception type: {type(e).__name__}")
+        
+        # Print column information for all SB DataFrames
+        print("\n[ERROR] SB DataFrame Column Information:")
+        if bank_a_sb_subject is not None:
+            print(f"  Bank A SB Subject: {list(bank_a_sb_subject.columns) if not bank_a_sb_subject.empty else 'EMPTY'}")
+        else:
+            print(f"  Bank A SB Subject: None")
+        if bank_a_sb_peer is not None:
+            print(f"  Bank A SB Peer: {list(bank_a_sb_peer.columns) if not bank_a_sb_peer.empty else 'EMPTY'}")
+        else:
+            print(f"  Bank A SB Peer: None")
+        if bank_b_sb_subject is not None:
+            print(f"  Bank B SB Subject: {list(bank_b_sb_subject.columns) if not bank_b_sb_subject.empty else 'EMPTY'}")
+        else:
+            print(f"  Bank B SB Subject: None")
+        if bank_b_sb_peer is not None:
+            print(f"  Bank B SB Peer: {list(bank_b_sb_peer.columns) if not bank_b_sb_peer.empty else 'EMPTY'}")
+        else:
+            print(f"  Bank B SB Peer: None")
+        
+        logger.error(error_msg, exc_info=True)
+        # Return empty DataFrames if transformation fails
+        bank_a_sb_transformed = pd.DataFrame(columns=['assessment_area', 'metric', 'bank_value', 'peer_value', 'difference'])
+        bank_b_sb_transformed = pd.DataFrame(columns=['assessment_area', 'metric', 'bank_value', 'peer_value', 'difference'])
     
-    # 5. Notes/Methodology Sheet
-    create_simple_notes_sheet(wb, bank_a_name, bank_b_name, hmda_years, sb_years)
+    # Transform branch data - need to rename columns to match transformer expectations
+    # MergerMeter uses: market_total_branches, market_branches_in_lmict, market_branches_in_mmct
+    # Transformer expects: other_total_branches, other_branches_in_lmict, other_branches_in_mmct
+    bank_a_branch_for_transform = bank_a_branch.copy() if bank_a_branch is not None and not bank_a_branch.empty else pd.DataFrame()
+    if not bank_a_branch_for_transform.empty:
+        # Rename market columns to other columns
+        rename_map = {
+            'market_total_branches': 'other_total_branches',
+            'market_branches_in_lmict': 'other_branches_in_lmict',
+            'market_branches_in_mmct': 'other_branches_in_mmct'
+        }
+        bank_a_branch_for_transform = bank_a_branch_for_transform.rename(columns=rename_map)
     
-    # 6. HHI Analysis Sheet (if data provided)
+    bank_b_branch_for_transform = bank_b_branch.copy() if bank_b_branch is not None and not bank_b_branch.empty else pd.DataFrame()
+    if not bank_b_branch_for_transform.empty:
+        # Rename market columns to other columns
+        rename_map = {
+            'market_total_branches': 'other_total_branches',
+            'market_branches_in_lmict': 'other_branches_in_lmict',
+            'market_branches_in_mmct': 'other_branches_in_mmct'
+        }
+        bank_b_branch_for_transform = bank_b_branch_for_transform.rename(columns=rename_map)
+    
+    bank_a_branch_transformed = transform_branch_data(
+        branch_df=bank_a_branch_for_transform,
+        cbsa_name_map=cbsa_name_map,
+        required_cbsas=bank_a_required_cbsas
+    )
+    
+    bank_b_branch_transformed = transform_branch_data(
+        branch_df=bank_b_branch_for_transform,
+        cbsa_name_map=cbsa_name_map,
+        required_cbsas=bank_b_required_cbsas
+    )
+    
+    logger.info("Data transformation complete. Calling shared Excel generator...")
+    
+    # Call shared generator
+    shared_create_merger_excel(
+        output_path=output_path,
+        bank_a_name=bank_a_name,
+        bank_b_name=bank_b_name,
+        assessment_areas_data=assessment_areas_data,
+        mortgage_goals_data=mortgage_goals_data if mortgage_goals_data else None,
+        sb_goals_data=sb_goals_data if sb_goals_data is not None and not sb_goals_data.empty else None,
+        bank_a_mortgage_data=bank_a_mortgage_transformed,
+        bank_b_mortgage_data=bank_b_mortgage_transformed,
+        bank_a_mortgage_peer_data=None,  # Peer data is already merged in transformed data
+        bank_b_mortgage_peer_data=None,  # Peer data is already merged in transformed data
+        bank_a_sb_data=bank_a_sb_transformed,
+        bank_b_sb_data=bank_b_sb_transformed,
+        bank_a_sb_peer_data=None,  # Peer data is already merged in transformed data
+        bank_b_sb_peer_data=None,  # Peer data is already merged in transformed data
+        bank_a_branch_data=bank_a_branch_transformed,
+        bank_b_branch_data=bank_b_branch_transformed,
+        years_hmda=hmda_years,
+        years_sb=sb_years,
+        bank_a_lei=bank_a_lei,
+        bank_b_lei=bank_b_lei,
+        bank_a_rssd=bank_a_rssd,
+        bank_b_rssd=bank_b_rssd,
+        bank_a_sb_id=bank_a_sb_id,
+        bank_b_sb_id=bank_b_sb_id,
+        loan_purpose=loan_purpose,
+        action_taken=action_taken,
+        occupancy_type=occupancy_type,
+        total_units=total_units,
+        construction_method=construction_method,
+        not_reverse=not_reverse
+    )
+    
+    logger.info(f"Excel workbook saved to: {output_path}")
+    print(f"\n[OK] Excel workbook saved to: {output_path}")
+    
+    # Add HHI sheet if data provided (shared generator doesn't handle HHI)
     if hhi_data is not None and not hhi_data.empty:
-        _add_hhi_sheet(wb, hhi_data, bank_a_name, bank_b_name)
+        logger.info(f"[HHI] HHI data provided - Shape: {hhi_data.shape}, Columns: {list(hhi_data.columns)}")
+        try:
+            wb = load_workbook(output_path)
+            _add_hhi_sheet(wb, hhi_data, bank_a_name, bank_b_name)
+            wb.save(output_path)
+            logger.info("Added HHI Analysis sheet")
+        except Exception as e:
+            logger.error(f"Could not add HHI sheet: {e}")
+            import traceback
+            traceback.print_exc()
+    else:
+        logger.warning(f"[HHI] No HHI data provided - hhi_data is None: {hhi_data is None}, empty: {hhi_data.empty if hhi_data is not None else 'N/A'}")
+
+
+def _add_hhi_sheet(wb: Workbook, hhi_data: pd.DataFrame, bank_a_name: str, bank_b_name: str):
+    """Add HHI Analysis sheet to workbook for counties where both banks have branches."""
     
-    # Save workbook
-        wb.save(output_path)
-    print(f"\n[OK] Simplified Excel workbook saved to: {output_path}")
-    print(f"   This format is easier to verify and can be reformatted if needed.")
+    logger.info(f"[HHI] Adding HHI sheet - Input data shape: {hhi_data.shape}, Columns: {list(hhi_data.columns)}")
+    
+    # HHI calculator already filters to only counties where both banks have branches
+    # So we can use all the data directly
+    hhi_filtered = hhi_data.copy()
+    
+    if hhi_filtered.empty:
+        logger.warning(f"[HHI] No counties with overlapping branches for HHI analysis")
+        return
+    
+    logger.info(f"[HHI] Writing {len(hhi_filtered)} rows to Excel sheet")
+    
+    ws = wb.create_sheet("HHI Analysis", len(wb.sheetnames))
+    
+    # Header style - NCRC blue (#034ea0)
+    header_fill = PatternFill(start_color="034EA0", end_color="034EA0", fill_type="solid")
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+    
+    # Title
+    row = 1
+    ws.merge_cells(f'A{row}:{get_column_letter(len(hhi_filtered.columns))}{row}')
+    cell = ws.cell(row, 1, f"HHI Analysis - Counties with {bank_a_name} and {bank_b_name} Branches")
+    cell.font = Font(bold=True, size=12)
+    cell.alignment = Alignment(horizontal="center")
+    row += 2
+    
+    # Headers
+    for col_idx, col_name in enumerate(hhi_filtered.columns, 1):
+        cell = ws.cell(row, col_idx, col_name)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = header_alignment
+        cell.border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+    
+    row += 1
+    
+    # Data rows
+    for df_row_idx, df_row in hhi_filtered.iterrows():
+        for col_idx, col_name in enumerate(hhi_filtered.columns, 1):
+            value = df_row[col_name]
+            # Handle NaN/None values - show as empty string instead of "-"
+            if pd.isna(value) or value is None:
+                value = ""
+            # Debug: Log first row to see what we're writing
+            if row == 3 and col_idx == 1:
+                logger.info(f"[HHI] Writing first data row - Column '{col_name}': {value} (type: {type(value)})")
+            cell = ws.cell(row, col_idx, value)
+            
+            # Format numbers (only if value is not empty)
+            if value != "" and pd.api.types.is_numeric_dtype(hhi_filtered[col_name]):
+                if 'hhi' in col_name.lower():
+                    cell.number_format = '#,##0'  # HHI is typically an integer
+                elif 'deposits' in col_name.lower() or 'share' in col_name.lower():
+                    if 'share' in col_name.lower() or 'percent' in col_name.lower():
+                        cell.number_format = '0.00%'
+                    else:
+                        cell.number_format = '$#,##0'
+                else:
+                    cell.number_format = '#,##0'
+            
+            cell.border = Border(
+                left=Side(style='thin'),
+                right=Side(style='thin'),
+                top=Side(style='thin'),
+                bottom=Side(style='thin')
+            )
+        
+        row += 1
+    
+    # Adjust column widths
+    for col_idx, col_name in enumerate(hhi_filtered.columns, 1):
+        col_letter = get_column_letter(col_idx)
+        try:
+            col_max_len = hhi_filtered[col_name].astype(str).str.len().max() if not hhi_filtered[col_name].empty else 10
+        except (ValueError, AttributeError):
+            col_max_len = 10
+        max_length = max(len(str(col_name)), col_max_len)
+        ws.column_dimensions[col_letter].width = min(max_length + 2, 50)
 
 
 def create_simple_assessment_areas_sheet(wb, bank_a_name, bank_b_name, assessment_areas_data,
@@ -642,7 +1133,7 @@ def create_simple_sb_sheet(wb, bank_name, subject_data, peer_data,
         print(f"    No SB data for {bank_name}")
         return
     
-    metrics = ['SB Loans', '#LMICT', 'Avg SB LMICT Loan Amount', 'Loans Rev Under $1m', 'Avg Loan Amt for RUM SB']
+    metrics = ['SB Loans', '#LMICT', 'Avg SB LMICT Loan Amount', 'Loans Rev Under $1m', 'Avg Loan Amt for <$1M GAR SB']
     
     # Handle both column names: sb_loans_total (from merger report queries) and sb_loans_count (from MergerMeter queries)
     sb_loans_col = 'sb_loans_total' if 'sb_loans_total' in subject_data.columns else 'sb_loans_count'
@@ -721,7 +1212,7 @@ def create_simple_sb_sheet(wb, bank_name, subject_data, peer_data,
         elif metric == 'Loans Rev Under $1m':
             ws.cell(row, 3).value = int(grand_total_rev_under_1m)
             ws.cell(row, 3).number_format = '#,##0'
-        elif metric == 'Avg Loan Amt for RUM SB':
+        elif metric == 'Avg Loan Amt for <$1M GAR SB':
             ws.cell(row, 3).value = float(grand_total_avg_rev)
             ws.cell(row, 3).number_format = '#,##0'
         
@@ -739,7 +1230,7 @@ def create_simple_sb_sheet(wb, bank_name, subject_data, peer_data,
             elif metric == 'Loans Rev Under $1m':
                 ws.cell(row, 4).value = int(peer_grand_total_rev_under_1m)
                 ws.cell(row, 4).number_format = '#,##0'
-            elif metric == 'Avg Loan Amt for RUM SB':
+            elif metric == 'Avg Loan Amt for <$1M GAR SB':
                 ws.cell(row, 4).value = float(peer_grand_total_avg_rev)
                 ws.cell(row, 4).number_format = '#,##0'
         
@@ -748,7 +1239,7 @@ def create_simple_sb_sheet(wb, bank_name, subject_data, peer_data,
             sb_loans_row = row - metrics.index(metric)
             ws.cell(row, 5).value = f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)'
             ws.cell(row, 5).number_format = '0.00%'
-        elif metric in ['Avg SB LMICT Loan Amount', 'Avg Loan Amt for RUM SB']:
+        elif metric in ['Avg SB LMICT Loan Amount', 'Avg Loan Amt for <$1M GAR SB']:
             ws.cell(row, 5).value = f'=IFERROR((C{row}/D{row})-1,0)'
             ws.cell(row, 5).number_format = '0.00%'
         
@@ -829,15 +1320,17 @@ def create_simple_sb_sheet(wb, bank_name, subject_data, peer_data,
                 ws.cell(row, 3).value = int(agg['sb_loans_total'])
                 ws.cell(row, 3).number_format = '#,##0'
             elif metric == '#LMICT':
+                # Column C: Loan units (count), not percentage
                 ws.cell(row, 3).value = int(agg['lmict_count'])
                 ws.cell(row, 3).number_format = '#,##0'
             elif metric == 'Avg SB LMICT Loan Amount':
                 ws.cell(row, 3).value = float(agg['avg_sb_lmict_loan_amount'])
                 ws.cell(row, 3).number_format = '#,##0'
             elif metric == 'Loans Rev Under $1m':
+                # Column C: Loan units (count), not percentage
                 ws.cell(row, 3).value = int(agg['loans_rev_under_1m_count'])
                 ws.cell(row, 3).number_format = '#,##0'
-            elif metric == 'Avg Loan Amt for RUM SB':
+            elif metric == 'Avg Loan Amt for <$1M GAR SB':
                 ws.cell(row, 3).value = float(agg['avg_loan_amt_rum_sb'])
                 ws.cell(row, 3).number_format = '#,##0'
             
@@ -884,24 +1377,28 @@ def create_simple_sb_sheet(wb, bank_name, subject_data, peer_data,
                         ws.cell(row, 4).value = int(peer_agg['sb_loans_total'])
                         ws.cell(row, 4).number_format = '#,##0'
                     elif metric == '#LMICT':
+                        # Column D: Loan units (count), not percentage
                         ws.cell(row, 4).value = int(peer_agg['lmict_count'])
                         ws.cell(row, 4).number_format = '#,##0'
                     elif metric == 'Avg SB LMICT Loan Amount':
                         ws.cell(row, 4).value = float(peer_agg['avg_sb_lmict_loan_amount'])
                         ws.cell(row, 4).number_format = '#,##0'
                     elif metric == 'Loans Rev Under $1m':
+                        # Column D: Loan units (count), not percentage
                         ws.cell(row, 4).value = int(peer_agg['loans_rev_under_1m_count'])
                         ws.cell(row, 4).number_format = '#,##0'
-                    elif metric == 'Avg Loan Amt for RUM SB':
+                    elif metric == 'Avg Loan Amt for <$1M GAR SB':
                         ws.cell(row, 4).value = float(peer_agg['avg_loan_amt_rum_sb'])
                         ws.cell(row, 4).number_format = '#,##0'
             
             # Difference formulas (columns shifted: C=Subject, D=Peer, E=Difference)
+            # For #LMICT and Loans Rev Under $1m: Columns C and D are in loan units (counts),
+            # Column E calculates percentage difference: (Subject% - Peer%) where % = metric/SB Loans
             if metric in ['#LMICT', 'Loans Rev Under $1m']:
                 sb_loans_row = row - metrics.index(metric)
                 ws.cell(row, 5).value = f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)'
                 ws.cell(row, 5).number_format = '0.00%'
-            elif metric in ['Avg SB LMICT Loan Amount', 'Avg Loan Amt for RUM SB']:
+            elif metric in ['Avg SB LMICT Loan Amount', 'Avg Loan Amt for <$1M GAR SB']:
                 ws.cell(row, 5).value = f'=IFERROR((C{row}/D{row})-1,0)'
                 ws.cell(row, 5).number_format = '0.00%'
             

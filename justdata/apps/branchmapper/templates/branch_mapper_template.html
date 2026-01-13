@@ -6,6 +6,9 @@
     <title>BranchMapper - Bank Branch Location Map</title>
     <meta name="description" content="Interactive map showing bank branch locations with demographic and deposit data.">
     
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -50,12 +53,12 @@
             box-sizing: border-box;
         }
         
-        /* Force CSS Grid layout with LEFT controls sidebar and RIGHT info sidebar - override ALL other styles including shared CSS */
+        /* Force CSS Grid layout with LEFT controls sidebar - override ALL other styles including shared CSS */
         body .container,
         html body .container,
         .container {
             display: grid !important;
-            grid-template-columns: 280px 1fr 320px !important;
+            grid-template-columns: 280px 1fr !important;
             grid-template-rows: auto !important;
             gap: 20px !important;
             align-items: start !important;
@@ -107,24 +110,13 @@
             flex: unset !important;
         }
         
-        /* Right info sidebar in third column */
+        /* Right info sidebar - hidden */
         body .container > .sidebar,
         html body .container > .sidebar,
         body .container .sidebar,
         .container > .sidebar,
         .container .sidebar {
-            grid-column: 3 !important;
-            grid-row: 1 !important;
-            width: 320px !important;
-            min-width: 320px !important;
-            max-width: 320px !important;
-            position: sticky !important;
-            top: 20px !important;
-            align-self: start !important;
-            display: block !important;
-            flex-shrink: 0 !important;
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
+            display: none !important;
         }
         
         /* Override ALL media queries that might be affecting layout */
@@ -133,7 +125,7 @@
             html body .container,
             .container {
                 display: grid !important;
-                grid-template-columns: 280px 1fr 320px !important;
+                grid-template-columns: 280px 1fr !important;
                 flex-direction: unset !important;
             }
             body .container > .controls-sidebar,
@@ -199,7 +191,7 @@
             html body .container,
             .container {
                 display: grid !important;
-                grid-template-columns: 280px 1fr 320px !important;
+                grid-template-columns: 280px 1fr !important;
                 flex-direction: unset !important;
             }
             body .container > .controls-sidebar,
@@ -524,26 +516,34 @@
     </style>
 </head>
 <body>
-    <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
-    <div class="body-overlay" id="bodyOverlay"></div>
-    
     <!-- Header -->
     <header class="header">
         <div class="header-content">
             <div class="header-layout">
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    </a>
                 </div>
                 <div class="header-title-section">
-                    <h1><span class="app-name-part1">BRANCH</span><span class="app-name-part2">MAPPER</span></h1>
-                    <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
+                    <h1>BranchMapper</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
                 </div>
-                <div class="header-nav-wrapper">
-                    {% include 'nav_menu.html' %}
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- Return to JustData Home Button -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
+        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+            <i class="fas fa-arrow-left"></i> Return to JustData Home
+        </a>
+    </div>
 
     <div class="container">
         <!-- Left Controls Sidebar -->
@@ -629,27 +629,24 @@
                             <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; font-size: 0.75rem; color: #666;">
                                 <div style="display: inline-flex; align-items: center; gap: 4px;">
                                     <span style="display: inline-block; width: 12px; height: 12px; background: #1a1a1a; border: 1px solid #333;"></span>
-                                    <span>Very High (2x+)</span>
-                                </div>
-                                <div style="display: inline-flex; align-items: center; gap: 4px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background: #333333; border: 1px solid #333;"></span>
-                                    <span>High (1.5-2x)</span>
+                                    <span>Q4 (Highest 25%)</span>
                                 </div>
                                 <div style="display: inline-flex; align-items: center; gap: 4px;">
                                     <span style="display: inline-block; width: 12px; height: 12px; background: #666666; border: 1px solid #333;"></span>
-                                    <span>Above Avg (1.2-1.5x)</span>
+                                    <span>Q3 (50-75%)</span>
                                 </div>
                                 <div style="display: inline-flex; align-items: center; gap: 4px;">
                                     <span style="display: inline-block; width: 12px; height: 12px; background: #999999; border: 1px solid #333;"></span>
-                                    <span>Avg (0.8-1.2x)</span>
+                                    <span>Q2 (25-50%)</span>
                                 </div>
                                 <div style="display: inline-flex; align-items: center; gap: 4px;">
                                     <span style="display: inline-block; width: 12px; height: 12px; background: #cccccc; border: 1px solid #333;"></span>
-                                    <span>Below Avg (<0.8x)</span>
+                                    <span>Q1 (Lowest 25%)</span>
                                 </div>
                             </div>
                             <div style="margin-top: 4px; font-style: italic; color: #999; font-size: 0.7rem;">
-                                Minority = All non-Hispanic White excluded
+                                Minority = All non-Hispanic White excluded<br>
+                                Categories based on quartiles of minority % within county
                             </div>
                         </div>
                     </div>
@@ -840,19 +837,28 @@
             }
         }
         
-        // Get gray shade for minority category (darker = higher minority relative to metro)
+        // Get gray shade for minority category (darker = higher minority percentage quartile)
         function getMinorityColor(category) {
             switch(category) {
+                case 'Q4 (Highest 25%)':
+                    return '#1a1a1a';      // Very dark gray - Highest quartile
+                case 'Q3 (50-75%)':
+                    return '#666666';      // Medium-dark gray - Third quartile
+                case 'Q2 (25-50%)':
+                    return '#999999';      // Medium gray - Second quartile
+                case 'Q1 (Lowest 25%)':
+                    return '#cccccc';      // Light gray - Lowest quartile
+                // Legacy support for old categories
                 case 'Very High':
-                    return '#1a1a1a';      // Very dark gray - Very High (2x+ metro)
+                    return '#1a1a1a';
                 case 'High':
-                    return '#333333';      // Dark gray - High (1.5-2x metro)
+                    return '#333333';
                 case 'Above Average':
-                    return '#666666';     // Medium-dark gray - Above Average (1.2-1.5x metro)
+                    return '#666666';
                 case 'Average':
-                    return '#999999';     // Medium gray - Average (0.8-1.2x metro)
+                    return '#999999';
                 case 'Below Average':
-                    return '#cccccc';     // Light gray - Below Average (<0.8x metro)
+                    return '#cccccc';
                 default:
                     return '#e0e0e0';      // Very light gray - Unknown
             }
@@ -905,22 +911,41 @@
                 console.log('Response status:', response.status, response.statusText);
                 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    console.error('API error response:', errorData);
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        console.error('API error response:', errorData);
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } catch (jsonError) {
+                        // Response is not JSON, try to get text
+                        try {
+                            const errorText = await response.text();
+                            console.error('API error response (text):', errorText);
+                            errorMessage = errorText || errorMessage;
+                        } catch (textError) {
+                            console.error('Could not parse error response:', textError);
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
                 
-                const data = await response.json();
-                console.log('API response data:', data);
+                let data;
+                try {
+                    data = await response.json();
+                    console.log('API response data:', data);
+                } catch (jsonError) {
+                    console.error('Failed to parse JSON response:', jsonError);
+                    throw new Error('Invalid JSON response from server');
+                }
                 
                 if (!data.success) {
                     console.error('API returned success=false:', data);
-                    throw new Error(data.error || 'Failed to load census tract data');
+                    throw new Error(data.error || data.message || 'Failed to load census tract data');
                 }
                 
                 if (!data.geojson || !data.geojson.features) {
                     console.error('Invalid GeoJSON data:', data);
-                    throw new Error('Invalid GeoJSON data received');
+                    throw new Error('Invalid GeoJSON data received from server');
                 }
                 
                 console.log('Creating GeoJSON layer with', data.geojson.features.length, 'features');
@@ -997,7 +1022,14 @@
                 
             } catch (error) {
                 console.error('Error loading income layer:', error);
-                updateInfoPanel(`Error loading income data: ${error.message}`);
+                const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    error: error
+                });
+                updateInfoPanel(`Error loading income data: ${errorMessage}`);
             }
         }
         
@@ -1019,14 +1051,31 @@
                 const response = await fetch(`/api/census-tracts/${encodeURIComponent(county)}?income=false&minority=true`);
                 
                 if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorData.message || errorMessage;
+                    } catch (jsonError) {
+                        try {
+                            const errorText = await response.text();
+                            errorMessage = errorText || errorMessage;
+                        } catch (textError) {
+                            console.error('Could not parse error response:', textError);
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
                 
-                const data = await response.json();
+                let data;
+                try {
+                    data = await response.json();
+                } catch (jsonError) {
+                    console.error('Failed to parse JSON response:', jsonError);
+                    throw new Error('Invalid JSON response from server');
+                }
                 
                 if (!data.success) {
-                    throw new Error(data.error || 'Failed to load census tract data');
+                    throw new Error(data.error || data.message || 'Failed to load census tract data');
                 }
                 
                 // Create GeoJSON layer
@@ -1071,7 +1120,7 @@
                                 <hr style="margin: 8px 0;">
                                 <small style="color: #666;">
                                     Minority = Non-Hispanic White excluded<br>
-                                    Categories based on ratio to county average
+                                    ${category.startsWith('Q') ? 'Categories based on quartiles of minority % within county' : 'Categories based on ratio to county average'}
                                 </small>
                             </div>
                         `;
@@ -1094,7 +1143,14 @@
                 
             } catch (error) {
                 console.error('Error loading minority layer:', error);
-                updateInfoPanel(`Error loading minority data: ${error.message}`);
+                const errorMessage = error.message || error.toString() || 'Unknown error occurred';
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name,
+                    error: error
+                });
+                updateInfoPanel(`Error loading minority data: ${errorMessage}`);
             }
         }
         
@@ -2373,99 +2429,6 @@
             }
             
             updateInfoPanel('Map initialized. Select state and county, then click "Load Map" to view 2025 branch data.');
-            
-            // Hamburger menu is handled by shared app.js
-        });
-    </script>
-    
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-col">
-                <h4>BranchMapper</h4>
-                <p>Interactive bank branch location mapping platform</p>
-            </div>
-            <div class="footer-col">
-                <h4>Developed by</h4>
-                <p>NCRC - National Community Reinvestment Coalition<br>
-                Jad Edlebi &amp; Jason Richardson</p>
-            </div>
-            <div class="footer-col">
-                <h4>Links</h4>
-                <p>
-                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
-                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
-                </p>
-            </div>
-            <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2025 JustData - BranchMapper. Powered by AI and BigQuery.<br>
-            <span class="version-text">Version {{ version }}</span>
-        </div>
-    </footer>
-    
-    <!-- Hamburger Menu Functionality -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const navToggle = document.getElementById('navToggle');
-            const navMenu = document.querySelector('.nav-menu');
-            const bodyOverlay = document.getElementById('bodyOverlay');
-            
-            if (navToggle && navMenu) {
-                navToggle.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    this.setAttribute('aria-expanded', !isExpanded);
-                    navMenu.classList.toggle('active');
-                    if (bodyOverlay) bodyOverlay.classList.toggle('active');
-                    document.body.classList.toggle('menu-open');
-                    this.classList.toggle('active');
-                });
-                
-                if (bodyOverlay) {
-                    bodyOverlay.addEventListener('click', function() {
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navMenu.classList.remove('active');
-                        bodyOverlay.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                        navToggle.classList.remove('active');
-                    });
-                }
-                
-                const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-                dropdownToggles.forEach(toggle => {
-                    toggle.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const parentItem = this.closest('.nav-item-dropdown');
-                        if (parentItem) parentItem.classList.toggle('active');
-                    });
-                });
-                
-                const navLinks = document.querySelectorAll('.nav-link:not(.dropdown-toggle)');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function() {
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navMenu.classList.remove('active');
-                        if (bodyOverlay) bodyOverlay.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                        navToggle.classList.remove('active');
-                    });
-                });
-                
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navMenu.classList.remove('active');
-                        if (bodyOverlay) bodyOverlay.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                        navToggle.classList.remove('active');
-                    }
-                });
-            }
         });
     </script>
 </body>

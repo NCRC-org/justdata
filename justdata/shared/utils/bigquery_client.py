@@ -9,7 +9,6 @@ import json
 import tempfile
 from google.cloud import bigquery
 from google.oauth2 import service_account
-from google import auth
 from typing import List, Dict, Any
 
 
@@ -36,53 +35,296 @@ _credential_path_cache = None
 _temp_cred_file = None
 
 def get_bigquery_client(project_id: str = None):
-    """Get BigQuery client using environment-based credentials."""
+    """Get BigQuery client using environment-based credentials.
+    
+    VERSION: 2025-12-17-EXTENSIVE-DEBUGGING
+    """
     from pathlib import Path
-    global _credential_path_cache
+    global _credential_path_cache, _temp_cred_file
+    
+    # VERSION CHECK - Write to file immediately to verify function is called
+    from datetime import datetime
+    import sys
+    import logging
+    
+    # Use absolute path and also write to existing debug log
+    debug_file_path = Path(__file__).parent.parent.parent / "bigquery_client_debug.log"
+    debug_file_path_str = str(debug_file_path)
+    
+    # Also use the existing logger
+    logger = logging.getLogger('bigquery_client')
+    
+    logger.critical(f"========== get_bigquery_client() CALLED - VERSION 2025-12-17-EXTENSIVE-DEBUGGING ==========")
+    logger.critical(f"project_id parameter: {project_id}")
+    print(f"[CRITICAL] get_bigquery_client() CALLED - VERSION 2025-12-17", flush=True)
+    sys.stdout.flush()
     
     try:
-        # First, check environment variable
-        env_cred_path = None
-        if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"):
-            env_cred_path_str = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
-            env_cred_path = Path(env_cred_path_str)
-            
-            # Check if file exists - if not, skip to default credentials (Cloud Run service account)
-            if not env_cred_path.exists():
-                # File doesn't exist - this is OK in Cloud Run, will use service account
-                # Don't try to load it, just skip to default credentials
-                print(f"[INFO] GOOGLE_APPLICATION_CREDENTIALS file not found: {env_cred_path}")
-                print(f"[INFO] Using default service account credentials (Cloud Run service account)")
-            else:
-                # File exists, try to use it
+        with open(debug_file_path_str, 'a', encoding='utf-8') as f:
+            f.write(f"\n{'='*80}\n")
+            f.write(f"[{datetime.now()}] get_bigquery_client() CALLED - VERSION 2025-12-17-EXTENSIVE-DEBUGGING\n")
+            f.write(f"[{datetime.now()}] project_id parameter: {project_id}\n")
+            f.write(f"[{datetime.now()}] Working directory: {Path.cwd()}\n")
+            f.flush()
+    except Exception as e:
+        # If file write fails, at least print to stdout and logger
+        error_msg = f"[CRITICAL] Failed to write debug file: {e}"
+        print(error_msg, flush=True)
+        logger.critical(error_msg)
+        sys.stdout.flush()
+    
+    try:
+        # Ensure unified_env is loaded so credentials are in os.environ
+        try:
+            from justdata.shared.utils.unified_env import ensure_unified_env_loaded
+            ensure_unified_env_loaded(verbose=False)
+        except Exception as e:
+            print(f"[WARNING] Failed to load unified_env: {e}", flush=True)
+        
+        # First, check if credentials are provided as JSON string (for Render/cloud deployments)
+        # Check both exact name and common variations
+        cred_json_str = None
+        found_var_name = None
+        
+        # Check for JSON-specific env vars first
+        # Write to file AND print to ensure we see it
+        debug_file_path = "bigquery_client_debug.log"
+        import sys
+        from datetime import datetime
+        
+        try:
+            with open(debug_file_path, 'a', encoding='utf-8') as f:
+                f.write(f"\n{'='*80}\n")
+                f.write(f"[{datetime.now()}] get_bigquery_client() called with project_id={project_id}\n")
+                f.write(f"[{datetime.now()}] Checking for JSON credentials in environment variables...\n")
+                f.flush()
+        except:
+            pass
+        
+        print(f"[DEBUG] Checking for JSON credentials in environment variables...", flush=True)
+        sys.stdout.flush()
+        env_var_names = ["GOOGLE_APPLICATION_CREDENTIALS_JSON", "GOOGLE_CREDENTIALS_JSON", "GCP_CREDENTIALS_JSON"]
+        for var_name in env_var_names:
+            print(f"[DEBUG]   Checking {var_name}...", flush=True)
+            sys.stdout.flush()
+            try:
+                with open(debug_file_path, 'a', encoding='utf-8') as f:
+                    f.write(f"[{datetime.now()}]   Checking {var_name}...\n")
+                    f.flush()
+            except:
+                pass
+            if var_name in os.environ:
+                cred_json_str = os.environ[var_name]
+                found_var_name = var_name
+                print(f"[INFO] Found credentials in environment variable: {var_name}", flush=True)
+                print(f"[DEBUG]   Value length: {len(cred_json_str)}", flush=True)
+                sys.stdout.flush()
                 try:
+                    with open(debug_file_path, 'a', encoding='utf-8') as f:
+                        f.write(f"[{datetime.now()}]   FOUND {var_name} (length: {len(cred_json_str)})\n")
+                        f.write(f"[{datetime.now()}]   First 100 chars: {cred_json_str[:100]}\n")
+                        f.write(f"[{datetime.now()}]   Last 100 chars: {cred_json_str[-100:]}\n")
+                        f.flush()
+                except:
+                    pass
+                break
+            else:
+                print(f"[DEBUG]   {var_name} not found", flush=True)
+                sys.stdout.flush()
+                try:
+                    with open(debug_file_path, 'a', encoding='utf-8') as f:
+                        f.write(f"[{datetime.now()}]   {var_name} NOT FOUND\n")
+                        f.flush()
+                except:
+                    pass
+        
+        # Also check GOOGLE_APPLICATION_CREDENTIALS - if it looks like JSON (starts with {), use it as JSON
+        # Otherwise it will be treated as a file path later
+        if not cred_json_str and "GOOGLE_APPLICATION_CREDENTIALS" in os.environ:
+            cred_value = os.environ["GOOGLE_APPLICATION_CREDENTIALS"].strip()
+            # If it starts with {, it's JSON content, not a file path
+            if cred_value.startswith('{'):
+                cred_json_str = cred_value
+                found_var_name = "GOOGLE_APPLICATION_CREDENTIALS"
+                print(f"[INFO] Found JSON credentials in GOOGLE_APPLICATION_CREDENTIALS (treating as JSON content)")
+        
+        if cred_json_str:
+            # Strip whitespace in case it was added accidentally
+            cred_json_str = cred_json_str.strip()
+            if not cred_json_str:
+                print("[WARNING] GOOGLE_APPLICATION_CREDENTIALS_JSON is set but empty", flush=True)
+                sys.stdout.flush()
+            else:
+                try:
+                    print(f"[DEBUG] Attempting to parse JSON credentials from {found_var_name} (length: {len(cred_json_str)} chars)...", flush=True)
+                    sys.stdout.flush()
+                    
+                    # Write to debug file
+                    try:
+                        with open(debug_file_path, 'a', encoding='utf-8') as f:
+                            f.write(f"[{datetime.now()}] Parsing JSON credentials (length: {len(cred_json_str)})\n")
+                            f.write(f"[{datetime.now()}] First 100 chars: {cred_json_str[:100]}\n")
+                            f.write(f"[{datetime.now()}] Last 100 chars: {cred_json_str[-100:]}\n")
+                            f.flush()
+                    except:
+                        pass
+                    
+                    cred_dict = json.loads(cred_json_str)
+                    print(f"[DEBUG] Successfully parsed credentials JSON. Project: {cred_dict.get('project_id', 'N/A')}, Client email: {cred_dict.get('client_email', 'N/A')[:50]}...", flush=True)
+                    sys.stdout.flush()
+                    
+                    # Write parsed info to debug file
+                    try:
+                        with open(debug_file_path, 'a', encoding='utf-8') as f:
+                            f.write(f"[{datetime.now()}] Successfully parsed JSON\n")
+                            f.write(f"[{datetime.now()}] Project ID: {cred_dict.get('project_id', 'N/A')}\n")
+                            f.write(f"[{datetime.now()}] Client email: {cred_dict.get('client_email', 'N/A')}\n")
+                            f.write(f"[{datetime.now()}] Private key ID: {cred_dict.get('private_key_id', 'N/A')}\n")
+                            f.write(f"[{datetime.now()}] Has private_key: {'private_key' in cred_dict}\n")
+                            f.flush()
+                    except:
+                        pass
+                    
+                    # Validate it has required fields
+                    if not isinstance(cred_dict, dict):
+                        raise ValueError("Credentials must be a JSON object")
+                    if 'type' not in cred_dict:
+                        raise ValueError("Missing 'type' field in service account JSON")
+                    if 'private_key' not in cred_dict:
+                        raise ValueError("Missing 'private_key' field in service account JSON")
+                    if 'client_email' not in cred_dict:
+                        raise ValueError("Missing 'client_email' field in service account JSON")
+                    
+                    # Create credentials from dict
+                    print("[DEBUG] Creating service account credentials from JSON...", flush=True)
+                    sys.stdout.flush()
+                    
+                    # Write to file for debugging
+                    try:
+                        with open(debug_file_path, 'a', encoding='utf-8') as f:
+                            f.write(f"[{datetime.now()}] Creating service account credentials from JSON...\n")
+                            f.write(f"[{datetime.now()}] Project ID: {cred_dict.get('project_id', 'N/A')}\n")
+                            f.write(f"[{datetime.now()}] Client email: {cred_dict.get('client_email', 'N/A')}\n")
+                            f.write(f"[{datetime.now()}] Private key ID: {cred_dict.get('private_key_id', 'N/A')}\n")
+                            private_key = cred_dict.get('private_key', '')
+                            escaped_newline = '\\n'
+                            f.write(f"[{datetime.now()}] Private key length: {len(private_key)}\n")
+                            f.write(f"[{datetime.now()}] Private key starts with: {private_key[:50]}\n")
+                            f.write(f"[{datetime.now()}] Private key has actual newlines: {chr(10) in private_key}\n")
+                            f.write(f"[{datetime.now()}] Private key has escaped newlines: {escaped_newline in private_key}\n")
+                            f.flush()
+                    except Exception as e:
+                        print(f"[WARNING] Failed to write debug info: {e}", flush=True)
+                    
+                    # Ensure private_key has actual newlines, not escaped ones
+                    # The JSON parser should handle this, but let's be explicit
+                    if 'private_key' in cred_dict:
+                        private_key = cred_dict['private_key']
+                        # If it has escaped newlines (\\n), convert them to actual newlines
+                        if '\\n' in private_key and chr(10) not in private_key:
+                            cred_dict['private_key'] = private_key.replace('\\n', '\n')
+                            print("[DEBUG] Converted escaped newlines to actual newlines in private_key", flush=True)
+                            sys.stdout.flush()
+                    
+                    credentials = service_account.Credentials.from_service_account_info(cred_dict)
+                    client = bigquery.Client(credentials=credentials, project=project_id)
+                    
+                    try:
+                        with open(debug_file_path, 'a', encoding='utf-8') as f:
+                            f.write(f"[{datetime.now()}] BigQuery client created successfully\n")
+                            f.write(f"[{datetime.now()}] Client project: {client.project}\n")
+                            f.flush()
+                    except:
+                        pass
+                    
+                    print("[INFO] Successfully using credentials from GOOGLE_APPLICATION_CREDENTIALS_JSON", flush=True)
+                    sys.stdout.flush()
+                    return client
+                except json.JSONDecodeError as e:
+                    print(f"[ERROR] GOOGLE_APPLICATION_CREDENTIALS_JSON contains invalid JSON: {e}")
+                    print(f"[DEBUG] First 200 chars of value: {cred_json_str[:200]}...")
+                    print("[ERROR] Please check that the JSON is valid and complete")
+                except Exception as e:
+                    print(f"[ERROR] Error parsing GOOGLE_APPLICATION_CREDENTIALS_JSON: {e}")
+                    import traceback
+                    print(f"[DEBUG] Traceback: {traceback.format_exc()}")
+        else:
+            print("[WARNING] GOOGLE_APPLICATION_CREDENTIALS_JSON not found in environment variables", flush=True)
+            available_vars = [k for k in os.environ.keys() if 'GOOGLE' in k or 'GCP' in k or 'CREDENTIAL' in k]
+            print("[INFO] Available env vars (filtered): " + ", ".join(available_vars), flush=True)
+            sys.stdout.flush()
+            
+            # Write to file
+            try:
+                with open(debug_file_path, 'a', encoding='utf-8') as f:
+                    f.write(f"[{datetime.now()}] WARNING: GOOGLE_APPLICATION_CREDENTIALS_JSON not found\n")
+                    f.write(f"[{datetime.now()}] Available env vars: {', '.join(available_vars)}\n")
+                    if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ:
+                        cred_path_val = os.getenv('GOOGLE_APPLICATION_CREDENTIALS', '')
+                        f.write(f"[{datetime.now()}] GOOGLE_APPLICATION_CREDENTIALS value: {cred_path_val[:100]}...\n")
+                    f.flush()
+            except:
+                pass
+        
+        # Second, check environment variable for file path (only if we didn't already use it as JSON)
+        env_cred_path = None
+        if os.environ.get("GOOGLE_APPLICATION_CREDENTIALS") and found_var_name != "GOOGLE_APPLICATION_CREDENTIALS":
+            env_cred_str = os.environ["GOOGLE_APPLICATION_CREDENTIALS"]
+            # Skip if it looks like JSON (already handled above)
+            if env_cred_str.strip().startswith('{'):
+                print("[INFO] GOOGLE_APPLICATION_CREDENTIALS contains JSON, skipping file path check", flush=True)
+                sys.stdout.flush()
+            # Validate that it looks like a file path (not just a hash or invalid value)
+            elif os.sep in env_cred_str or '/' in env_cred_str or '\\' in env_cred_str or env_cred_str.endswith('.json'):
+                env_cred_path = Path(env_cred_str)
+                print(f"[DEBUG] Checking file path: {env_cred_path}", flush=True)
+                sys.stdout.flush()
+                try:
+                    with open(debug_file_path, 'a', encoding='utf-8') as f:
+                        f.write(f"[{datetime.now()}] Checking GOOGLE_APPLICATION_CREDENTIALS file path: {env_cred_path}\n")
+                        f.write(f"[{datetime.now()}] File exists: {env_cred_path.exists()}\n")
+                        f.flush()
+                except:
+                    pass
+                if env_cred_path.exists() and env_cred_path.is_file():
                     # Cache the working path
                     _credential_path_cache = env_cred_path
+                    print(f"[INFO] Using credentials from file: {env_cred_path}", flush=True)
+                    sys.stdout.flush()
+                    try:
+                        with open(debug_file_path, 'a', encoding='utf-8') as f:
+                            f.write(f"[{datetime.now()}] USING FILE PATH CREDENTIALS: {env_cred_path}\n")
+                            f.flush()
+                    except:
+                        pass
                     credentials = service_account.Credentials.from_service_account_file(str(env_cred_path))
                     client = bigquery.Client(credentials=credentials, project=project_id)
                     return client
-                except (FileNotFoundError, OSError, ValueError) as e:
-                    # File was deleted or inaccessible between exists() check and open, or invalid format
-                    print(f"[INFO] Credentials file became unavailable or invalid: {e}")
-                    # Clear cache and fall through to use default credentials
-                    _credential_path_cache = None
+                else:
+                    # Invalid path in env var - log warning but continue to fallback
+                    print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}", flush=True)
+                    sys.stdout.flush()
+            else:
+                # Not a valid file path (might be a hash or other invalid value)
+                print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS contains invalid value (not a file path): {env_cred_str[:50]}...")
+                print("[INFO] Ignoring invalid env var - unsetting it to prevent Google Auth from trying to use it...")
+                # Unset the invalid env var so Google Auth doesn't try to use it
+                if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ:
+                    del os.environ['GOOGLE_APPLICATION_CREDENTIALS']
         
         # If we have a cached path, use it (avoids repeated lookups and messages)
         if _credential_path_cache and _credential_path_cache.exists():
-            try:
-                credentials = service_account.Credentials.from_service_account_file(str(_credential_path_cache))
-                client = bigquery.Client(credentials=credentials, project=project_id)
-                return client
-            except (FileNotFoundError, OSError) as e:
-                # Cached file no longer exists, clear cache and fall through
-                print(f"[INFO] Cached credentials file no longer available: {e}")
-                _credential_path_cache = None
+            credentials = service_account.Credentials.from_service_account_file(str(_credential_path_cache))
+            client = bigquery.Client(credentials=credentials, project=project_id)
+            return client
         
         # Try to find credentials file in common locations
         # Check both the main file and any timestamped backups
         possible_paths = [
+            Path("C:/Code/Dream/config/credentials/hdma1-242116-74024e2eb88f.json"),
             Path("C:/DREAM/config/credentials/hdma1-242116-74024e2eb88f.json"),
             Path("C:/DREAM/config/credentials/hdma1-242116-74024e2eb88f_20251102_180816.json"),  # Backup file
+            Path("C:/Code/Dream/hdma1-242116-74024e2eb88f.json"),
             Path("C:/DREAM/hdma1-242116-74024e2eb88f.json"),
             Path("config/credentials/hdma1-242116-74024e2eb88f.json"),
             Path("hdma1-242116-74024e2eb88f.json"),
@@ -91,6 +333,12 @@ def get_bigquery_client(project_id: str = None):
         ]
         
         # Also search the credentials directory for any matching JSON files
+        cred_dir = Path("C:/Code/Dream/config/credentials")
+        if cred_dir.exists():
+            for json_file in cred_dir.glob("hdma1-*.json"):
+                if json_file not in possible_paths:
+                    possible_paths.append(json_file)
+        
         cred_dir = Path("C:/DREAM/config/credentials")
         if cred_dir.exists():
             for json_file in cred_dir.glob("hdma1-*.json"):
@@ -113,79 +361,30 @@ def get_bigquery_client(project_id: str = None):
                     # Silent - env var issue already handled, just use the found file
                     pass
                 # Don't print anything - credentials found and cached, will be used silently next time
-            try:
-                credentials = service_account.Credentials.from_service_account_file(str(cred_path))
-                client = bigquery.Client(credentials=credentials, project=project_id)
-                return client
-            except (FileNotFoundError, OSError, ValueError) as e:
-                # File became unavailable or invalid, clear cache and fall through
-                print(f"[INFO] Cached credentials file no longer available: {e}")
-                _credential_path_cache = None
-        
-        # If we get here, no credentials file found - use default service account
-        # In Cloud Run, this will automatically use the service account assigned to the service
-        # In local development, this will use gcloud application-default credentials
-        if env_cred_path and not env_cred_path.exists():
-            print(f"[INFO] GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}")
-            print(f"[INFO] Temporarily unsetting GOOGLE_APPLICATION_CREDENTIALS to use default service account")
-            # Temporarily unset the env var so google.auth.default() doesn't try to use it
-            old_cred_path = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
-            try:
-                # Now create client with default credentials (Cloud Run service account)
-                credentials, _ = auth.default()
-                client = bigquery.Client(credentials=credentials, project=project_id)
-                # Restore the env var (in case it's needed elsewhere, though it shouldn't be)
-                if old_cred_path:
-                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
-                return client
-            except Exception as e:
-                # Restore env var even if there's an error
-                if old_cred_path:
-                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
-                raise
-        else:
-            print("[INFO] No credentials file found, using default service account credentials...")
-            # Use default credentials - in Cloud Run this will be the service account
-            # In local dev this will be gcloud application-default credentials
-            client = bigquery.Client(project=project_id)
+            credentials = service_account.Credentials.from_service_account_file(str(cred_path))
+            client = bigquery.Client(credentials=credentials, project=project_id)
             return client
         
+        # If we get here, no credentials found - show warning about env var if it was set
+        if env_cred_path and not env_cred_path.exists():
+            print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}")
+            print(f"[WARNING] No credentials file found in common locations either")
+        
+        # Fallback: try default service account (for cloud deployments)
+        print("[INFO] No credentials file found, trying default service account...")
+        client = bigquery.Client(project=project_id)
+        return client
+        
     except Exception as e:
-        # Check if the error is about a missing credentials file
-        error_str = str(e)
-        if "was not found" in error_str or ("File" in error_str and "not found" in error_str):
-            # This is a file not found error - use default credentials instead
-            print(f"[INFO] Credentials file error detected, using default service account: {e}")
-            try:
-                # Temporarily unset GOOGLE_APPLICATION_CREDENTIALS if it's set
-                old_cred_path = os.environ.pop("GOOGLE_APPLICATION_CREDENTIALS", None)
-                try:
-                    print("[INFO] Attempting to use default application credentials...")
-                    credentials, _ = auth.default()
-                    client = bigquery.Client(credentials=credentials, project=project_id)
-                    # Restore env var
-                    if old_cred_path:
-                        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
-                    return client
-                except Exception as e2:
-                    # Restore env var even on error
-                    if old_cred_path:
-                        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = old_cred_path
-                    print(f"Error with default credentials: {e2}")
-                    raise
-            except Exception as e2:
-                print(f"Error with default credentials: {e2}")
-                raise
-        else:
-            # Some other error - log it and try default credentials as fallback
-            print(f"Error creating BigQuery client: {e}")
-            try:
-                print("[INFO] Attempting to use default application credentials as fallback...")
-                client = bigquery.Client(project=project_id)
-                return client
-            except Exception as e2:
-                print(f"Error with default credentials: {e2}")
-                raise
+        print(f"Error creating BigQuery client: {e}")
+        # Try one more time with default credentials
+        try:
+            print("[INFO] Attempting to use default application credentials...")
+            client = bigquery.Client(project=project_id)
+            return client
+        except Exception as e2:
+            print(f"Error with default credentials: {e2}")
+            raise
 
 
 def execute_query(client: bigquery.Client, sql: str, timeout: int = 120) -> List[Dict[str, Any]]:
@@ -232,7 +431,9 @@ def execute_query(client: bigquery.Client, sql: str, timeout: int = 120) -> List
             data.append(dict(row.items()))
             row_count += 1
             if row_count % 1000 == 0:
-                print(f"[DEBUG] Processed {row_count} rows...")
+                # Only log every 10,000 rows to reduce log verbosity
+                if row_count % 10000 == 0:
+                    print(f"[DEBUG] Processed {row_count} rows...")
         
         print(f"[DEBUG] Query returned {len(data)} total rows")
         return data

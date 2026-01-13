@@ -19,7 +19,7 @@ function initDOMElements() {
 // Form submission handler
 function setupFormHandler() {
     if (!analysisForm) {
-        console.warn('Analysis form not found');
+        // Form doesn't exist on this page (e.g., report page) - silently return
         return;
     }
     
@@ -33,32 +33,8 @@ function setupFormHandler() {
     // Enhanced validation with helpful messages
     let hasErrors = false;
     
-    // Validate year range
-    if (!startYear || !endYear) {
-        const startYearEl = document.getElementById('startYear');
-        if (startYearEl) showValidationMessage(startYearEl, 'Please select both start and end years.', 'error');
-        const endYearEl = document.getElementById('endYear');
-        if (endYearEl) showValidationMessage(endYearEl, 'Please select both start and end years.', 'error');
-        hasErrors = true;
-    } else {
-        const start = parseInt(startYear);
-        const end = parseInt(endYear);
-        const yearRange = end - start + 1;
-        
-        if (start > end) {
-            const startYearEl = document.getElementById('startYear');
-            if (startYearEl) showValidationMessage(startYearEl, 'Start year must be before or equal to end year.', 'error');
-            const endYearEl = document.getElementById('endYear');
-            if (endYearEl) showValidationMessage(endYearEl, 'End year must be after or equal to start year.', 'error');
-            hasErrors = true;
-        } else if (yearRange < 3) {
-            const startYearEl = document.getElementById('startYear');
-            if (startYearEl) showValidationMessage(startYearEl, `You've selected ${yearRange} ${yearRange === 1 ? 'year' : 'years'}. Please select at least 3 years for meaningful analysis.`, 'error');
-            const endYearEl = document.getElementById('endYear');
-            if (endYearEl) showValidationMessage(endYearEl, `You've selected ${yearRange} ${yearRange === 1 ? 'year' : 'years'}. Please select at least 3 years for meaningful analysis.`, 'error');
-            hasErrors = true;
-        }
-    }
+    // Year validation removed - years are now automatically set based on selection type
+    // (County = 2020-2023, Planning Region = 2024 only, Other states = 2020-2024)
     
     // State selection is optional
     const selectedState = $('#state-filter-select').val();
@@ -276,12 +252,16 @@ function disableForm() {
 
 // Enable form
 function enableForm() {
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = '<i class="fas fa-magic"></i><span>Generate Analysis</span>';
+    if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-magic"></i><span>Generate Analysis</span>';
+    }
     
     // Enable inputs and selects
-    const inputs = analysisForm.querySelectorAll('input, select');
-    inputs.forEach(input => input.disabled = false);
+    if (analysisForm) {
+        const inputs = analysisForm.querySelectorAll('input, select');
+        inputs.forEach(input => input.disabled = false);
+    }
 }
 
 // Reset form (for retry button)
@@ -378,7 +358,10 @@ function validateInput(input, type) {
                 message = 'Please select a valid year between 2017-2025.';
                 input.setCustomValidity('Please select a valid year between 2017-2025.');
             } else {
-                // Check if the range is at least 3 years
+                    // Year validation removed - years are automatically set
+                    // (County = 2020-2023, Planning Region = 2024 only)
+                    /*
+                    // Check if the range is at least 3 years
                 const startYearEl = document.getElementById('startYear');
                 const endYearEl = document.getElementById('endYear');
                 const startYear = startYearEl ? startYearEl.value : null;
@@ -393,13 +376,11 @@ function validateInput(input, type) {
                         isValid = false;
                         message = 'Start year must be before or equal to end year.';
                         input.setCustomValidity('Start year must be before or equal to end year.');
-                    } else if (yearRange < 3) {
-                        isValid = false;
-                        message = `You've selected ${yearRange} ${yearRange === 1 ? 'year' : 'years'}. Please select at least 3 years for meaningful analysis.`;
-                        input.setCustomValidity('Please select a range of at least 3 years.');
                     } else {
+                        // Year validation removed - years are automatically set
+                        // Allow any valid year range (planning regions = 1 year, counties = 4 years)
                         isValid = true;
-                        message = `Good! You've selected ${yearRange} years (${start}-${end}).`;
+                        message = `Years automatically set: ${start}-${end}`;
                         messageType = 'success';
                         input.setCustomValidity('');
                     }
@@ -407,10 +388,11 @@ function validateInput(input, type) {
                     isValid = true;
                     input.setCustomValidity('');
                 }
+            */
             }
         }
     }
-    
+
     // Show/hide validation message
     if (message) {
         showValidationMessage(input, message, messageType);
@@ -434,18 +416,18 @@ function initializeTour() {
         startTour();
     });
     
-    // Auto-start tour for first-time visitors
-    if (!hasSeenTour) {
-        // Wait a bit for page to load, then show tour
-        setTimeout(() => {
-            const shouldStart = confirm('Welcome to BranchSeeker! Would you like to take a quick tour to learn how to use the tool?');
-            if (shouldStart) {
-                startTour();
-            } else {
-                localStorage.setItem('branchseeker_tour_completed', 'true');
-            }
-        }, 1000);
-    }
+    // Auto-start tour disabled - users can click "Take a Tour" button if they want
+    // if (!hasSeenTour) {
+    //     // Wait a bit for page to load, then show tour
+    //     setTimeout(() => {
+    //         const shouldStart = confirm('Welcome to BranchSeeker! Would you like to take a quick tour to learn how to use the tool?');
+    //         if (shouldStart) {
+    //             startTour();
+    //         } else {
+    //             localStorage.setItem('branchseeker_tour_completed', 'true');
+    //         }
+    //     }, 1000);
+    // }
 }
 
 // Start the onboarding tour
@@ -544,7 +526,7 @@ $(document).ready(function() {
     }
     
     // State selection validation - check if element exists
-    const stateSelect = $('#state-select');
+    const stateSelect = $('#state-filter-select');
     if (stateSelect.length) {
         stateSelect.on('change', function() {
             if (!this.value) {
@@ -935,11 +917,11 @@ $(document).ready(function() {
     }
     
     // Populate state dropdown
-    if ($('#state-select').length) {
+    if ($('#state-filter-select').length) {
         fetch('/states')
             .then(response => response.json())
             .then(states => {
-                const $stateSelect = $('#state-select');
+                const $stateSelect = $('#state-filter-select');
                 $stateSelect.empty();
                 $stateSelect.append(new Option('Select a state...', ''));
                 states.forEach(state => {
@@ -1155,6 +1137,20 @@ function updateProgressStep(stepId, status = 'active') {
     // Add new status
     stepElement.classList.add(status);
     
+    // Update icon based on status
+    const iconElement = stepElement.querySelector('i');
+    if (iconElement) {
+        if (status === 'completed') {
+            iconElement.className = 'fas fa-check-circle'; // Green checkmark
+        } else if (status === 'active') {
+            // Keep original icon from PROGRESS_STEPS
+            const stepConfig = PROGRESS_STEPS.find(s => s.id === stepId);
+            if (stepConfig) {
+                iconElement.className = `fas ${stepConfig.icon}`;
+            }
+        }
+    }
+    
     // If completing a step, mark previous steps as completed
     if (status === 'completed' || status === 'active') {
         const currentIndex = PROGRESS_STEPS.findIndex(s => s.id === stepId);
@@ -1163,6 +1159,11 @@ function updateProgressStep(stepId, status = 'active') {
             if (prevStep && !prevStep.classList.contains('completed')) {
                 prevStep.classList.remove('pending', 'active');
                 prevStep.classList.add('completed');
+                // Update icon for previous steps too
+                const prevIcon = prevStep.querySelector('i');
+                if (prevIcon) {
+                    prevIcon.className = 'fas fa-check-circle';
+                }
             }
         }
     }
@@ -1172,11 +1173,14 @@ function updateProgressStep(stepId, status = 'active') {
 function mapStepToId(stepName) {
     const stepMap = {
         'initializing': 'initializing',
-        'parsing_params': 'parsing_params',
         'preparing_data': 'preparing_data',
         'connecting_db': 'connecting_db',
         'fetching_data': 'fetching_data',
-        'processing_data': 'processing_data',
+        'building_report': 'building_report',
+        'section_1': 'section_1',
+        'section_2': 'section_2',
+        'section_3': 'section_3',
+        'section_4': 'section_4',
         'generating_ai': 'generating_ai',
         'completed': 'completed'
     };
@@ -1186,13 +1190,21 @@ function mapStepToId(stepName) {
     
     // Try partial matches
     if (stepName.includes('initializ')) return 'initializing';
-    if (stepName.includes('parsing') || stepName.includes('param')) return 'parsing_params';
-    if (stepName.includes('preparing') || stepName.includes('matching')) return 'preparing_data';
+    if (stepName.includes('preparing') || stepName.includes('matching') || stepName.includes('parsing')) return 'preparing_data';
     if (stepName.includes('connect') || stepName.includes('database')) return 'connecting_db';
-    if (stepName.includes('fetch') || stepName.includes('query')) return 'fetching_data';
-    if (stepName.includes('process') || stepName.includes('build')) return 'processing_data';
+    if (stepName.includes('fetch') || stepName.includes('query') || stepName.includes('benchmark')) return 'fetching_data';
+    if (stepName.includes('build') && (stepName.includes('report') || stepName.includes('section'))) return 'building_report';
+    // BizSight specific sections
+    if (stepName.includes('section 1') || stepName.includes('geographic') || stepName.includes('map')) return 'section_1';
+    if (stepName.includes('section 2') || stepName.includes('county summary')) return 'section_2';
+    if (stepName.includes('section 3') || stepName.includes('comparison')) return 'section_3';
+    if (stepName.includes('section 4') || stepName.includes('top lenders')) return 'section_4';
+    // BranchSight specific sections
+    if (stepName.includes('yearly breakdown') || stepName.includes('yearly') && stepName.includes('breakdown')) return 'yearly_breakdown';
+    if (stepName.includes('bank networks') || (stepName.includes('bank') && stepName.includes('network'))) return 'bank_networks';
+    if (stepName.includes('county analysis') || (stepName.includes('county') && stepName.includes('analysis'))) return 'county_analysis';
     if (stepName.includes('ai') || stepName.includes('generating') || stepName.includes('insight')) return 'generating_ai';
-    if (stepName.includes('complete') || stepName.includes('done')) return 'completed';
+    if (stepName.includes('complete') || stepName.includes('done') || stepName.includes('finaliz')) return 'completed';
     
     return null;
 }
@@ -1202,6 +1214,31 @@ function listenForProgress(jobId) {
     console.log(`[DEBUG] Starting progress listener for job: ${jobId}`);
     const evtSource = new EventSource(`/progress/${jobId}`);
     let currentStepId = null;
+    let isCompleted = false; // Track if we've received a completion message
+    
+    // Random fun messages to intersperse with progress updates
+    const funMessages = [
+        "Doing something cool.",
+        "Russell hates this.",
+        "Data drives the movement for economic justice.",
+        "Support the CFPB.",
+        "Fight. Fight. Fight.",
+        "Data geeks to the front.",
+        "This is awesome, isn't it?"
+    ];
+    
+    // Randomly select 1-2 messages for this report run
+    const numMessages = Math.random() < 0.5 ? 1 : 2; // 50% chance of 1, 50% chance of 2
+    const selectedMessages = [];
+    const availableMessages = [...funMessages]; // Copy array to avoid modifying original
+    
+    for (let i = 0; i < numMessages && availableMessages.length > 0; i++) {
+        const randomIndex = Math.floor(Math.random() * availableMessages.length);
+        selectedMessages.push(availableMessages.splice(randomIndex, 1)[0]);
+    }
+    
+    let messageIndex = 0; // Track which fun message to show next
+    let updateCount = 0; // Track number of progress updates received
     
     evtSource.onopen = function(event) {
         console.log('[DEBUG] SSE connection opened');
@@ -1212,7 +1249,35 @@ function listenForProgress(jobId) {
         console.log('[DEBUG] Progress update received:', data);
         
         document.getElementById('progressFill').style.width = data.percent + '%';
-        document.getElementById('progressText').textContent = data.step;
+        // Update progress text - show the current step/section being processed
+        const progressTextEl = document.getElementById('progressText');
+        if (progressTextEl) {
+            updateCount++;
+            
+            // Randomly show fun messages 10-15% of the time (but not on first update or last update)
+            const shouldShowFunMessage = selectedMessages.length > 0 && 
+                                        updateCount > 2 && 
+                                        !data.done && 
+                                        !data.error &&
+                                        Math.random() < 0.12; // 12% chance
+            
+            if (shouldShowFunMessage) {
+                // Show a fun message instead of the actual progress
+                progressTextEl.textContent = selectedMessages[messageIndex % selectedMessages.length];
+                messageIndex++;
+                
+                // After showing fun message, restore actual progress after a short delay
+                setTimeout(() => {
+                    if (progressTextEl && !data.done && !data.error) {
+                        // Restore the actual progress message
+                        progressTextEl.textContent = data.step;
+                    }
+                }, 2000); // Show fun message for 2 seconds
+            } else {
+                // Show normal progress message
+                progressTextEl.textContent = data.step;
+            }
+        }
         
         // Update progress steps
         const stepId = mapStepToId(data.step.toLowerCase());
@@ -1227,6 +1292,7 @@ function listenForProgress(jobId) {
         
         if (data.done || data.error) {
             console.log(`[DEBUG] Progress complete. done: ${data.done}, error: ${data.error}`);
+            isCompleted = true; // Mark as completed before closing
             evtSource.close();
             if (currentStepId) {
                 updateProgressStep(currentStepId, 'completed');
@@ -1235,6 +1301,9 @@ function listenForProgress(jobId) {
                 showError(data.error);
             } else {
                 updateProgressStep('completed', 'completed');
+                if (progressTextEl) {
+                    progressTextEl.textContent = 'Analysis complete!';
+                }
                 showResults(jobId);
             }
             hideProgress();
@@ -1243,6 +1312,14 @@ function listenForProgress(jobId) {
     };
     
     evtSource.onerror = function(event) {
+        // Ignore errors if we've already completed successfully
+        // The connection may close normally after completion, triggering onerror
+        if (isCompleted) {
+            console.log('[DEBUG] SSE connection closed after completion (normal)');
+            return;
+        }
+        
+        // Only show error if we haven't completed yet
         console.error('[ERROR] SSE error:', event);
         console.error('[ERROR] SSE readyState:', evtSource.readyState);
         evtSource.close();

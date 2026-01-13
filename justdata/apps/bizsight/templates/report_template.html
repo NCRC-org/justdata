@@ -5,11 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BizSight - Small Business Lending Report</title>
     
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <!-- Shared Population Demographics Module -->
+    <script src="/shared/population_demographics.js"></script>
     
     <style>
         .report-container {
@@ -30,7 +38,7 @@
         
         .map-and-table-container {
             display: grid;
-            grid-template-columns: 1fr 400px;
+            grid-template-columns: 1fr 500px;
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -87,54 +95,99 @@
         
         .summary-table-container {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
             border: 1px solid #e0e0e0;
             height: 600px;
-            overflow: hidden;
+            overflow-y: auto;
             display: flex;
             flex-direction: column;
+            width: 100%;
+            min-width: 450px;
         }
         
         .summary-table-container h3 {
-            margin: 0 0 15px 0;
+            margin: 0 0 20px 0;
             color: var(--ncrc-primary-blue);
             font-size: 1.2rem;
         }
         
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
+        .summary-cards-vertical {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         
-        .summary-table th {
-            background: var(--ncrc-primary-blue);
-            color: white;
-            padding: 10px;
-            text-align: left;
-            font-size: 0.9rem;
-            font-weight: 600;
+        .summary-card-vertical {
+            background: white;
+            padding: 18px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
         
-        .summary-table td {
-            padding: 12px 10px;
-            border-bottom: 1px solid #e0e0e0;
-            font-size: 0.9rem;
-        }
-        
-        .summary-table tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .summary-table .label {
-            font-weight: 600;
-            color: #333;
-        }
-        
-        .summary-table .value {
-            text-align: right;
-            color: var(--ncrc-dark-blue);
+        .summary-card-vertical .label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 8px;
             font-weight: 500;
+        }
+        
+        .summary-card-vertical .value {
+            font-size: 1.5rem;
+            color: var(--ncrc-dark-blue);
+            font-weight: 700;
+            margin-bottom: 6px;
+            word-break: break-word;
+            line-height: 1.2;
+        }
+        
+        .summary-card-vertical .change {
+            font-size: 0.85rem;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .summary-card-vertical .change.positive {
+            color: #28a745;
+        }
+        
+        .summary-card-vertical .change.negative {
+            color: #dc3545;
+        }
+        
+        .summary-boxes-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+        
+        .summary-box {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .summary-box:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .summary-box-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .summary-box-value {
+            font-size: 1.8rem;
+            color: var(--ncrc-primary-blue);
+            font-weight: 700;
+            line-height: 1.2;
         }
         
         .legend {
@@ -172,7 +225,12 @@
         
         .report-section {
             margin-bottom: 40px;
+            display: block; /* Ensure sections stack vertically */
+            width: 100%; /* Full width */
+            clear: both; /* Prevent floating */
         }
+        
+        /* Removed .sections-row-container CSS - sections should stack vertically, not horizontally */
         
         .section-title {
             color: var(--ncrc-primary-blue);
@@ -199,8 +257,55 @@
             border-radius: 4px;
         }
         
+        .intro-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            line-height: 1.8;
+            color: #333;
+        }
+        
+        .callouts-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .callout-box {
+            flex: 1;
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .callout-box:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .callout-box h3 {
+            margin: 0 0 12px 0;
+            color: var(--ncrc-primary-blue);
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .callout-box p {
+            margin: 0;
+            color: #555;
+            line-height: 1.6;
+            flex: 1;
+        }
+        
         .table-container {
             margin-top: 20px;
+            width: 100%;
+            overflow-x: auto;
         }
         
         .table-header {
@@ -224,10 +329,12 @@
         
         .data-table {
             width: 100%;
+            max-width: 100%;
             border-collapse: collapse;
             margin-top: 10px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             font-size: 0.9rem;
+            table-layout: auto;
         }
         
         .data-table thead {
@@ -249,6 +356,32 @@
             padding: 12px 10px;
             border-bottom: 1px solid #e0e0e0;
             line-height: 1.5;
+        }
+        
+        /* Column width rules for Sections 2-5: First column no-wrap, other columns fixed 100px */
+        /* Note: Inline styles in JavaScript override these, matching LendSight approach */
+        .data-table th:first-child,
+        .data-table td:first-child {
+            white-space: nowrap;
+            width: auto;
+            min-width: 0;
+        }
+        
+        .data-table th:not(:first-child),
+        .data-table td:not(:first-child) {
+            width: 100px;
+            min-width: 100px;
+            max-width: 100px;
+        }
+        
+        /* Exception for Section 4 (Top Lenders) - Lender Name column already has special styling */
+        #topLendersTableNumber th:first-child,
+        #topLendersTableNumber td:first-child,
+        #topLendersTableAmount th:first-child,
+        #topLendersTableAmount td:first-child {
+            white-space: nowrap;
+            width: auto;
+            min-width: 450px;
         }
         
         .data-table tbody tr:hover {
@@ -280,6 +413,15 @@
             border-radius: 8px;
             border-left: 3px solid var(--ncrc-secondary-blue);
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* Section 2 narrative extends to full width */
+        #section2 .table-narrative {
+            width: 100%;
+            margin-left: -20px;
+            margin-right: -20px;
+            padding-left: 20px;
+            padding-right: 20px;
         }
         
         .table-narrative p {
@@ -480,18 +622,20 @@
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light);">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
+    <div class="report-container">
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="/static/img/ncrc-logo.png" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    </a>
                 </div>
                 <div class="header-title-section">
-                    <h1><span class="app-name-part1">BIZ</span><span class="app-name-part2">SIGHT</span></h1>
+                    <h1>BizSight</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
                 </div>
                 <div class="header-tagline">
-                    <p class="tagline-text"><em>Data drives the<br><span class="movement-text">movement</span></em></p>
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -533,19 +677,38 @@
         
         <div id="reportContent">
         
-        <!-- Section 1: Geographic Overview and Tract-Level Analysis -->
+        <!-- Section 1: Introduction -->
         <div class="report-section" id="section1" style="margin-bottom: 30px;">
-            <h2 class="section-title">Section 1: Geographic Overview and Tract-Level Analysis</h2>
+            <h2 class="section-title">Section 1: Introduction</h2>
             <div id="section1Intro" style="margin-bottom: 20px; line-height: 1.8; color: #333;">
-                <p>This report provides a comprehensive analysis of small business lending activity in <span id="introCountyName">the selected county</span> for the years 2020 to 2024. The analysis is based on data collected under the Community Reinvestment Act (CRA), which requires financial institutions to report information about small business loan applications and originations.</p>
+                <p>This report provides a comprehensive analysis of small business lending activity in <span id="introCountyName">the selected county</span> for the most recent five years (2020-2024). The analysis is based on data collected under the <a href="https://ncrc.org/communityreinvestmentact" target="_blank" rel="noopener noreferrer">Community Reinvestment Act</a> (CRA), which requires financial institutions to report information about small business loan applications and originations.</p>
                 
-                <p><strong>Data Coverage:</strong> This report includes tract-level and county-level data on small business lending, including loan counts and amounts by loan size categories (under $100K, $100K-$250K, $250K-$1M), lending to businesses with revenues under $1 million, and lending in Low- and Moderate-Income (LMI) census tracts. The data also includes demographic information from the U.S. Census Bureau, including tract-level income, population, and racial/ethnic composition.</p>
+                <div style="margin: 20px 0; padding: 15px; background: #e8f4f8; border-left: 4px solid #2fade3; border-radius: 4px;">
+                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-info-circle"></i> Data Coverage:</strong> This report includes tract-level and county-level data on small business lending, including loan counts and amounts by loan size categories, lending to businesses with revenues under $1 million, and lending in Low- and Moderate-Income (LMI) census tracts. The data also includes demographic information from the <a href="https://www.census.gov/" target="_blank" rel="noopener noreferrer">U.S. Census Bureau</a>, including tract-level income, population, and racial/ethnic composition.</p>
+                </div>
                 
-                <p><strong>Limitations:</strong> The data in this report reflects only lending activity reported by financial institutions subject to Community Reinvestment Act (CRA) reporting requirements. It does not include lending by institutions that are exempt from reporting, nor does it include non-traditional lending sources such as online lenders, fintech companies, or alternative financing providers that may not be subject to CRA reporting requirements. Additionally, the data may not capture the full extent of small business lending activity, particularly for very small loans or loans to businesses that do not meet the reporting thresholds.</p>
+                <div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-exclamation-triangle"></i> Limitations:</strong> The data in this report reflects only lending activity reported by financial institutions subject to <a href="https://ncrc.org/communityreinvestmentact" target="_blank" rel="noopener noreferrer">Community Reinvestment Act</a> (CRA) reporting requirements. It does not include lending by institutions that are exempt from reporting, nor does it include non-traditional lending sources such as online lenders, fintech companies, or alternative financing providers that may not be subject to CRA reporting requirements.</p>
+                </div>
                 
-                <p><strong>Important Note on PPP Lending:</strong> In 2020 and 2021, the Paycheck Protection Program (PPP) significantly impacted small business lending patterns. PPP loans, which were government-guaranteed and designed to help businesses maintain payroll during the COVID-19 pandemic, are included in this data and may distort year-over-year comparisons for those years. The analysis in this report compares 2018 (pre-PPP) to 2024 (post-PPP) to provide a clearer picture of underlying lending trends while avoiding the distortion caused by PPP lending in 2020-2021.</p>
+                <div style="margin: 20px 0; padding: 15px; background: #f8d7da; border-left: 4px solid #dc3545; border-radius: 4px;">
+                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-info-circle"></i> Section 1071 Data Not Available:</strong> <a href="https://ncrc.org/section1071/" target="_blank" rel="noopener noreferrer">Section 1071</a> of the Dodd-Frank Act has still not been implemented. As a result, this report does not include data on race, ethnicity, or other demographic details about borrowers or the businesses receiving loans. For more information on Section 1071 and its implementation status, visit <a href="https://ncrc.org/section1071/" target="_blank" rel="noopener noreferrer">NCRC's Section 1071 resource page</a>.</p>
+                </div>
+                
+                <div style="margin: 20px 0; padding: 15px; background: #e8f4f8; border-left: 4px solid #2fade3; border-radius: 4px;">
+                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-info-circle"></i> Paycheck Protection Program (PPP):</strong> In 2020 and 2021, the Paycheck Protection Program (PPP) significantly impacted small business lending patterns. PPP loans, which were government-guaranteed and designed to help businesses maintain payroll during the COVID-19 pandemic, are included in this data and may distort year-over-year comparisons for those years. The analysis in this report compares 2020 (baseline year) to 2024 (most recent) to provide a clearer picture of underlying lending trends. For more information, see NCRC's research on <a href="https://ncrc.org/lending-discrimination-during-covid-19-black-and-hispanic-women-owned-businesses/" target="_blank" rel="noopener noreferrer">lending discrimination during COVID-19</a>, <a href="https://ncrc.org/ncrc-paycheck-protection-plan-preliminary-analysis/" target="_blank" rel="noopener noreferrer">preliminary PPP analysis</a>, and <a href="https://www.ncrc.org/lending-discrimination-within-the-paycheck-protection-program/" target="_blank" rel="noopener noreferrer">lending discrimination within the PPP</a>.</p>
+                </div>
             </div>
         </div>
+        
+        <!-- Population Demographics Section -->
+        {% if metadata and metadata.historical_census_data %}
+            {% set historical_census_data = metadata.historical_census_data %}
+            {% set section_title = "Population Demographics (Adult Population 18+)" %}
+            {% set chart_height = 400 %}
+            {% set canvas_id = "bizsightPopulationDemographicsChart" %}
+            {% include 'shared/web/templates/population_demographics_section.html' %}
+        {% endif %}
         
         <div class="map-and-table-container">
             <!-- Map Container -->
@@ -588,44 +751,26 @@
                 </div>
             </div>
             
-            <!-- Summary Table -->
+            <!-- Summary Statistics Boxes -->
             <div class="summary-table-container">
                 <h3><i class="fas fa-chart-bar"></i> Summary Statistics (2024)</h3>
-                <table class="summary-table">
-                    <thead>
-                        <tr>
-                            <th>Metric</th>
-                            <th>Value</th>
-                        </tr>
-                    </thead>
-                    <tbody id="summaryTableBody">
-                        <tr>
-                            <td class="label">Total Loans</td>
-                            <td class="value">-</td>
-                        </tr>
-                        <tr>
-                            <td class="label">Total Loan Amount</td>
-                            <td class="value">-</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <!-- Treemap Charts Toggle -->
-                <div style="margin-top: 15px; text-align: center; flex-shrink: 0;">
-                    <div style="display: inline-flex; gap: 10px; background: #f5f5f5; padding: 5px; border-radius: 5px;">
-                        <button id="treemapToggleLoans" class="treemap-toggle-btn active" onclick="switchTreemap('loans')" style="padding: 6px 12px; border: none; background: var(--ncrc-primary-blue); color: white; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">
-                            Number of Loans
-                        </button>
-                        <button id="treemapToggleAmounts" class="treemap-toggle-btn" onclick="switchTreemap('amounts')" style="padding: 6px 12px; border: none; background: #ccc; color: #333; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 0.85rem;">
-                            Amount of Loans
-                        </button>
+                <div class="summary-boxes-container" id="summaryBoxesContainer">
+                    <div class="summary-box">
+                        <div class="summary-box-label">Number of Loans</div>
+                        <div class="summary-box-value" id="summaryBoxLoans">-</div>
                     </div>
-                </div>
-                
-                <!-- Treemap Charts Container -->
-                <div style="margin-top: 10px; flex: 1; min-height: 0; display: flex; flex-direction: column;">
-                    <div id="treemapLoans" style="width: 100%; flex: 1; min-height: 200px;"></div>
-                    <div id="treemapAmounts" style="width: 100%; flex: 1; min-height: 200px; display: none;"></div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Amount of Loans</div>
+                        <div class="summary-box-value" id="summaryBoxAmount">-</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Amount to Businesses with Under $1M in Revenue</div>
+                        <div class="summary-box-value" id="summaryBoxUnder1M">-</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Amount to Businesses in Low and Moderate Income Neighborhoods</div>
+                        <div class="summary-box-value" id="summaryBoxLMI">-</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -633,9 +778,15 @@
         <!-- Section 2: County Summary (2020-2024) -->
         <div class="report-section print-break" id="section2" style="margin-top: 40px;">
             <h2 class="section-title">Section 2: County Summary (2020-2024)</h2>
-            <p class="table-introduction" id="countySummaryIntro">
-                <!-- 2 sentences will be populated by JavaScript -->
-            </p>
+            
+            <!-- Intro Text - Full width above table -->
+            <div class="ai-insight-card" style="margin-bottom: 20px;">
+                <div class="ai-content" id="countySummaryIntro">
+                    <!-- 2 sentences will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Table - Full width -->
             <div class="table-container">
                 <!-- Tab Navigation -->
                 <div style="display: flex; border-bottom: 2px solid var(--ncrc-primary-blue); margin-bottom: 0;">
@@ -653,13 +804,12 @@
                         <thead>
                             <tr>
                                 <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Variable</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2018</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2019</th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2020</th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2021</th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2022</th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2023</th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2024</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Change (2020→2024)</th>
                             </tr>
                         </thead>
                         <tbody id="countySummaryTableNumberBody">
@@ -673,14 +823,12 @@
                     <table class="data-table" id="countySummaryTableAmount" role="table" aria-label="County Summary - Amount of Loans">
                         <thead>
                             <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Variable</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2018</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2019</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2020</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2021</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2022</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2023</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2024</th>
+                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; white-space: nowrap; width: auto; min-width: 0;">Variable</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2020</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2021</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2022</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2023</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2024</th>
                             </tr>
                         </thead>
                         <tbody id="countySummaryTableAmountBody">
@@ -688,22 +836,33 @@
                         </tbody>
                     </table>
                 </div>
-                
-                <p class="table-caption" id="countySummaryCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic;">
-                    <!-- Caption will be populated by JavaScript -->
-                </p>
             </div>
+            
+            <!-- Source Caption - Full width below table -->
+            <p class="table-caption" id="countySummaryCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic; width: 100%;">
+                <!-- Caption will be populated by JavaScript -->
+            </p>
+            
             <div class="table-narrative" id="countySummaryDiscussion" role="region" aria-label="County Summary Analysis">
                 <!-- AI narrative will be populated by JavaScript -->
             </div>
+            <p id="countySummaryAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
         </div>
         
         <!-- Section 3: County, State, and National Comparison (2024) -->
-        <div class="report-section print-break" id="section3" style="margin-top: 40px;">
+        <div class="report-section print-break" id="section3">
             <h2 class="section-title">Section 3: County, State, and National Comparison (2024)</h2>
-            <p class="table-introduction" id="comparisonIntro">
-                <!-- Will be populated by JavaScript -->
-            </p>
+            
+            <!-- Intro Text - Full width above table -->
+            <div class="ai-insight-card" style="margin-bottom: 20px;">
+                <div class="ai-content" id="comparisonIntro">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Table - Full width -->
             <div class="table-container">
                 <!-- Tab Navigation -->
                 <div style="display: flex; border-bottom: 2px solid var(--ncrc-primary-blue); margin-bottom: 0;">
@@ -720,11 +879,11 @@
                     <table class="data-table" id="comparisonTableNumber" role="table" aria-label="Comparison - Number of Loans">
                         <thead>
                             <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Metric</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">County (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">State (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">National (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">% Change Since 2018</th>
+                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; white-space: nowrap; width: auto; min-width: 0;">Metric</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">County (2024)</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">State (2024)</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">National (2024)</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">Change</th>
                             </tr>
                         </thead>
                         <tbody id="comparisonTableNumberBody">
@@ -738,11 +897,11 @@
                     <table class="data-table" id="comparisonTableAmount" role="table" aria-label="Comparison - Amount of Loans">
                         <thead>
                             <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Metric</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">County (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">State (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">National (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">% Change Since 2018</th>
+                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; white-space: nowrap; width: auto; min-width: 0;">Metric</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">County (2024)</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">State (2024)</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">National (2024)</th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">Change</th>
                             </tr>
                         </thead>
                         <tbody id="comparisonTableAmountBody">
@@ -750,22 +909,33 @@
                         </tbody>
                     </table>
                 </div>
-                
-                <p class="table-caption" id="comparisonCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic;">
-                    <!-- Caption will be populated by JavaScript -->
-                </p>
             </div>
+            
+            <!-- Source Caption - Full width below table -->
+            <p class="table-caption" id="comparisonCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic; width: 100%;">
+                <!-- Caption will be populated by JavaScript -->
+            </p>
+            
             <div class="table-narrative" id="comparisonDiscussion" role="region" aria-label="Comparison Analysis">
                 <!-- AI narrative will be populated by JavaScript -->
             </div>
+            <p id="comparisonAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
         </div>
         
         <!-- Section 4: Top Lenders by Number of Loans (2024) -->
-        <div class="report-section print-break" id="section4" style="margin-top: 40px;">
+        <div class="report-section print-break" id="section4">
             <h2 class="section-title">Section 4: Top Lenders by Number of Loans (2024)</h2>
-            <p class="table-introduction" id="topLendersIntro">
-                <!-- 2 sentences will be populated by JavaScript -->
-            </p>
+            
+            <!-- Intro Text - Full width above table -->
+            <div class="ai-insight-card" style="margin-bottom: 20px;">
+                <div class="ai-content" id="topLendersIntro">
+                    <!-- 2 sentences will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <!-- Table - Full width -->
             <div class="table-container">
                 <!-- Tab Navigation -->
                 <div style="display: flex; border-bottom: 2px solid var(--ncrc-primary-blue); margin-bottom: 0;">
@@ -787,16 +957,16 @@
                     <table class="data-table collapsible-table" id="topLendersTableNumber" role="table" aria-label="Top Lenders - Number of Loans">
                         <thead>
                             <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 0)" aria-label="Sort by Lender Name" tabindex="0" role="button">Lender Name <i class="fas fa-sort"></i></th>
+                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 450px; width: auto;" onclick="sortTable('topLendersTableNumber', 0)" aria-label="Sort by Lender Name" tabindex="0" role="button">Lender Name <i class="fas fa-sort"></i></th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 1)" aria-label="Sort by Num Total" tabindex="0" role="button">Num Total <i class="fas fa-sort"></i></th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 2)">Num Under 100K (%) <i class="fas fa-sort"></i></th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 3)">Num 100K 250K (%) <i class="fas fa-sort"></i></th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 4)">Num 250K 1M (%) <i class="fas fa-sort"></i></th>
                                 <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 5)">Numsb Under 1M (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 6)">Low Income (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 7)">Moderate Income (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 8)">Middle Income (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 9)">Upper Income (%) <i class="fas fa-sort"></i></th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 6)" id="headerLowIncomeNumber">Low Income (%) <i class="fas fa-sort"></i></th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 7)" id="headerModerateIncomeNumber">Moderate Income (%) <i class="fas fa-sort"></i></th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 8)" id="headerMiddleIncomeNumber">Middle Income (%) <i class="fas fa-sort"></i></th>
+                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 9)" id="headerUpperIncomeNumber">Upper Income (%) <i class="fas fa-sort"></i></th>
                             </tr>
                         </thead>
                         <tbody id="topLendersTableBodyNumber">
@@ -815,16 +985,16 @@
                     <table class="data-table collapsible-table" id="topLendersTableAmount" role="table" aria-label="Top Lenders - Amount of Loans">
                     <thead>
                         <tr>
-                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 0)" aria-label="Sort by Lender Name" tabindex="0" role="button">Lender Name <i class="fas fa-sort"></i></th>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 450px; width: auto;" onclick="sortTable('topLendersTableAmount', 0)" aria-label="Sort by Lender Name" tabindex="0" role="button">Lender Name <i class="fas fa-sort"></i></th>
                             <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 1)">Amt Total (in $000s) <i class="fas fa-sort"></i></th>
                             <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 2)">Amt Under 100K (%) <i class="fas fa-sort"></i></th>
                             <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 3)">Amt 100K 250K (%) <i class="fas fa-sort"></i></th>
                             <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 4)">Amt 250K 1M (%) <i class="fas fa-sort"></i></th>
                             <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 5)">Amtsb Under 1M (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 6)">Low Income (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 7)">Moderate Income (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 8)">Middle Income (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 9)">Upper Income (%) <i class="fas fa-sort"></i></th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 6)" id="headerLowIncomeAmount">Low Income (%) <i class="fas fa-sort"></i></th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 7)" id="headerModerateIncomeAmount">Moderate Income (%) <i class="fas fa-sort"></i></th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 8)" id="headerMiddleIncomeAmount">Middle Income (%) <i class="fas fa-sort"></i></th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 9)" id="headerUpperIncomeAmount">Upper Income (%) <i class="fas fa-sort"></i></th>
                         </tr>
                     </thead>
                         <tbody id="topLendersTableBodyAmount">
@@ -832,30 +1002,67 @@
                         </tbody>
                     </table>
                 </div>
-                
-                <p class="table-caption" id="topLendersCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic;">
-                    <!-- Caption will be populated by JavaScript -->
-                </p>
             </div>
+            
+            <!-- Source Caption - Full width below table -->
+            <p class="table-caption" id="topLendersCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic; width: 100%;">
+                <!-- Caption will be populated by JavaScript -->
+            </p>
+            
             <div class="table-narrative" id="topLendersDiscussion" role="region" aria-label="Top Lenders Analysis">
                 <!-- AI narrative will be populated by JavaScript -->
             </div>
+            <p id="topLendersAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
         </div>
         
-        <!-- Section 5: Market Concentration Trends (HHI by Year) -->
+        <!-- Section 5: Market Concentration (Moved to end, before Methods) -->
         <div class="report-section print-break" id="section5" style="margin-top: 40px;">
-            <h2 class="section-title">Section 5: Market Concentration Trends (2020-2024)</h2>
-            <p class="table-introduction" id="hhiTrendsIntro" style="margin-bottom: 20px;">
-                This chart shows the Herfindahl-Hirschman Index (HHI) for small business lending in the county from 2020 to 2024. The HHI is calculated using the total dollar amount of loans by all lenders in each year, measuring market concentration on a scale from 0 to 10,000. Higher values indicate greater market concentration, while lower values suggest a more competitive market.
-            </p>
-            <div class="table-container" style="margin-bottom: 20px;">
-                <div id="hhiByYearChart" style="width: 100%; height: 400px; margin: 20px 0;">
-                    <!-- HHI by year chart will be populated by JavaScript -->
+            <h2 class="section-title">Section 5: Market Concentration</h2>
+            <div style="display: flex; gap: 20px; align-items: flex-start;">
+                <!-- Intro Text - 1/3 width -->
+                <div style="flex: 0 0 33.333%;">
+                    <div class="ai-insight-card">
+                        <div class="ai-content" id="hhiTrendsIntro">
+                            <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+                            <p>This chart and table present the HHI for small business lending in the selected counties across the selected years, providing insight into how competitive the small business lending market is.</p>
+                        </div>
+                    </div>
+                    <p class="table-caption" style="margin-top: 15px;">
+                        <strong>Source:</strong> HMDA Section 1071 Small Business Lending data, compiled and maintained in NCRC's curated databases. 
+                        <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. 
+                        HHI values range from 0 to 10,000. 
+                        <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.
+                    </p>
+                </div>
+                
+                <!-- Chart and Table - 2/3 width -->
+                <div style="flex: 0 0 66.667%;">
+                    <div class="chart-container" style="height: 400px; margin-bottom: 20px;">
+                        <canvas id="hhiByYearChart"></canvas>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table" id="hhiByYearTable">
+                            <thead>
+                                <tr>
+                                    <th style="text-align: left;">Year</th>
+                                    <th style="text-align: center;">HHI</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             <div class="table-narrative" id="hhiTrendsDiscussion" role="region" aria-label="Market Concentration Trends Analysis">
                 <!-- AI narrative will be populated by JavaScript -->
             </div>
+            <p id="hhiTrendsAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                Above text is AI generated from NCRC data and analysis
+            </p>
         </div>
         
         <!-- Section 6: Methods, Definitions, and AI Disclosure -->
@@ -983,8 +1190,8 @@
                     document.getElementById('reportMetadata').textContent = 
                         `${metadata.county_name} • Years: ${metadata.year_range}`;
                     
-                    // Update summary table
-                    updateSummaryTable(data.summary_table);
+                    // Update summary cards (pass county summary data for 2020 baseline)
+                    updateSummaryTable(data.summary_table, data.county_summary_table);
                     
                     // Load tract data for map
                     tractData = data.tract_data_for_map || [];
@@ -1060,8 +1267,16 @@
                     }
                     
                     // Populate AI narratives
+                    console.log('[DEBUG] AI Insights check:', {
+                        hasAiInsights: !!data.ai_insights,
+                        aiInsightsKeys: data.ai_insights ? Object.keys(data.ai_insights) : [],
+                        aiInsightsEnabled: metadata?.ai_insights_enabled,
+                        metadataKeys: metadata ? Object.keys(metadata) : []
+                    });
                     if (data.ai_insights) {
                         populateAINarratives(data.ai_insights, metadata);
+                    } else {
+                        console.warn('[WARNING] No AI insights data provided');
                     }
                     
                     // Populate Section 1 intro county name
@@ -1229,9 +1444,9 @@
                 }
             }
             
-            const amounts2018 = (yearAmountsData['2018'] || 0) * 1000;
+            const amounts2020 = (yearAmountsData['2020'] || 0) * 1000;
             const amounts2024 = (yearAmountsData['2024'] || 0) * 1000;
-            const trend = amounts2018 > 0 ? ((amounts2024 - amounts2018) / amounts2018 * 100) : 0;
+            const trend = amounts2020 > 0 ? ((amounts2024 - amounts2020) / amounts2020 * 100) : 0;
             const trendText = trend > 0 ? `+${trend.toFixed(0)}%` : `${trend.toFixed(0)}%`;
             const trendColor = trend > 0 ? '#28a745' : trend < 0 ? '#dc3545' : '#6c757d';
             
@@ -1266,9 +1481,9 @@
                             <span style="color: #333;">${formatAmount(avgAmountPerLoan * 1000)}</span>
                         </div>
                         ` : ''}
-                        ${amounts2018 > 0 ? `
+                        ${amounts2020 > 0 ? `
                         <div style="margin-bottom: 6px;">
-                            <span style="color: #666; font-weight: 600;">Change (2018→2024):</span> 
+                            <span style="color: #666; font-weight: 600;">Change (2020→2024):</span> 
                             <span style="color: ${trendColor}; font-weight: 600;">${trendText}</span>
                         </div>
                         ` : ''}
@@ -1653,7 +1868,7 @@
             }
         }
         
-        function populateCountySummaryTable(data, metadata) {
+        function populateCountySummaryTable(data, metadata, summaryTable) {
             if (!data || data.length === 0) return;
             
             const tbodyNumber = document.getElementById('countySummaryTableNumberBody');
@@ -1661,7 +1876,7 @@
             if (!tbodyNumber || !tbodyAmount) return;
             
             // Data is now a DataFrame-like structure with Variable column and year columns
-            const years = ['2018', '2019', '2020', '2021', '2022', '2023', '2024'];
+            const years = ['2020', '2021', '2022', '2023', '2024'];
             
             // Format value based on variable name
             function formatValue(varName, value) {
@@ -1669,8 +1884,8 @@
                 
                 // Check for percentage indicators FIRST (before other checks)
                 if (varName.includes('%') || varName.includes('(% of Total)')) {
-                    // Percentage format
-                    return parseFloat(value).toFixed(2) + '%';
+                    // Percentage format: ##.#%
+                    return parseFloat(value).toFixed(1) + '%';
                 } else if (varName === 'Total Loans') {
                     // Integer format for total loans only
                     return parseInt(value).toLocaleString();
@@ -1720,37 +1935,141 @@
                 }
             });
             
+            // Helper function to calculate change
+            const calculateChange = (varName, value2020, value2024) => {
+                if (value2020 === null || value2020 === undefined || isNaN(value2020) ||
+                    value2024 === null || value2024 === undefined || isNaN(value2024)) {
+                    return '-';
+                }
+                
+                const val2020 = parseFloat(value2020);
+                const val2024 = parseFloat(value2024);
+                
+                // For Total Loans (integers), calculate percentage change
+                if (varName === 'Total Loans') {
+                    if (val2020 === 0) return '-';
+                    const pctChange = ((val2024 - val2020) / val2020) * 100;
+                    const sign = pctChange >= 0 ? '+' : '';
+                    return `${sign}${pctChange.toFixed(1)}%`;
+                }
+                // For percentage rows, calculate percentage point change
+                else if (varName.includes('%') || varName.includes('(% of Total)')) {
+                    const ppChange = val2024 - val2020;
+                    const sign = ppChange >= 0 ? '+' : '';
+                    return `${sign}${ppChange.toFixed(2)} pp`;
+                }
+                // For other rows (like Total Loan Amount), calculate percentage change
+                else {
+                    if (val2020 === 0) return '-';
+                    const pctChange = ((val2024 - val2020) / val2020) * 100;
+                    const sign = pctChange >= 0 ? '+' : '';
+                    return `${sign}${pctChange.toFixed(1)}%`;
+                }
+            };
+            
             // Build number table rows
             let numberRowsHtml = '';
             numberRows.forEach(row => {
                 const varName = row['Variable'] || row['variable'] || '';
                 numberRowsHtml += '<tr>';
-                numberRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0;">${varName}</td>`;
+                // First column: auto-width, no-wrap (matching LendSight)
+                numberRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; width: auto; min-width: 0; max-width: none;">${varName}</td>`;
                 
                 years.forEach(year => {
                     const value = row[year] !== undefined ? row[year] : (row[year.toLowerCase()] !== undefined ? row[year.toLowerCase()] : null);
                     const formatted = formatValue(varName, value);
-                    numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatted}</td>`;
+                    // Other columns: fixed 100px width (matching LendSight)
+                    numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatted}</td>`;
                 });
+                
+                // Add change column
+                const value2020 = row['2020'] !== undefined ? row['2020'] : (row['2020'] !== undefined ? row['2020'] : null);
+                const value2024 = row['2024'] !== undefined ? row['2024'] : (row['2024'] !== undefined ? row['2024'] : null);
+                const change = calculateChange(varName, value2020, value2024);
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; font-weight: 500;">${change}</td>`;
                 
                 numberRowsHtml += '</tr>';
             });
             
-            // Build amount table rows
+            // Build amount table rows with proper column widths (matching LendSight)
             let amountRowsHtml = '';
+            let totalAmountByYear = {}; // Store total amounts by year for LMI calculation
+            
             amountRows.forEach(row => {
                 const varName = row['Variable'] || row['variable'] || '';
+                
+                // Store total amount for LMI calculation
+                if (varName.includes('Total Loan Amount')) {
+                    years.forEach(year => {
+                        const value = row[year] !== undefined ? row[year] : (row[year.toLowerCase()] !== undefined ? row[year.toLowerCase()] : null);
+                        if (value !== null && value !== undefined && !isNaN(value)) {
+                            totalAmountByYear[year] = parseFloat(value); // in thousands
+                        }
+                    });
+                }
+                
                 amountRowsHtml += '<tr>';
-                amountRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0;">${varName}</td>`;
+                // First column: auto-width, no-wrap (matching LendSight)
+                amountRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; width: auto; min-width: 0; max-width: none;">${varName}</td>`;
                 
                 years.forEach(year => {
                     const value = row[year] !== undefined ? row[year] : (row[year.toLowerCase()] !== undefined ? row[year.toLowerCase()] : null);
                     const formatted = formatValue(varName, value);
-                    amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatted}</td>`;
+                    // Other columns: fixed 100px width (matching LendSight)
+                    amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatted}</td>`;
                 });
+                
+                // Add change column
+                const value2020 = row['2020'] !== undefined ? row['2020'] : (row['2020'] !== undefined ? row['2020'] : null);
+                const value2024 = row['2024'] !== undefined ? row['2024'] : (row['2024'] !== undefined ? row['2024'] : null);
+                const change = calculateChange(varName, value2020, value2024);
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; font-weight: 500;">${change}</td>`;
                 
                 amountRowsHtml += '</tr>';
             });
+            
+            // Check if LMI Amount row already exists in the data (from backend)
+            let hasLMIAmountRow = false;
+            amountRows.forEach(row => {
+                const varName = row['Variable'] || row['variable'] || '';
+                if (varName.includes('Amount to LMI Tracts')) {
+                    hasLMIAmountRow = true;
+                }
+            });
+            
+            // Add LMI Amount row if it doesn't exist in the data
+            // (Backend should now provide this, but add as fallback if missing)
+            if (!hasLMIAmountRow) {
+                // Try to find it in the data first
+                let lmiAmountRow = null;
+                data.forEach(row => {
+                    const varName = row['Variable'] || row['variable'] || '';
+                    if (varName.includes('Amount to LMI Tracts')) {
+                        lmiAmountRow = row;
+                    }
+                });
+                
+                if (lmiAmountRow) {
+                    // Add the row that was found
+                    const varName = lmiAmountRow['Variable'] || lmiAmountRow['variable'] || '';
+                    amountRowsHtml += '<tr>';
+                    amountRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0;">${varName}</td>`;
+                    
+                    years.forEach(year => {
+                        const value = lmiAmountRow[year] !== undefined ? lmiAmountRow[year] : (lmiAmountRow[year.toLowerCase()] !== undefined ? lmiAmountRow[year.toLowerCase()] : null);
+                        const formatted = formatValue(varName, value);
+                        amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatted}</td>`;
+                    });
+                    
+                    // Add change column for LMI row
+                    const value2020 = lmiAmountRow['2020'] !== undefined ? lmiAmountRow['2020'] : (lmiAmountRow['2020'] !== undefined ? lmiAmountRow['2020'] : null);
+                    const value2024 = lmiAmountRow['2024'] !== undefined ? lmiAmountRow['2024'] : (lmiAmountRow['2024'] !== undefined ? lmiAmountRow['2024'] : null);
+                    const change = calculateChange(varName, value2020, value2024);
+                    amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; font-weight: 500;">${change}</td>`;
+                    
+                    amountRowsHtml += '</tr>';
+                }
+            }
             
             tbodyNumber.innerHTML = numberRowsHtml;
             tbodyAmount.innerHTML = amountRowsHtml;
@@ -1827,13 +2146,13 @@
             // Format value based on metric type
             function formatComparisonValue(metric, value, column) {
                 if (value === null || value === undefined || isNaN(value)) {
-                    return column === '% Change Since 2018' ? '-' : '-';
+                    return column === 'Change' ? '-' : '-';
                 }
                 
                 // Check metric type
                 if (metric.includes('%') || metric.includes('(% of Total)')) {
-                    // Percentage format
-                    return parseFloat(value).toFixed(2) + '%';
+                    // Percentage format: ##.#%
+                    return parseFloat(value).toFixed(1) + '%';
                 } else if (metric === 'Total Loans') {
                     // Integer format
                     return parseInt(value).toLocaleString();
@@ -1857,7 +2176,7 @@
                     } else {
                         return '$' + amount.toLocaleString('en-US', {maximumFractionDigits: 0});
                     }
-                } else if (column === '% Change Since 2018') {
+                } else if (column === 'Change') {
                     // Percentage change format
                     if (value === null || value === undefined || isNaN(value)) {
                         return '-';
@@ -1869,29 +2188,33 @@
                 }
             }
             
-            // Build number table rows
+            // Build number table rows with proper column widths (matching LendSight)
             let numberRowsHtml = '';
             numberRows.forEach(row => {
                 const metric = row['Metric'] || row['metric'] || '';
                 numberRowsHtml += '<tr>';
-                numberRowsHtml += `<td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0;">${metric}</td>`;
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['% Change Since 2018'], '% Change Since 2018')}</td>`;
+                // First column: auto-width, no-wrap (matching LendSight)
+                numberRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; width: auto; min-width: 0; max-width: none;">${metric}</td>`;
+                // Other columns: fixed 100px width (matching LendSight)
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['Change'] || row['% Change Since 2020'], 'Change')}</td>`;
                 numberRowsHtml += '</tr>';
             });
             
-            // Build amount table rows
+            // Build amount table rows with proper column widths (matching LendSight)
             let amountRowsHtml = '';
             amountRows.forEach(row => {
                 const metric = row['Metric'] || row['metric'] || '';
                 amountRowsHtml += '<tr>';
-                amountRowsHtml += `<td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0;">${metric}</td>`;
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['% Change Since 2018'], '% Change Since 2018')}</td>`;
+                // First column: auto-width, no-wrap (matching LendSight)
+                amountRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; width: auto; min-width: 0; max-width: none;">${metric}</td>`;
+                // Other columns: fixed 100px width (matching LendSight)
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['Change'] || row['% Change Since 2020'], 'Change')}</td>`;
                 amountRowsHtml += '</tr>';
             });
             
@@ -1901,7 +2224,7 @@
             // Populate table introduction
             const intro = document.getElementById('comparisonIntro');
             if (intro && metadata) {
-                intro.textContent = `This table compares ${metadata.county_name}'s 2024 small business lending data with state and national benchmarks. The final column shows the percentage change for each geography since 2018 (pre-PPP to post-PPP), allowing for a comparison of trends across different levels of aggregation.`;
+                intro.textContent = `This table compares ${metadata.county_name}'s 2024 small business lending data with state and national benchmarks. The final column shows the percentage change for each geography since 2020 (baseline year), allowing for a comparison of trends across different levels of aggregation.`;
             }
             
             // Populate caption
@@ -1911,14 +2234,51 @@
                 captionText += '<strong>Year:</strong> 2024. ';
                 captionText += `<strong>County:</strong> ${metadata.county_name || 'Unknown'}. `;
                 captionText += `<strong>State:</strong> ${metadata.state_name || 'Unknown'}. `;
-                captionText += '<strong>% Change:</strong> For absolute values (loans/dollars), calculated as ((2024 value - 2018 value) / 2018 value) × 100. For percentage metrics, calculated as the percentage change in the underlying absolute values (dollars or loans), not the change in percentage shares. Compares pre-PPP (2018) to post-PPP (2024) periods, excluding PPP lending data from 2020-2021.';
+                captionText += '<strong>% Change:</strong> For absolute values (loans/dollars), calculated as ((2024 value - 2020 value) / 2020 value) × 100. For percentage metrics, calculated as the percentage change in the underlying absolute values (dollars or loans), not the change in percentage shares. Compares 2020 (baseline) to 2024 (most recent) periods.';
                 caption.innerHTML = captionText;
             }
         }
         
         function populateAINarratives(aiInsights, metadata) {
+            // Check if AI insights are disabled
+            const aiDisabled = metadata && metadata.ai_insights_enabled === false;
+            const getAIDisabledMessage = () => {
+                return '<div class="alert alert-info" style="padding: 15px; margin: 15px 0; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px;"><strong>AI Insights Not Available:</strong> AI-powered analysis is currently disabled. To enable AI insights, please configure the CLAUDE_API_KEY environment variable in your deployment settings.</div>';
+            };
+            
+            // Key Findings Section
+            if (aiInsights.key_findings && aiInsights.key_findings.trim().length > 0) {
+                const keyFindingsEl = document.getElementById('keyFindingsContent');
+                const keyFindingsSection = document.getElementById('keyFindingsSection');
+                if (keyFindingsEl && keyFindingsSection) {
+                    let text = aiInsights.key_findings.trim();
+                    // Split by bullet points or newlines
+                    let findings = text.split(/[•\-\*]\s+/).filter(f => f.trim().length > 0);
+                    if (findings.length === 0) {
+                        // Try splitting by newlines
+                        findings = text.split(/\n+/).filter(f => f.trim().length > 0);
+                    }
+                    // Format as bullet list
+                    const findingsHtml = findings.map(f => {
+                        const finding = f.trim().replace(/^[•\-\*]\s*/, '');
+                        return `<p style="margin-bottom: 12px; padding-left: 1.5em; text-indent: -1.5em;"><strong>•</strong> ${finding}${finding.endsWith('.') ? '' : '.'}</p>`;
+                    }).join('');
+                    keyFindingsEl.innerHTML = findingsHtml;
+                    keyFindingsSection.style.display = 'block';
+                }
+            } else {
+                const keyFindingsEl = document.getElementById('keyFindingsContent');
+                const keyFindingsSection = document.getElementById('keyFindingsSection');
+                if (keyFindingsEl && keyFindingsSection) {
+                    if (aiDisabled) {
+                        keyFindingsEl.innerHTML = getAIDisabledMessage();
+                        keyFindingsSection.style.display = 'block';
+                    }
+                }
+            }
+            
             // County Summary Discussion (Section 2)
-            if (aiInsights.county_summary_discussion) {
+            if (aiInsights.county_summary_discussion && aiInsights.county_summary_discussion.trim().length > 0) {
                 const discussionEl = document.getElementById('countySummaryDiscussion');
                 if (discussionEl) {
                     // Format markdown-like content with proper paragraph breaks
@@ -1938,6 +2298,19 @@
                         .filter(p => p.trim().length > 0)
                         .map(p => p.trim().replace(/\n/g, ' '));
                     discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
+                    const aiCaption = document.getElementById('countySummaryAICaption');
+                    if (aiCaption) {
+                        aiCaption.style.display = 'block';
+                    }
+                }
+            } else {
+                const discussionEl = document.getElementById('countySummaryDiscussion');
+                if (discussionEl) {
+                    if (aiDisabled) {
+                        discussionEl.innerHTML = getAIDisabledMessage();
+                    } else {
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                    }
                 }
             }
             
@@ -1957,6 +2330,10 @@
                         .filter(p => p.trim().length > 0)
                         .map(p => p.trim().replace(/\n/g, ' '));
                     discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
+                    const aiCaption = document.getElementById('comparisonAICaption');
+                    if (aiCaption) {
+                        aiCaption.style.display = 'block';
+                    }
                 } else {
                     const discussionEl = document.getElementById('comparisonDiscussion');
                     if (discussionEl) {
@@ -1966,7 +2343,11 @@
             } else {
                 const discussionEl = document.getElementById('comparisonDiscussion');
                 if (discussionEl) {
-                    discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                    if (aiDisabled) {
+                        discussionEl.innerHTML = getAIDisabledMessage();
+                    } else {
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                    }
                 }
             }
             
@@ -1986,16 +2367,26 @@
                         .filter(p => p.trim().length > 0)
                         .map(p => p.trim().replace(/\n/g, ' '));
                     discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
+                    discussionEl.style.display = 'block';
+                    const aiCaption = document.getElementById('hhiTrendsAICaption');
+                    if (aiCaption) {
+                        aiCaption.style.display = 'block';
+                    }
                 }
             } else {
                 const discussionEl = document.getElementById('hhiTrendsDiscussion');
                 if (discussionEl) {
-                    discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                    if (aiDisabled) {
+                        discussionEl.innerHTML = getAIDisabledMessage();
+                    } else {
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                    }
+                    discussionEl.style.display = 'block';
                 }
             }
             
             // Top Lenders Discussion (Section 4)
-            if (aiInsights.top_lenders_discussion) {
+            if (aiInsights.top_lenders_discussion && aiInsights.top_lenders_discussion.trim().length > 0) {
                 const discussionEl = document.getElementById('topLendersDiscussion');
                 if (discussionEl) {
                     let text = aiInsights.top_lenders_discussion.trim();
@@ -2010,6 +2401,19 @@
                         .filter(p => p.trim().length > 0)
                         .map(p => p.trim().replace(/\n/g, ' '));
                     discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
+                    const aiCaption = document.getElementById('topLendersAICaption');
+                    if (aiCaption) {
+                        aiCaption.style.display = 'block';
+                    }
+                }
+            } else {
+                const discussionEl = document.getElementById('topLendersDiscussion');
+                if (discussionEl) {
+                    if (aiDisabled) {
+                        discussionEl.innerHTML = getAIDisabledMessage();
+                    } else {
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                    }
                 }
             }
             
@@ -2071,6 +2475,7 @@
             
             const formatPercent = (val) => {
                 if (val === null || val === undefined || isNaN(val)) return '0.0%';
+                // Format: ##.#%
                 return parseFloat(val).toFixed(1) + '%';
             };
             
@@ -2092,16 +2497,16 @@
                 
                 return `
                     <tr data-index="${rowIndex}" ${isHidden}>
-                        <td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0;">${row['Lender Name'] || ''}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatNumTotal(row['Num Total'])}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Num Under 100K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Num 100K 250K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Num 250K 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Numsb Under 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; ${lowIncomeStyle}">${formatPercent(row['Low Income %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Middle Income %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Upper Income %'] || 0)}</td>
+                        <td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; min-width: 450px; width: auto;">${row['Lender Name'] || ''}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatNumTotal(row['Num Total'])}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Num Under 100K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Num 100K 250K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Num 250K 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Numsb Under 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${lowIncomeStyle}">${formatPercent(row['Low Income %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Middle Income %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Upper Income %'] || 0)}</td>
                     </tr>
                 `;
             }).join('');
@@ -2114,16 +2519,16 @@
                 
                 return `
                     <tr data-index="${rowIndex}" ${isHidden}>
-                        <td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0;">${row['Lender Name'] || ''}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatDollarAmount(row['Amt Total'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Amt Under 100K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Amt 100K 250K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Amt 250K 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Amtsb Under 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; ${lowIncomeStyle}">${formatPercent(row['Low Income Amt %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income Amt %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Middle Income Amt %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatPercent(row['Upper Income Amt %'] || 0)}</td>
+                        <td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; min-width: 450px; width: auto;">${row['Lender Name'] || ''}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatDollarAmount(row['Amt Total'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amt Under 100K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amt 100K 250K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amt 250K 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amtsb Under 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${lowIncomeStyle}">${formatPercent(row['Low Income Amt %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income Amt %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Middle Income Amt %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Upper Income Amt %'] || 0)}</td>
                     </tr>
                 `;
             }).join('');
@@ -2136,6 +2541,40 @@
                 if (expandBtnAmount) expandBtnAmount.style.display = 'inline-block';
             }
             
+            // Check which income categories exist and add asterisks to headers
+            const incomeCategories = metadata.income_categories_exist || {};
+            const missingCategories = [];
+            
+            // Update headers with asterisks for missing categories
+            if (!incomeCategories.low_income) {
+                const headerLowNumber = document.getElementById('headerLowIncomeNumber');
+                const headerLowAmount = document.getElementById('headerLowIncomeAmount');
+                if (headerLowNumber) headerLowNumber.innerHTML = 'Low Income (%)* <i class="fas fa-sort"></i>';
+                if (headerLowAmount) headerLowAmount.innerHTML = 'Low Income (%)* <i class="fas fa-sort"></i>';
+                missingCategories.push('Low Income');
+            }
+            if (!incomeCategories.moderate_income) {
+                const headerModNumber = document.getElementById('headerModerateIncomeNumber');
+                const headerModAmount = document.getElementById('headerModerateIncomeAmount');
+                if (headerModNumber) headerModNumber.innerHTML = 'Moderate Income (%)* <i class="fas fa-sort"></i>';
+                if (headerModAmount) headerModAmount.innerHTML = 'Moderate Income (%)* <i class="fas fa-sort"></i>';
+                missingCategories.push('Moderate Income');
+            }
+            if (!incomeCategories.middle_income) {
+                const headerMidNumber = document.getElementById('headerMiddleIncomeNumber');
+                const headerMidAmount = document.getElementById('headerMiddleIncomeAmount');
+                if (headerMidNumber) headerMidNumber.innerHTML = 'Middle Income (%)* <i class="fas fa-sort"></i>';
+                if (headerMidAmount) headerMidAmount.innerHTML = 'Middle Income (%)* <i class="fas fa-sort"></i>';
+                missingCategories.push('Middle Income');
+            }
+            if (!incomeCategories.upper_income) {
+                const headerUpperNumber = document.getElementById('headerUpperIncomeNumber');
+                const headerUpperAmount = document.getElementById('headerUpperIncomeAmount');
+                if (headerUpperNumber) headerUpperNumber.innerHTML = 'Upper Income (%)* <i class="fas fa-sort"></i>';
+                if (headerUpperAmount) headerUpperAmount.innerHTML = 'Upper Income (%)* <i class="fas fa-sort"></i>';
+                missingCategories.push('Upper Income');
+            }
+            
             // Populate caption
             const caption = document.getElementById('topLendersCaption');
             if (caption && metadata) {
@@ -2143,6 +2582,13 @@
                 captionText += '<strong>Year:</strong> 2024. ';
                 captionText += '<strong>Methodology:</strong> Lenders are sorted in descending order by total number of loans. ';
                 captionText += `County: ${metadata.county_name || 'Unknown'}.`;
+                
+                // Add note about missing income categories
+                if (missingCategories.length > 0) {
+                    const categoryList = missingCategories.join(', ');
+                    captionText += ` <strong>Note:</strong> Columns marked with an asterisk * show 0% because ${metadata.county_name} has no census tracts classified as ${categoryList} based on Area Median Income (AMI).`;
+                }
+                
                 caption.innerHTML = captionText;
             }
         }
@@ -2242,7 +2688,7 @@
             }
         }
         
-        function updateSummaryTable(summary) {
+        function updateSummaryTable(summary, countySummaryData) {
             const formatNumber = (num) => {
                 if (num === null || num === undefined) return '-';
                 return typeof num === 'number' ? num.toLocaleString('en-US', {
@@ -2251,80 +2697,161 @@
                 }) : num;
             };
             
-            const formatPercent = (num) => {
+            const formatCurrency = (num, isAlreadyInDollars = false) => {
                 if (num === null || num === undefined) return '-';
-                return typeof num === 'number' ? num.toFixed(1) + '%' : num;
-            };
-            
-            const formatCurrency = (num) => {
-                if (num === null || num === undefined) return '-';
-                // Amount is in thousands, format with commas
+                // Amount is in thousands by default, convert to full dollars
                 const amount = typeof num === 'number' ? num : parseFloat(num) || 0;
-                return '$' + amount.toLocaleString('en-US', {
+                const fullAmount = isAlreadyInDollars ? amount : (amount * 1000); // Convert from thousands to full dollars if needed
+                return '$' + fullAmount.toLocaleString('en-US', {
                     minimumFractionDigits: 0,
                     maximumFractionDigits: 0
                 });
             };
             
-            const tbody = document.getElementById('summaryTableBody');
-            if (!tbody) {
-                console.error('summaryTableBody not found');
+            const calculateChange = (current, baseline) => {
+                if (!baseline || baseline === 0) return null;
+                return ((current - baseline) / baseline) * 100;
+            };
+            
+            const formatChange = (change) => {
+                if (change === null || change === undefined || isNaN(change)) return '';
+                const sign = change >= 0 ? '+' : '';
+                const className = change > 0 ? 'positive' : change < 0 ? 'negative' : '';
+                return `<span class="change ${className}">${sign}${change.toFixed(1)}% since 2020</span>`;
+            };
+            
+            const container = document.getElementById('summaryCardsContainer');
+            if (!container) {
+                console.error('summaryCardsContainer not found');
                 return;
             }
+            
             if (!summary) {
                 console.error('Summary data is missing');
                 return;
             }
             
-            console.log('Updating summary table with data:', summary);
+            console.log('Updating summary cards with data:', summary);
+            console.log('County summary data:', countySummaryData);
             
-            tbody.innerHTML = `
-                <tr>
-                    <td class="label">Total Loans</td>
-                    <td class="value">${formatNumber(summary.total_loans || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">Total Loan Amount</td>
-                    <td class="value">${formatCurrency(summary.total_loan_amount || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Loans to Low Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_loans_low_income || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Loans to Moderate Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_loans_moderate_income || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Loans to Middle Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_loans_middle_income || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Loans to Upper Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_loans_upper_income || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Amount to Low Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_amount_low_income || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Amount to Moderate Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_amount_moderate_income || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Amount to Middle Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_amount_middle_income || 0)}</td>
-                </tr>
-                <tr>
-                    <td class="label">% Amount to Upper Income Tracts</td>
-                    <td class="value">${formatPercent(summary.pct_amount_upper_income || 0)}</td>
-                </tr>
+            // Extract 2020 values from county summary data if available
+            let data2020 = {};
+            if (countySummaryData && Array.isArray(countySummaryData)) {
+                countySummaryData.forEach(row => {
+                    const varName = row['Variable'] || row['variable'] || '';
+                    const value2020 = row['2020'] !== undefined ? row['2020'] : null;
+                    if (value2020 !== null && value2020 !== undefined && !isNaN(value2020)) {
+                        data2020[varName] = parseFloat(value2020);
+                    }
+                });
+            }
+            
+            // Get 2020 baseline values
+            // Note: "Total Loan Amount (in millions)" is actually in thousands in the data
+            const totalLoans2020 = data2020['Total Loans'] || null;
+            const totalAmount2020Raw = data2020['Total Loan Amount (in millions)'] || null;
+            const totalAmount2020 = totalAmount2020Raw !== null ? totalAmount2020Raw : null; // in thousands
+            
+            // Get percentage values for 2020 to calculate amounts
+            const pctUnder1m2020 = data2020['Amount to Businesses Under $1M Revenue (% of Total)'] || null;
+            const pctLMI2020 = data2020['Loans to LMI Tracts (% of Total)'] || null;
+            
+            // Calculate 2020 amounts from percentages (if we have total amount)
+            const amtUnder1m2020 = (totalAmount2020 !== null && pctUnder1m2020 !== null) 
+                ? (totalAmount2020 * pctUnder1m2020 / 100) 
+                : null; // in thousands
+            
+            // For LMI, we need to calculate from low + moderate income percentages
+            // But we only have loan count percentage, not amount percentage
+            // So we'll calculate from the summary data percentages for 2024 and apply same ratio
+            const pctAmountLow2020 = null; // Not directly available
+            const pctAmountModerate2020 = null; // Not directly available
+            const amtLMI2020 = null; // Will calculate from 2024 ratio if needed
+            
+            // Calculate current values (2024)
+            const totalLoans2024 = summary.total_loans || 0;
+            const totalAmount2024 = summary.total_loan_amount || 0; // in thousands
+            const avgLoanAmount2024 = totalLoans2024 > 0 ? (totalAmount2024 * 1000) / totalLoans2024 : 0; // in full dollars
+            
+            // Calculate amounts for 2024 from percentages
+            const pctUnder1m2024 = summary.pct_amount_under_1m || summary.pct_amount_sb_under_1m || 0;
+            const amtUnder1m2024 = (totalAmount2024 * pctUnder1m2024 / 100) || 0; // in thousands
+            
+            // Amount to LMI tracts - calculate from low + moderate income percentages
+            const pctLMI2024 = (summary.pct_amount_low_income || 0) + (summary.pct_amount_moderate_income || 0);
+            const amtLMI2024 = (totalAmount2024 * pctLMI2024 / 100) || 0; // in thousands
+            
+            // Calculate average loan amount for 2020
+            const avgLoanAmount2020 = (totalLoans2020 !== null && totalAmount2020 !== null && totalLoans2020 > 0) 
+                ? (totalAmount2020 * 1000) / totalLoans2020 
+                : null; // in full dollars
+            
+            // For LMI 2020, if we don't have the amount percentage, estimate using the same ratio as 2024
+            // This is an approximation but better than nothing
+            let amtLMI2020Calculated = null;
+            if (totalAmount2020 !== null && pctLMI2024 > 0) {
+                // Use 2024 percentage as approximation for 2020 (not ideal but better than null)
+                amtLMI2020Calculated = totalAmount2020 * pctLMI2024 / 100;
+            }
+            
+            // Calculate percentage changes
+            const changeLoans = calculateChange(totalLoans2024, totalLoans2020);
+            const changeAmount = calculateChange(totalAmount2024, totalAmount2020);
+            const changeAvgLoan = calculateChange(avgLoanAmount2024, avgLoanAmount2020);
+            const changeUnder1m = calculateChange(amtUnder1m2024, amtUnder1m2020);
+            const changeLMI = calculateChange(amtLMI2024, amtLMI2020Calculated || amtLMI2020);
+            
+            container.innerHTML = `
+                <div class="summary-card-vertical">
+                    <div class="label">Number of Loans</div>
+                    <div class="value">${formatNumber(totalLoans2024)}</div>
+                    ${formatChange(changeLoans)}
+                </div>
+                <div class="summary-card-vertical">
+                    <div class="label">Amount of Loans</div>
+                    <div class="value">${formatCurrency(totalAmount2024)}</div>
+                    ${formatChange(changeAmount)}
+                </div>
+                <div class="summary-card-vertical">
+                    <div class="label">Average Loan Amount</div>
+                    <div class="value">${formatCurrency(avgLoanAmount2024, true)}</div>
+                    ${formatChange(changeAvgLoan)}
+                </div>
+                <div class="summary-card-vertical">
+                    <div class="label">Amount to Businesses with Under $1 Million in Revenue</div>
+                    <div class="value">${formatCurrency(amtUnder1m2024)}</div>
+                    ${formatChange(changeUnder1m)}
+                </div>
+                <div class="summary-card-vertical">
+                    <div class="label">Amount to Businesses in Low and Moderate Income Neighborhoods</div>
+                    <div class="value">${formatCurrency(amtLMI2024)}</div>
+                    ${formatChange(changeLMI)}
+                </div>
             `;
             
-            // Render treemap charts (with a small delay to ensure DOM is ready)
-            setTimeout(() => {
-                renderTreemaps(summary);
-            }, 100);
+            // Update summary boxes
+            const summaryBoxAmount = document.getElementById('summaryBoxAmount');
+            if (summaryBoxAmount) {
+                summaryBoxAmount.textContent = formatCurrency(summary.total_loan_amount || 0);
+            }
+            
+            const summaryBoxUnder1M = document.getElementById('summaryBoxUnder1M');
+            if (summaryBoxUnder1M) {
+                // Use amtsb_under_1m from summary, or calculate from percentage if available
+                const under1MAmount = summary.amtsb_under_1m || 
+                                     (summary.total_loan_amount && summary.pct_amount_sb_under_1m ? 
+                                      (summary.total_loan_amount * summary.pct_amount_sb_under_1m / 100) : 0);
+                summaryBoxUnder1M.textContent = formatCurrency(under1MAmount);
+            }
+            
+            const summaryBoxLMI = document.getElementById('summaryBoxLMI');
+            if (summaryBoxLMI) {
+                // Use lmi_tract_amount from summary, or calculate from percentage if available
+                const lmiAmount = summary.lmi_tract_amount || 
+                                 (summary.total_loan_amount && summary.pct_dollars_to_lmi_tracts ? 
+                                  (summary.total_loan_amount * summary.pct_dollars_to_lmi_tracts / 100) : 0);
+                summaryBoxLMI.textContent = formatCurrency(lmiAmount);
+            }
         }
         
         // Treemap toggle function
@@ -2468,151 +2995,182 @@
             }
         }
         
+        let hhiByYearChartInstance = null;
+        
         function populateHHIByYearChart(hhiData, metadata) {
-            if (typeof Plotly === 'undefined') {
-                console.warn('Plotly not loaded, skipping HHI chart');
+            if (!hhiData || hhiData.length === 0) {
+                console.warn('No HHI by year data available.');
+                const section = document.getElementById('section5');
+                if (section) {
+                    section.style.display = 'none';
+                }
                 return;
             }
-            
-            const container = document.getElementById('hhiByYearChart');
-            if (!container) {
-                console.warn('HHI chart container not found');
-                return;
+
+            const section = document.getElementById('section5');
+            if (section) {
+                section.style.display = 'block';
             }
+
+            // Filter to only whole years (remove 2020.5, etc.) and sort
+            const wholeYearData = hhiData.filter(d => {
+                const year = parseFloat(d.year);
+                return Number.isInteger(year) && year >= 2000 && year <= 2100;
+            });
             
-            // Sort data by year
-            const sortedData = hhiData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
+            const sortedData = wholeYearData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
             
             const years = sortedData.map(d => d.year.toString());
             const hhiValues = sortedData.map(d => parseFloat(d.hhi_value || 0));
-            
-            const trace = {
-                x: years,
-                y: hhiValues,
-                type: 'bar',
-                marker: {
-                    color: '#2fade3',  // NCRC color
-                    line: {
-                        color: 'white',
-                        width: 1
-                    }
-                },
-                text: hhiValues.map(v => v.toFixed(0)),
-                textposition: 'outside',
-                hovertemplate: '<b>%{x}</b><br>HHI: %{text}<extra></extra>'
-            };
-            
-            // Calculate max value for y-axis range
-            const maxHHI = Math.max(...hhiValues, 2500); // Ensure we show at least up to 2,500
-            const yMax = Math.max(maxHHI * 1.15, 3000); // At least 3,000 to show thresholds clearly
-            
-            // Add horizontal reference lines for concentration thresholds
-            const shapes = [
-                // Low concentration threshold (1,500)
-                {
-                    type: 'line',
-                    xref: 'paper',
-                    x0: 0,
-                    x1: 1,
-                    yref: 'y',
-                    y0: 1500,
-                    y1: 1500,
-                    line: {
-                        color: '#28a745', // Green for competitive
-                        width: 2,
-                        dash: 'dash'
-                    }
-                },
-                // High concentration threshold (2,500)
-                {
-                    type: 'line',
-                    xref: 'paper',
-                    x0: 0,
-                    x1: 1,
-                    yref: 'y',
-                    y0: 2500,
-                    y1: 2500,
-                    line: {
-                        color: '#dc3545', // Red for high concentration
-                        width: 2,
-                        dash: 'dash'
-                    }
+
+            // Populate table
+            const table = document.getElementById('hhiByYearTable');
+            if (table) {
+                const tbody = table.querySelector('tbody');
+                if (tbody) {
+                    tbody.innerHTML = sortedData.map(d => {
+                        const hhiValue = parseFloat(d.hhi_value || 0);
+                        return `<tr>
+                            <td style="text-align: left; font-weight: 600;">${d.year}</td>
+                            <td style="text-align: center;">${Math.round(hhiValue).toLocaleString()}</td>
+                        </tr>`;
+                    }).join('');
                 }
-            ];
-            
-            // Add annotations for threshold labels
-            const annotations = [
-                {
-                    xref: 'paper',
-                    x: 0.98, // Right side of chart
-                    y: 1500,
-                    xanchor: 'right',
-                    yanchor: 'middle',
-                    text: 'Low Concentration<br>Threshold (1,500)',
-                    showarrow: false,
-                    font: {
-                        color: '#28a745',
-                        size: 11,
-                        family: 'Inter, sans-serif'
-                    },
-                    bgcolor: 'rgba(255, 255, 255, 0.8)',
-                    bordercolor: '#28a745',
-                    borderwidth: 1,
-                    borderpad: 4
-                },
-                {
-                    xref: 'paper',
-                    x: 0.98, // Right side of chart
-                    y: 2500,
-                    xanchor: 'right',
-                    yanchor: 'middle',
-                    text: 'High Concentration<br>Threshold (2,500)',
-                    showarrow: false,
-                    font: {
-                        color: '#dc3545',
-                        size: 11,
-                        family: 'Inter, sans-serif'
-                    },
-                    bgcolor: 'rgba(255, 255, 255, 0.8)',
-                    bordercolor: '#dc3545',
-                    borderwidth: 1,
-                    borderpad: 4
+            }
+
+            // Create Chart.js line chart (matching Branch Report)
+            const canvas = document.getElementById('hhiByYearChart');
+            if (canvas && typeof Chart !== 'undefined') {
+                const ctx = canvas.getContext('2d');
+
+                // Destroy existing chart if it exists
+                if (hhiByYearChartInstance) {
+                    hhiByYearChartInstance.destroy();
                 }
-            ];
-            
-            const layout = {
-                margin: { l: 60, r: 120, t: 30, b: 50 }, // Increased right margin for labels
-                paper_bgcolor: 'rgba(0,0,0,0)',
-                plot_bgcolor: 'rgba(0,0,0,0)',
-                xaxis: {
-                    title: 'Year',
-                    showgrid: true,
-                    gridcolor: '#e0e0e0',
-                    tickfont: { size: 12 }
-                },
-                yaxis: {
-                    title: 'HHI',
-                    showgrid: true,
-                    gridcolor: '#e0e0e0',
-                    tickfont: { size: 12 },
-                    range: [0, yMax]
-                },
-                shapes: shapes,
-                annotations: annotations,
-                showlegend: false,
-                height: 400
-            };
-            
-            const config = {
-                displayModeBar: false,
-                responsive: true
-            };
-            
-            try {
-                Plotly.newPlot('hhiByYearChart', [trace], layout, config);
-                console.log('HHI by year chart rendered successfully');
-            } catch (error) {
-                console.error('Error creating HHI chart:', error);
+
+                // Calculate max value for y-axis range
+                const maxHHI = Math.max(...hhiValues, 2500); // Ensure we show at least up to 2,500
+                const yMax = Math.max(maxHHI * 1.15, 3000); // At least 3,000 to show thresholds clearly
+
+                hhiByYearChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: years,
+                        datasets: [{
+                            label: 'HHI',
+                            data: hhiValues,
+                            borderColor: '#034ea0', // NCRC Dark Blue
+                            backgroundColor: '#034ea0',
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 5,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#034ea0',
+                            pointBorderColor: 'white',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            title: {
+                                display: true,
+                                text: 'Market Concentration (HHI) by Year',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const value = context.parsed.y;
+                                        return 'HHI: ' + Math.round(value).toLocaleString();
+                                    }
+                                }
+                            },
+                            annotation: {
+                                annotations: {
+                                    moderateLine: {
+                                        type: 'line',
+                                        yMin: 1500,
+                                        yMax: 1500,
+                                        borderColor: 'rgba(255, 165, 0, 0.7)', // Orange for moderate
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: 'Moderate Concentration (1,500)',
+                                            enabled: true,
+                                            position: 'start',
+                                            backgroundColor: 'rgba(255, 165, 0, 0.8)',
+                                            color: 'white',
+                                            font: {
+                                                size: 10
+                                            }
+                                        }
+                                    },
+                                    highLine: {
+                                        type: 'line',
+                                        yMin: 2500,
+                                        yMax: 2500,
+                                        borderColor: 'rgba(255, 0, 0, 0.7)', // Red for high
+                                        borderWidth: 2,
+                                        borderDash: [5, 5],
+                                        label: {
+                                            content: 'High Concentration (2,500)',
+                                            enabled: true,
+                                            position: 'start',
+                                            backgroundColor: 'rgba(255, 0, 0, 0.8)',
+                                            color: 'white',
+                                            font: {
+                                                size: 10
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: yMax,
+                                title: {
+                                    display: true,
+                                    text: 'HHI',
+                                    font: {
+                                        size: 12
+                                    }
+                                },
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toLocaleString();
+                                    },
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Year',
+                                    font: {
+                                        size: 12
+                                    }
+                                },
+                                ticks: {
+                                    font: {
+                                        size: 10
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
             }
         }
         
@@ -2629,8 +3187,8 @@
                 return;
             }
             
-            // Get year-by-year amounts (in millions)
-            const years = ['2018', '2019', '2020', '2021', '2022', '2023', '2024'];
+            // Get year-by-year amounts (most recent 5 years)
+            const years = ['2020', '2021', '2022', '2023', '2024'];
             const yearAmounts = [];
             const yearLabels = [];
             

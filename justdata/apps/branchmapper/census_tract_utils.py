@@ -67,7 +67,7 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
     """
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from apps.branchseeker.config import PROJECT_ID
+        from justdata.apps.branchmapper.config import PROJECT_ID
         
         # First, extract FIPS codes to get GEOID5
         fips_data = extract_fips_from_county_state(county_state)
@@ -136,13 +136,15 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
             print(f"No rows found in geo.cbsa_to_county for GEOID5 {geoid5} ({county_state})")
             # Try querying by county_state as a fallback
             print(f"Trying fallback query by county_state: '{county_state}'")
+            from justdata.shared.utils.bigquery_client import escape_sql_string
+            escaped_county_state = escape_sql_string(county_state)
             fallback_query = f"""
             SELECT DISTINCT
                 CAST(cbsa_code AS STRING) as cbsa_code,
                 CBSA as cbsa_name,
                 geoid5
             FROM geo.cbsa_to_county
-            WHERE county_state = '{county_state}'
+            WHERE county_state = '{escaped_county_state}'
                 AND cbsa_code IS NOT NULL
             LIMIT 1
             """
@@ -201,15 +203,17 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
     """
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from apps.branchseeker.config import PROJECT_ID
+        from justdata.apps.branchmapper.config import PROJECT_ID
         
         client = get_bigquery_client(PROJECT_ID)
         
-        # Try exact match first
+        # Try exact match first (with TRIM to handle whitespace)
+        from justdata.shared.utils.bigquery_client import escape_sql_string
+        escaped_county_state = escape_sql_string(county_state)
         query = f"""
         SELECT DISTINCT geoid5
         FROM geo.cbsa_to_county
-        WHERE county_state = '{county_state}'
+        WHERE TRIM(county_state) = TRIM('{escaped_county_state}')
         LIMIT 1
         """
         
@@ -229,12 +233,12 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
                 'geoid5': geoid5
             }
         
-        # Try case-insensitive match
+        # Try case-insensitive match with TRIM
         print(f"No exact match, trying case-insensitive match...")
         query_case_insensitive = f"""
         SELECT DISTINCT geoid5, county_state
         FROM geo.cbsa_to_county
-        WHERE UPPER(county_state) = UPPER('{county_state}')
+        WHERE UPPER(TRIM(county_state)) = UPPER(TRIM('{escaped_county_state}'))
         LIMIT 1
         """
         
@@ -253,6 +257,43 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
                 'county_fips': county_fips,
                 'geoid5': geoid5
             }
+        
+        # Try splitting county and state and matching separately
+        if ',' in county_state:
+            print(f"No match found, trying to match by splitting county and state...")
+            parts = county_state.split(',', 1)
+            if len(parts) == 2:
+                county_name = parts[0].strip()
+                state_name = parts[1].strip()
+                escaped_county = escape_sql_string(county_name)
+                escaped_state = escape_sql_string(state_name)
+                
+                query_split = f"""
+                SELECT DISTINCT geoid5, county_state
+                FROM geo.cbsa_to_county
+                WHERE UPPER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(0)])) = UPPER(TRIM('{escaped_county}'))
+                    AND UPPER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = UPPER(TRIM('{escaped_state}'))
+                LIMIT 1
+                """
+                
+                try:
+                    query_job = client.query(query_split)
+                    results = list(query_job.result())
+                    
+                    if results and results[0].geoid5:
+                        geoid5 = str(results[0].geoid5).zfill(5)
+                        state_fips = geoid5[:2]
+                        county_fips = geoid5[2:]
+                        matched_name = str(results[0].county_state) if results[0].county_state else county_state
+                        
+                        print(f"Found GEOID5 with split match: {geoid5} (State: {state_fips}, County: {county_fips}) for '{matched_name}' (searched for '{county_state}')")
+                        return {
+                            'state_fips': state_fips,
+                            'county_fips': county_fips,
+                            'geoid5': geoid5
+                        }
+                except Exception as split_error:
+                    print(f"Split match query failed: {split_error}")
         
         print(f"Could not find GEOID5 for {county_state}")
         return None

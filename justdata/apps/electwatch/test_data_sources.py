@@ -365,7 +365,7 @@ def test_quiver_api() -> bool:
     # Test 3: Get trades using the ElectWatch client
     print_info("Test 3: Testing ElectWatch Quiver client integration...")
     try:
-        from apps.electwatch.services.quiver_client import QuiverClient
+        from justdata.apps.electwatch.services.quiver_client import QuiverClient
         client = QuiverClient()
 
         if client.test_connection():
@@ -727,7 +727,7 @@ def test_newsapi() -> bool:
     # Test using the NewsClient with quality filtering
     print_info("Test 1: Testing NewsClient with source quality filtering...")
     try:
-        from apps.electwatch.services.news_client import NewsClient, get_source_info
+        from justdata.apps.electwatch.services.news_client import NewsClient, get_source_info
 
         client = NewsClient()
 

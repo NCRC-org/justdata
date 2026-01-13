@@ -15,8 +15,8 @@ from dataclasses import dataclass
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
-from apps.electwatch.config import ElectWatchConfig
-from apps.electwatch.services.firm_mapper import (
+from justdata.apps.electwatch.config import ElectWatchConfig
+from justdata.apps.electwatch.services.firm_mapper import (
     FirmMapper, get_mapper, AmountRange, parse_stock_amount
 )
 
@@ -367,7 +367,7 @@ def _generate_ai_insights(
     Generate AI-powered insights about the official's financial relationships.
     """
     try:
-        from shared.analysis.ai_provider import AIAnalyzer
+        from justdata.shared.analysis.ai_provider import AIAnalyzer
 
         # Build data summary
         data_summary = {

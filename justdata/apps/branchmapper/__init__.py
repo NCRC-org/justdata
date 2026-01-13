@@ -1,2 +1,4 @@
-"""BranchMapper - Interactive map of bank branch locations."""
+"""
+BranchMapper application - Interactive map of bank branch locations.
+"""
 

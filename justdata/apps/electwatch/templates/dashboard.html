@@ -205,26 +205,6 @@
             box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.1);
         }
 
-        .search-input {
-            padding: 8px 12px;
-            border: 2px solid #e5e7eb;
-            border-radius: 6px;
-            font-size: 0.875rem;
-            background: white;
-            transition: all 0.2s;
-            min-width: 180px;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: var(--ncrc-justdata-blue);
-            box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.1);
-        }
-
-        .search-input::placeholder {
-            color: #9ca3af;
-        }
-
         /* Leaderboard Table */
         .leaderboard-table {
             width: 100%;
@@ -311,7 +291,7 @@
             font-weight: 400;
             text-transform: none;
             white-space: normal;
-            width: 320px;
+            width: 240px;
             line-height: 1.5;
             z-index: 100;
             opacity: 0;
@@ -497,16 +477,6 @@
 
         .header-group-row th.financial-sector-group {
             text-align: center;
-        }
-
-        /* Financial sector column styling - emphasize these columns belong to the Financial Sector header */
-        .leaderboard-table th.financial-sector-col {
-            background: #e6f4f9;  /* Light blue tint matching Financial Sector header */
-            white-space: nowrap;  /* Prevent header text and sort icon from wrapping */
-        }
-
-        .leaderboard-table th.financial-sector-col:hover {
-            background: #d4ecf5;
         }
 
         .header-group-row .header-tooltip {
@@ -1799,7 +1769,6 @@
                 <div class="card-header">
                     <h2><i class="fas fa-ranking-star"></i> Officials by Financial Involvement</h2>
                     <div class="filters">
-                        <input type="text" class="search-input" id="search-official" placeholder="Search by name...">
                         <select class="filter-select" id="filter-chamber">
                             <option value="">All Chambers</option>
                             <option value="house">House</option>
@@ -1827,11 +1796,11 @@
                                 <th colspan="2"></th>
                                 <th colspan="4" class="financial-sector-group">
                                     <span class="header-tooltip">
-                                        <i class="fas fa-landmark"></i> Financial Sector Involvement
+                                        <i class="fas fa-landmark"></i> Financial Sector
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
                                             <strong>What We Track:</strong><br>
-                                            PAC contributions and stock trades involving financial sector firms over the last 2 election cycles (4 years).<br><br>
+                                            PAC contributions and stock trades involving financial sector firms over a rolling 12-month period.<br><br>
                                             <strong>PAC Contributions Include:</strong><br>
                                             • Direct PAC-to-candidate contributions from financial firm PACs (e.g., "Wells Fargo PAC")<br>
                                             • Industry association PACs (e.g., "American Bankers Association PAC")<br><br>
@@ -1851,22 +1820,22 @@
                             <!-- Column headers -->
                             <tr>
                                 <th class="rank">#</th>
-                                <th class="sortable" data-sort="name" data-order="asc">
+                                <th>
                                     <span class="header-tooltip">
                                         Official
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Federal elected officials including U.S. Representatives and Senators. Filtered to members on finance-related committees. Click to sort by last name.
+                                            Federal elected officials including U.S. Representatives and Senators. Filtered to members on finance-related committees.
                                             <span class="tooltip-source">Source: Congress.gov, House Clerk, Senate.gov</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable active financial-sector-col" data-sort="financial_pac" data-order="desc">
+                                <th class="sortable active" data-sort="financial_pac" data-order="desc">
                                     <span class="header-tooltip">
-                                        PAC $
+                                        Fin PAC $
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            <strong>Financial Sector PAC $:</strong> Total contributions from financial sector PACs to this candidate's principal campaign committee over the last 2 election cycles.<br><br>
+                                            <strong>Financial Sector PAC $:</strong> Total contributions from financial sector PACs to this candidate's principal campaign committee over the past 12 months.<br><br>
                                             <strong>Includes:</strong><br>
                                             • Company PACs (e.g., "JPMorgan Chase PAC")<br>
                                             • Industry PACs (e.g., "American Bankers Assoc PAC")<br><br>
@@ -1875,22 +1844,22 @@
                                             • SuperPAC independent expenditures<br>
                                             • Leadership PAC transfers<br><br>
                                             <em>Note: FEC data has a 1-3 month reporting lag.</em>
-                                            <span class="tooltip-source">Source: FEC Schedule A Receipts (2 election cycles)</span>
+                                            <span class="tooltip-source">Source: FEC Schedule A Receipts (rolling 12 months)</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable financial-sector-col" data-sort="financial_pct" data-order="desc">
+                                <th class="sortable" data-sort="financial_pct" data-order="desc">
                                     <span class="header-tooltip">
-                                        PAC %
+                                        Fin PAC %
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
                                             <strong>Financial Sector %:</strong> What percentage of this official's total PAC contributions come from financial sector PACs.<br><br>
                                             Higher % = more reliant on financial industry money relative to other PAC sources.
-                                            <span class="tooltip-source">Calculation: Financial Sector PAC $ ÷ Total PAC $ (2 election cycles)</span>
+                                            <span class="tooltip-source">Calculation: Financial Sector PAC $ ÷ Total PAC $ (rolling 12 months)</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable financial-sector-col" data-sort="buys" data-order="desc">
+                                <th class="sortable" data-sort="buys" data-order="desc">
                                     <span class="header-tooltip">
                                         Buys
                                         <span class="tooltip-icon">?</span>
@@ -1900,7 +1869,7 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable financial-sector-col" data-sort="sells" data-order="desc">
+                                <th class="sortable" data-sort="sells" data-order="desc">
                                     <span class="header-tooltip">
                                         Sells
                                         <span class="tooltip-icon">?</span>
@@ -2517,7 +2486,6 @@
             const industry = document.getElementById('filter-industry').value;
 
             const params = new URLSearchParams();
-            params.append('limit', '535');  // Load all members of Congress
             if (chamber) params.append('chamber', chamber);
             if (party) params.append('party', party);
             if (industry) params.append('industry', industry);
@@ -2536,28 +2504,10 @@
         }
 
         function sortAndRenderLeaderboard() {
-            // Get search term
-            const searchTerm = (document.getElementById('search-official').value || '').trim().toLowerCase();
-
-            // Filter by search term if provided
-            let filtered = allOfficials;
-            if (searchTerm.length > 0) {
-                filtered = allOfficials.filter(official =>
-                    (official.name || '').toLowerCase().includes(searchTerm) ||
-                    (official.state || '').toLowerCase().includes(searchTerm)
-                );
-            }
-
-            const sorted = [...filtered].sort((a, b) => {
+            const sorted = [...allOfficials].sort((a, b) => {
                 let aVal, bVal;
 
                 switch (currentSort.field) {
-                    case 'name':
-                        // Sort by last name (extract last word of name)
-                        const aLastName = (a.name || '').split(' ').pop().toLowerCase();
-                        const bLastName = (b.name || '').split(' ').pop().toLowerCase();
-                        const nameCompare = aLastName.localeCompare(bLastName);
-                        return currentSort.order === 'desc' ? -nameCompare : nameCompare;
                     case 'contributions':
                         // Sort by total PAC contributions
                         aVal = a.contributions || 0;
@@ -2602,9 +2552,7 @@
                 return currentSort.order === 'desc' ? bVal - aVal : aVal - bVal;
             });
 
-            // Show top 50 unless searching
-            const displayList = searchTerm.length > 0 ? sorted : sorted.slice(0, 50);
-            renderLeaderboard(displayList);
+            renderLeaderboard(sorted);
             updateSortIndicators();
         }
 
@@ -3007,11 +2955,6 @@
         document.getElementById('filter-chamber').addEventListener('change', loadLeaderboard);
         document.getElementById('filter-party').addEventListener('change', loadLeaderboard);
         document.getElementById('filter-industry').addEventListener('change', loadLeaderboard);
-
-        // Official name search - filter the loaded officials list
-        document.getElementById('search-official').addEventListener('input', (e) => {
-            sortAndRenderLeaderboard();
-        });
 
         // Firm search - filter the loaded firms list
         document.getElementById('firm-search').addEventListener('input', (e) => {

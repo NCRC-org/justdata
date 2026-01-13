@@ -6,10 +6,196 @@
     <title>DataExplorer - JustData</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('dataexplorer.static', filename='css/dashboard.css') }}?v={{ version }}">
-    <link rel="stylesheet" href="{{ url_for('dataexplorer.static', filename='css/wizard-enhancements.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/wizard-enhancements.css') }}?v={{ version }}">
     <style>
+        /* Header Styles (from LendSight) */
+        .header {
+            background: var(--ncrc-dark-blue);
+            text-align: center;
+            padding: 40px 20px 30px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+        }
+        
+        .header-layout {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+            position: relative;
+            width: 100%;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            flex: 0 0 auto;
+        }
+        
+        .header-title-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            width: auto;
+        }
+        
+        .header-tagline {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            flex-shrink: 0;
+            flex: 0 0 auto;
+        }
+        
+        .logo img {
+            max-height: 90px;
+            width: auto;
+            border-radius: 8px;
+        }
+        
+        .header-title-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+        
+        .just-data-subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.95);
+            margin: 10px 0 0 0;
+            text-align: center;
+        }
+        
+        .tagline-box {
+            background: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            height: 90px;
+            width: 256px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+        }
+        
+        .header-tagline p {
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            margin: 0;
+            font-style: normal;
+            white-space: normal;
+            text-align: center;
+            line-height: 1.3;
+            max-width: 100%;
+        }
+        
+        .header-tagline p em {
+            font-style: italic;
+            color: var(--ncrc-pink);
+        }
+        
+        /* Footer Styles (from LendSight) */
+        .footer {
+            background: var(--ncrc-dark-blue);
+            padding: 2rem 0 0.5rem 0;
+            border-radius: 0;
+            margin: 2rem 0 0 0;
+            width: 100%;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .footer-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 3rem;
+        }
+        
+        .footer-col {
+            flex: 1 1 0;
+            min-width: 200px;
+            max-width: 300px;
+            margin-bottom: 1rem;
+        }
+        
+        .footer-col.footer-logo {
+            flex: 0 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            min-width: auto;
+            max-width: none;
+            margin-left: auto;
+        }
+        
+        .footer-logo-img {
+            height: 90px;
+            width: auto;
+            border-radius: 8px;
+        }
+        
+        .footer-col h4 {
+            color: var(--ncrc-gold);
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .footer-col p {
+            color: #fff;
+            margin: 0;
+            line-height: 1.6;
+        }
+        
+        .footer-col a {
+            color: #fff;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+        
+        .footer-col a:hover {
+            color: var(--ncrc-gold);
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            color: #ccc;
+            font-size: 0.95rem;
+            margin-top: 1.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        
+        .version-text {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 400;
+            margin-top: 0.5rem;
+            display: inline-block;
+        }
+        
         /* Wizard Container Adjustments */
         .wizard-wrapper {
             max-width: 1400px;
@@ -20,6 +206,18 @@
         /* Ensure body doesn't have extra padding that conflicts with header */
         body {
             padding-top: 0 !important;
+        }
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-dark-blue: #1a8fc9;
+            --ncrc-accent-red: #e82e2e;
+            --ncrc-pink: #eb2f89;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --success-green: #4CAF50;
         }
         
         body {
@@ -1439,22 +1637,23 @@
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
-    <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
-    <div class="body-overlay" id="bodyOverlay"></div>
-    
-    <!-- Header -->
+    <!-- Header (same as LendSight) -->
     <header class="header">
         <div class="header-content">
             <div class="header-layout">
                 <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    </a>
                 </div>
                 <div class="header-title-section">
-                    <h1><span class="app-name-part1">DATA</span><span class="app-name-part2">EXPLORER</span></h1>
-                    <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
+                    <h1>DataExplorer</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
                 </div>
-                <div class="header-nav-wrapper">
-                    {% include 'nav_menu.html' %}
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1519,9 +1718,9 @@
     </footer>
     
     <!-- Scripts -->
-    <script src="{{ url_for('dataexplorer.static', filename='js/api-client.js') }}"></script>
-    <script src="{{ url_for('dataexplorer.static', filename='js/wizard.js') }}"></script>
-    <script src="{{ url_for('dataexplorer.static', filename='js/wizard-steps.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/wizard-steps.js') }}"></script>
     <script>
         // Initialize wizard on page load
         document.addEventListener('DOMContentLoaded', function() {
@@ -1535,64 +1734,6 @@
             // Hide swipe indicator on desktop
             if (window.innerWidth > 768) {
                 document.getElementById('swipeIndicator').style.display = 'none';
-            }
-            
-            // Initialize hamburger menu
-            const navToggle = document.getElementById('navToggle');
-            const navMenu = document.querySelector('.nav-menu');
-            const bodyOverlay = document.getElementById('bodyOverlay');
-            
-            if (navToggle && navMenu) {
-                navToggle.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const isExpanded = this.getAttribute('aria-expanded') === 'true';
-                    this.setAttribute('aria-expanded', !isExpanded);
-                    navMenu.classList.toggle('active');
-                    if (bodyOverlay) bodyOverlay.classList.toggle('active');
-                    document.body.classList.toggle('menu-open');
-                    this.classList.toggle('active');
-                });
-                
-                if (bodyOverlay) {
-                    bodyOverlay.addEventListener('click', function() {
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navMenu.classList.remove('active');
-                        bodyOverlay.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                        navToggle.classList.remove('active');
-                    });
-                }
-                
-                const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
-                dropdownToggles.forEach(toggle => {
-                    toggle.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const parentItem = this.closest('.nav-item-dropdown');
-                        if (parentItem) parentItem.classList.toggle('active');
-                    });
-                });
-                
-                const navLinks = document.querySelectorAll('.nav-link:not(.dropdown-toggle)');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', function() {
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navMenu.classList.remove('active');
-                        if (bodyOverlay) bodyOverlay.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                        navToggle.classList.remove('active');
-                    });
-                });
-                
-                document.addEventListener('keydown', function(e) {
-                    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
-                        navToggle.setAttribute('aria-expanded', 'false');
-                        navMenu.classList.remove('active');
-                        if (bodyOverlay) bodyOverlay.classList.remove('active');
-                        document.body.classList.remove('menu-open');
-                        navToggle.classList.remove('active');
-                    }
-                });
             }
         });
     </script>

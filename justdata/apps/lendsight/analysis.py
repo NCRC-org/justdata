@@ -12,6 +12,22 @@ from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
 class LendSightAnalyzer(AIAnalyzer):
     """AI analyzer specifically for HMDA mortgage lending data."""
     
+    def _get_ncrc_report_sources(self) -> str:
+        """Return formatted NCRC report sources for AI prompts."""
+        return """
+        REFERENCE SOURCES - NCRC Mortgage Market Report Series:
+        You may reference these NCRC research reports if the information is relevant and valid for the analysis:
+        - Part 1: Introduction to Mortgage Market Trends: https://ncrc.org/mortgage-market-report-series-part-1-introduction-to-mortgage-market-trends/
+        - Part 2: Lending Trends by Borrower and Neighborhood Characteristics: https://ncrc.org/mortgage-market-report-series-part-2-lending-trends-by-borrower-and-neighborhood-characteristics/
+        - Part 3: Native American and Hawaiian Lending: https://ncrc.org/mortgage-market-report-series-part-3-native-american-and-hawaiian-lending/
+        - Part 4: Mortgage Lending Across American Cities: https://ncrc.org/mortgage-market-report-series-part-4-mortgage-lending-across-american-cities/
+        - Part 5: Top 50 Home Purchase Lenders Analysis for 2024: https://ncrc.org/mortgage-market-report-series-part-5-top-50-home-purchase-lenders-analysis-for-2024/
+        
+        If you reference any of these reports, you MUST include a hypertext link using markdown format: [link text](URL)
+        Example: "As noted in NCRC's mortgage market analysis ([Part 1: Introduction to Mortgage Market Trends](https://ncrc.org/mortgage-market-report-series-part-1-introduction-to-mortgage-market-trends/)), non-bank lenders now dominate the market."
+        Only reference these sources if the information is directly relevant and supports your analysis.
+        """
+    
     def generate_intro_paragraph(self, data: Dict[str, Any]) -> str:
         """Generate intro paragraph defining years of data, geographic scope, loan purposes, and filters."""
         counties = data.get('counties', [])
@@ -141,24 +157,32 @@ class LendSightAnalyzer(AIAnalyzer):
         demographic_data = data.get('demographic_overview', [])
         
         prompt = f"""
-        Generate 3-5 key findings for mortgage lending analysis. Each finding should be a SINGLE SENTENCE explaining a particularly compelling statistic from the data.
+        Generate 3-5 key findings for mortgage lending analysis. Each finding should have a BOLD TITLE followed by a colon and then a sentence summarizing the major data point.
         
         Counties: {counties}
         Years: {years[0]} to {years[-1]}
         Data: {json.dumps(json_data, indent=2)[:2000]}
         Demographic Overview Data: {json.dumps(demographic_data, indent=2)[:1500] if demographic_data else 'Not available'}
         
+        {self._get_ncrc_report_sources()}
+        
         IMPORTANT DEFINITIONS:
         - LMIB = Low-to-Moderate Income Borrowers
         - LMICT = Low-to-Moderate Income Census Tracts
         - MMCT = Majority-Minority Census Tracts
         
+        FORMAT REQUIREMENTS:
+        - Each finding must be formatted as: **Title:** Sentence describing the finding
+        - The title should be a short, descriptive phrase (3-8 words) that summarizes the finding
+        - The sentence after the colon should be ONE COMPLETE SENTENCE explaining the compelling statistic
+        - Format as bullet points starting with "•"
+        - Example format: • **Total Originations:** Mortgage originations in Hillsborough County, Florida declined by 38.5% from 25,510 loans in 2020 to 15,701 loans in 2024, representing a net decrease of 9,809 loans over the five-year period.
+        - Include specific numbers/percentages when available
+        
         Focus on:
         - Most significant and compelling statistics from the data
         - Particularly notable trends or patterns
-        - Format as bullet points starting with "•"
-        - Each bullet point should be ONE SENTENCE ONLY
-        - Include specific numbers/percentages when available
+        - Title should be concise and descriptive (e.g., "Total Originations", "LMI Borrower Lending", "Hispanic Borrower Share", "MMCT Originations", "White Borrower Share")
         
         WRITING REQUIREMENTS:
         - Write in objective, third-person style
@@ -166,8 +190,9 @@ class LendSightAnalyzer(AIAnalyzer):
         - NO personal opinions or subjective statements
         - NO speculation about strategic implications or underlying causes
         - Present ONLY factual patterns and observable data trends
-        - Each finding must be a single, complete sentence
+        - Each finding must have a bold title followed by a colon and one complete sentence
         - Use professional, analytical tone
+        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
         """
         
         return self._call_ai(prompt, max_tokens=400, temperature=0.3)
@@ -487,6 +512,8 @@ Top Lenders by Loan Volume:
         Lending Table Data: {json.dumps(demographic_data, indent=2)[:2000] if demographic_data else 'Not available'}
         {population_context if population_context else "Population demographics data not available for comparison."}
         
+        {self._get_ncrc_report_sources()}
+        
         CRITICAL: {f"The population demographics data IS PROVIDED ABOVE and MUST be used. Do NOT say the data is missing or unavailable." if population_context else "Population demographics data is not available for this analysis."}
         
         CRITICAL ANALYSIS REQUIREMENT - COMPARE LENDING TO POPULATION:
@@ -499,27 +526,34 @@ Top Lenders by Loan Volume:
         - DO NOT say the population data is missing - it is provided above
         
         The discussion should:
-        1. FIRST PARAGRAPH: Compare lending percentages to population shares for each race/ethnicity group in the most recent year ({latest_year})
-           - For each group, state their lending percentage and population percentage
-           - Note whether lending is above, below, or approximately equal to population share
-           - Calculate and mention the difference in percentage points
-           - Focus on groups where there are notable differences (gaps) between lending and population shares
-        2. SECOND PARAGRAPH: Analyze trends over time
-           - Focus on the growth or shrinkage of lending to specific race/ethnic groups over time
-           - Discuss changes in PERCENTAGES over the time period (focus on percentage points, not raw numbers)
-           - Note any particularly notable trends or patterns in lending
-           - Discuss what the "Change Over Time" column shows in terms of percentage point changes
-        3. Use PERCENTAGES ONLY - do NOT include raw numbers or counts of borrowers
+        1. FIRST PARAGRAPH: Explain how to interpret the table and identify the most significant patterns
+           - Explain what the table shows (lending percentages vs. population shares) in plain English
+           - Explain HOW TO READ the table - what each column means and how to interpret the data
+           - Identify the MOST COMPELLING disparities - ONLY cite 1-2 groups with the LARGEST gaps or most notable differences
+           - For those selected groups, briefly note whether lending is above, below, or approximately equal to population share
+           - DO NOT list every single group's numbers - the reader can see those in the table
+           - DO NOT recite all the data - focus on explaining what the patterns mean
+           - Reference national trends from NCRC reports when relevant (e.g., "This pattern aligns with [national trends](link) showing...")
+           - Use plain English to explain what the disparities mean, not just what they are
+        2. SECOND PARAGRAPH: Explain the trends over time in plain English
+           - Describe the overall direction of changes (which groups are gaining or losing share) in simple terms
+           - ONLY cite the MOST SIGNIFICANT changes - the BIGGEST percentage point shifts or those that differ most from national trends
+           - Explain what these trends suggest about the market in plain English (e.g., "The data shows a shift toward greater representation of certain groups")
+           - DO NOT list every single change - focus ONLY on the most compelling trends
+           - Help readers understand how to interpret the "Change Over Time" column
+           - Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+           - Use plain English to explain what the trends mean, not just what they are
         
-        CRITICAL WRITING REQUIREMENTS:
-        - Write in PLAIN ENGLISH - avoid jargon and technical terms
+        CRITICAL WRITING REQUIREMENTS (SAME AS SECTION 2):
+        - Write in PLAIN ENGLISH - explain what the data means, not just what it says
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - ONLY cite the MOST COMPELLING numbers: the biggest changes, largest gaps, or patterns that differ most from national trends
+        - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
+        - Focus on explaining HOW TO READ the table and WHAT TRENDS are visible
         - Use simple, clear language accessible to non-technical readers
-        - Use "lending data" or "mortgage lending patterns" - NEVER say "demographic data" or "demographic composition"
+        - Explain trends in plain English, not just cite numbers
+        - Use "lending data" or "mortgage lending patterns" - NEVER say "demographic data"
         - Use "borrowers" - NEVER use "individuals" or "people"
-        - Focus ONLY on percentages and percentage point changes - NO raw numbers
-        - Example: "White borrowers received 53.0% of loans, compared to 68.2% of the population, a gap of 15.2 percentage points" 
-        - Example: "Hispanic borrowers' share increased from 29.5% to 35.1%" NOT "fell from 4,406 to 3,255"
-        - Make the analysis narrative and readable - avoid creating a "wall of numbers"
         - Write in objective, third-person style
         - NO first-person language (no "I", "we", "my", "our")
         - NO assumptions about causality or why patterns exist
@@ -528,7 +562,8 @@ Top Lenders by Loan Volume:
         - Present ONLY what the lending data shows compared to population demographics
         - Use professional, analytical tone
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
-        - The first paragraph MUST compare lending to population shares for the most recent year
+        - The first paragraph MUST explain how to interpret the table and identify the most significant patterns
+        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
         """
         
         return self._call_ai(prompt, max_tokens=1000, temperature=0.3)
@@ -585,13 +620,37 @@ Top Lenders by Loan Volume:
         Years: {year_range}
         Table Data: {json.dumps(income_neighborhood_data, indent=2)[:2000] if income_neighborhood_data else 'Not available'}
         
+        {self._get_ncrc_report_sources()}
+        
+        CRITICAL: The reader can see ALL the numbers in the table. Your job is NOT to recite the data, but to EXPLAIN what it means in plain English.
+        
+        ABSOLUTE REQUIREMENTS:
+        - Cite AT MOST ONE specific number per paragraph (one percentage point change OR one starting/ending percentage, not both)
+        - DO NOT list multiple categories with numbers - the reader can see all the data in the table
+        - DO NOT cite year-by-year changes - focus on overall trends
+        - MUST reference NCRC national reports when discussing patterns
+        - Explain concepts in plain English that a non-expert can understand
+        
         The discussion should:
-        1. Analyze the data within the table
-        2. Especially focus on the growth or shrinkage of each category over time
-        3. Discuss changes in percentages over the time period
-        4. Note any particularly notable trends or patterns
-        5. Reference specific numbers and percentages from the table
-        6. Discuss what the "Change Over Time" column shows
+        1. FIRST PARAGRAPH: Explain how to read the table and identify the most significant patterns
+           - Start by explaining WHAT THE TABLE SHOWS in plain English (lending by income and neighborhood characteristics)
+           - Explain HOW TO READ the table - what each category means (LMIB, LMICT, MMCT) in simple terms
+           - Explain that these categories OVERLAP - a loan can be in multiple categories simultaneously (this is critical to understand)
+           - Identify the SINGLE MOST COMPELLING pattern - cite ONLY 1 category with the BIGGEST change
+           - For that ONE category, note ONLY the direction of change (increased/decreased) and what it means conceptually
+           - DO NOT cite specific percentages or percentage point changes in this paragraph - just explain the concept
+           - MUST reference national trends from NCRC reports (e.g., "This pattern aligns with [NCRC research](link) showing that...")
+           - Use plain English to explain what the pattern means conceptually, not numerically
+        2. SECOND PARAGRAPH: Explain the trends over time in plain English
+           - Describe the OVERALL DIRECTION of changes in simple terms (e.g., "some categories increased while others decreased")
+           - Identify the SINGLE MOST SIGNIFICANT change - cite ONLY 1 category
+           - For that ONE category, cite AT MOST ONE number (either the percentage point change OR the starting/ending percentage, not both)
+           - Explain what this trend suggests about lending patterns in plain English (e.g., "This suggests a shift toward...")
+           - DO NOT cite multiple numbers or year-by-year changes - focus on explaining what the overall trend means
+           - Help readers understand how to interpret the "Change Over Time" column conceptually
+           - MUST reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+           - Use plain English to explain what the trends mean conceptually, not just cite numbers
+           - If patterns differ from national trends, note that (e.g., "Unlike [national patterns](link), this area shows...")
         
         CRITICAL UNDERSTANDING - THESE CATEGORIES OVERLAP:
         - LMICT = Low to Moderate Income Census Tract (areas where median income is below 80% of the area median)
@@ -606,9 +665,14 @@ Top Lenders by Loan Volume:
         - Percentages are calculated as: (category loans / total loans) × 100
         - The Change Over Time column shows the change from the first year to the last year
         
-        CRITICAL WRITING REQUIREMENTS:
-        - Write in PLAIN ENGLISH - avoid jargon and technical terms
+        CRITICAL WRITING REQUIREMENTS (SAME AS SECTION 1):
+        - Write in PLAIN ENGLISH - explain what the data means, not just what it says
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - ONLY cite the MOST COMPELLING numbers: the biggest changes, largest gaps, or patterns that differ most from national trends
+        - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
+        - Focus on explaining HOW TO READ the table and WHAT TRENDS are visible
         - Use simple, clear language accessible to non-technical readers
+        - Explain trends in plain English, not just cite numbers
         - If you must use an acronym, explain it in plain English the first time
         - Write in objective, third-person style
         - NO first-person language (no "I", "we", "my", "our")
@@ -618,25 +682,27 @@ Top Lenders by Loan Volume:
         - Present ONLY what the data shows
         - Use professional, analytical tone
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
-        - Include specific numbers and percentages when discussing changes
-        - Focus especially on growth or shrinkage of specific categories
+        - The first paragraph MUST explain how to interpret the table and identify the most significant patterns
+        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
         """
         
         return self._call_ai(prompt, max_tokens=1000, temperature=0.3)
     
     def generate_all_table_discussions(self, data: Dict[str, Any]) -> Dict[str, str]:
-        """Generate all three table discussions in a single API call to reduce rate limit issues.
+        """Generate all four table discussions in a single API call to reduce rate limit issues.
         
         Returns a dictionary with keys:
         - demographic_overview_discussion
         - income_neighborhood_discussion
         - top_lenders_detailed_discussion
+        - market_concentration_discussion
         """
         counties = data.get('counties', [])
         years = data.get('years', [])
         demographic_data = data.get('demographic_overview', [])
         income_neighborhood_data = data.get('income_neighborhood_indicators', [])
         top_lenders_data = data.get('top_lenders_detailed', [])
+        market_concentration_data = data.get('market_concentration', [])
         
         if len(years) > 1:
             year_range = f"{min(years)} to {max(years)}"
@@ -654,16 +720,19 @@ Top Lenders by Loan Volume:
             counties_str = f"{counties[0]} and {len(counties) - 1} other counties"
         
         prompt = f"""
-        Generate three separate discussion sections for a mortgage lending analysis report. Each section must be AT LEAST 2 PARAGRAPHS (minimum requirement).
+        Generate four separate discussion sections for a mortgage lending analysis report. Each section must be AT LEAST 2 PARAGRAPHS (minimum requirement).
         
-        IMPORTANT: Return your response as a JSON object with exactly these three keys:
+        IMPORTANT: Return your response as a JSON object with exactly these four keys:
         - "demographic_overview_discussion"
         - "income_neighborhood_discussion"
         - "top_lenders_detailed_discussion"
+        - "market_concentration_discussion"
         
         Counties: {counties_str}
         Years: {year_range}
         Latest Year: {latest_year}
+        
+        {self._get_ncrc_report_sources()}
         
         === DATA FOR SECTION 1: DEMOGRAPHIC OVERVIEW ===
         Lending Table Data: {json.dumps(demographic_data, indent=2)[:2000] if demographic_data else 'Not available'}
@@ -676,36 +745,65 @@ Top Lenders by Loan Volume:
         For "demographic_overview_discussion":
         - This is LENDING DATA for {counties_str}, NOT demographic data about the population
         - The table shows mortgage lending patterns by race and ethnicity of BORROWERS
-        - CRITICAL: You MUST compare the lending percentage for each race/ethnicity group to their share of the population in the most recent year ({latest_year})
-        - The population demographics data IS PROVIDED ABOVE - use it to make comparisons
-        - FIRST PARAGRAPH: Compare lending percentages to population shares for each group in {latest_year}
-          * For each group shown in the lending table, state their lending percentage and population percentage (from the data above)
-          * Note whether lending is above, below, or approximately equal to population share
-          * Calculate and mention the difference in percentage points
-          * Focus on groups where there are notable differences (gaps) between lending and population shares
-          * DO NOT say the population data is missing - it is provided above
-        - SECOND PARAGRAPH: Analyze trends over time
-          * Focus on the growth or shrinkage of lending to specific race/ethnic groups over time
-          * Discuss changes in PERCENTAGES over the time period (focus on percentage points, not raw numbers)
-          * Note any particularly notable trends or patterns in lending
-        - Use PERCENTAGES ONLY - do NOT include raw numbers or counts of borrowers
+        - CRITICAL: The population demographics data IS PROVIDED ABOVE - use it to make comparisons
+        - FIRST PARAGRAPH: Explain how to interpret the table and identify the most significant patterns
+          * Explain what the table shows (lending percentages vs. population shares) in plain English
+          * Explain HOW TO READ the table - what each column means and how to interpret the data
+          * Identify the MOST COMPELLING disparities - ONLY cite 1-2 groups with the LARGEST gaps or most notable differences
+          * For those selected groups, briefly note whether lending is above, below, or approximately equal to population share
+          * DO NOT list every single group's numbers - the reader can see those in the table
+          * DO NOT recite all the data - focus on explaining what the patterns mean
+          * Reference national trends from NCRC reports when relevant (e.g., "This pattern aligns with [national trends](link) showing...")
+          * Use plain English to explain what the disparities mean, not just what they are
+        - SECOND PARAGRAPH: Explain the trends over time in plain English
+          * Describe the overall direction of changes (which groups are gaining or losing share) in simple terms
+          * ONLY cite the MOST SIGNIFICANT changes - the BIGGEST percentage point shifts or those that differ most from national trends
+          * Explain what these trends suggest about the market in plain English (e.g., "The data shows a shift toward greater representation of certain groups")
+          * DO NOT list every single change - focus ONLY on the most compelling trends
+          * Help readers understand how to interpret the "Change Over Time" column
+          * Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+          * Use plain English to explain what the trends mean, not just what they are
         - Use "lending data" or "mortgage lending patterns" - NEVER say "demographic data"
         - Use "borrowers" - NEVER use "individuals" or "people"
-        - Make the analysis narrative and readable - avoid creating a "wall of numbers"
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - ONLY cite the MOST COMPELLING numbers: the biggest changes, largest gaps, or patterns that differ most from national trends
+        - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
+        - Focus on explaining HOW TO READ the table and WHAT TRENDS are visible in plain English
+        - Use simple, clear language accessible to non-technical readers
+        - Explain trends in plain English, not just cite numbers
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
-        - The first paragraph MUST compare lending to population shares for the most recent year
         - DO NOT mention that population data is missing or unavailable - it is provided above
         
         === DATA FOR SECTION 2: INCOME AND NEIGHBORHOOD INDICATORS ===
         Table Data: {json.dumps(income_neighborhood_data, indent=2)[:2000] if income_neighborhood_data else 'Not available'}
         
         For "income_neighborhood_discussion":
-        - Analyze the data within the table
-        - Focus on the growth or shrinkage of each category over time
-        - Discuss changes in percentages over the time period
-        - Note any particularly notable trends or patterns
-        - Reference specific numbers and percentages from the table
-        - Discuss what the "Change Over Time" column shows
+        - CRITICAL: The reader can see ALL the numbers in the table. Your job is NOT to recite the data, but to EXPLAIN what it means in plain English.
+        - ABSOLUTE REQUIREMENTS:
+          * Cite AT MOST ONE specific number per paragraph (one percentage point change OR one starting/ending percentage, not both)
+          * DO NOT list multiple categories with numbers - the reader can see all the data in the table
+          * DO NOT cite year-by-year changes - focus on overall trends
+          * MUST reference NCRC national reports when discussing patterns
+          * Explain concepts in plain English that a non-expert can understand
+        - FIRST PARAGRAPH: Explain how to read the table and identify the most significant patterns
+          * Start by explaining WHAT THE TABLE SHOWS in plain English (lending by income and neighborhood characteristics)
+          * Explain HOW TO READ the table - what each category means (LMIB, LMICT, MMCT) in simple terms
+          * Explain that these categories OVERLAP - a loan can be in multiple categories simultaneously (this is critical to understand)
+          * Identify the SINGLE MOST COMPELLING pattern - cite ONLY 1 category with the BIGGEST change
+          * For that ONE category, note ONLY the direction of change (increased/decreased) and what it means conceptually
+          * DO NOT cite specific percentages or percentage point changes in this paragraph - just explain the concept
+          * MUST reference national trends from NCRC reports (e.g., "This pattern aligns with [NCRC research](link) showing that...")
+          * Use plain English to explain what the pattern means conceptually, not numerically
+        - SECOND PARAGRAPH: Explain the trends over time in plain English
+          * Describe the OVERALL DIRECTION of changes in simple terms (e.g., "some categories increased while others decreased")
+          * Identify the SINGLE MOST SIGNIFICANT change - cite ONLY 1 category
+          * For that ONE category, cite AT MOST ONE number (either the percentage point change OR the starting/ending percentage, not both)
+          * Explain what this trend suggests about lending patterns in plain English (e.g., "This suggests a shift toward...")
+          * DO NOT cite multiple numbers or year-by-year changes - focus on explaining what the overall trend means
+          * Help readers understand how to interpret the "Change Over Time" column conceptually
+          * MUST reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+          * Use plain English to explain what the trends mean conceptually, not just cite numbers
+          * If patterns differ from national trends, note that (e.g., "Unlike [national patterns](link), this area shows...")
         - CRITICAL: These categories are OVERLAPPING, not mutually exclusive:
           * LMICT = Low to Moderate Income Census Tract (areas where median income is below 80% of the area median)
           * LMIB = Low to Moderate Income Borrower (borrowers with income below 80% of the area median)
@@ -714,6 +812,9 @@ Top Lenders by Loan Volume:
         - DO NOT say things like "loans in both X and Y" or treat these as mutually exclusive categories
         - Each percentage represents the share of total loans that meet that specific criteria, regardless of whether they also meet other criteria
         - The percentages can add up to more than 100% because loans can be in multiple categories
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - Only cite the MOST COMPELLING numbers: the biggest changes or most notable patterns
+        - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
         
         === DATA FOR SECTION 3: TOP LENDERS ===
@@ -722,20 +823,63 @@ Top Lenders by Loan Volume:
         For "top_lenders_detailed_discussion":
         - This is LENDING DATA showing mortgage lending patterns, NOT demographic data
         - DO NOT mention specific lender names
-        - Focus on TRENDS and PATTERNS at a higher level
-        - Discuss variations in lending to traditionally excluded groups: Hispanic, Black, LMIB, LMICT, MMCT
-        - CRITICAL: The data includes lender_type field (from lenders18.type_name) which categorizes lenders as:
-          * Mortgage companies
-          * Banks
-          * Bank affiliates
-          * Credit unions
-        - You MUST analyze and discuss differences between these lender types:
-          * Compare how mortgage companies vs. banks vs. credit unions perform
-          * Discuss which lender types serve higher or lower shares of traditionally excluded groups
-          * Note patterns in lending to Hispanic borrowers, Black borrowers, LMIB, LMICT, and MMCT by lender type
-          * Discuss performance differences between lender types
-        - Focus on percentage ranges and patterns by lender type rather than specific lender statistics
+        - FIRST PARAGRAPH: Explain how to read the table and identify the most significant patterns
+          * Explain what the table shows (lending patterns by lender type)
+          * Explain that lenders are categorized as mortgage companies, banks, bank affiliates, or credit unions
+          * Identify the MOST COMPELLING patterns - only cite 1-2 lender types or groups with the most notable differences
+          * DO NOT list every single statistic - the reader can see those in the table
+          * Focus on explaining what the patterns mean, not reciting all the data
+          * Reference national trends from NCRC reports when relevant (e.g., "[NCRC research](link) shows that mortgage companies...")
+        - SECOND PARAGRAPH: Explain the trends and patterns in plain English
+          * Describe overall patterns in how different lender types serve traditionally excluded groups (Hispanic, Black, LMIB, LMICT, MMCT)
+          * Only cite the MOST SIGNIFICANT differences between lender types
+          * Explain what these patterns suggest about market access
+          * DO NOT list every single percentage - focus on the most compelling trends
+          * Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+        - CRITICAL: The data includes lender_type field which categorizes lenders as mortgage companies, banks, bank affiliates, or credit unions
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - Only cite the MOST COMPELLING numbers: the biggest differences or most notable patterns
+        - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
+        
+        === DATA FOR SECTION 4: MARKET CONCENTRATION ===
+        Market Concentration Data (HHI by year and loan purpose): {json.dumps(market_concentration_data, indent=2)[:2000] if market_concentration_data else 'Not available'}
+        
+        For "market_concentration_discussion":
+        - This table shows market concentration using the Herfindahl-Hirschman Index (HHI) for all loans, home purchase loans, refinance loans, and home equity lending by year
+        - HHI measures market concentration by calculating the sum of squared market shares for all lenders
+        - HHI values range from 0 to 10,000, where:
+          * Lower values (below 1,500) indicate more competitive markets with many lenders sharing market share
+          * Moderate values (1,500-2,500) indicate moderate concentration
+          * Higher values (above 2,500) indicate highly concentrated markets dominated by fewer lenders
+        - The table shows HHI values for each loan type (All Loans, Home Purchase, Refinance, Home Equity) for each year
+        - CRITICAL: Before analyzing trends, you MUST first assess the overall competitive nature of the market:
+          * If HHI values are consistently below 1,500 (or even well below 1,500), the market is HIGHLY COMPETITIVE
+          * You MUST acknowledge this competitive nature prominently in your analysis
+          * Even if concentration increased over time, if values remain well below 1,500, emphasize that the market remains highly competitive overall
+          * Put any increases in concentration in proper context - a market that goes from 200 to 400 HHI is still highly competitive (both well below 1,500)
+          * Do NOT focus solely on increases without acknowledging the overall competitive nature
+        - FIRST PARAGRAPH: Explain how to read the table and what it means
+          * Explain what HHI measures and what it means for market competition in plain English
+          * CRITICALLY: If HHI values are below 1,500, explicitly state that the market is highly competitive
+          * Explain what the different loan types represent
+          * Describe the overall competitive nature of the market - do NOT list every HHI value
+          * Reference national trends from NCRC reports when relevant
+        - SECOND PARAGRAPH: Explain the trends and patterns in plain English
+          * CRITICALLY: If HHI values are well below 1,500, acknowledge that the market remains highly competitive even if concentration increased
+          * Describe overall trends (is the market becoming more or less competitive?)
+          * Only cite the MOST SIGNIFICANT changes or differences between loan types
+          * Explain what these patterns mean for borrowers and the lending market
+          * DO NOT list every single HHI value - focus on the most compelling trends
+          * Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
+        - Use PLAIN ENGLISH - avoid technical jargon
+        - Do NOT include specific HHI numbers or calculations in the discussion
+        - Focus on explaining what the patterns mean, not the mathematical details
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - Only cite the MOST COMPELLING information: the biggest changes or most notable patterns
+        - DO NOT create a "wall of numbers" - cite at most 1-2 specific examples per paragraph
+        - AT LEAST 2 PARAGRAPHS (minimum requirement)
+        - CRITICAL: If all HHI values in the data are below 1,500, you MUST emphasize the competitive nature of the market prominently, even if discussing increases over time
         
         CRITICAL WRITING REQUIREMENTS FOR ALL SECTIONS:
         - Write in PLAIN ENGLISH - avoid jargon and technical terms
@@ -750,65 +894,111 @@ Top Lenders by Loan Volume:
         - Present ONLY what the data shows
         - Use professional, analytical tone
         - AT LEAST 2 PARAGRAPHS for each section (minimum requirement)
+        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
         
-        Return ONLY a valid JSON object with the three keys specified above. Do not include any other text or explanation.
+        Return ONLY a valid JSON object with the four keys specified above. Do not include any other text or explanation.
         """
         
-        response = self._call_ai(prompt, max_tokens=6000, temperature=0.3)  # Increased for 3 discussions
-        
+        try:
+            response = self._call_ai(prompt, max_tokens=3000, temperature=0.3)
+        except Exception as api_error:
+            print(f"[ERROR] AI API call failed: {api_error}")
+            import traceback
+            traceback.print_exc()
+            return {
+                'demographic_overview_discussion': '',
+                'income_neighborhood_discussion': '',
+                'top_lenders_detailed_discussion': '',
+                'market_concentration_discussion': ''
+            }
+
+        # Log the raw response for debugging
+        print(f"[DEBUG] Raw AI response length: {len(response) if response else 0}")
+        if response:
+            print(f"[DEBUG] Raw AI response preview (first 500 chars): {response[:500]}")
+            print(f"[DEBUG] Raw AI response preview (last 500 chars): {response[-500:] if len(response) > 500 else response}")
+        else:
+            print(f"[ERROR] AI returned empty response!")
+            return {
+                'demographic_overview_discussion': '',
+                'income_neighborhood_discussion': '',
+                'top_lenders_detailed_discussion': '',
+                'market_concentration_discussion': ''
+            }
+
         # Parse the JSON response
         try:
-            # Try to extract JSON from the response (in case there's extra text)
             import re
-            json_match = re.search(r'\{.*\}', response, re.DOTALL)
-            if json_match:
-                response = json_match.group(0)
+
+            # First, try to extract JSON from markdown code fences (```json ... ``` or ``` ... ```)
+            # Use greedy matching to capture the full JSON object (including nested braces)
+            code_fence_match = re.search(r'```(?:json)?\s*(\{[\s\S]*\})\s*```', response)
+            if code_fence_match:
+                response = code_fence_match.group(1)
+                print(f"[DEBUG] Extracted JSON from markdown code fence, length: {len(response)}")
+            else:
+                # Fall back to extracting JSON object from response (handles extra text before/after)
+                json_match = re.search(r'\{[\s\S]*\}', response)
+                if json_match:
+                    response = json_match.group(0)
+                    print(f"[DEBUG] Extracted JSON from response, length: {len(response)}")
+                else:
+                    print(f"[ERROR] No JSON object found in AI response")
+                    print(f"[ERROR] Full response: {response}")
+                    return {
+                        'demographic_overview_discussion': '',
+                        'income_neighborhood_discussion': '',
+                        'top_lenders_detailed_discussion': '',
+                        'market_concentration_discussion': ''
+                    }
             
             discussions = json.loads(response)
+            print(f"[DEBUG] Successfully parsed JSON, keys: {list(discussions.keys())}")
             
-            # Validate that we have all three keys
-            required_keys = ['demographic_overview_discussion', 'income_neighborhood_discussion', 'top_lenders_detailed_discussion']
+            # Validate that we have all four keys
+            required_keys = ['demographic_overview_discussion', 'income_neighborhood_discussion', 'top_lenders_detailed_discussion', 'market_concentration_discussion']
             for key in required_keys:
                 if key not in discussions:
+                    print(f"[WARNING] Missing required key in AI response: {key}")
+                    print(f"[WARNING] Available keys: {list(discussions.keys())}")
                     raise ValueError(f"Missing required key in response: {key}")
+                # Check if the value is empty or None
+                value = discussions.get(key)
+                value_str = str(value).strip() if value else ''
+                if not value or len(value_str) == 0:
+                    print(f"[WARNING] Key {key} exists but is empty in AI response")
+                    print(f"[WARNING] Value type: {type(value)}, Value: {repr(value)}")
+                else:
+                    print(f"[DEBUG] Key {key} has content, length: {len(value_str)}")
+            
+            # Log success
+            print(f"[DEBUG] Successfully parsed AI discussions, lengths: demographic={len(discussions.get('demographic_overview_discussion', ''))}, income={len(discussions.get('income_neighborhood_discussion', ''))}, lenders={len(discussions.get('top_lenders_detailed_discussion', ''))}, market_concentration={len(discussions.get('market_concentration_discussion', ''))}")
             
             return discussions
         except json.JSONDecodeError as e:
-            print(f"Error parsing JSON response: {e}")
-            print(f"Response was: {response[:1000]}")  # Show more of the response
-            print(f"Response length: {len(response)}")
-            
-            # Try to extract partial data if possible
-            try:
-                # Try to find and extract individual discussions even if JSON is malformed
-                import re
-                partial_discussions = {}
-                for key in ['demographic_overview_discussion', 'income_neighborhood_discussion', 'top_lenders_detailed_discussion']:
-                    # Look for the key and extract its value (handle escaped quotes and newlines)
-                    pattern = f'"{key}":\\s*"([^"]*(?:\\\\.[^"]*)*)"'
-                    match = re.search(pattern, response, re.DOTALL)
-                    if match:
-                        partial_discussions[key] = match.group(1).replace('\\"', '"').replace('\\n', '\n')
-                    else:
-                        partial_discussions[key] = ''
-                
-                # Only return partial data if we got meaningful content (not just empty strings)
-                if any(v and v.strip() for v in partial_discussions.values()):
-                    print(f"  [WARNING] Extracted partial discussions from malformed JSON")
-                    # Fill in empty ones with empty string
-                    for key in ['demographic_overview_discussion', 'income_neighborhood_discussion', 'top_lenders_detailed_discussion']:
-                        if key not in partial_discussions or not partial_discussions[key]:
-                            partial_discussions[key] = ''
-                    return partial_discussions
-            except Exception as extract_error:
-                print(f"  [ERROR] Could not extract partial data: {extract_error}")
-            
-            # If extraction failed or returned only empty strings, re-raise to trigger fallback in core.py
-            print("  [WARNING] Falling back to individual discussion calls due to JSON parsing error...")
-            raise  # Re-raise to trigger fallback in core.py
+            print(f"[ERROR] Error parsing JSON response from AI: {e}")
+            print(f"[ERROR] Response length: {len(response)}")
+            print(f"[ERROR] Response preview (first 1000 chars): {response[:1000]}")
+            print(f"[ERROR] Response preview (last 500 chars): {response[-500:] if len(response) > 500 else response}")
+            # Fallback: return empty strings
+            return {
+                'demographic_overview_discussion': '',
+                'income_neighborhood_discussion': '',
+                'top_lenders_detailed_discussion': '',
+                'market_concentration_discussion': ''
+            }
         except Exception as e:
-            print(f"Error in generate_all_table_discussions: {e}")
-            raise
+            print(f"[ERROR] Unexpected error parsing AI response: {e}")
+            print(f"[ERROR] Response type: {type(response)}, length: {len(response) if response else 0}")
+            import traceback
+            traceback.print_exc()
+            # Fallback: return empty strings
+            return {
+                'demographic_overview_discussion': '',
+                'income_neighborhood_discussion': '',
+                'top_lenders_detailed_discussion': '',
+                'market_concentration_discussion': ''
+            }
     
     def generate_top_lenders_detailed_discussion(self, data: Dict[str, Any]) -> str:
         """Generate at least 2 paragraphs discussing the top lenders detailed table data."""
@@ -836,6 +1026,8 @@ Top Lenders by Loan Volume:
         Year: {latest_year} (most recent year in report)
         Table Data: {json.dumps(top_lenders_data, indent=2)[:2000] if top_lenders_data else 'Not available'}
         
+        {self._get_ncrc_report_sources()}
+        
         CRITICAL WRITING REQUIREMENTS:
         - DO NOT mention specific lender names (e.g., "Nova Financial", "Crosscountry Mortgage", "Loandepotcom")
         - Focus on TRENDS and PATTERNS at a higher level of analysis
@@ -850,12 +1042,19 @@ Top Lenders by Loan Volume:
         - Note any notable variations in lending patterns between different lender types
         
         The discussion should:
-        1. Analyze overall trends in lending patterns across the top lenders
-        2. Discuss variations in lending to traditionally excluded groups (Hispanic, Black, LMIB, LMICT, MMCT)
-        3. CRITICALLY: Compare and contrast patterns between different lender types (mortgage companies vs. banks vs. credit unions)
-        4. Discuss which lender types serve higher or lower shares of traditionally excluded groups
-        5. Note ranges and patterns in percentages by lender type rather than specific lender statistics
-        6. Discuss whether there are distinct market segments or lending approaches visible between lender types
+        1. FIRST PARAGRAPH: Explain how to read the table and identify the most significant patterns
+           - Explain what the table shows (lending patterns by lender type)
+           - Explain that lenders are categorized as mortgage companies, banks, bank affiliates, or credit unions
+           - Identify the MOST COMPELLING patterns - only cite 1-2 lender types or groups with the most notable differences
+           - DO NOT list every single statistic - the reader can see those in the table
+           - Focus on explaining what the patterns mean, not reciting all the data
+           - Reference national trends from NCRC reports when relevant (e.g., "[NCRC research](link) shows that mortgage companies...")
+        2. SECOND PARAGRAPH: Explain the trends and patterns in plain English
+           - Describe overall patterns in how different lender types serve traditionally excluded groups (Hispanic, Black, LMIB, LMICT, MMCT)
+           - Only cite the MOST SIGNIFICANT differences between lender types
+           - Explain what these patterns suggest about market access
+           - DO NOT list every single percentage - focus on the most compelling trends
+           - Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
         
         IMPORTANT NOTES:
         - Race/ethnicity percentages are calculated using the same methodology as Section 1
@@ -864,10 +1063,13 @@ Top Lenders by Loan Volume:
         - LMICT = Low to Moderate Income Census Tract (explain in plain English: areas where median income is below 80% of the area median)
         - MMCT = Majority Minority Census Tract (explain in plain English: areas where more than half the population is from minority groups)
         - Use "borrowers" terminology, not "individuals" or "people"
-        - Focus on percentages and percentage ranges, not raw numbers
         
         CRITICAL WRITING REQUIREMENTS:
-        - Write in PLAIN ENGLISH - avoid jargon and technical terms
+        - Write in PLAIN ENGLISH - explain what the data means, not just what it says
+        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
+        - Only cite the MOST COMPELLING numbers: the biggest differences or most notable patterns
+        - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
+        - Focus on explaining HOW TO READ the table and WHAT TRENDS are visible
         - Use simple, clear language accessible to non-technical readers
         - If you must use an acronym, explain it in plain English the first time
         - Write in objective, third-person style
@@ -879,8 +1081,7 @@ Top Lenders by Loan Volume:
         - Present ONLY what the lending data shows
         - Use professional, analytical tone
         - AT LEAST 2 PARAGRAPHS (minimum requirement)
-        - Focus on trends, patterns, and variations rather than specific lender details
-        - Discuss at a higher level of analysis
+        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
         """
         
         return self._call_ai(prompt, max_tokens=1000, temperature=0.3)
@@ -927,6 +1128,96 @@ Top Lenders by Loan Volume:
             summary_data = data.get('summary_data', [])
             summary_text = json.dumps(summary_data, indent=2)[:1500] if summary_data else "No summary data available"
             
+            # Check if multi-racial borrowers are present in the data
+            has_multi_racial = False
+            multi_racial_count = 0
+            
+            # First check summary_data structure
+            if summary_data:
+                for row in summary_data:
+                    if isinstance(row, dict):
+                        # Check all possible key variations
+                        multi_racial_keys = ['multi_racial', 'Multi-Racial', 'multi-racial', 'multi_racial_originations', 'Multi-Racial Originations']
+                        for key in multi_racial_keys:
+                            if key in row:
+                                count = row[key]
+                                # Convert to int if it's a number
+                                try:
+                                    count = int(count) if count is not None else 0
+                                except (ValueError, TypeError):
+                                    count = 0
+                                if count > 0:
+                                    has_multi_racial = True
+                                    multi_racial_count = count
+                                    break
+                        if has_multi_racial:
+                            break
+                    else:
+                        # Check string representation
+                        row_str = str(row).lower()
+                        if 'multi_racial' in row_str or 'multi-racial' in row_str:
+                            has_multi_racial = True
+                            break
+            
+            # Also check summary_text as fallback (in case data is nested differently)
+            if not has_multi_racial and summary_text:
+                import re
+                # Look for patterns like "multi_racial": 123 or percentages like 2.1%
+                multi_racial_patterns = [
+                    r'"multi_racial"\s*:\s*(\d+)',
+                    r'"Multi-Racial[^"]*"\s*:\s*(\d+)',
+                    r'multi[_-]?racial[^:]*:\s*(\d+)',
+                    r'Multi[_-]?Racial[^:]*:\s*(\d+)',
+                    r'multi[_-]?racial[^%]*[:\s]+([\d.]+)%',  # Percentage format
+                ]
+                for pattern in multi_racial_patterns:
+                    matches = re.findall(pattern, summary_text, re.IGNORECASE)
+                    if matches:
+                        # Check if any match is > 0
+                        for match in matches:
+                            try:
+                                value = float(match)
+                                if value > 0:
+                                    has_multi_racial = True
+                                    break
+                            except ValueError:
+                                pass
+                        if has_multi_racial:
+                            break
+            
+            # Build multi-racial explanation if present
+            multi_racial_explanation = ""
+            if has_multi_racial:
+                multi_racial_explanation = """
+            
+            MULTI-RACIAL BORROWER EXPLANATION (REQUIRED IF MULTI-RACIAL DATA IS PRESENT):
+            If the table includes multi-racial borrowers, you MUST include a clear explanation in your narrative:
+            
+            1. Definition: Multi-racial borrowers are defined as non-Hispanic borrowers who identify with 2 or more DISTINCT main race categories. The main race categories are:
+               - Native American (category 1)
+               - Asian (category 2, includes all Asian subcategories like Chinese, Japanese, Filipino, etc.)
+               - Black (category 3)
+               - Native Hawaiian or Other Pacific Islander/HoPI (category 4, includes all HoPI subcategories)
+               - White (category 5)
+            
+            2. Important Logic:
+               - Multi-racial status requires 2+ DISTINCT main categories (not just multiple subcategories of the same race)
+               - For example: Someone who selects both "Chinese" and "Japanese" is NOT multi-racial - both map to the "Asian" main category (2)
+               - For example: Someone who selects "Black" (3) and "White" (5) IS multi-racial - these are two distinct main categories
+               - Hispanic borrowers CANNOT be multi-racial - Hispanic ethnicity takes precedence over race combinations
+            
+            3. Census Alignment: This definition aligns with Census Bureau's "Two or More Races" category, which counts people who identify with two or more of the five main race categories, excluding Hispanic ethnicity.
+            
+            4. Race Combination Mix: If multi-racial data is present, note the most common race combinations based on national HMDA data patterns. According to national HMDA data (2018-2024), the top 5 most common multi-racial combinations are:
+               - Asian/White: 38.01% of all multi-racial borrowers
+               - Native American/White: 21.80% of all multi-racial borrowers
+               - Black/White: 17.47% of all multi-racial borrowers
+               - HoPI/White: 4.84% of all multi-racial borrowers
+               - Native American/Black: 3.74% of all multi-racial borrowers
+               These top 5 combinations account for approximately 86% of all multi-racial borrowers nationally. If specific combination data is available in the table for this analysis, reference those local patterns instead.
+            
+            This explanation should be integrated naturally into your narrative, typically when first discussing borrower demographics or race/ethnicity breakdowns."""
+            
             prompt = f"""
             Analyze the yearly breakdown table data and provide a narrative explanation:
             
@@ -942,12 +1233,14 @@ Top Lenders by Loan Volume:
             - MMCT = Majority-Minority Census Tracts
             - The table shows: Total Originations, LMI Borrower Only Originations, MMCT Only Originations, and Both LMIB/MMCT Originations
             - These categories are mutually exclusive (deduplicated)
+            {multi_racial_explanation}
             
             Write 1-2 paragraphs that:
             1. Describe the changes over time in total originations and each category
             2. Indicate the percentage of originations that are to LMI Borrowers only, in MMCT only, and both LMIB/MMCT combined over time
             3. Note any significant trends or patterns in the net change column
             4. Discuss what these changes mean for origination distribution patterns
+            {f"5. If multi-racial borrowers are present, explain the multi-racial definition and logic as specified above, including the most common race combinations" if has_multi_racial else ""}
             
             WRITING REQUIREMENTS:
             - Plain English, accessible to non-technical readers

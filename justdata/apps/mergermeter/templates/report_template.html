@@ -11,6 +11,9 @@
     <meta property="og:title" content="MergerMeter - Merger Impact Analysis Report">
     <meta property="og:description" content="Comprehensive two-bank merger impact analysis report">
     
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
@@ -325,41 +328,6 @@
     <!-- Header removed per user request -->
 
     <div class="container">
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> Report Sections</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-info-type="mortgage-goals">
-                    <i class="fas fa-bullseye"></i>
-                    <h4>Mortgage Goals</h4>
-                    <p>Post-merger performance goals</p>
-                </div>
-                <div class="feature-card" data-info-type="mortgage-data">
-                    <i class="fas fa-chart-line"></i>
-                    <h4>Mortgage Data</h4>
-                    <p>Bank-specific mortgage lending metrics</p>
-                </div>
-                <div class="feature-card" data-info-type="small-business">
-                    <i class="fas fa-briefcase"></i>
-                    <h4>Small Business Data</h4>
-                    <p>Small business lending analysis</p>
-                </div>
-                <div class="feature-card" data-info-type="branch-data">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <h4>Branch Data</h4>
-                    <p>Branch network analysis</p>
-                </div>
-            </div>
-            
-            <!-- Version Card -->
-            <div class="version-card" style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; text-align: center;">
-                <p style="margin: 0; color: #6c757d; font-size: 0.85rem;">
-                    <strong>MergerMeter</strong><br>
-                    Version {{ version }}
-                </p>
-            </div>
-        </aside>
-        
         <!-- Info Modal -->
         <div id="infoModal" class="info-modal">
             <div class="info-modal-content">
@@ -434,7 +402,7 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.v2.js') }}"></script>
     <script>
         $(document).ready(function() {
             // Set report date
@@ -507,51 +475,296 @@
             }
 
             function displayAISummary(summary, statisticalAnalysis, jobId) {
-                // Convert plain text to formatted HTML
-                function formatSummaryText(text) {
-                    if (!text) return '';
-                    
-                    // Split into paragraphs (double newlines)
-                    let paragraphs = text.split(/\n\s*\n/);
-                    
-                    let html = '';
-                    for (let para of paragraphs) {
-                        para = para.trim();
-                        if (!para) continue;
-                        
-                        // Check if it's a heading (all caps, short, or ends with colon)
-                        if (para.length < 100 && (
-                            para === para.toUpperCase() || 
-                            para.endsWith(':') ||
-                            /^(EXECUTIVE SUMMARY|KEY FINDINGS|RECOMMENDATIONS|CONCLUSION|DATA ANALYSIS|STATISTICAL FINDINGS)/i.test(para)
-                        )) {
-                            html += `<h3 style="color: #034ea0; margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem; font-weight: 600;">${escapeHtml(para)}</h3>`;
-                        } else {
-                            html += `<p style="margin-bottom: 15px; line-height: 1.8;">${escapeHtml(para).replace(/\n/g, '<br>')}</p>`;
+                // First, load metadata and HHI data to build introduction
+                fetch(`/report-data?job_id=${jobId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (!data.success) {
+                            console.error('Error loading report data:', data.error);
+                            return;
                         }
-                    }
-                    
-                    return html;
+                        
+                        const metadata = data.metadata || {};
+                        const hhiData = data.hhi_data || {};
+                        
+                        // Build introduction section
+                        const introHTML = buildIntroductionSection(metadata);
+                        
+                        // Build HHI table section
+                        const hhiHTML = buildHHITableSection(hhiData, metadata);
+                        
+                        // Convert plain text to formatted HTML
+                        function formatSummaryText(text) {
+                            if (!text) return '';
+                            
+                            // Split into paragraphs (double newlines)
+                            let paragraphs = text.split(/\n\s*\n/);
+                            
+                            let html = '';
+                            for (let para of paragraphs) {
+                                para = para.trim();
+                                if (!para) continue;
+                                
+                                // Check if it's a heading (all caps, short, or ends with colon)
+                                if (para.length < 100 && (
+                                    para === para.toUpperCase() || 
+                                    para.endsWith(':') ||
+                                    /^(EXECUTIVE SUMMARY|KEY FINDINGS|RECOMMENDATIONS|CONCLUSION|DATA ANALYSIS|STATISTICAL FINDINGS)/i.test(para)
+                                )) {
+                                    html += `<h3 style="color: #034ea0; margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem; font-weight: 600;">${escapeHtml(para)}</h3>`;
+                                } else {
+                                    html += `<p style="margin-bottom: 15px; line-height: 1.8;">${escapeHtml(para).replace(/\n/g, '<br>')}</p>`;
+                                }
+                            }
+                            
+                            return html;
+                        }
+                        
+                        // Format the complete report with introduction, HHI table, and AI summary
+                        const summaryHTML = `
+                            ${introHTML}
+                            ${hhiHTML}
+                            <div class="ai-summary-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.8; color: #333; margin-top: 30px;">
+                                <h2 style="color: #034ea0; margin-bottom: 20px; font-size: 1.8rem;">AI-Generated Analysis Summary</h2>
+                                <div style="font-family: 'Inter', sans-serif; font-size: 1rem;">
+                                    ${formatSummaryText(summary)}
+                                </div>
+                            </div>
+                            
+                            <div class="download-section" style="margin-top: 30px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+                                <p style="margin: 0 0 15px 0; color: #666;">For detailed data tables and analysis, download the full Excel report:</p>
+                                <a href="/download?format=excel&job_id=${jobId}" class="action-btn primary" style="display: inline-block;">
+                                    <i class="fas fa-download"></i> Download Full Excel Report
+                                </a>
+                            </div>
+                        `;
+                        
+                        document.getElementById('reportContent').innerHTML = summaryHTML;
+                    })
+                    .catch(error => {
+                        console.error('Error loading report data:', error);
+                        // Fallback: just show AI summary without intro/HHI
+                        function formatSummaryText(text) {
+                            if (!text) return '';
+                            let paragraphs = text.split(/\n\s*\n/);
+                            let html = '';
+                            for (let para of paragraphs) {
+                                para = para.trim();
+                                if (!para) continue;
+                                if (para.length < 100 && (
+                                    para === para.toUpperCase() || 
+                                    para.endsWith(':') ||
+                                    /^(EXECUTIVE SUMMARY|KEY FINDINGS|RECOMMENDATIONS|CONCLUSION|DATA ANALYSIS|STATISTICAL FINDINGS)/i.test(para)
+                                )) {
+                                    html += `<h3 style="color: #034ea0; margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem; font-weight: 600;">${escapeHtml(para)}</h3>`;
+                                } else {
+                                    html += `<p style="margin-bottom: 15px; line-height: 1.8;">${escapeHtml(para).replace(/\n/g, '<br>')}</p>`;
+                                }
+                            }
+                            return html;
+                        }
+                        const summaryHTML = `
+                            <div class="ai-summary-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.8; color: #333;">
+                                <div style="font-family: 'Inter', sans-serif; font-size: 1rem;">
+                                    ${formatSummaryText(summary)}
+                                </div>
+                            </div>
+                        `;
+                        document.getElementById('reportContent').innerHTML = summaryHTML;
+                    });
+            }
+            
+            function buildIntroductionSection(metadata) {
+                const bankA = metadata.acquirer_name || 'Acquirer Bank';
+                const bankB = metadata.target_name || 'Target Bank';
+                const bankALei = metadata.acquirer_lei || 'N/A';
+                const bankBLei = metadata.target_lei || 'N/A';
+                const bankARssd = metadata.acquirer_rssd || 'N/A';
+                const bankBRssd = metadata.target_rssd || 'N/A';
+                const bankASbId = metadata.acquirer_sb_id || 'N/A';
+                const bankBSbId = metadata.target_sb_id || 'N/A';
+                
+                // Build loan purpose description
+                const loanPurposeMap = {
+                    '1': 'Home Purchase',
+                    '2': 'Home Improvement',
+                    '3': 'Refinance',
+                    '31': 'Refinance',
+                    '4': 'Other Purpose'
+                };
+                const loanPurpose = metadata.loan_purpose || '';
+                const loanPurposeLabels = loanPurpose.split(',').map(p => loanPurposeMap[p.trim()] || `Code ${p.trim()}`).filter(Boolean);
+                const loanPurposeText = loanPurposeLabels.length > 0 ? loanPurposeLabels.join(', ') : 'All Loan Purposes';
+                
+                // Build filter descriptions
+                const filters = [];
+                if (metadata.action_taken) {
+                    const actionMap = {
+                        '1': 'Loan Originated',
+                        '2': 'Application Approved but Not Accepted',
+                        '3': 'Application Denied',
+                        '4': 'Application Withdrawn',
+                        '5': 'File Closed for Incompleteness'
+                    };
+                    const actions = metadata.action_taken.split(',').map(a => actionMap[a.trim()] || `Code ${a.trim()}`).filter(Boolean);
+                    if (actions.length > 0) filters.push(`Action Taken: ${actions.join(', ')}`);
+                }
+                if (metadata.occupancy_type) {
+                    const occMap = {'1': 'Owner-occupied', '2': 'Not Owner-occupied'};
+                    const occs = metadata.occupancy_type.split(',').map(o => occMap[o.trim()] || `Code ${o.trim()}`).filter(Boolean);
+                    if (occs.length > 0) filters.push(`Occupancy: ${occs.join(', ')}`);
+                }
+                if (metadata.total_units) {
+                    const units = metadata.total_units.split(',').map(u => `${u.trim()} units`).filter(Boolean);
+                    if (units.length > 0) filters.push(`Units: ${units.join(', ')}`);
+                }
+                if (metadata.construction_method) {
+                    const constMap = {'1': 'Site-built', '2': 'Manufactured Home'};
+                    const consts = metadata.construction_method.split(',').map(c => constMap[c.trim()] || `Code ${c.trim()}`).filter(Boolean);
+                    if (consts.length > 0) filters.push(`Construction: ${consts.join(', ')}`);
+                }
+                if (metadata.not_reverse) {
+                    const revMap = {'1': 'Not Reverse Mortgage', '2': 'Reverse Mortgage'};
+                    const revs = metadata.not_reverse.split(',').map(r => revMap[r.trim()] || `Code ${r.trim()}`).filter(Boolean);
+                    if (revs.length > 0) filters.push(`Reverse Mortgage: ${revs.join(', ')}`);
                 }
                 
-                // Format the AI summary with proper styling
-                const summaryHTML = `
-                    <div class="ai-summary-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.8; color: #333;">
-                        <div style="font-family: 'Inter', sans-serif; font-size: 1rem;">
-                            ${formatSummaryText(summary)}
+                const hmdaYears = metadata.hmda_years ? (Array.isArray(metadata.hmda_years) ? metadata.hmda_years : metadata.hmda_years.split(',')) : [];
+                const sbYears = metadata.sb_years ? (Array.isArray(metadata.sb_years) ? metadata.sb_years : metadata.sb_years.split(',')) : [];
+                const hmdaYearsText = hmdaYears.length > 0 ? hmdaYears.join(', ') : 'N/A';
+                const sbYearsText = sbYears.length > 0 ? sbYears.join(', ') : 'N/A';
+                
+                return `
+                    <div class="introduction-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                        <h2 style="color: #034ea0; margin-bottom: 20px; font-size: 1.8rem; border-bottom: 2px solid #034ea0; padding-bottom: 10px;">Analysis Overview</h2>
+                        
+                        <div style="line-height: 1.8; color: #333; font-size: 1rem;">
+                            <p style="margin-bottom: 15px;">
+                                This analysis examines the potential community impact of the proposed merger between <strong>${escapeHtml(bankA)}</strong> (acquiring bank) and <strong>${escapeHtml(bankB)}</strong> (target bank). 
+                                The analysis evaluates mortgage lending, small business lending, and branch distribution patterns across the banks' combined assessment areas.
+                            </p>
+                            
+                            <h3 style="color: #034ea0; margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem;">Bank Information</h3>
+                            
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                                    <h4 style="color: #034ea0; margin: 0 0 10px 0; font-size: 1.1rem;">Acquirer Bank: ${escapeHtml(bankA)}</h4>
+                                    <p style="margin: 5px 0;"><strong>LEI:</strong> ${escapeHtml(bankALei)}</p>
+                                    <p style="margin: 5px 0;"><strong>RSSD ID:</strong> ${escapeHtml(bankARssd)}</p>
+                                    <p style="margin: 5px 0;"><strong>SB Respondent ID:</strong> ${escapeHtml(bankASbId)}</p>
+                                </div>
+                                
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 6px;">
+                                    <h4 style="color: #034ea0; margin: 0 0 10px 0; font-size: 1.1rem;">Target Bank: ${escapeHtml(bankB)}</h4>
+                                    <p style="margin: 5px 0;"><strong>LEI:</strong> ${escapeHtml(bankBLei)}</p>
+                                    <p style="margin: 5px 0;"><strong>RSSD ID:</strong> ${escapeHtml(bankBRssd)}</p>
+                                    <p style="margin: 5px 0;"><strong>SB Respondent ID:</strong> ${escapeHtml(bankBSbId)}</p>
+                                </div>
+                            </div>
+                            
+                            <h3 style="color: #034ea0; margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem;">Data Sources and Filters</h3>
+                            
+                            <p style="margin-bottom: 10px;"><strong>Loan Types Analyzed:</strong> ${escapeHtml(loanPurposeText)}</p>
+                            <p style="margin-bottom: 10px;"><strong>HMDA Years:</strong> ${escapeHtml(hmdaYearsText)}</p>
+                            <p style="margin-bottom: 10px;"><strong>Small Business Years:</strong> ${escapeHtml(sbYearsText)}</p>
+                            
+                            ${filters.length > 0 ? `
+                                <p style="margin-bottom: 10px;"><strong>HMDA Filters Applied:</strong></p>
+                                <ul style="margin-left: 20px; margin-bottom: 15px;">
+                                    ${filters.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+                                </ul>
+                            ` : ''}
                         </div>
                     </div>
+                `;
+            }
+            
+            function buildHHITableSection(hhiData, metadata) {
+                if (!hhiData || !hhiData.data || hhiData.data.length === 0) {
+                    return `
+                        <div class="hhi-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                            <h2 style="color: #034ea0; margin-bottom: 20px; font-size: 1.8rem; border-bottom: 2px solid #034ea0; padding-bottom: 10px;">HHI Analysis</h2>
+                            <p style="color: #666;">No counties found where both banks have branches. HHI analysis requires overlapping branch presence.</p>
+                        </div>
+                    `;
+                }
+                
+                const headers = hhiData.headers || [];
+                const data = hhiData.data || [];
+                
+                // Find column indices
+                const countyColIdx = headers.findIndex(h => h.toLowerCase().includes('county'));
+                const preHhiColIdx = headers.findIndex(h => h.toLowerCase().includes('pre') && h.toLowerCase().includes('hhi'));
+                const postHhiColIdx = headers.findIndex(h => h.toLowerCase().includes('post') && h.toLowerCase().includes('hhi'));
+                const changeColIdx = headers.findIndex(h => h.toLowerCase().includes('change') || h.toLowerCase().includes('hhi change'));
+                const preConcColIdx = headers.findIndex(h => h.toLowerCase().includes('pre') && h.toLowerCase().includes('concentration'));
+                const postConcColIdx = headers.findIndex(h => h.toLowerCase().includes('post') && h.toLowerCase().includes('concentration'));
+                
+                let tableHTML = `
+                    <div class="hhi-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 30px;">
+                        <h2 style="color: #034ea0; margin-bottom: 20px; font-size: 1.8rem; border-bottom: 2px solid #034ea0; padding-bottom: 10px;">HHI Analysis - Deposit Market Concentration</h2>
+                        <p style="margin-bottom: 20px; color: #666;">
+                            The Herfindahl-Hirschman Index (HHI) measures market concentration based on deposit shares. 
+                            HHI values range from 0 to 10,000, with higher values indicating greater concentration. 
+                            This table shows counties where both banks have branches and the impact of the merger on market concentration.
+                        </p>
+                        <div style="overflow-x: auto;">
+                            <table class="data-table" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                <thead>
+                                    <tr style="background: #034ea0; color: white;">
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">County, State</th>
+                                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Pre-Merger HHI</th>
+                                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">Post-Merger HHI</th>
+                                        <th style="padding: 12px; text-align: right; border: 1px solid #ddd;">HHI Change</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Pre-Merger Concentration</th>
+                                        <th style="padding: 12px; text-align: left; border: 1px solid #ddd;">Post-Merger Concentration</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                data.forEach((row, idx) => {
+                    const county = countyColIdx >= 0 ? (row[headers[countyColIdx]] || '--') : '--';
+                    const preHhi = preHhiColIdx >= 0 ? (row[headers[preHhiColIdx]] || '--') : '--';
+                    const postHhi = postHhiColIdx >= 0 ? (row[headers[postHhiColIdx]] || '--') : '--';
+                    const change = changeColIdx >= 0 ? (row[headers[changeColIdx]] || '--') : '--';
+                    const preConc = preConcColIdx >= 0 ? (row[headers[preConcColIdx]] || '--') : '--';
+                    const postConc = postConcColIdx >= 0 ? (row[headers[postConcColIdx]] || '--') : '--';
                     
+                    // Format HHI values
+                    const preHhiFormatted = typeof preHhi === 'number' ? preHhi.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : preHhi;
+                    const postHhiFormatted = typeof postHhi === 'number' ? postHhi.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) : postHhi;
+                    const changeFormatted = typeof change === 'number' ? change.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2, signDisplay: 'always'}) : change;
                     
-                    <div class="download-section" style="margin-top: 30px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
-                        <p style="margin: 0 0 15px 0; color: #666;">For detailed data tables and analysis, download the full Excel report:</p>
-                        <a href="/download?format=excel&job_id=${jobId}" class="action-btn primary" style="display: inline-block;">
-                            <i class="fas fa-download"></i> Download Full Excel Report
-                        </a>
+                    // Color code change (red for increase, green for decrease)
+                    const changeColor = typeof change === 'number' ? (change > 0 ? '#d32f2f' : change < 0 ? '#2e7d32' : '#666') : '#666';
+                    
+                    const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                    
+                    tableHTML += `
+                        <tr style="background: ${rowBg};">
+                            <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(county)}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${preHhiFormatted}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">${postHhiFormatted}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd; text-align: right; color: ${changeColor}; font-weight: ${typeof change === 'number' && change !== 0 ? 'bold' : 'normal'};">${changeFormatted}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(preConc)}</td>
+                            <td style="padding: 10px; border: 1px solid #ddd;">${escapeHtml(postConc)}</td>
+                        </tr>
+                    `;
+                });
+                
+                tableHTML += `
+                                </tbody>
+                            </table>
+                        </div>
+                        <p style="margin-top: 15px; font-size: 0.85rem; color: #666;">
+                            <strong>HHI Interpretation:</strong> HHI &lt; 1,500 = Low Concentration (Competitive); 
+                            HHI 1,500-2,500 = Moderate Concentration; HHI &gt; 2,500 = High Concentration
+                        </p>
                     </div>
                 `;
                 
-                document.getElementById('reportContent').innerHTML = summaryHTML;
+                return tableHTML;
             }
 
             function escapeHtml(text) {

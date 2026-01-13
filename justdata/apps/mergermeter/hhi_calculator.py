@@ -7,7 +7,7 @@ Calculates deposit market concentration before and after merger.
 import pandas as pd
 from typing import Dict, List, Tuple, Optional
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
-from .config import PROJECT_ID
+from justdata.apps.mergermeter.config import PROJECT_ID
 
 
 def calculate_hhi(deposits_by_bank: Dict[str, float]) -> float:
@@ -91,7 +91,7 @@ def get_county_deposit_data(
             CAST(b.rssd AS STRING) as rssd,
             b.bank_name,
             SUM(b.deposits_000s * 1000) as total_deposits  -- Convert from thousands to actual amount
-        FROM `hdma1-242116.branches.sod` b
+        FROM `hdma1-242116.branches.sod25` b
         LEFT JOIN `hdma1-242116.geo.cbsa_to_county` c
             ON CAST(b.geoid5 AS STRING) = CAST(c.geoid5 AS STRING)
         WHERE CAST(b.year AS STRING) = '{year}'
@@ -128,14 +128,19 @@ def get_county_deposit_data(
         results = execute_query(client, query)
         
         if not results:
+            print(f"[HHI] No deposit data found for {len(county_geoids)} counties, year {year}")
+            print(f"[HHI] Query was for RSSDs: {acquirer_rssd}, {target_rssd}")
             return pd.DataFrame()
         
         # Convert to DataFrame
         df = pd.DataFrame(results)
+        print(f"[HHI] Found deposit data for {len(df)} bank-county combinations")
+        print(f"[HHI] Counties with data: {df['geoid5'].nunique() if 'geoid5' in df.columns else 0}")
         return df
         
     except Exception as e:
-        print(f"Error querying county deposit data: {e}")
+        print(f"[HHI] Error querying county deposit data: {e}")
+        print(f"[HHI] Query parameters: {len(county_geoids)} counties, year {year}, RSSDs: {acquirer_rssd}, {target_rssd}")
         import traceback
         traceback.print_exc()
         return pd.DataFrame()

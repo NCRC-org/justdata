@@ -31,7 +31,7 @@ def safe_float(value, default=0.0):
 
 def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
     """
-    Create county-level summary table for Section 2 (2020-2024).
+    Create county-level summary table for Section 2 (2018-2024).
     
     Shows aggregate data for the whole county across all years.
     
@@ -96,10 +96,13 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
         if 'is_lmi_tract' in year_data.columns:
             lmi_mask = (year_data['is_lmi_tract'] == 1) | (year_data['is_lmi_tract'] == True) | (year_data['is_lmi_tract'].astype(str) == '1')
             lmi_tract_loans = safe_int(year_data[lmi_mask].get('loan_count', pd.Series([0])).sum())
+            lmi_tract_amount = safe_float(year_data[lmi_mask].get('loan_amount', pd.Series([0.0])).sum())
         else:
             lmi_tract_loans = 0
+            lmi_tract_amount = 0.0
         
         lmi_tract_pct = (lmi_tract_loans / num_total * 100) if num_total > 0 else 0.0
+        amt_lmi_tract_pct = (lmi_tract_amount / amt_total * 100) if amt_total > 0 else 0.0
         
         # Calculate percentages
         num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
@@ -132,7 +135,8 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
             'amt_under_100k_pct': amt_under_100k_pct,
             'amt_100k_250k_pct': amt_100k_250k_pct,
             'amt_250k_1m_pct': amt_250k_1m_pct,
-            'amtsb_under_1m_pct': amtsb_under_1m_pct
+            'amtsb_under_1m_pct': amtsb_under_1m_pct,
+            'amt_lmi_tract_pct': amt_lmi_tract_pct
         }
     
     # Build table rows
@@ -147,7 +151,8 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
         ('Amount Under $100K (% of Total)', 'amt_under_100k_pct', True),
         ('Amount $100K-$250K (% of Total)', 'amt_100k_250k_pct', True),
         ('Amount $250K-$1M (% of Total)', 'amt_250k_1m_pct', True),
-        ('Amount to Businesses Under $1M Revenue (% of Total)', 'amtsb_under_1m_pct', True)
+        ('Amount to Businesses Under $1M Revenue (% of Total)', 'amtsb_under_1m_pct', True),
+        ('Amount to LMI Tracts (% of Total)', 'amt_lmi_tract_pct', True)
     ]
     
     for var_name, var_key, is_pct in variables:
@@ -168,7 +173,7 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
 
 
 def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, national_benchmarks: Dict, 
-                           county_2018_data: Optional[Dict] = None) -> pd.DataFrame:
+                           county_2020_data: Optional[Dict] = None) -> pd.DataFrame:
     """
     Create County, State, and National Comparison table for Section 3 (2024).
     
@@ -176,7 +181,7 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
         county_df: DataFrame with county data for all years (from aggregate table)
         state_benchmarks: Dictionary with state-level benchmark data for 2024
         national_benchmarks: Dictionary with national-level benchmark data for 2024
-        county_2018_data: Optional dictionary with county 2018 data for % change calculation
+        county_2020_data: Optional dictionary with county 2020 data for % change calculation (baseline year)
     
     Returns:
         DataFrame with metrics as rows and County/State/National/% Change as columns
@@ -351,7 +356,7 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     national_pct_amount_middle_income = national_benchmarks.get('pct_amount_middle_income', 0.0)
     national_pct_amount_upper_income = national_benchmarks.get('pct_amount_upper_income', 0.0)
     
-    # Calculate % change since 2018
+    # Calculate % change since 2020 (baseline year)
     def calc_pct_change(current, base):
         if base is None or base == 0:
             return None
@@ -364,25 +369,25 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
             pass
         return None
     
-    pct_change_total_loans = calc_pct_change(num_total, county_2018_data.get('total_loans', 0) if county_2018_data else 0)
-    pct_change_total_amount = calc_pct_change(amt_total, county_2018_data.get('total_amount', 0.0) if county_2018_data else 0.0)
-    pct_change_num_under_100k = calc_pct_change(num_under_100k, county_2018_data.get('num_under_100k', 0) if county_2018_data else 0)
-    pct_change_num_100k_250k = calc_pct_change(num_100k_250k, county_2018_data.get('num_100k_250k', 0) if county_2018_data else 0)
-    pct_change_num_250k_1m = calc_pct_change(num_250k_1m, county_2018_data.get('num_250k_1m', 0) if county_2018_data else 0)
-    pct_change_numsb_under_1m = calc_pct_change(numsb_under_1m, county_2018_data.get('numsb_under_1m', 0) if county_2018_data else 0)
-    pct_change_lmi_tract_loans = calc_pct_change(lmi_tract_loans, county_2018_data.get('lmi_tract_loans', 0) if county_2018_data else 0)
-    pct_change_amt_under_100k = calc_pct_change(amt_under_100k, county_2018_data.get('amt_under_100k', 0.0) if county_2018_data else 0.0)
-    pct_change_amt_100k_250k = calc_pct_change(amt_100k_250k, county_2018_data.get('amt_100k_250k', 0.0) if county_2018_data else 0.0)
-    pct_change_amt_250k_1m = calc_pct_change(amt_250k_1m, county_2018_data.get('amt_250k_1m', 0.0) if county_2018_data else 0.0)
-    pct_change_amtsb_under_1m = calc_pct_change(amtsb_under_1m, county_2018_data.get('amtsb_under_1m', 0.0) if county_2018_data else 0.0)
-    pct_change_low_income_loans = calc_pct_change(county_low_income_loans, county_2018_data.get('low_income_loans', 0) if county_2018_data else 0)
-    pct_change_moderate_income_loans = calc_pct_change(county_moderate_income_loans, county_2018_data.get('moderate_income_loans', 0) if county_2018_data else 0)
-    pct_change_middle_income_loans = calc_pct_change(county_middle_income_loans, county_2018_data.get('middle_income_loans', 0) if county_2018_data else 0)
-    pct_change_upper_income_loans = calc_pct_change(county_upper_income_loans, county_2018_data.get('upper_income_loans', 0) if county_2018_data else 0)
-    pct_change_low_income_amount = calc_pct_change(county_low_income_amount, county_2018_data.get('low_income_amount', 0.0) if county_2018_data else 0.0)
-    pct_change_moderate_income_amount = calc_pct_change(county_moderate_income_amount, county_2018_data.get('moderate_income_amount', 0.0) if county_2018_data else 0.0)
-    pct_change_middle_income_amount = calc_pct_change(county_middle_income_amount, county_2018_data.get('middle_income_amount', 0.0) if county_2018_data else 0.0)
-    pct_change_upper_income_amount = calc_pct_change(county_upper_income_amount, county_2018_data.get('upper_income_amount', 0.0) if county_2018_data else 0.0)
+    pct_change_total_loans = calc_pct_change(num_total, county_2020_data.get('total_loans', 0) if county_2020_data else 0)
+    pct_change_total_amount = calc_pct_change(amt_total, county_2020_data.get('total_amount', 0.0) if county_2020_data else 0.0)
+    pct_change_num_under_100k = calc_pct_change(num_under_100k, county_2020_data.get('num_under_100k', 0) if county_2020_data else 0)
+    pct_change_num_100k_250k = calc_pct_change(num_100k_250k, county_2020_data.get('num_100k_250k', 0) if county_2020_data else 0)
+    pct_change_num_250k_1m = calc_pct_change(num_250k_1m, county_2020_data.get('num_250k_1m', 0) if county_2020_data else 0)
+    pct_change_numsb_under_1m = calc_pct_change(numsb_under_1m, county_2020_data.get('numsb_under_1m', 0) if county_2020_data else 0)
+    pct_change_lmi_tract_loans = calc_pct_change(lmi_tract_loans, county_2020_data.get('lmi_tract_loans', 0) if county_2020_data else 0)
+    pct_change_amt_under_100k = calc_pct_change(amt_under_100k, county_2020_data.get('amt_under_100k', 0.0) if county_2020_data else 0.0)
+    pct_change_amt_100k_250k = calc_pct_change(amt_100k_250k, county_2020_data.get('amt_100k_250k', 0.0) if county_2020_data else 0.0)
+    pct_change_amt_250k_1m = calc_pct_change(amt_250k_1m, county_2020_data.get('amt_250k_1m', 0.0) if county_2020_data else 0.0)
+    pct_change_amtsb_under_1m = calc_pct_change(amtsb_under_1m, county_2020_data.get('amtsb_under_1m', 0.0) if county_2020_data else 0.0)
+    pct_change_low_income_loans = calc_pct_change(county_low_income_loans, county_2020_data.get('low_income_loans', 0) if county_2020_data else 0)
+    pct_change_moderate_income_loans = calc_pct_change(county_moderate_income_loans, county_2020_data.get('moderate_income_loans', 0) if county_2020_data else 0)
+    pct_change_middle_income_loans = calc_pct_change(county_middle_income_loans, county_2020_data.get('middle_income_loans', 0) if county_2020_data else 0)
+    pct_change_upper_income_loans = calc_pct_change(county_upper_income_loans, county_2020_data.get('upper_income_loans', 0) if county_2020_data else 0)
+    pct_change_low_income_amount = calc_pct_change(county_low_income_amount, county_2020_data.get('low_income_amount', 0.0) if county_2020_data else 0.0)
+    pct_change_moderate_income_amount = calc_pct_change(county_moderate_income_amount, county_2020_data.get('moderate_income_amount', 0.0) if county_2020_data else 0.0)
+    pct_change_middle_income_amount = calc_pct_change(county_middle_income_amount, county_2020_data.get('middle_income_amount', 0.0) if county_2020_data else 0.0)
+    pct_change_upper_income_amount = calc_pct_change(county_upper_income_amount, county_2020_data.get('upper_income_amount', 0.0) if county_2020_data else 0.0)
     
     # Build comparison data rows
     comparison_data = [
@@ -391,7 +396,7 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
             'County (2024)': num_total,
             'State (2024)': state_total,
             'National (2024)': national_total,
-            '% Change Since 2018': pct_change_total_loans
+            '% Change Since 2020': pct_change_total_loans
         },
         {
             'Metric': 'Loans Under $100K (% of Total)',
@@ -525,6 +530,46 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     return result_df
 
 
+def clean_lender_name(name: str) -> str:
+    """
+    Clean and abbreviate lender names.
+    
+    Args:
+        name: Raw lender name
+    
+    Returns:
+        Cleaned lender name
+    """
+    if not name or not isinstance(name, str):
+        return str(name) if name else ''
+    
+    # Abbreviate common bank name suffixes
+    name = name.strip()
+    
+    # American Express National Bank -> American Express
+    if 'AMERICAN EXPRESS NATIONAL BANK' in name.upper():
+        return 'American Express'
+    
+    # Remove common suffixes (case-insensitive)
+    suffixes = [
+        ' National Bank',
+        ' N.A.',
+        ' NA',
+        ' National Association',
+        ' Bank, National Association',
+        ', National Association',
+        ' Bank N.A.',
+        ' Bank NA'
+    ]
+    
+    for suffix in suffixes:
+        if name.upper().endswith(suffix.upper()):
+            name = name[:-len(suffix)]
+            break
+    
+    return name.strip()
+
+
 def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame:
     """
     Create top lenders table for Section 4 (2024 only).
@@ -542,6 +587,10 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         return pd.DataFrame()
     
     # Filter to specified year (handle both string and int)
+    print(f"DEBUG: create_top_lenders_table: Filtering to year {year}")
+    print(f"DEBUG: create_top_lenders_table: Input df has {len(df)} rows")
+    print(f"DEBUG: create_top_lenders_table: Available years in df: {df['year'].unique() if 'year' in df.columns else 'no year column'}")
+    
     if 'year' in df.columns:
         if df['year'].dtype in ['int64', 'int32', 'int']:
             year_df = df[df['year'] == year].copy()
@@ -549,9 +598,15 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
             year_df_str = df['year'].astype(str)
             year_df = df[year_df_str == str(year)].copy()
     else:
+        print(f"DEBUG: WARNING - No 'year' column in disclosure_df, using all data (this may be wrong!)")
         year_df = df.copy()
     
+    print(f"DEBUG: create_top_lenders_table: After filtering to {year}, year_df has {len(year_df)} rows")
+    if not year_df.empty:
+        print(f"DEBUG: create_top_lenders_table: Years in filtered df: {year_df['year'].unique() if 'year' in year_df.columns else 'no year column'}")
+    
     if year_df.empty:
+        print(f"DEBUG: WARNING - No data for year {year} in disclosure_df")
         return pd.DataFrame()
     
     # Map field names (handle variations)
@@ -583,8 +638,20 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
     # Aggregate by lender
     lender_data = []
     
+    # Verify we only have data for the specified year
+    if 'year' in year_df.columns:
+        unique_years = year_df['year'].unique()
+        if len(unique_years) > 1 or (len(unique_years) == 1 and unique_years[0] != year):
+            print(f"DEBUG: WARNING - year_df contains data for years {unique_years}, expected only {year}")
+        else:
+            print(f"DEBUG: Verified year_df contains only year {year} data")
+    
     for lender_name in year_df['lender_name'].unique():
         lender_df = year_df[year_df['lender_name'] == lender_name]
+        
+        # Debug: Check if this lender has multiple rows (which is expected for different income groups/loan sizes)
+        if len(lender_df) > 1:
+            print(f"DEBUG: Lender {lender_name} has {len(lender_df)} rows (expected for different income groups/loan sizes)")
         
         # Sum numeric fields
         num_under_100k = safe_int(lender_df[actual_fields['num_under_100k']].sum()) if actual_fields['num_under_100k'] in lender_df.columns else 0
@@ -718,8 +785,11 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         middle_income_amt_pct = (middle_income_amt / amt_total * 100) if amt_total > 0 else 0.0
         upper_income_amt_pct = (upper_income_amt / amt_total * 100) if amt_total > 0 else 0.0
         
+        # Clean lender name (abbreviate common suffixes)
+        cleaned_lender_name = clean_lender_name(lender_name)
+        
         lender_row = {
-            'Lender Name': lender_name.upper() if isinstance(lender_name, str) else str(lender_name),
+            'Lender Name': cleaned_lender_name.upper() if isinstance(cleaned_lender_name, str) else str(cleaned_lender_name),
             'Num Total': num_total,
             'Num Under 100K': num_under_100k,
             'Num Under 100K %': num_under_100k_pct,
@@ -760,6 +830,18 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         return pd.DataFrame()
     
     result_df = pd.DataFrame(lender_data)
+    
+    # Debug: Verify totals and year filtering
+    if not result_df.empty:
+        total_loans_all_lenders = result_df['Num Total'].sum()
+        total_amount_all_lenders = result_df['Amt Total'].sum()
+        print(f"DEBUG: create_top_lenders_table: Total loans across all lenders: {total_loans_all_lenders:,}")
+        print(f"DEBUG: create_top_lenders_table: Total amount across all lenders: ${total_amount_all_lenders:,.0f} (in thousands)")
+        print(f"DEBUG: create_top_lenders_table: Number of unique lenders: {len(result_df)}")
+        if len(result_df) > 0:
+            top_lender = result_df.iloc[0]
+            print(f"DEBUG: create_top_lenders_table: Top lender: {top_lender['Lender Name']}, Loans: {top_lender['Num Total']:,}, Amount: ${top_lender['Amt Total']:,.0f}")
+    
     return result_df
 
 
@@ -819,7 +901,7 @@ def calculate_hhi_for_lenders(disclosure_df: pd.DataFrame, year: int = 2024) -> 
 
 def calculate_hhi_by_year(disclosure_df: pd.DataFrame, years: List[int]) -> List[Dict]:
     """
-    Calculate HHI for each year from 2020 to 2024.
+    Calculate HHI for each year from 2018 to 2024.
     
     Args:
         disclosure_df: DataFrame with disclosure data for all years

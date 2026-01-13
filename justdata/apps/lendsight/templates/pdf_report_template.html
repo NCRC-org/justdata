@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>LendSight - Mortgage Lending Analysis Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+            padding: 20px;
+        }
+        .header {
+            background-color: #003366;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 18pt;
+        }
+        .header .metadata {
+            opacity: 0.9;
+            font-size: 11pt;
+        }
+        .section {
+            margin-bottom: 25px;
+            page-break-inside: avoid;
+        }
+        .section-title {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #003366;
+            border-bottom: 2px solid #003366;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .ai-insight {
+            background-color: #f8f9fa;
+            border-left: 4px solid #003366;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 10pt;
+            line-height: 1.6;
+        }
+        .ai-insight p {
+            margin-bottom: 10px;
+        }
+        .ai-insight p:last-child {
+            margin-bottom: 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 9pt;
+        }
+        th {
+            background-color: #003366;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #003366;
+        }
+        td {
+            padding: 6px;
+            border: 1px solid #ddd;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        tr:hover {
+            background-color: #e9ecef;
+        }
+        .table-caption {
+            font-size: 8pt;
+            color: #666;
+            font-style: italic;
+            margin-top: 5px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 8pt;
+            color: #666;
+        }
+        .key-findings {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .key-findings h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .key-findings ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .key-findings li {
+            margin-bottom: 8px;
+        }
+        .numeric {
+            text-align: right;
+        }
+        .percent {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Mortgage Lending Analysis Report</h1>
+        <div class="metadata">
+            {% if metadata %}
+                {{ metadata.get('counties', ['Unknown'])|join(', ') }} |
+                Years: {{ metadata.get('years', [])|join('-') if metadata.get('years') else 'N/A' }}
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Key Findings -->
+    {% if ai_insights and ai_insights.get('key_findings') %}
+    <div class="section">
+        <h2 class="section-title">Key Findings</h2>
+        <div class="ai-insight">
+            {{ ai_insights.get('key_findings')|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Demographic Overview -->
+    {% if ai_insights and ai_insights.get('demographic_overview_discussion') %}
+    <div class="section">
+        <h2 class="section-title">Demographic Overview</h2>
+        <div class="ai-insight">
+            {{ ai_insights.get('demographic_overview_discussion')|safe }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Summary Statistics -->
+    {% if report_data and report_data.get('summary') %}
+    <div class="section">
+        <h2 class="section-title">Summary Statistics</h2>
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('summary')[0].keys() if report_data.get('summary') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('summary', []) %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {{ "{:,.0f}".format(value) if value == value|int else "{:,.2f}".format(value) }}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Loans by Race and Ethnicity -->
+    {% if report_data and report_data.get('demographic_overview') %}
+    <div class="section">
+        <h2 class="section-title">Loans by Race and Ethnicity</h2>
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('demographic_overview')[0].keys() if report_data.get('demographic_overview') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('demographic_overview', []) %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {% if 'percent' in key|lower or '%' in key %}
+                                    {{ "{:.1f}%".format(value) }}
+                                {% else %}
+                                    {{ "{:,.0f}".format(value) if value == value|int else "{:,.2f}".format(value) }}
+                                {% endif %}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Income Borrowers -->
+    {% if report_data and report_data.get('income_borrowers') %}
+    <div class="section">
+        <h2 class="section-title">Loans by Borrower Income</h2>
+        {% if ai_insights and ai_insights.get('income_neighborhood_discussion') %}
+        <div class="ai-insight">
+            {{ ai_insights.get('income_neighborhood_discussion')|safe }}
+        </div>
+        {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('income_borrowers')[0].keys() if report_data.get('income_borrowers') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('income_borrowers', []) %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {% if 'percent' in key|lower or '%' in key %}
+                                    {{ "{:.1f}%".format(value) }}
+                                {% else %}
+                                    {{ "{:,.0f}".format(value) if value == value|int else "{:,.2f}".format(value) }}
+                                {% endif %}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- Top Lenders -->
+    {% if report_data and report_data.get('top_lenders_detailed') %}
+    <div class="section">
+        <h2 class="section-title">Top Lenders</h2>
+        {% if ai_insights and ai_insights.get('top_lenders_detailed_discussion') %}
+        <div class="ai-insight">
+            {{ ai_insights.get('top_lenders_detailed_discussion')|safe }}
+        </div>
+        {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('top_lenders_detailed')[0].keys() if report_data.get('top_lenders_detailed') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('top_lenders_detailed', [])[:20] %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {% if 'percent' in key|lower or '%' in key or 'share' in key|lower %}
+                                    {{ "{:.1f}%".format(value) }}
+                                {% else %}
+                                    {{ "{:,.0f}".format(value) if value == value|int else "{:,.2f}".format(value) }}
+                                {% endif %}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if report_data.get('top_lenders_detailed')|length > 20 %}
+        <p class="table-caption">Showing top 20 of {{ report_data.get('top_lenders_detailed')|length }} lenders</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Market Concentration -->
+    {% if report_data and report_data.get('market_concentration') %}
+    <div class="section">
+        <h2 class="section-title">Market Concentration</h2>
+        {% if ai_insights and ai_insights.get('market_concentration_discussion') %}
+        <div class="ai-insight">
+            {{ ai_insights.get('market_concentration_discussion')|safe }}
+        </div>
+        {% endif %}
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('market_concentration')[0].keys() if report_data.get('market_concentration') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('market_concentration', []) %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {{ "{:,.2f}".format(value) }}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- HHI Analysis -->
+    {% if report_data and report_data.get('hhi') %}
+    <div class="section">
+        <h2 class="section-title">HHI Market Concentration Index</h2>
+        <table>
+            <thead>
+                <tr>
+                    {% for key in report_data.get('hhi')[0].keys() if report_data.get('hhi') %}
+                        <th>{{ key|replace('_', ' ')|title }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data.get('hhi', []) %}
+                <tr>
+                    {% for key, value in row.items() %}
+                        <td class="{% if value is number %}numeric{% endif %}">
+                            {% if value is number %}
+                                {{ "{:,.2f}".format(value) }}
+                            {% else %}
+                                {{ value if value is not none else '-' }}
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <div class="footer">
+        <p>Generated by NCRC JustData - LendSight</p>
+        <p>Data Source: Home Mortgage Disclosure Act (HMDA)</p>
+        <p>Report generated: {{ metadata.get('generated_at', 'N/A') if metadata else 'N/A' }}</p>
+    </div>
+</body>
+</html>

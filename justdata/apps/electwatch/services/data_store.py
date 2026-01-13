@@ -56,9 +56,14 @@ MISSING_BIOGUIDE_IDS = {
     'Rob Bresnahan': 'B001326',
     'Val Hoyle': 'H001094',
     'Byron Donalds': 'D000032',
-    'Ritchie Torres': 'T000486',  # Not Norma Torres (T000474)
     'April Delaney': 'D000637',
     'Rich McCormick': 'M001135',
+}
+
+# Bioguide ID corrections - for members with WRONG bioguide IDs in stored data
+# These override incorrect stored values
+BIOGUIDE_OVERRIDES = {
+    'Ritchie Torres': 'T000486',  # Stored as T000481 (Norma Torres) - WRONG
 }
 
 # Website URL overrides for officials with non-standard URLs
@@ -70,6 +75,7 @@ WEBSITE_URL_OVERRIDES = {
     'Dusty Johnson': 'https://dustyjohnson.house.gov',
     'Mike Johnson': 'https://mikejohnson.house.gov',  # Speaker
     'April Delaney': 'https://aprildelaney.house.gov',  # Not former Rep John Delaney
+    'Ritchie Torres': 'https://ritchietorres.house.gov',  # Not Norma Torres
 }
 
 # Wikipedia/Wikimedia photo URLs for Senators (House members use clerk.house.gov)
@@ -307,10 +313,21 @@ def get_officials() -> List[Dict]:
         elif party == 'IND':
             official['party'] = 'I'
 
-        # Ensure photo URL - use fallback lookup if missing
+        # FIRST: Override incorrect bioguide IDs (must happen before photo lookup)
+        name = official.get('name', '')
+        if name in BIOGUIDE_OVERRIDES:
+            official['bioguide_id'] = BIOGUIDE_OVERRIDES[name]
+            # Clear existing photo URL since it was based on wrong bioguide
+            official['photo_url'] = None
+
+        # SECOND: Override website URLs for officials with non-standard or wrong URLs
+        if name in WEBSITE_URL_OVERRIDES:
+            official['website_url'] = WEBSITE_URL_OVERRIDES[name]
+
+        # THIRD: Ensure photo URL - use Wikipedia fallback or generate from bioguide
         if not official.get('photo_url'):
             photo_url = get_photo_url(
-                official.get('name', ''),
+                name,
                 official.get('bioguide_id'),
                 official.get('chamber', 'house')
             )

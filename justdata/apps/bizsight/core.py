@@ -13,13 +13,13 @@ from datetime import datetime
 from pathlib import Path
 
 # Add repo root to path
-REPO_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
 from justdata.apps.bizsight.config import BizSightConfig
 from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
 from justdata.apps.bizsight.utils.progress_tracker import ProgressTracker
-from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders
+from justdata.apps.bizsight.report_builder import create_top_lenders_table, create_county_summary_table, create_comparison_table, calculate_hhi_by_year, calculate_hhi_for_lenders, safe_int, safe_float
 from justdata.apps.bizsight.ai_analysis import BizSightAnalyzer
 
 
@@ -39,25 +39,25 @@ def parse_web_parameters(county_data: dict, years_str: str) -> tuple:
     if not geoid5:
         raise ValueError("County GEOID5 not provided")
     
-    # Parse years - if empty or None, automatically get last 5 years
-    from .data_utils import get_last_5_years_sb
-    
-    if not years_str or not years_str.strip():
-        # Automatically get last 5 years from SB disclosure data
-        years = get_last_5_years_sb()
-        print(f"✅ Automatically using last 5 SB disclosure years: {years}")
-    else:
-        years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
+    # Parse years
+    years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
     
     # Validate year range
-    if len(years) < BizSightConfig.MIN_YEARS:
-        raise ValueError(f"Must select at least {BizSightConfig.MIN_YEARS} years")
+    # Allow 1 year for planning regions (2024 only), otherwise require MIN_YEARS
+    is_planning_region = county_data.get('is_planning_region', False)
+    min_required_years = 1 if is_planning_region else BizSightConfig.MIN_YEARS
+    if len(years) < min_required_years:
+        if is_planning_region:
+            raise ValueError("Planning region analysis requires 2024 data")
+        else:
+            raise ValueError(f"Must select at least {BizSightConfig.MIN_YEARS} years")
     
-    # Validate years are in range (relaxed for dynamic years)
+    # Validate years are in range
     min_year = min(years)
     max_year = max(years)
-    if min_year < 2018 or max_year > 2025:
-        raise ValueError("Years must be between 2018 and 2025")
+    # Limit to most recent 5 years (2020-2024)
+    if min_year < 2020 or max_year > 2024:
+        raise ValueError("Years must be between 2020 and 2024 (most recent 5 years)")
     
     return str(geoid5).zfill(5), sorted(years)
 
@@ -79,26 +79,27 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
     try:
         # Initialize progress
         if progress_tracker:
-            progress_tracker.update_progress('initializing')
+            progress_tracker.update_progress('initializing', 0, 'Initializing analysis... Let\'s do this! 🚀')
         
         # Parse parameters
         geoid5, years = parse_web_parameters(county_data, years_str)
         county_name = county_data.get('name', 'Unknown County')
+        is_planning_region = county_data.get('is_planning_region', False)
         
         if progress_tracker:
-            progress_tracker.update_progress('parsing_params', 5, 
-                f'Analyzing {county_name} for years {min(years)}-{max(years)}')
+            progress_tracker.update_progress('preparing_data', 5, 
+                f'Preparing data for {county_name}... Unpacking the data puzzle! 🧩')
         
         # Initialize BigQuery client
         if progress_tracker:
-            progress_tracker.update_progress('connecting_db', 20, 'Connecting to BigQuery...')
+            progress_tracker.update_progress('connecting_db', 20, 'Connecting to BigQuery... Time to tap into that data goldmine! 💎')
         
         bq_client = BigQueryClient()
         
         # Fetch aggregate data with census demographics
         if progress_tracker:
-            progress_tracker.update_progress('fetching_aggregate', 30, 
-                'Fetching tract-level lending data with census demographics...')
+            progress_tracker.update_progress('fetching_data', 30, 
+                'Fetching tract-level lending data with census demographics... Digging deep for insights! ⛏️')
         
         print(f"DEBUG: Starting BigQuery aggregate query for GEOID5: {geoid5}, years: {years}")
         aggregate_query = bq_client.get_aggregate_data_with_census(geoid5, years)
@@ -114,23 +115,36 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Fetch disclosure data for top lenders table (2024) and HHI by year (all years)
         if progress_tracker:
-            progress_tracker.update_progress('fetching_disclosure', 40, 
-                'Fetching lender-level disclosure data...')
+            progress_tracker.update_progress('fetching_data', 40, 
+                'Fetching lender-level disclosure data... Who\'s lending where? Let\'s find out! 🏦')
         
-        print(f"DEBUG: Starting BigQuery disclosure query for GEOID5: {geoid5}, year: 2024")
-        disclosure_query_2024 = bq_client.get_disclosure_data(geoid5, [2024])
+        print(f"DEBUG: Starting BigQuery disclosure query for GEOID5: {geoid5}, year: 2024, is_planning_region: {is_planning_region}")
+        disclosure_query_2024 = bq_client.get_disclosure_data(geoid5, [2024], is_planning_region=is_planning_region)
         print(f"DEBUG: Disclosure query completed, converting to DataFrame...")
         disclosure_df = disclosure_query_2024.to_dataframe()
         print(f"DEBUG: Disclosure DataFrame created: {len(disclosure_df)} rows")
         
+        # Verify that disclosure_df only contains 2024 data
+        if 'year' in disclosure_df.columns:
+            unique_years = disclosure_df['year'].unique()
+            if len(unique_years) > 1 or (len(unique_years) == 1 and unique_years[0] != 2024):
+                print(f"DEBUG: WARNING - disclosure_df contains years {unique_years}, expected only 2024")
+            else:
+                print(f"DEBUG: Verified disclosure_df contains only 2024 data")
+        else:
+            print(f"DEBUG: WARNING - disclosure_df has no 'year' column, cannot verify year filtering")
+        
         # Also fetch disclosure data for all years for HHI by year calculation
-        print(f"DEBUG: Starting BigQuery disclosure query for all years: {years}")
-        disclosure_query_all = bq_client.get_disclosure_data(geoid5, years)
+        print(f"DEBUG: Starting BigQuery disclosure query for all years: {years}, is_planning_region: {is_planning_region}")
+        disclosure_query_all = bq_client.get_disclosure_data(geoid5, years, is_planning_region=is_planning_region)
         print(f"DEBUG: Disclosure query for all years completed, converting to DataFrame...")
         disclosure_df_all_years = disclosure_query_all.to_dataframe()
         print(f"DEBUG: Disclosure DataFrame for all years created: {len(disclosure_df_all_years)} rows")
         
-        # Build county summary table (Section 2) - 2018-2024
+        # Build county summary table (Section 2) - most recent 5 years
+        if progress_tracker:
+            progress_tracker.update_progress('building_report', 50, 
+                'Section 2: Creating county summary table... Organizing the data! 📋')
         county_summary_df = pd.DataFrame()
         if not aggregate_df.empty:
             print(f"DEBUG: Creating county summary table from {len(aggregate_df)} aggregate rows")
@@ -146,8 +160,8 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Fetch state and national benchmarks for comparison table (Section 3)
         if progress_tracker:
-            progress_tracker.update_progress('fetching_benchmarks', 45, 
-                'Loading state and national benchmarks...')
+            progress_tracker.update_progress('fetching_data', 45, 
+                'Loading state and national benchmarks... Setting the bar for comparison! 📈')
         
         # Handle District of Columbia special case (GEOID5 starts with 11, but DC is both county and state)
         # For DC, state_fips should be "11" (DC's state FIPS code)
@@ -275,22 +289,22 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     state_df = state_query.to_dataframe()
                     if not state_df.empty:
                         row = state_df.iloc[0]
-                        state_total = int(row.get('total_loans', 0))
+                        state_total = safe_int(row.get('total_loans', 0))
                         state_amount = float(row.get('total_amount', 0.0))
-                        state_num_under_100k = int(row.get('num_under_100k', 0))
-                        state_num_100k_250k = int(row.get('num_100k_250k', 0))
-                        state_num_250k_1m = int(row.get('num_250k_1m', 0))
-                        state_amt_under_100k = float(row.get('amt_under_100k', 0.0))
-                        state_amt_250k_1m = float(row.get('amt_250k_1m', 0.0))
-                        state_numsb_under_1m = int(row.get('numsb_under_1m', 0))
-                        state_amtsb_under_1m = float(row.get('amtsb_under_1m', 0.0))
-                        state_lmi_loans = int(row.get('lmi_tract_loans', 0))
+                        state_num_under_100k = safe_int(row.get('num_under_100k', 0))
+                        state_num_100k_250k = safe_int(row.get('num_100k_250k', 0))
+                        state_num_250k_1m = safe_int(row.get('num_250k_1m', 0))
+                        state_amt_under_100k = safe_float(row.get('amt_under_100k', 0.0))
+                        state_amt_250k_1m = safe_float(row.get('amt_250k_1m', 0.0))
+                        state_numsb_under_1m = safe_int(row.get('numsb_under_1m', 0))
+                        state_amtsb_under_1m = safe_float(row.get('amtsb_under_1m', 0.0))
+                        state_lmi_loans = safe_int(row.get('lmi_tract_loans', 0))
                         
                         # Income category breakdowns from BigQuery
-                        state_low_income_loans = int(row.get('low_income_loans', 0))
-                        state_moderate_income_loans = int(row.get('moderate_income_loans', 0))
-                        state_middle_income_loans = int(row.get('middle_income_loans', 0))
-                        state_upper_income_loans = int(row.get('upper_income_loans', 0))
+                        state_low_income_loans = safe_int(row.get('low_income_loans', 0))
+                        state_moderate_income_loans = safe_int(row.get('moderate_income_loans', 0))
+                        state_middle_income_loans = safe_int(row.get('middle_income_loans', 0))
+                        state_upper_income_loans = safe_int(row.get('upper_income_loans', 0))
                         state_low_income_amount = float(row.get('low_income_amount', 0.0))
                         state_moderate_income_amount = float(row.get('moderate_income_amount', 0.0))
                         state_middle_income_amount = float(row.get('middle_income_amount', 0.0))
@@ -330,22 +344,22 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     national_df = national_query.to_dataframe()
                     if not national_df.empty:
                         row = national_df.iloc[0]
-                        national_total = int(row.get('total_loans', 0))
+                        national_total = safe_int(row.get('total_loans', 0))
                         national_amount = float(row.get('total_amount', 0.0))
-                        national_num_under_100k = int(row.get('num_under_100k', 0))
-                        national_num_100k_250k = int(row.get('num_100k_250k', 0))
-                        national_num_250k_1m = int(row.get('num_250k_1m', 0))
-                        national_amt_under_100k = float(row.get('amt_under_100k', 0.0))
-                        national_amt_250k_1m = float(row.get('amt_250k_1m', 0.0))
-                        national_numsb_under_1m = int(row.get('numsb_under_1m', 0))
-                        national_amtsb_under_1m = float(row.get('amtsb_under_1m', 0.0))
-                        national_lmi_loans = int(row.get('lmi_tract_loans', 0))
+                        national_num_under_100k = safe_int(row.get('num_under_100k', 0))
+                        national_num_100k_250k = safe_int(row.get('num_100k_250k', 0))
+                        national_num_250k_1m = safe_int(row.get('num_250k_1m', 0))
+                        national_amt_under_100k = safe_float(row.get('amt_under_100k', 0.0))
+                        national_amt_250k_1m = safe_float(row.get('amt_250k_1m', 0.0))
+                        national_numsb_under_1m = safe_int(row.get('numsb_under_1m', 0))
+                        national_amtsb_under_1m = safe_float(row.get('amtsb_under_1m', 0.0))
+                        national_lmi_loans = safe_int(row.get('lmi_tract_loans', 0))
                         
                         # Income category breakdowns from BigQuery
-                        national_low_income_loans = int(row.get('low_income_loans', 0))
-                        national_moderate_income_loans = int(row.get('moderate_income_loans', 0))
-                        national_middle_income_loans = int(row.get('middle_income_loans', 0))
-                        national_upper_income_loans = int(row.get('upper_income_loans', 0))
+                        national_low_income_loans = safe_int(row.get('low_income_loans', 0))
+                        national_moderate_income_loans = safe_int(row.get('moderate_income_loans', 0))
+                        national_middle_income_loans = safe_int(row.get('middle_income_loans', 0))
+                        national_upper_income_loans = safe_int(row.get('upper_income_loans', 0))
                         national_low_income_amount = float(row.get('low_income_amount', 0.0))
                         national_moderate_income_amount = float(row.get('moderate_income_amount', 0.0))
                         national_middle_income_amount = float(row.get('middle_income_amount', 0.0))
@@ -384,117 +398,120 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         if not national_benchmarks:
             national_benchmarks = {}
         
-        # Get county 2018 data for % change calculations
-        county_2018_data = None
+        # Get county 2020 data for % change calculations (baseline year - most recent 5 years)
+        county_2020_data = None
         try:
-            county_2018_df = pd.DataFrame()
+            county_2020_df = pd.DataFrame()
             if 'year' in aggregate_df.columns:
                 # Handle both string and int year values
                 if aggregate_df['year'].dtype in ['int64', 'int32', 'int']:
-                    county_2018_df = aggregate_df[aggregate_df['year'] == 2018].copy()
+                    county_2020_df = aggregate_df[aggregate_df['year'] == 2020].copy()
                 else:
-                    county_2018_df = aggregate_df[aggregate_df['year'].astype(str) == '2018'].copy()
-            print(f"DEBUG: County 2018 data: {len(county_2018_df)} rows")
-            if not county_2018_df.empty:
-                county_2018_num_under_100k = int(county_2018_df.get('num_under_100k', pd.Series([0])).sum())
-                county_2018_num_100k_250k = int(county_2018_df.get('num_100k_250k', pd.Series([0])).sum())
-                county_2018_num_250k_1m = int(county_2018_df.get('num_250k_1m', pd.Series([0])).sum())
-                county_2018_amt_under_100k = float(county_2018_df.get('amt_under_100k', pd.Series([0.0])).sum())
-                county_2018_amt_250k_1m = float(county_2018_df.get('amt_250k_1m', pd.Series([0.0])).sum())
-                numsb_col = 'numsbrev_under_1m' if 'numsbrev_under_1m' in county_2018_df.columns else 'numsb_under_1m'
-                amtsb_col = 'amtsbrev_under_1m' if 'amtsbrev_under_1m' in county_2018_df.columns else 'amtsb_under_1m'
-                county_2018_numsb_under_1m = int(county_2018_df.get(numsb_col, pd.Series([0])).sum())
-                county_2018_amtsb_under_1m = float(county_2018_df.get(amtsb_col, pd.Series([0.0])).sum())
+                    county_2020_df = aggregate_df[aggregate_df['year'].astype(str) == '2020'].copy()
+            print(f"DEBUG: County 2020 data: {len(county_2020_df)} rows")
+            if not county_2020_df.empty:
+                county_2020_num_under_100k = safe_int(county_2020_df.get('num_under_100k', pd.Series([0])).sum())
+                county_2020_num_100k_250k = safe_int(county_2020_df.get('num_100k_250k', pd.Series([0])).sum())
+                county_2020_num_250k_1m = safe_int(county_2020_df.get('num_250k_1m', pd.Series([0])).sum())
+                county_2020_amt_under_100k = float(county_2020_df.get('amt_under_100k', pd.Series([0.0])).sum())
+                county_2020_amt_250k_1m = float(county_2020_df.get('amt_250k_1m', pd.Series([0.0])).sum())
+                numsb_col = 'numsbrev_under_1m' if 'numsbrev_under_1m' in county_2020_df.columns else 'numsb_under_1m'
+                amtsb_col = 'amtsbrev_under_1m' if 'amtsbrev_under_1m' in county_2020_df.columns else 'amtsb_under_1m'
+                county_2020_numsb_under_1m = safe_int(county_2020_df.get(numsb_col, pd.Series([0])).sum())
+                county_2020_amtsb_under_1m = float(county_2020_df.get(amtsb_col, pd.Series([0.0])).sum())
                 
-                if 'is_lmi_tract' in county_2018_df.columns:
-                    lmi_mask = (county_2018_df['is_lmi_tract'] == 1) | (county_2018_df['is_lmi_tract'] == True) | (county_2018_df['is_lmi_tract'].astype(str) == '1')
-                    county_2018_lmi_tract_loans = int(county_2018_df[lmi_mask].get('loan_count', pd.Series([0])).sum())
+                if 'is_lmi_tract' in county_2020_df.columns:
+                    lmi_mask = (county_2020_df['is_lmi_tract'] == 1) | (county_2020_df['is_lmi_tract'] == True) | (county_2020_df['is_lmi_tract'].astype(str) == '1')
+                    county_2020_lmi_tract_loans = int(county_2020_df[lmi_mask].get('loan_count', pd.Series([0])).sum())
                 else:
-                    county_2018_lmi_tract_loans = 0
+                    county_2020_lmi_tract_loans = 0
                 
-                # Calculate 2018 income category breakdowns
-                county_2018_low_income_loans = 0
-                county_2018_moderate_income_loans = 0
-                county_2018_middle_income_loans = 0
-                county_2018_upper_income_loans = 0
-                county_2018_low_income_amount = 0.0
-                county_2018_moderate_income_amount = 0.0
-                county_2018_middle_income_amount = 0.0
-                county_2018_upper_income_amount = 0.0
+                # Calculate 2020 income category breakdowns
+                county_2020_low_income_loans = 0
+                county_2020_moderate_income_loans = 0
+                county_2020_middle_income_loans = 0
+                county_2020_upper_income_loans = 0
+                county_2020_low_income_amount = 0.0
+                county_2020_moderate_income_amount = 0.0
+                county_2020_middle_income_amount = 0.0
+                county_2020_upper_income_amount = 0.0
                 
-                if 'income_level' in county_2018_df.columns:
-                    low_mask_2018 = county_2018_df['income_level'] == 1
-                    moderate_mask_2018 = county_2018_df['income_level'] == 2
-                    middle_mask_2018 = county_2018_df['income_level'] == 3
-                    upper_mask_2018 = county_2018_df['income_level'] == 4
+                if 'income_level' in county_2020_df.columns:
+                    low_mask_2020 = county_2020_df['income_level'] == 1
+                    moderate_mask_2020 = county_2020_df['income_level'] == 2
+                    middle_mask_2020 = county_2020_df['income_level'] == 3
+                    upper_mask_2020 = county_2020_df['income_level'] == 4
                     
-                    county_2018_low_income_loans = int(county_2018_df[low_mask_2018].get('loan_count', pd.Series([0])).sum())
-                    county_2018_moderate_income_loans = int(county_2018_df[moderate_mask_2018].get('loan_count', pd.Series([0])).sum())
-                    county_2018_middle_income_loans = int(county_2018_df[middle_mask_2018].get('loan_count', pd.Series([0])).sum())
-                    county_2018_upper_income_loans = int(county_2018_df[upper_mask_2018].get('loan_count', pd.Series([0])).sum())
+                    county_2020_low_income_loans = int(county_2020_df[low_mask_2020].get('loan_count', pd.Series([0])).sum())
+                    county_2020_moderate_income_loans = int(county_2020_df[moderate_mask_2020].get('loan_count', pd.Series([0])).sum())
+                    county_2020_middle_income_loans = int(county_2020_df[middle_mask_2020].get('loan_count', pd.Series([0])).sum())
+                    county_2020_upper_income_loans = int(county_2020_df[upper_mask_2020].get('loan_count', pd.Series([0])).sum())
                     
-                    county_2018_low_income_amount = float(county_2018_df[low_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
-                    county_2018_moderate_income_amount = float(county_2018_df[moderate_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
-                    county_2018_middle_income_amount = float(county_2018_df[middle_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
-                    county_2018_upper_income_amount = float(county_2018_df[upper_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
-                elif 'income_category' in county_2018_df.columns:
-                    low_mask_2018 = county_2018_df['income_category'].str.contains('Low Income', na=False)
-                    moderate_mask_2018 = county_2018_df['income_category'].str.contains('Moderate Income', na=False)
-                    middle_mask_2018 = county_2018_df['income_category'].str.contains('Middle Income', na=False)
-                    upper_mask_2018 = county_2018_df['income_category'].str.contains('Upper Income', na=False)
+                    county_2020_low_income_amount = float(county_2020_df[low_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
+                    county_2020_moderate_income_amount = float(county_2020_df[moderate_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
+                    county_2020_middle_income_amount = float(county_2020_df[middle_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
+                    county_2020_upper_income_amount = float(county_2020_df[upper_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
+                elif 'income_category' in county_2020_df.columns:
+                    low_mask_2020 = county_2020_df['income_category'].str.contains('Low Income', na=False)
+                    moderate_mask_2020 = county_2020_df['income_category'].str.contains('Moderate Income', na=False)
+                    middle_mask_2020 = county_2020_df['income_category'].str.contains('Middle Income', na=False)
+                    upper_mask_2020 = county_2020_df['income_category'].str.contains('Upper Income', na=False)
                     
-                    county_2018_low_income_loans = int(county_2018_df[low_mask_2018].get('loan_count', pd.Series([0])).sum())
-                    county_2018_moderate_income_loans = int(county_2018_df[moderate_mask_2018].get('loan_count', pd.Series([0])).sum())
-                    county_2018_middle_income_loans = int(county_2018_df[middle_mask_2018].get('loan_count', pd.Series([0])).sum())
-                    county_2018_upper_income_loans = int(county_2018_df[upper_mask_2018].get('loan_count', pd.Series([0])).sum())
+                    county_2020_low_income_loans = int(county_2020_df[low_mask_2020].get('loan_count', pd.Series([0])).sum())
+                    county_2020_moderate_income_loans = int(county_2020_df[moderate_mask_2020].get('loan_count', pd.Series([0])).sum())
+                    county_2020_middle_income_loans = int(county_2020_df[middle_mask_2020].get('loan_count', pd.Series([0])).sum())
+                    county_2020_upper_income_loans = int(county_2020_df[upper_mask_2020].get('loan_count', pd.Series([0])).sum())
                     
-                    county_2018_low_income_amount = float(county_2018_df[low_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
-                    county_2018_moderate_income_amount = float(county_2018_df[moderate_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
-                    county_2018_middle_income_amount = float(county_2018_df[middle_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
-                    county_2018_upper_income_amount = float(county_2018_df[upper_mask_2018].get('loan_amount', pd.Series([0.0])).sum())
+                    county_2020_low_income_amount = float(county_2020_df[low_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
+                    county_2020_moderate_income_amount = float(county_2020_df[moderate_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
+                    county_2020_middle_income_amount = float(county_2020_df[middle_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
+                    county_2020_upper_income_amount = float(county_2020_df[upper_mask_2020].get('loan_amount', pd.Series([0.0])).sum())
                 
-                county_2018_total_loans = county_2018_num_under_100k + county_2018_num_100k_250k + county_2018_num_250k_1m
-                county_2018_amt_100k_250k = float(county_2018_df.get('amt_100k_250k', pd.Series([0.0])).sum())
-                county_2018_total_amount = county_2018_amt_under_100k + county_2018_amt_100k_250k + county_2018_amt_250k_1m
+                county_2020_total_loans = county_2020_num_under_100k + county_2020_num_100k_250k + county_2020_num_250k_1m
+                county_2020_amt_100k_250k = float(county_2020_df.get('amt_100k_250k', pd.Series([0.0])).sum())
+                county_2020_total_amount = county_2020_amt_under_100k + county_2020_amt_100k_250k + county_2020_amt_250k_1m
                 
-                county_2018_data = {
-                    'total_loans': county_2018_total_loans,
-                    'total_amount': county_2018_total_amount,
-                    'num_under_100k': county_2018_num_under_100k,
-                    'num_100k_250k': county_2018_num_100k_250k,
-                    'num_250k_1m': county_2018_num_250k_1m,
-                    'numsb_under_1m': county_2018_numsb_under_1m,
-                    'low_income_loans': county_2018_low_income_loans,
-                    'moderate_income_loans': county_2018_moderate_income_loans,
-                    'middle_income_loans': county_2018_middle_income_loans,
-                    'upper_income_loans': county_2018_upper_income_loans,
-                    'low_income_amount': county_2018_low_income_amount,
-                    'moderate_income_amount': county_2018_moderate_income_amount,
-                    'middle_income_amount': county_2018_middle_income_amount,
-                    'upper_income_amount': county_2018_upper_income_amount,
-                    'lmi_tract_loans': county_2018_lmi_tract_loans,
-                    'amt_under_100k': county_2018_amt_under_100k,
-                    'amt_100k_250k': county_2018_amt_100k_250k,
-                    'amt_250k_1m': county_2018_amt_250k_1m,
-                    'amtsb_under_1m': county_2018_amtsb_under_1m
+                county_2020_data = {
+                    'total_loans': county_2020_total_loans,
+                    'total_amount': county_2020_total_amount,
+                    'num_under_100k': county_2020_num_under_100k,
+                    'num_100k_250k': county_2020_num_100k_250k,
+                    'num_250k_1m': county_2020_num_250k_1m,
+                    'numsb_under_1m': county_2020_numsb_under_1m,
+                    'low_income_loans': county_2020_low_income_loans,
+                    'moderate_income_loans': county_2020_moderate_income_loans,
+                    'middle_income_loans': county_2020_middle_income_loans,
+                    'upper_income_loans': county_2020_upper_income_loans,
+                    'low_income_amount': county_2020_low_income_amount,
+                    'moderate_income_amount': county_2020_moderate_income_amount,
+                    'middle_income_amount': county_2020_middle_income_amount,
+                    'upper_income_amount': county_2020_upper_income_amount,
+                    'lmi_tract_loans': county_2020_lmi_tract_loans,
+                    'amt_under_100k': county_2020_amt_under_100k,
+                    'amt_100k_250k': county_2020_amt_100k_250k,
+                    'amt_250k_1m': county_2020_amt_250k_1m,
+                    'amtsb_under_1m': county_2020_amtsb_under_1m
                 }
-                print(f"DEBUG: County 2018 data calculated: total_loans={county_2018_total_loans}, total_amount={county_2018_total_amount}")
+                print(f"DEBUG: County 2020 data calculated: total_loans={county_2020_total_loans}, total_amount={county_2020_total_amount}")
             else:
-                print(f"DEBUG: County 2018 data: county_2018_df is empty")
+                print(f"DEBUG: County 2020 data: county_2020_df is empty")
         except Exception as e:
-            print(f"Warning: Failed to calculate county 2018 data: {e}")
+            print(f"Warning: Failed to calculate county 2020 data: {e}")
             import traceback
             traceback.print_exc()
         
         # Build comparison table (Section 3) - County, State, National Comparison
+        if progress_tracker:
+            progress_tracker.update_progress('section_3', 70, 
+                'Section 3: Creating comparison table... See how we stack up! 📊')
         comparison_df = pd.DataFrame()
         if not aggregate_df.empty:
             print(f"DEBUG: Creating comparison table")
             print(f"DEBUG: State benchmarks available: {bool(state_benchmarks)}, keys: {list(state_benchmarks.keys()) if state_benchmarks else 'None'}")
             print(f"DEBUG: National benchmarks available: {bool(national_benchmarks)}, keys: {list(national_benchmarks.keys()) if national_benchmarks else 'None'}")
-            print(f"DEBUG: County 2018 data available: {bool(county_2018_data)}")
+            print(f"DEBUG: County 2020 data available: {bool(county_2020_data)}")
             try:
-                comparison_df = create_comparison_table(aggregate_df, state_benchmarks, national_benchmarks, county_2018_data)
+                comparison_df = create_comparison_table(aggregate_df, state_benchmarks, national_benchmarks, county_2020_data)
                 print(f"DEBUG: Comparison table created: {len(comparison_df)} rows")
                 if not comparison_df.empty:
                     print(f"DEBUG: Comparison table columns: {comparison_df.columns.tolist()}")
@@ -508,6 +525,9 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                 traceback.print_exc()
         
         # Build top lenders table (Section 4) - 2024 only
+        if progress_tracker:
+            progress_tracker.update_progress('section_4', 75, 
+                'Section 4: Creating top lenders table... Who are the big players? 🏆')
         top_lenders_df = pd.DataFrame()
         hhi_value = None
         hhi_concentration = None
@@ -672,8 +692,8 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Fetch county summary statistics for 2024 only (for the summary table next to map)
         if progress_tracker:
-            progress_tracker.update_progress('processing_data', 50, 
-                'Calculating summary statistics...')
+            progress_tracker.update_progress('section_1', 55, 
+                'Section 1: Preparing geographic overview... Mapping it out! 🗺️')
         
         summary_query = bq_client.get_county_summary_stats(geoid5, [2024])  # 2024 only for summary table
         summary_df = summary_query.to_dataframe()
@@ -689,8 +709,8 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Prepare tract data for map
         if progress_tracker:
-            progress_tracker.update_progress('building_report', 65, 
-                'Preparing map data and visualizations...')
+            progress_tracker.update_progress('section_1', 60, 
+                'Section 1: Preparing map data and visualizations... Making it look pretty! 🎨')
         
         # Aggregate tract data across years
         # Use census_tract_geoid (from SQL alias) or fallback to tract_geoid if it exists
@@ -735,16 +755,21 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             def get_year_amounts(tract_id):
                 tract_id_str = str(tract_id)
                 year_amounts = tract_year_data.get(tract_id_str, {})
-                # Ensure all years 2018-2024 are present (with 0 if missing)
+                # Ensure all years 2020-2024 are present (with 0 if missing)
                 result = {}
-                for year in ['2018', '2019', '2020', '2021', '2022', '2023', '2024']:
+                for year in ['2020', '2021', '2022', '2023', '2024']:
                     result[year] = float(year_amounts.get(year, 0.0))
                 return result
             
             tract_summary['year_amounts'] = tract_summary[tract_id_col].apply(get_year_amounts)
             
             # Convert year_amounts dictionaries to JSON strings for proper serialization
-            tract_summary['year_amounts'] = tract_summary['year_amounts'].apply(lambda x: json.dumps(x) if isinstance(x, dict) else x)
+            def convert_to_json(x):
+                """Convert dict to JSON string, return other types as-is."""
+                if isinstance(x, dict):
+                    return json.dumps(x)
+                return x
+            tract_summary['year_amounts'] = tract_summary['year_amounts'].apply(convert_to_json)
         
         # Rename tract ID column to consistent name for downstream use
         if tract_id_col in tract_summary.columns:
@@ -839,8 +864,28 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             print(f"DEBUG: income_level values: {summary_2024_df['income_level'].value_counts().to_dict()}")
             print(f"DEBUG: income_level nulls: {summary_2024_df['income_level'].isna().sum()}")
         
-        summary_total_loans = int(summary_2024_df.get('loan_count', pd.Series([0])).sum()) if not summary_2024_df.empty else 0
+        summary_total_loans = safe_int(summary_2024_df.get('loan_count', pd.Series([0])).sum()) if not summary_2024_df.empty else 0
         summary_total_amount = float(summary_2024_df.get('loan_amount', pd.Series([0.0])).sum()) if not summary_2024_df.empty else 0.0
+        
+        # Extract amtsb_under_1m from aggregate data (2024 only)
+        # Try both column name variations (amounts are in thousands)
+        amtsb_under_1m = 0.0
+        if not summary_2024_df.empty:
+            # Check for both possible column names
+            if 'amtsbrev_under_1m' in summary_2024_df.columns:
+                amtsb_under_1m = float(summary_2024_df['amtsbrev_under_1m'].sum())
+                print(f"DEBUG: Found amtsbrev_under_1m column, sum: {amtsb_under_1m}")
+            elif 'amtsb_under_1m' in summary_2024_df.columns:
+                amtsb_under_1m = float(summary_2024_df['amtsb_under_1m'].sum())
+                print(f"DEBUG: Found amtsb_under_1m column, sum: {amtsb_under_1m}")
+            else:
+                print(f"DEBUG: WARNING - Neither amtsbrev_under_1m nor amtsb_under_1m found in columns: {summary_2024_df.columns.tolist()}")
+                # Try to find any column with 'under' and '1m' in the name
+                for col in summary_2024_df.columns:
+                    if 'under' in col.lower() and '1m' in col.lower() and 'amt' in col.lower():
+                        amtsb_under_1m = float(summary_2024_df[col].sum())
+                        print(f"DEBUG: Found alternative column '{col}', sum: {amtsb_under_1m}")
+                        break
         
         print(f"DEBUG: Summary total loans: {summary_total_loans}, total amount: {summary_total_amount}")
         
@@ -888,12 +933,20 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                 summary_middle_income_amount = float(summary_2024_df[middle_mask]['loan_amount'].sum() if 'loan_amount' in summary_2024_df.columns else 0.0)
                 summary_upper_income_amount = float(summary_2024_df[upper_mask]['loan_amount'].sum() if 'loan_amount' in summary_2024_df.columns else 0.0)
         
+        # Calculate percentage for amtsb_under_1m (for JavaScript fallback)
+        pct_amount_sb_under_1m = 0.0
+        if summary_total_amount > 0 and amtsb_under_1m > 0:
+            pct_amount_sb_under_1m = (amtsb_under_1m / summary_total_amount * 100)
+        
         summary_table = {
-            'total_loans': int(summary_row.get('total_loans', 0)),
-            'total_loan_amount': float(summary_row.get('total_loan_amount', 0)),
+            'total_loans': safe_int(summary_row.get('total_loans', 0)),
+            'total_loan_amount': float(summary_row.get('total_loan_amount', 0) or summary_row.get('total_amount', 0)),
             'pct_loans_to_lmi_tracts': float(summary_row.get('pct_loans_to_lmi_tracts', 0)),
             'pct_dollars_to_lmi_tracts': float(summary_row.get('pct_dollars_to_lmi_tracts', 0)),
-            'lmi_tract_loans': int(summary_row.get('lmi_tract_loans', 0)),
+            'lmi_tract_loans': safe_int(summary_row.get('lmi_tract_loans', 0)),
+            'lmi_tract_amount': float(summary_row.get('lmi_tract_amount', 0)),
+            'amtsb_under_1m': amtsb_under_1m,  # Use value extracted from aggregate data (in thousands)
+            'pct_amount_sb_under_1m': pct_amount_sb_under_1m,  # Percentage for JavaScript fallback
             # Income category percentages
             'pct_loans_low_income': (summary_low_income_loans / summary_total_loans * 100) if summary_total_loans > 0 else 0.0,
             'pct_loans_moderate_income': (summary_moderate_income_loans / summary_total_loans * 100) if summary_total_loans > 0 else 0.0,
@@ -905,8 +958,36 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             'pct_amount_upper_income': (summary_upper_income_amount / summary_total_amount * 100) if summary_total_amount > 0 else 0.0
         }
         
-        # Prepare metadata
+        # Check which income categories have census tracts in the county
+        income_categories_exist = {
+            'low_income': False,
+            'moderate_income': False,
+            'middle_income': False,
+            'upper_income': False
+        }
+        
+        if 'income_category' in tract_summary.columns:
+            unique_categories = tract_summary['income_category'].dropna().unique()
+            income_categories_exist['low_income'] = any('Low Income' in str(cat) for cat in unique_categories)
+            income_categories_exist['moderate_income'] = any('Moderate Income' in str(cat) for cat in unique_categories)
+            income_categories_exist['middle_income'] = any('Middle Income' in str(cat) for cat in unique_categories)
+            income_categories_exist['upper_income'] = any('Upper Income' in str(cat) for cat in unique_categories)
+        
+        # Fetch historical census data for population demographics section
+        historical_census_data = {}
+        try:
+            from justdata.shared.utils.census_historical_utils import get_census_data_for_geoids
+            historical_census_data = get_census_data_for_geoids([geoid5])
+            print(f"[BizSight] Fetched historical census data for {geoid5}: {len(historical_census_data)} counties")
+        except Exception as e:
+            print(f"[BizSight] Error fetching census data: {e}")
+            import traceback
+            traceback.print_exc()
+            historical_census_data = {}
+        
+        # Prepare metadata (ai_insights_enabled will be set after AI analysis attempt)
         metadata = {
+            'historical_census_data': historical_census_data,
             'county_name': county_name,
             'state_name': county_data.get('state_name', ''),
             'geoid5': geoid5,
@@ -914,6 +995,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             'year_range': f"{min(years)}-{max(years)}",
             'county_minority_threshold': float(county_minority_pct),
             'total_tracts': len(tract_summary),
+            'income_categories_exist': income_categories_exist,
             'generated_at': datetime.now().isoformat()
         }
         
@@ -929,11 +1011,41 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Generate AI narratives
         if progress_tracker:
-            progress_tracker.update_progress('generating_ai', 90, 'Generating AI narratives...')
+            progress_tracker.update_progress('generating_ai', 90, 'Generating AI narratives... Let the AI work its magic! ✨')
         
         ai_insights = {}
+        ai_insights_enabled = False  # Track whether AI insights are enabled
+        
+        # Check for API key before initializing (using unified environment system)
+        from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+        from justdata.shared.utils.env_utils import is_local_development
+        
+        # Ensure unified environment is loaded (primary method)
+        ensure_unified_env_loaded(verbose=False)
+        config = get_unified_config(load_env=False, verbose=False)
+        claude_api_key = config.get('CLAUDE_API_KEY')
+        
+        if not claude_api_key:
+            print(f"[WARNING] CLAUDE_API_KEY not set - AI insights will not be generated")
+            if is_local_development():
+                print(f"[INFO] To enable AI insights locally, add CLAUDE_API_KEY to your .env file")
+            else:
+                print(f"[INFO] To enable AI insights, set CLAUDE_API_KEY environment variable in Render dashboard")
+            print(f"[INFO] Skipping AI analysis and continuing with report generation...")
+            ai_insights_enabled = False
+        else:
+            # Update environment variable with cleaned key
+            import os
+            os.environ['CLAUDE_API_KEY'] = claude_api_key
+            ai_insights_enabled = True  # API key exists, AI should be enabled
+        
         try:
+            if not claude_api_key:
+                raise Exception("No API key found for provider: claude")
+            print("DEBUG: Initializing AI analyzer for key findings generation...", flush=True)
             ai_analyzer = BizSightAnalyzer()
+            print("DEBUG: AI analyzer initialized successfully", flush=True)
+            ai_insights_enabled = True  # Analyzer initialized successfully
             ai_data = {
                 'county_name': county_name,
                 'state_name': county_data.get('state_name', ''),
@@ -1047,33 +1159,22 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                 'comparison_discussion': "",
                 'top_lenders_discussion': ""
             }
+            ai_insights_enabled = False  # Ensure flag is set when AI fails
         
-        # Save Excel report (like LendSight does)
-        if progress_tracker:
-            progress_tracker.update_progress('saving_excel', 90, 'Saving Excel report...')
-        
-        try:
-            from apps.bizsight.excel_export import save_bizsight_excel_report
-            
-            excel_path = os.path.join(BizSightConfig.OUTPUT_DIR, f'bizsight_analysis_{job_id}.xlsx')
-            os.makedirs(os.path.dirname(excel_path), exist_ok=True)
-            # Pass the full result dict (which will become analysis_result) instead of just report_data
-            excel_result = {
-                'county_summary_table': county_summary_df.to_dict('records') if not county_summary_df.empty else [],
-                'comparison_table': comparison_df.to_dict('records') if not comparison_df.empty else [],
-                'top_lenders_table': top_lenders_df.to_dict('records') if not top_lenders_df.empty else [],
-                'hhi_by_year': hhi_by_year,
-                'report_data': report_data
-            }
-            save_bizsight_excel_report(excel_result, excel_path, metadata=metadata)
-            print(f"Excel report saved: {excel_path}")
-        except Exception as e:
-            print(f"Warning: Failed to save Excel report: {e}")
-            import traceback
-            traceback.print_exc()
+        # Debug: Log AI insights status
+        print(f"[DEBUG] AI insights status: enabled={ai_insights_enabled}, keys={list(ai_insights.keys())}", flush=True)
+        for key, value in ai_insights.items():
+            if value:
+                print(f"[DEBUG] AI insight '{key}': length={len(str(value))}", flush=True)
+            else:
+                print(f"[DEBUG] AI insight '{key}': empty", flush=True)
         
         if progress_tracker:
-            progress_tracker.update_progress('finalizing', 95, 'Finalizing report...')
+            progress_tracker.update_progress('completed', 95, 'Finalizing report... Dotting the i\'s and crossing the t\'s! ✅')
+        
+        # Add AI insights enabled flag to metadata
+        metadata['ai_insights_enabled'] = ai_insights_enabled
+        print(f"[DEBUG] Metadata ai_insights_enabled set to: {ai_insights_enabled}", flush=True)
         
         # Ensure HHI is always included (even if None)
         hhi_data = None
@@ -1103,6 +1204,10 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             'hhi_by_year': hhi_by_year,
             'ai_insights': ai_insights
         }
+        
+        # Debug: Log final AI insights in result
+        print(f"[DEBUG] Final result ai_insights keys: {list(result.get('ai_insights', {}).keys())}", flush=True)
+        print(f"[DEBUG] Final result metadata ai_insights_enabled: {result.get('metadata', {}).get('ai_insights_enabled')}", flush=True)
         
         print(f"\n{'='*80}")
         print(f"DEBUG: ========== FINAL RESULT SUMMARY ==========")

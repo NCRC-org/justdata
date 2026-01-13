@@ -5,6 +5,7 @@ MergerMeter Flask web application - Two-bank merger impact analyzer.
 
 from flask import render_template, request, jsonify, send_file, session, Response
 import os
+import sys
 import tempfile
 import zipfile
 from datetime import datetime
@@ -13,11 +14,65 @@ import threading
 import time
 import json
 from typing import List, Dict
+from pathlib import Path
+from werkzeug.middleware.proxy_fix import ProxyFix
+
+# Add repo root to path for shared modules
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
+sys.path.insert(0, str(REPO_ROOT))
 
 from justdata.shared.web.app_factory import create_app, register_standard_routes
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
-from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
-from .version import __version__
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+
+# Use absolute imports from repo root (like other apps) - avoids issues with gunicorn
+from justdata.apps.mergermeter.config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
+from justdata.apps.mergermeter.version import __version__
+
+# Load unified environment configuration (primary method - works for both local and Render)
+ensure_unified_env_loaded(verbose=True)
+config = get_unified_config(verbose=True)
+print(f"[MergerMeter] Environment: {'LOCAL' if config['IS_LOCAL'] else 'PRODUCTION (Render)'}")
+print(f"[MergerMeter] Shared config loaded from: {config.get('SHARED_ENV_FILE', 'Environment variables')}")
+
+
+def _import_local_module(module_name, *attributes):
+    """
+    Import a local module using file-based import to avoid relative import issues.
+    Returns the module or a tuple of attributes if specified.
+    If only one attribute is requested, returns it directly (not in a tuple).
+    """
+    import sys
+    from pathlib import Path
+    import importlib.util
+    
+    module_path = Path(__file__).parent / f'{module_name}.py'
+    if module_path.exists():
+        spec = importlib.util.spec_from_file_location(module_name, module_path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        if attributes:
+            result = tuple(getattr(module, attr) for attr in attributes)
+            # If only one attribute, return it directly (not as a tuple)
+            return result[0] if len(result) == 1 else result
+        return module
+    else:
+        # Fallback: try relative import
+        try:
+            module = __import__(f'.{module_name}', fromlist=[*attributes] if attributes else [], package=__package__ or 'mergermeter')
+            if attributes:
+                result = tuple(getattr(module, attr) for attr in attributes)
+                # If only one attribute, return it directly (not as a tuple)
+                return result[0] if len(result) == 1 else result
+            return module
+        except (ImportError, AttributeError):
+            # Last resort: try absolute import
+            module = __import__(module_name, fromlist=[*attributes] if attributes else [])
+            if attributes:
+                result = tuple(getattr(module, attr) for attr in attributes)
+                # If only one attribute, return it directly (not as a tuple)
+                return result[0] if len(result) == 1 else result
+            return module
 
 
 # Create the Flask app
@@ -27,8 +82,13 @@ app = create_app(
     static_folder=STATIC_DIR
 )
 
+# Add ProxyFix for proper request handling behind Render's proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
 # Set maximum file upload size to 10MB (plenty for JSON files)
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB
+
+# Note: /health endpoint is already registered by create_app() in app_factory.py
 
 
 def index():
@@ -53,12 +113,25 @@ def progress_handler(job_id):
         keepalive_counter = 0
         max_keepalive = 20  # Send keepalive every 10 seconds (20 * 0.5s)
         
+        # Maximum stream duration: 5 minutes (600 seconds) to prevent memory issues
+        max_duration = 300  # 5 minutes
+        start_time = time.time()
+        max_iterations = int(max_duration / 0.5)  # Maximum iterations based on sleep time
+        iteration_count = 0
+        
         try:
             # Send initial connection message
             yield f": connected\n\n"
             
-            while True:
+            while iteration_count < max_iterations:
                 try:
+                    # Check if we've exceeded maximum duration
+                    elapsed = time.time() - start_time
+                    if elapsed >= max_duration:
+                        print(f"Progress stream timeout for {job_id} after {elapsed:.1f}s")
+                        yield f"data: {{\"percent\": {last_percent}, \"step\": \"Connection timeout - please refresh\", \"done\": true, \"error\": \"Stream timeout after 5 minutes\"}}\n\n"
+                        break
+                    
                     progress = get_progress(job_id)
                     if not progress:
                         # If no progress found, send default
@@ -80,6 +153,8 @@ def progress_handler(job_id):
                         keepalive_counter = 0
                     
                     if done or error:
+                        # Small delay to ensure final message is sent
+                        time.sleep(0.1)
                         break
                     
                     # Send keepalive comment periodically to keep connection alive
@@ -89,13 +164,18 @@ def progress_handler(job_id):
                         keepalive_counter = 0
                     
                     time.sleep(0.5)
+                    iteration_count += 1
                     
                 except GeneratorExit:
                     # Client disconnected
                     print(f"Client disconnected from progress stream for {job_id}")
                     break
+                except (BrokenPipeError, ConnectionResetError, OSError) as e:
+                    # Client connection issues - exit gracefully
+                    print(f"Connection error in progress stream for {job_id}: {e}")
+                    break
                 except Exception as e:
-                    # Log error but continue trying
+                    # Log error but continue trying (with limit)
                     print(f"Error in progress stream for {job_id}: {e}")
                     import traceback
                     traceback.print_exc()
@@ -104,9 +184,14 @@ def progress_handler(job_id):
                     except:
                         break
                     time.sleep(1)
+                    iteration_count += 1
+                    
         except GeneratorExit:
             # Client disconnected normally
             print(f"Progress stream closed for {job_id}")
+        except (BrokenPipeError, ConnectionResetError, OSError) as e:
+            # Connection errors - exit silently
+            print(f"Connection closed for {job_id}: {e}")
         except Exception as e:
             # Final error - send error message and close
             print(f"Fatal error in progress stream for {job_id}: {e}")
@@ -145,11 +230,11 @@ def analyze():
             'target_assessment_areas': request.form.get('target_assessment_areas', '[]'),
             'loan_purpose': request.form.get('loan_purpose', ''),
             'hmda_years': request.form.get('hmda_years', '2020,2021,2022,2023,2024'),
-            'sb_years': request.form.get('sb_years', '2019,2020,2021,2022,2023'),
+            'sb_years': request.form.get('sb_years', '2020,2021,2022,2023,2024'),
             'action_taken': request.form.get('action_taken', '1'),
             'occupancy_type': request.form.get('occupancy_type', '1'),
             'total_units': request.form.get('total_units', '1-4'),
-            'construction_method': request.form.get('construction_method', '1'),
+            'construction_method': request.form.get('construction_method', '1,2'),  # Default: both site-built and manufactured homes
             'not_reverse': request.form.get('not_reverse', '1')
         }
         
@@ -158,13 +243,15 @@ def analyze():
         
         # Run analysis in background thread so server can respond to progress requests
         def run_analysis():
-            try:
-                _perform_analysis(job_id, form_data)
-            except Exception as e:
-                import traceback
-                error_msg = str(e)
-                traceback.print_exc()
-                update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
+            # Push application context for background thread
+            with app.app_context():
+                try:
+                    _perform_analysis(job_id, form_data)
+                except Exception as e:
+                    import traceback
+                    error_msg = str(e)
+                    traceback.print_exc()
+                    update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
         
         thread = threading.Thread(target=run_analysis, daemon=True)
         thread.start()
@@ -382,7 +469,7 @@ def _perform_analysis(job_id, form_data):
         target_counties = deduplicate_counties(target_counties)
         
         # Expand MSA names to counties (if user provided MSA names instead of county lists)
-        from .county_mapper import detect_and_expand_msa_names
+        detect_and_expand_msa_names = _import_local_module('county_mapper', 'detect_and_expand_msa_names')
         
         update_progress(job_id, {'percent': 8, 'step': 'Checking for MSA names and expanding to counties...', 'done': False, 'error': None})
         
@@ -399,47 +486,37 @@ def _perform_analysis(job_id, form_data):
         
         # Get filters from form_data (not request.form - we're in a background thread)
         loan_purpose = form_data.get('loan_purpose') or ''
-        hmda_years_str = form_data.get('hmda_years', '').strip()
-        sb_years_str = form_data.get('sb_years', '').strip()
+        hmda_years_str = form_data.get('hmda_years') or '2020,2021,2022,2023,2024'
+        sb_years_str = form_data.get('sb_years') or '2020,2021,2022,2023,2024'
         
         # Get HMDA filter values (defaults for multi-select: comma-separated values)
         action_taken = form_data.get('action_taken', '1')
         occupancy_type = form_data.get('occupancy_type', '1')
         total_units = form_data.get('total_units', '1,2,3,4')  # Default to 1-4 units
-        construction_method = form_data.get('construction_method', '1')
+        construction_method = form_data.get('construction_method', '1,2')  # Default: both site-built and manufactured homes
         not_reverse = form_data.get('not_reverse', '1')
         
-        # Parse years - if empty, automatically get last 5 years
-        from .data_utils import get_last_5_years_hmda, get_last_5_years_sb
+        # Parse years (handle None/empty strings)
+        if not isinstance(hmda_years_str, str):
+            hmda_years_str = '2020,2021,2022,2023,2024'
+        if not isinstance(sb_years_str, str):
+            sb_years_str = '2019,2020,2021,2022,2023'
         
-        if not hmda_years_str or not isinstance(hmda_years_str, str):
-            # Automatically get last 5 years from HMDA data
-            hmda_years_list = get_last_5_years_hmda()
-            hmda_years = [str(y) for y in hmda_years_list]
-            print(f"✅ Automatically using last 5 HMDA years: {hmda_years}")
-        else:
-            hmda_years = [y.strip() for y in hmda_years_str.split(',') if y.strip()]
-        
-        if not sb_years_str or not isinstance(sb_years_str, str):
-            # Automatically get last 5 years from SB disclosure data
-            sb_years_list = get_last_5_years_sb()
-            sb_years = [str(y) for y in sb_years_list]
-            print(f"✅ Automatically using last 5 SB disclosure years: {sb_years}")
-        else:
-            sb_years = [y.strip() for y in sb_years_str.split(',') if y.strip()]
+        hmda_years = [y.strip() for y in hmda_years_str.split(',') if y.strip()]
+        sb_years = [y.strip() for y in sb_years_str.split(',') if y.strip()]
         
         update_progress(job_id, {'percent': 10, 'step': 'Mapping counties to GEOIDs...', 'done': False, 'error': None})
         
         # Map counties to GEOIDs and enrich with metadata
-        from .county_mapper import map_counties_to_geoids, enrich_counties_with_metadata
+        map_counties_to_geoids, enrich_counties_with_metadata = _import_local_module('county_mapper', 'map_counties_to_geoids', 'enrich_counties_with_metadata')
         
         acquirer_geoids, acquirer_unmapped = map_counties_to_geoids(acquirer_counties)
         target_geoids, target_unmapped = map_counties_to_geoids(target_counties)
-        
+
         # Enrich counties with full metadata (state_name, county_name, geoid5, cbsa_code, cbsa_name)
         acquirer_counties_enriched = enrich_counties_with_metadata(acquirer_counties, acquirer_geoids)
         target_counties_enriched = enrich_counties_with_metadata(target_counties, target_geoids)
-        
+
         # Combine all GEOIDs for HHI calculation
         all_geoids = list(set(acquirer_geoids + target_geoids))
         
@@ -452,10 +529,11 @@ def _perform_analysis(job_id, form_data):
         update_progress(job_id, {'percent': 15, 'step': 'Querying HMDA data for Bank A...', 'done': False, 'error': None})
         
         # Query HMDA data
-        from .query_builders import (
-            build_hmda_subject_query, build_hmda_peer_query,
-            build_sb_subject_query, build_sb_peer_query,
-            build_branch_query, build_branch_market_query, build_branch_details_query
+        build_hmda_subject_query, build_hmda_peer_query, build_sb_subject_query, build_sb_peer_query, build_branch_query, build_branch_market_query, build_branch_details_query = _import_local_module(
+            'query_builders', 
+            'build_hmda_subject_query', 'build_hmda_peer_query',
+            'build_sb_subject_query', 'build_sb_peer_query',
+            'build_branch_query', 'build_branch_market_query', 'build_branch_details_query'
         )
         from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
         import pandas as pd
@@ -472,9 +550,9 @@ def _perform_analysis(job_id, form_data):
             results = execute_query(client, query)
             if results:
                 bank_a_hmda_subject = pd.DataFrame(results)
-        
+
         update_progress(job_id, {'percent': 25, 'step': 'Querying HMDA peer data for Bank A...', 'done': False, 'error': None})
-        
+
         # Bank A HMDA Peer
         bank_a_hmda_peer = pd.DataFrame()
         if acquirer_lei and acquirer_geoids:
@@ -485,9 +563,9 @@ def _perform_analysis(job_id, form_data):
             results = execute_query(client, query)
             if results:
                 bank_a_hmda_peer = pd.DataFrame(results)
-        
+
         update_progress(job_id, {'percent': 35, 'step': 'Querying HMDA data for Bank B...', 'done': False, 'error': None})
-        
+
         # Bank B HMDA Subject
         bank_b_hmda_subject = pd.DataFrame()
         if target_lei and target_geoids:
@@ -498,9 +576,9 @@ def _perform_analysis(job_id, form_data):
             results = execute_query(client, query)
             if results:
                 bank_b_hmda_subject = pd.DataFrame(results)
-        
+
         update_progress(job_id, {'percent': 45, 'step': 'Querying HMDA peer data for Bank B...', 'done': False, 'error': None})
-        
+
         # Bank B HMDA Peer
         bank_b_hmda_peer = pd.DataFrame()
         if target_lei and target_geoids:
@@ -684,8 +762,9 @@ def _perform_analysis(job_id, form_data):
         
         # Calculate HHI
         hhi_df = pd.DataFrame()
+        print(f"[HHI] Starting HHI calculation - RSSDs: {acquirer_rssd}, {target_rssd}, Counties: {len(all_geoids) if all_geoids else 0}")
         if acquirer_rssd and target_rssd and all_geoids:
-            from .hhi_calculator import calculate_hhi_by_county
+            calculate_hhi_by_county = _import_local_module('hhi_calculator', 'calculate_hhi_by_county')
             try:
                 hhi_df = calculate_hhi_by_county(
                     county_geoids=all_geoids,
@@ -693,15 +772,426 @@ def _perform_analysis(job_id, form_data):
                     target_rssd=target_rssd,
                     year=2025
                 )
+                print(f"[HHI] HHI calculation completed - {len(hhi_df)} counties with data")
             except Exception as e:
-                print(f"Error calculating HHI: {e}")
+                print(f"[HHI] Error calculating HHI: {e}")
                 import traceback
                 traceback.print_exc()
+        else:
+            print(f"[HHI] Skipping HHI calculation - Missing: RSSDs={not (acquirer_rssd and target_rssd)}, Counties={not all_geoids}")
+        
+        update_progress(job_id, {'percent': 92, 'step': 'Querying Mortgage Goals data...', 'done': False, 'error': None})
+        
+        # Query HMDA data for Mortgage Goals (by loan purpose type, aggregated by state)
+        mortgage_goals_data = {}
+        if (acquirer_lei or target_lei) and all_geoids:
+            # Get state mapping from counties
+            geoid5_list = "', '".join([str(g).zfill(5) for g in all_geoids])
+            state_query = f"""
+            SELECT DISTINCT 
+                LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+                State as state_name
+            FROM `hdma1-242116.geo.cbsa_to_county`
+            WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
+            """
+            state_results = execute_query(client, state_query)
+            state_map = {row['geoid5']: row.get('state_name', '') for row in state_results} if state_results else {}
+            
+            # Query for each loan purpose type
+            loan_purpose_map = {
+                'home_purchase': '1',
+                'refinance': '31,32',
+                'home_equity': '2,4'
+            }
+            
+            for loan_type, loan_purpose_filter in loan_purpose_map.items():
+                combined_dfs = []
+                
+                # Build county-level query for mortgage goals (not CBSA-level)
+                # This allows us to properly break down multi-state CBSAs by county, then aggregate by state
+                def build_county_level_hmda_query(lei, geoids, years, loan_purpose, action_taken, occupancy_type, total_units, construction_method, not_reverse):
+                    """Build HMDA query aggregated by county (GEOID5) instead of CBSA"""
+                    geoid5_list = "', '".join([str(g).zfill(5) for g in geoids])
+                    years_list = "', '".join([str(y) for y in years])
+                    
+                    # Build filters
+                    loan_purpose_filter_str = ""
+                    if loan_purpose:
+                        if ',' in loan_purpose:
+                            purposes = [p.strip() for p in loan_purpose.split(',')]
+                            purpose_list = "', '".join(purposes)
+                            loan_purpose_filter_str = f"AND h.loan_purpose IN ('{purpose_list}')"
+                        else:
+                            loan_purpose_filter_str = f"AND h.loan_purpose = '{loan_purpose.strip()}'"
+                    
+                    action_taken_filter = ""
+                    if action_taken:
+                        if ',' in action_taken:
+                            actions = [a.strip() for a in action_taken.split(',')]
+                            action_list = "', '".join(actions)
+                            action_taken_filter = f"AND h.action_taken IN ('{action_list}')"
+                        else:
+                            action_taken_filter = f"AND h.action_taken = '{action_taken.strip()}'"
+                    
+                    occupancy_filter = ""
+                    if occupancy_type:
+                        if ',' in occupancy_type:
+                            occupancies = [o.strip() for o in occupancy_type.split(',')]
+                            occupancy_list = "', '".join(occupancies)
+                            occupancy_filter = f"AND h.occupancy_type IN ('{occupancy_list}')"
+                        else:
+                            occupancy_filter = f"AND h.occupancy_type = '{occupancy_type.strip()}'"
+                    
+                    units_filter = ""
+                    if total_units:
+                        if ',' in total_units:
+                            units = [u.strip() for u in total_units.split(',')]
+                            units_list = "', '".join(units)
+                            units_filter = f"AND h.total_units IN ('{units_list}')"
+                        else:
+                            units_filter = f"AND h.total_units = '{total_units.strip()}'"
+                    
+                    construction_filter = ""
+                    if construction_method:
+                        if ',' in construction_method:
+                            constructions = [c.strip() for c in construction_method.split(',')]
+                            construction_list = "', '".join(constructions)
+                            construction_filter = f"AND h.construction_method IN ('{construction_list}')"
+                        else:
+                            construction_filter = f"AND h.construction_method = '{construction_method.strip()}'"
+                    
+                    reverse_filter = ""
+                    if not_reverse:
+                        if ',' in not_reverse:
+                            reverse_values = [r.strip() for r in not_reverse.split(',')]
+                            if '1' in reverse_values and '2' not in reverse_values:
+                                reverse_filter = "AND h.reverse_mortgage != '1'"
+                            elif '2' in reverse_values and '1' not in reverse_values:
+                                reverse_filter = "AND h.reverse_mortgage = '1'"
+                        else:
+                            if not_reverse == '1':
+                                reverse_filter = "AND h.reverse_mortgage != '1'"
+                            elif not_reverse == '2':
+                                reverse_filter = "AND h.reverse_mortgage = '1'"
+                    
+                    # Get state name from county crosswalk
+                    query = f"""
+                    WITH county_state_map AS (
+                        SELECT DISTINCT
+                            LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+                            State as state_name
+                        FROM `hdma1-242116.geo.cbsa_to_county`
+                        WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
+                    ),
+                    filtered_hmda AS (
+                        SELECT 
+                            LPAD(CAST(h.county_code AS STRING), 5, '0') as geoid5,
+                            h.loan_amount,
+                            CASE WHEN h.tract_to_msa_income_percentage IS NOT NULL
+                                AND CAST(h.tract_to_msa_income_percentage AS FLOAT64) <= 80 
+                                THEN 1 ELSE 0 END as is_lmict,
+                            CASE WHEN h.income IS NOT NULL
+                                AND h.ffiec_msa_md_median_family_income IS NOT NULL
+                                AND h.ffiec_msa_md_median_family_income > 0
+                                AND (CAST(h.income AS FLOAT64) * 1000.0) / CAST(h.ffiec_msa_md_median_family_income AS FLOAT64) * 100.0 <= 80.0
+                                THEN 1 ELSE 0 END as is_lmib,
+                            CASE WHEN h.tract_minority_population_percent IS NOT NULL
+                                AND CAST(h.tract_minority_population_percent AS FLOAT64) > 50 
+                                THEN 1 ELSE 0 END as is_mmct,
+                            CASE WHEN h.applicant_ethnicity_1 IN ('1','11','12','13','14')
+                                OR h.applicant_ethnicity_2 IN ('1','11','12','13','14')
+                                OR h.applicant_ethnicity_3 IN ('1','11','12','13','14')
+                                OR h.applicant_ethnicity_4 IN ('1','11','12','13','14')
+                                OR h.applicant_ethnicity_5 IN ('1','11','12','13','14')
+                                THEN 1 ELSE 0 END as is_hispanic,
+                            CASE WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
+                                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
+                                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
+                                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
+                                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
+                                AND COALESCE(
+                                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_1 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_2 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_3 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_4 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_5 ELSE NULL END
+                                ) = '3'
+                                THEN 1 ELSE 0 END as is_black,
+                            CASE WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
+                                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
+                                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
+                                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
+                                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
+                                AND COALESCE(
+                                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_1 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_2 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_3 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_4 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_5 ELSE NULL END
+                                ) IN ('2','21','22','23','24','25','26','27')
+                                THEN 1 ELSE 0 END as is_asian,
+                            CASE WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
+                                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
+                                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
+                                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
+                                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
+                                AND COALESCE(
+                                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_1 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_2 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_3 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_4 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_5 ELSE NULL END
+                                ) = '1'
+                                THEN 1 ELSE 0 END as is_native_american,
+                            CASE WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
+                                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
+                                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
+                                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
+                                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
+                                AND COALESCE(
+                                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_1 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_2 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_3 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_4 ELSE NULL END,
+                                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
+                                         THEN h.applicant_race_5 ELSE NULL END
+                                ) IN ('4','41','42','43','44')
+                                THEN 1 ELSE 0 END as is_hopi
+                        FROM `hdma1-242116.hmda.hmda` h
+                        WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
+                            AND CAST(h.lei AS STRING) = '{lei}'
+                            AND LPAD(CAST(h.county_code AS STRING), 5, '0') IN ('{geoid5_list}')
+                            AND h.county_code IS NOT NULL
+                            {loan_purpose_filter_str}
+                            {action_taken_filter}
+                            {occupancy_filter}
+                            {units_filter}
+                            {construction_filter}
+                            {reverse_filter}
+                    )
+                    SELECT 
+                        csm.state_name,
+                        COUNT(*) as total_loans,
+                        SUM(fh.is_lmict) as lmict_loans,
+                        SUM(fh.is_lmib) as lmib_loans,
+                        SUM(CASE WHEN fh.is_lmib = 1 THEN fh.loan_amount ELSE 0 END) as lmib_amount,
+                        SUM(fh.is_mmct) as mmct_loans,
+                        SUM(CASE WHEN fh.is_mmct = 1 AND fh.is_lmib = 1 THEN 1 ELSE 0 END) as minb_loans,
+                        SUM(CASE WHEN fh.is_asian = 1 THEN 1 ELSE 0 END) as asian_loans,
+                        SUM(CASE WHEN fh.is_black = 1 THEN 1 ELSE 0 END) as black_loans,
+                        SUM(CASE WHEN fh.is_native_american = 1 THEN 1 ELSE 0 END) as native_american_loans,
+                        SUM(CASE WHEN fh.is_hopi = 1 THEN 1 ELSE 0 END) as hopi_loans,
+                        SUM(CASE WHEN fh.is_hispanic = 1 THEN 1 ELSE 0 END) as hispanic_loans
+                    FROM filtered_hmda fh
+                    INNER JOIN county_state_map csm
+                        ON fh.geoid5 = csm.geoid5
+                    GROUP BY csm.state_name
+                    ORDER BY csm.state_name
+                    """
+                    return query
+                
+                # Query Bank A
+                if acquirer_lei and acquirer_geoids:
+                    query = build_county_level_hmda_query(
+                        acquirer_lei, acquirer_geoids, hmda_years, loan_purpose_filter,
+                        action_taken, occupancy_type, total_units, construction_method, not_reverse
+                    )
+                    results = execute_query(client, query)
+                    if results:
+                        df_a = pd.DataFrame(results)
+                        combined_dfs.append(df_a)
+                
+                # Query Bank B
+                if target_lei and target_geoids:
+                    query = build_county_level_hmda_query(
+                        target_lei, target_geoids, hmda_years, loan_purpose_filter,
+                        action_taken, occupancy_type, total_units, construction_method, not_reverse
+                    )
+                    results = execute_query(client, query)
+                    if results:
+                        df_b = pd.DataFrame(results)
+                        combined_dfs.append(df_b)
+                
+                # Combine and aggregate by state (already aggregated by state in query, just need to sum)
+                if combined_dfs:
+                    df = pd.concat(combined_dfs, ignore_index=True)
+                    if not df.empty and 'state_name' in df.columns:
+                        # Sum across both banks for each state
+                        agg_dict = {
+                            'total_loans': 'sum',
+                            'lmict_loans': 'sum',
+                            'lmib_loans': 'sum',
+                            'lmib_amount': 'sum',
+                            'mmct_loans': 'sum',
+                            'minb_loans': 'sum',
+                            'asian_loans': 'sum',
+                            'black_loans': 'sum',
+                            'native_american_loans': 'sum',
+                            'hopi_loans': 'sum',
+                            'hispanic_loans': 'sum'
+                        }
+                        # Only include columns that exist
+                        agg_dict = {k: 'sum' for k in agg_dict.keys() if k in df.columns}
+                        if agg_dict:
+                            mortgage_goals_data[loan_type] = df.groupby('state_name').agg(agg_dict).reset_index()
+                        else:
+                            mortgage_goals_data[loan_type] = pd.DataFrame()
+                    else:
+                        mortgage_goals_data[loan_type] = pd.DataFrame()
+                else:
+                    mortgage_goals_data[loan_type] = pd.DataFrame()
+        
+        # Query SB data for SB Goals (aggregated by state, only states with branches)
+        update_progress(job_id, {'percent': 93, 'step': 'Querying SB Goals data...', 'done': False, 'error': None})
+        sb_goals_data = None
+        if (acquirer_sb_id or target_sb_id) and all_geoids:
+            # Get state mapping from counties (only states where banks have branches)
+            geoid5_list = "', '".join([str(g).zfill(5) for g in all_geoids])
+            state_query = f"""
+            SELECT DISTINCT 
+                LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+                State as state_name
+            FROM `hdma1-242116.geo.cbsa_to_county`
+            WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
+            """
+            state_results = execute_query(client, state_query)
+            state_map = {row['geoid5']: row.get('state_name', '') for row in state_results} if state_results else {}
+            states_with_branches = set(state_map.values())
+            
+            # Build county-level SB query aggregated by state
+            def build_county_level_sb_query(sb_id, geoids, years):
+                """Build SB query aggregated by county (GEOID5) then by state"""
+                geoid5_list = "', '".join([str(g).zfill(5) for g in geoids])
+                years_list = "', '".join([str(y) for y in years])
+                
+                # Extract respondent ID without prefix
+                if '-' in sb_id:
+                    respondent_id_no_prefix = sb_id.split('-', 1)[-1]
+                else:
+                    respondent_id_no_prefix = sb_id
+                
+                query = f"""
+                WITH county_state_map AS (
+                    SELECT DISTINCT
+                        LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
+                        State as state_name
+                    FROM `hdma1-242116.geo.cbsa_to_county`
+                    WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
+                ),
+                filtered_sb_data AS (
+                    SELECT 
+                        LPAD(CAST(d.geoid5 AS STRING), 5, '0') as geoid5,
+                        (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
+                        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) as sb_loans_amount,
+                        CASE 
+                            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
+                            THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
+                            ELSE 0
+                        END as lmict_loans_count,
+                        CASE 
+                            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
+                            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m)
+                            ELSE 0
+                        END as lmict_loans_amount,
+                        d.numsbrev_under_1m as loans_rev_under_1m,
+                        d.amtsbrev_under_1m as amount_rev_under_1m
+                    FROM `hdma1-242116.sb.disclosure` d
+                    INNER JOIN `hdma1-242116.sb.lenders` l
+                        ON d.respondent_id = l.sb_resid
+                    WHERE CAST(d.year AS STRING) IN ('{years_list}')
+                        AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
+                        AND (l.sb_resid = '{respondent_id_no_prefix}' OR l.sb_resid = '{sb_id}')
+                )
+                SELECT 
+                    csm.state_name,
+                    SUM(fs.sb_loans_count) as total_sb_loans,
+                    SUM(fs.lmict_loans_count) as lmict_loans,
+                    SUM(fs.lmict_loans_amount) as lmict_amount,
+                    SUM(fs.loans_rev_under_1m) as loans_rev_under_1m,
+                    SUM(fs.amount_rev_under_1m) as amount_rev_under_1m
+                FROM filtered_sb_data fs
+                INNER JOIN county_state_map csm
+                    ON fs.geoid5 = csm.geoid5
+                GROUP BY csm.state_name
+                ORDER BY csm.state_name
+                """
+                return query
+            
+            combined_sb_dfs = []
+            
+            # Query Bank A
+            if acquirer_sb_id and acquirer_geoids:
+                query = build_county_level_sb_query(acquirer_sb_id, acquirer_geoids, sb_years)
+                results = execute_query(client, query)
+                if results:
+                    df_a = pd.DataFrame(results)
+                    combined_sb_dfs.append(df_a)
+            
+            # Query Bank B
+            if target_sb_id and target_geoids:
+                query = build_county_level_sb_query(target_sb_id, target_geoids, sb_years)
+                results = execute_query(client, query)
+                if results:
+                    df_b = pd.DataFrame(results)
+                    combined_sb_dfs.append(df_b)
+            
+            # Combine and aggregate by state
+            if combined_sb_dfs:
+                df = pd.concat(combined_sb_dfs, ignore_index=True)
+                if not df.empty and 'state_name' in df.columns:
+                    # Sum across both banks for each state
+                    agg_dict = {
+                        'total_sb_loans': 'sum',
+                        'lmict_loans': 'sum',
+                        'lmict_amount': 'sum',
+                        'loans_rev_under_1m': 'sum',
+                        'amount_rev_under_1m': 'sum'
+                    }
+                    # Only include columns that exist
+                    agg_dict = {k: 'sum' for k in agg_dict.keys() if k in df.columns}
+                    if agg_dict:
+                        sb_goals_data = df.groupby('state_name').agg(agg_dict).reset_index()
+                        # Calculate averages
+                        if 'lmict_loans' in sb_goals_data.columns and 'lmict_amount' in sb_goals_data.columns:
+                            sb_goals_data['avg_sb_lmict_loan_amount'] = sb_goals_data.apply(
+                                lambda row: row['lmict_amount'] / row['lmict_loans'] 
+                                if pd.notna(row['lmict_loans']) and row['lmict_loans'] > 0 else 0, axis=1
+                            )
+                        if 'loans_rev_under_1m' in sb_goals_data.columns and 'amount_rev_under_1m' in sb_goals_data.columns:
+                            sb_goals_data['avg_loan_amt_rum_sb'] = sb_goals_data.apply(
+                                lambda row: row['amount_rev_under_1m'] / row['loans_rev_under_1m']
+                                if pd.notna(row['loans_rev_under_1m']) and row['loans_rev_under_1m'] > 0 else 0, axis=1
+                            )
+                    else:
+                        sb_goals_data = pd.DataFrame()
+                else:
+                    sb_goals_data = pd.DataFrame()
+            else:
+                sb_goals_data = pd.DataFrame()
         
         update_progress(job_id, {'percent': 95, 'step': 'Generating Excel report...', 'done': False, 'error': None})
         
         # Generate Excel file
-        from .excel_generator import create_merger_excel
+        create_merger_excel = _import_local_module('excel_generator', 'create_merger_excel')
         
         # Create filename with shortened acquiring bank name
         import re
@@ -728,6 +1218,11 @@ def _perform_analysis(job_id, form_data):
             'hmda_years': hmda_years,
             'sb_years': sb_years,
             'loan_purpose': loan_purpose,
+            'action_taken': action_taken,
+            'occupancy_type': occupancy_type,
+            'total_units': total_units,
+            'construction_method': construction_method,
+            'not_reverse': not_reverse,
             'acquirer_lei': acquirer_lei,
             'target_lei': target_lei,
             'acquirer_rssd': acquirer_rssd,
@@ -783,7 +1278,9 @@ def _perform_analysis(job_id, form_data):
             bank_b_branch=bank_b_branch,
             hhi_data=hhi_df,
             assessment_areas=assessment_areas_dict,
-            metadata=metadata
+            metadata=metadata,
+            mortgage_goals_data=mortgage_goals_data,
+            sb_goals_data=sb_goals_data if sb_goals_data is not None and not sb_goals_data.empty else None
         )
         
         # Save metadata
@@ -816,6 +1313,10 @@ def _perform_analysis(job_id, form_data):
         
         print(f"  Saved raw data to {raw_data_file}")
         
+        # "Doing something cool" step before completion
+        update_progress(job_id, {'percent': 98, 'step': 'Doing something cool...', 'done': False, 'error': None})
+        print("\nDoing something cool...")
+        
         update_progress(job_id, {'percent': 100, 'step': 'Analysis complete!', 'done': True, 'error': None})
         
     except Exception as e:
@@ -845,8 +1346,8 @@ def load_bank_names():
         }
         
         # Get bank name from LEI number using BigQuery
+        # PROJECT_ID is imported at module level (line 22/26), no need to import again
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from .config import PROJECT_ID
         
         client = get_bigquery_client(PROJECT_ID)
         
@@ -993,8 +1494,6 @@ def get_bank_name_from_lei(client, lei: str) -> str:
         Cleaned bank name in ALL CAPS with suffixes removed, or None if not found
     """
     try:
-        from .config import PROJECT_ID
-        
         query = f"""
         SELECT DISTINCT
             respondent_name
@@ -1020,13 +1519,19 @@ def get_bank_name_from_lei(client, lei: str) -> str:
 @app.route('/api/generate-assessment-areas-from-branches', methods=['POST'])
 def generate_assessment_areas_from_branches():
     """Generate assessment areas from branch locations for a bank"""
+    print(f"[DEBUG] Route /api/generate-assessment-areas-from-branches CALLED")
+    print(f"[DEBUG] Request method: {request.method}")
+    print(f"[DEBUG] Request path: {request.path}")
+    print(f"[DEBUG] Request URL: {request.url}")
     try:
         data = request.get_json()
+        print(f"[DEBUG] Request data: {data}")
         rssd = data.get('rssd', '').strip()
+        lei = data.get('lei', '').strip()  # LEI needed for 'loans' method
         bank_type = data.get('bank_type', 'acquirer')  # 'acquirer' or 'target'
         year = int(data.get('year', 2025))
-        group_by_cbsa = data.get('group_by_cbsa', True)
-        min_branches = int(data.get('min_branches', 1))
+        method = data.get('method', 'all_branches')  # 'all_branches', 'deposits', or 'loans'
+        min_share = float(data.get('min_share', 0.01))  # Minimum share threshold (default 1%)
         
         if not rssd:
             return jsonify({
@@ -1034,26 +1539,61 @@ def generate_assessment_areas_from_branches():
                 'error': 'RSSD number is required to generate assessment areas from branches.'
             }), 400
         
-        from .branch_assessment_area_generator import generate_assessment_areas_from_branches as generate_aa_from_branches
+        # For 'loans' method, LEI is required (HMDA uses LEI, not RSSD)
+        if method == 'loans' and not lei:
+            return jsonify({
+                'success': False,
+                'error': 'LEI is required for the "lending activity" method. HMDA data uses LEI, not RSSD.'
+            }), 400
         
-        # Generate assessment areas based on CBSA deposit share (>1% of bank's national deposits)
-        # All counties in qualifying CBSAs are included
+        if method not in ['all_branches', 'deposits', 'loans']:
+            return jsonify({
+                'success': False,
+                'error': f"Invalid method '{method}'. Must be 'all_branches', 'deposits', or 'loans'."
+            }), 400
+        
+        # Import branch assessment area generator - use absolute import to avoid relative import issues
+        import sys
+        from pathlib import Path
+        branch_gen_path = Path(__file__).parent / 'branch_assessment_area_generator.py'
+        if branch_gen_path.exists():
+            import importlib.util
+            spec = importlib.util.spec_from_file_location("branch_assessment_area_generator", branch_gen_path)
+            branch_gen_module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(branch_gen_module)
+            generate_aa_from_branches = branch_gen_module.generate_assessment_areas_from_branches
+        else:
+            # Fallback: try relative import
+            try:
+                from .branch_assessment_area_generator import generate_assessment_areas_from_branches as generate_aa_from_branches
+            except ImportError:
+                from branch_assessment_area_generator import generate_assessment_areas_from_branches as generate_aa_from_branches
+        
+        # Generate assessment areas using the selected method
         assessment_areas = generate_aa_from_branches(
             rssd=rssd,
             year=year,
-            min_deposit_share=0.01  # 1% of bank's national deposits
+            method=method,
+            min_share=min_share,
+            lei=lei if method == 'loans' else None
         )
         
         if not assessment_areas:
+            method_descriptions = {
+                'all_branches': 'branches',
+                'deposits': 'branch deposits',
+                'loans': 'loan applications'
+            }
             return jsonify({
                 'success': False,
-                'error': f'No branches found for RSSD {rssd} in year {year}. Please verify the RSSD number and year.'
+                'error': f'No {method_descriptions.get(method, "data")} found for RSSD {rssd} in year {year}. Please verify the RSSD number and year.'
             }), 404
         
         return jsonify({
             'success': True,
             'assessment_areas': assessment_areas,
             'bank_type': bank_type,
+            'method': method,
             'count': len(assessment_areas)
         })
         
@@ -1129,10 +1669,10 @@ def download_bank_identifiers_template():
         'ResID'
     ])
     
-    # Write example rows
+    # Write example rows (using actual examples that match the recommended format)
     examples = [
-        ['PNC BANK', '549300BJX7P13H14EN18', '451965', '123456789'],
-        ['FIRSTBANK', '549300ABC123DEF456', '123456', '987654321'],
+        ['1ST MERCHANTS BANK', 'S0Q3AHZRL5K6VQE35M07', '17147', '0000004365'],
+        ['1ST', 'WKN6AF1FCL7BBYGTGI83', '785473', '0000785473'],
     ]
     
     for row in examples:
@@ -1273,23 +1813,34 @@ def upload_assessment_areas():
                             cbsa_name = item.get('cbsa_name') or item.get('name') or item.get('assessment_area') or 'Unknown'
                             counties = item.get('counties') or item.get('county_list') or []
                             
-                            # Support new format with state/county codes
-                            # Format 1: List of county dicts with state_code and county_code
-                            # Format 2: List of strings (legacy "County, State" format)
-                            # Format 3: String that can be split
+                            # Support optimized formats (in order of preference):
+                            # Format 1: Direct GEOID5 list (most efficient - no BigQuery lookup needed)
+                            # Format 2: List of county dicts with geoid5, state_code, or county_code
+                            # Format 3: List of strings (legacy "County, State" format - requires BigQuery lookup)
                             
-                            if isinstance(counties, str):
+                            # Check if there's a direct geoids array (most efficient format)
+                            if 'geoids' in item:
+                                geoids_list = item.get('geoids', [])
+                                if isinstance(geoids_list, list):
+                                    # Convert to dict format for consistency
+                                    counties = [{'geoid5': str(g).zfill(5)} for g in geoids_list if g]
+                            elif isinstance(counties, str):
                                 counties = [c.strip() for c in counties.split(',') if c.strip()]
                             elif isinstance(counties, list):
-                                # Check if it's a list of dicts with codes
+                                # Check if it's a list of dicts with codes or GEOIDs
                                 processed_counties = []
                                 for county_item in counties:
                                     if isinstance(county_item, dict):
-                                        # New format: {"state_code": "12", "county_code": "057"} or {"geoid5": "12057"}
+                                        # Optimized format: {"geoid5": "12057"} (preferred)
+                                        # Or: {"state_code": "12", "county_code": "057"}
                                         processed_counties.append(county_item)
                                     elif isinstance(county_item, str):
-                                        # Legacy format: "County, State"
-                                        processed_counties.append(county_item)
+                                        # Check if it's a GEOID5 (5 digits)
+                                        if county_item.strip().isdigit() and len(county_item.strip()) == 5:
+                                            processed_counties.append({'geoid5': county_item.strip()})
+                                        else:
+                                            # Legacy format: "County, State" (requires BigQuery lookup)
+                                            processed_counties.append(county_item)
                                 counties = processed_counties
                             
                             assessment_areas.append({
@@ -1304,8 +1855,17 @@ def upload_assessment_areas():
                             cbsa_name = aa.get('cbsa_name') or aa.get('name') or 'Unknown'
                             counties = aa.get('counties') or aa.get('county_list') or []
                             
-                            # Support new format with state/county codes
-                            if isinstance(counties, str):
+                            # Support optimized formats (in order of preference):
+                            # Format 1: Direct GEOID5 list (most efficient)
+                            # Format 2: List of county dicts with geoid5, state_code, or county_code
+                            # Format 3: List of strings (legacy format - requires BigQuery lookup)
+                            
+                            # Check if there's a direct geoids array (most efficient format)
+                            if 'geoids' in aa:
+                                geoids_list = aa.get('geoids', [])
+                                if isinstance(geoids_list, list):
+                                    counties = [{'geoid5': str(g).zfill(5)} for g in geoids_list if g]
+                            elif isinstance(counties, str):
                                 counties = [c.strip() for c in counties.split(',') if c.strip()]
                             elif isinstance(counties, list):
                                 processed_counties = []
@@ -1313,7 +1873,11 @@ def upload_assessment_areas():
                                     if isinstance(county_item, dict):
                                         processed_counties.append(county_item)
                                     elif isinstance(county_item, str):
-                                        processed_counties.append(county_item)
+                                        # Check if it's a GEOID5 (5 digits)
+                                        if county_item.strip().isdigit() and len(county_item.strip()) == 5:
+                                            processed_counties.append({'geoid5': county_item.strip()})
+                                        else:
+                                            processed_counties.append(county_item)
                                 counties = processed_counties
                             
                             assessment_areas.append({
@@ -1325,8 +1889,17 @@ def upload_assessment_areas():
                         cbsa_name = data.get('cbsa_name') or data.get('name') or 'Unknown'
                         counties = data.get('counties') or data.get('county_list') or []
                         
-                        # Support new format with state/county codes
-                        if isinstance(counties, str):
+                        # Support optimized formats (in order of preference):
+                        # Format 1: Direct GEOID5 list (most efficient)
+                        # Format 2: List of county dicts with geoid5, state_code, or county_code
+                        # Format 3: List of strings (legacy format - requires BigQuery lookup)
+                        
+                        # Check if there's a direct geoids array (most efficient format)
+                        if 'geoids' in data:
+                            geoids_list = data.get('geoids', [])
+                            if isinstance(geoids_list, list):
+                                counties = [{'geoid5': str(g).zfill(5)} for g in geoids_list if g]
+                        elif isinstance(counties, str):
                             counties = [c.strip() for c in counties.split(',') if c.strip()]
                         elif isinstance(counties, list):
                             processed_counties = []
@@ -1334,7 +1907,11 @@ def upload_assessment_areas():
                                 if isinstance(county_item, dict):
                                     processed_counties.append(county_item)
                                 elif isinstance(county_item, str):
-                                    processed_counties.append(county_item)
+                                    # Check if it's a GEOID5 (5 digits)
+                                    if county_item.strip().isdigit() and len(county_item.strip()) == 5:
+                                        processed_counties.append({'geoid5': county_item.strip()})
+                                    else:
+                                        processed_counties.append(county_item)
                             counties = processed_counties
                         
                         assessment_areas.append({
@@ -1436,7 +2013,7 @@ def parse_assessment_areas_from_text(text):
     Returns a list of assessment area dictionaries.
     """
     import re
-    from .county_mapper import get_counties_by_msa_name
+    get_counties_by_msa_name = _import_local_module('county_mapper', 'get_counties_by_msa_name')
     
     assessment_areas = []
     all_counties = set()  # Track all unique counties found
@@ -1727,10 +2304,11 @@ def generate_ai_summary():
                     pass
         
         # Perform statistical analysis
-        from .statistical_analysis import (
-            analyze_sb_lending_distribution,
-            analyze_branch_distribution,
-            analyze_hhi_concentration
+        analyze_sb_lending_distribution, analyze_branch_distribution, analyze_hhi_concentration = _import_local_module(
+            'statistical_analysis',
+            'analyze_sb_lending_distribution',
+            'analyze_branch_distribution',
+            'analyze_hhi_concentration'
         )
         
         # Perform statistical analysis on available data
@@ -1773,7 +2351,21 @@ def generate_ai_summary():
         # Generate AI summary
         from justdata.shared.analysis.ai_provider import AIAnalyzer
         
-        analyzer = AIAnalyzer(ai_provider="claude")
+        try:
+            analyzer = AIAnalyzer(ai_provider="claude")
+        except Exception as e:
+            error_msg = str(e)
+            if "No API key found" in error_msg or "API key" in error_msg:
+                return jsonify({
+                    'success': False, 
+                    'error': 'Claude API key not configured. Please set CLAUDE_API_KEY or ANTHROPIC_API_KEY environment variable.',
+                    'details': error_msg
+                }), 500
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': f'Failed to initialize AI analyzer: {error_msg}'
+                }), 500
         
         # Get data summaries for all categories - use raw data if available, otherwise use report_data
         mortgage_data_summary = ""
@@ -1991,7 +2583,16 @@ IMPORTANT:
 - Do NOT use markdown formatting (no #, ##, **, etc.)
 - Use clear section headings in plain text like "MORTGAGE LENDING ANALYSIS" or "BRANCH NETWORK ANALYSIS"."""
         
-        ai_summary = analyzer._call_ai(prompt, max_tokens=4000, temperature=0.3)
+        try:
+            ai_summary = analyzer._call_ai(prompt, max_tokens=4000, temperature=0.3)
+        except Exception as e:
+            error_msg = str(e)
+            print(f"  [AI Summary] Error calling AI API: {error_msg}")
+            return jsonify({
+                'success': False,
+                'error': f'Failed to generate AI summary: {error_msg}',
+                'details': 'This may be due to missing API key, API rate limits, or network issues.'
+            }), 500
         
         return jsonify({
             'success': True,
@@ -2260,15 +2861,53 @@ def report_data():
         # Try to load metadata if available
         metadata = {}
         metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
+        metadata = {}
         if metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
+        
+        # Load HHI data if available (from Excel HHI Analysis sheet or from raw data)
+        hhi_data = {}
+        # Try to load from raw data file first (most reliable)
+        raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
+        if raw_data_file.exists():
+            try:
+                with open(raw_data_file, 'r') as f:
+                    raw_data = json.load(f)
+                    if 'hhi_data' in raw_data and raw_data['hhi_data']:
+                        hhi_df = pd.DataFrame(raw_data['hhi_data'])
+                        if not hhi_df.empty:
+                            hhi_data = {
+                                'headers': list(hhi_df.columns),
+                                'data': convert_numpy_types(hhi_df.to_dict('records'))
+                            }
+                            print(f"[HHI] Loaded HHI data from raw_data file: {len(hhi_df)} rows, {len(hhi_df.columns)} columns")
+            except Exception as e:
+                print(f"Error loading HHI data from raw data file: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # Fallback: Try to load from Excel sheet if raw data not available
+        if not hhi_data and 'HHI Analysis' in ordered_report_data:
+            hhi_sheet_data = ordered_report_data['HHI Analysis']
+            # Check if it's already in the right format
+            if isinstance(hhi_sheet_data, dict) and 'headers' in hhi_sheet_data and 'data' in hhi_sheet_data:
+                hhi_data = hhi_sheet_data
+            elif isinstance(hhi_sheet_data, pd.DataFrame):
+                # Convert DataFrame to expected format
+                if not hhi_sheet_data.empty:
+                    hhi_data = {
+                        'headers': list(hhi_sheet_data.columns),
+                        'data': convert_numpy_types(hhi_sheet_data.to_dict('records'))
+                    }
+                    print(f"[HHI] Loaded HHI data from Excel sheet: {len(hhi_sheet_data)} rows")
         
         return jsonify({
             'success': True,
             'report': ordered_report_data,
             'sheet_order': ordered_sheet_names,  # Include order for frontend
-            'metadata': metadata
+            'metadata': metadata,
+            'hhi_data': hhi_data
         })
     except Exception as e:
         import traceback
@@ -2387,5 +3026,20 @@ register_standard_routes(
 
 # Register MergerMeter-specific routes
 app.add_url_rule('/report', 'report', report, methods=['GET'])
-# Note: /report-data is already registered via @app.route decorator above
+# Note: /report-data and /api/generate-assessment-areas-from-branches are already registered via @app.route decorators above
+
+# Debug: Verify route is registered
+print(f"[DEBUG] Checking if /api/generate-assessment-areas-from-branches is registered...")
+route_found = False
+for rule in app.url_map.iter_rules():
+    if '/api/generate-assessment-areas-from-branches' in rule.rule:
+        route_found = True
+        print(f"[DEBUG] Found route: {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
+        break
+if not route_found:
+    print("[DEBUG] WARNING: Route /api/generate-assessment-areas-from-branches NOT FOUND in registered routes!")
+    print("[DEBUG] All /api routes:")
+    for rule in app.url_map.iter_rules():
+        if '/api/' in rule.rule:
+            print(f"  {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
 

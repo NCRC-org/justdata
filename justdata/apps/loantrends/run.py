@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 # Use __file__ for reliable path resolution
-REPO_ROOT = Path(__file__).resolve().parents[2]  # .../JustData
+REPO_ROOT = Path(__file__).resolve().parents[3]  # .../JustData
 APP_DIR = Path(__file__).resolve().parent
 
 # Add repo root to Python path for shared modules
@@ -17,14 +17,14 @@ sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(APP_DIR))
 
 # Verify shared module exists
-shared_path = REPO_ROOT / 'shared'
-if not shared_path.exists():
-    print(f"ERROR: Shared module not found at {shared_path}")
+justdata_path = REPO_ROOT / 'justdata'
+if not justdata_path.exists():
+    print(f"ERROR: justdata module not found at {justdata_path}")
     sys.exit(1)
 
 print(f"Repository root: {REPO_ROOT}")
 print(f"App directory: {APP_DIR}")
-print(f"Shared module found at: {shared_path}")
+print(f"JustData module found at: {justdata_path}")
 
 # Import app using absolute import (don't change directory - breaks package structure)
 try:

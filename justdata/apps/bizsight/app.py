@@ -4,7 +4,7 @@ BizSight Flask Web Application
 Main application file for BizSight.
 """
 
-from flask import Flask, render_template, request, jsonify, session, Response, send_file, make_response
+from flask import Flask, render_template, request, jsonify, session, Response, send_file, make_response, send_from_directory
 import os
 import sys
 import uuid
@@ -13,9 +13,10 @@ import time
 import json
 from pathlib import Path
 from datetime import datetime
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Add repo root to path
-REPO_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
+REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
@@ -26,6 +27,18 @@ from justdata.apps.bizsight.utils.progress_tracker import (
     store_analysis_result, get_analysis_result
 )
 from justdata.apps.bizsight.utils.bigquery_client import BigQueryClient
+from justdata.apps.bizsight.version import __version__
+from justdata.shared.services.export_service import ExportService
+from justdata.shared.utils.env_utils import is_local_development
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+
+# Load unified environment configuration (works for both local and Render)
+ensure_unified_env_loaded(verbose=True)
+config = get_unified_config(verbose=True)
+
+# Print environment summary
+print(f"[ENV] Environment: {'LOCAL' if config['IS_LOCAL'] else 'PRODUCTION (Render)'}")
+print(f"[ENV] Shared config loaded from: {config.get('SHARED_ENV_FILE', 'Environment variables')}")
 
 # Create Flask app
 app = Flask(
@@ -33,6 +46,9 @@ app = Flask(
     template_folder=TEMPLATES_DIR_STR,
     static_folder=STATIC_DIR_STR
 )
+
+# Add ProxyFix for proper request handling behind Render's proxy
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
 # Configure Flask - AGGRESSIVE CACHE BUSTING
 app.secret_key = BizSightConfig.SECRET_KEY
@@ -49,9 +65,9 @@ print("=" * 80, flush=True)
 print("INITIALIZING FLASK APP - DISABLING JINJA2 BYTECODE CACHE", flush=True)
 print("=" * 80, flush=True)
 app.jinja_env.bytecode_cache = None
-print(f"✓ Jinja2 bytecode_cache disabled: {app.jinja_env.bytecode_cache}", flush=True)
-print(f"✓ Template folder: {TEMPLATES_DIR_STR}", flush=True)
-print(f"✓ Static folder: {STATIC_DIR_STR}", flush=True)
+print(f"[OK] Jinja2 bytecode_cache disabled: {app.jinja_env.bytecode_cache}", flush=True)
+print(f"[OK] Template folder: {TEMPLATES_DIR_STR}", flush=True)
+print(f"[OK] Static folder: {STATIC_DIR_STR}", flush=True)
 print("=" * 80, flush=True)
 
 # Force reload templates on every request
@@ -77,6 +93,17 @@ def clear_template_cache():
             clear_template_cache._logged = True
 
 
+@app.route('/shared/population_demographics.js')
+def shared_population_demographics_js():
+    """Serve shared population demographics JavaScript module"""
+    from flask import send_from_directory
+    from pathlib import Path
+    shared_static_dir = Path(__file__).parent.parent.parent / 'shared' / 'web' / 'static' / 'js'
+    js_path = shared_static_dir / 'population_demographics.js'
+    if js_path.exists():
+        return send_from_directory(str(shared_static_dir), 'population_demographics.js', mimetype='application/javascript')
+    return '', 404
+
 @app.route('/')
 def index():
     """Main page with the US map for county selection."""
@@ -93,7 +120,7 @@ def index():
             pass
         print(f"DEBUG: Rendering analysis_template.html, bytecode_cache={app.jinja_env.bytecode_cache}", flush=True)
     
-    response = make_response(render_template('analysis_template.html', version=BizSightConfig.APP_VERSION))
+    response = make_response(render_template('analysis_template.html', version=__version__))
     # Add aggressive cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -103,6 +130,47 @@ def index():
     response.headers['ETag'] = f'"{int(time.time())}"'
     response.headers['Last-Modified'] = datetime.now().strftime('%a, %d %b %Y %H:%M:%S GMT')
     return response
+
+
+@app.route('/static/img/ncrc-logo.png')
+def serve_shared_logo():
+    """Serve the shared NCRC logo from shared/web/static/img/"""
+    shared_logo_path = REPO_ROOT / 'shared' / 'web' / 'static' / 'img' / 'ncrc-logo.png'
+    if shared_logo_path.exists():
+        return send_from_directory(str(shared_logo_path.parent), shared_logo_path.name)
+    else:
+        # Fallback to local static if shared logo doesn't exist
+        return send_from_directory(app.static_folder, 'img/ncrc-logo.png'), 404
+
+
+@app.route('/favicon.ico')
+def favicon():
+    """Serve favicon.ico from shared static folder"""
+    shared_static_dir = REPO_ROOT / 'shared' / 'web' / 'static'
+    favicon_path = shared_static_dir / 'favicon.ico'
+    if favicon_path.exists():
+        return send_from_directory(str(shared_static_dir), 'favicon.ico', mimetype='image/x-icon')
+    return '', 204  # No Content if file doesn't exist
+
+
+@app.route('/favicon-32x32.png')
+def favicon_32x32():
+    """Serve favicon-32x32.png from shared static folder"""
+    shared_static_dir = REPO_ROOT / 'shared' / 'web' / 'static'
+    favicon_path = shared_static_dir / 'favicon-32x32.png'
+    if favicon_path.exists():
+        return send_from_directory(str(shared_static_dir), 'favicon-32x32.png', mimetype='image/png')
+    return '', 204  # No Content if file doesn't exist
+
+
+@app.route('/favicon-16x16.png')
+def favicon_16x16():
+    """Serve favicon-16x16.png from shared static folder"""
+    shared_static_dir = REPO_ROOT / 'shared' / 'web' / 'static'
+    favicon_path = shared_static_dir / 'favicon-16x16.png'
+    if favicon_path.exists():
+        return send_from_directory(str(shared_static_dir), 'favicon-16x16.png', mimetype='image/png')
+    return '', 204  # No Content if file doesn't exist
 
 
 @app.route('/progress/<job_id>')
@@ -261,22 +329,135 @@ def get_states():
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/planning-regions', methods=['GET'])
+def get_planning_regions():
+    """Get Connecticut planning regions for 2024 data."""
+    planning_regions = [
+        {'code': '09110', 'name': 'Capitol Planning Region', 'geoid5': '09110'},
+        {'code': '09120', 'name': 'Greater Bridgeport Planning Region', 'geoid5': '09120'},
+        {'code': '09130', 'name': 'Lower Connecticut River Valley Planning Region', 'geoid5': '09130'},
+        {'code': '09140', 'name': 'Naugatuck Valley Planning Region', 'geoid5': '09140'},
+        {'code': '09150', 'name': 'Northeastern Connecticut Planning Region', 'geoid5': '09150'},
+        {'code': '09160', 'name': 'Northwest Hills Planning Region', 'geoid5': '09160'},
+        {'code': '09170', 'name': 'South Central Connecticut Planning Region', 'geoid5': '09170'},
+        {'code': '09180', 'name': 'Southeastern Connecticut Planning Region', 'geoid5': '09180'},
+        {'code': '09190', 'name': 'Western Connecticut Planning Region', 'geoid5': '09190'},
+    ]
+    return jsonify(planning_regions)
+
 @app.route('/api/counties-by-state/<state_code>', methods=['GET'])
 def get_counties_by_state(state_code):
-    """Get counties for a specific state."""
+    """Get counties for a specific state - matching LendSight's working implementation.
+    
+    Updated Dec 11, 2025: Fixed to query BigQuery directly like LendSight.
+    This fixes the issue where counties were not loading after selecting a state."""
     try:
-        from justdata.apps.bizsight.data_utils import get_available_counties
-        print(f"DEBUG: get_counties_by_state called with state_code: {state_code}")
-        counties = get_available_counties(state_code=state_code)
-        print(f"DEBUG: Returning {len(counties)} counties")
-        if len(counties) > 0:
-            print(f"DEBUG: First county example: {counties[0]}")
-        return jsonify(counties)
+        from urllib.parse import unquote
+        from justdata.shared.utils.bigquery_client import get_bigquery_client, escape_sql_string
+        from justdata.apps.bizsight.config import BizSightConfig
+        
+        # URL decode the state code
+        state_code = unquote(str(state_code)).strip()
+        print(f"[DEBUG] get_counties_by_state called with state_code: '{state_code}'")
+        
+        client = get_bigquery_client(BizSightConfig.GCP_PROJECT_ID)
+        
+        # Check if state_code is a numeric state code (2 digits) or a state name
+        is_numeric_code = state_code.isdigit() and len(state_code) <= 2
+        
+        if is_numeric_code:
+            # Use geoid5 to match by state FIPS code (first 2 digits of geoid5)
+            # GEOID5 format: SSCCC where SS = state FIPS (2 digits), CCC = county FIPS (3 digits)
+            state_code_padded = state_code.zfill(2)
+            print(f"[DEBUG] Using state FIPS code: {state_code_padded}")
+            query = f"""
+            SELECT DISTINCT 
+                county_state,
+                geoid5,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
+            FROM geo.cbsa_to_county 
+            WHERE geoid5 IS NOT NULL
+                AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
+                AND county_state IS NOT NULL
+                AND TRIM(county_state) != ''
+            ORDER BY county_state
+            """
+        else:
+            # Use state name to match (extract from county_state)
+            print(f"[DEBUG] Using state name: {state_code}")
+            query = f"""
+            SELECT DISTINCT county_state, geoid5
+            FROM geo.cbsa_to_county 
+            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escape_sql_string(state_code)}')
+            ORDER BY county_state
+            """
+        
+        try:
+            query_job = client.query(query)
+            results = list(query_job.result())
+            # Return both county_state and geoid5 so frontend can use FIPS codes
+            # GEOID5 = SSCCC where SS = state FIPS, CCC = county FIPS
+            counties = []
+            seen_geoids = set()  # Track unique GEOIDs to avoid duplicates
+            
+            for row in results:
+                # Ensure geoid5 is properly formatted as 5-digit string
+                geoid5 = str(row.geoid5).zfill(5) if row.geoid5 else None
+                
+                # Skip if we've already seen this GEOID
+                if geoid5 and geoid5 in seen_geoids:
+                    continue
+                    
+                if geoid5:
+                    seen_geoids.add(geoid5)
+                
+                # Extract state and county FIPS from GEOID5
+                state_fips = geoid5[:2] if geoid5 and len(geoid5) >= 2 else None
+                county_fips = geoid5[2:] if geoid5 and len(geoid5) >= 5 else None
+                
+                # Parse county_name and state_name from county_state
+                county_name = ''
+                state_name = ''
+                if row.county_state and ',' in row.county_state:
+                    parts = row.county_state.split(',', 1)
+                    county_name = parts[0].strip()
+                    state_name = parts[1].strip() if len(parts) > 1 else ''
+                
+                counties.append({
+                    'geoid5': geoid5,
+                    'name': row.county_state,
+                    'county_name': county_name,
+                    'state_name': state_name,
+                    'state_fips': state_fips,
+                    'county_fips': county_fips
+                })
+            
+            if counties:
+                print(f"[DEBUG] Found {len(counties)} counties for state_code: {state_code}")
+                # Debug: show first few counties
+                if len(counties) > 0:
+                    print(f"[DEBUG] Sample counties: {counties[:3]}")
+                return jsonify(counties)
+            else:
+                print(f"[WARNING] No counties found for state_code: {state_code}")
+                return jsonify([])
+        except Exception as bq_error:
+            print(f"[ERROR] BigQuery query failed: {bq_error}")
+            import traceback
+            traceback.print_exc()
+            # Fall back to using data_utils
+            from justdata.apps.bizsight.data_utils import get_available_counties
+            state_code_padded = state_code.zfill(2) if state_code.isdigit() else state_code
+            counties = get_available_counties(state_code=state_code_padded if state_code.isdigit() else None)
+            print(f"[DEBUG] Fallback: Found {len(counties)} counties")
+            return jsonify(counties)
     except Exception as e:
         import traceback
         traceback.print_exc()
-        print(f"ERROR in get_counties_by_state: {e}")
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
+        print(f"[ERROR] get_counties_by_state error: {error_msg}")
+        return jsonify({'error': error_msg}), 500
 
 
 @app.route('/api/county-boundaries', methods=['GET'])
@@ -361,7 +542,7 @@ def report():
             pass
         print(f"DEBUG: Rendering report_template.html for job_id={job_id}, bytecode_cache={app.jinja_env.bytecode_cache}", flush=True)
     
-    response = make_response(render_template('report_template.html', job_id=job_id, version=BizSightConfig.APP_VERSION))
+    response = make_response(render_template('report_template.html', job_id=job_id, version=__version__))
     # Add aggressive cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -445,6 +626,17 @@ def report_data():
     hhi = clean_for_json(analysis_result.get('hhi', None))
     hhi_by_year = clean_for_json(analysis_result.get('hhi_by_year', []))
     ai_insights = clean_for_json(analysis_result.get('ai_insights', {}))
+    
+    # Debug logging for AI insights
+    print(f"DEBUG: ai_insights type: {type(ai_insights)}")
+    print(f"DEBUG: ai_insights keys: {list(ai_insights.keys()) if isinstance(ai_insights, dict) else 'not a dict'}")
+    print(f"DEBUG: metadata ai_insights_enabled: {metadata.get('ai_insights_enabled') if isinstance(metadata, dict) else 'metadata not a dict'}")
+    if isinstance(ai_insights, dict):
+        for key, value in ai_insights.items():
+            if value:
+                print(f"DEBUG: ai_insights['{key}']: length={len(str(value))}")
+            else:
+                print(f"DEBUG: ai_insights['{key}']: empty")
     
     # Debug logging
     print(f"DEBUG: county_summary_table length: {len(county_summary_table) if isinstance(county_summary_table, list) else 'not a list'}")
@@ -599,56 +791,102 @@ def download_excel(analysis_result, metadata):
 
 
 def download_pdf_report(report_data, metadata, job_id):
-    """Download PDF file with written portions of the report."""
+    """Download PDF file with written portions of the report using WeasyPrint."""
     try:
         import tempfile
-        from playwright.sync_api import sync_playwright
-        
+        from weasyprint import HTML, CSS
+        from flask import render_template
+
+        # Get AI insights from the analysis result
+        from justdata.shared.utils.progress_tracker import get_analysis_result
+        analysis_result = get_analysis_result(job_id) if job_id else {}
+        ai_insights = analysis_result.get('ai_insights', {})
+
+        # Serialize report data for template
+        serialized_data = {}
+        for key, value in report_data.items():
+            if hasattr(value, 'to_dict'):
+                import numpy as np
+                df_clean = value.replace({np.nan: None})
+                serialized_data[key] = df_clean.to_dict('records')
+            else:
+                serialized_data[key] = value
+
         # Create temporary file for PDF
         tmp_fd, tmp_path = tempfile.mkstemp(suffix='.pdf')
         os.close(tmp_fd)
-        
-        # Use Playwright to render the page with JavaScript executed
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            
-            # Build the report URL with job_id
-            base_url = request.url_root.rstrip('/')
-            report_url = f"{base_url}/report"
-            if job_id:
-                report_url += f"?job_id={job_id}"
-            
-            # Navigate to the report page
-            page.goto(report_url, wait_until='networkidle', timeout=60000)
-            
-            # Wait for the report to be fully loaded
-            page.wait_for_selector('#reportContent', state='visible', timeout=30000)
-            page.wait_for_timeout(2000)  # Additional wait for tables to populate
-            
-            # Generate PDF with NCRC styling
-            page.pdf(
-                path=tmp_path,
-                format='Letter',
-                margin={
-                    'top': '0.5in',
-                    'right': '0.6in',
-                    'bottom': '0.75in',
-                    'left': '0.6in'
-                },
-                print_background=True,
-                display_header_footer=True,
-                header_template='<div></div>',
-                footer_template='<div style="font-size: 9pt; color: #666; text-align: center; width: 100%; font-family: Inter, Arial, sans-serif; padding-top: 5px;"><span class="pageNumber"></span> / <span class="totalPages"></span></div>',
-                prefer_css_page_size=True,
-                scale=0.95
-            )
-            
-            browser.close()
-        
+
+        # Render the PDF-specific template (server-side rendered, no JavaScript needed)
+        html_content = render_template(
+            'pdf_report_template.html',
+            report_data=serialized_data,
+            metadata=metadata,
+            ai_insights=ai_insights
+        )
+
+        # PDF-specific CSS for better print formatting
+        pdf_css = CSS(string='''
+            @page {
+                size: letter;
+                margin: 0.5in 0.6in 0.75in 0.6in;
+                @bottom-center {
+                    content: counter(page) " / " counter(pages);
+                    font-size: 9pt;
+                    color: #666;
+                }
+            }
+            body {
+                font-family: Arial, Helvetica, sans-serif;
+                font-size: 10pt;
+                line-height: 1.4;
+            }
+            .no-print, .sidebar, nav, .export-btn, button, #map, .leaflet-container {
+                display: none !important;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                page-break-inside: auto;
+                font-size: 9pt;
+            }
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            th, td {
+                border: 1px solid #ddd;
+                padding: 6px 8px;
+                text-align: left;
+            }
+            th {
+                background-color: #f5f5f5 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .section-card {
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+            h1, h2, h3 {
+                page-break-after: avoid;
+            }
+            .header {
+                background-color: #003366 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+                color: white !important;
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+        ''')
+
+        # Generate PDF using WeasyPrint
+        html_doc = HTML(string=html_content, base_url=request.url_root)
+        html_doc.write_pdf(tmp_path, stylesheets=[pdf_css])
+
         # Generate filename
         filename = generate_filename(metadata, '.pdf')
-        
+
         # Send the file and schedule cleanup
         response = send_file(
             tmp_path,
@@ -656,7 +894,7 @@ def download_pdf_report(report_data, metadata, job_id):
             download_name=filename,
             mimetype='application/pdf'
         )
-        
+
         @response.call_on_close
         def cleanup():
             try:
@@ -664,12 +902,12 @@ def download_pdf_report(report_data, metadata, job_id):
                     os.unlink(tmp_path)
             except:
                 pass
-        
+
         return response
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': f'PDF export failed: {str(e)}. Make sure Playwright browsers are installed: python -m playwright install chromium'}), 500
+        return jsonify({'error': f'PDF export failed: {str(e)}'}), 500
 
 
 def download_map_pdfs(report_data, metadata, job_id):
@@ -840,7 +1078,7 @@ def health():
     return jsonify({
         'status': 'healthy',
         'app': 'bizsight',
-        'version': BizSightConfig.APP_VERSION,
+        'version': __version__,
         'timestamp': datetime.now().isoformat()
     })
 

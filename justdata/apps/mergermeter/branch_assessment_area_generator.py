@@ -7,9 +7,30 @@ when manual definition is not available.
 """
 
 from typing import List, Dict, Optional, Tuple
-from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
-from .config import PROJECT_ID
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
+from justdata.apps.mergermeter.config import PROJECT_ID
 import pandas as pd
+import os
+
+# Get PROJECT_ID - handle both relative and absolute imports
+# PROJECT_ID is also available via environment variable
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+# Try to import from config if available (for consistency with other modules)
+try:
+    import sys
+    from pathlib import Path
+    # Try absolute import first
+    config_path = Path(__file__).parent / 'config.py'
+    if config_path.exists():
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("config", config_path)
+        config_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(config_module)
+        if hasattr(config_module, 'PROJECT_ID'):
+            PROJECT_ID = config_module.PROJECT_ID
+except Exception:
+    # If all else fails, use environment variable or default
+    pass
 
 
 def get_all_branches_for_bank(
@@ -31,7 +52,7 @@ def get_all_branches_for_bank(
     
     query = f"""
     WITH
-    -- CBSA crosswalk to get CBSA codes and names from GEOID5
+    -- CBSA crosswalk to get CBSA codes and names from GEOID5 (exclude rural areas with code 99999)
     cbsa_crosswalk AS (
         SELECT
             CAST(geoid5 AS STRING) as geoid5,
@@ -41,6 +62,7 @@ def get_all_branches_for_bank(
             State as state_name,
             CONCAT(County, ', ', State) as county_state
         FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        WHERE CAST(cbsa_code AS STRING) != '99999'
     ),
     
     -- Get all branches for the bank
@@ -49,7 +71,7 @@ def get_all_branches_for_bank(
             CAST(b.rssd AS STRING) as rssd,
             CAST(b.geoid5 AS STRING) as geoid5,
             b.uninumbr
-        FROM `{PROJECT_ID}.branches.sod` b
+        FROM `{PROJECT_ID}.branches.sod25` b
         WHERE CAST(b.year AS STRING) = '{year}'
             AND CAST(b.rssd AS STRING) = '{rssd}'
             AND b.geoid5 IS NOT NULL
@@ -129,13 +151,14 @@ def get_cbsa_deposit_shares(
     
     query = f"""
     WITH
-    -- CBSA crosswalk to get CBSA codes and names from GEOID5
+    -- CBSA crosswalk to get CBSA codes and names from GEOID5 (exclude rural areas with code 99999)
     cbsa_crosswalk AS (
         SELECT
             CAST(geoid5 AS STRING) as geoid5,
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
         FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        WHERE CAST(cbsa_code AS STRING) != '99999'
     ),
     
     -- Get all branch deposits by county for the subject bank
@@ -143,7 +166,7 @@ def get_cbsa_deposit_shares(
         SELECT 
             CAST(b.geoid5 AS STRING) as geoid5,
             SUM(b.deposits_000s * 1000) as bank_deposits  -- Convert from thousands to actual amount
-        FROM `{PROJECT_ID}.branches.sod` b
+        FROM `{PROJECT_ID}.branches.sod25` b
         WHERE CAST(b.year AS STRING) = '{year}'
             AND CAST(b.rssd AS STRING) = '{rssd}'
             AND b.geoid5 IS NOT NULL
@@ -234,24 +257,129 @@ def get_cbsa_deposit_shares(
         return pd.DataFrame(), 0.0
 
 
+def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any]]:
+    """
+    Helper function to get all counties for a list of CBSA codes.
+    
+    Args:
+        cbsa_codes: List of CBSA codes (strings)
+        client: BigQuery client
+    
+    Returns:
+        List of assessment area dictionaries
+    """
+    assessment_areas = []
+    
+    for cbsa_code in cbsa_codes:
+        # Handle non-metro areas
+        if cbsa_code.startswith('NON-METRO-'):
+            state_name = cbsa_code.replace('NON-METRO-', '')
+            cbsa_name = f"{state_name} Non-Metro Area"
+            
+            non_metro_query = f"""
+            SELECT DISTINCT
+                CAST(geoid5 AS STRING) as geoid5,
+                County as county_name,
+                State as state_name,
+                CONCAT(County, ', ', State) as county_state
+            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            WHERE (cbsa_code IS NULL OR CAST(cbsa_code AS STRING) = 'N/A')
+                AND State = '{escape_sql_string(state_name)}'
+            ORDER BY County
+            """
+            
+            non_metro_results = execute_query(client, non_metro_query)
+            
+            if non_metro_results:
+                counties = []
+                for county_row in non_metro_results:
+                    geoid5 = str(county_row.get('geoid5', '')).zfill(5)
+                    if len(geoid5) == 5:
+                        state_code = geoid5[:2]
+                        county_code = geoid5[2:]
+                        counties.append({
+                            'state_code': state_code,
+                            'county_code': county_code,
+                            'county_name': county_row.get('county_name', ''),
+                            'state_name': county_row.get('state_name', ''),
+                            'geoid5': geoid5
+                        })
+                
+                if counties:
+                    assessment_areas.append({
+                        'cbsa_name': cbsa_name,
+                        'counties': counties
+                    })
+            continue
+        
+        # Query all counties in this CBSA (get CBSA name from first row) - exclude rural areas
+        query = f"""
+        SELECT DISTINCT
+            CAST(geoid5 AS STRING) as geoid5,
+            County as county_name,
+            State as state_name,
+            CBSA as cbsa_name,
+            CONCAT(County, ', ', State) as county_state
+        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
+            AND CAST(cbsa_code AS STRING) != '99999'
+        ORDER BY State, County
+        """
+        
+        county_results = execute_query(client, query)
+        
+        if not county_results:
+            print(f"  Warning: No counties found for CBSA {cbsa_code}")
+            continue
+        
+        # Get CBSA name from first result
+        cbsa_name = county_results[0].get('cbsa_name', f"CBSA {cbsa_code}")
+        
+        # Build counties list
+        counties = []
+        for county_row in county_results:
+            geoid5 = str(county_row.get('geoid5', '')).zfill(5)
+            if len(geoid5) == 5:
+                state_code = geoid5[:2]
+                county_code = geoid5[2:]
+                counties.append({
+                    'state_code': state_code,
+                    'county_code': county_code,
+                    'county_name': county_row.get('county_name', ''),
+                    'state_name': county_row.get('state_name', ''),
+                    'geoid5': geoid5
+                })
+        
+        if counties:
+            assessment_areas.append({
+                'cbsa_name': cbsa_name,
+                'counties': counties
+            })
+    
+    return assessment_areas
+
+
 def generate_assessment_areas_from_branches(
     rssd: str,
     year: int = 2025,
-    min_deposit_share: float = 0.01
+    method: str = 'all_branches',
+    min_share: float = 0.01,
+    lei: str = None
 ) -> List[Dict[str, any]]:
     """
-    Generate assessment areas from branch locations based on CBSA deposit share.
+    Generate assessment areas from branch locations using one of three methods.
     
-    Includes all counties in CBSAs where the bank has >1% (or min_deposit_share) 
-    of its total national deposits. If a CBSA qualifies, ALL counties in that CBSA
-    are included (not just counties where the bank has branches).
+    Method 1: 'all_branches' - All CBSAs where the bank has branches
+    Method 2: 'deposits' - CBSAs where bank has >=1% of its total branch deposits
+    Method 3: 'loans' - CBSAs where bank has >=1% of its total loan applications
+    
+    For all methods, ALL counties in qualifying CBSAs are included.
     
     Args:
         rssd: Bank's RSSD ID (string)
         year: Year for branch data (default: 2025)
-        min_deposit_share: Minimum deposit share (as decimal, e.g., 0.01 for 1%) of the
-                          bank's national deposits required in a CBSA to include it.
-                          CBSAs where the bank has less than this share are excluded.
+        method: Method to use - 'all_branches', 'deposits', or 'loans' (default: 'all_branches')
+        min_share: Minimum share threshold (as decimal, e.g., 0.01 for 1%) for deposits/loans methods
     
     Returns:
         List of assessment area dictionaries with format:
@@ -265,129 +393,189 @@ def generate_assessment_areas_from_branches(
             },
             ...
         ]
-    
-    Note:
-        - Calculates bank's total national deposits across all branches
-        - For each CBSA, calculates bank's deposits in that CBSA
-        - Includes CBSAs where bank has >1% of its national deposits
-        - For qualifying CBSAs, includes ALL counties in that CBSA (from geo.cbsa_to_county)
     """
     if not rssd or not rssd.strip():
         return []
     
-    # Get CBSA deposit shares (percentage of bank's national deposits)
-    cbsa_df, total_national_deposits = get_cbsa_deposit_shares(rssd, year)
-    
-    if cbsa_df.empty or total_national_deposits == 0:
-        print(f"  No deposit data found for RSSD {rssd}")
-        return []
-    
-    print(f"  Bank total national deposits: ${total_national_deposits:,.0f}")
-    
-    # Filter by minimum deposit share (default 1% of bank's national deposits)
-    min_share_pct = min_deposit_share * 100
-    qualifying_cbsas = cbsa_df[cbsa_df['national_deposit_share_pct'] > min_share_pct].copy()
-    
-    print(f"  Found {len(qualifying_cbsas)} CBSAs where bank has >{min_share_pct:.1f}% of national deposits")
-    
-    if qualifying_cbsas.empty:
-        return []
-    
-    # Get all counties for qualifying CBSAs
-    assessment_areas = []
-    
     try:
         client = get_bigquery_client(PROJECT_ID)
+        qualifying_cbsas = []
         
-        for _, cbsa_row in qualifying_cbsas.iterrows():
-            cbsa_code = str(cbsa_row['cbsa_code'])
-            cbsa_name = str(cbsa_row['cbsa_name'])
-            cbsa_deposits = cbsa_row['cbsa_deposits']
-            share_pct = cbsa_row['national_deposit_share_pct']
+        if method == 'all_branches':
+            # Method 1: All CBSAs where bank has branches
+            print(f"  Method: All CBSAs where bank has branches")
+            branch_df = get_all_branches_for_bank(rssd, year)
             
-            # Handle non-metro areas (counties without a CBSA code) - grouped by state
-            if cbsa_code.startswith('NON-METRO-'):
-                state_name = cbsa_row.get('state_name', '') or cbsa_name.replace(' Non-Metro Area', '')
-                
-                # Query all non-metro counties in this state
-                non_metro_query = f"""
+            if branch_df.empty:
+                print(f"  No branches found for RSSD {rssd}")
+                return []
+            
+            # Get unique CBSA codes where bank has branches (exclude rural areas with code 99999)
+            cbsa_codes = branch_df[(branch_df['cbsa_code'] != 'N/A') & (branch_df['cbsa_code'] != '99999')]['cbsa_code'].unique().tolist()
+            # Handle non-metro areas
+            non_metro_states = branch_df[branch_df['cbsa_code'] == 'N/A']['county_state'].str.extract(r',\s*(\w+)$')[0].unique().tolist()
+            for state in non_metro_states:
+                if state:
+                    cbsa_codes.append(f'NON-METRO-{state}')
+            
+            print(f"  Found {len(cbsa_codes)} CBSAs where bank has branches (excluding rural areas)")
+            qualifying_cbsas = cbsa_codes
+            
+        elif method == 'deposits':
+            # Method 2: CBSAs with >=1% of bank's branch deposits
+            print(f"  Method: CBSAs with >={min_share*100:.1f}% of bank's branch deposits")
+            cbsa_df, total_national_deposits = get_cbsa_deposit_shares(rssd, year)
+            
+            if cbsa_df.empty or total_national_deposits == 0:
+                print(f"  No deposit data found for RSSD {rssd}")
+                return []
+            
+            print(f"  Bank total national deposits: ${total_national_deposits:,.0f}")
+            
+            min_share_pct = min_share * 100
+            # Filter by threshold and exclude rural areas (CBSA code 99999)
+            qualifying_df = cbsa_df[
+                (cbsa_df['national_deposit_share_pct'] >= min_share_pct) & 
+                (cbsa_df['cbsa_code'].astype(str) != '99999')
+            ].copy()
+            
+            print(f"  Found {len(qualifying_df)} CBSAs where bank has >={min_share_pct:.1f}% of national deposits (excluding rural areas)")
+            
+            if qualifying_df.empty:
+                return []
+            
+            qualifying_cbsas = qualifying_df['cbsa_code'].astype(str).tolist()
+            
+        elif method == 'loans':
+            # Method 3: CBSAs with >=1% of bank's loan applications
+            print(f"  Method: CBSAs with >={min_share*100:.1f}% of bank's loan applications")
+            
+            # For loans method, we need LEI (HMDA uses LEI, not RSSD)
+            if not lei:
+                print(f"  Error: LEI is required for 'loans' method. RSSD cannot be used to query HMDA data.")
+                return []
+            
+            # Get loan data by CBSA
+            query = f"""
+            WITH
+            -- Get CBSA codes for counties (exclude rural areas with code 99999)
+            cbsa_crosswalk AS (
                 SELECT DISTINCT
                     CAST(geoid5 AS STRING) as geoid5,
-                    County as county_name,
-                    State as state_name,
-                    CONCAT(County, ', ', State) as county_state
+                    CAST(cbsa_code AS STRING) as cbsa_code,
+                    CBSA as cbsa_name,
+                    State as state_name
                 FROM `{PROJECT_ID}.geo.cbsa_to_county`
-                WHERE (cbsa_code IS NULL OR CAST(cbsa_code AS STRING) = 'N/A')
-                    AND State = '{state_name.replace("'", "''")}'
-                ORDER BY County
-                """
-                
-                non_metro_results = execute_query(client, non_metro_query)
-                
-                if non_metro_results:
-                    counties = []
-                    for county_row in non_metro_results:
-                        geoid5 = str(county_row.get('geoid5', '')).zfill(5)
-                        if len(geoid5) == 5:
-                            state_code = geoid5[:2]
-                            county_code = geoid5[2:]
-                            counties.append({
-                                'state_code': state_code,
-                                'county_code': county_code
-                            })
-                    
-                    if counties:
-                        print(f"  {cbsa_name}: {len(counties)} counties, ${cbsa_deposits:,.0f} deposits ({share_pct:.2f}% of national)")
-                        assessment_areas.append({
-                            'cbsa_name': cbsa_name,
-                            'counties': counties
-                        })
-                continue
+                WHERE CAST(cbsa_code AS STRING) != '99999'
+            ),
             
-            # Query all counties in this CBSA
-            query = f"""
-            SELECT DISTINCT
-                CAST(geoid5 AS STRING) as geoid5,
-                County as county_name,
-                State as state_name,
-                CONCAT(County, ', ', State) as county_state
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
-            WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
-            ORDER BY State, County
+            -- Get bank's loans by county
+            -- HMDA county_code is already GEOID5 (5-digit state+county FIPS code)
+            bank_loans_by_county AS (
+                SELECT 
+                    LPAD(CAST(h.county_code AS STRING), 5, '0') as geoid5,
+                    COUNT(*) as loan_count
+                FROM `{PROJECT_ID}.hmda.hmda` h
+                WHERE CAST(h.activity_year AS STRING) = '{year}'
+                    AND CAST(h.lei AS STRING) = '{lei}'
+                    AND h.county_code IS NOT NULL
+                    AND h.action_taken = '1'  -- Originations only
+                GROUP BY geoid5
+            ),
+            
+            -- Calculate total national loans
+            total_national_loans AS (
+                SELECT SUM(loan_count) as total_loans
+                FROM bank_loans_by_county
+            ),
+            
+            -- Aggregate loans by CBSA
+            bank_loans_by_cbsa AS (
+                SELECT 
+                    CASE 
+                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
+                        THEN CONCAT('NON-METRO-', c.state_name)
+                        ELSE CAST(c.cbsa_code AS STRING)
+                    END as cbsa_code,
+                    CASE 
+                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
+                        THEN CONCAT(c.state_name, ' Non-Metro Area')
+                        ELSE COALESCE(c.cbsa_name, 'Non-Metro Area')
+                    END as cbsa_name,
+                    SUM(bl.loan_count) as cbsa_loans,
+                    MAX(c.state_name) as state_name
+                FROM bank_loans_by_county bl
+                LEFT JOIN cbsa_crosswalk c
+                    ON bl.geoid5 = c.geoid5
+                GROUP BY 
+                    CASE 
+                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
+                        THEN CONCAT('NON-METRO-', c.state_name)
+                        ELSE CAST(c.cbsa_code AS STRING)
+                    END,
+                    CASE 
+                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
+                        THEN CONCAT(c.state_name, ' Non-Metro Area')
+                        ELSE COALESCE(c.cbsa_name, 'Non-Metro Area')
+                    END,
+                    c.state_name
+                HAVING SUM(bl.loan_count) > 0
+            )
+            
+            SELECT 
+                blc.cbsa_code,
+                blc.cbsa_name,
+                blc.cbsa_loans,
+                SAFE_DIVIDE(blc.cbsa_loans, tnl.total_loans) * 100 as national_loan_share_pct,
+                tnl.total_loans as total_national_loans,
+                blc.state_name
+            FROM bank_loans_by_cbsa blc
+            CROSS JOIN total_national_loans tnl
+            WHERE tnl.total_loans > 0
+            ORDER BY national_loan_share_pct DESC, blc.cbsa_code
             """
             
-            county_results = execute_query(client, query)
+            results = execute_query(client, query)
             
-            if not county_results:
-                print(f"  Warning: No counties found for CBSA {cbsa_code} ({cbsa_name})")
-                continue
+            if not results:
+                print(f"  No loan data found for RSSD {rssd}")
+                return []
             
-            # Build counties list
-            counties = []
-            for county_row in county_results:
-                geoid5 = str(county_row.get('geoid5', '')).zfill(5)
-                if len(geoid5) == 5:
-                    state_code = geoid5[:2]
-                    county_code = geoid5[2:]
-                    counties.append({
-                        'state_code': state_code,
-                        'county_code': county_code
-                    })
+            loan_df = pd.DataFrame(results)
+            total_national_loans = loan_df['total_national_loans'].iloc[0] if not loan_df.empty else 0
             
-            if counties:
-                print(f"  CBSA {cbsa_name}: {len(counties)} counties, ${cbsa_deposits:,.0f} deposits ({share_pct:.2f}% of national)")
-                assessment_areas.append({
-                    'cbsa_name': cbsa_name,
-                    'counties': counties
-                })
+            print(f"  Bank total national loans: {total_national_loans:,.0f}")
+            
+            min_share_pct = min_share * 100
+            # Filter by threshold and exclude rural areas (CBSA code 99999)
+            qualifying_df = loan_df[
+                (loan_df['national_loan_share_pct'] >= min_share_pct) & 
+                (loan_df['cbsa_code'].astype(str) != '99999')
+            ].copy()
+            
+            print(f"  Found {len(qualifying_df)} CBSAs where bank has >={min_share_pct:.1f}% of national loans (excluding rural areas)")
+            
+            if qualifying_df.empty:
+                return []
+            
+            qualifying_cbsas = qualifying_df['cbsa_code'].astype(str).tolist()
+            
+        else:
+            raise ValueError(f"Unknown method: {method}. Must be 'all_branches', 'deposits', or 'loans'")
+        
+        if not qualifying_cbsas:
+            return []
+        
+        # Get all counties for qualifying CBSAs
+        assessment_areas = _get_counties_for_cbsas(qualifying_cbsas, client)
+        
+        return assessment_areas
         
     except Exception as e:
         print(f"Error generating assessment areas for RSSD {rssd}: {e}")
         import traceback
         traceback.print_exc()
         return []
-    
-    return assessment_areas
 
 
 def get_branch_count_by_county(

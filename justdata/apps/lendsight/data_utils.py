@@ -4,9 +4,9 @@ LendSight-specific data utilities for BigQuery and county reference.
 Similar to BranchSeeker but for HMDA mortgage data.
 """
 
-from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
 from typing import List, Optional, Dict, Any
-from .config import PROJECT_ID
+from justdata.apps.lendsight.config import PROJECT_ID
 
 
 def find_exact_county_match(county_input: str) -> list:
@@ -24,10 +24,12 @@ def find_exact_county_match(county_input: str) -> list:
         
         # Use exact match on county_state (since it comes from the dropdown, it should be exact)
         # Also match by geoid5 to ensure we get the exact county
+        # Escape apostrophes in county name for SQL safety
+        escaped_county = escape_sql_string(county_input)
         county_query = f"""
             SELECT DISTINCT county_state, geoid5
             FROM geo.cbsa_to_county 
-            WHERE county_state = '{county_input}'
+            WHERE county_state = '{escaped_county}'
             ORDER BY geoid5
             LIMIT 1
             """
@@ -80,59 +82,54 @@ def find_exact_county_match(county_input: str) -> list:
         return [county_input]
 
 
-def get_available_counties() -> List[str]:
-    """Get list of available counties from the database."""
+def get_available_counties() -> List[Dict[str, str]]:
+    """Get list of available counties from the database with FIPS codes.
+    
+    Returns:
+        List of dictionaries with 'name', 'geoid5', 'state_fips', 'county_fips'
+    """
     try:
         print("Attempting to connect to BigQuery...")
         client = get_bigquery_client(PROJECT_ID)
         query = """
-        SELECT DISTINCT county_state 
+        SELECT DISTINCT 
+            county_state,
+            geoid5,
+            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
         FROM geo.cbsa_to_county 
+        WHERE geoid5 IS NOT NULL
+            AND county_state IS NOT NULL
+            AND TRIM(county_state) != ''
         ORDER BY county_state
         """
         print("Executing county query...")
         query_job = client.query(query)
         results = query_job.result()
-        counties = [row.county_state for row in results]
+        counties = []
+        seen_geoids = set()  # Track unique GEOIDs to avoid duplicates
+        for row in results:
+            geoid5 = str(row.geoid5).zfill(5) if row.geoid5 else None
+            if geoid5 and geoid5 in seen_geoids:
+                continue
+            if geoid5:
+                seen_geoids.add(geoid5)
+            counties.append({
+                'name': row.county_state,
+                'geoid5': geoid5,
+                'state_fips': row.state_fips,
+                'county_fips': row.county_fips
+            })
         print(f"Fetched {len(counties)} counties from BigQuery")
         return counties
     except Exception as e:
         print(f"BigQuery not available: {e}")
         print("Using fallback county list...")
-        # Return fallback list
-        return get_fallback_counties()
-
-
-def get_last_5_years_hmda() -> List[int]:
-    """
-    Get the last 5 years dynamically from HMDA data (hmda.hmda).
-    
-    Returns:
-        List of the 5 most recent years available, sorted descending (e.g., [2024, 2023, 2022, 2021, 2020])
-    """
-    try:
-        client = get_bigquery_client(PROJECT_ID)
-        query = f"""
-        SELECT DISTINCT CAST(activity_year AS INT64) as year
-        FROM `{PROJECT_ID}.hmda.hmda`
-        WHERE activity_year IS NOT NULL
-        ORDER BY year DESC
-        LIMIT 5
-        """
-        query_job = client.query(query)
-        results = query_job.result()
-        years = [int(row.year) for row in results]
-        if years:
-            print(f"✅ Fetched last 5 HMDA years: {years}")
-            return years
-        else:
-            # Fallback to recent years
-            print("⚠️  No HMDA years found, using fallback")
-            return list(range(2020, 2025))  # 2020-2024
-    except Exception as e:
-        print(f"Error fetching HMDA years: {e}")
-        # Fallback to recent years
-        return list(range(2020, 2025))  # 2020-2024
+        # Return fallback list (convert to standard format)
+        fallback_strings = get_fallback_counties()
+        # Convert fallback strings to dict format (without geoid5 since we don't have it)
+        return [{'name': county, 'geoid5': None, 'state_fips': None, 'county_fips': None} 
+                for county in fallback_strings]
 
 
 def get_fallback_counties() -> List[str]:
@@ -366,14 +363,18 @@ def execute_mortgage_query(sql_template: str, county: str, year: int, loan_purpo
         # Use the first match
         exact_county = county_matches[0]
         
+        # Escape apostrophes in county name for SQL (double them)
+        escaped_county = escape_sql_string(exact_county)
+        
         # Convert loan_purpose list to comma-separated string for SQL
         if loan_purpose is None or len(loan_purpose) == 0 or set(loan_purpose) == {'purchase', 'refinance', 'equity'}:
             loan_purpose_str = 'all'
         else:
             loan_purpose_str = ','.join(sorted(loan_purpose))
         
-        # Substitute parameters in SQL template
-        sql = sql_template.replace('@county', f"'{exact_county}'").replace('@year', f"'{year}'").replace('@loan_purpose', f"'{loan_purpose_str}'")
+        # Substitute parameters in SQL template (escape apostrophes in county name)
+        # Note: year is an integer, so don't wrap it in quotes
+        sql = sql_template.replace('@county', f"'{escaped_county}'").replace('@year', f"{year}").replace('@loan_purpose', f"'{loan_purpose_str}'")
         
         # Execute query
         return execute_query(client, sql)

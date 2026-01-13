@@ -8,8 +8,7 @@ import os
 from pathlib import Path
 
 # Get the base directory (this file's parent directory)
-# In the project structure, BASE_DIR should be the project root
-BASE_DIR = Path(__file__).parent.parent.parent.parent.absolute()
+BASE_DIR = Path(__file__).parent.parent.absolute()
 BIZSIGHT_DIR = Path(__file__).parent.absolute()
 
 # Data directories
@@ -35,7 +34,12 @@ class BizSightConfig:
     
     # Application Info
     APP_NAME = "BizSight"
-    APP_VERSION = "1.0.0"
+    # Import version from version.py for consistency
+    try:
+        from apps.bizsight.version import __version__ as VERSION
+        APP_VERSION = VERSION
+    except ImportError:
+        APP_VERSION = "0.9.0"  # Fallback
     
     # Base directories (keep as Path objects for path operations)
     BASE_DIR_STR = str(BASE_DIR)

@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BizSight - Small Business Lending Analysis</title>
+    <meta name="description" content="AI-powered small business lending data analyzer with tract-level mapping and demographic insights.">
+    <meta name="keywords" content="BizSight, small business lending, Section 1071, HMDA, AI, BigQuery, market intelligence">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
+    
+    <style>
+        .map-selection-container {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .instructions-panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        .instructions-panel h3 {
+            margin: 0 0 20px 0;
+            color: var(--ncrc-primary-blue);
+            font-size: 1.3rem;
+        }
+        
+        .instruction-step {
+            margin-bottom: 20px;
+            padding-left: 30px;
+            position: relative;
+        }
+        
+        .instruction-step::before {
+            content: counter(step-counter);
+            counter-increment: step-counter;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 24px;
+            height: 24px;
+            background: var(--ncrc-secondary-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .instructions-panel ol {
+            counter-reset: step-counter;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .instruction-step h4 {
+            margin: 0 0 8px 0;
+            color: var(--ncrc-dark-blue);
+            font-size: 1rem;
+        }
+        
+        .instruction-step p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .selected-county-info {
+            background: var(--ncrc-light-blue);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid var(--ncrc-primary-blue);
+            display: none;
+        }
+        
+        .selected-county-info.active {
+            display: block;
+        }
+        
+        .selected-county-info h4 {
+            margin: 0 0 10px 0;
+            color: var(--ncrc-primary-blue);
+        }
+        
+        .selected-county-info p {
+            margin: 5px 0;
+            font-size: 0.9rem;
+        }
+        
+        .us-map-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 600px;
+            position: relative;
+        }
+        
+        #usMap {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+        
+        .year-selection-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .year-selection-card.active {
+            display: block;
+        }
+        
+        .limitations-notice {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 6px;
+        }
+        
+        .limitations-notice h4 {
+            margin: 0 0 10px 0;
+            color: #856404;
+        }
+        
+        .limitations-notice ul {
+            margin: 0;
+            padding-left: 20px;
+            color: #856404;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
+                        <img src="/static/img/ncrc-logo.png" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                    </a>
+                </div>
+                <div class="header-title-section">
+                    <h1>BizSight</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div class="header-tagline">
+                    <div class="tagline-box">
+                        <p>Data drives the <em>movement</em></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Return to JustData Home Button -->
+    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
+        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
+            <i class="fas fa-arrow-left"></i> Return to JustData Home
+        </a>
+    </div>
+
+    <div class="container">
+        <div class="content-wrapper">
+        <main class="main-content">
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-map-marker-alt"></i> Select a County for Analysis</h2>
+                    <p>Select a state and county from the dropdowns below to begin your small business lending analysis</p>
+                </div>
+
+                <!-- County Selection Interface -->
+                <div class="county-selection-container">
+                    <div class="selection-form">
+                        <h3><i class="fas fa-map-marker-alt"></i> Select County</h3>
+                        
+                        <!-- State Selection -->
+                        <div class="form-group">
+                            <label for="stateSelect">
+                                <i class="fas fa-map"></i> State
+                            </label>
+                            <select id="stateSelect" name="state" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1rem;">
+                                <option value="">Select a state...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- County Selection -->
+                        <div class="form-group">
+                            <label for="countySelect">
+                                <i class="fas fa-building"></i> County
+                            </label>
+                            <select id="countySelect" name="county" required disabled style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1rem;">
+                                <option value="">Select a state first...</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Selected County Info -->
+                        <div class="selected-county-info" id="selectedCountyInfo" style="display: none; margin-top: 20px; padding: 15px; background: var(--ncrc-light-blue); border-radius: 8px;">
+                            <h4><i class="fas fa-check-circle"></i> Selected County</h4>
+                            <p><strong id="selectedCountyName">-</strong></p>
+                            <p id="selectedCountyState">-</p>
+                            <p style="font-size: 0.85rem; color: #666; margin-top: 5px;">
+                                GEOID5: <span id="selectedCountyGEOID5">-</span>
+                            </p>
+                        </div>
+                        
+                        <!-- Limitations Notice -->
+                        <div class="limitations-notice" style="margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 3px solid #ffc107; border-radius: 4px;">
+                            <h4><i class="fas fa-info-circle"></i> Important Limitations</h4>
+                            <ul style="margin: 10px 0; padding-left: 20px;">
+                                <li><strong>Single County Only:</strong> Analysis focuses on one county at a time for detailed tract-level mapping</li>
+                                <li><strong>No Borrower Details:</strong> Unlike mortgage data, we don't have detailed borrower demographics</li>
+                                <li><strong>Tract-Level Data:</strong> Aggregate table provides census tract-level lending patterns</li>
+                                <li><strong>County-Level Lender Data:</strong> Disclosure table shows lender activity at county level</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generate Analysis Button (shown after county selection) -->
+                <div class="year-selection-card" id="yearSelectionCard" style="display: none;">
+                    <h3 style="margin: 0 0 20px 0; color: var(--ncrc-primary-blue);">
+                        <i class="fas fa-calendar-alt"></i> Report Configuration
+                    </h3>
+                    
+                    <div style="padding: 15px; background: var(--ncrc-light-blue); border-radius: 8px; margin-bottom: 20px;">
+                        <p style="margin: 0; color: #333;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Year Range:</strong> This report includes data from <strong>2020 to 2024</strong>, the most recent 5 years.
+                        </p>
+                    </div>
+                    
+                    <button type="button" class="submit-btn" id="generateAnalysisBtn" style="width: 100%;">
+                        <i class="fas fa-magic"></i>
+                        <span>Generate Analysis</span>
+                    </button>
+                </div>
+
+                <!-- Progress Section -->
+                <div id="progressSection" class="progress-section" style="display: none;">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <h3>Analyzing Data...</h3>
+                        </div>
+                        <div class="progress-steps" id="progressSteps" style="margin-bottom: 15px; text-align: left;">
+                            <!-- Progress steps will be populated by JavaScript -->
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">Initializing analysis...</p>
+                        <div class="progress-info">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" class="results-section" style="display: none;">
+                    <div class="results-card">
+                        <div class="results-header">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>Analysis Complete!</h3>
+                        </div>
+                        <div class="results-content">
+                            <p>Your small business lending analysis has been generated successfully.</p>
+                            <div class="download-options">
+                                <button class="download-btn" id="viewReportBtn">
+                                    <i class="fas fa-chart-bar"></i>
+                                    View Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="errorSection" class="error-section" style="display: none;">
+                    <div class="error-card">
+                        <div class="error-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Analysis Failed</h3>
+                        </div>
+                        <div class="error-content">
+                            <p id="errorMessage"></p>
+                            <button class="retry-btn" onclick="resetForm()">
+                                <i class="fas fa-redo"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        </div>
+        
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <h3><i class="fas fa-star"></i> What You'll Get</h3>
+            <div class="sidebar-features">
+                <!-- Card 1: Section 1071 of Dodd-Frank Act (moved to top) -->
+                <div class="feature-card" data-tooltip="<strong>Section 1071 of the Dodd-Frank Act</strong><br><br>Section 1071, passed in 2010, requires financial institutions to collect and report data on small business lending, including demographic information about business owners. After 15 years of delay, NCRC sued the Consumer Financial Protection Bureau (CFPB) to finally implement this critical provision. This data will provide unprecedented transparency into small business lending patterns, helping identify disparities and opportunities for underserved communities.<br><br>However, Section 1071 is currently under attack from industry groups seeking to weaken or delay its implementation. Despite these challenges, when fully implemented, Section 1071 data will enable:<br>• Fair lending enforcement and compliance monitoring<br>• Identification of business and community development needs<br>• Analysis of lending patterns to women-owned and minority-owned businesses<br>• Market transparency for small business credit access<br><br><a href='https://ncrc.org/section1071/' target='_blank' style='color: var(--ncrc-primary-blue); text-decoration: underline;'>Learn more about Section 1071 →</a>">
+                    <i class="fas fa-gavel" style="color: var(--ncrc-primary-blue);"></i>
+                    <h4>Section 1071</h4>
+                    <p>Small business lending transparency</p>
+                </div>
+                
+                <!-- Card 2: Limitations of this Data -->
+                <div class="feature-card" data-tooltip="<strong>Limitations of This Data</strong><br><br>This analysis uses available small business lending data, which has important limitations:<br><br>• <strong>No Borrower Demographics:</strong> Unlike mortgage data (HMDA), we don't have detailed borrower information such as race, ethnicity, or gender<br><br>• <strong>Tract-Level Aggregation:</strong> Data is aggregated at the census tract level, not individual loan level<br><br>• <strong>County-Level Lender Data:</strong> Lender disclosure information is only available at the county level, limiting granular analysis<br><br>• <strong>Single County Focus:</strong> Analysis is limited to one county at a time for detailed tract-level mapping<br><br>• <strong>Data Availability:</strong> Coverage varies by lender and reporting requirements<br><br>These limitations will be addressed when Section 1071 is fully implemented, providing comprehensive borrower-level demographic data.">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h4>Data Limitations</h4>
+                    <p>Current data constraints</p>
+                </div>
+                
+                <!-- Card 3: AI Insights -->
+                <div class="feature-card" data-tooltip="<strong>AI Insights</strong><br><br>AI-generated narrative analysis helps interpret small business lending patterns and trends. However, it's important to understand:<br><br>• <strong>AI Support is Limited:</strong> AI can only analyze the data we provide—it cannot access additional information or verify data accuracy<br><br>• <strong>Data Management:</strong> All underlying data is managed, cleaned, and maintained by NCRC research staff<br><br>• <strong>Verification Recommended:</strong> Always verify specific claims and data points using the underlying data tables in the report<br><br>• <strong>Pattern Recognition:</strong> AI identifies patterns and generates written summaries, but human review is essential for critical analysis">
+                    <i class="fas fa-robot"></i>
+                    <h4>AI Insights</h4>
+                    <p>AI-powered analysis and insights</p>
+                </div>
+                
+                <!-- Card 4: Interactive Map -->
+                <div class="feature-card" data-tooltip="<strong>Interactive Map</strong><br><br>Explore small business lending patterns through an interactive tract-level map with multiple visualization layers:<br><br>• <strong>Income Classifications:</strong> View tracts by income level (Low, Moderate, Middle, Upper) based on Area Median Income<br><br>• <strong>Race Demographics:</strong> See minority percentage and racial composition by tract<br><br>• <strong>Loan Count Quartiles:</strong> Visualize the number of loans per tract broken into quartiles<br><br>• <strong>Loan Amount Quartiles:</strong> View total loan amounts per tract in quartile distributions<br><br>Toggle layers on and off to compare different aspects of lending patterns across census tracts within your selected county.">
+                    <i class="fas fa-map"></i>
+                    <h4>Interactive Map</h4>
+                    <p>Tract-level visualization layers</p>
+                </div>
+                
+                <!-- Card 5: Detailed Reports -->
+                <div class="feature-card" data-tooltip="<strong>Detailed Reports</strong><br><br>Comprehensive analysis reports include:<br><br>• <strong>County Summary:</strong> Overall statistics for the entire county (2020-2024) including total loans, amounts by size category, and LMI tract percentages<br><br>• <strong>Top Lenders:</strong> Analysis of the top 10 lenders by loan volume (2024) with detailed breakdowns by loan size and tract characteristics<br><br>• <strong>AI Narratives:</strong> Each table includes AI-generated explanations of the data and trends, written in accessible language<br><br>• <strong>Methods & Disclosure:</strong> Full documentation of data sources, definitions, and AI disclosure information">
+                    <i class="fas fa-table"></i>
+                    <h4>Detailed Reports</h4>
+                    <p>County summaries and lender analysis</p>
+                </div>
+            </div>
+            
+            <!-- Version card - only show when deployed (not in development) -->
+            {% if version and version != '1.0.0' %}
+            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current version of BizSight. Check back for updates and new features.">
+                <i class="fas fa-code-branch"></i>
+                <h4>Version</h4>
+                <p>{{ version }}</p>
+            </div>
+            {% endif %}
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>BizSight</h4>
+                <p>AI-powered small business lending analysis platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                JustData Team</p>
+            </div>
+            <div class="footer-col">
+                <h4>Data Source</h4>
+                <p>HMDA Section 1071<br>
+                Small Business Lending Data</p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="/static/img/ncrc-logo.png" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - BizSight. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version or '1.0.0' }}</span>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <!-- jQuery (required for app.js) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 (for enhanced dropdowns) -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
+    
+    <!-- Override progress steps for BizSight -->
+    <script>
+        // Define progress steps for BizSight (small business lending) - 10 steps matching LendSight format
+        window.PROGRESS_STEPS = [
+            { id: 'initializing', label: 'Initializing', icon: 'fa-cog' },
+            { id: 'preparing_data', label: 'Preparing Data', icon: 'fa-database' },
+            { id: 'connecting_db', label: 'Connecting to Database', icon: 'fa-plug' },
+            { id: 'fetching_data', label: 'Fetching Data', icon: 'fa-download' },
+            { id: 'building_report', label: 'Building Report', icon: 'fa-file-alt' },
+            { id: 'section_1', label: 'Section 1: Geographic Overview', icon: 'fa-map-marked-alt' },
+            { id: 'section_2', label: 'Section 2: County Summary', icon: 'fa-table' },
+            { id: 'section_3', label: 'Section 3: Comparison', icon: 'fa-balance-scale' },
+            { id: 'section_4', label: 'Section 4: Top Lenders', icon: 'fa-building' },
+            { id: 'generating_ai', label: 'Generating AI Insights', icon: 'fa-brain' },
+            { id: 'completed', label: 'Complete', icon: 'fa-check' }
+        ];
+    </script>
+    <!-- Load app.js for progress step functions -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // BizSight County Selection
+        let selectedCounty = null;
+        
+        // Initialize state and county dropdowns
+        function initializeCountySelection() {
+            // Load states into dropdown
+            fetch('/api/states')
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error(`HTTP error! status: ${r.status}`);
+                    }
+                    return r.json();
+                })
+                .then(states => {
+                    const stateSelect = document.getElementById('stateSelect');
+                    if (!stateSelect) {
+                        console.error('State select element not found');
+                        return;
+                    }
+                    
+                    stateSelect.innerHTML = '<option value="">Select a state...</option>';
+                    
+                    if (!states || states.length === 0) {
+                        console.warn('No states returned from API');
+                        stateSelect.innerHTML = '<option value="">No states available</option>';
+                        return;
+                    }
+                    
+                    // Check if states is an error object
+                    if (states.error) {
+                        console.error('API error:', states.error);
+                        stateSelect.innerHTML = '<option value="">Error loading states</option>';
+                        return;
+                    }
+                    
+                    states.forEach(state => {
+                        const option = document.createElement('option');
+                        option.value = state.fips || state.code;
+                        option.textContent = state.name;
+                        stateSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading states:', error);
+                    const stateSelect = document.getElementById('stateSelect');
+                    if (stateSelect) {
+                        stateSelect.innerHTML = '<option value="">Error loading states</option>';
+                    }
+                });
+            
+            // Handle state selection
+            document.getElementById('stateSelect').addEventListener('change', function() {
+                const stateCode = this.value;
+                const countySelect = document.getElementById('countySelect');
+                
+                if (!stateCode) {
+                    countySelect.disabled = true;
+                    countySelect.innerHTML = '<option value="">Select a state first...</option>';
+                    selectedCounty = null;
+                    document.getElementById('selectedCountyInfo').style.display = 'none';
+                    document.getElementById('yearSelectionCard').style.display = 'none';
+                    return;
+                }
+                
+                // Check if Connecticut (state code 09)
+                // State codes from API use FIPS codes, so Connecticut is '09'
+                if (stateCode === '09') {
+                    // Show Connecticut choice modal
+                    console.log('Connecticut selected (state code: ' + stateCode + '), showing choice modal');
+                    showConnecticutChoiceModal();
+                    return;
+                }
+                
+                // Load counties for selected state
+                fetch(`/api/counties-by-state/${stateCode}`)
+                    .then(r => {
+                        if (!r.ok) {
+                            throw new Error(`HTTP error! status: ${r.status}`);
+                        }
+                        return r.json();
+                    })
+                    .then(counties => {
+                        if (!counties || counties.length === 0) {
+                            console.warn('No counties returned from API');
+                            countySelect.innerHTML = '<option value="">No counties available for this state</option>';
+                            return;
+                        }
+                        
+                        // Check if counties is an error object
+                        if (counties.error) {
+                            console.error('API error:', counties.error);
+                            countySelect.innerHTML = '<option value="">Error loading counties</option>';
+                            return;
+                        }
+                        
+                        countySelect.disabled = false;
+                        countySelect.innerHTML = '<option value="">Select a county...</option>';
+                        counties.forEach(county => {
+                            const option = document.createElement('option');
+                            option.value = county.geoid5 || county.name;
+                            option.textContent = `${county.county_name || county.name}, ${county.state_name || ''}`;
+                            option.dataset.county = JSON.stringify(county);
+                            countySelect.appendChild(option);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error loading counties:', error);
+                        countySelect.innerHTML = '<option value="">Error loading counties</option>';
+                    });
+            });
+            
+            // Handle county selection
+            document.getElementById('countySelect').addEventListener('change', function() {
+                const selectedOption = this.options[this.selectedIndex];
+                if (!selectedOption.value) {
+                    selectedCounty = null;
+                    document.getElementById('selectedCountyInfo').style.display = 'none';
+                    return;
+                }
+                
+                const county = JSON.parse(selectedOption.dataset.county);
+                selectCounty(county);
+            });
+        }
+        
+        function selectCounty(county) {
+            selectedCounty = county;
+            
+            // Construct GEOID5 from state_fips + county_fips if not already present
+            if (!county.geoid5 && county.state_fips && county.county_fips) {
+                county.geoid5 = (county.state_fips + county.county_fips).padStart(5, '0');
+            }
+            
+            // Mark if this is a planning region
+            if (ctSelectionType === 'planning_region') {
+                county.is_planning_region = true;
+            }
+            
+            // Update selected county info display
+            document.getElementById('selectedCountyName').textContent = county.county_name;
+            document.getElementById('selectedCountyState').textContent = county.state_name;
+            document.getElementById('selectedCountyGEOID5').textContent = county.geoid5 || 'N/A';
+            document.getElementById('selectedCountyInfo').style.display = 'block';
+            
+            // Show year selection card with generate button
+            document.getElementById('yearSelectionCard').style.display = 'block';
+            
+            // Update year range info based on selection type
+            const yearInfo = document.querySelector('#yearSelectionCard p');
+            if (yearInfo) {
+                if (ctSelectionType === 'planning_region') {
+                    yearInfo.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Year Range:</strong> This report will analyze <strong>2024 data only</strong> (planning region data).';
+                } else if (ctSelectionType === 'county') {
+                    yearInfo.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Year Range:</strong> This report will analyze data from <strong>2020 to 2023</strong> (county data only). 2024 data uses planning regions and cannot be combined.';
+                } else {
+                    yearInfo.innerHTML = '<i class="fas fa-info-circle"></i> <strong>Year Range:</strong> This report will analyze data from <strong>2020 to 2024</strong> (all available years).';
+                }
+            }
+            
+            // Scroll to generate button
+            setTimeout(() => {
+                document.getElementById('yearSelectionCard').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 300);
+        }
+        
+        // Generate analysis button handler
+        document.getElementById('generateAnalysisBtn')?.addEventListener('click', async function() {
+            if (!selectedCounty) {
+                alert('Please select a county or planning region first');
+                return;
+            }
+
+            // Set year range based on selection type
+            let start, end;
+            if (ctSelectionType === 'planning_region') {
+                // Planning regions: 2024 only
+                start = 2024;
+                end = 2024;
+            } else if (ctSelectionType === 'county') {
+                // Connecticut counties: 2020-2023 only
+                start = 2020;
+                end = 2023;
+            } else {
+                // Other states: 2020-2024
+                start = 2020;
+                end = 2024;
+            }
+
+            // Show progress and initialize progress steps
+            document.getElementById('yearSelectionCard').style.display = 'none';
+            document.getElementById('progressSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('errorSection').style.display = 'none';
+            
+            // Initialize progress steps if function exists
+            if (typeof initializeProgressSteps === 'function') {
+                initializeProgressSteps();
+            }
+
+            try {
+                const response = await fetch('/analyze', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        county_data: selectedCounty,
+                        startYear: start,
+                        endYear: end
+                    })
+                });
+                
+                const result = await response.json();
+                if (!result.success) {
+                    throw new Error(result.error || 'Analysis failed');
+                }
+                
+                // Use the listenForProgress from app.js (which has progress steps support)
+                if (typeof listenForProgress === 'function') {
+                    listenForProgress(result.job_id);
+                } else {
+                    console.error('listenForProgress function not found');
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = error.message;
+                document.getElementById('errorSection').style.display = 'block';
+                document.getElementById('progressSection').style.display = 'none';
+            }
+        });
+        
+        // Note: listenForProgress is now defined in app.js with progress steps support
+        
+        // Initialize sidebar tooltips with left positioning
+        function initializeSidebarTooltips() {
+            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
+            
+            featureCards.forEach((card) => {
+                const tooltipText = card.getAttribute('data-tooltip');
+                if (!tooltipText) return;
+                
+                // Create tooltip element
+                let tooltip = card.querySelector('.custom-tooltip');
+                if (!tooltip) {
+                    tooltip = document.createElement('div');
+                    tooltip.className = 'custom-tooltip';
+                    tooltip.innerHTML = tooltipText;
+                    document.body.appendChild(tooltip);
+                }
+                
+                // Show tooltip on hover - positioned to the left
+                card.addEventListener('mouseenter', function() {
+                    const cardRect = card.getBoundingClientRect();
+                    
+                    // Show tooltip first to measure it
+                    tooltip.style.cssText = 'display: block !important; visibility: hidden !important; opacity: 0 !important; position: fixed !important;';
+                    
+                    // Calculate position after tooltip is rendered
+                    requestAnimationFrame(() => {
+                        const tooltipRect = tooltip.getBoundingClientRect();
+                        const tooltipWidth = tooltipRect.width || 350;
+                        const tooltipHeight = tooltipRect.height || 200;
+                        
+                        // Position to the LEFT of the sidebar card
+                        let left = cardRect.left - tooltipWidth - 20; // 20px gap
+                        let top = cardRect.top + (cardRect.height / 2) - (tooltipHeight / 2);
+                        
+                        // Ensure tooltip stays on screen
+                        if (left < 10) {
+                            left = 10; // Keep some margin from left edge
+                        }
+                        if (top < 10) {
+                            top = 10;
+                        }
+                        if (top + tooltipHeight > window.innerHeight - 10) {
+                            top = window.innerHeight - tooltipHeight - 10;
+                        }
+                        
+                        // Apply styles with high z-index to appear in front
+                        tooltip.style.cssText = `
+                            display: block !important;
+                            visibility: visible !important;
+                            opacity: 1 !important;
+                            position: fixed !important;
+                            left: ${left}px !important;
+                            top: ${top}px !important;
+                            z-index: 99999 !important;
+                            background: white !important;
+                            color: #333 !important;
+                            padding: 16px 20px !important;
+                            border-radius: 8px !important;
+                            font-size: 0.9rem !important;
+                            line-height: 1.6 !important;
+                            white-space: normal !important;
+                            max-width: 400px !important;
+                            min-width: 300px !important;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
+                            pointer-events: auto !important;
+                            text-align: left !important;
+                            word-wrap: break-word !important;
+                            margin: 0 !important;
+                            border: 1px solid #ddd !important;
+                            overflow: visible !important;
+                        `;
+                    });
+                });
+                
+                // Hide tooltip on mouse leave
+                card.addEventListener('mouseleave', function() {
+                    tooltip.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
+                });
+                
+                // Keep tooltip visible when hovering over it
+                tooltip.addEventListener('mouseenter', function() {
+                    tooltip.style.opacity = '1';
+                    tooltip.style.visibility = 'visible';
+                });
+                
+                tooltip.addEventListener('mouseleave', function() {
+                    tooltip.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
+                });
+            });
+        }
+        
+        // Connecticut choice modal handlers
+        let ctChoiceMade = false;
+        let ctSelectionType = null; // 'county' or 'planning_region'
+        
+        function showConnecticutChoiceModal() {
+            const modal = document.getElementById('ctChoiceModal');
+            if (modal) {
+                modal.style.display = 'block';
+                ctChoiceMade = false;
+                // Prevent body scroll when modal is open
+                document.body.style.overflow = 'hidden';
+            } else {
+                console.error('Connecticut choice modal not found!');
+            }
+        }
+        
+        function hideConnecticutChoiceModal() {
+            const modal = document.getElementById('ctChoiceModal');
+            if (modal) {
+                modal.style.display = 'none';
+                // Restore body scroll
+                document.body.style.overflow = 'auto';
+            }
+        }
+        
+        // Initialize modal handlers when DOM is ready
+        function initializeConnecticutModal() {
+            const ctChoiceCounty = document.getElementById('ctChoiceCounty');
+            const ctChoicePlanningRegion = document.getElementById('ctChoicePlanningRegion');
+            const ctChoiceCancel = document.getElementById('ctChoiceCancel');
+            
+            if (ctChoiceCounty) {
+                ctChoiceCounty.addEventListener('click', function() {
+                    ctSelectionType = 'county';
+                    ctChoiceMade = true;
+                    hideConnecticutChoiceModal();
+                    // Load counties for Connecticut
+                    loadConnecticutCounties();
+                });
+            }
+            
+            if (ctChoicePlanningRegion) {
+                ctChoicePlanningRegion.addEventListener('click', function() {
+                    ctSelectionType = 'planning_region';
+                    ctChoiceMade = true;
+                    hideConnecticutChoiceModal();
+                    // Load planning regions
+                    loadConnecticutPlanningRegions();
+                });
+            }
+            
+            if (ctChoiceCancel) {
+                ctChoiceCancel.addEventListener('click', function() {
+                    hideConnecticutChoiceModal();
+                    resetStateSelection();
+                });
+            }
+            
+            // Close button (X) handler
+            const ctModalClose = document.getElementById('ctModalClose');
+            if (ctModalClose) {
+                ctModalClose.addEventListener('click', function() {
+                    hideConnecticutChoiceModal();
+                    resetStateSelection();
+                });
+            }
+            
+            // Helper function to reset state selection
+            function resetStateSelection() {
+                const stateSelect = document.getElementById('stateSelect');
+                if (stateSelect) {
+                    stateSelect.value = '';
+                }
+                const countySelect = document.getElementById('countySelect');
+                if (countySelect) {
+                    countySelect.disabled = true;
+                    countySelect.innerHTML = '<option value="">Select a state first...</option>';
+                }
+                selectedCounty = null;
+                const selectedCountyInfo = document.getElementById('selectedCountyInfo');
+                if (selectedCountyInfo) {
+                    selectedCountyInfo.style.display = 'none';
+                }
+                const yearSelectionCard = document.getElementById('yearSelectionCard');
+                if (yearSelectionCard) {
+                    yearSelectionCard.style.display = 'none';
+                }
+            }
+            
+            // Close modal when clicking outside
+            const modal = document.getElementById('ctChoiceModal');
+            if (modal) {
+                window.addEventListener('click', function(event) {
+                    if (event.target === modal) {
+                        hideConnecticutChoiceModal();
+                    }
+                });
+            }
+        }
+        
+        function loadConnecticutCounties() {
+            const countySelect = document.getElementById('countySelect');
+            fetch('/api/counties-by-state/09')
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+                    return r.json();
+                })
+                .then(counties => {
+                    if (!counties || counties.length === 0) {
+                        countySelect.innerHTML = '<option value="">No counties available</option>';
+                        return;
+                    }
+                    if (counties.error) {
+                        console.error('API error:', counties.error);
+                        countySelect.innerHTML = '<option value="">Error loading counties</option>';
+                        return;
+                    }
+                    countySelect.disabled = false;
+                    countySelect.innerHTML = '<option value="">Select a county (2020-2023 data only)...</option>';
+                    counties.forEach(county => {
+                        const option = document.createElement('option');
+                        option.value = county.geoid5 || county.name;
+                        option.textContent = `${county.county_name || county.name}, ${county.state_name || ''}`;
+                        option.dataset.county = JSON.stringify(county);
+                        countySelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading counties:', error);
+                    countySelect.innerHTML = '<option value="">Error loading counties</option>';
+                });
+        }
+        
+        function loadConnecticutPlanningRegions() {
+            const countySelect = document.getElementById('countySelect');
+            fetch('/api/planning-regions')
+                .then(r => {
+                    if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+                    return r.json();
+                })
+                .then(regions => {
+                    if (!regions || regions.length === 0) {
+                        countySelect.innerHTML = '<option value="">No planning regions available</option>';
+                        return;
+                    }
+                    countySelect.disabled = false;
+                    countySelect.innerHTML = '<option value="">Select a planning region (2024 data only)...</option>';
+                    regions.forEach(region => {
+                        const option = document.createElement('option');
+                        option.value = region.geoid5 || region.code;
+                        option.textContent = region.name;
+                        option.dataset.county = JSON.stringify({
+                            geoid5: region.geoid5,
+                            county_name: region.name,
+                            state_name: 'Connecticut',
+                            is_planning_region: true
+                        });
+                        countySelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error loading planning regions:', error);
+                    countySelect.innerHTML = '<option value="">Error loading planning regions</option>';
+                });
+        }
+        
+        // Initialize county selection and tooltips when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCountySelection();
+            initializeSidebarTooltips();
+            initializeConnecticutModal();
+        });
+    </script>
+    
+    <!-- Connecticut Planning Region Choice Modal -->
+    <div id="ctChoiceModal" class="modal" style="display: none; position: fixed; z-index: 10000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 30px; border: 1px solid #888; width: 90%; max-width: 700px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; position: relative;">
+            <!-- Close button (X) -->
+            <span id="ctModalClose" class="modal-close" style="position: absolute; top: 15px; right: 20px; color: #aaa; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='#000'" onmouseout="this.style.color='#aaa'">&times;</span>
+            
+            <div style="margin-bottom: 25px;">
+                <h2 style="color: var(--ncrc-primary-blue); margin: 0 0 20px 0; font-size: 1.5rem; padding-right: 30px;">
+                    <i class="fas fa-info-circle"></i> Important: Connecticut Data Change
+                </h2>
+                
+                <div style="background: #e7f3ff; padding: 20px; border-radius: 8px; border-left: 4px solid var(--ncrc-primary-blue); margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; color: var(--ncrc-dark-blue); font-size: 1.1rem;">
+                        What Changed?
+                    </h3>
+                    <p style="margin: 0 0 12px 0; line-height: 1.7; color: #333;">
+                        Starting in <strong>2024</strong>, Connecticut changed how it reports business loan data. Instead of using counties (like Fairfield County, Hartford County, etc.), the state now uses <strong>planning regions</strong> (like "Greater Bridgeport Planning Region" or "Capitol Planning Region").
+                    </p>
+                    <p style="margin: 0; line-height: 1.7; color: #333;">
+                        <strong>Why this matters:</strong> Because the data structure changed, we cannot combine 2020-2023 data (which uses counties) with 2024 data (which uses planning regions) in a single report. They're like comparing apples and oranges.
+                    </p>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 20px; border-radius: 8px; border-left: 4px solid #ffc107; margin-bottom: 25px;">
+                    <h3 style="margin: 0 0 12px 0; color: #856404; font-size: 1.1rem;">
+                        What Are Your Options?
+                    </h3>
+                    <p style="margin: 0; line-height: 1.7; color: #856404;">
+                        You have two choices. Pick the one that best fits what you need:
+                    </p>
+                </div>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
+                <button id="ctChoiceCounty" class="ct-choice-btn" style="padding: 20px; border: 2px solid var(--ncrc-primary-blue); border-radius: 8px; background: white; cursor: pointer; text-align: left; transition: all 0.2s;">
+                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--ncrc-primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; margin-top: 2px;">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0 0 8px 0; color: var(--ncrc-dark-blue); font-size: 1.1rem;">
+                                Option 1: Analyze by County (2020-2023)
+                            </h3>
+                            <p style="margin: 0 0 8px 0; color: #555; font-size: 0.95rem; line-height: 1.6;">
+                                Choose this if you want to see <strong>historical trends</strong> from 2020-2023. You'll select a traditional county (like Fairfield County or Hartford County) and get data for those 4 years.
+                            </p>
+                            <p style="margin: 0; color: #888; font-size: 0.85rem; font-style: italic;">
+                                ⚠️ Note: 2024 data will not be included because it uses a different structure (planning regions).
+                            </p>
+                        </div>
+                    </div>
+                </button>
+                
+                <button id="ctChoicePlanningRegion" class="ct-choice-btn" style="padding: 20px; border: 2px solid var(--ncrc-primary-blue); border-radius: 8px; background: white; cursor: pointer; text-align: left; transition: all 0.2s;">
+                    <div style="display: flex; align-items: flex-start; gap: 15px;">
+                        <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--ncrc-secondary-blue); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; margin-top: 2px;">
+                            <i class="fas fa-map"></i>
+                        </div>
+                        <div style="flex: 1;">
+                            <h3 style="margin: 0 0 8px 0; color: var(--ncrc-dark-blue); font-size: 1.1rem;">
+                                Option 2: Analyze by Planning Region (2024)
+                            </h3>
+                            <p style="margin: 0 0 8px 0; color: #555; font-size: 0.95rem; line-height: 1.6;">
+                                Choose this if you want to see the <strong>most recent data</strong> from 2024. You'll select a planning region (like "Greater Bridgeport Planning Region" or "Capitol Planning Region") and get data for 2024 only.
+                            </p>
+                            <p style="margin: 0; color: #888; font-size: 0.85rem; font-style: italic;">
+                                ⚠️ Note: Historical data (2020-2023) uses counties and cannot be combined with 2024 planning region data.
+                            </p>
+                        </div>
+                    </div>
+                </button>
+            </div>
+            
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <p style="margin: 0; color: #666; font-size: 0.9rem; line-height: 1.6;">
+                    <strong>💡 Tip:</strong> Over time, as more years use planning regions, this limitation will become less important. For now, pick the option that matches what you need to analyze.
+                </p>
+            </div>
+            
+            <div style="text-align: right; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                <button id="ctChoiceCancel" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <style>
+        .ct-choice-btn:hover {
+            background: var(--ncrc-light-blue) !important;
+            border-color: var(--ncrc-secondary-blue) !important;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .ct-choice-btn.selected {
+            background: var(--ncrc-light-blue) !important;
+            border-color: var(--ncrc-secondary-blue) !important;
+            border-width: 3px !important;
+        }
+    </style>
+</body>
+</html>

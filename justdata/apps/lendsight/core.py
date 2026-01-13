@@ -8,9 +8,11 @@ import os
 import pandas as pd
 from typing import Dict, List
 from datetime import datetime
-from .config import OUTPUT_DIR, PROJECT_ID
-from .data_utils import find_exact_county_match, execute_mortgage_query
-from .mortgage_report_builder import build_mortgage_report, save_mortgage_excel_report
+from justdata.apps.lendsight.config import OUTPUT_DIR, PROJECT_ID
+from justdata.apps.lendsight.data_utils import find_exact_county_match, execute_mortgage_query
+from justdata.apps.lendsight.mortgage_report_builder import build_mortgage_report, save_mortgage_excel_report
+from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
+from justdata.apps.lendsight.version import __version__
 
 
 def parse_web_parameters(counties_str: str, years_str: str, selection_type: str = 'county', 
@@ -27,15 +29,11 @@ def parse_web_parameters(counties_str: str, years_str: str, selection_type: str 
     Returns:
         Tuple of (counties_list, years_list)
     """
-    from .data_utils import expand_state_to_counties, expand_metro_to_counties, get_last_5_years_hmda
+    from justdata.apps.lendsight.data_utils import expand_state_to_counties, expand_metro_to_counties
     
-    # Parse years - if empty or None, automatically get last 5 years
-    if not years_str or not years_str.strip():
-        # Automatically get last 5 years from HMDA data
-        years = get_last_5_years_hmda()
-        print(f"✅ Automatically using last 5 HMDA years: {years}")
-    elif years_str.lower() == "all":
-        years = list(range(2018, 2024))  # HMDA data typically 2018-2023
+    # Parse years
+    if years_str.lower() == "all":
+        years = list(range(2020, 2025))  # HMDA data 2020-2024
     else:
         years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
     
@@ -92,13 +90,13 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
     try:
         # Initialize progress
         if progress_tracker:
-            progress_tracker.update_progress('initializing')
+            progress_tracker.update_progress('initializing', 0, 'Initializing analysis... Getting ready to crunch some numbers! 🚀')
         
         # Parse parameters with selection context
         counties, years = parse_web_parameters(counties_str, years_str, selection_type, state_code, metro_code)
         
         if progress_tracker:
-            progress_tracker.update_progress('parsing_params')
+            progress_tracker.update_progress('preparing_data', 5, f'Preparing data for {len(counties)} counties... Unpacking the data puzzle! 🧩')
         
         if not counties:
             return {'success': False, 'error': 'No counties provided'}
@@ -108,7 +106,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         
         # Clarify county selections
         if progress_tracker:
-            progress_tracker.update_progress('preparing_data')
+            progress_tracker.update_progress('preparing_data', 10, 'Matching counties... Making sure we have the right places! 📍')
         
         clarified_counties = []
         total_counties = len(counties)
@@ -116,8 +114,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             try:
                 if progress_tracker:
                     progress_tracker.update_progress('preparing_data', 
-                        int(15 + (idx / total_counties) * 5),
-                        f'Preparing data... Matching county {idx}/{total_counties}: {county}')
+                        int(10 + (idx / total_counties) * 5),
+                        f'Matching county {idx}/{total_counties}: {county}... Almost there! 📍')
                 
                 print(f"Matching county {idx}/{total_counties}: {county}")
                 matches = find_exact_county_match(county)
@@ -133,13 +131,13 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         
         # Load SQL template
         if progress_tracker:
-            progress_tracker.update_progress('connecting_db')
+            progress_tracker.update_progress('connecting_db', 15, 'Connecting to BigQuery... Time to tap into that data goldmine! 💎')
         
         sql_template = load_sql_template()
         
         # Execute BigQuery queries
         if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 20, 'Fetching mortgage data from database...')
+            progress_tracker.update_progress('fetching_data', 20, 'Fetching mortgage data... Digging deep for insights! ⛏️')
         
         all_results = []
         total_queries = len(clarified_counties) * len(years)
@@ -154,8 +152,8 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     print(f"  [DEBUG] About to call execute_mortgage_query...")
                     if progress_tracker:
                         progress_tracker.update_progress('fetching_data', 
-                            20 + int((query_index / total_queries) * 30),
-                            f'Fetching data: {county} ({year})...')
+                            20 + int((query_index / total_queries) * 25),
+                            f'Fetching data: {county} ({year})... Who\'s lending where? Let\'s find out! 🏦')
                     
                     print(f"  [DEBUG] Calling execute_mortgage_query now...")
                     results = execute_mortgage_query(sql_template, county, year, loan_purpose)
@@ -176,180 +174,208 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     # Continue with other queries even if one fails
                     continue
         
-        print(f"[DEBUG] Data fetch complete: {len(all_results)} total records")
+        print(f"[DEBUG] Data fetch complete: {len(all_results)} total records", flush=True)
         
         if not all_results:
-            print(f"[ERROR] No data found for the specified parameters")
+            print(f"[ERROR] No data found for the specified parameters", flush=True)
             return {'success': False, 'error': 'No data found for the specified parameters'}
         
-        print(f"[DEBUG] Moving to Census data fetch...")
+        print(f"[DEBUG] Moving to Census data fetch...", flush=True)
+        print(f"[DEBUG] counties_with_fips provided: {counties_with_fips is not None}, length: {len(counties_with_fips) if counties_with_fips else 0}", flush=True)
+        print(f"[DEBUG] state_code: {state_code}", flush=True)
         # Fetch Census data FIRST (before building report) so it can be used in AI analysis
         if progress_tracker:
-            print(f"[DEBUG] Updating progress to fetching_census_data")
-            progress_tracker.update_progress('fetching_census_data', 50, 'Fetching Census demographic data...')
+            print(f"[DEBUG] Updating progress to fetching_data", flush=True)
+            progress_tracker.update_progress('fetching_data', 45, 'Fetching Census demographic data... Getting the full picture! 📊')
         
-        census_data = None
+        census_data = {}
         try:
-            print(f"[DEBUG] Importing census_utils...")
-            from .census_utils import get_census_data_for_multiple_counties
+            print(f"[DEBUG] Importing census_utils...", flush=True)
+            import sys
+            sys.stdout.flush()
+            from justdata.apps.lendsight.census_utils import get_census_data_for_multiple_counties
             import os
-            # Try to load .env file if it exists
-            try:
-                from dotenv import load_dotenv
-                load_dotenv()
-            except ImportError:
-                pass
-            api_key = os.getenv('CENSUS_API_KEY')
-            print(f"\n[DEBUG] Fetching Census demographic data for context...")
-            if not api_key:
-                print(f"  [WARNING] CENSUS_API_KEY not set - Census data will not be available")
-            else:
-                print(f"  [INFO] CENSUS_API_KEY is set")
+            # Use unified environment system (primary method)
+            from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
             
-            # Check if census package is installed
-            try:
-                import census
-            except ImportError:
-                print(f"  [ERROR] 'census' package not installed. Install with: pip install census us requests")
-                print(f"  [ERROR] Census data will not be available until the package is installed.")
-                census_data = None
+            # Ensure unified environment is loaded (already loaded in app.py, but ensure it's loaded here too)
+            ensure_unified_env_loaded(verbose=False)
+            config = get_unified_config(load_env=False, verbose=False)
+            api_key = config.get('CENSUS_API_KEY')
+            print(f"\n[DEBUG] Fetching Census demographic data for context...", flush=True)
+            print(f"  [DEBUG] Checking for CENSUS_API_KEY in environment...", flush=True)
+            print(f"  [DEBUG] CENSUS_API_KEY from os.getenv: {api_key is not None}", flush=True)
+            if not api_key:
+                print(f"  [WARNING] CENSUS_API_KEY not set - Census data will not be available", flush=True)
+                print(f"  [INFO] To enable Census data, set CENSUS_API_KEY environment variable in Render dashboard", flush=True)
+                print(f"  [INFO] Get a free API key from: https://api.census.gov/data/key_signup.html", flush=True)
+                # Debug: Show all environment variables that contain 'CENSUS'
+                env_vars_with_census = [k for k in os.environ.keys() if 'CENSUS' in k.upper()]
+                if env_vars_with_census:
+                    print(f"  [DEBUG] Found these related env vars: {env_vars_with_census}", flush=True)
+                else:
+                    print(f"  [DEBUG] No environment variables found containing 'CENSUS'", flush=True)
             else:
-                # Only proceed with Census API calls if package is installed
-                print(f"[DEBUG] Calling get_census_data_for_multiple_counties with {len(clarified_counties)} counties...")
-                print(f"[DEBUG] This may take 30-60 seconds as it makes multiple API calls per county...")
-                if progress_tracker:
-                    progress_tracker.update_progress('fetching_census_data', 50, f'Fetching Census data for {len(clarified_counties)} counties (this may take a minute)...')
-                
-                # Use FIPS codes if provided, otherwise look them up
-                if counties_with_fips and len(counties_with_fips) > 0:
-                    # FIPS codes already provided from frontend
-                    print(f"  [INFO] Using FIPS codes provided from frontend for {len(counties_with_fips)} counties")
-                    census_data = get_census_data_for_multiple_counties(counties_with_fips, state_code, api_key, progress_tracker)
+                print(f"  [INFO] CENSUS_API_KEY is set (length: {len(api_key)})", flush=True)
+            print(f"[DEBUG] Calling get_census_data_for_multiple_counties with {len(clarified_counties)} counties...", flush=True)
+            print(f"[DEBUG] This may take 30-60 seconds as it makes multiple API calls per county...", flush=True)
+            sys.stdout.flush()
+            if progress_tracker:
+                progress_tracker.update_progress('fetching_data', 50, f'Fetching Census data for {len(clarified_counties)} counties... This may take a minute, but it\'s worth it! ⏳')
+            
+            # Use FIPS codes if provided, otherwise look them up
+            if counties_with_fips and len(counties_with_fips) > 0:
+                # FIPS codes already provided from frontend
+                print(f"  [INFO] Using FIPS codes provided from frontend for {len(counties_with_fips)} counties", flush=True)
+                print(f"  [DEBUG] Sample county data: {counties_with_fips[0] if counties_with_fips else 'None'}", flush=True)
+                # Extract state_code from first county if not provided
+                if not state_code and counties_with_fips:
+                    first_county = counties_with_fips[0]
+                    if isinstance(first_county, dict):
+                        state_code = first_county.get('state_fips') or (first_county.get('geoid5', '')[:2] if first_county.get('geoid5') else None)
+                        print(f"  [DEBUG] Extracted state_code from county data: {state_code}", flush=True)
+                if not state_code:
+                    print(f"  [ERROR] state_code is required but not provided and cannot be extracted from county data", flush=True)
+                    census_data = {}
                 else:
-                    # Fallback: Look up FIPS codes from BigQuery
-                    print(f"  [INFO] Looking up FIPS codes from BigQuery for {len(clarified_counties)} counties...")
-                    from justdata.shared.utils.bigquery_client import get_bigquery_client
-                    from .config import PROJECT_ID
-                    counties_with_fips_lookup = []
-                    client = get_bigquery_client(PROJECT_ID)
-                    
-                    for county_name in clarified_counties:
-                        try:
-                            query = f"""
-                            SELECT DISTINCT county_state, geoid5
-                            FROM geo.cbsa_to_county
-                            WHERE county_state = '{county_name}'
-                            LIMIT 1
-                            """
-                            query_job = client.query(query)
-                            results = list(query_job.result())
-                            if results and results[0].geoid5:
-                                geoid5 = str(results[0].geoid5).zfill(5)
-                                counties_with_fips_lookup.append({
-                                    'name': county_name,
-                                    'geoid5': geoid5,
-                                    'state_fips': geoid5[:2],
-                                    'county_fips': geoid5[2:]
-                                })
-                            else:
-                                print(f"  [WARNING] Could not find geoid5 for {county_name}, skipping Census data...")
-                        except Exception as e:
-                            print(f"  [WARNING] Error looking up FIPS for {county_name}: {e}")
-                    
-                    if counties_with_fips_lookup:
-                        census_data = get_census_data_for_multiple_counties(counties_with_fips_lookup, state_code, api_key, progress_tracker)
+                    print(f"  [INFO] Starting Census API calls with state_code={state_code} (this may take 1-2 minutes)...", flush=True)
+                import sys
+                sys.stdout.flush()
+                census_data = get_census_data_for_multiple_counties(counties_with_fips, state_code, api_key, progress_tracker)
+                print(f"  [INFO] Census API calls completed", flush=True)
+            else:
+                # Fallback: Look up FIPS codes from BigQuery
+                print(f"  [INFO] Looking up FIPS codes from BigQuery for {len(clarified_counties)} counties...", flush=True)
+                from justdata.shared.utils.bigquery_client import get_bigquery_client
+                from justdata.apps.lendsight.config import PROJECT_ID
+                counties_with_fips_lookup = []
+                client = get_bigquery_client(PROJECT_ID)
+                
+                for county_name in clarified_counties:
+                    try:
+                        from justdata.shared.utils.bigquery_client import escape_sql_string
+                        escaped_county = escape_sql_string(county_name)
+                        query = f"""
+                        SELECT DISTINCT county_state, geoid5
+                        FROM geo.cbsa_to_county
+                        WHERE county_state = '{escaped_county}'
+                        LIMIT 1
+                        """
+                        query_job = client.query(query)
+                        results = list(query_job.result())
+                        if results and results[0].geoid5:
+                            geoid5 = str(results[0].geoid5).zfill(5)
+                            counties_with_fips_lookup.append({
+                                'name': county_name,
+                                'geoid5': geoid5,
+                                'state_fips': geoid5[:2],
+                                'county_fips': geoid5[2:]
+                            })
+                        else:
+                            print(f"  [WARNING] Could not find geoid5 for {county_name}, skipping Census data...")
+                    except Exception as e:
+                        print(f"  [WARNING] Error looking up FIPS for {county_name}: {e}")
+                
+                if counties_with_fips_lookup:
+                    # Extract state_code from first county if not provided
+                    if not state_code and counties_with_fips_lookup:
+                        first_county = counties_with_fips_lookup[0]
+                        state_code = first_county.get('state_fips')
+                        print(f"  [DEBUG] Extracted state_code from lookup: {state_code}", flush=True)
+                    if not state_code:
+                        print(f"  [ERROR] state_code is required but not provided and cannot be extracted", flush=True)
+                        census_data = {}
                     else:
-                        print(f"  [WARNING] No counties with valid FIPS codes found, skipping Census data...")
-                        census_data = None
-                
-                print(f"[DEBUG] get_census_data_for_multiple_counties returned successfully")
-                if census_data and len(census_data) > 0:
-                    print(f"  [OK] Retrieved Census data for {len(census_data)} counties")
-                    print(f"  [DEBUG] Census data keys: {list(census_data.keys())}")
-                    # Debug: print sample data
-                    for county, data in list(census_data.items())[:1]:  # Print first county only
-                        print(f"  [DEBUG] Sample Census data for {county}:")
-                        print(f"    - Data keys: {list(data.keys())}")
-                        
-                        # Check for new structure (time_periods) or old structure (demographics)
-                        if 'time_periods' in data:
-                            time_periods = data.get('time_periods', {})
-                            print(f"    - Time periods: {list(time_periods.keys())}")
-                            for period_key, period_data in time_periods.items():
-                                demographics = period_data.get('demographics', {})
-                                print(f"      - {period_key}: {period_data.get('year', 'N/A')}")
-                                print(f"        Total Population: {demographics.get('total_population', 'N/A')}")
-                                print(f"        White: {demographics.get('white_percentage', 0):.1f}%")
-                                print(f"        Black: {demographics.get('black_percentage', 0):.1f}%")
-                                print(f"        Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
-                        elif 'demographics' in data:
-                            demographics = data.get('demographics', {})
-                            print(f"    - Using legacy demographics format")
-                            print(f"    - Demographics keys: {list(demographics.keys()) if demographics else 'None'}")
-                            print(f"    - Total Population: {demographics.get('total_population', 'N/A')}")
-                            print(f"    - Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
-                            print(f"    - Black: {demographics.get('black_percentage', 0):.1f}%")
-                            print(f"    - White: {demographics.get('white_percentage', 0):.1f}%")
-                            print(f"    - Data year: {data.get('data_year', 'N/A')}")
+                        census_data = get_census_data_for_multiple_counties(counties_with_fips_lookup, state_code, api_key, progress_tracker)
                 else:
-                    print(f"  [WARNING] No Census data retrieved (returned empty dict or None)")
-                    print(f"  [DEBUG] Census data type: {type(census_data)}, value: {census_data}")
-                    census_data = None  # Store None when no data, not empty dict
+                    print(f"  [WARNING] No counties with valid FIPS codes found, skipping Census data...", flush=True)
+                    census_data = {}
+            print(f"[DEBUG] get_census_data_for_multiple_counties returned successfully", flush=True)
+            if census_data and len(census_data) > 0:
+                print(f"  [OK] Retrieved Census data for {len(census_data)} counties")
+                print(f"  [DEBUG] Census data keys: {list(census_data.keys())}")
+                # Debug: print sample data
+                for county, data in list(census_data.items())[:1]:  # Print first county only
+                    print(f"  [DEBUG] Sample Census data for {county}:")
+                    print(f"    - Data keys: {list(data.keys())}")
+                    
+                    # Check for new structure (time_periods) or old structure (demographics)
+                    if 'time_periods' in data:
+                        time_periods = data.get('time_periods', {})
+                        print(f"    - Time periods: {list(time_periods.keys())}")
+                        for period_key, period_data in time_periods.items():
+                            demographics = period_data.get('demographics', {})
+                            print(f"      - {period_key}: {period_data.get('year', 'N/A')}")
+                            print(f"        Total Population: {demographics.get('total_population', 'N/A')}")
+                            print(f"        White: {demographics.get('white_percentage', 0):.1f}%")
+                            print(f"        Black: {demographics.get('black_percentage', 0):.1f}%")
+                            print(f"        Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
+                    elif 'demographics' in data:
+                        demographics = data.get('demographics', {})
+                        print(f"    - Using legacy demographics format")
+                        print(f"    - Demographics keys: {list(demographics.keys()) if demographics else 'None'}")
+                        print(f"    - Total Population: {demographics.get('total_population', 'N/A')}")
+                        print(f"    - Hispanic: {demographics.get('hispanic_percentage', 0):.1f}%")
+                        print(f"    - Black: {demographics.get('black_percentage', 0):.1f}%")
+                        print(f"    - White: {demographics.get('white_percentage', 0):.1f}%")
+                        print(f"    - Data year: {data.get('data_year', 'N/A')}")
+            else:
+                print(f"  [WARNING] No Census data retrieved (returned empty dict or None)")
+                print(f"  [DEBUG] Census data type: {type(census_data)}, value: {census_data}")
+                print(f"  [DEBUG] API key was provided: {api_key is not None}")
+                if api_key:
+                    print(f"  [DEBUG] API key length: {len(api_key)}")
+                else:
+                    print(f"  [ERROR] CENSUS_API_KEY is missing - Census data cannot be fetched")
+                census_data = {}  # Ensure it's an empty dict, not None
         except Exception as census_error:
             print(f"  [WARNING] Error fetching Census data: {census_error}")
             import traceback
             traceback.print_exc()
-            census_data = None
+            census_data = {}
         
-        print(f"[DEBUG] Census data fetch complete, moving to report building...")
+        print(f"[DEBUG] Census data fetch complete, moving to report building...", flush=True)
         # Build report (pass census_data so it can be included in tables)
         if progress_tracker:
-            print(f"[DEBUG] Updating progress to processing_data")
-            progress_tracker.update_progress('processing_data', 60, 'Processing data and building report...')
+            print(f"[DEBUG] Updating progress to building_report", flush=True)
+            progress_tracker.update_progress('building_report', 60, 'Processing data and building report... Making it look pretty! 🎨')
         
-        print(f"\n[DEBUG] Building report with {len(all_results)} records...")
-        report_data = build_mortgage_report(all_results, clarified_counties, years, census_data=census_data, progress_tracker=progress_tracker)
+        # Load HUD data for income distribution
+        if progress_tracker:
+            progress_tracker.update_progress('building_report', 62, 'Loading HUD income distribution data... Setting the bar for comparison! 📈')
+        geoids = []
+        for county in clarified_counties:
+            # Extract GEOID5 from county data if available
+            if counties_with_fips:
+                for county_data in counties_with_fips:
+                    if isinstance(county_data, dict) and 'geoid5' in county_data:
+                        geoids.append(str(county_data['geoid5']).zfill(5))
+            else:
+                # Try to extract from BigQuery results
+                county_df = pd.DataFrame(all_results)
+                if 'geoid5' in county_df.columns:
+                    geoids.extend(county_df['geoid5'].unique().tolist())
+        
+        # Get unique GEOIDs
+        geoids = list(set(geoids))
+        hud_data = get_hud_data_for_counties(geoids) if geoids else {}
+        
+        print(f"\n[DEBUG] Building report with {len(all_results)} records...", flush=True)
+        if progress_tracker:
+            progress_tracker.update_progress('building_report', 65, f'Processing {len(all_results):,} records... This may take a moment for large datasets! ⏳')
+        report_data = build_mortgage_report(all_results, clarified_counties, years, census_data=census_data, hud_data=hud_data, progress_tracker=progress_tracker)
         print(f"[DEBUG] Report building complete")
         
         # Add census data to report_data
         report_data['census_data'] = census_data
         
-        # Calculate total loans (sum of total_originations from all aggregated rows)
-        # all_results contains aggregated data (one row per lender/county/year)
-        # Each row has a total_originations count, so we sum those to get total loans
-        total_loans = 0
-        if all_results:
-            import pandas as pd
-            df = pd.DataFrame(all_results)
-            if 'total_originations' in df.columns:
-                total_loans = int(df['total_originations'].sum())
-            else:
-                # Fallback: if column doesn't exist, count rows (shouldn't happen)
-                total_loans = len(all_results)
-        
-        print(f"[DEBUG] Total loans calculated: {total_loans} (from {len(all_results)} aggregated rows)")
-        
-        # Save Excel report
-        if progress_tracker:
-            progress_tracker.update_progress('building_report')
-        
-        excel_path = os.path.join(OUTPUT_DIR, 'hmda_mortgage_analysis.xlsx')
-        # Prepare metadata for Notes sheet
-        excel_metadata = {
-            'counties': clarified_counties,
-            'years': years,
-            'total_records': total_loans,  # Use total loans, not row count
-            'generated_at': datetime.now().isoformat(),
-            'loan_purpose': loan_purpose if loan_purpose else ['purchase', 'refinance', 'equity'],  # Include loan purpose in metadata
-            'census_data': census_data  # Include Census data for Methods sheet
-        }
-        save_mortgage_excel_report(report_data, excel_path, metadata=excel_metadata)
-        print(f"Excel report saved: {excel_path}")
+        # Note: Excel report is now generated on-demand when user requests download
+        # This improves performance and prevents timeouts during analysis
         
         # Generate AI insights (optional if API key is configured)
         ai_insights = {}
         try:
-            from .analysis import LendSightAnalyzer
+            from justdata.apps.lendsight.analysis import LendSightAnalyzer
             from justdata.shared.analysis.ai_provider import convert_numpy_types
             
             # Prepare data for AI analysis
@@ -365,6 +391,11 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 final_year_origination_count = int(final_year_df['total_originations'].sum())
             
             # Prepare table data for AI analysis
+            # Note: Converting DataFrames to dicts can be slow for large datasets
+            # We optimize by only converting what's needed and using efficient methods
+            if progress_tracker:
+                progress_tracker.update_progress('generating_ai', 88, 'Preparing data for AI analysis... Almost there! 🤖')
+            
             by_lender_df = report_data.get('by_lender', pd.DataFrame())
             by_lender_data = convert_numpy_types(by_lender_df.to_dict('records') if not by_lender_df.empty else [])
             
@@ -379,6 +410,15 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             # Prepare top lenders detailed data
             top_lenders_detailed_df = report_data.get('top_lenders_detailed', pd.DataFrame())
             top_lenders_detailed_data = convert_numpy_types(top_lenders_detailed_df.to_dict('records') if not top_lenders_detailed_df.empty else [])
+            
+            # Prepare market concentration data
+            market_concentration_data = report_data.get('market_concentration', [])
+            if isinstance(market_concentration_data, pd.DataFrame):
+                market_concentration_data = convert_numpy_types(market_concentration_data.to_dict('records') if not market_concentration_data.empty else [])
+            elif isinstance(market_concentration_data, list):
+                market_concentration_data = convert_numpy_types(market_concentration_data)
+            else:
+                market_concentration_data = []
             
             # Safely get top lenders list
             top_lenders_list = []
@@ -405,6 +445,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'demographic_overview': demographic_data,
                 'income_neighborhood_indicators': income_neighborhood_data,
                 'top_lenders_detailed': top_lenders_detailed_data,
+                'market_concentration': market_concentration_data,
                 'trends_data': convert_numpy_types(report_data.get('trends', {}).to_dict('records') if not report_data.get('trends', pd.DataFrame()).empty else []),
                 'hhi': convert_numpy_types(hhi_data),
                 'county_data': convert_numpy_types(county_df.to_dict('records') if not county_df.empty else []),
@@ -412,8 +453,32 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'census_data': convert_numpy_types(census_data)  # Include Census data for context
             }
             
+            # Debug: Log what data is being passed to AI
+            print(f"[DEBUG] AI data summary:")
+            print(f"  - demographic_overview: {len(demographic_data)} records")
+            print(f"  - income_neighborhood_indicators: {len(income_neighborhood_data)} records")
+            print(f"  - top_lenders_detailed: {len(top_lenders_detailed_data)} records")
+            print(f"  - census_data: {len(census_data) if census_data else 0} counties")
+            
+            # Validate that we have data before calling AI
+            if len(demographic_data) == 0:
+                print(f"[WARNING] demographic_overview is empty - AI may return empty discussion")
+            if len(income_neighborhood_data) == 0:
+                print(f"[WARNING] income_neighborhood_indicators is empty - AI may return empty discussion")
+            if len(top_lenders_detailed_data) == 0:
+                print(f"[WARNING] top_lenders_detailed is empty - AI may return empty discussion")
+            print(f"  - income_neighborhood_indicators: {len(income_neighborhood_data)} records")
+            print(f"  - top_lenders_detailed: {len(top_lenders_detailed_data)} records")
+            print(f"  - census_data: {len(census_data)} counties")
+            if demographic_data:
+                print(f"  - demographic_overview sample (first record): {demographic_data[0] if len(demographic_data) > 0 else 'N/A'}")
+            if income_neighborhood_data:
+                print(f"  - income_neighborhood_indicators sample (first record): {income_neighborhood_data[0] if len(income_neighborhood_data) > 0 else 'N/A'}")
+            if top_lenders_detailed_data:
+                print(f"  - top_lenders_detailed sample (first record): {top_lenders_detailed_data[0] if len(top_lenders_detailed_data) > 0 else 'N/A'}")
+            
             if progress_tracker:
-                progress_tracker.update_progress('generating_ai')
+                progress_tracker.update_progress('generating_ai', 90, 'Generating AI narratives... Let the AI work its magic! ✨')
             
             # Initialize analyzer
             print(f"Initializing AI analyzer...")
@@ -421,102 +486,185 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             print(f"Years for AI: {years}")
             print(f"Final year origination count: {final_year_origination_count}")
             
+            # Check for API key before initializing (using unified environment system)
+            from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+            from justdata.shared.utils.env_utils import is_local_development
+            
+            # Ensure unified environment is loaded (primary method)
+            ensure_unified_env_loaded(verbose=False)
+            config = get_unified_config(load_env=False, verbose=False)
+            claude_api_key = config.get('CLAUDE_API_KEY')
+            analyzer = None
+            ai_insights = {}
+            ai_insights_enabled = False  # Track whether AI insights are enabled
+            
+            # Debug: Show what we found
+            print(f"[DEBUG] Checking for Claude API key...")
+            print(f"  CLAUDE_API_KEY from os.getenv: {os.getenv('CLAUDE_API_KEY') is not None}")
+            print(f"  ANTHROPIC_API_KEY from os.getenv: {os.getenv('ANTHROPIC_API_KEY') is not None}")
+            print(f"  Final claude_api_key result: {claude_api_key is not None}")
+            
+            if not claude_api_key:
+                print(f"[WARNING] CLAUDE_API_KEY not set - AI insights will not be generated")
+                print(f"[INFO] To enable AI insights, set CLAUDE_API_KEY environment variable in Render dashboard")
+                print(f"[INFO] Skipping AI analysis and continuing with report generation...")
+                ai_insights_enabled = False
+            else:
+                # Update environment variable with cleaned key
+                os.environ['CLAUDE_API_KEY'] = claude_api_key
+                ai_insights_enabled = True  # API key exists, AI should be enabled
+                print(f"[INFO] CLAUDE_API_KEY is set (length: {len(claude_api_key)})")
             try:
                 analyzer = LendSightAnalyzer()
                 print("AI analyzer initialized successfully")
+                ai_insights_enabled = True  # Analyzer initialized successfully
             except Exception as init_error:
                 print(f"Failed to initialize AI analyzer: {init_error}")
                 import traceback
                 traceback.print_exc()
-                raise Exception(f"AI analyzer initialization failed: {init_error}. Please check API key configuration.")
+                print(f"[WARNING] AI analyzer initialization failed, continuing without AI insights")
+                analyzer = None
+                ai_insights_enabled = False  # Analyzer failed to initialize
             
-            # Generate AI insights with progress tracking
+            # Generate AI insights with progress tracking (only if analyzer was successfully initialized)
             # NOTE: demographic_overview_intro, income_neighborhood_intro, and top_lenders_detailed_intro
             # are hardcoded in JavaScript, so we don't need AI calls for those.
-            ai_insights = {}
             
-            # Combined call 1: All table discussions (reduces 3 calls to 1)
-            if progress_tracker:
-                progress_tracker.update_ai_progress(1, 3, 'Table Discussions (Combined)')
-            print("  Generating all table discussions (combined call)...")
-            try:
-                discussions = analyzer.generate_all_table_discussions(ai_data)
-                print(f"  [DEBUG] Discussions returned: {list(discussions.keys())}")
-                print(f"  [DEBUG] demographic_overview_discussion length: {len(discussions.get('demographic_overview_discussion', ''))}")
-                print(f"  [DEBUG] income_neighborhood_discussion length: {len(discussions.get('income_neighborhood_discussion', ''))}")
-                print(f"  [DEBUG] top_lenders_detailed_discussion length: {len(discussions.get('top_lenders_detailed_discussion', ''))}")
-                ai_insights['demographic_overview_discussion'] = discussions.get('demographic_overview_discussion', '')
-                ai_insights['income_neighborhood_discussion'] = discussions.get('income_neighborhood_discussion', '')
-                ai_insights['top_lenders_detailed_discussion'] = discussions.get('top_lenders_detailed_discussion', '')
-                print("  [OK] All table discussions generated successfully")
-                print(f"  [DEBUG] ai_insights keys after storing: {list(ai_insights.keys())}")
-                print(f"  [DEBUG] Stored demographic_overview_discussion length: {len(ai_insights.get('demographic_overview_discussion', ''))}")
-            except Exception as gen_error:
-                print(f"  [ERROR] Error generating table discussions: {gen_error}")
-                import traceback
-                traceback.print_exc()
-                # Fallback to individual calls if combined call fails
-                print("  Falling back to individual discussion calls...")
+            if analyzer:
+                # Combined call 1: All table discussions (reduces 3 calls to 1)
+                if progress_tracker:
+                    progress_tracker.update_ai_progress(1, 3, 'Table Discussions (Combined)')
+                print("  Generating all table discussions (combined call)...")
                 try:
-                    ai_insights['demographic_overview_discussion'] = analyzer.generate_demographic_overview_discussion(ai_data)
-                    ai_insights['income_neighborhood_discussion'] = analyzer.generate_income_neighborhood_discussion(ai_data)
-                    ai_insights['top_lenders_detailed_discussion'] = analyzer.generate_top_lenders_detailed_discussion(ai_data)
-                except Exception as fallback_error:
-                    print(f"  [ERROR] Fallback also failed: {fallback_error}")
-                    raise
-            
-            # Call 2: Key findings (intro paragraph is now generated in JavaScript)
-            if progress_tracker:
-                progress_tracker.update_ai_progress(2, 3, 'Key Findings')
-            print("  Generating key findings...")
-            try:
-                ai_insights['key_findings'] = analyzer.generate_key_findings(ai_data)
-                print("  [OK] Key findings generated successfully")
-            except Exception as gen_error:
-                print(f"  [ERROR] Error generating key findings: {gen_error}")
-                import traceback
-                traceback.print_exc()
-                raise
-            
-            # Optional calls (only if needed - these may not be displayed in the report)
-            # Call 3: Trends analysis (if needed)
-            if progress_tracker:
-                progress_tracker.update_ai_progress(3, 3, 'Trends Analysis')
-            print("  Generating trends analysis...")
-            try:
-                ai_insights['trends_analysis'] = analyzer.generate_trends_analysis(ai_data)
-                print("  [OK] Trends analysis generated successfully")
-            except Exception as gen_error:
-                print(f"  [WARNING] Error generating trends analysis (non-critical): {gen_error}")
-                ai_insights['trends_analysis'] = ""
-            
-            # Note: lender_strategies and community_impact are not currently displayed in the report template
-            # so we skip them to reduce API calls
-            
-            # Generate table-specific introductions and narratives
-            print("Generating table introductions and narratives...")
-            table_introductions = {}
-            table_narratives = {}
-            try:
-                if not report_data.get('summary', pd.DataFrame()).empty:
-                    table_introductions['table1'] = analyzer.generate_table_introduction('table1', ai_data)
-                    table_narratives['table1'] = analyzer.generate_table_narrative('table1', ai_data)
-                if not report_data.get('by_lender', pd.DataFrame()).empty:
-                    table_introductions['table2'] = analyzer.generate_table_introduction('table2', ai_data)
-                    table_narratives['table2'] = analyzer.generate_table_narrative('table2', ai_data)
-                if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
-                    table_introductions['table3'] = analyzer.generate_table_introduction('table3', ai_data)
-                    table_narratives['table3'] = analyzer.generate_table_narrative('table3', ai_data)
-            except Exception as intro_error:
-                print(f"Error generating table introductions/narratives: {intro_error}")
-                import traceback
-                traceback.print_exc()
-                raise
-            
-            ai_insights['table_introductions'] = table_introductions
-            ai_insights['table_narratives'] = table_narratives
-            
-            print("AI insights generated successfully")
+                    discussions = analyzer.generate_all_table_discussions(ai_data)
+                    print(f"  [DEBUG] Discussions returned: {list(discussions.keys())}")
+                    
+                    # Extract and validate each discussion
+                    demo_disc = discussions.get('demographic_overview_discussion', '')
+                    income_disc = discussions.get('income_neighborhood_discussion', '')
+                    lenders_disc = discussions.get('top_lenders_detailed_discussion', '')
+                    market_conc_disc = discussions.get('market_concentration_discussion', '')
+                    
+                    print(f"  [DEBUG] demographic_overview_discussion length: {len(demo_disc)}")
+                    print(f"  [DEBUG] income_neighborhood_discussion length: {len(income_disc)}")
+                    print(f"  [DEBUG] top_lenders_detailed_discussion length: {len(lenders_disc)}")
+                    print(f"  [DEBUG] market_concentration_discussion length: {len(market_conc_disc)}")
+                    
+                    # Check if discussions are empty and count how many are empty
+                    empty_count = 0
+                    if not demo_disc or len(demo_disc.strip()) == 0:
+                        print(f"  [WARNING] demographic_overview_discussion is empty or whitespace only")
+                        empty_count += 1
+                    if not income_disc or len(income_disc.strip()) == 0:
+                        print(f"  [WARNING] income_neighborhood_discussion is empty or whitespace only")
+                        empty_count += 1
+                    if not lenders_disc or len(lenders_disc.strip()) == 0:
+                        print(f"  [WARNING] top_lenders_detailed_discussion is empty or whitespace only")
+                        empty_count += 1
+                    if not market_conc_disc or len(market_conc_disc.strip()) == 0:
+                        print(f"  [WARNING] market_concentration_discussion is empty or whitespace only")
+                        empty_count += 1
+
+                    # If ALL discussions are empty, trigger fallback to individual calls
+                    if empty_count == 4:
+                        print(f"  [WARNING] All 4 discussions are empty, triggering fallback to individual calls")
+                        raise ValueError("All discussions returned empty from combined call")
+
+                    # Store the discussions (even if some are empty, so frontend knows they were attempted)
+                    ai_insights['demographic_overview_discussion'] = demo_disc
+                    ai_insights['income_neighborhood_discussion'] = income_disc
+                    ai_insights['top_lenders_detailed_discussion'] = lenders_disc
+                    ai_insights['market_concentration_discussion'] = market_conc_disc
+
+                    print("  [OK] All table discussions generated successfully")
+                    print(f"  [DEBUG] ai_insights keys after storing: {list(ai_insights.keys())}")
+                    print(f"  [DEBUG] Stored demographic_overview_discussion length: {len(ai_insights.get('demographic_overview_discussion', ''))}")
+                    print(f"  [DEBUG] Stored income_neighborhood_discussion length: {len(ai_insights.get('income_neighborhood_discussion', ''))}")
+                    print(f"  [DEBUG] Stored top_lenders_detailed_discussion length: {len(ai_insights.get('top_lenders_detailed_discussion', ''))}")
+                    print(f"  [DEBUG] Stored market_concentration_discussion length: {len(ai_insights.get('market_concentration_discussion', ''))}")
+                except Exception as gen_error:
+                    print(f"  [ERROR] Error generating table discussions: {gen_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Fallback to individual calls if combined call fails
+                    print("  Falling back to individual discussion calls...")
+                    try:
+                        print("    Generating demographic_overview_discussion individually...")
+                        ai_insights['demographic_overview_discussion'] = analyzer.generate_demographic_overview_discussion(ai_data)
+                        print(f"    [OK] demographic_overview_discussion length: {len(ai_insights.get('demographic_overview_discussion', ''))}")
+
+                        print("    Generating income_neighborhood_discussion individually...")
+                        ai_insights['income_neighborhood_discussion'] = analyzer.generate_income_neighborhood_discussion(ai_data)
+                        print(f"    [OK] income_neighborhood_discussion length: {len(ai_insights.get('income_neighborhood_discussion', ''))}")
+
+                        print("    Generating top_lenders_detailed_discussion individually...")
+                        ai_insights['top_lenders_detailed_discussion'] = analyzer.generate_top_lenders_detailed_discussion(ai_data)
+                        print(f"    [OK] top_lenders_detailed_discussion length: {len(ai_insights.get('top_lenders_detailed_discussion', ''))}")
+
+                        # Note: market_concentration_discussion is only available via combined call
+                        print("    [INFO] market_concentration_discussion not available in fallback mode")
+                        ai_insights['market_concentration_discussion'] = ''
+                    except Exception as fallback_error:
+                        print(f"  [ERROR] Fallback also failed: {fallback_error}")
+                        traceback.print_exc()
+                        # Don't raise - continue without these insights
+                
+                # Call 2: Key findings (intro paragraph is now generated in JavaScript)
+                if progress_tracker:
+                    progress_tracker.update_ai_progress(2, 3, 'Key Findings')
+                print("  Generating key findings...")
+                try:
+                    ai_insights['key_findings'] = analyzer.generate_key_findings(ai_data)
+                    print("  [OK] Key findings generated successfully")
+                except Exception as gen_error:
+                    print(f"  [ERROR] Error generating key findings: {gen_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Don't raise - continue without key findings
+                
+                # Optional calls (only if needed - these may not be displayed in the report)
+                # Call 3: Trends analysis (if needed)
+                if progress_tracker:
+                    progress_tracker.update_ai_progress(3, 3, 'Trends Analysis')
+                print("  Generating trends analysis...")
+                try:
+                    ai_insights['trends_analysis'] = analyzer.generate_trends_analysis(ai_data)
+                    print("  [OK] Trends analysis generated successfully")
+                except Exception as gen_error:
+                    print(f"  [WARNING] Error generating trends analysis (non-critical): {gen_error}")
+                    ai_insights['trends_analysis'] = ""
+                
+                # Note: lender_strategies and community_impact are not currently displayed in the report template
+                # so we skip them to reduce API calls
+                
+                # Generate table-specific introductions and narratives
+                print("Generating table introductions and narratives...")
+                table_introductions = {}
+                table_narratives = {}
+                try:
+                    if not report_data.get('summary', pd.DataFrame()).empty:
+                        table_introductions['table1'] = analyzer.generate_table_introduction('table1', ai_data)
+                        table_narratives['table1'] = analyzer.generate_table_narrative('table1', ai_data)
+                    if not report_data.get('by_lender', pd.DataFrame()).empty:
+                        table_introductions['table2'] = analyzer.generate_table_introduction('table2', ai_data)
+                        table_narratives['table2'] = analyzer.generate_table_narrative('table2', ai_data)
+                    if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
+                        table_introductions['table3'] = analyzer.generate_table_introduction('table3', ai_data)
+                        table_narratives['table3'] = analyzer.generate_table_narrative('table3', ai_data)
+                except Exception as intro_error:
+                    print(f"Error generating table introductions/narratives: {intro_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Don't raise - continue without table intros/narratives
+                
+                ai_insights['table_introductions'] = table_introductions
+                ai_insights['table_narratives'] = table_narratives
+                
+                print("AI insights generated successfully")
+            else:
+                print("[INFO] Skipping AI insights generation (no API key or analyzer not initialized)")
+                ai_insights = {}
+                ai_insights_enabled = False  # Ensure flag is set when skipping
             
         except Exception as e:
             import traceback
@@ -548,15 +696,22 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'methods': 'Methods section not available - AI analysis failed.'
             }
         
-        # Mark as completed
+        # Finalize and complete
         if progress_tracker:
-            progress_tracker.update_progress('completed')
+            progress_tracker.update_progress('completed', 100, 'Finalizing report... Dotting the i\'s and crossing the t\'s! ✅')
+            # Add a small delay to ensure the message is sent and displayed before completion
+            import time
+            time.sleep(0.5)  # Brief pause to ensure SSE message is sent and user sees it
         
-        print("\nAnalysis completed successfully!")
+        print("Analysis completed successfully!")
+        
+        # Mark as completed (this will call complete() which sends the final message)
+        if progress_tracker:
+            progress_tracker.complete(success=True)
         
         # Ensure census_data is properly formatted for JSON serialization
-        census_data_serialized = None
-        if census_data and (not isinstance(census_data, dict) or len(census_data) > 0):
+        census_data_serialized = {}
+        if census_data and len(census_data) > 0:
             from justdata.shared.analysis.ai_provider import convert_numpy_types
             try:
                 print(f"  [DEBUG] Before serialization: {len(census_data)} counties")
@@ -594,14 +749,9 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 print(f"  [ERROR] Error serializing census_data: {ser_error}")
                 import traceback
                 traceback.print_exc()
-                census_data_serialized = None
+                census_data_serialized = {}
         else:
-            if not census_data or (isinstance(census_data, dict) and len(census_data) == 0):
-                print(f"  [WARNING] No census_data to serialize - Census API returned no data")
-                census_data_serialized = None  # Store None instead of empty dict
-            else:
-                print(f"  [WARNING] No census_data to serialize (type: {type(census_data)}, len: {len(census_data) if census_data else 0})")
-                census_data_serialized = None
+            print(f"  [WARNING] No census_data to serialize (type: {type(census_data)}, len: {len(census_data) if census_data else 0})")
         
         # Debug: Check AI insights before returning
         print(f"\n[DEBUG] Final ai_insights keys: {list(ai_insights.keys())}")
@@ -619,16 +769,18 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             'metadata': {
                 'counties': clarified_counties,
                 'years': years,
-                'total_records': total_loans,  # Use total loans, not row count
+                'total_records': len(all_results),
                 'generated_at': datetime.now().isoformat(),
                 'loan_purpose': loan_purpose if loan_purpose else ['purchase', 'refinance', 'equity'],  # Include loan purpose in metadata
-                'census_data': census_data_serialized  # Include Census data for frontend display (serialized)
+                'census_data': census_data_serialized,  # Include Census data for frontend display (serialized)
+                'hhi': convert_numpy_types(hhi_data),  # Include HHI data for frontend display
+                'version': __version__,  # Include version number
+                'ai_insights_enabled': ai_insights_enabled  # Flag indicating if AI insights are available
             },
             'message': f'Analysis completed successfully. Generated reports for {len(clarified_counties)} counties and {len(years)} years.',
             'counties': clarified_counties,
             'years': years,
-            'records': len(all_results),
-            'excel_file': excel_path
+            'records': len(all_results)
         }
         
     except Exception as e:

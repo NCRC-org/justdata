@@ -260,7 +260,7 @@ class WeeklyDataUpdate:
     """Comprehensive weekly data update process."""
 
     def __init__(self):
-        from apps.electwatch.services.data_store import get_weekly_data_path
+        from justdata.apps.electwatch.services.data_store import get_weekly_data_path
 
         self.start_time = datetime.now()
         self.weekly_dir = get_weekly_data_path(self.start_time)
@@ -346,7 +346,7 @@ class WeeklyDataUpdate:
         logger.info("
 --- Fetching ALL Congress Members from Congress.gov ---")
         try:
-            from apps.electwatch.services.congress_api_client import CongressAPIClient
+            from justdata.apps.electwatch.services.congress_api_client import CongressAPIClient
             client = CongressAPIClient()
 
             members = client.get_all_members()
@@ -393,7 +393,7 @@ class WeeklyDataUpdate:
         """
         logger.info("\n--- Fetching FMP Congressional Trading (Financial Sector) ---")
         try:
-            from apps.electwatch.services.fmp_client import FMPClient, ALL_FINANCIAL_SYMBOLS
+            from justdata.apps.electwatch.services.fmp_client import FMPClient, ALL_FINANCIAL_SYMBOLS
             client = FMPClient()
 
             if not client.test_connection():
@@ -560,7 +560,7 @@ class WeeklyDataUpdate:
         """Fetch congressional trading data from Quiver (LEGACY - replaced by FMP)."""
         logger.info("\n--- Fetching Quiver Congressional Trading ---")
         try:
-            from apps.electwatch.services.quiver_client import QuiverClient
+            from justdata.apps.electwatch.services.quiver_client import QuiverClient
             client = QuiverClient()
 
             if not client.test_connection():
@@ -692,7 +692,7 @@ class WeeklyDataUpdate:
         logger.info("\n--- Fetching FEC Campaign Finance ---")
         try:
             import time
-            from apps.electwatch.services.fec_client import FECClient
+            from justdata.apps.electwatch.services.fec_client import FECClient
             client = FECClient()
 
             if not client.test_connection():
@@ -847,76 +847,70 @@ class WeeklyDataUpdate:
             'INDEPENDENT BANKER', 'AMERICAN BANKER', 'CREDIT UNION'
         ]
 
-        # Use FEC election cycles instead of rolling 12-month window
-        # FEC cycles are 2-year periods identified by the election year (even years)
-        # We use current cycle + previous cycle = 4 years of data
-        current_year = datetime.now().year
-        # Cycles are even years - find the current and previous cycles
-        current_cycle = current_year if current_year % 2 == 0 else current_year + 1
-        previous_cycle = current_cycle - 2
-        cycles = [current_cycle, previous_cycle]
-        logger.info(f"  Using FEC election cycles: {previous_cycle} and {current_cycle} (2 cycles = 4 years)")
+        # Calculate rolling 12-month date window
+        rolling_end_date = datetime.now()
+        rolling_start_date = rolling_end_date - timedelta(days=365)
+        min_date_str = rolling_start_date.strftime('%Y-%m-%d')
+        max_date_str = rolling_end_date.strftime('%Y-%m-%d')
+        logger.info(f"  Using rolling 12-month window: {min_date_str} to {max_date_str}")
 
         def get_financial_pac_total(committee_id: str) -> tuple:
-            """Get total financial sector PAC contributions to a candidate's committee (2 election cycles)."""
+            """Get total financial sector PAC contributions to a candidate's committee (rolling 12 months)."""
             url = 'https://api.open.fec.gov/v1/schedules/schedule_a/'
             total = 0
             contributors = []
+            page = 1
+            max_pages = 20  # Limit pages to avoid excessive API calls
 
-            # Query each cycle separately to get complete data
-            for cycle in cycles:
-                page = 1
-                max_pages = 20  # Limit pages per cycle to avoid excessive API calls
+            while page <= max_pages:
+                params = {
+                    'api_key': api_key,
+                    'committee_id': committee_id,
+                    'min_date': min_date_str,
+                    'max_date': max_date_str,
+                    'contributor_type': 'committee',
+                    'per_page': 100,
+                    'page': page
+                }
 
-                while page <= max_pages:
-                    params = {
-                        'api_key': api_key,
-                        'committee_id': committee_id,
-                        'two_year_transaction_period': cycle,
-                        'contributor_type': 'committee',
-                        'per_page': 100,
-                        'page': page
-                    }
+                try:
+                    time.sleep(0.5)  # Rate limiting
+                    r = requests.get(url, params=params, timeout=60)
 
-                    try:
-                        time.sleep(0.5)  # Rate limiting
-                        r = requests.get(url, params=params, timeout=60)
+                    if r.status_code == 429:
+                        logger.warning("  Rate limited - waiting 60 seconds")
+                        time.sleep(60)
+                        continue
 
-                        if r.status_code == 429:
-                            logger.warning("  Rate limited - waiting 60 seconds")
-                            time.sleep(60)
-                            continue
-
-                        if not r.ok:
-                            break
-
-                        data = r.json()
-                        results = data.get('results', [])
-                        if not results:
-                            break
-
-                        for c in results:
-                            contrib_name = c.get('contributor_name', '').upper()
-                            amt = c.get('contribution_receipt_amount', 0)
-                            # Only count PAC contributions (not employee contributions)
-                            # Must have "PAC" or "POLITICAL ACTION" in name AND match financial keywords
-                            is_pac = 'PAC' in contrib_name or 'POLITICAL ACTION' in contrib_name or 'POLITICAL FUND' in contrib_name
-                            if amt > 0 and is_pac and any(kw in contrib_name for kw in FINANCIAL_KEYWORDS):
-                                total += amt
-                                contributors.append({
-                                    'name': c.get('contributor_name', ''),
-                                    'amount': amt,
-                                    'cycle': cycle
-                                })
-
-                        pages = data.get('pagination', {}).get('pages', 1)
-                        if page >= pages:
-                            break
-                        page += 1
-
-                    except Exception as e:
-                        logger.error(f"  Error fetching receipts for cycle {cycle}: {e}")
+                    if not r.ok:
                         break
+
+                    data = r.json()
+                    results = data.get('results', [])
+                    if not results:
+                        break
+
+                    for c in results:
+                        name = c.get('contributor_name', '').upper()
+                        amt = c.get('contribution_receipt_amount', 0)
+                        # Only count PAC contributions (not employee contributions)
+                        # Must have "PAC" or "POLITICAL ACTION" in name AND match financial keywords
+                        is_pac = 'PAC' in name or 'POLITICAL ACTION' in name or 'POLITICAL FUND' in name
+                        if amt > 0 and is_pac and any(kw in name for kw in FINANCIAL_KEYWORDS):
+                            total += amt
+                            contributors.append({
+                                'name': c.get('contributor_name', ''),
+                                'amount': amt
+                            })
+
+                    pages = data.get('pagination', {}).get('pages', 1)
+                    if page >= pages:
+                        break
+                    page += 1
+
+                except Exception as e:
+                    logger.error(f"  Error fetching receipts: {e}")
+                    break
 
             return total, contributors
 
@@ -1044,7 +1038,7 @@ class WeeklyDataUpdate:
         """Fetch bills and member data from Congress.gov."""
         logger.info("\n--- Fetching Congress.gov Data ---")
         try:
-            from apps.electwatch.services.congress_api_client import CongressAPIClient
+            from justdata.apps.electwatch.services.congress_api_client import CongressAPIClient
             client = CongressAPIClient()
 
             # Fetch recent financial-related bills
@@ -1069,7 +1063,7 @@ class WeeklyDataUpdate:
         """Fetch news and stock data from Finnhub."""
         logger.info("\n--- Fetching Finnhub Data ---")
         try:
-            from apps.electwatch.services.finnhub_client import FinnhubClient
+            from justdata.apps.electwatch.services.finnhub_client import FinnhubClient
             client = FinnhubClient()
 
             if not client.test_connection():
@@ -1122,7 +1116,7 @@ class WeeklyDataUpdate:
         """Fetch SEC EDGAR filings."""
         logger.info("\n--- Fetching SEC EDGAR Data ---")
         try:
-            from apps.electwatch.services.sec_client import SECClient
+            from justdata.apps.electwatch.services.sec_client import SECClient
             client = SECClient()
 
             # Add SEC filings to existing firms data
@@ -1154,7 +1148,7 @@ class WeeklyDataUpdate:
         """Fetch news from NewsAPI with quality filtering."""
         logger.info("\n--- Fetching NewsAPI Data ---")
         try:
-            from apps.electwatch.services.news_client import NewsClient
+            from justdata.apps.electwatch.services.news_client import NewsClient
             client = NewsClient()
 
             if not client.test_connection():
@@ -1207,7 +1201,7 @@ class WeeklyDataUpdate:
 
     def process_officials(self):
         """Process and enrich officials data."""
-        from apps.electwatch.services.firm_mapper import FirmMapper, FINANCIAL_SECTORS
+        from justdata.apps.electwatch.services.firm_mapper import FirmMapper, FINANCIAL_SECTORS
 
         mapper = FirmMapper()
 
@@ -1649,7 +1643,7 @@ class WeeklyDataUpdate:
             official['firms'] = sorted_firms[:10]
 
             # Get net worth data for display (informational only, not used in scoring)
-            from apps.electwatch.services.net_worth_client import get_net_worth, get_wealth_tier
+            from justdata.apps.electwatch.services.net_worth_client import get_net_worth, get_wealth_tier
 
             net_worth_data = get_net_worth(official.get('name', ''))
             official['net_worth'] = net_worth_data
@@ -1782,7 +1776,7 @@ class WeeklyDataUpdate:
 
     def process_industries(self):
         """Build industry aggregations."""
-        from apps.electwatch.services.firm_mapper import FINANCIAL_SECTORS
+        from justdata.apps.electwatch.services.firm_mapper import FINANCIAL_SECTORS
 
         industries = []
         for sector_id, sector_info in FINANCIAL_SECTORS.items():
@@ -1995,7 +1989,7 @@ Be factual and avoid speculation."""
         """Generate AI pattern insights for the dashboard using the app's insight generator."""
         try:
             # Import the insight generator from the app
-            from apps.electwatch.app import _generate_ai_pattern_insights
+            from justdata.apps.electwatch.app import _generate_ai_pattern_insights
 
             logger.info("Calling AI to generate pattern insights...")
             insights = _generate_ai_pattern_insights()
@@ -2019,7 +2013,7 @@ Be factual and avoid speculation."""
 
     def save_all_data(self):
         """Save all processed data to storage."""
-        from apps.electwatch.services.data_store import (
+        from justdata.apps.electwatch.services.data_store import (
             save_officials, save_firms, save_industries,
             save_committees, save_news, save_summaries, save_insights, save_metadata
         )
@@ -2049,7 +2043,7 @@ Be factual and avoid speculation."""
             save_insights(insights, self.weekly_dir)
         else:
             logger.warning("No insights generated - using sample insights")
-            from apps.electwatch.app import _get_sample_insights
+            from justdata.apps.electwatch.app import _get_sample_insights
             save_insights(_get_sample_insights(), self.weekly_dir)
 
         # Calculate next update time (next Sunday midnight)
@@ -2093,7 +2087,7 @@ Be factual and avoid speculation."""
 
     def verify_data(self) -> bool:
         """Verify data integrity."""
-        from apps.electwatch.services.data_store import (
+        from justdata.apps.electwatch.services.data_store import (
             get_officials, get_firms, get_industries,
             get_committees, get_news, get_metadata
         )

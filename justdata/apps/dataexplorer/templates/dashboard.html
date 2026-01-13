@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DataExplorer 2.0 - Interactive Financial Data Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('dataexplorer.static', filename='css/dashboard.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 <body>
@@ -115,6 +115,6 @@
         </footer>
     </div>
 
-    <script src="{{ url_for('dataexplorer.static', filename='js/dashboard.js') }}?v={{ version }}"></script>
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ version }}"></script>
 </body>
 </html>

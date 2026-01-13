@@ -21,13 +21,13 @@ REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
 # Import configuration
-from apps.electwatch.config import ElectWatchConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
-from apps.electwatch.version import __version__
+from justdata.apps.electwatch.config import ElectWatchConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
+from justdata.apps.electwatch.version import __version__
 
 # Import shared utilities
-from shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
-from shared.web.app_factory import create_app
-from shared.utils.progress_tracker import (
+from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+from justdata.shared.web.app_factory import create_app
+from justdata.shared.utils.progress_tracker import (
     get_progress, update_progress, create_progress_tracker,
     store_analysis_result, get_analysis_result
 )
@@ -116,7 +116,7 @@ def official_profile(official_id: str):
 @app.route('/industry/<sector>')
 def industry_view(sector: str):
     """Industry-specific view."""
-    from apps.electwatch.services.firm_mapper import get_sector_info
+    from justdata.apps.electwatch.services.firm_mapper import get_sector_info
     sector_info = get_sector_info(sector)
     if not sector_info:
         return jsonify({'error': f'Unknown sector: {sector}'}), 404
@@ -177,7 +177,7 @@ def api_get_officials():
 
     # PRIORITY 1: Try to get pre-computed weekly data from data store
     try:
-        from apps.electwatch.services.data_store import get_officials, get_metadata
+        from justdata.apps.electwatch.services.data_store import get_officials, get_metadata
         stored_officials = get_officials()
         metadata = get_metadata()
 
@@ -234,7 +234,7 @@ def api_get_officials():
                 photo_attribution = None
                 if o.get('photo_url'):
                     try:
-                        from apps.electwatch.services.photo_service import get_photo_citation_for_api
+                        from justdata.apps.electwatch.services.photo_service import get_photo_citation_for_api
                         photo_attribution = get_photo_citation_for_api(
                             name=o.get('name', ''),
                             photo_url=o.get('photo_url'),
@@ -821,7 +821,7 @@ def api_get_official(official_id: str):
     """Get detailed data for a specific official from weekly data store."""
     # PRIORITY 1: Try to get pre-computed weekly data from data store
     try:
-        from apps.electwatch.services.data_store import get_official, get_metadata
+        from justdata.apps.electwatch.services.data_store import get_official, get_metadata
         stored_official = get_official(official_id)
         metadata = get_metadata()
 
@@ -884,7 +884,7 @@ def api_get_official(official_id: str):
             # Photos sourced from Wikimedia Commons or U.S. House Clerk / Bioguide
             if official.get('photo_url'):
                 try:
-                    from apps.electwatch.services.photo_service import get_photo_citation_for_api
+                    from justdata.apps.electwatch.services.photo_service import get_photo_citation_for_api
                     official['photo_attribution'] = get_photo_citation_for_api(
                         name=official.get('name', ''),
                         photo_url=official.get('photo_url'),
@@ -1202,14 +1202,14 @@ def _build_industry_response(sector: str, sector_info: dict, data: dict):
 @app.route('/api/industry/<sector>', methods=['GET'])
 def api_get_industry(sector: str):
     """Get officials involved in a specific industry sector."""
-    from apps.electwatch.services.firm_mapper import get_sector_info
+    from justdata.apps.electwatch.services.firm_mapper import get_sector_info
     sector_info = get_sector_info(sector)
     if not sector_info:
         return jsonify({'error': f'Unknown sector: {sector}'}), 404
 
     # Try to get data from weekly data store first
     try:
-        from apps.electwatch.services.data_store import get_officials, get_industry
+        from justdata.apps.electwatch.services.data_store import get_officials, get_industry
         all_officials = get_officials()
 
         if all_officials:
@@ -1297,7 +1297,7 @@ def api_get_industry(sector: str):
 
     # Try to get live data
     try:
-        from apps.electwatch.services.data_aggregator import get_data_aggregator
+        from justdata.apps.electwatch.services.data_aggregator import get_data_aggregator
         aggregator = get_data_aggregator()
         live_data = aggregator.get_industry_detail(sector)
 
@@ -1698,7 +1698,7 @@ def api_get_committee(committee_id: str):
     # Try to get financial data from data store and merge with master list
     real_members = []
     try:
-        from apps.electwatch.services.data_store import get_officials
+        from justdata.apps.electwatch.services.data_store import get_officials
         all_officials = get_officials()
 
         # Create lookup by name for quick matching
@@ -1817,7 +1817,7 @@ def api_get_committee(committee_id: str):
     # News - try to get real news from data store first
     news = []
     try:
-        from apps.electwatch.services.data_store import get_news
+        from justdata.apps.electwatch.services.data_store import get_news
         all_news = get_news()
         committee_keywords = [committee['name'].lower(), committee.get('full_name', '').lower()]
 
@@ -1879,7 +1879,7 @@ def api_get_freshness():
 
     # Try to get actual metadata from data store
     try:
-        from apps.electwatch.services.data_store import get_metadata, get_freshness
+        from justdata.apps.electwatch.services.data_store import get_metadata, get_freshness
         metadata = get_metadata()
 
         if metadata.get('status') == 'valid':
@@ -1967,11 +1967,11 @@ def api_get_firm_detail(firm_name: str):
         - Regulatory/litigation mentions
         - Recent news
     """
-    from apps.electwatch.services.sec_client import get_sample_sec_data
+    from justdata.apps.electwatch.services.sec_client import get_sample_sec_data
 
     # Try to get live data first
     try:
-        from apps.electwatch.services.data_aggregator import get_data_aggregator
+        from justdata.apps.electwatch.services.data_aggregator import get_data_aggregator
         aggregator = get_data_aggregator()
         live_data = aggregator.get_firm_detail(firm_name)
 
@@ -2058,8 +2058,8 @@ def api_get_firm_detail(firm_name: str):
 
     # Try to get data from weekly data store
     try:
-        from apps.electwatch.services.data_store import get_officials
-        from apps.electwatch.services.firm_mapper import FirmMapper
+        from justdata.apps.electwatch.services.data_store import get_officials
+        from justdata.apps.electwatch.services.firm_mapper import FirmMapper
         all_officials = get_officials()
 
         # Get firm record to find associated PACs
@@ -2107,7 +2107,7 @@ def api_get_firm_detail(firm_name: str):
             # If no firms data, check trades array for ticker match
             if not has_match and official.get('trades'):
                 # Check if official traded this ticker
-                from apps.electwatch.services.firm_mapper import AmountRange
+                from justdata.apps.electwatch.services.firm_mapper import AmountRange
                 for trade in official.get('trades', []):
                     # Handle both dict and string formats
                     if isinstance(trade, dict):
@@ -2472,7 +2472,7 @@ def api_search_bills():
         q: Search query (e.g., "cryptocurrency", "H.R. 4763", "stablecoin")
         limit: Max results (default 20)
     """
-    from apps.electwatch.services.congress_api_client import get_congress_client
+    from justdata.apps.electwatch.services.congress_api_client import get_congress_client
 
     query = request.args.get('q', '').strip()
     limit = int(request.args.get('limit', 20))
@@ -2502,7 +2502,7 @@ def api_get_bill(bill_id: str):
     Args:
         bill_id: Bill identifier like "hr4763", "s1234", "H.R. 4763"
     """
-    from apps.electwatch.services.congress_api_client import get_congress_client
+    from justdata.apps.electwatch.services.congress_api_client import get_congress_client
 
     client = get_congress_client()
 
@@ -2689,7 +2689,7 @@ def api_get_insights():
     like coordinated contributions, stock trading aligned with PAC activity, etc.
     """
     try:
-        from apps.electwatch.services.data_store import get_insights, get_insights_metadata
+        from justdata.apps.electwatch.services.data_store import get_insights, get_insights_metadata
 
         # Check if refresh is requested (dev/testing only)
         refresh = request.args.get('refresh', 'false').lower() == 'true'
@@ -2929,8 +2929,8 @@ def _generate_ai_pattern_insights():
     import sys
     print("[AI] Starting insight generation...", flush=True)
     try:
-        from shared.analysis.ai_provider import AIAnalyzer
-        from apps.electwatch.services.data_store import get_officials, get_firms, get_metadata
+        from justdata.shared.analysis.ai_provider import AIAnalyzer
+        from justdata.apps.electwatch.services.data_store import get_officials, get_firms, get_metadata
 
         print("[AI] Imports successful, loading data...", flush=True)
 
@@ -3109,7 +3109,7 @@ def api_analyze():
 
         def run_analysis():
             try:
-                from apps.electwatch.core import run_official_analysis
+                from justdata.apps.electwatch.core import run_official_analysis
                 result = run_official_analysis(
                     official_id=official_id,
                     include_ai=include_ai,
@@ -3205,7 +3205,7 @@ def download():
 
 def _get_sectors():
     """Get all sector definitions."""
-    from apps.electwatch.services.firm_mapper import get_mapper
+    from justdata.apps.electwatch.services.firm_mapper import get_mapper
     return get_mapper().get_all_sectors()
 
 

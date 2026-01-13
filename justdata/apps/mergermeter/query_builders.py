@@ -132,15 +132,18 @@ WHERE FALSE
     query = f"""
 WITH cbsa_crosswalk AS (
     SELECT
-        geoid5 as county_code,
-        cbsa_code,
-        cbsa as cbsa_name
+        CAST(geoid5 AS STRING) as county_code,
+        -- Treat NULL/empty cbsa_code as '99999' for rural areas
+        COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
+        COALESCE(cbsa, 'Rural Area') as cbsa_name
     FROM `hdma1-242116.geo.cbsa_to_county`
 ),
+-- Filter HMDA data to user-selected assessment area counties
 filtered_hmda AS (
-    SELECT 
+    SELECT
         CAST(h.activity_year AS STRING) as activity_year,
-        c.cbsa_code,
+        -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
+        COALESCE(c.cbsa_code, '99999') as cbsa_code,
         h.loan_amount,
         CASE 
             WHEN h.tract_to_msa_income_percentage IS NOT NULL
@@ -254,9 +257,8 @@ filtered_hmda AS (
         END as is_hopi
     FROM `hdma1-242116.hmda.hmda` h
     LEFT JOIN cbsa_crosswalk c
-        ON CAST(h.county_code AS STRING) = c.county_code
+        ON LPAD(CAST(h.county_code AS STRING), 5, '0') = c.county_code
     WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
-        AND CAST(h.county_code AS STRING) IN ('{geoid5_list}')
         {action_taken_filter}
         {occupancy_filter}
         {reverse_filter}
@@ -264,6 +266,8 @@ filtered_hmda AS (
         {units_filter}
         AND h.lei = '{subject_lei}'
         {loan_purpose_filter}
+        -- Filter to user-selected assessment area counties (county_code in HMDA is the 5-digit GEOID)
+        AND LPAD(CAST(h.county_code AS STRING), 5, '0') IN ('{geoid5_list}')
 ),
 aggregated_metrics AS (
     SELECT 
@@ -313,6 +317,11 @@ def build_hmda_peer_query(
     construction_method: str = '1',
     not_reverse: str = '1'
 ) -> str:
+    """
+    Build peer HMDA query.
+    NOTE: Qualified counties are determined SOLELY by subject lender's applications.
+    Peers have no role in determining which CBSAs/counties are included.
+    """
     """
     Build HMDA query for peer banks (50%-200% volume rule).
     
@@ -426,15 +435,18 @@ WHERE FALSE
     query = f"""
 WITH cbsa_crosswalk AS (
     SELECT
-        geoid5 as county_code,
-        cbsa_code,
-        cbsa as cbsa_name
+        CAST(geoid5 AS STRING) as county_code,
+        -- Treat NULL/empty cbsa_code as '99999' for rural areas
+        COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
+        COALESCE(cbsa, 'Rural Area') as cbsa_name
     FROM `hdma1-242116.geo.cbsa_to_county`
 ),
+-- Filter HMDA data to user-selected assessment area counties (includes all lenders for peer comparison)
 filtered_hmda AS (
-    SELECT 
+    SELECT
         CAST(h.activity_year AS STRING) as activity_year,
-        c.cbsa_code,
+        -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
+        COALESCE(c.cbsa_code, '99999') as cbsa_code,
         h.lei,
         h.loan_amount,
         CASE 
@@ -549,15 +561,16 @@ filtered_hmda AS (
         END as is_hopi
     FROM `hdma1-242116.hmda.hmda` h
     LEFT JOIN cbsa_crosswalk c
-        ON CAST(h.county_code AS STRING) = c.county_code
+        ON LPAD(CAST(h.county_code AS STRING), 5, '0') = c.county_code
     WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
-        AND CAST(h.county_code AS STRING) IN ('{geoid5_list}')
         {action_taken_filter}
         {occupancy_filter}
         {reverse_filter}
         {construction_filter}
         {units_filter}
         {loan_purpose_filter}
+        -- Filter to user-selected assessment area counties (county_code in HMDA is the 5-digit GEOID)
+        AND LPAD(CAST(h.county_code AS STRING), 5, '0') IN ('{geoid5_list}')
 ),
 subject_volume AS (
     SELECT 
@@ -799,7 +812,7 @@ filtered_branches AS (
         b.br_lmi,
         b.br_minority as cr_minority,
         b.uninumbr
-    FROM `hdma1-242116.branches.sod` b
+    FROM `hdma1-242116.branches.sod25` b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
@@ -922,7 +935,7 @@ filtered_branches AS (
         b.br_lmi,
         b.br_minority as cr_minority,
         b.uninumbr
-    FROM `hdma1-242116.branches.sod` b
+    FROM `hdma1-242116.branches.sod25` b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
@@ -1046,7 +1059,7 @@ filtered_branches AS (
         CAST(b.geoid5 AS STRING) as geoid5,
         c.county_state,
         b.uninumbr
-    FROM `hdma1-242116.branches.sod` b
+    FROM `hdma1-242116.branches.sod25` b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'

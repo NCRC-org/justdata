@@ -1,10 +1,11 @@
-/* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
+/* NCRC Brand Colors - From NCRC Brand Guidelines V19b + JustData Palette */
 :root {
     --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC blue */
     --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
+    --ncrc-justdata-blue: #1a8fc9;      /* JustData Blue - Header background */
     --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
     --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
-    --ncrc-dark-blue: #034ea0;          /* Dark Blue for headers */
+    --ncrc-dark-blue: #034ea0;          /* Dark Blue (legacy) */
     --ncrc-light-blue: #E6F2FF;         /* Light blue background (custom, not in palette) */
     --ncrc-gold: #ffc23a;               /* Golden Yellow */
     --ncrc-purple: #552d87;             /* Deep Purple (same as primary blue) */
@@ -267,14 +268,14 @@ body:has(.nav-overlay.active) main {
     }
 }
 
-/* Header */
+/* Header - ElectWatch-style clean layout */
 .header {
     width: 100%;
-    background: var(--ncrc-dark-blue);
-    text-align: center;
-    padding: 2.5rem 20px 2rem;
+    background: var(--ncrc-justdata-blue);
+    text-align: left;
+    padding: 20px;
     color: white;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     position: relative;
     overflow: visible;
     opacity: 0;
@@ -318,13 +319,28 @@ body:has(.nav-overlay.active) main {
     gap: 1rem;
     position: relative;
     width: 100%;
-    min-height: 100px;
     flex-wrap: wrap;
     overflow: visible;
 }
 
+/* Logo link wrapper - clickable to go home */
+.logo-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    text-decoration: none;
+    color: white;
+    transition: opacity 0.2s ease;
+}
+
+.logo-link:hover {
+    opacity: 0.9;
+    text-decoration: none;
+}
+
 .logo {
-    display: none; /* Logo removed - title is now in its place */
+    display: flex;
+    align-items: center;
 }
 
 @keyframes slideInLeft {
@@ -352,18 +368,6 @@ body:has(.nav-overlay.active) main {
     flex-direction: column;
     align-items: flex-start;
     text-align: left;
-    flex: 0 0 auto;
-    position: relative;
-    left: 0;
-    transform: none;
-    width: auto;
-    z-index: 2;
-    opacity: 0;
-    animation: fadeInScale 0.8s ease-out 0.5s forwards;
-    margin-left: 0;
-    padding-left: 0;
-    margin-right: auto;
-    align-self: flex-start;
 }
 
 @keyframes fadeInScale {
@@ -378,33 +382,24 @@ body:has(.nav-overlay.active) main {
 }
 
 .logo img {
-    max-height: 85px;
+    height: 50px;
     width: auto;
-    border-radius: 8px;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-}
-
-.logo i {
-    font-size: 2.5rem;
-    color: var(--ncrc-gold);
-    display: none; /* Hide icon when logo image is used */
 }
 
 .header-title-section h1 {
-    font-size: 3.5rem;
+    font-size: 1.75rem;
     font-weight: 700;
     color: white;
     margin: 0;
-    letter-spacing: 2px;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
-    line-height: 1.1;
+    line-height: 1.2;
 }
 
 .header-title-section .tagline-text {
-    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    opacity: 0.9;
+    margin-top: 2px;
     margin-bottom: 0;
-    display: block;
-    white-space: normal;
+    font-style: normal;
 }
 
 .app-name-part1 {
@@ -413,44 +408,16 @@ body:has(.nav-overlay.active) main {
 }
 
 .app-name-part2 {
-    color: #ffc23a;
+    color: #000000;
     display: inline-block;
-    text-shadow: 0 2px 6px rgba(255, 194, 58, 0.4);
 }
 
 .header-nav-wrapper {
-    display: flex !important;
-    align-items: flex-start;
-    justify-content: center;
+    display: flex;
+    align-items: center;
     flex-shrink: 0;
-    flex: 0 0 auto;
-    margin-left: auto;
-    margin-right: 2rem;
-    opacity: 1 !important;
-    transform: none;
-    animation: none;
-    padding-right: 0;
-    align-self: flex-start;
     position: relative;
     z-index: 1000;
-    visibility: visible !important;
-}
-
-.header-tagline {
-    display: flex;
-    align-items: flex-start;
-    justify-content: flex-start;
-    flex-shrink: 0;
-    flex: 0 0 auto;
-    margin-top: 0.5rem;
-    padding: 0;
-    min-width: auto;
-}
-
-/* Ensure nav menu aligns with title/tagline vertically */
-.header-nav-wrapper {
-    margin-top: 0;
-    padding-top: 0;
 }
 
 .nav-menu {
@@ -789,7 +756,7 @@ body.menu-open .header {
         height: 100vh;
         width: 300px;
         max-width: 85vw;
-        background: var(--ncrc-dark-blue);
+        background: var(--ncrc-justdata-blue);
         flex-direction: column;
         align-items: flex-start;
         padding: 5rem 1.5rem 2rem;
@@ -1650,7 +1617,7 @@ body.menu-open .header {
 
 /* Footer */
 .footer {
-    background: var(--ncrc-dark-blue);
+    background: var(--ncrc-justdata-blue);
     padding: 3rem 0 1rem 0;
     border-radius: 0;
     margin: 2rem 0 0 0;

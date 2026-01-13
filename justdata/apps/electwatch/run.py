@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 # Set up paths
-REPO_ROOT = Path(__file__).resolve().parents[2]  # .../ncrc-test-apps
+REPO_ROOT = Path(__file__).resolve().parents[3]  # .../ncrc-test-apps
 APP_DIR = Path(__file__).resolve().parent
 
 # Add repo root to Python path for shared module imports
@@ -29,15 +29,15 @@ else:
     print(f"[ENV] Warning: No .env file found at {env_file}")
 
 # Verify shared module exists
-shared_path = REPO_ROOT / 'shared'
-if not shared_path.exists():
-    print(f"ERROR: Shared module not found at {shared_path}")
-    print("Make sure you're running from the ncrc-test-apps repository")
+justdata_path = REPO_ROOT / 'justdata'
+if not justdata_path.exists():
+    print(f"ERROR: justdata module not found at {justdata_path}")
+    print("Make sure you're running from the JustData repository")
     sys.exit(1)
 
 # Import app
 try:
-    from apps.electwatch.app import app
+    from justdata.apps.electwatch.app import app
     print("Successfully imported ElectWatch app")
 except ImportError as e:
     print(f"ERROR importing app: {e}")

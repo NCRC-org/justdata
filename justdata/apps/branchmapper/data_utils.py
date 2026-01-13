@@ -5,7 +5,7 @@ BranchMapper-specific data utilities for BigQuery and county reference.
 
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 from typing import List, Optional, Dict
-from .config import PROJECT_ID
+from justdata.apps.branchmapper.config import PROJECT_ID
 
 
 def find_exact_county_match(county_input: str) -> list:
@@ -279,8 +279,9 @@ def execute_branch_query(sql_template: str, county: str, year: int) -> List[dict
         # Use the first match
         exact_county = county_matches[0]
         
-        # Escape apostrophes in county name for SQL (replace ' with '')
-        exact_county_escaped = exact_county.replace("'", "''")
+        # Escape apostrophes in county name for SQL safety
+        from justdata.shared.utils.bigquery_client import escape_sql_string
+        exact_county_escaped = escape_sql_string(exact_county)
         
         # Substitute parameters in SQL template
         sql = sql_template.replace('@county', f"'{exact_county_escaped}'").replace('@year', f"'{year}'")

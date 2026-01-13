@@ -5,7 +5,7 @@ Main API router for JustData v1.
 from fastapi import APIRouter
 
 # Import application-specific routers
-# from justdata.apps.branchseeker.api import router as branchseeker_router
+# from justdata.apps.branchsight.api import router as branchsight_router
 # from justdata.apps.lendsight.api import router as lendsight_router
 # from justdata.apps.bizsight.api import router as bizsight_router
 from justdata.api.v1.hubspot import router as hubspot_router
@@ -15,9 +15,9 @@ api_router = APIRouter()
 
 # Include application routers
 # api_router.include_router(
-#     branchseeker_router,
-#     prefix="/branchseeker",
-#     tags=["branchseeker"]
+#     branchsight_router,
+#     prefix="/branchsight",
+#     tags=["branchsight"]
 # )
 
 # api_router.include_router(
@@ -42,7 +42,7 @@ async def api_root():
     return {
         "message": "JustData API v1",
         "endpoints": {
-            "branchseeker": "/branchseeker",
+            "branchsight": "/branchsight",
             "lendsight": "/lendsight",
             "bizsight": "/bizsight",
             "hubspot": "/hubspot"
