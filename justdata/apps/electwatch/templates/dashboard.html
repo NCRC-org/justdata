@@ -479,6 +479,16 @@
             text-align: center;
         }
 
+        /* Financial sector column styling - emphasize these columns belong to the Financial Sector header */
+        .leaderboard-table th.financial-sector-col {
+            background: #e6f4f9;  /* Light blue tint matching Financial Sector header */
+            white-space: nowrap;  /* Prevent header text and sort icon from wrapping */
+        }
+
+        .leaderboard-table th.financial-sector-col:hover {
+            background: #d4ecf5;
+        }
+
         .header-group-row .header-tooltip {
             color: white;
         }
@@ -1830,9 +1840,9 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable active" data-sort="financial_pac" data-order="desc">
+                                <th class="sortable active financial-sector-col" data-sort="financial_pac" data-order="desc">
                                     <span class="header-tooltip">
-                                        Fin PAC $
+                                        PAC $
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
                                             <strong>Financial Sector PAC $:</strong> Total contributions from financial sector PACs to this candidate's principal campaign committee over the past 12 months.<br><br>
@@ -1848,9 +1858,9 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable" data-sort="financial_pct" data-order="desc">
+                                <th class="sortable financial-sector-col" data-sort="financial_pct" data-order="desc">
                                     <span class="header-tooltip">
-                                        Fin PAC %
+                                        PAC %
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
                                             <strong>Financial Sector %:</strong> What percentage of this official's total PAC contributions come from financial sector PACs.<br><br>
@@ -1859,7 +1869,7 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable" data-sort="buys" data-order="desc">
+                                <th class="sortable financial-sector-col" data-sort="buys" data-order="desc">
                                     <span class="header-tooltip">
                                         Buys
                                         <span class="tooltip-icon">?</span>
@@ -1869,7 +1879,7 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable" data-sort="sells" data-order="desc">
+                                <th class="sortable financial-sector-col" data-sort="sells" data-order="desc">
                                     <span class="header-tooltip">
                                         Sells
                                         <span class="tooltip-icon">?</span>
