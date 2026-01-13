@@ -13,25 +13,7 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/member_search.css') }}">
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                </div>
-                <div class="header-title-section">
-                    <h1>MemberView</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
+    {% set app_name = "MemberView" %}{% include "shared_header.html" %}
 
     <div class="container">
         <!-- Left Sidebar: Filters -->
@@ -102,40 +84,6 @@
         </div>
 
         <!-- Right Sidebar: Data Info -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-info-circle"></i> Data Available</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="<strong>HubSpot Member Data</strong><br><br>Member information is synced from HubSpot CRM and includes:<br><br>• <strong>Company Information:</strong> Company name, membership status (Current, Grace Period, Lapsed), location (city, state, county, country), phone number, industry<br><br>• <strong>Contact Information:</strong> Associated contacts for each member company, including email addresses and names<br><br>• <strong>Deal Information:</strong> Membership deals with amounts, close dates, and deal stages. Includes company address and zip code from deal records<br><br>• <strong>Membership Status:</strong> Track active members, those in grace period, and lapsed memberships">
-                    <i class="fas fa-database"></i>
-                    <h4>HubSpot Data</h4>
-                    <p>Company info, contacts, deals, and membership status from HubSpot CRM</p>
-                </div>
-                
-                <div class="feature-card" data-tooltip="<strong>Geographic Filtering</strong><br><br>Filter members by geographic location:<br><br>• <strong>State:</strong> Filter by any U.S. state or District of Columbia<br><br>• <strong>Metro Area:</strong> Filter by Core Based Statistical Area (CBSA). Counties not in a metro area are labeled as '{State Name} non-metro'<br><br>• <strong>County Matching:</strong> Members are matched to metro areas based on their county location using BigQuery geo.cbsa_to_county data">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <h4>Geographic Filters</h4>
-                    <p>Filter by state and metro area (CBSA) with non-metro county support</p>
-                </div>
-                
-                <div class="feature-card" data-tooltip="<strong>Membership Status</strong><br><br>Three membership categories are tracked:<br><br>• <strong>Current:</strong> Active members with valid membership<br><br>• <strong>Grace Period:</strong> Members whose membership has expired but are still within a grace period<br><br>• <strong>Lapsed:</strong> Members whose membership has expired<br><br>Filter results by one or more status categories to analyze membership retention and engagement">
-                    <i class="fas fa-users"></i>
-                    <h4>Membership Status</h4>
-                    <p>Track Current, Grace Period, and Lapsed memberships</p>
-                </div>
-                
-                <div class="feature-card" data-tooltip="<strong>Member Details</strong><br><br>For each member, you can view:<br><br>• <strong>Company Name:</strong> Full organization name<br><br>• <strong>Location:</strong> City, state, and county (when available)<br><br>• <strong>Metro Area:</strong> Associated CBSA metro area or non-metro designation<br><br>• <strong>Status:</strong> Current membership status with color-coded badges<br><br>• <strong>Associated Data:</strong> Links to contacts and deals (available in detailed member view)">
-                    <i class="fas fa-building"></i>
-                    <h4>Member Details</h4>
-                    <p>View company information, location, metro area, and status for each member</p>
-                </div>
-            </div>
-            
-            <div class="feature-card" style="margin-top: 30px;" data-tooltip="Current development version. Version 1.0 will be released when the product is ready for production use.">
-                <i class="fas fa-code-branch"></i>
-                <h4>Version</h4>
-                <p>0.1.0 (Development)</p>
-            </div>
-        </aside>
     </div>
 
     <script src="{{ url_for('static', filename='js/member_search.js') }}"></script>

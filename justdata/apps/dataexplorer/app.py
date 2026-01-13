@@ -16,6 +16,7 @@ DO NOT MODIFY WITHOUT USER APPROVAL
 """
 
 from flask import render_template, request, jsonify, send_from_directory
+from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import json
 import logging
@@ -67,6 +68,13 @@ app = create_app(
 
 # Add ProxyFix for proper request handling behind Render's proxy
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
+
+# Add shared templates folder to Jinja2 loader
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
+app.jinja_loader = ChoiceLoader([
+    FileSystemLoader(str(TEMPLATES_DIR)),
+    FileSystemLoader(str(SHARED_TEMPLATES_DIR))
+])
 
 # Configure cache-busting
 app.config['DEBUG'] = True

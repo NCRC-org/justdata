@@ -19,12 +19,12 @@ sys.path.insert(0, str(APP_DIR))
 # Verify shared module exists
 justdata_path = REPO_ROOT / 'justdata'
 if not justdata_path.exists():
-    print(f"ERROR: justdata module not found at {shared_path}")
+    print(f"ERROR: justdata module not found at {justdata_path}")
     sys.exit(1)
 
 print(f"Repository root: {REPO_ROOT}")
 print(f"App directory: {APP_DIR}")
-print(f"JustData module found at: {shared_path}")
+print(f"JustData module found at: {justdata_path}")
 
 # Import app using absolute import (don't change directory - breaks package structure)
 try:

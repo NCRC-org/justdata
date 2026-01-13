@@ -516,34 +516,7 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                    </a>
-                </div>
-                <div class="header-title-section">
-                    <h1>BranchMapper</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Return to JustData Home Button -->
-    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
-        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
-            <i class="fas fa-arrow-left"></i> Return to JustData Home
-        </a>
-    </div>
+    {% set app_name = "BranchMapper" %}{% include "shared_header.html" %}
 
     <div class="container">
         <!-- Left Controls Sidebar -->
@@ -709,34 +682,6 @@
         </div>
         
         <!-- Right Info Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-info-circle"></i> About BranchMapper</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="<strong>Data Sources</strong><br><br>Branch location data comes from the FDIC Summary of Deposits file released June 30, 2025, providing a snapshot of all bank branches open at that time.<br><br>Census tract demographic data (income and minority population) comes from the U.S. Census Bureau American Community Survey (ACS) 5-Year Estimates, 2018-2022.">
-                    <i class="fas fa-database"></i>
-                    <h4>Data Sources</h4>
-                </div>
-                <div class="feature-card" data-tooltip="<strong>How to Use</strong><br><br>1. Select a state and county from the dropdowns<br>2. Click 'Load Map' to view all bank branches in that area<br>3. Use the bank selector to filter and compare up to 3 specific banks (they will appear in different colors)<br>4. Click on any branch marker to see detailed information including branch name, deposits, and address<br>5. Toggle census tract layers to view income levels or minority population data overlaid on the map">
-                    <i class="fas fa-map-marked-alt"></i>
-                    <h4>How to Use</h4>
-                </div>
-                <div class="feature-card" data-tooltip="<strong>Income & Minority Levels</strong><br><br><strong>Income Levels:</strong> Compare each census tract's median family income to the county median:<br>• Low: ≤50% of county median<br>• Moderate: ≤80% of county median<br>• Middle: ≤120% of county median<br>• Upper: >120% of county median<br><br><strong>Minority Levels:</strong> Compare each tract's minority population percentage to the county average:<br>• Very High: ≥2x county average<br>• High: 1.5-2x county average<br>• Above Average: 1.2-1.5x county average<br>• Average: 0.8-1.2x county average<br>• Below Average: <0.8x county average">
-                    <i class="fas fa-chart-line"></i>
-                    <h4>Income & Minority Levels</h4>
-                </div>
-                <div class="feature-card" data-tooltip="<strong>Need Help?</strong><br><br>For questions about the data, assistance with analysis, or more detailed research support, please contact NCRC Research at <strong>research@ncrc.org</strong>.<br><br>Our research team can help with:<br>• Custom analysis<br>• Data interpretation<br>• Detailed market research<br>• Technical support">
-                    <i class="fas fa-envelope"></i>
-                    <h4>Need Help?</h4>
-                </div>
-            </div>
-            
-            <!-- Version Card at bottom of sidebar -->
-            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current development version. Version 1.0 will be released when the product is ready for production use.">
-                <i class="fas fa-code-branch"></i>
-                <h4>Version</h4>
-                <p>{{ version }} (Development)</p>
-            </div>
-        </aside>
     </div>
     
     <!-- Leaflet JS -->

@@ -4,18 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DataExplorer 2.0 - Interactive Financial Data Dashboard</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
 </head>
 <body>
     <div class="container">
-        <header>
-            <div class="header-content">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="logo">
-                <h1>DataExplorer 2.0</h1>
-                <p class="subtitle">Interactive Financial Data Dashboard</p>
-            </div>
-        </header>
+        {% set app_name = "DataExplorer" %}{% include "shared_header.html" %}
 
         <nav class="mode-selector">
             <button class="mode-btn active" data-mode="area">Area Analysis</button>
@@ -116,5 +113,27 @@
     </div>
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ version }}"></script>
+
+    <script>
+        // Toggle hamburger navigation menu
+        function toggleNavMenu() {
+            const menu = document.getElementById('navMenu');
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
+
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger-menu');
+            if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+    </script>
+    {% include "shared_header_js.html" %}
 </body>
 </html>

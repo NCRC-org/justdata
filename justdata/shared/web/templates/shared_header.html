@@ -1,0 +1,38 @@
+<!-- Shared Header Component -->
+<!-- Variables: app_name, app_subtitle (optional, defaults to 'A Just Data Tool by NCRC') -->
+<header class="header" style="position: relative; z-index: 99999;">
+    <div class="header-content" style="position: relative; z-index: 99999;">
+        <div class="header-layout" style="display: flex; justify-content: space-between; align-items: center; position: relative;">
+            <div class="logo" style="flex: 0 0 auto;">
+                <a href="/" aria-label="Back to JustData Home">
+                    <img src="{{ url_for('static', filename='img/justdata-logo.png') }}" alt="JustData Logo" style="max-height: 80px; width: auto;" onerror="this.style.display='none';">
+                </a>
+            </div>
+            <!-- Title centered absolutely -->
+            <div class="header-title-section" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;">
+                <h1>{{ app_name }}</h1>
+                <p class="just-data-subtitle">{{ app_subtitle|default('A Just Data Tool by NCRC') }}</p>
+            </div>
+            <!-- Hamburger Menu -->
+            <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end;">
+                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
+                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                </button>
+            </div>
+        </div>
+        <!-- Dropdown Nav Menu -->
+        <nav id="navMenu" class="app-nav-dropdown" style="display: none; position: absolute; top: 100%; right: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 99999;">
+            <a href="/" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
+            <a href="/lendsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
+            <a href="/bizsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
+            <a href="/branchsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px; color: #7c3aed;"></i>BranchSight</a>
+            <a href="/branchmapper" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-map-marked-alt" style="margin-right: 10px; color: #0891b2;"></i>BranchMapper</a>
+            <a href="/mergermeter" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
+            <a href="/dataexplorer" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
+            <a href="/lenderprofile" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
+            <a href="/electwatch" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
+        </nav>
+    </div>
+</header>

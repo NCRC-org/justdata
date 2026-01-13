@@ -27,8 +27,6 @@
     <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <!-- Intro.js for onboarding tour -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
 {% endblock %}
 
 {% block content %}
@@ -40,14 +38,11 @@
                 <div class="card-header">
                     <h2><i class="fas fa-search"></i> Generate Local Market Mortgage Analysis</h2>
                     <p>Enter the state and county to analyze mortgage lending</p>
-                    <button id="startTourBtn" class="tour-btn" style="margin-top: 10px; padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                        <i class="fas fa-question-circle"></i> Take a Tour
-                    </button>
                 </div>
 
                 <form id="analysisForm" class="analysis-form">
                     <!-- State Selection (Required) -->
-                    <div class="form-group" data-intro="Select a state to begin your analysis." data-step="1">
+                    <div class="form-group">
                         <label for="state-filter-select" data-tooltip="Select a state to filter counties. Counties from the selected state will appear below.">
                             <i class="fas fa-map"></i>
                             State <span style="color: red;">*</span>
@@ -62,7 +57,7 @@
                     </div>
 
                     <!-- County Selection (Single county from selected state) -->
-                    <div class="form-group" id="county-selection-group" data-intro="Select a single county from the selected state to analyze." data-step="2">
+                    <div class="form-group" id="county-selection-group">
                         <label for="county-select" data-tooltip="Select a single county from the selected state. You can search by typing county names.">
                             <i class="fas fa-map-marker-alt"></i>
                             County <span style="color: red;">*</span>
@@ -77,7 +72,7 @@
                     </div>
 
                     <!-- Loan Purpose Selection -->
-                    <div class="form-group" data-intro="Select the type of loans to analyze. You can select multiple loan purposes by checking the boxes." data-step="3">
+                    <div class="form-group">
                         <label style="display: block; margin-bottom: 12px; font-weight: 600; font-size: 1rem;">
                             <i class="fas fa-home" style="margin-right: 8px; color: var(--ncrc-dark-blue);"></i>
                             Loan Purpose
@@ -133,16 +128,16 @@
                     </div>
 
                     <!-- Year Range (Fixed to 2020-2024) -->
-                    <div class="form-group" data-intro="The report will analyze data from 2020 to 2024 (all available years)." data-step="3">
+                    <div class="form-group">
                         <div style="padding: 15px; background: var(--ncrc-light-blue); border-radius: 8px; margin-bottom: 20px;">
                             <p style="margin: 0; color: #333;">
                                 <i class="fas fa-calendar-alt"></i>
-                                <strong>Year Range:</strong> This report will analyze data from <strong>2020 to 2024</strong> (all available years).
+                                <strong>Year Range:</strong> This report will analyze data from <strong>2020 to 2024</strong> (most recent 5 years).
                             </p>
                         </div>
                     </div>
 
-                    <button type="submit" class="submit-btn" id="submitBtn" data-intro="Click here to start your analysis! The process typically takes 2-5 minutes depending on your selections. You'll see progress updates as it runs." data-step="5" data-tooltip="Click to generate your analysis. Make sure you've selected counties and a year range first.">
+                    <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your analysis. Make sure you've selected counties and a year range first.">
                         <i class="fas fa-magic"></i>
                         <span>Generate Analysis</span>
                     </button>
@@ -221,39 +216,6 @@
 
         </main>
         </div> <!-- End content-wrapper -->
-        
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> What You'll Get</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="Access state and county-level data on mortgage lending from the Home Mortgage Disclosure Act (HMDA), including which lenders operate in each market and their loan volume market share. See the percentage of mortgage originations to low-to-moderate income borrowers, in majority-minority census tracts, or areas that are both. Track changes in origination counts and market concentration over time to identify lending patterns in specific geographies and community types.">
-                    <i class="fas fa-chart-bar"></i>
-                    <h4>Comprehensive Data</h4>
-                    <p>Detailed HMDA mortgage origination statistics, market share analysis, and growth trends</p>
-                </div>
-                <div class="feature-card" data-tooltip="AI-generated narrative analysis of mortgage lending patterns, market concentration trends, and demographic lending coverage based on NCRC's curated HMDA datasets. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. Verify specific claims and data points using the Excel Export, which contains the complete underlying data compiled by NCRC research staff.">
-                    <i class="fas fa-robot"></i>
-                    <h4>AI Insights</h4>
-                    <p>Claude AI-powered analysis of lending strategies and market dynamics</p>
-                </div>
-                <div class="feature-card" data-tooltip="Download structured data tables showing mortgage origination counts, loan volume market shares, and demographic breakdowns by lender, state, and county from HMDA data. Use this file to conduct custom analysis, create additional visualizations, or verify findings from the AI-generated insights and web reports.">
-                    <i class="fas fa-file-excel"></i>
-                    <h4>Excel Export</h4>
-                    <p>Structured HMDA data in Excel format for further analysis and reporting</p>
-                </div>
-                <div class="feature-card" data-tooltip="View formatted tables and charts showing mortgage origination distributions, market concentration metrics, and demographic lending coverage statistics from HMDA data. Export individual tables or charts as needed. For detailed analysis or data verification, use the Excel Export option to access the complete underlying dataset.">
-                    <i class="fas fa-globe"></i>
-                    <h4>Web Report</h4>
-                    <p>Interactive web-based report with charts, tables, and export options</p>
-                </div>
-            </div>
-            
-            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current version of LendSight.">
-                <i class="fas fa-code-branch"></i>
-                <h4>Version</h4>
-                <p>{{ version }}</p>
-            </div>
-        </aside>
     </div> <!-- End container -->
 {% endblock %}
 
@@ -262,8 +224,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Intro.js for onboarding tour -->
-    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
     <!-- Your app.js (after dependencies) -->
     <script src="{{ url_for('static', filename='js/app.js') }}?v={{ version }}&t={{ cache_buster }}"></script>
     <!-- LendSight-specific form handler will be attached after shared app.js loads -->
@@ -473,250 +433,7 @@
                     return window.originalValidateInput.call(this, input, type);
                 }
                 return true;
-            };
-            
-            // Override tour initialization for LendSight
-            if (typeof window.initializeTour === 'function') {
-                const originalInitializeTour = window.initializeTour;
-                window.initializeTour = function() {
-                    const hasSeenTour = localStorage.getItem('lendsight_tour_completed');
-                    const startTourBtn = document.getElementById('startTourBtn');
-                    
-                    if (!startTourBtn) return;
-                    
-                    // Set up tour button click handler
-                    startTourBtn.addEventListener('click', function() {
-                        startTour();
-                    });
-                    
-                    // Show welcome message if user hasn't seen tour
-                    if (!hasSeenTour) {
-                        setTimeout(() => {
-                            const shouldStart = confirm('Welcome to LendSight! Would you like to take a quick tour to learn how to use the tool?');
-                            if (shouldStart) {
-                                startTour();
-                            } else {
-                                localStorage.setItem('lendsight_tour_completed', 'true');
-                            }
-                        }, 1000);
-                    }
-                };
-            } else {
-                // If initializeTour doesn't exist, create it
-                window.initializeTour = function() {
-                    const hasSeenTour = localStorage.getItem('lendsight_tour_completed');
-                    const startTourBtn = document.getElementById('startTourBtn');
-                    
-                    if (!startTourBtn) return;
-                    
-                    startTourBtn.addEventListener('click', function() {
-                        startTour();
-                    });
-                    
-                    if (!hasSeenTour) {
-                        setTimeout(() => {
-                            const shouldStart = confirm('Welcome to LendSight! Would you like to take a quick tour to learn how to use the tool?');
-                            if (shouldStart) {
-                                startTour();
-                            } else {
-                                localStorage.setItem('lendsight_tour_completed', 'true');
-                            }
-                        }, 1000);
-                    }
-                };
-            }
-            
-            // Function to move skip button into button container
-            function moveSkipButton() {
-                var skipButton = document.querySelector('.introjs-skipbutton');
-                var buttonContainer = document.querySelector('.introjs-tooltipbuttons');
-                
-                if (!skipButton || !buttonContainer) {
-                    return false;
-                }
-                
-                // If skip button is already in the container, we're done
-                if (skipButton.parentNode === buttonContainer) {
-                    return true;
-                }
-                
-                // Move skip button to the end of the button container (after Next button)
-                try {
-                    buttonContainer.appendChild(skipButton);
-                    // Force a reflow to ensure the button is visible
-                    skipButton.offsetHeight;
-                    return true;
-                } catch (e) {
-                    console.error('Error moving skip button:', e);
-                    return false;
-                }
-            }
-            
-            // Set up a MutationObserver to watch for skip button creation
-            var skipButtonObserver = null;
-            function setupSkipButtonObserver() {
-                if (skipButtonObserver) {
-                    skipButtonObserver.disconnect();
-                }
-                
-                skipButtonObserver = new MutationObserver(function(mutations) {
-                    var skipButton = document.querySelector('.introjs-skipbutton');
-                    var buttonContainer = document.querySelector('.introjs-tooltipbuttons');
-                    
-                    if (skipButton && buttonContainer && skipButton.parentNode !== buttonContainer) {
-                        moveSkipButton();
-                    }
-                });
-                
-                // Observe the tooltip for changes
-                var tooltip = document.querySelector('.introjs-tooltip');
-                if (tooltip) {
-                    skipButtonObserver.observe(tooltip, {
-                        childList: true,
-                        subtree: true
-                    });
-                }
-            }
-            
-            // Override startTour for LendSight
-            if (typeof window.startTour === 'function') {
-                const originalStartTour = window.startTour;
-                window.startTour = function() {
-                    if (typeof introJs === 'undefined') {
-                        console.error('Intro.js not loaded');
-                        return;
-                    }
-                    
-                    var intro = introJs().setOptions({
-                        nextLabel: 'Next →',
-                        prevLabel: '← Back',
-                        skipLabel: 'Skip Tour',
-                        doneLabel: 'Got it!',
-                        showProgress: true,
-                        showBullets: true,
-                        exitOnOverlayClick: false,
-                        exitOnEsc: true,
-                        tooltipClass: 'customTooltip',
-                        highlightClass: 'customHighlight',
-                        buttonClass: 'introjs-button',
-                        scrollToElement: true,
-                        scrollPadding: 100,
-                        disableInteraction: false
-                    });
-                    
-                    // Move skip button on each step change
-                    intro.onchange(function(targetElement) {
-                        // Try multiple times with increasing delays to ensure it works
-                        setTimeout(moveSkipButton, 50);
-                        setTimeout(moveSkipButton, 150);
-                        setTimeout(moveSkipButton, 300);
-                    });
-                    
-                    // Move skip button when tour starts
-                    intro.onstart(function() {
-                        setupSkipButtonObserver();
-                        setTimeout(moveSkipButton, 50);
-                        setTimeout(moveSkipButton, 100);
-                        setTimeout(moveSkipButton, 200);
-                        setTimeout(moveSkipButton, 300);
-                        setTimeout(moveSkipButton, 500);
-                    });
-                    
-                    intro.oncomplete(function() {
-                        if (skipButtonObserver) {
-                            skipButtonObserver.disconnect();
-                        }
-                        localStorage.setItem('lendsight_tour_completed', 'true');
-                    });
-                    
-                    intro.onexit(function() {
-                        if (skipButtonObserver) {
-                            skipButtonObserver.disconnect();
-                        }
-                        // Don't mark as completed if they exit early
-                    });
-                    
-                    intro.start();
-                    
-                    // Also try multiple times after tour starts
-                    setTimeout(moveSkipButton, 200);
-                    setTimeout(moveSkipButton, 400);
-                    setTimeout(moveSkipButton, 600);
-                    setTimeout(moveSkipButton, 800);
-                };
-            } else {
-                // If startTour doesn't exist, create it
-                window.startTour = function() {
-                    if (typeof introJs === 'undefined') {
-                        console.error('Intro.js not loaded');
-                        return;
-                    }
-                    
-                    var intro = introJs().setOptions({
-                        nextLabel: 'Next →',
-                        prevLabel: '← Back',
-                        skipLabel: 'Skip Tour',
-                        doneLabel: 'Got it!',
-                        showProgress: true,
-                        showBullets: true,
-                        exitOnOverlayClick: false,
-                        exitOnEsc: true,
-                        tooltipClass: 'customTooltip',
-                        highlightClass: 'customHighlight',
-                        buttonClass: 'introjs-button',
-                        scrollToElement: true,
-                        scrollPadding: 100,
-                        disableInteraction: false
-                    });
-                    
-                    // Move skip button on each step change
-                    intro.onchange(function(targetElement) {
-                        setTimeout(moveSkipButton, 50);
-                        setTimeout(moveSkipButton, 150);
-                        setTimeout(moveSkipButton, 300);
-                    });
-                    
-                    // Move skip button when tour starts
-                    intro.onstart(function() {
-                        setupSkipButtonObserver();
-                        setTimeout(moveSkipButton, 50);
-                        setTimeout(moveSkipButton, 100);
-                        setTimeout(moveSkipButton, 200);
-                        setTimeout(moveSkipButton, 300);
-                        setTimeout(moveSkipButton, 500);
-                    });
-                    
-                    intro.oncomplete(function() {
-                        if (skipButtonObserver) {
-                            skipButtonObserver.disconnect();
-                        }
-                        localStorage.setItem('lendsight_tour_completed', 'true');
-                    });
-                    
-                    intro.onexit(function() {
-                        if (skipButtonObserver) {
-                            skipButtonObserver.disconnect();
-                        }
-                        // Don't mark as completed if they exit early
-                    });
-                    
-                    intro.start();
-                    
-                    // Also try multiple times after tour starts
-                    setTimeout(moveSkipButton, 200);
-                    setTimeout(moveSkipButton, 400);
-                    setTimeout(moveSkipButton, 600);
-                    setTimeout(moveSkipButton, 800);
-                };
-            }
-            
-            // Initialize tour after a short delay to ensure everything is loaded
-            setTimeout(function() {
-                if (typeof window.initializeTour === 'function') {
-                    window.initializeTour();
-                }
-            }, 500);
-        });
+            };});
     </script>
     
     <!-- Override progress steps for LendSight BEFORE app.js loads -->

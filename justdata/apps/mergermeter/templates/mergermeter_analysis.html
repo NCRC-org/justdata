@@ -33,30 +33,12 @@
         }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <!-- Intro.js for onboarding tour -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
     <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
     <div class="body-overlay" id="bodyOverlay"></div>
     
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                </div>
-                <div class="header-title-section">
-                    <h1><span class="app-name-part1">MERGER</span><span class="app-name-part2">METER</span></h1>
-                    <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
-                </div>
-                <div class="header-nav-wrapper">
-                    {% include 'nav_menu.html' %}
-                </div>
-            </div>
-        </div>
-    </header>
+    {% set app_name = "MergerMeter" %}{% include "shared_header.html" %}
 
     <div class="container">
         <!-- Main Content -->
@@ -66,14 +48,11 @@
                 <div class="card-header">
                     <h2><i class="fas fa-search"></i> Generate Merger Impact Analysis</h2>
                     <p>Upload merger research ticket and assessment area documents to analyze two-bank merger</p>
-                    <button id="startTourBtn" class="tour-btn" style="margin-top: 10px; padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                        <i class="fas fa-question-circle"></i> Take a Tour
-                    </button>
                 </div>
 
                 <form id="analysisForm" class="analysis-form">
                     <!-- Bank Information Section -->
-                    <div class="form-group" data-intro="Enter the identifiers for both banks. You'll need LEI, RSSD, and Small Business Respondent ID for each bank. Click 'Load' to fetch and confirm the bank names." data-step="1">
+                    <div class="form-group">
                         <h3 style="margin-bottom: 20px; color: var(--ncrc-dark-blue);">
                             <i class="fas fa-building"></i> Bank Information
                         </h3>
@@ -216,7 +195,7 @@
                     </div>
 
                     <!-- Assessment Area Upload Section -->
-                    <div class="form-group" id="assessmentAreaSection" style="display: none;" data-intro="Upload assessment area documents for each bank. Assessment areas are built from combining one or more counties. Files can be in PDF or Text format." data-step="2">
+                    <div class="form-group" id="assessmentAreaSection" style="display: none;">
                         <h3 style="margin-bottom: 20px; color: var(--ncrc-dark-blue);">
                             <i class="fas fa-upload"></i> Assessment Area Documents
                         </h3>
@@ -453,7 +432,7 @@
                     </div>
 
                     <!-- Analysis Settings Section -->
-                    <div class="form-group" data-intro="Select the filters for your analysis. Default settings are preselected based on standard merger analysis requirements, but you can change them as needed." data-step="3">
+                    <div class="form-group">
                         <h3 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
                             <i class="fas fa-cog"></i> Analysis Filters
                         </h3>
@@ -579,7 +558,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="submit-btn" id="submitBtn" data-intro="Click here to start your merger analysis! The process typically takes 5-10 minutes depending on the data volume. You'll see progress updates as it runs." data-step="4" data-tooltip="Click to generate your merger analysis. Make sure you've entered bank information and uploaded the required files.">
+                    <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your merger analysis. Make sure you've entered bank information and uploaded the required files.">
                         <i class="fas fa-magic"></i>
                         <span>Generate Merger Analysis</span>
                     </button>
@@ -660,40 +639,6 @@
 
         </main>
         </div> <!-- End content-wrapper -->
-
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> What You'll Get</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="Access comprehensive data on two banks planning to merge, including mortgage lending patterns, small business lending, and branch distribution across assessment areas. Compare performance metrics between the acquirer and target banks, analyze market concentration, and identify geographic and demographic coverage patterns. All data is sourced from HMDA (mortgage lending), Small Business Lending Survey, and FDIC Summary of Deposits.">
-                    <i class="fas fa-chart-bar"></i>
-                    <h4>Comprehensive Data</h4>
-                    <p>Detailed merger analysis including mortgage, small business, and branch data</p>
-                </div>
-                <div class="feature-card" data-tooltip="AI-generated narrative analysis of merger impact, community benefits assessment, and post-merger goal setting based on NCRC's curated datasets. The analysis evaluates lending performance in low-to-moderate income communities, majority-minority census tracts, and assessment area coverage. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. Verify specific claims and data points using the Excel Export, which contains the complete underlying data compiled by NCRC research staff.">
-                    <i class="fas fa-robot"></i>
-                    <h4>AI Insights</h4>
-                    <p>Claude AI-powered analysis of merger impact and community benefits</p>
-                </div>
-                <div class="feature-card" data-tooltip="Download structured data tables showing mortgage goals, bank-specific mortgage data, small business data, and branch data for both acquirer and target banks. The Excel file includes separate sheets for mortgage lending analysis, small business lending, branch distribution, assessment area coverage, and post-merger goal recommendations. Use this file to conduct custom analysis, create additional visualizations, or verify findings from the AI-generated insights and web reports.">
-                    <i class="fas fa-file-excel"></i>
-                    <h4>Excel Export</h4>
-                    <p>Structured merger analysis data in Excel format for further analysis and reporting</p>
-                </div>
-                <div class="feature-card" data-tooltip="View formatted tables and charts showing post-merger goals, bank performance comparisons, peer benchmarking, and assessment area coverage. The web report includes interactive visualizations of lending patterns, demographic coverage, and geographic distribution. Export individual tables or charts as needed. For detailed analysis or data verification, use the Excel Export option to access the complete underlying dataset.">
-                    <i class="fas fa-globe"></i>
-                    <h4>Web Report</h4>
-                    <p>Interactive web-based report with charts, tables, and export options</p>
-                </div>
-            </div>
-            
-            <!-- Version Card -->
-            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current development version of MergerMeter. Version 1.0 will be released when the product is ready for production use.">
-                <i class="fas fa-code-branch"></i>
-                <h4>Version</h4>
-                <p>0.9.0 (Development)</p>
-            </div>
-        </aside>
     </div> <!-- End container -->
 
     <!-- Footer -->
@@ -729,8 +674,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Intro.js for onboarding tour -->
-    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
     <!-- Set base URL for API calls BEFORE loading app.js -->
     <script>
         // Set base URL for API calls (with blueprint prefix)
@@ -1759,6 +1702,7 @@
             }
         });
     </script>
+    {% include "shared_header_js.html" %}
 </body>
 </html>
 

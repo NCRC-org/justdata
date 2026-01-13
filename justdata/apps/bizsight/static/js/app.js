@@ -403,79 +403,9 @@ function validateInput(input, type) {
     return isValid;
 }
 
-// Initialize onboarding tour
-function initializeTour() {
-    // Check if user has seen the tour before
-    const hasSeenTour = localStorage.getItem('branchseeker_tour_completed');
-    const startTourBtn = document.getElementById('startTourBtn');
-    
-    if (!startTourBtn) return;
-    
-    // Start tour button click handler
-    startTourBtn.addEventListener('click', function() {
-        startTour();
-    });
-    
-    // Auto-start tour disabled - users can click "Take a Tour" button if they want
-    // if (!hasSeenTour) {
-    //     // Wait a bit for page to load, then show tour
-    //     setTimeout(() => {
-    //         const shouldStart = confirm('Welcome to BranchSeeker! Would you like to take a quick tour to learn how to use the tool?');
-    //         if (shouldStart) {
-    //             startTour();
-    //         } else {
-    //             localStorage.setItem('branchseeker_tour_completed', 'true');
-    //         }
-    //     }, 1000);
-    // }
-}
 
-// Start the onboarding tour
-function startTour() {
-    if (typeof introJs === 'undefined') {
-        console.error('Intro.js not loaded');
-        return;
-    }
-    
-    introJs().setOptions({
-        nextLabel: 'Next →',
-        prevLabel: '← Back',
-        skipLabel: 'Skip Tour',
-        doneLabel: 'Got it!',
-        showProgress: true,
-        showBullets: true,
-        exitOnOverlayClick: false,
-        exitOnEsc: true,
-        tooltipClass: 'customTooltip',
-        highlightClass: 'customHighlight',
-        buttonClass: 'introjs-button',
-        scrollToElement: true,
-        scrollPadding: 100,
-        disableInteraction: false
-    }).onchange(function(targetElement) {
-        // Simple, one-time move of skip button after each step change
-        setTimeout(function() {
-            var skipButton = document.querySelector('.introjs-skipbutton');
-            var buttonContainer = document.querySelector('.introjs-tooltipbuttons');
-            var nextButton = document.querySelector('.introjs-nextbutton');
-            if (skipButton && buttonContainer && nextButton && skipButton.parentNode !== buttonContainer) {
-                buttonContainer.insertBefore(skipButton, nextButton);
-            }
-        }, 100);
-    }).oncomplete(function() {
-        localStorage.setItem('branchseeker_tour_completed', 'true');
-    }).onexit(function() {
-        // Don't mark as completed if they exit early
-    }).start();
-    
-    // Also try once after tour starts
-    setTimeout(function() {
-        var skipButton = document.querySelector('.introjs-skipbutton');
-        var buttonContainer = document.querySelector('.introjs-tooltipbuttons');
-        var nextButton = document.querySelector('.introjs-nextbutton');
-        if (skipButton && buttonContainer && nextButton && skipButton.parentNode !== buttonContainer) {
-            buttonContainer.insertBefore(skipButton, nextButton);
-        }
+
+
     }, 200);
 }
 
@@ -488,9 +418,6 @@ $(document).ready(function() {
     setupFormHandler();
     setupViewReportHandler();
     setupDownloadHandler();
-    
-    // Initialize tour
-    initializeTour();
     
     // County selection validation - check if element exists
     const countySelect = $('#county-select');
@@ -536,9 +463,6 @@ $(document).ready(function() {
             }
         });
     }
-    
-    // Initialize onboarding tour
-    initializeTour();
     
     // Initialize sidebar tooltips
     initializeSidebarTooltips();

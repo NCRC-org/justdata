@@ -1638,44 +1638,7 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo-white.png') }}" alt="NCRC" onerror="this.style.display='none'">
-                <div class="logo-text">
-                    <h1>ElectWatch</h1>
-                    <div class="tagline">Financial Influence Monitor • A JustData Tool</div>
-                </div>
-            </div>
-            <nav class="nav-tabs">
-                <button class="nav-tab active" data-panel="leaderboard">
-                    <i class="fas fa-trophy"></i>
-                    <span>Leaderboard</span>
-                </button>
-                <button class="nav-tab" data-panel="committees">
-                    <i class="fas fa-building-columns"></i>
-                    <span>Committees</span>
-                </button>
-                <button class="nav-tab" data-panel="industries">
-                    <i class="fas fa-industry"></i>
-                    <span>Industries</span>
-                </button>
-                <button class="nav-tab" data-panel="firms">
-                    <i class="fas fa-briefcase"></i>
-                    <span>Firms</span>
-                </button>
-                <button class="nav-tab" data-panel="insights">
-                    <i class="fas fa-brain"></i>
-                    <span>AI Insights</span>
-                </button>
-                <button class="nav-tab" data-panel="bills">
-                    <i class="fas fa-scroll"></i>
-                    <span>Bill Lookup</span>
-                </button>
-            </nav>
-        </div>
-    </header>
+    {% set app_name = "ElectWatch" %}{% include "shared_header.html" %}
 
     <!-- Data Freshness Banner -->
     <div class="data-freshness-banner">
@@ -3263,5 +3226,6 @@
         loadFirms();
         refreshInsights();
     </script>
+    {% include "shared_header_js.html" %}
 </body>
 </html>

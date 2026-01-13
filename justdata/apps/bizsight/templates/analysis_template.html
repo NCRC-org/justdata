@@ -17,7 +17,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
     
     <style>
         .map-selection-container {
@@ -172,34 +171,7 @@
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="/static/img/ncrc-logo.png" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                    </a>
-                </div>
-                <div class="header-title-section">
-                    <h1>BizSight</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Return to JustData Home Button -->
-    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
-        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
-            <i class="fas fa-arrow-left"></i> Return to JustData Home
-        </a>
-    </div>
+    {% set app_name = "BizSight" %}{% include "shared_header.html" %}
 
     <div class="container">
         <div class="content-wrapper">
@@ -335,56 +307,6 @@
             </div>
         </main>
         </div>
-        
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> What You'll Get</h3>
-            <div class="sidebar-features">
-                <!-- Card 1: Section 1071 of Dodd-Frank Act (moved to top) -->
-                <div class="feature-card" data-tooltip="<strong>Section 1071 of the Dodd-Frank Act</strong><br><br>Section 1071, passed in 2010, requires financial institutions to collect and report data on small business lending, including demographic information about business owners. After 15 years of delay, NCRC sued the Consumer Financial Protection Bureau (CFPB) to finally implement this critical provision. This data will provide unprecedented transparency into small business lending patterns, helping identify disparities and opportunities for underserved communities.<br><br>However, Section 1071 is currently under attack from industry groups seeking to weaken or delay its implementation. Despite these challenges, when fully implemented, Section 1071 data will enable:<br>• Fair lending enforcement and compliance monitoring<br>• Identification of business and community development needs<br>• Analysis of lending patterns to women-owned and minority-owned businesses<br>• Market transparency for small business credit access<br><br><a href='https://ncrc.org/section1071/' target='_blank' style='color: var(--ncrc-primary-blue); text-decoration: underline;'>Learn more about Section 1071 →</a>">
-                    <i class="fas fa-gavel" style="color: var(--ncrc-primary-blue);"></i>
-                    <h4>Section 1071</h4>
-                    <p>Small business lending transparency</p>
-                </div>
-                
-                <!-- Card 2: Limitations of this Data -->
-                <div class="feature-card" data-tooltip="<strong>Limitations of This Data</strong><br><br>This analysis uses available small business lending data, which has important limitations:<br><br>• <strong>No Borrower Demographics:</strong> Unlike mortgage data (HMDA), we don't have detailed borrower information such as race, ethnicity, or gender<br><br>• <strong>Tract-Level Aggregation:</strong> Data is aggregated at the census tract level, not individual loan level<br><br>• <strong>County-Level Lender Data:</strong> Lender disclosure information is only available at the county level, limiting granular analysis<br><br>• <strong>Single County Focus:</strong> Analysis is limited to one county at a time for detailed tract-level mapping<br><br>• <strong>Data Availability:</strong> Coverage varies by lender and reporting requirements<br><br>These limitations will be addressed when Section 1071 is fully implemented, providing comprehensive borrower-level demographic data.">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h4>Data Limitations</h4>
-                    <p>Current data constraints</p>
-                </div>
-                
-                <!-- Card 3: AI Insights -->
-                <div class="feature-card" data-tooltip="<strong>AI Insights</strong><br><br>AI-generated narrative analysis helps interpret small business lending patterns and trends. However, it's important to understand:<br><br>• <strong>AI Support is Limited:</strong> AI can only analyze the data we provide—it cannot access additional information or verify data accuracy<br><br>• <strong>Data Management:</strong> All underlying data is managed, cleaned, and maintained by NCRC research staff<br><br>• <strong>Verification Recommended:</strong> Always verify specific claims and data points using the underlying data tables in the report<br><br>• <strong>Pattern Recognition:</strong> AI identifies patterns and generates written summaries, but human review is essential for critical analysis">
-                    <i class="fas fa-robot"></i>
-                    <h4>AI Insights</h4>
-                    <p>AI-powered analysis and insights</p>
-                </div>
-                
-                <!-- Card 4: Interactive Map -->
-                <div class="feature-card" data-tooltip="<strong>Interactive Map</strong><br><br>Explore small business lending patterns through an interactive tract-level map with multiple visualization layers:<br><br>• <strong>Income Classifications:</strong> View tracts by income level (Low, Moderate, Middle, Upper) based on Area Median Income<br><br>• <strong>Race Demographics:</strong> See minority percentage and racial composition by tract<br><br>• <strong>Loan Count Quartiles:</strong> Visualize the number of loans per tract broken into quartiles<br><br>• <strong>Loan Amount Quartiles:</strong> View total loan amounts per tract in quartile distributions<br><br>Toggle layers on and off to compare different aspects of lending patterns across census tracts within your selected county.">
-                    <i class="fas fa-map"></i>
-                    <h4>Interactive Map</h4>
-                    <p>Tract-level visualization layers</p>
-                </div>
-                
-                <!-- Card 5: Detailed Reports -->
-                <div class="feature-card" data-tooltip="<strong>Detailed Reports</strong><br><br>Comprehensive analysis reports include:<br><br>• <strong>County Summary:</strong> Overall statistics for the entire county (2020-2024) including total loans, amounts by size category, and LMI tract percentages<br><br>• <strong>Top Lenders:</strong> Analysis of the top 10 lenders by loan volume (2024) with detailed breakdowns by loan size and tract characteristics<br><br>• <strong>AI Narratives:</strong> Each table includes AI-generated explanations of the data and trends, written in accessible language<br><br>• <strong>Methods & Disclosure:</strong> Full documentation of data sources, definitions, and AI disclosure information">
-                    <i class="fas fa-table"></i>
-                    <h4>Detailed Reports</h4>
-                    <p>County summaries and lender analysis</p>
-                </div>
-            </div>
-            
-            <!-- Version card - only show when deployed (not in development) -->
-            {% if version and version != '1.0.0' %}
-            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current version of BizSight. Check back for updates and new features.">
-                <i class="fas fa-code-branch"></i>
-                <h4>Version</h4>
-                <p>{{ version }}</p>
-            </div>
-            {% endif %}
-        </aside>
     </div>
 
     <!-- Footer -->
@@ -420,7 +342,6 @@
     <!-- Select2 (for enhanced dropdowns) -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
     
     <!-- Override progress steps for BizSight -->
     <script>
@@ -672,97 +593,6 @@
         
         // Note: listenForProgress is now defined in app.js with progress steps support
         
-        // Initialize sidebar tooltips with left positioning
-        function initializeSidebarTooltips() {
-            const featureCards = document.querySelectorAll('.sidebar .feature-card[data-tooltip]');
-            
-            featureCards.forEach((card) => {
-                const tooltipText = card.getAttribute('data-tooltip');
-                if (!tooltipText) return;
-                
-                // Create tooltip element
-                let tooltip = card.querySelector('.custom-tooltip');
-                if (!tooltip) {
-                    tooltip = document.createElement('div');
-                    tooltip.className = 'custom-tooltip';
-                    tooltip.innerHTML = tooltipText;
-                    document.body.appendChild(tooltip);
-                }
-                
-                // Show tooltip on hover - positioned to the left
-                card.addEventListener('mouseenter', function() {
-                    const cardRect = card.getBoundingClientRect();
-                    
-                    // Show tooltip first to measure it
-                    tooltip.style.cssText = 'display: block !important; visibility: hidden !important; opacity: 0 !important; position: fixed !important;';
-                    
-                    // Calculate position after tooltip is rendered
-                    requestAnimationFrame(() => {
-                        const tooltipRect = tooltip.getBoundingClientRect();
-                        const tooltipWidth = tooltipRect.width || 350;
-                        const tooltipHeight = tooltipRect.height || 200;
-                        
-                        // Position to the LEFT of the sidebar card
-                        let left = cardRect.left - tooltipWidth - 20; // 20px gap
-                        let top = cardRect.top + (cardRect.height / 2) - (tooltipHeight / 2);
-                        
-                        // Ensure tooltip stays on screen
-                        if (left < 10) {
-                            left = 10; // Keep some margin from left edge
-                        }
-                        if (top < 10) {
-                            top = 10;
-                        }
-                        if (top + tooltipHeight > window.innerHeight - 10) {
-                            top = window.innerHeight - tooltipHeight - 10;
-                        }
-                        
-                        // Apply styles with high z-index to appear in front
-                        tooltip.style.cssText = `
-                            display: block !important;
-                            visibility: visible !important;
-                            opacity: 1 !important;
-                            position: fixed !important;
-                            left: ${left}px !important;
-                            top: ${top}px !important;
-                            z-index: 99999 !important;
-                            background: white !important;
-                            color: #333 !important;
-                            padding: 16px 20px !important;
-                            border-radius: 8px !important;
-                            font-size: 0.9rem !important;
-                            line-height: 1.6 !important;
-                            white-space: normal !important;
-                            max-width: 400px !important;
-                            min-width: 300px !important;
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.25) !important;
-                            pointer-events: auto !important;
-                            text-align: left !important;
-                            word-wrap: break-word !important;
-                            margin: 0 !important;
-                            border: 1px solid #ddd !important;
-                            overflow: visible !important;
-                        `;
-                    });
-                });
-                
-                // Hide tooltip on mouse leave
-                card.addEventListener('mouseleave', function() {
-                    tooltip.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
-                });
-                
-                // Keep tooltip visible when hovering over it
-                tooltip.addEventListener('mouseenter', function() {
-                    tooltip.style.opacity = '1';
-                    tooltip.style.visibility = 'visible';
-                });
-                
-                tooltip.addEventListener('mouseleave', function() {
-                    tooltip.style.cssText = 'display: none !important; visibility: hidden !important; opacity: 0 !important;';
-                });
-            });
-        }
-        
         // Connecticut choice modal handlers
         let ctChoiceMade = false;
         let ctSelectionType = null; // 'county' or 'planning_region'
@@ -932,7 +762,6 @@
         // Initialize county selection and tooltips when page loads
         document.addEventListener('DOMContentLoaded', function() {
             initializeCountySelection();
-            initializeSidebarTooltips();
             initializeConnecticutModal();
         });
     </script>

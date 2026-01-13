@@ -14,34 +14,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                    </a>
-                </div>
-                <div class="header-title-section">
-                    <h1>LoanTrends</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Return to JustData Home Button -->
-    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
-        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
-            <i class="fas fa-arrow-left"></i> Return to JustData Home
-        </a>
-    </div>
+    {% set app_name = "LoanTrends" %}{% include "shared_header.html" %}
 
     <div class="container">
         <!-- Main Content -->
@@ -222,25 +195,6 @@
             </div>
         </main>
         </div>
-        
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> What You'll Get</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="National-level quarterly mortgage lending trends from CFPB HMDA Quarterly Data Graph API.">
-                    <h4>National Trends</h4>
-                </div>
-                <div class="feature-card" data-tooltip="AI-generated analysis of quarterly trends with 3-sentence intros and 2-paragraph narratives for each section.">
-                    <h4>AI Insights</h4>
-                </div>
-                <div class="feature-card" data-tooltip="Comprehensive tables showing quarterly data for selected metrics with trend analysis.">
-                    <h4>Data Tables</h4>
-                </div>
-                <div class="feature-card" data-tooltip="View formatted report with sections grouped by metric category.">
-                    <h4>Web Report</h4>
-                </div>
-            </div>
-        </aside>
     </div>
 
     <!-- Footer -->

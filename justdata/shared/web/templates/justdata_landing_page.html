@@ -8,9 +8,9 @@
     <meta name="keywords" content="JustData, NCRC, data analysis, banking, mortgage, small business, member management">
     <meta name="author" content="JustData - National Community Reinvestment Coalition">
     <meta name="theme-color" content="#552d87">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -70,8 +70,8 @@
         /* Header */
         .header {
             background: var(--ncrc-dark-blue);
-            text-align: center;
-            padding: 40px 20px 30px;
+            text-align: left;
+            padding: 15px 20px;
             color: white;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
@@ -79,14 +79,14 @@
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
+            position: relative;
         }
 
         .header-layout {
             display: flex;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
             gap: 30px;
-            position: relative;
             width: 100%;
         }
 
@@ -99,14 +99,9 @@
 
         .header-title-section {
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             align-items: center;
-            text-align: center;
-            flex: 1;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: auto;
+            text-align: left;
         }
 
         .header-tagline {
@@ -1153,54 +1148,63 @@
     <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <a href="https://ncrc.org" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="/static/img/ncrc-logo.png" alt="NCRC Logo" style="max-height: 90px; width: auto; border-radius: 8px;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+            <div class="header-layout" style="display: flex; justify-content: space-between; align-items: center;">
+                <!-- Left side: Buttons + User Type Selector (stacked vertically, center-aligned text) -->
+                <div style="display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 160px;">
+                    <button class="header-btn" onclick="openUserTypesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; width: 100%; text-align: center;">
+                        <i class="fas fa-users-cog"></i>
+                        <span>User Types</span>
+                    </button>
+                    <button class="header-btn" onclick="openIncomeSourcesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; width: 100%; text-align: center;">
+                        <i class="fas fa-dollar-sign"></i>
+                        <span>Income Sources</span>
+                    </button>
+                    <select id="userTypeSelect" onchange="switchUserType(this.value)" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; width: 100%; text-align: center; text-align-last: center;">
+                        <option value="public" style="color: #333;">Public (Free)</option>
+                        <option value="economy" style="color: #333;">Just Economy Club</option>
+                        <option value="member" style="color: #333;">Member</option>
+                        <option value="memberplus" style="color: #333;">Member Plus</option>
+                        <option value="institutional" style="color: #333;">Institutional</option>
+                        <option value="staff" style="color: #333;">Staff</option>
+                        <option value="admin" style="color: #333;">Admin</option>
+                    </select>
+                </div>
+                <!-- Center: Logo (10% larger: 80px -> 88px) -->
+                <div class="header-title-section" style="display: flex; align-items: center; justify-content: center; flex: 1;">
+                    <a href="/" style="display: flex; align-items: center;">
+                        <img src="/static/img/justdata-logo.png" alt="JustData" style="max-height: 88px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     </a>
-                    <i class="fas fa-chart-line" style="font-size: 3rem; color: var(--ncrc-gold); display: none;"></i>
-                </div>
-                <div class="header-title-section">
-                    <img src="/static/img/justdata-logo.png" alt="JustData" style="max-height: 80px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                     <h1 style="display: none;">JustData</h1>
-                    <p class="just-data-subtitle">An Advocacy Empowerment Tool by NCRC</p>
                 </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
+                <!-- Right side: Hamburger Menu -->
+                <div style="display: flex; align-items: center; min-width: 160px; justify-content: flex-end;">
+                    <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
+                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                    </button>
                 </div>
             </div>
-            <!-- User Type Selector -->
-            <div class="user-type-selector">
-                <label for="userTypeSelect">View as:</label>
-                <select id="userTypeSelect" onchange="switchUserType(this.value)" aria-label="Select user type to view">
-                    <option value="public" selected>Public (Free)</option>
-                    <option value="economy">Just Economy Club (Free)</option>
-                    <option value="member">Member (Included with $900/yr NCRC membership)</option>
-                    <option value="memberplus">Member Plus ($500-750/yr add-on)</option>
-                    <option value="institutional">Institutional ($5K-15K/yr)</option>
-                    <option value="staff">Staff (Included with employment)</option>
-                    <option value="admin">Admin (Internal)</option>
-                </select>
-            </div>
+            <!-- Dropdown Nav Menu -->
+            <nav id="navMenu" class="nav-menu" style="display: none; position: absolute; top: 100%; right: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 1000;">
+                <a href="/" class="nav-item" data-app="home" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
+                <a href="/lendsight" class="nav-item" data-app="lendsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
+                <a href="/bizsight" class="nav-item" data-app="bizsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
+                <a href="/branchsight" class="nav-item" data-app="branchseeker" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px; color: #7c3aed;"></i>BranchSight</a>
+                <a href="/branchmapper" class="nav-item" data-app="branchmapper" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-map-marked-alt" style="margin-right: 10px; color: #0891b2;"></i>BranchMapper</a>
+                <a href="/mergermeter" class="nav-item" data-app="mergermeter" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
+                <a href="/dataexplorer" class="nav-item" data-app="dataexplorer" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
+                <a href="/lenderprofile" class="nav-item" data-app="lenderprofile" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
+                <a href="/electwatch" class="nav-item" data-app="electwatch" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
+            </nav>
+
         </div>
     </header>
 
     <div class="container">
         <div class="content-wrapper">
             <main class="main-content" id="main-content" role="main">
-                <!-- User Types and Expected Income Buttons - Side by Side -->
-                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <button class="user-types-button" onclick="openUserTypesModal()" aria-label="View user access types and permissions">
-                        <i class="fas fa-users-cog" aria-hidden="true"></i>
-                        <span>User Types</span>
-                    </button>
-                    <button class="user-types-button" onclick="openIncomeSourcesModal()" aria-label="View expected income and funding sources">
-                        <i class="fas fa-dollar-sign" aria-hidden="true"></i>
-                        <span>Expected Income & Sources</span>
-                    </button>
-                </div>
+
 
                 <div class="page-title">
                     <h2><i class="fas fa-th-large" aria-hidden="true"></i> Available Applications</h2>
@@ -1255,30 +1259,30 @@
                         </div>
                     </div>
 
-                    <!-- BranchMapper Card -->
-                    <div class="app-card app-branchmapper" data-app="branchmapper" aria-label="BranchMapper - Interactive branch map visualization application" onclick="handleInfoClick('BranchMapper')">
+                    <!-- BranchSeeker Card (BranchSight) -->
+                    <div class="app-card app-branchseeker" data-app="branchseeker" aria-label="BranchSeeker - Bank branch location analysis application" onclick="handleInfoClick('BranchSeeker')">
                         <div class="app-card-header">
                             <div class="app-card-icon" aria-hidden="true">
-                                <i class="fas fa-map-marked-alt"></i>
+                                <i class="fas fa-building"></i>
                             </div>
-                            <h3 class="app-card-title">BranchMapper</h3>
+                            <h3 class="app-card-title">BranchSight</h3>
                         </div>
                         <p class="app-card-description">
-                            Interactive map visualization of bank branch locations with geographic filtering.
+                            Analyze bank branch locations and market concentration using FDIC Summary of Deposits data.
                         </p>
                         <div class="app-card-buttons">
-                            <button class="app-card-info-btn" onclick="event.stopPropagation(); handleInfoClick('BranchMapper')" aria-label="View BranchMapper information">
+                            <button class="app-card-info-btn" onclick="event.stopPropagation(); handleInfoClick('BranchSeeker')" aria-label="View BranchSight information">
                                 <i class="fas fa-info-circle"></i>
                                 <span>Info</span>
                             </button>
-                            <a href="/branchmapper" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch BranchMapper">
+                            <a href="/branchsight" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch BranchSight">
                                 <i class="fas fa-external-link-alt"></i>
                                 <span>Launch</span>
                             </a>
                         </div>
                     </div>
 
-                    <!-- BranchSeeker Card (BranchSight) -->
+                    <!-- BranchMapper Card -->
                     <div class="app-card app-branchseeker" data-app="branchseeker" aria-label="BranchSeeker - Bank branch location analysis application" onclick="handleInfoClick('BranchSeeker')">
                         <div class="app-card-header">
                             <div class="app-card-icon" aria-hidden="true">
@@ -1364,6 +1368,29 @@
                                 <span>Info</span>
                             </button>
                             <a href="/lenderprofile" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch LenderProfile">
+                                <i class="fas fa-external-link-alt"></i>
+                                <span>Launch</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- ElectWatch Card -->
+                    <div class="app-card app-electwatch" data-app="electwatch" aria-label="ElectWatch - Congressional financial tracking application" onclick="handleInfoClick('ElectWatch')">
+                        <div class="app-card-header">
+                            <div class="app-card-icon" aria-hidden="true">
+                                <i class="fas fa-landmark"></i>
+                            </div>
+                            <h3 class="app-card-title">ElectWatch</h3>
+                        </div>
+                        <p class="app-card-description">
+                            Track congressional representatives' financial relationships with banks and their voting records on financial legislation.
+                        </p>
+                        <div class="app-card-buttons">
+                            <button class="app-card-info-btn" onclick="event.stopPropagation(); handleInfoClick('ElectWatch')" aria-label="View ElectWatch information">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Info</span>
+                            </button>
+                            <a href="/electwatch" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch ElectWatch">
                                 <i class="fas fa-external-link-alt"></i>
                                 <span>Launch</span>
                             </a>
@@ -1470,41 +1497,7 @@
             </main>
         </div>
 
-        <!-- Sidebar -->
-        <aside class="sidebar" role="complementary" aria-label="Site instructions and information">
-            <h3><i class="fas fa-info-circle" aria-hidden="true"></i> How to Use This Site</h3>
-            <div class="sidebar-features">
-                <div class="feature-card">
-                    <i class="fas fa-mouse-pointer" aria-hidden="true"></i>
-                    <h4>Select an Application</h4>
-                    <p>Click any card above to launch that data analysis tool. Use Tab key to navigate, Enter or Space to activate.</p>
-                </div>
 
-                <div class="feature-card">
-                    <i class="fas fa-list" aria-hidden="true"></i>
-                    <h4>What's Available</h4>
-                    <p>AI-Driven Reports: LendSight, BranchSight, BizSight, MergerMeter. Interactive Tools: BranchMapper, DataExplorer.</p>
-                </div>
-
-                <div class="feature-card">
-                    <i class="fas fa-compass" aria-hidden="true"></i>
-                    <h4>Navigation</h4>
-                    <p>Each app has its own interface with forms, filters, and analysis options.</p>
-                </div>
-
-                <div class="feature-card">
-                    <i class="fas fa-download" aria-hidden="true"></i>
-                    <h4>Export Results</h4>
-                    <p>Export in Excel, PowerPoint, PDF, or CSV formats.</p>
-                </div>
-
-                <div class="feature-card">
-                    <i class="fas fa-robot" aria-hidden="true"></i>
-                    <h4>AI Insights</h4>
-                    <p>AI-generated summaries help interpret data patterns automatically.</p>
-                </div>
-            </div>
-        </aside>
     </div>
 
     <!-- Footer -->
@@ -1769,6 +1762,16 @@
                             <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
                         </tr>
                         <tr>
+                            <td>ElectWatch</td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
+                        </tr>
+                        <tr>
                             <td><strong>Interactive Tools</strong></td>
                             <td colspan="7" style="text-align: center; background: var(--ncrc-light-blue); font-weight: 600; color: var(--ncrc-primary-blue);">Interactive Tools</td>
                         </tr>
@@ -1835,6 +1838,25 @@
     </div>
 
     <script>
+        // Toggle hamburger navigation menu
+        function toggleNavMenu() {
+            const menu = document.getElementById('navMenu');
+            if (menu.style.display === 'none' || menu.style.display === '') {
+                menu.style.display = 'block';
+            } else {
+                menu.style.display = 'none';
+            }
+        }
+        
+        // Close menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger-menu');
+            if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+
         // User Access Configuration
         const appAccessConfig = {
             'lendsight': {
@@ -1934,6 +1956,15 @@
                 memberplus: 'hidden',
                 institutional: 'hidden',
                 staff: 'hidden',
+                admin: 'full'
+            },
+            'electwatch': {
+                public: 'hidden',
+                economy: 'hidden',
+                member: 'hidden',
+                memberplus: 'hidden',
+                institutional: 'hidden',
+                staff: 'full',
                 admin: 'full'
             }
         };
@@ -2079,8 +2110,38 @@
             const visibleApps = document.querySelectorAll('.app-card:not(.app-hidden)').length;
             const titleP = document.querySelector('.page-title p');
             if (titleP) {
-                titleP.textContent = `Select an application to begin your data analysis (${visibleApps} available)`;
+                titleP.textContent = "Select an application to begin your data analysis";
             }
+
+            // Update hamburger nav menu visibility based on user type
+            document.querySelectorAll('#navMenu .nav-item').forEach(item => {
+                const appKey = item.getAttribute('data-app');
+                if (appKey === 'home') {
+                    item.style.display = 'block'; // Home always visible
+                    return;
+                }
+                const access = appAccessConfig[appKey];
+                if (!access || access[userType] === 'hidden') {
+                    item.style.display = 'none';
+                } else if (access[userType] === 'locked') {
+                    item.style.display = 'flex';
+                    item.style.alignItems = 'center';
+                    item.style.opacity = '0.6';
+                    // Add lock icon if not present
+                    if (!item.querySelector('.nav-lock-icon')) {
+                        const lockIcon = document.createElement('i');
+                        lockIcon.className = 'fas fa-lock nav-lock-icon';
+                        lockIcon.style.cssText = 'margin-left: auto; color: #999; font-size: 0.8rem;';
+                        item.appendChild(lockIcon);
+                    }
+                } else {
+                    item.style.display = 'block';
+                    item.style.opacity = '1';
+                    // Remove lock icon if present
+                    const lockIcon = item.querySelector('.nav-lock-icon');
+                    if (lockIcon) lockIcon.remove();
+                }
+            });
         }
 
         // Handle card clicks
@@ -2817,7 +2878,7 @@
             document.body.style.overflow = ''; // Restore scrolling
             
             // Return focus to button that opened modal
-            document.querySelector('.user-types-button').focus();
+            // Focus restored
         }
 
         // Expected Income & Sources Modal Functions
@@ -2839,11 +2900,7 @@
             modal.setAttribute('aria-hidden', 'true');
             document.body.style.overflow = '';
             
-            // Return focus to button that opened modal
-            const buttons = document.querySelectorAll('.user-types-button');
-            if (buttons.length > 1) {
-                buttons[1].focus();
-            }
+            // Focus restored
         }
 
         // Close modal on Escape key

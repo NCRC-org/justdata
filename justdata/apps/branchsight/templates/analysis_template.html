@@ -27,38 +27,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-    <!-- Intro.js for onboarding tour -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                    </a>
-                </div>
-                <div class="header-title-section">
-                    <h1>BranchSight</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Return to JustData Home Button -->
-    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
-        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
-            <i class="fas fa-arrow-left"></i> Return to JustData Home
-        </a>
-    </div>
+    {% set app_name = "BranchSight" %}{% include "shared_header.html" %}
 
     <div class="container">
         <!-- Main Content -->
@@ -68,14 +39,11 @@
                 <div class="card-header">
                     <h2><i class="fas fa-search"></i> Generate Branch Analysis</h2>
                     <p>Enter the state and county to analyze FDIC branch data</p>
-                    <button id="startTourBtn" class="tour-btn" style="margin-top: 10px; padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
-                        <i class="fas fa-question-circle"></i> Take a Tour
-                    </button>
                 </div>
 
                 <form id="analysisForm" class="analysis-form">
                     <!-- State Selection (Required) -->
-                    <div class="form-group" data-intro="Select a state to begin your analysis." data-step="1">
+                    <div class="form-group">
                         <label for="state-filter-select" data-tooltip="Select a state to filter counties. Counties from the selected state will appear below.">
                             <i class="fas fa-map"></i>
                             State <span style="color: red;">*</span>
@@ -90,7 +58,7 @@
                     </div>
 
                     <!-- County Selection (Single county from selected state) -->
-                    <div class="form-group" id="county-selection-group" data-intro="Select a single county from the selected state to analyze." data-step="2">
+                    <div class="form-group" id="county-selection-group">
                         <label for="county-select" data-tooltip="Select a single county from the selected state. You can search by typing county names.">
                             <i class="fas fa-map-marker-alt"></i>
                             County <span style="color: red;">*</span>
@@ -105,7 +73,7 @@
                     </div>
 
                     <!-- Year Range (Fixed to 2021-2025) -->
-                    <div class="form-group" data-intro="The report will analyze data from 2021 to 2025 (the most recent five years of data)." data-step="3">
+                    <div class="form-group">
                         <div style="padding: 15px; background: var(--ncrc-light-blue); border-radius: 8px; margin-bottom: 20px;">
                             <p style="margin: 0; color: #333;">
                                 <i class="fas fa-calendar-alt"></i>
@@ -114,7 +82,7 @@
                         </div>
                     </div>
 
-                    <button type="submit" class="submit-btn" id="submitBtn" data-intro="Click here to start your analysis! The process typically takes 2-5 minutes depending on your selections. You'll see progress updates as it runs." data-step="4" data-tooltip="Click to generate your analysis. Make sure you've selected counties and a year range first.">
+                    <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your analysis. Make sure you've selected counties and a year range first.">
                         <i class="fas fa-magic"></i>
                         <span>Generate Analysis</span>
                     </button>
@@ -192,39 +160,6 @@
 
         </main>
         </div> <!-- End content-wrapper -->
-        
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> What You'll Get</h3>
-            <div class="sidebar-features">
-                <div class="feature-card" data-tooltip="Access county-level data on bank branch networks, including which institutions operate in the selected market and their deposit market share. See the percentage of branches located in low-to-moderate income census tracts, majority-minority census tracts, or areas that are both. Track changes in branch counts and market concentration over the last 5 years (2021-2025) to identify expansion or contraction patterns in specific geographies and community types.">
-                    <i class="fas fa-chart-bar"></i>
-                    <h4>Comprehensive Data</h4>
-                    <p>Detailed branch statistics for a single county, market share analysis, and 5-year growth trends</p>
-                </div>
-                <div class="feature-card" data-tooltip="AI-generated narrative analysis of branch distribution patterns, market concentration trends, and demographic service coverage based on NCRC's curated datasets. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. Verify specific claims and data points using the Excel Export, which contains the complete underlying data compiled by NCRC research staff.">
-                    <i class="fas fa-robot"></i>
-                    <h4>AI Insights</h4>
-                    <p>Claude AI-powered analysis of banking strategies and market dynamics</p>
-                </div>
-                <div class="feature-card" data-tooltip="Download structured data tables showing branch counts, deposit market shares, and demographic breakdowns by institution, state, and county. Use this file to conduct custom analysis, create additional visualizations, or verify findings from the AI-generated insights and web reports.">
-                    <i class="fas fa-file-excel"></i>
-                    <h4>Excel Export</h4>
-                    <p>Structured data in Excel format for further analysis and reporting</p>
-                </div>
-                <div class="feature-card" data-tooltip="View formatted tables and charts showing branch distributions, market concentration metrics, and demographic coverage statistics. Export individual tables or charts as needed. For detailed analysis or data verification, use the Excel Export option to access the complete underlying dataset.">
-                    <i class="fas fa-globe"></i>
-                    <h4>Web Report</h4>
-                    <p>Interactive web-based report with charts, tables, and export options</p>
-                </div>
-            </div>
-            
-            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current version of BranchSight.">
-                <i class="fas fa-code-branch"></i>
-                <h4>Version</h4>
-                <p>{{ version }}</p>
-            </div>
-        </aside>
     </div> <!-- End container -->
 
     <!-- Footer -->
@@ -260,8 +195,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <!-- Intro.js for onboarding tour -->
-    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.js"></script>
     <!-- Override progress steps for BranchSight -->
     <script>
         // Define progress steps for BranchSight (branch analysis) - 10 steps matching LendSight format

@@ -1,0 +1,21 @@
+<!-- Shared Header JavaScript -->
+<script>
+    // Toggle hamburger navigation menu
+    function toggleNavMenu() {
+        const menu = document.getElementById('navMenu');
+        if (menu.style.display === 'none' || menu.style.display === '') {
+            menu.style.display = 'block';
+        } else {
+            menu.style.display = 'none';
+        }
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', function(event) {
+        const menu = document.getElementById('navMenu');
+        const hamburger = document.querySelector('.hamburger-menu');
+        if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target)) {
+            menu.style.display = 'none';
+        }
+    });
+</script>

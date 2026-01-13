@@ -13,7 +13,6 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/introjs.min.css">
     
     <style>
         .map-selection-container {
@@ -171,23 +170,7 @@
     <!-- Body-level overlay for navigation menu (must be direct child of body for proper z-index) -->
     <div class="body-overlay" id="bodyOverlay"></div>
     
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                </div>
-                <div class="header-title-section">
-                    <h1><span class="app-name-part1">BIZ</span><span class="app-name-part2">SIGHT</span></h1>
-                    <p class="tagline-text"><em>data drives the <span class="movement-text">movement</span></em></p>
-                </div>
-                <div class="header-nav-wrapper">
-                    {% include 'nav_menu.html' %}
-                </div>
-            </div>
-        </div>
-    </header>
+    {% set app_name = "BizSight" %}{% include "shared_header.html" %}
 
     <div class="container">
         <div class="content-wrapper">
@@ -317,56 +300,6 @@
             </div>
         </main>
         </div>
-        
-        <!-- Sidebar -->
-        <aside class="sidebar">
-            <h3><i class="fas fa-star"></i> What You'll Get</h3>
-            <div class="sidebar-features">
-                <!-- Card 1: Section 1071 of Dodd-Frank Act (moved to top) -->
-                <div class="feature-card" data-tooltip="<strong>Section 1071 of the Dodd-Frank Act</strong><br><br>Section 1071, passed in 2010, requires financial institutions to collect and report data on small business lending, including demographic information about business owners. After 15 years of delay, NCRC sued the Consumer Financial Protection Bureau (CFPB) to finally implement this critical provision. This data will provide unprecedented transparency into small business lending patterns, helping identify disparities and opportunities for underserved communities.<br><br>However, Section 1071 is currently under attack from industry groups seeking to weaken or delay its implementation. Despite these challenges, when fully implemented, Section 1071 data will enable:<br>• Fair lending enforcement and compliance monitoring<br>• Identification of business and community development needs<br>• Analysis of lending patterns to women-owned and minority-owned businesses<br>• Market transparency for small business credit access<br><br><a href='https://ncrc.org/section1071/' target='_blank' style='color: var(--ncrc-primary-blue); text-decoration: underline;'>Learn more about Section 1071 →</a>">
-                    <i class="fas fa-gavel" style="color: var(--ncrc-primary-blue);"></i>
-                    <h4>Section 1071 of Dodd-Frank Act</h4>
-                    <p>Transparency in small business lending data collection and reporting</p>
-                </div>
-                
-                <!-- Card 2: Limitations of this Data -->
-                <div class="feature-card" data-tooltip="<strong>Limitations of This Data</strong><br><br>This analysis uses available small business lending data, which has important limitations:<br><br>• <strong>No Borrower Demographics:</strong> Unlike mortgage data (HMDA), we don't have detailed borrower information such as race, ethnicity, or gender<br><br>• <strong>Tract-Level Aggregation:</strong> Data is aggregated at the census tract level, not individual loan level<br><br>• <strong>County-Level Lender Data:</strong> Lender disclosure information is only available at the county level, limiting granular analysis<br><br>• <strong>Single County Focus:</strong> Analysis is limited to one county at a time for detailed tract-level mapping<br><br>• <strong>Data Availability:</strong> Coverage varies by lender and reporting requirements<br><br>These limitations will be addressed when Section 1071 is fully implemented, providing comprehensive borrower-level demographic data.">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <h4>Limitations of this Data</h4>
-                    <p>Important constraints on current small business lending data availability</p>
-                </div>
-                
-                <!-- Card 3: AI Insights -->
-                <div class="feature-card" data-tooltip="<strong>AI Insights</strong><br><br>AI-generated narrative analysis helps interpret small business lending patterns and trends. However, it's important to understand:<br><br>• <strong>AI Support is Limited:</strong> AI can only analyze the data we provide—it cannot access additional information or verify data accuracy<br><br>• <strong>Data Management:</strong> All underlying data is managed, cleaned, and maintained by NCRC research staff<br><br>• <strong>Verification Recommended:</strong> Always verify specific claims and data points using the underlying data tables in the report<br><br>• <strong>Pattern Recognition:</strong> AI identifies patterns and generates written summaries, but human review is essential for critical analysis">
-                    <i class="fas fa-robot"></i>
-                    <h4>AI Insights</h4>
-                    <p>AI-powered analysis with data managed by NCRC research staff</p>
-                </div>
-                
-                <!-- Card 4: Interactive Map -->
-                <div class="feature-card" data-tooltip="<strong>Interactive Map</strong><br><br>Explore small business lending patterns through an interactive tract-level map with multiple visualization layers:<br><br>• <strong>Income Classifications:</strong> View tracts by income level (Low, Moderate, Middle, Upper) based on Area Median Income<br><br>• <strong>Race Demographics:</strong> See minority percentage and racial composition by tract<br><br>• <strong>Loan Count Quartiles:</strong> Visualize the number of loans per tract broken into quartiles<br><br>• <strong>Loan Amount Quartiles:</strong> View total loan amounts per tract in quartile distributions<br><br>Toggle layers on and off to compare different aspects of lending patterns across census tracts within your selected county.">
-                    <i class="fas fa-map"></i>
-                    <h4>Interactive Map</h4>
-                    <p>Tract-level visualization with income, race, and lending quartile layers</p>
-                </div>
-                
-                <!-- Card 5: Detailed Reports -->
-                <div class="feature-card" data-tooltip="<strong>Detailed Reports</strong><br><br>Comprehensive analysis reports include:<br><br>• <strong>County Summary:</strong> Overall statistics for the entire county (2020-2024) including total loans, amounts by size category, and LMI tract percentages<br><br>• <strong>Top Lenders:</strong> Analysis of the top 10 lenders by loan volume (2024) with detailed breakdowns by loan size and tract characteristics<br><br>• <strong>AI Narratives:</strong> Each table includes AI-generated explanations of the data and trends, written in accessible language<br><br>• <strong>Methods & Disclosure:</strong> Full documentation of data sources, definitions, and AI disclosure information">
-                    <i class="fas fa-table"></i>
-                    <h4>Detailed Reports</h4>
-                    <p>County summaries, top lenders analysis, and comprehensive lending statistics</p>
-                </div>
-            </div>
-            
-            <!-- Version card - only show when deployed (not in development) -->
-            {% if version and version != '1.0.0' %}
-            <div class="feature-card" style="margin-top: 40px;" data-tooltip="Current version of BizSight. Check back for updates and new features.">
-                <i class="fas fa-code-branch"></i>
-                <h4>Version</h4>
-                <p>{{ version }}</p>
-            </div>
-            {% endif %}
-        </aside>
     </div>
 
     <!-- Footer -->
@@ -404,7 +337,6 @@
     <!-- Select2 (for enhanced dropdowns) -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/intro.js@7.2.0/minified/intro.min.js"></script>
     <!-- Set base URL for API calls BEFORE loading app.js -->
     <script>
         // Set base URL for API calls (with blueprint prefix)
@@ -781,5 +713,6 @@
             }
         });
     </script>
+    {% include "shared_header_js.html" %}
 </body>
 </html>
