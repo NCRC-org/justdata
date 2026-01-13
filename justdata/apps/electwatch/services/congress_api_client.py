@@ -133,17 +133,24 @@ class CongressAPIClient:
         return party_map.get(party_name, party_name[0] if party_name else 'U')
     
     def _calculate_years_served(self, terms: Dict) -> int:
+        """Calculate years in Congress from earliest term start to now."""
         from datetime import datetime as dt
         term_items = terms.get('item', [])
         if not term_items:
             return 0
-        total_years = 0
+
         current_year = dt.now().year
+
+        # Find the earliest start year across all terms
+        earliest_start = current_year
         for term in term_items:
-            start_year = term.get('startYear', current_year)
-            end_year = term.get('endYear', current_year)
-            total_years += (end_year - start_year) if end_year else (current_year - start_year)
-        return total_years
+            start_year = term.get('startYear')
+            if start_year and start_year < earliest_start:
+                earliest_start = start_year
+
+        # Calculate years from earliest start to now
+        years_served = current_year - earliest_start
+        return max(years_served, 1)  # At least 1 year if they have any terms
 
     def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Optional[Dict]:
         """Make a request to the Congress.gov API."""

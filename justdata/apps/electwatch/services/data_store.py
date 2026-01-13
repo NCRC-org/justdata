@@ -56,6 +56,9 @@ MISSING_BIOGUIDE_IDS = {
     'Rob Bresnahan': 'B001326',
     'Val Hoyle': 'H001094',
     'Byron Donalds': 'D000032',
+    'Ritchie Torres': 'T000486',  # Not Norma Torres (T000474)
+    'April Delaney': 'D000637',
+    'Rich McCormick': 'M001135',
 }
 
 # Website URL overrides for officials with non-standard URLs
@@ -66,6 +69,7 @@ WEBSITE_URL_OVERRIDES = {
     'Bill Johnson': 'https://billjohnson.house.gov',  # Multiple Johnsons
     'Dusty Johnson': 'https://dustyjohnson.house.gov',
     'Mike Johnson': 'https://mikejohnson.house.gov',  # Speaker
+    'April Delaney': 'https://aprildelaney.house.gov',  # Not former Rep John Delaney
 }
 
 # Wikipedia/Wikimedia photo URLs for Senators (House members use clerk.house.gov)
@@ -82,7 +86,98 @@ WIKIPEDIA_PHOTOS = {
     'John Kennedy': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/John_Kennedy%2C_official_portrait%2C_115th_Congress_%28cropped%29.jpg/330px-John_Kennedy%2C_official_portrait%2C_115th_Congress_%28cropped%29.jpg',
     'Sheldon Whitehouse': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg',
     'John Fetterman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg',
+    # House members with bioguide mismatches or missing photos
+    'Ritchie Torres': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Ritchie_Torres%2C_117th_Congress_portrait.jpeg/330px-Ritchie_Torres%2C_117th_Congress_portrait.jpeg',
+    'Rich McCormick': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Rich_McCormick_118th_Congress_portrait.jpg/330px-Rich_McCormick_118th_Congress_portrait.jpg',
+    'Val Hoyle': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/99/Rep._Val_Hoyle_-_118th_Congress.jpg/330px-Rep._Val_Hoyle_-_118th_Congress.jpg',
+    'George Whitesides': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/George_Whitesides_119th_Congress_portrait.jpg/330px-George_Whitesides_119th_Congress_portrait.jpg',
+    'April Delaney': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/April_Delaney_119th_Congress_portrait.jpg/330px-April_Delaney_119th_Congress_portrait.jpg',
 }
+
+# First year in Congress for members (to calculate years served correctly)
+# These override any incorrectly calculated values from the API
+CONGRESS_START_YEAR = {
+    # Senators
+    'Ted Cruz': 2013,
+    'John Boozman': 2001,  # House 2001, Senate 2011
+    'Shelley Moore Capito': 2001,  # House 2001, Senate 2015
+    'Tommy Tuberville': 2021,
+    'Markwayne Mullin': 2013,  # House 2013, Senate 2023
+    'John Kennedy': 2017,
+    'Angus King': 2013,
+    'Tina Smith': 2018,
+    'Sheldon Whitehouse': 2007,
+    'John Fetterman': 2023,
+    'Dave McCormick': 2025,
+    'Rand Paul': 2011,
+    'Mike Crapo': 1993,  # House 1993, Senate 1999
+    'Tim Scott': 2011,  # House 2011, Senate 2013
+    'Thom Tillis': 2015,
+    'Bill Hagerty': 2021,
+    'Cynthia Lummis': 2009,  # House 2009, Senate 2021
+    'Kevin Cramer': 2013,  # House 2013, Senate 2019
+    'Katie Britt': 2023,
+    'Bernie Moreno': 2025,
+    'John Curtis': 2017,  # House 2017, Senate 2025
+    # House members (key finance committee members)
+    'French Hill': 2015,
+    'Patrick McHenry': 2005,
+    'Maxine Waters': 1991,
+    'Andy Barr': 2013,
+    'Blaine Luetkemeyer': 2009,
+    'Bill Huizenga': 2011,
+    'Ann Wagner': 2013,
+    'Frank Lucas': 1994,
+    'Roger Williams': 2013,
+    'Barry Loudermilk': 2015,
+    'Alexander Mooney': 2015,
+    'Warren Davidson': 2016,
+    'Bryan Steil': 2019,
+    'Lance Gooden': 2019,
+    'William Timmons': 2019,
+    'Anthony Gonzalez': 2019,
+    'Byron Donalds': 2021,
+    'Mike Flood': 2022,
+    'Erin Houchin': 2023,
+    'Monica De La Cruz': 2023,
+    'Andy Ogles': 2023,
+    'Mike Lawler': 2023,
+    'Zach Nunn': 2023,
+    'Young Kim': 2021,
+    'Nancy Mace': 2021,
+    'Scott Fitzgerald': 2021,
+    'Pete Sessions': 1997,  # With gap, but total service
+    'Nydia Velazquez': 1993,
+    'Brad Sherman': 1997,
+    'Gregory Meeks': 1998,
+    'David Scott': 2003,
+    'Al Green': 2005,
+    'Emanuel Cleaver': 2005,
+    'Gwen Moore': 2005,
+    'Stephen Lynch': 2001,
+    'Jim Himes': 2009,
+    'Bill Foster': 2008,
+    'Joyce Beatty': 2013,
+    'Juan Vargas': 2013,
+    'Josh Gottheimer': 2017,
+    'Vicente Gonzalez': 2017,
+    'Al Lawson': 2017,
+    'Cindy Axne': 2019,
+    'Sean Casten': 2019,
+    'Ayanna Pressley': 2019,
+    'Ritchie Torres': 2021,
+    'Nikema Williams': 2021,
+    'Jake Auchincloss': 2021,
+    'Brittany Pettersen': 2023,
+    'Wiley Nickel': 2023,
+}
+
+
+def get_years_in_congress(name: str, stored_years: int = None) -> int:
+    """Get correct years in Congress, using override if available."""
+    if name in CONGRESS_START_YEAR:
+        return datetime.now().year - CONGRESS_START_YEAR[name]
+    return stored_years if stored_years else 1
 
 
 def normalize_to_public_name(formal_name: str) -> str:
@@ -247,6 +342,12 @@ def get_officials() -> List[Dict]:
         # Add bioguide_id from mapping if missing
         if not official.get('bioguide_id') and official.get('name') in MISSING_BIOGUIDE_IDS:
             official['bioguide_id'] = MISSING_BIOGUIDE_IDS[official.get('name')]
+
+        # Correct years in Congress using lookup table
+        official['years_in_congress'] = get_years_in_congress(
+            official.get('name', ''),
+            official.get('years_in_congress')
+        )
 
     return officials
 

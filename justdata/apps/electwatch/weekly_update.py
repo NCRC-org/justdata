@@ -847,70 +847,76 @@ class WeeklyDataUpdate:
             'INDEPENDENT BANKER', 'AMERICAN BANKER', 'CREDIT UNION'
         ]
 
-        # Calculate rolling 12-month date window
-        rolling_end_date = datetime.now()
-        rolling_start_date = rolling_end_date - timedelta(days=365)
-        min_date_str = rolling_start_date.strftime('%Y-%m-%d')
-        max_date_str = rolling_end_date.strftime('%Y-%m-%d')
-        logger.info(f"  Using rolling 12-month window: {min_date_str} to {max_date_str}")
+        # Use FEC election cycles instead of rolling 12-month window
+        # FEC cycles are 2-year periods identified by the election year (even years)
+        # We use current cycle + previous cycle = 4 years of data
+        current_year = datetime.now().year
+        # Cycles are even years - find the current and previous cycles
+        current_cycle = current_year if current_year % 2 == 0 else current_year + 1
+        previous_cycle = current_cycle - 2
+        cycles = [current_cycle, previous_cycle]
+        logger.info(f"  Using FEC election cycles: {previous_cycle} and {current_cycle} (2 cycles = 4 years)")
 
         def get_financial_pac_total(committee_id: str) -> tuple:
-            """Get total financial sector PAC contributions to a candidate's committee (rolling 12 months)."""
+            """Get total financial sector PAC contributions to a candidate's committee (2 election cycles)."""
             url = 'https://api.open.fec.gov/v1/schedules/schedule_a/'
             total = 0
             contributors = []
-            page = 1
-            max_pages = 20  # Limit pages to avoid excessive API calls
 
-            while page <= max_pages:
-                params = {
-                    'api_key': api_key,
-                    'committee_id': committee_id,
-                    'min_date': min_date_str,
-                    'max_date': max_date_str,
-                    'contributor_type': 'committee',
-                    'per_page': 100,
-                    'page': page
-                }
+            # Query each cycle separately to get complete data
+            for cycle in cycles:
+                page = 1
+                max_pages = 20  # Limit pages per cycle to avoid excessive API calls
 
-                try:
-                    time.sleep(0.5)  # Rate limiting
-                    r = requests.get(url, params=params, timeout=60)
+                while page <= max_pages:
+                    params = {
+                        'api_key': api_key,
+                        'committee_id': committee_id,
+                        'two_year_transaction_period': cycle,
+                        'contributor_type': 'committee',
+                        'per_page': 100,
+                        'page': page
+                    }
 
-                    if r.status_code == 429:
-                        logger.warning("  Rate limited - waiting 60 seconds")
-                        time.sleep(60)
-                        continue
+                    try:
+                        time.sleep(0.5)  # Rate limiting
+                        r = requests.get(url, params=params, timeout=60)
 
-                    if not r.ok:
+                        if r.status_code == 429:
+                            logger.warning("  Rate limited - waiting 60 seconds")
+                            time.sleep(60)
+                            continue
+
+                        if not r.ok:
+                            break
+
+                        data = r.json()
+                        results = data.get('results', [])
+                        if not results:
+                            break
+
+                        for c in results:
+                            contrib_name = c.get('contributor_name', '').upper()
+                            amt = c.get('contribution_receipt_amount', 0)
+                            # Only count PAC contributions (not employee contributions)
+                            # Must have "PAC" or "POLITICAL ACTION" in name AND match financial keywords
+                            is_pac = 'PAC' in contrib_name or 'POLITICAL ACTION' in contrib_name or 'POLITICAL FUND' in contrib_name
+                            if amt > 0 and is_pac and any(kw in contrib_name for kw in FINANCIAL_KEYWORDS):
+                                total += amt
+                                contributors.append({
+                                    'name': c.get('contributor_name', ''),
+                                    'amount': amt,
+                                    'cycle': cycle
+                                })
+
+                        pages = data.get('pagination', {}).get('pages', 1)
+                        if page >= pages:
+                            break
+                        page += 1
+
+                    except Exception as e:
+                        logger.error(f"  Error fetching receipts for cycle {cycle}: {e}")
                         break
-
-                    data = r.json()
-                    results = data.get('results', [])
-                    if not results:
-                        break
-
-                    for c in results:
-                        name = c.get('contributor_name', '').upper()
-                        amt = c.get('contribution_receipt_amount', 0)
-                        # Only count PAC contributions (not employee contributions)
-                        # Must have "PAC" or "POLITICAL ACTION" in name AND match financial keywords
-                        is_pac = 'PAC' in name or 'POLITICAL ACTION' in name or 'POLITICAL FUND' in name
-                        if amt > 0 and is_pac and any(kw in name for kw in FINANCIAL_KEYWORDS):
-                            total += amt
-                            contributors.append({
-                                'name': c.get('contributor_name', ''),
-                                'amount': amt
-                            })
-
-                    pages = data.get('pagination', {}).get('pages', 1)
-                    if page >= pages:
-                        break
-                    page += 1
-
-                except Exception as e:
-                    logger.error(f"  Error fetching receipts: {e}")
-                    break
 
             return total, contributors
 
