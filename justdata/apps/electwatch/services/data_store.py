@@ -32,6 +32,99 @@ from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
 
+# Formal/legal names -> public names mapping
+# These are officials whose disclosure names differ from their commonly-used names
+FORMAL_TO_PUBLIC_NAME = {
+    'Rafael Cruz': 'Ted Cruz',
+    'Angus S. King': 'Angus King',
+    'Thomas Tuberville': 'Tommy Tuberville',
+    'Thomas H. Kean': 'Tom Kean',
+    'James French Hill': 'French Hill',
+    'Neal P. Dunn': 'Neal Dunn',
+    'Carol Devine Miller': 'Carol Miller',
+    'Richard McCormick': 'Rich McCormick',
+    'Marjorie Taylor Greene': 'Marjorie Greene',
+    'Richard W. Allen': 'Rick Allen',
+    'William R. Keating': 'Bill Keating',
+}
+
+# Missing bioguide IDs - for new members not yet in our data
+# These are used to generate House Clerk photo URLs
+MISSING_BIOGUIDE_IDS = {
+    'Julie Johnson': 'J000310',
+    'George Whitesides': 'W000828',
+    'Rob Bresnahan': 'B001326',
+    'Val Hoyle': 'H001094',
+    'Byron Donalds': 'D000032',
+}
+
+# Website URL overrides for officials with non-standard URLs
+# Standard format is lastname.house.gov or lastname.senate.gov
+# These entries override when the standard format doesn't work
+WEBSITE_URL_OVERRIDES = {
+    'Julie Johnson': 'https://juliejohnson.house.gov',
+    'Bill Johnson': 'https://billjohnson.house.gov',  # Multiple Johnsons
+    'Dusty Johnson': 'https://dustyjohnson.house.gov',
+    'Mike Johnson': 'https://mikejohnson.house.gov',  # Speaker
+}
+
+# Wikipedia/Wikimedia photo URLs for Senators (House members use clerk.house.gov)
+# These are used as fallback when photo_url is not in stored data
+WIKIPEDIA_PHOTOS = {
+    'Dave McCormick': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/McCormick_Portrait_%28HR%29.jpg/330px-McCormick_Portrait_%28HR%29.jpg',
+    'Angus King': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg',
+    'Ted Cruz': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg/330px-Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg',
+    'Markwayne Mullin': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg',
+    'Tommy Tuberville': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg',
+    'Shelley Moore Capito': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg',
+    'John Boozman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg',
+    'Tina Smith': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Tina_Smith%2C_official_portrait%2C_116th_congress.jpg/330px-Tina_Smith%2C_official_portrait%2C_116th_congress.jpg',
+    'John Kennedy': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/John_Kennedy%2C_official_portrait%2C_115th_Congress_%28cropped%29.jpg/330px-John_Kennedy%2C_official_portrait%2C_115th_Congress_%28cropped%29.jpg',
+    'Sheldon Whitehouse': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg',
+    'John Fetterman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg',
+}
+
+
+def normalize_to_public_name(formal_name: str) -> str:
+    """Convert a formal/legal name to the publicly-used name."""
+    return FORMAL_TO_PUBLIC_NAME.get(formal_name, formal_name)
+
+
+def get_photo_url(name: str, bioguide_id: str = None, chamber: str = 'house') -> Optional[str]:
+    """Get photo URL for an official, checking Wikipedia first then House Clerk."""
+    # Check Wikipedia photos (mainly for Senators)
+    if name in WIKIPEDIA_PHOTOS:
+        return WIKIPEDIA_PHOTOS[name]
+
+    # Check for missing bioguide IDs
+    if not bioguide_id and name in MISSING_BIOGUIDE_IDS:
+        bioguide_id = MISSING_BIOGUIDE_IDS[name]
+
+    # For House members, use clerk.house.gov with bioguide_id
+    if bioguide_id and chamber == 'house':
+        return f"https://clerk.house.gov/content/assets/img/members/{bioguide_id}.jpg"
+
+    return None
+
+
+def get_website_url(name: str, chamber: str = 'house') -> Optional[str]:
+    """Get official website URL for a member of Congress."""
+    # Check for overrides first (for non-standard URLs)
+    if name in WEBSITE_URL_OVERRIDES:
+        return WEBSITE_URL_OVERRIDES[name]
+
+    # Generate standard URL from last name
+    parts = name.split()
+    if parts:
+        last_name = parts[-1].lower()
+        if chamber == 'house':
+            return f"https://{last_name}.house.gov"
+        else:
+            return f"https://www.{last_name}.senate.gov"
+
+    return None
+
+
 # Data directory
 DATA_DIR = Path(__file__).parent.parent / 'data'
 CURRENT_DIR = DATA_DIR / 'current'
@@ -96,18 +189,94 @@ def get_metadata() -> Dict[str, Any]:
 
 
 def get_officials() -> List[Dict]:
-    """Get all officials data."""
+    """Get all officials data with normalized public names and photos."""
     data = load_json('officials.json')
-    return data.get('officials', []) if data else []
+    officials = data.get('officials', []) if data else []
+
+    # Normalize names, parties, and ensure photos
+    for official in officials:
+        # Normalize name to public version (e.g., 'Rafael Cruz' -> 'Ted Cruz')
+        if 'name' in official:
+            official['name'] = normalize_to_public_name(official['name'])
+
+        # Also update the ID to match the public name
+        if official.get('name'):
+            official['id'] = official['name'].lower().replace(' ', '_')
+
+        # Normalize party to single letter (REP -> R, DEM -> D)
+        party = official.get('party', '')
+        if party == 'REP':
+            official['party'] = 'R'
+        elif party == 'DEM':
+            official['party'] = 'D'
+        elif party == 'IND':
+            official['party'] = 'I'
+
+        # Ensure photo URL - use fallback lookup if missing
+        if not official.get('photo_url'):
+            photo_url = get_photo_url(
+                official.get('name', ''),
+                official.get('bioguide_id'),
+                official.get('chamber', 'house')
+            )
+            if photo_url:
+                official['photo_url'] = photo_url
+                official['photo_source'] = 'wikipedia' if 'wikimedia' in photo_url else 'house_clerk'
+
+        # Populate contributions_list from top_financial_pacs if available
+        if not official.get('contributions_list') and official.get('top_financial_pacs'):
+            official['contributions_list'] = [
+                {
+                    'source': pac.get('name', 'Unknown PAC'),
+                    'pac_name': pac.get('name', 'Unknown PAC'),
+                    'amount': pac.get('amount', 0),
+                    'date': None,  # Date not available from this source
+                    'industry': 'financial'  # All are financial sector PACs
+                }
+                for pac in official.get('top_financial_pacs', [])
+            ]
+            official['contributions_count'] = len(official['contributions_list'])
+
+        # Add website URL (with overrides for non-standard URLs like juliejohnson.house.gov)
+        if not official.get('website_url'):
+            official['website_url'] = get_website_url(
+                official.get('name', ''),
+                official.get('chamber', 'house')
+            )
+
+        # Add bioguide_id from mapping if missing
+        if not official.get('bioguide_id') and official.get('name') in MISSING_BIOGUIDE_IDS:
+            official['bioguide_id'] = MISSING_BIOGUIDE_IDS[official.get('name')]
+
+    return officials
 
 
 def get_official(official_id: str) -> Optional[Dict]:
-    """Get a specific official by ID."""
+    """Get a specific official by ID (handles both original and normalized IDs)."""
+    # First try get_officials which has all the normalization applied
+    officials = get_officials()
+    for official in officials:
+        if official.get('id') == official_id:
+            return official
+
+    # Fall back to by_id index (try original and normalized keys)
     data = load_json('officials.json')
     if not data:
         return None
+
     officials_by_id = data.get('by_id', {})
-    return officials_by_id.get(official_id)
+
+    # Try direct match
+    if official_id in officials_by_id:
+        return officials_by_id.get(official_id)
+
+    # Try matching by normalized ID
+    for stored_id, official in officials_by_id.items():
+        normalized_id = normalize_to_public_name(official.get('name', '')).lower().replace(' ', '_')
+        if normalized_id == official_id:
+            return official
+
+    return None
 
 
 def get_firms() -> List[Dict]:
@@ -286,6 +455,36 @@ def save_summaries(summaries: Dict[str, str], weekly_dir: Optional[Path] = None)
     """Save AI-generated summaries."""
     summaries['generated_at'] = datetime.now().isoformat()
     save_json('summaries.json', summaries, weekly_dir)
+
+
+def save_insights(insights: List[Dict[str, Any]], weekly_dir: Optional[Path] = None):
+    """Save AI-generated pattern insights."""
+    data = {
+        'insights': insights,
+        'generated_at': datetime.now().isoformat(),
+        'version': '1.0'
+    }
+    save_json('insights.json', data, weekly_dir)
+
+
+def get_insights() -> List[Dict[str, Any]]:
+    """Get AI-generated pattern insights from storage."""
+    data = load_json('insights.json')
+    if data and 'insights' in data:
+        return data['insights']
+    return []
+
+
+def get_insights_metadata() -> Dict[str, Any]:
+    """Get metadata about when insights were generated."""
+    data = load_json('insights.json')
+    if data:
+        return {
+            'generated_at': data.get('generated_at'),
+            'version': data.get('version'),
+            'count': len(data.get('insights', []))
+        }
+    return {}
 
 
 def save_metadata(metadata: Dict[str, Any], weekly_dir: Optional[Path] = None):

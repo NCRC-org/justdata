@@ -17,12 +17,12 @@
     <style>
         /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
         :root {
-            --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC blue */
-            --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
+            --ncrc-primary-blue: #1a8fc9;      /* JustData Blue - primary brand color */
+            --ncrc-secondary-blue: #0066CC;     /* Bright Blue - Secondary */
             --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
             --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
-            --ncrc-dark-blue: #034ea0;          /* Dark Blue for headers */
-            --ncrc-light-blue: #E6F2FF;         /* Light blue background */
+            --ncrc-dark-blue: #1a8fc9;          /* JustData Blue for headers */
+            --ncrc-light-blue: #E6F7FF;         /* Light blue background */
             --ncrc-gold: #ffc23a;               /* Golden Yellow */
             --ncrc-purple: #552d87;             /* Deep Purple */
             --ncrc-gray: #818390;               /* Medium Gray */
@@ -583,14 +583,6 @@
                 gap: 20px;
             }
 
-            .sidebar {
-                width: 100%;
-                position: relative;
-                top: 0;
-                margin-top: 0;
-                max-height: none;
-            }
-
             .apps-grid {
                 grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
                 gap: 20px;
@@ -698,14 +690,6 @@
                 font-size: 0.9rem;
             }
 
-            .sidebar {
-                padding: 15px;
-            }
-
-            .sidebar h3 {
-                font-size: 1rem;
-            }
-
             .modal-content {
                 max-width: 100%;
                 margin: 10px;
@@ -792,83 +776,6 @@
         .app-admin .app-card-icon {
             background: rgba(232, 46, 46, 0.1);
             color: var(--ncrc-accent-red);
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 320px;
-            flex-shrink: 0;
-            position: sticky;
-            top: 20px;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            padding: 18px;
-            margin-top: 20px;
-            max-height: calc(100vh - 40px);
-            overflow-y: visible;
-            opacity: 0;
-            transform: translateX(30px);
-            animation: slideInRightCard 0.8s ease-out 1.2s forwards;
-        }
-
-        @keyframes slideInRightCard {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        .sidebar h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--ncrc-primary-blue);
-            margin-bottom: 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--ncrc-light-blue);
-        }
-
-        .sidebar-features {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .sidebar .feature-card {
-            background: var(--ncrc-light-blue);
-            border-radius: 8px;
-            padding: 10px 12px;
-            border: 1px solid rgba(0, 51, 102, 0.1);
-        }
-
-        .sidebar .feature-card i {
-            font-size: 1.4rem;
-            color: var(--ncrc-primary-blue);
-            margin-bottom: 6px;
-            display: inline-block;
-            margin-right: 8px;
-            vertical-align: top;
-        }
-
-        .sidebar .feature-card h4 {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--ncrc-primary-blue);
-            margin: 0 0 4px 0;
-            display: inline-block;
-            vertical-align: top;
-            width: calc(100% - 40px);
-        }
-
-        .sidebar .feature-card p {
-            font-size: 0.8rem;
-            color: var(--ncrc-gray);
-            line-height: 1.3;
-            margin: 4px 0 0 0;
         }
 
         /* Footer */
@@ -1495,7 +1402,6 @@
         body.menu-open .container,
         body.menu-open .content-wrapper,
         body.menu-open .main-content,
-        body.menu-open .sidebar,
         body.menu-open .footer,
         body.menu-open .app-card,
         body.menu-open .coming-soon-section,
@@ -1808,41 +1714,6 @@
             </main>
         </div>
 
-        <!-- Sidebar -->
-        <aside class="sidebar" role="complementary" aria-label="Site instructions and information">
-            <h3><i class="fas fa-info-circle" aria-hidden="true"></i> How to Use This Site</h3>
-            <div class="sidebar-features">
-                <div class="feature-card">
-                    <i class="fas fa-mouse-pointer" aria-hidden="true"></i>
-                    <h4>Select an Application</h4>
-                    <p>Click any card to launch the JustData tool.</p>
-                </div>
-
-                <div class="feature-card">
-                    <i class="fas fa-list" aria-hidden="true"></i>
-                    <h4>What's Available</h4>
-                    <p>AI Generated reports. Data dashboards. Custom tools for custom projects.</p>
-                </div>
-
-                <div class="feature-card">
-                    <i class="fas fa-compass" aria-hidden="true"></i>
-                    <h4>Navigation</h4>
-                    <p>Each app has its own interface with forms, filters, and analysis options.</p>
-                </div>
-
-                <div class="feature-card">
-                    <i class="fas fa-download" aria-hidden="true"></i>
-                    <h4>Export Results</h4>
-                    <p>Export in Excel, PowerPoint, PDF, or CSV formats.</p>
-                </div>
-
-                <div class="feature-card">
-                    <i class="fas fa-robot" aria-hidden="true"></i>
-                    <h4>AI Insights</h4>
-                    <p>AI-generated summaries help interpret data patterns automatically.</p>
-                </div>
-            </div>
-        </aside>
     </div>
 
     <!-- Footer -->

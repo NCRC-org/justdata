@@ -1309,6 +1309,59 @@ class FirmMapper:
         normalized = self._normalize_pac_name(pac_name)
         return self._pac_index.get(normalized) or self._fuzzy_match_pac(normalized)
 
+    def get_firm_from_name(self, firm_name: str) -> Optional[FirmRecord]:
+        """
+        Get full firm record from firm name or alias.
+
+        Searches exact matches first, then fuzzy matches.
+
+        Args:
+            firm_name: Firm name (e.g., 'JPMorgan Chase', 'JP Morgan', 'Chase')
+
+        Returns:
+            FirmRecord or None
+        """
+        if not firm_name:
+            return None
+
+        normalized = firm_name.lower().strip()
+
+        # Exact match
+        if normalized in self._name_index:
+            return self._name_index[normalized]
+
+        # Try without common suffixes
+        cleaned = re.sub(r'\s+(inc\.?|corp\.?|co\.?|corporation|company|&\s*co\.?)$', '', normalized, flags=re.IGNORECASE)
+        if cleaned in self._name_index:
+            return self._name_index[cleaned]
+
+        # Fuzzy match
+        best_match = None
+        best_ratio = 0.7  # Minimum threshold
+
+        for name, firm in self._name_index.items():
+            ratio = SequenceMatcher(None, normalized, name).ratio()
+            if ratio > best_ratio:
+                best_ratio = ratio
+                best_match = firm
+
+        return best_match
+
+    def get_firm_pacs(self, firm_name: str) -> List[str]:
+        """
+        Get PAC names associated with a firm.
+
+        Args:
+            firm_name: Firm name (e.g., 'JPMorgan Chase')
+
+        Returns:
+            List of PAC names for that firm
+        """
+        firm = self.get_firm_from_name(firm_name)
+        if firm:
+            return firm.pac_names
+        return []
+
     def get_sector_info(self, sector_code: str) -> Optional[Dict]:
         """Get sector metadata."""
         return FINANCIAL_SECTORS.get(sector_code)

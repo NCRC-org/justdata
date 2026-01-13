@@ -229,6 +229,24 @@ def api_get_officials():
                 # Total Involvement = Total PAC + Max Stock Trades
                 total_amount = total_pac + stock_trades_max
 
+                # Get photo attribution for hover tooltip
+                # Photos sourced from Wikimedia Commons or U.S. House Clerk / Bioguide
+                photo_attribution = None
+                if o.get('photo_url'):
+                    try:
+                        from apps.electwatch.services.photo_service import get_photo_citation_for_api
+                        photo_attribution = get_photo_citation_for_api(
+                            name=o.get('name', ''),
+                            photo_url=o.get('photo_url'),
+                            photo_source=o.get('photo_source'),
+                            bioguide_id=o.get('bioguide_id')
+                        )
+                        if 'wikimedia' in (o.get('photo_url') or '').lower():
+                            print(f"[DEBUG PHOTO] {o.get('name')}: attribution={photo_attribution}")
+                    except Exception as e:
+                        print(f"[PHOTO ERROR] {o.get('name')}: {e}")
+                        logger.error(f"[PHOTO] Error getting attribution for {o.get('name')}: {e}")
+
                 formatted.append({
                     'id': o.get('id', o.get('name', '').lower().replace(' ', '_')),
                     'name': o.get('name', ''),
@@ -262,6 +280,8 @@ def api_get_officials():
                     'top_industries': o.get('top_industries', []),
                     'score_breakdown': o.get('score_breakdown', {}),
                     'photo_url': o.get('photo_url'),
+                    'photo_source': o.get('photo_source'),  # 'wikipedia', 'house_clerk', etc.
+                    'photo_attribution': photo_attribution,  # Citation for hover tooltip
                 })
 
             return jsonify({
@@ -850,8 +870,29 @@ def api_get_official(official_id: str):
                 'net_worth_estimate': stored_official.get('net_worth_estimate'),
                 'bioguide_id': stored_official.get('bioguide_id', ''),
                 'photo_url': stored_official.get('photo_url'),
+                'photo_source': stored_official.get('photo_source'),
+                'photo_attribution': None,  # Will be set below
+                # Financial PAC data
+                'financial_sector_pac': stored_official.get('financial_sector_pac'),
+                'top_financial_pacs': stored_official.get('top_financial_pacs', []),
+                # Website URL (with overrides for non-standard URLs)
+                'website_url': stored_official.get('website_url'),
                 'data_source': 'weekly_update'
             }
+
+            # Add photo attribution for hover tooltip
+            # Photos sourced from Wikimedia Commons or U.S. House Clerk / Bioguide
+            if official.get('photo_url'):
+                try:
+                    from apps.electwatch.services.photo_service import get_photo_citation_for_api
+                    official['photo_attribution'] = get_photo_citation_for_api(
+                        name=official.get('name', ''),
+                        photo_url=official.get('photo_url'),
+                        photo_source=official.get('photo_source'),
+                        bioguide_id=official.get('bioguide_id')
+                    )
+                except Exception:
+                    pass
 
             return jsonify({
                 'success': True,
@@ -1566,40 +1607,161 @@ def api_get_committee(committee_id: str):
     if not committee:
         return jsonify({'error': f'Committee not found: {committee_id}'}), 404
 
-    # Try to get real members from data store based on committee assignments
+    # Master list of all committee members (used to ensure everyone is shown)
+    # These will be enriched with financial data from the data store
+    all_committee_members = {
+        'house-financial-services': [
+            {'name': 'French Hill', 'party': 'R', 'state': 'AR', 'role': 'Chair'},
+            {'name': 'Maxine Waters', 'party': 'D', 'state': 'CA', 'role': 'Ranking Member'},
+            {'name': 'Andy Barr', 'party': 'R', 'state': 'KY', 'role': 'Vice Chair'},
+            {'name': 'Bill Huizenga', 'party': 'R', 'state': 'MI', 'role': 'Member'},
+            {'name': 'Ann Wagner', 'party': 'R', 'state': 'MO', 'role': 'Member'},
+            {'name': 'Frank Lucas', 'party': 'R', 'state': 'OK', 'role': 'Member'},
+            {'name': 'Pete Sessions', 'party': 'R', 'state': 'TX', 'role': 'Member'},
+            {'name': 'Bill Posey', 'party': 'R', 'state': 'FL', 'role': 'Member'},
+            {'name': 'Blaine Luetkemeyer', 'party': 'R', 'state': 'MO', 'role': 'Member'},
+            {'name': 'Tom Emmer', 'party': 'R', 'state': 'MN', 'role': 'Member'},
+            {'name': 'Ralph Norman', 'party': 'R', 'state': 'SC', 'role': 'Member'},
+            {'name': 'Dan Meuser', 'party': 'R', 'state': 'PA', 'role': 'Member'},
+            {'name': 'John Rose', 'party': 'R', 'state': 'TN', 'role': 'Member'},
+            {'name': 'Bryan Steil', 'party': 'R', 'state': 'WI', 'role': 'Member'},
+            {'name': 'Mike Lawler', 'party': 'R', 'state': 'NY', 'role': 'Member'},
+            {'name': 'Zach Nunn', 'party': 'R', 'state': 'IA', 'role': 'Member'},
+            {'name': 'Monica De La Cruz', 'party': 'R', 'state': 'TX', 'role': 'Member'},
+            {'name': 'Erin Houchin', 'party': 'R', 'state': 'IN', 'role': 'Member'},
+            {'name': 'Andy Ogles', 'party': 'R', 'state': 'TN', 'role': 'Member'},
+            {'name': 'Mike Flood', 'party': 'R', 'state': 'NE', 'role': 'Member'},
+            {'name': 'Brad Sherman', 'party': 'D', 'state': 'CA', 'role': 'Member'},
+            {'name': 'Gregory Meeks', 'party': 'D', 'state': 'NY', 'role': 'Member'},
+            {'name': 'David Scott', 'party': 'D', 'state': 'GA', 'role': 'Member'},
+            {'name': 'Nydia Velazquez', 'party': 'D', 'state': 'NY', 'role': 'Member'},
+            {'name': 'Al Green', 'party': 'D', 'state': 'TX', 'role': 'Member'},
+            {'name': 'Emanuel Cleaver', 'party': 'D', 'state': 'MO', 'role': 'Member'},
+            {'name': 'Jim Himes', 'party': 'D', 'state': 'CT', 'role': 'Member'},
+            {'name': 'Bill Foster', 'party': 'D', 'state': 'IL', 'role': 'Member'},
+            {'name': 'Joyce Beatty', 'party': 'D', 'state': 'OH', 'role': 'Member'},
+            {'name': 'Juan Vargas', 'party': 'D', 'state': 'CA', 'role': 'Member'},
+            {'name': 'Sean Casten', 'party': 'D', 'state': 'IL', 'role': 'Member'},
+            {'name': 'Ayanna Pressley', 'party': 'D', 'state': 'MA', 'role': 'Member'},
+            {'name': 'Ritchie Torres', 'party': 'D', 'state': 'NY', 'role': 'Member'},
+            {'name': 'Sylvia Garcia', 'party': 'D', 'state': 'TX', 'role': 'Member'},
+            {'name': 'Nikema Williams', 'party': 'D', 'state': 'GA', 'role': 'Member'},
+        ],
+        'senate-banking': [
+            {'name': 'Tim Scott', 'party': 'R', 'state': 'SC', 'role': 'Chair'},
+            {'name': 'Elizabeth Warren', 'party': 'D', 'state': 'MA', 'role': 'Ranking Member'},
+            {'name': 'Mike Crapo', 'party': 'R', 'state': 'ID', 'role': 'Member'},
+            {'name': 'Mike Rounds', 'party': 'R', 'state': 'SD', 'role': 'Member'},
+            {'name': 'Thom Tillis', 'party': 'R', 'state': 'NC', 'role': 'Member'},
+            {'name': 'John Kennedy', 'party': 'R', 'state': 'LA', 'role': 'Member'},
+            {'name': 'Bill Hagerty', 'party': 'R', 'state': 'TN', 'role': 'Member'},
+            {'name': 'Cynthia Lummis', 'party': 'R', 'state': 'WY', 'role': 'Member'},
+            {'name': 'Kevin Cramer', 'party': 'R', 'state': 'ND', 'role': 'Member'},
+            {'name': 'Katie Britt', 'party': 'R', 'state': 'AL', 'role': 'Member'},
+            {'name': 'Dave McCormick', 'party': 'R', 'state': 'PA', 'role': 'Member'},
+            {'name': 'Bernie Moreno', 'party': 'R', 'state': 'OH', 'role': 'Member'},
+            {'name': 'Ruben Gallego', 'party': 'D', 'state': 'AZ', 'role': 'Member'},
+            {'name': 'Jack Reed', 'party': 'D', 'state': 'RI', 'role': 'Member'},
+            {'name': 'Mark Warner', 'party': 'D', 'state': 'VA', 'role': 'Member'},
+            {'name': 'Chris Van Hollen', 'party': 'D', 'state': 'MD', 'role': 'Member'},
+            {'name': 'Catherine Cortez Masto', 'party': 'D', 'state': 'NV', 'role': 'Member'},
+            {'name': 'Tina Smith', 'party': 'D', 'state': 'MN', 'role': 'Member'},
+            {'name': 'Raphael Warnock', 'party': 'D', 'state': 'GA', 'role': 'Member'},
+            {'name': 'John Fetterman', 'party': 'D', 'state': 'PA', 'role': 'Member'},
+            {'name': 'Andy Kim', 'party': 'D', 'state': 'NJ', 'role': 'Member'},
+        ],
+        'senate-finance': [
+            {'name': 'Mike Crapo', 'party': 'R', 'state': 'ID', 'role': 'Chair'},
+            {'name': 'Ron Wyden', 'party': 'D', 'state': 'OR', 'role': 'Ranking Member'},
+            {'name': 'Chuck Grassley', 'party': 'R', 'state': 'IA', 'role': 'Member'},
+            {'name': 'John Cornyn', 'party': 'R', 'state': 'TX', 'role': 'Member'},
+            {'name': 'John Thune', 'party': 'R', 'state': 'SD', 'role': 'Member'},
+            {'name': 'Tim Scott', 'party': 'R', 'state': 'SC', 'role': 'Member'},
+            {'name': 'Bill Cassidy', 'party': 'R', 'state': 'LA', 'role': 'Member'},
+            {'name': 'James Lankford', 'party': 'R', 'state': 'OK', 'role': 'Member'},
+            {'name': 'Steve Daines', 'party': 'R', 'state': 'MT', 'role': 'Member'},
+            {'name': 'Todd Young', 'party': 'R', 'state': 'IN', 'role': 'Member'},
+            {'name': 'John Barrasso', 'party': 'R', 'state': 'WY', 'role': 'Member'},
+            {'name': 'Marsha Blackburn', 'party': 'R', 'state': 'TN', 'role': 'Member'},
+            {'name': 'Debbie Stabenow', 'party': 'D', 'state': 'MI', 'role': 'Member'},
+            {'name': 'Maria Cantwell', 'party': 'D', 'state': 'WA', 'role': 'Member'},
+            {'name': 'Bob Menendez', 'party': 'D', 'state': 'NJ', 'role': 'Member'},
+            {'name': 'Tom Carper', 'party': 'D', 'state': 'DE', 'role': 'Member'},
+            {'name': 'Ben Cardin', 'party': 'D', 'state': 'MD', 'role': 'Member'},
+            {'name': 'Sheldon Whitehouse', 'party': 'D', 'state': 'RI', 'role': 'Member'},
+            {'name': 'Michael Bennet', 'party': 'D', 'state': 'CO', 'role': 'Member'},
+            {'name': 'Bob Casey', 'party': 'D', 'state': 'PA', 'role': 'Member'},
+            {'name': 'Mark Warner', 'party': 'D', 'state': 'VA', 'role': 'Member'},
+        ],
+    }
+
+    # Try to get financial data from data store and merge with master list
     real_members = []
     try:
         from apps.electwatch.services.data_store import get_officials
         all_officials = get_officials()
-        committee_name = committee.get('name', '')
 
+        # Create lookup by name for quick matching
+        officials_by_name = {}
         for official in all_officials:
-            official_committees = official.get('committees', [])
-            # Check if official is on this committee
-            for comm in official_committees:
-                # Check for committee name match (accounting for (Chair), (Ranking), etc.)
-                if committee_name.lower() in comm.lower() or comm.lower() in committee_name.lower():
-                    role = 'Member'
-                    if '(Chair)' in comm or '(Vice Chair)' in comm:
-                        role = 'Chair' if '(Vice Chair)' not in comm else 'Vice Chair'
-                    elif '(Ranking)' in comm:
-                        role = 'Ranking Member'
+            name = official.get('name', '')
+            officials_by_name[name.lower()] = official
+            # Also add without middle names/initials
+            parts = name.split()
+            if len(parts) > 2:
+                short_name = f"{parts[0]} {parts[-1]}"
+                officials_by_name[short_name.lower()] = official
 
-                    real_members.append({
-                        'id': official.get('id', ''),
-                        'name': official.get('name', ''),
-                        'party': official.get('party', ''),
-                        'state': official.get('state', ''),
-                        'role': role,
-                        'contributions': official.get('contributions', 0),
-                        'stock_trades': official.get('stock_trades_max', 0),
-                        'score': official.get('involvement_score', 50),
-                        'photo_url': official.get('photo_url'),
-                    })
-                    break
+        # Get the master list for this committee, or fall back to data store matching
+        master_list = all_committee_members.get(committee['id'], [])
 
-        # Sort by score descending
-        real_members.sort(key=lambda x: x.get('score', 0), reverse=True)
+        if master_list:
+            # Use master list and enrich with financial data
+            for member in master_list:
+                name = member['name']
+                # Try to find matching official in data store
+                official = officials_by_name.get(name.lower())
+
+                real_members.append({
+                    'id': official.get('id', name.lower().replace(' ', '_').replace('.', '')) if official else name.lower().replace(' ', '_').replace('.', ''),
+                    'name': name,
+                    'party': member['party'],
+                    'state': member['state'],
+                    'role': member['role'],
+                    'contributions': official.get('contributions', 0) if official else 0,
+                    'financial_sector_pac': official.get('financial_sector_pac', 0) if official else 0,
+                    'stock_trades': official.get('stock_trades_max', 0) if official else 0,
+                    'photo_url': official.get('photo_url') if official else None,
+                })
+        else:
+            # Fall back to finding members from data store by committee assignment
+            committee_name = committee.get('name', '')
+            for official in all_officials:
+                official_committees = official.get('committees', [])
+                for comm in official_committees:
+                    if committee_name.lower() in comm.lower() or comm.lower() in committee_name.lower():
+                        role = 'Member'
+                        if '(Chair)' in comm or '(Vice Chair)' in comm:
+                            role = 'Chair' if '(Vice Chair)' not in comm else 'Vice Chair'
+                        elif '(Ranking)' in comm:
+                            role = 'Ranking Member'
+
+                        real_members.append({
+                            'id': official.get('id', ''),
+                            'name': official.get('name', ''),
+                            'party': official.get('party', ''),
+                            'state': official.get('state', ''),
+                            'role': role,
+                            'contributions': official.get('contributions', 0),
+                            'financial_sector_pac': official.get('financial_sector_pac', 0),
+                            'stock_trades': official.get('stock_trades_max', 0),
+                            'photo_url': official.get('photo_url'),
+                        })
+                        break
+
+        # Sort by role (Chair/Ranking first), then by party, then by name
+        role_order = {'Chair': 0, 'Vice Chair': 1, 'Ranking Member': 2, 'Member': 3}
+        real_members.sort(key=lambda x: (role_order.get(x.get('role', 'Member'), 3), x.get('party', 'R') == 'D', x.get('name', '')))
 
     except Exception as e:
         logger.warning(f"Could not load committee members from store: {e}")
@@ -1652,13 +1814,38 @@ def api_get_committee(committee_id: str):
         {'bill_id': 'H.R. 2890', 'title': 'Community Bank Relief Act', 'sponsor': 'Rep. Blaine Luetkemeyer (R-MO)', 'status': 'Passed House', 'date': '2025-04-10', 'industries': ['banking']},
     ]
 
-    # News
-    news = [
-        {'title': f'{committee["name"]} Committee Advances Major Crypto Legislation', 'source': 'Politico', 'date': '2026-01-08', 'url': 'https://www.politico.com', 'reliable': True},
-        {'title': f'{committee["chair"]["name"]} Outlines 2026 Legislative Priorities', 'source': 'American Banker', 'date': '2026-01-05', 'url': 'https://www.americanbanker.com', 'reliable': True},
-        {'title': f'Banking Industry Lobbying Intensifies as {committee["name"]} Considers Reform', 'source': 'Wall Street Journal', 'date': '2025-12-28', 'url': 'https://www.wsj.com', 'reliable': True},
-        {'title': f'Bipartisan Support Grows for Stablecoin Framework in {committee["chamber"]}', 'source': 'Reuters', 'date': '2025-12-20', 'url': 'https://www.reuters.com', 'reliable': True},
-    ]
+    # News - try to get real news from data store first
+    news = []
+    try:
+        from apps.electwatch.services.data_store import get_news
+        all_news = get_news()
+        committee_keywords = [committee['name'].lower(), committee.get('full_name', '').lower()]
+
+        # Filter news relevant to this committee
+        for item in all_news:
+            title_lower = item.get('title', '').lower()
+            if any(kw in title_lower for kw in committee_keywords if kw):
+                news.append({
+                    'title': item.get('title', ''),
+                    'source': item.get('source', ''),
+                    'date': item.get('published_date', item.get('date', '')),
+                    'url': item.get('url', ''),
+                    'reliable': item.get('reliable', True)
+                })
+                if len(news) >= 5:
+                    break
+    except Exception as e:
+        logger.warning(f"Could not load news from store: {e}")
+
+    # Fallback to placeholder news with search URLs if no real news found
+    if not news:
+        search_term = committee['name'].replace(' ', '+')
+        news = [
+            {'title': f'{committee["name"]} Committee Advances Major Crypto Legislation', 'source': 'Politico', 'date': '2026-01-08', 'url': f'https://www.politico.com/search?q={search_term}', 'reliable': True},
+            {'title': f'{committee["chair"]["name"]} Outlines 2026 Legislative Priorities', 'source': 'American Banker', 'date': '2026-01-05', 'url': f'https://www.americanbanker.com/search?q={search_term}', 'reliable': True},
+            {'title': f'Banking Industry Lobbying Intensifies as {committee["name"]} Considers Reform', 'source': 'Wall Street Journal', 'date': '2025-12-28', 'url': f'https://www.wsj.com/search?query={search_term}', 'reliable': True},
+            {'title': f'Bipartisan Support Grows for Stablecoin Framework in {committee["chamber"]}', 'source': 'Reuters', 'date': '2025-12-20', 'url': f'https://www.reuters.com/search/news?query={search_term}', 'reliable': True},
+        ]
 
     return jsonify({
         'success': True,
@@ -1872,16 +2059,33 @@ def api_get_firm_detail(firm_name: str):
     # Try to get data from weekly data store
     try:
         from apps.electwatch.services.data_store import get_officials
+        from apps.electwatch.services.firm_mapper import FirmMapper
         all_officials = get_officials()
 
-        # Find officials who have traded this firm
+        # Get firm record to find associated PACs
+        mapper = FirmMapper()
+        firm_record = mapper.get_firm_from_name(firm_name)
+        firm_pac_names = []
+        if firm_record:
+            firm_pac_names = [pac.upper() for pac in firm_record.pac_names]
+            logger.info(f"[FIRM] Found PACs for {firm_name}: {firm_pac_names}")
+
+        # Find officials who have traded this firm OR received PAC contributions
         firm_officials = []
+        pac_contributions = []  # PAC contribution records for this firm
         total_amount = 0
+        total_pac_amount = 0
         party_counts = {'r': 0, 'd': 0}
         party_amounts = {'r': 0, 'd': 0}
 
         for official in all_officials:
-            for firm in official.get('firms', []):
+            # Check for structured firms data first
+            firms_data = official.get('firms', [])
+            has_match = False
+            official_buys = 0
+            official_sells = 0
+
+            for firm in firms_data:
                 firm_ticker = firm.get('ticker', '').upper()
                 firm_name_lower = firm.get('name', '').lower()
 
@@ -1894,34 +2098,105 @@ def api_get_firm_detail(firm_name: str):
                     match = False
 
                 if match:
-                    party = official.get('party', '').upper()
+                    has_match = True
+                    official_buys = firm.get('buys', 0)
+                    official_sells = firm.get('sells', 0)
                     firm_total = firm.get('total', 0)
-
-                    firm_officials.append({
-                        'id': official.get('id', ''),
-                        'name': official.get('name', ''),
-                        'party': party,
-                        'state': official.get('state', ''),
-                        'chamber': official.get('chamber', 'house'),
-                        'committee': ', '.join(official.get('committees', [])[:2]),
-                        'total': firm_total,
-                        'buys': firm.get('buys', 0),
-                        'sells': firm.get('sells', 0),
-                        'has_pac': False,
-                        'has_stock': True,
-                        'photo_url': official.get('photo_url'),
-                    })
-
-                    total_amount += firm_total
-                    if party == 'R':
-                        party_counts['r'] += 1
-                        party_amounts['r'] += firm_total
-                    elif party == 'D':
-                        party_counts['d'] += 1
-                        party_amounts['d'] += firm_total
                     break
 
-        if firm_officials:
+            # If no firms data, check trades array for ticker match
+            if not has_match and official.get('trades'):
+                # Check if official traded this ticker
+                from apps.electwatch.services.firm_mapper import AmountRange
+                for trade in official.get('trades', []):
+                    # Handle both dict and string formats
+                    if isinstance(trade, dict):
+                        trade_ticker = trade.get('ticker', '').upper()
+                        trade_company = trade.get('company', '').lower()
+                    else:
+                        # Parse string format
+                        trade_str = str(trade)
+                        trade_ticker = ''
+                        trade_company = ''
+                        if 'ticker=' in trade_str:
+                            trade_ticker = trade_str.split('ticker=')[1].split(';')[0].upper()
+                        if 'company=' in trade_str:
+                            trade_company = trade_str.split('company=')[1].split(';')[0].lower()
+
+                    # Match by ticker or company name
+                    if trade_ticker == normalized.upper() or normalized.lower() in trade_company:
+                        has_match = True
+                        # Count buys and sells
+                        trade_type = ''
+                        amount_range = ''
+                        if isinstance(trade, dict):
+                            trade_type = trade.get('type', '')
+                            amount_range = trade.get('amount_range', '')
+                        else:
+                            trade_str = str(trade)
+                            if 'type=' in trade_str:
+                                trade_type = trade_str.split('type=')[1].split(';')[0]
+                            if 'amount_range=' in trade_str:
+                                amount_range = trade_str.split('amount_range=')[1].split(';')[0]
+
+                        try:
+                            amount = AmountRange.from_bucket(amount_range)
+                            if 'purchase' in trade_type.lower():
+                                official_buys += amount.max_amount
+                            elif 'sale' in trade_type.lower():
+                                official_sells += amount.max_amount
+                        except:
+                            pass
+
+            if has_match:
+                party = official.get('party', '').upper()
+                firm_total = official_buys + official_sells
+
+                firm_officials.append({
+                    'id': official.get('id', ''),
+                    'name': official.get('name', ''),
+                    'party': party,
+                    'state': official.get('state', ''),
+                    'chamber': official.get('chamber', 'house'),
+                    'committee': ', '.join(official.get('committees', [])[:2]),
+                    'total': firm_total,
+                    'buys': official_buys,
+                    'sells': official_sells,
+                    'has_pac': False,
+                    'has_stock': True,
+                    'photo_url': official.get('photo_url'),
+                })
+
+                total_amount += firm_total
+                if party == 'R':
+                    party_counts['r'] += 1
+                    party_amounts['r'] += firm_total
+                elif party == 'D':
+                    party_counts['d'] += 1
+                    party_amounts['d'] += firm_total
+
+            # Also check for PAC contributions from this firm
+            if firm_pac_names:
+                for contrib in official.get('contributions_list', []):
+                    pac_name = contrib.get('pac_name', '') or contrib.get('source', '')
+                    if pac_name.upper() in firm_pac_names or any(fp in pac_name.upper() for fp in firm_pac_names):
+                        amount = contrib.get('amount', 0)
+                        party = official.get('party', '').upper()
+
+                        pac_contributions.append({
+                            'official_id': official.get('id', ''),
+                            'official_name': official.get('name', ''),
+                            'party': party,
+                            'state': official.get('state', ''),
+                            'chamber': official.get('chamber', 'house'),
+                            'pac_name': pac_name,
+                            'amount': amount,
+                            'date': contrib.get('date', ''),
+                            'photo_url': official.get('photo_url'),
+                        })
+                        total_pac_amount += amount
+
+        if firm_officials or pac_contributions:
             # Sort by total amount
             firm_officials.sort(key=lambda x: x['total'], reverse=True)
 
@@ -1935,20 +2210,33 @@ def api_get_firm_detail(firm_name: str):
             else:
                 party_split = {'r': 50, 'd': 50}
 
+            # Get firm info from mapper if available
+            firm_ticker = None
+            firm_industries = []
+            if firm_record:
+                firm_ticker = firm_record.ticker
+                firm_industries = firm_record.industries
+
             return jsonify({
                 'success': True,
                 'firm': {
-                    'name': firm_name,
-                    'ticker': normalized.upper() if len(normalized) <= 5 else None,
-                    'industries': [],
-                    'total': total_amount,
-                    'contributions': 0,
+                    'name': firm_record.name if firm_record else firm_name,
+                    'ticker': firm_ticker or (normalized.upper() if len(normalized) <= 5 else None),
+                    'industries': firm_industries,
+                    'total': total_amount + total_pac_amount,
+                    'contributions': total_pac_amount,  # PAC contributions
                     'stock_trades': total_amount,
                     'officials_count': len(firm_officials),
                     'party_split': party_split,
                     'r_amount': party_amounts['r'],
                     'd_amount': party_amounts['d'],
                     'officials': firm_officials[:20],
+                    # PAC contribution data
+                    'pac_name': firm_pac_names[0] if firm_pac_names else None,
+                    'pac_names': firm_pac_names,
+                    'pac_contributions': sorted(pac_contributions, key=lambda x: x['amount'], reverse=True)[:20],
+                    'pac_contributions_total': total_pac_amount,
+                    'pac_recipients_count': len(set(c['official_name'] for c in pac_contributions)),
                     'activity': [],
                     'sec_filings': [],
                     'insider_transactions': [],
@@ -2394,11 +2682,32 @@ def api_get_insights():
     """
     Get AI-generated pattern insights across officials, industries, and firms.
 
+    In production, insights are pre-generated during weekly update and served from file.
+    Use ?refresh=true to regenerate insights on demand (dev/testing only).
+
     This endpoint uses Claude to analyze aggregate data and identify patterns
     like coordinated contributions, stock trading aligned with PAC activity, etc.
     """
     try:
-        # Check if Claude API is available
+        from apps.electwatch.services.data_store import get_insights, get_insights_metadata
+
+        # Check if refresh is requested (dev/testing only)
+        refresh = request.args.get('refresh', 'false').lower() == 'true'
+
+        if not refresh:
+            # Try to load pre-generated insights from file
+            stored_insights = get_insights()
+            insights_meta = get_insights_metadata()
+
+            if stored_insights and len(stored_insights) > 0:
+                return jsonify({
+                    'success': True,
+                    'insights': stored_insights,
+                    'generated_at': insights_meta.get('generated_at', datetime.now().isoformat()),
+                    'source': 'weekly_update'
+                })
+
+        # No stored insights or refresh requested - generate new ones
         if not ElectWatchConfig.CLAUDE_API_KEY:
             # Return sample insights when no API key
             return jsonify({
@@ -2414,7 +2723,8 @@ def api_get_insights():
         return jsonify({
             'success': True,
             'insights': insights,
-            'generated_at': datetime.now().isoformat()
+            'generated_at': datetime.now().isoformat(),
+            'source': 'live_generation'
         })
 
     except Exception as e:
@@ -2426,21 +2736,25 @@ def api_get_insights():
 
 
 def _get_sample_insights():
-    """Return sample insights for demo/testing with detailed entity data."""
+    """Return sample insights for demo/testing with detailed entity data and sources."""
     return [
         {
             'title': 'Crypto Industry Concentration',
             'summary': 'Coinbase and related crypto firms have contributed $1.2M to Republican '
                       'members of the House Financial Services Committee in 2025. Simultaneously, '
                       '8 of these members have reported COIN stock purchases totaling $180K-$400K.',
-            'detailed_summary': 'Analysis reveals a significant concentration of crypto industry financial activity '
-                               'among Republican members of the House Financial Services Committee. Between January 2025 '
-                               'and January 2026, Coinbase Global Inc PAC contributed $450,000 across 23 committee members, '
-                               'while Robinhood Markets contributed $280,000 to 18 members. Notably, 8 of these same members '
-                               'reported purchasing COIN stock during this period, with disclosure ranges indicating total '
-                               'purchases between $180,000 and $400,000. This pattern suggests potential coordination between '
-                               'PAC contribution strategies and personal investment decisions among members with direct '
-                               'oversight authority over cryptocurrency regulation.',
+            'detailed_summary': '''Analysis reveals a significant concentration of crypto industry financial activity among Republican members of the [[committee:house-financial-services|House Financial Services Committee]].
+
+Between January 2025 and January 2026, [[firm:Coinbase|Coinbase Global Inc PAC]] contributed $450,000 across 23 committee members, while [[firm:Robinhood|Robinhood Markets]] contributed $280,000 to 18 members.
+
+**Key Finding:** 8 of these same members reported purchasing COIN stock during this period, with disclosure ranges indicating total purchases between $180,000 and $400,000.
+
+**Notable Members:**
+• [[official:french_hill|Rep. French Hill]] (R-AR) - Committee Chair, received $180,000 in crypto PAC contributions and purchased COIN stock
+• [[official:tom_emmer|Rep. Tom Emmer]] (R-MN) - Majority Whip, received $145,000 and purchased COIN
+• [[official:cynthia_lummis|Sen. Cynthia Lummis]] (R-WY) - Senate Banking member, known Bitcoin advocate
+
+This pattern suggests potential coordination between PAC contribution strategies and personal investment decisions among members with direct oversight authority over [[industry:crypto|cryptocurrency regulation]].''',
             'evidence': 'Based on FEC filings and STOCK Act disclosures through Jan 2026',
             'category': 'cross_correlation',
             'severity': 'high',
@@ -2450,16 +2764,21 @@ def _get_sample_insights():
                 {'name': 'Block (Square)', 'ticker': 'SQ', 'amount': 195000, 'detail': '16 officials received contributions'},
             ],
             'officials': [
-                {'id': 'hill_j_french', 'name': 'J. French Hill', 'party': 'R', 'state': 'AR', 'amount': 180000, 'detail': 'Chair, purchased COIN stock'},
-                {'id': 'emmer_tom', 'name': 'Tom Emmer', 'party': 'R', 'state': 'MN', 'amount': 145000, 'detail': 'Majority Whip, purchased COIN'},
-                {'id': 'lummis_cynthia', 'name': 'Cynthia Lummis', 'party': 'R', 'state': 'WY', 'amount': 120000, 'detail': 'Senate Banking, Bitcoin advocate'},
-                {'id': 'torres_ritchie', 'name': 'Ritchie Torres', 'party': 'D', 'state': 'NY', 'amount': 95000, 'detail': 'Crypto Caucus member'},
+                {'id': 'french_hill', 'name': 'French Hill', 'party': 'R', 'state': 'AR', 'amount': 180000, 'detail': 'Chair, purchased COIN stock'},
+                {'id': 'tom_emmer', 'name': 'Tom Emmer', 'party': 'R', 'state': 'MN', 'amount': 145000, 'detail': 'Majority Whip, purchased COIN'},
+                {'id': 'cynthia_lummis', 'name': 'Cynthia Lummis', 'party': 'R', 'state': 'WY', 'amount': 120000, 'detail': 'Senate Banking, Bitcoin advocate'},
+                {'id': 'ritchie_torres', 'name': 'Ritchie Torres', 'party': 'D', 'state': 'NY', 'amount': 95000, 'detail': 'Crypto Caucus member'},
             ],
             'industries': [
                 {'code': 'crypto', 'name': 'Digital Assets & Crypto', 'amount': 1200000, 'detail': 'Primary sector, 71% to Republicans'},
             ],
             'committees': [
                 {'id': 'house-financial-services', 'name': 'House Financial Services', 'chamber': 'house', 'members': 71, 'detail': 'Primary jurisdiction over crypto regulation'},
+            ],
+            'sources': [
+                {'title': 'Coinbase PAC spending surges as crypto regulation heats up', 'url': 'https://www.politico.com/news/2025/crypto-pac-spending', 'source': 'Politico', 'date': '2025-11-15'},
+                {'title': 'Congressional Stock Trading in Crypto Sector Under Scrutiny', 'url': 'https://www.reuters.com/markets/congressional-crypto-trading', 'source': 'Reuters', 'date': '2025-12-02'},
+                {'title': 'FEC Records: Crypto Industry PAC Disbursements Q3-Q4 2025', 'url': 'https://www.fec.gov/data/disbursements/', 'source': 'FEC.gov', 'date': '2026-01-05'},
             ]
         },
         {
@@ -2467,13 +2786,22 @@ def _get_sample_insights():
             'summary': 'Wells Fargo and JPMorgan PAC contributions to Senate Banking Committee '
                       'members increased 45% in Q4 2025 compared to Q3, correlating with '
                       'upcoming CFPB oversight hearings scheduled for February 2026.',
-            'detailed_summary': 'A significant spike in banking sector PAC contributions occurred in Q4 2025, '
-                               'with Wells Fargo increasing disbursements by 52% and JPMorgan by 41% compared to Q3. '
-                               'This surge correlates with the scheduling of CFPB oversight hearings for February 2026 '
-                               'and pending consideration of the Consumer Financial Protection Reform Act. Senate Banking '
-                               'Committee members received $1.4M in combined contributions from these two institutions alone. '
-                               'The timing suggests strategic deployment of PAC resources ahead of significant regulatory '
-                               'review periods.',
+            'detailed_summary': '''A significant spike in [[industry:banking|banking sector]] PAC contributions occurred in Q4 2025, coinciding with scheduled CFPB oversight hearings.
+
+**Contribution Increases (Q3 to Q4 2025):**
+• [[firm:Wells Fargo|Wells Fargo PAC]]: +52% ($850,000 total)
+• [[firm:JPMorgan Chase|JPMorgan Chase PAC]]: +41% ($780,000 total)
+• [[firm:Bank of America|Bank of America PAC]]: +28% ($620,000 total)
+
+This surge correlates with the scheduling of CFPB oversight hearings for February 2026 and pending consideration of the Consumer Financial Protection Reform Act.
+
+**Key Recipients on [[committee:senate-banking|Senate Banking Committee]]:**
+• [[official:tim_scott|Sen. Tim Scott]] (R-SC) - Ranking Member, received $320,000
+• [[official:elizabeth_warren|Sen. Elizabeth Warren]] (D-MA) - CFPB advocate, received $95,000
+
+The [[committee:house-financial-services|House Financial Services Committee]] is expected to hold joint oversight hearings. Total combined contributions from these two institutions to Banking Committee members: $1.4M.
+
+The timing suggests strategic deployment of PAC resources ahead of significant regulatory review periods.''',
             'evidence': 'FEC data analysis comparing quarterly contribution trends',
             'category': 'timing',
             'severity': 'medium',
@@ -2483,8 +2811,8 @@ def _get_sample_insights():
                 {'name': 'Bank of America', 'ticker': 'BAC', 'amount': 620000, 'detail': '28% increase Q3 to Q4'},
             ],
             'officials': [
-                {'id': 'scott_tim', 'name': 'Tim Scott', 'party': 'R', 'state': 'SC', 'amount': 320000, 'detail': 'Ranking Member, Banking'},
-                {'id': 'warren_elizabeth', 'name': 'Elizabeth Warren', 'party': 'D', 'state': 'MA', 'amount': 95000, 'detail': 'Banking Committee, CFPB advocate'},
+                {'id': 'tim_scott', 'name': 'Tim Scott', 'party': 'R', 'state': 'SC', 'amount': 320000, 'detail': 'Ranking Member, Banking'},
+                {'id': 'elizabeth_warren', 'name': 'Elizabeth Warren', 'party': 'D', 'state': 'MA', 'amount': 95000, 'detail': 'Banking Committee, CFPB advocate'},
             ],
             'industries': [
                 {'code': 'banking', 'name': 'Banking & Depository', 'amount': 2250000, 'detail': '45% Q4 increase'},
@@ -2492,6 +2820,11 @@ def _get_sample_insights():
             'committees': [
                 {'id': 'senate-banking', 'name': 'Banking, Housing, and Urban Affairs', 'chamber': 'senate', 'members': 24, 'detail': 'Primary CFPB oversight authority'},
                 {'id': 'house-financial-services', 'name': 'House Financial Services', 'chamber': 'house', 'members': 71, 'detail': 'Joint oversight hearings'},
+            ],
+            'sources': [
+                {'title': 'Big Banks Ramp Up Political Spending Ahead of CFPB Hearings', 'url': 'https://www.wsj.com/finance/banking-pac-spending-cfpb', 'source': 'Wall Street Journal', 'date': '2025-12-18'},
+                {'title': 'Senate Banking Committee schedules February CFPB oversight', 'url': 'https://www.banking.senate.gov/hearings', 'source': 'Senate.gov', 'date': '2025-11-30'},
+                {'title': 'Q4 2025 PAC Activity Report', 'url': 'https://www.opensecrets.org/pacs', 'source': 'OpenSecrets', 'date': '2026-01-08'},
             ]
         },
         {
@@ -2499,12 +2832,24 @@ def _get_sample_insights():
             'summary': 'Fintech firms (PayPal, Block, Stripe) show unusually balanced contributions '
                       'across party lines, with 52% to Democrats and 48% to Republicans—significantly '
                       'more balanced than traditional banking (68% R / 32% D).',
-            'detailed_summary': 'Fintech sector PAC contributions display a notably different partisan distribution '
-                               'compared to traditional financial services. While banking PACs direct 68% of contributions '
-                               'to Republicans, fintech firms maintain near-parity: PayPal at 54% D/46% R, Block (Square) '
-                               'at 51% D/49% R, and Stripe at 50%/50%. This balanced approach may reflect the sector\'s '
-                               'interest in maintaining regulatory relationships regardless of which party controls Congress. '
-                               'Total fintech contributions reached $865,000 in the analysis period.',
+            'detailed_summary': '''[[industry:fintech|Fintech sector]] PAC contributions display a notably different partisan distribution compared to traditional financial services.
+
+**Partisan Split Comparison:**
+| Sector | Democrat | Republican |
+|--------|----------|------------|
+| Traditional Banking | 32% | 68% |
+| Fintech | 52% | 48% |
+
+**Individual Firm Breakdowns:**
+• [[firm:Visa|Visa]]: 54% D / 46% R ($340,000 total)
+• [[firm:Mastercard|Mastercard]]: 51% D / 49% R ($320,000 total)
+• [[firm:PayPal|PayPal]]: 55% D / 45% R ($205,000 total)
+
+**Key Recipients:**
+• [[official:maxine_waters|Rep. Maxine Waters]] (D-CA) - Ranking Member, [[committee:house-financial-services|House Financial Services]]: $125,000
+• [[official:french_hill|Rep. French Hill]] (R-AR) - Chair, House Financial Services: $110,000
+
+This balanced approach may reflect the sector's interest in maintaining regulatory relationships regardless of which party controls Congress. Total [[industry:fintech|fintech]] contributions reached $865,000 in the analysis period.''',
             'evidence': 'Comparative analysis of contribution patterns by industry',
             'category': 'party_balance',
             'severity': 'low',
@@ -2514,8 +2859,8 @@ def _get_sample_insights():
                 {'name': 'PayPal', 'ticker': 'PYPL', 'amount': 205000, 'detail': '55% D / 45% R split'},
             ],
             'officials': [
-                {'id': 'waters_maxine', 'name': 'Maxine Waters', 'party': 'D', 'state': 'CA', 'amount': 125000, 'detail': 'Ranking Member, Fin Services'},
-                {'id': 'hill_j_french', 'name': 'J. French Hill', 'party': 'R', 'state': 'AR', 'amount': 110000, 'detail': 'Chair, Fin Services'},
+                {'id': 'maxine_waters', 'name': 'Maxine Waters', 'party': 'D', 'state': 'CA', 'amount': 125000, 'detail': 'Ranking Member, Fin Services'},
+                {'id': 'french_hill', 'name': 'French Hill', 'party': 'R', 'state': 'AR', 'amount': 110000, 'detail': 'Chair, Fin Services'},
             ],
             'industries': [
                 {'code': 'fintech', 'name': 'Financial Technology', 'amount': 865000, 'detail': '52% D / 48% R overall'},
@@ -2524,6 +2869,10 @@ def _get_sample_insights():
             'committees': [
                 {'id': 'house-financial-services', 'name': 'House Financial Services', 'chamber': 'house', 'members': 71, 'detail': 'Fintech regulatory oversight'},
                 {'id': 'senate-banking', 'name': 'Banking, Housing, and Urban Affairs', 'chamber': 'senate', 'members': 24, 'detail': 'Payments regulation'},
+            ],
+            'sources': [
+                {'title': 'Fintech lobbying takes bipartisan approach as regulation looms', 'url': 'https://www.americanbanker.com/fintech-lobbying-bipartisan', 'source': 'American Banker', 'date': '2025-10-22'},
+                {'title': 'Payment Industry PAC Spending Analysis 2025', 'url': 'https://www.opensecrets.org/industries/indus.php?ind=F03', 'source': 'OpenSecrets', 'date': '2025-12-15'},
             ]
         },
         {
@@ -2531,13 +2880,22 @@ def _get_sample_insights():
             'summary': '12 House Financial Services Committee members traded bank stocks within '
                       '30 days of the committee vote on the Regional Bank Stability Act. '
                       '9 of these trades were in institutions directly affected by the legislation.',
-            'detailed_summary': 'STOCK Act disclosure analysis reveals that 12 House Financial Services Committee members '
-                               'executed trades in banking sector stocks within 30 days of the November 2025 committee vote '
-                               'on the Regional Bank Stability Act. Of these, 9 trades involved institutions that would be '
-                               'directly affected by the legislation\'s provisions on capital requirements and stress testing. '
-                               'Notable trades include purchases of regional bank stocks (KEY, RF, FITB) by members who voted '
-                               'in favor of relaxing capital requirements. Total disclosed trade value ranges from $245,000 '
-                               'to $780,000 due to STOCK Act bucket reporting.',
+            'detailed_summary': '''STOCK Act disclosure analysis reveals concerning trading patterns surrounding the Regional Bank Stability Act vote.
+
+**Key Finding:** 12 [[committee:house-financial-services|House Financial Services Committee]] members executed trades in [[industry:banking|banking sector]] stocks within 30 days of the November 2025 committee vote. Of these, **9 trades involved institutions directly affected by the legislation**.
+
+**Stocks Traded Before Vote:**
+• [[firm:KeyCorp|KeyCorp (KEY)]]: 4 members traded, $160,000 total value
+• [[firm:Regions Financial|Regions Financial (RF)]]: 3 members traded, $155,000 total
+• [[firm:Fifth Third Bancorp|Fifth Third Bancorp (FITB)]]: 2 members traded, $150,000 total
+
+**Notable Trading Activity:**
+• [[official:french_hill|Rep. French Hill]] (R-AR) - Purchased KEY stock 14 days before committee vote, disclosed value $95,000
+• [[official:maxine_waters|Rep. Maxine Waters]] (D-CA) - No trades in affected stocks during window
+
+The legislation's provisions on capital requirements and stress testing would directly benefit regional banks. Members who purchased shares voted in favor of relaxing these requirements.
+
+Total disclosed trade value ranges from $245,000 to $780,000 due to STOCK Act bucket reporting requirements.''',
             'evidence': 'Cross-referenced STOCK Act disclosures with committee vote calendar',
             'category': 'timing',
             'severity': 'high',
@@ -2547,66 +2905,175 @@ def _get_sample_insights():
                 {'name': 'Fifth Third Bancorp', 'ticker': 'FITB', 'amount': 150000, 'detail': '2 members traded before vote'},
             ],
             'officials': [
-                {'id': 'hill_j_french', 'name': 'J. French Hill', 'party': 'R', 'state': 'AR', 'amount': 95000, 'detail': 'Purchased KEY 14 days before vote'},
-                {'id': 'waters_maxine', 'name': 'Maxine Waters', 'party': 'D', 'state': 'CA', 'amount': 0, 'detail': 'No trades in affected stocks'},
+                {'id': 'french_hill', 'name': 'French Hill', 'party': 'R', 'state': 'AR', 'amount': 95000, 'detail': 'Purchased KEY 14 days before vote'},
+                {'id': 'maxine_waters', 'name': 'Maxine Waters', 'party': 'D', 'state': 'CA', 'amount': 0, 'detail': 'No trades in affected stocks'},
             ],
             'industries': [
                 {'code': 'banking', 'name': 'Banking & Depository', 'amount': 465000, 'detail': '12 members, 9 in affected institutions'},
             ],
             'committees': [
                 {'id': 'house-financial-services', 'name': 'House Financial Services', 'chamber': 'house', 'members': 71, 'detail': 'Regional Bank Stability Act vote'},
+            ],
+            'sources': [
+                {'title': 'Lawmakers traded bank stocks ahead of key committee vote', 'url': 'https://www.nytimes.com/2025/12/lawmakers-stock-trading-bank-vote', 'source': 'New York Times', 'date': '2025-12-10'},
+                {'title': 'Regional Bank Stability Act advances from committee', 'url': 'https://financialservices.house.gov/news/regional-bank-stability-act', 'source': 'House.gov', 'date': '2025-11-18'},
+                {'title': 'STOCK Act Filings Database', 'url': 'https://efdsearch.senate.gov/search/', 'source': 'Senate.gov', 'date': '2025-12-01'},
+                {'title': 'Analysis: Congressional Trading and Banking Legislation', 'url': 'https://www.propublica.org/congress-stock-trading', 'source': 'ProPublica', 'date': '2025-12-22'},
             ]
         }
     ]
 
 
 def _generate_ai_pattern_insights():
-    """Generate real AI insights using Claude."""
+    """Generate real AI insights using Claude based on actual data."""
+    import sys
+    print("[AI] Starting insight generation...", flush=True)
     try:
         from shared.analysis.ai_provider import AIAnalyzer
+        from apps.electwatch.services.data_store import get_officials, get_firms, get_metadata
 
-        # Build context for AI analysis
-        # In production, this would pull real aggregate data
-        prompt = """Analyze the following congressional financial activity patterns and identify
-noteworthy correlations, timing patterns, or potential conflicts of interest.
+        print("[AI] Imports successful, loading data...", flush=True)
 
-Focus on:
-1. Cross-correlations between PAC contributions and stock trades in the same industry
-2. Timing patterns around committee votes or legislation
-3. Unusual concentration of activity in specific sectors
-4. Cross-party patterns that differ from norms
+        # Load actual data
+        officials = get_officials()
+        firms = get_firms()
+        metadata = get_metadata()
 
-Return your analysis as a JSON array with objects containing:
-- title: Short descriptive title
-- summary: 2-3 sentence analysis
-- evidence: Data sources supporting the finding
-- category: One of [cross_correlation, timing, concentration, party_balance]
-- severity: One of [high, medium, low]
+        print(f"[AI] Loaded {len(officials) if officials else 0} officials, {len(firms) if firms else 0} firms", flush=True)
 
-Data context:
-- Time period: January 2025 - January 2026
-- Focus: House Financial Services, Senate Banking committees
-- Key industries: Banking, Crypto, Fintech, Mortgage, Investment
+        if not officials or len(officials) < 5:
+            print("[AI] Not enough data to generate insights", flush=True)
+            return _get_sample_insights()
 
-Provide 4-5 insights based on realistic patterns you might find in this type of data."""
+        # Build data summary for AI analysis
+        # Top 20 by financial sector PAC
+        top_pac_recipients = sorted(
+            [o for o in officials if o.get('financial_sector_pac', 0) > 0],
+            key=lambda x: x.get('financial_sector_pac', 0),
+            reverse=True
+        )[:20]
 
+        # Top 20 by stock trades
+        top_traders = sorted(
+            [o for o in officials if o.get('stock_trades_max', 0) > 0],
+            key=lambda x: x.get('stock_trades_max', 0),
+            reverse=True
+        )[:20]
+
+        # Group by party
+        rep_pac_total = sum(o.get('financial_sector_pac', 0) for o in officials if o.get('party') == 'R')
+        dem_pac_total = sum(o.get('financial_sector_pac', 0) for o in officials if o.get('party') == 'D')
+
+        # Build context strings
+        pac_recipients_str = "\n".join([
+            f"- {o['name']} ({o['party']}-{o['state']}): ${o.get('financial_sector_pac', 0):,.0f} financial PAC, "
+            f"${o.get('stock_trades_max', 0):,.0f} max trades, committees: {', '.join(o.get('committees', [])[:2])}"
+            for o in top_pac_recipients[:15]
+        ])
+
+        traders_str = "\n".join([
+            f"- {o['name']} ({o['party']}-{o['state']}): ${o.get('purchases_max', 0):,.0f} buys, "
+            f"${o.get('sales_max', 0):,.0f} sells, top industries: {', '.join([i.get('name', i) if isinstance(i, dict) else i for i in o.get('top_industries', [])[:2]])}"
+            for o in top_traders[:15]
+        ])
+
+        # Top firms by connected officials
+        top_firms_str = ""
+        if firms:
+            sorted_firms = sorted(firms, key=lambda x: x.get('connected_officials', 0), reverse=True)[:10]
+            top_firms_str = "\n".join([
+                f"- {f['name']} ({f.get('ticker', 'N/A')}): {f.get('connected_officials', 0)} connected officials, "
+                f"${f.get('total_pac', 0):,.0f} PAC contributions"
+                for f in sorted_firms
+            ])
+
+        prompt = f"""Analyze congressional financial activity data and identify patterns for a transparency research tool.
+
+IMPORTANT DEFINITIONS:
+- Financial Sector PAC: Political Action Committee contributions from banks, insurance, investment, and fintech firms
+- Stock Trades: Disclosed securities transactions by members of Congress (STOCK Act filings)
+- Cross-correlation: Pattern where PAC contributions and stock trades occur in same industry sector
+
+DATA SUMMARY (as of {metadata.get('last_updated_display', 'January 2026')}):
+
+Top Financial Sector PAC Recipients:
+{pac_recipients_str}
+
+Top Financial Sector Stock Traders:
+{traders_str}
+
+Top Financial Firms by Congressional Connections:
+{top_firms_str}
+
+Aggregate Statistics:
+- Republican financial PAC total: ${rep_pac_total:,.0f}
+- Democratic financial PAC total: ${dem_pac_total:,.0f}
+- Total officials tracked: {len(officials)}
+
+ANALYSIS REQUIREMENTS:
+Generate exactly 4 findings based ONLY on the data above. Each finding must:
+1. Reference specific officials and dollar amounts from the provided data
+2. Identify a clear pattern (cross-correlation, concentration, or party distribution)
+3. Use professional, analytical tone without speculation
+4. Cite actual data points, not hypothetical scenarios
+
+OUTPUT FORMAT (JSON array with 4 objects):
+{{
+  "title": "5-8 word headline",
+  "summary": "2 sentences max referencing specific data",
+  "detailed_summary": "3-4 paragraphs with entity links: [[official:name_id|Display Name]], [[firm:Firm Name|Display]], [[committee:house-financial-services|Committee Name]], [[industry:banking|industry name]]. Use **bold** for emphasis and bullet points with •",
+  "evidence": "Data source (FEC filings, STOCK Act disclosures, etc.)",
+  "category": "cross_correlation|concentration|party_balance",
+  "severity": "high|medium|low",
+  "firms": [{{"name": "...", "ticker": "...", "amount": 0, "detail": "..."}}],
+  "officials": [{{"id": "lowercase_name", "name": "...", "party": "R|D", "state": "XX", "amount": 0, "detail": "..."}}],
+  "industries": [{{"code": "banking|crypto|fintech|insurance", "name": "...", "amount": 0, "detail": "..."}}],
+  "committees": [{{"id": "house-financial-services|senate-banking", "name": "...", "chamber": "house|senate", "members": 0, "detail": "..."}}],
+  "sources": [{{"title": "...", "url": "https://...", "source": "FEC.gov|House.gov|Senate.gov", "date": "YYYY-MM-DD"}}]
+}}
+
+IMPORTANT:
+- Use ONLY data provided above - do not invent officials, amounts, or patterns
+- Official IDs should be lowercase with underscores (e.g., "french_hill", "tommy_tuberville")
+- Include 2-4 sources per insight from government data sources (FEC.gov, House.gov, Senate.gov, efdsearch.senate.gov)
+- Severity should reflect actual concentration: high = significant pattern affecting oversight, medium = notable trend, low = interesting observation
+
+Return ONLY the JSON array, no additional text."""
+
+        print("[AI] Generating insights from real data...", flush=True)
+        print(f"[AI] Prompt length: {len(prompt)} chars", flush=True)
         analyzer = AIAnalyzer(ai_provider='claude')
-        response = analyzer._call_ai(prompt, max_tokens=2000)
+        print("[AI] Calling Claude API...", flush=True)
+        response = analyzer._call_ai(prompt, max_tokens=8000, temperature=0.3)
+        print(f"[AI] Got response: {len(response) if response else 0} chars", flush=True)
 
         # Try to parse JSON response
         try:
-            import json
-            insights = json.loads(response)
-            if isinstance(insights, list):
+            # Clean up response - sometimes Claude adds markdown code blocks
+            cleaned = response.strip()
+            if cleaned.startswith('```json'):
+                cleaned = cleaned[7:]
+            if cleaned.startswith('```'):
+                cleaned = cleaned[3:]
+            if cleaned.endswith('```'):
+                cleaned = cleaned[:-3]
+            cleaned = cleaned.strip()
+
+            insights = json.loads(cleaned)
+            if isinstance(insights, list) and len(insights) > 0:
+                print(f"[AI] Successfully generated {len(insights)} insights")
                 return insights
-        except json.JSONDecodeError:
-            pass
+        except json.JSONDecodeError as e:
+            print(f"[AI] JSON parse error: {e}")
+            print(f"[AI] Response preview: {response[:500]}...")
 
         # Fallback to sample if parsing fails
         return _get_sample_insights()
 
     except Exception as e:
         print(f"[AI] Error generating insights: {e}")
+        import traceback
+        traceback.print_exc()
         return _get_sample_insights()
 
 

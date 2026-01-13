@@ -78,6 +78,21 @@ for alt, canonical in NAME_ALIASES.items():
         NAME_VARIANTS[canonical] = [canonical]
     NAME_VARIANTS[canonical].append(alt)
 
+# Reverse mapping: formal/legal names -> public names
+# Used to normalize names from disclosures to their commonly-used public names
+FORMAL_TO_PUBLIC_NAME = {v: k for k, v in NAME_ALIASES.items()}
+
+
+def normalize_to_public_name(formal_name: str) -> str:
+    """Convert a formal/legal name to the publicly-used name.
+
+    Examples:
+        'Rafael Cruz' -> 'Ted Cruz'
+        'Thomas Tuberville' -> 'Tommy Tuberville'
+        'Angus S. King' -> 'Angus King'
+    """
+    return FORMAL_TO_PUBLIC_NAME.get(formal_name, formal_name)
+
 # Common nickname mappings for fuzzy matching
 NICKNAME_MAP = {
     'Bill': ['William', 'Billy'],
@@ -319,20 +334,23 @@ class WeeklyDataUpdate:
 
     def fetch_all_data(self):
         """Fetch data from all sources."""
-        # FIRST: Get ALL Congress members
+        # FIRST: Get ALL Congress members (not just those with financial activity)
         self.fetch_all_congress_members()
 
         # Then enrich with financial activity data
-        self.fetch_fmp_data()
+        self.fetch_fmp_data()  # FMP for congressional stock trades (replaced Quiver)
         self.fetch_fec_data()
 
     def fetch_all_congress_members(self):
         """Fetch complete list of all Congress members from Congress.gov API."""
-        logger.info("--- Fetching ALL Congress Members ---")
+        logger.info("
+--- Fetching ALL Congress Members from Congress.gov ---")
         try:
             from apps.electwatch.services.congress_api_client import CongressAPIClient
             client = CongressAPIClient()
+
             members = client.get_all_members()
+
             if members:
                 self.officials_data = members
                 self._officials_by_name = {}
@@ -344,24 +362,28 @@ class WeeklyDataUpdate:
                         last_name = parts[-1].lower()
                         if last_name not in self._officials_by_name:
                             self._officials_by_name[last_name] = m
+
                 house = len([m for m in members if m['chamber'] == 'house'])
                 senate = len([m for m in members if m['chamber'] == 'senate'])
+
                 self.source_status['congress_members'] = {
-                    'status': 'success', 'house_members': house, 'senate_members': senate,
-                    'total': len(members), 'timestamp': datetime.now().isoformat()
+                    'status': 'success',
+                    'house_members': house,
+                    'senate_members': senate,
+                    'total': len(members),
+                    'timestamp': datetime.now().isoformat()
                 }
                 logger.info(f"Fetched {len(members)} Congress members ({house} House, {senate} Senate)")
             else:
-                logger.warning("No Congress members fetched")
-                self.source_status['congress_members'] = {'status': 'failed', 'error': 'No members'}
+                logger.warning("No Congress members fetched - check API key")
+                self.warnings.append("Congress.gov: No members fetched")
+                self.source_status['congress_members'] = {'status': 'failed', 'error': 'No members returned'}
+
         except Exception as e:
             logger.error(f"Congress members fetch failed: {e}")
+            self.warnings.append(f"Congress.gov members: {e}")
             self.source_status['congress_members'] = {'status': 'failed', 'error': str(e)}
-        self.fetch_financial_pac_data()  # Financial sector-specific PAC contributions
-        self.fetch_congress_data()
-        self.fetch_finnhub_data()
-        self.fetch_sec_data()
-        self.fetch_news_data()
+
 
     def fetch_fmp_data(self):
         """Fetch congressional trading data from Financial Modeling Prep (FMP).
@@ -394,9 +416,12 @@ class WeeklyDataUpdate:
             # Aggregate by politician
             politicians = {}
             for trade in all_trades:
-                name = trade.get('politician_name', 'Unknown')
-                if not name or name == 'Unknown' or name.strip() == '':
+                raw_name = trade.get('politician_name', 'Unknown')
+                if not raw_name or raw_name == 'Unknown' or raw_name.strip() == '':
                     continue
+
+                # Normalize to public name (e.g., 'Rafael Cruz' -> 'Ted Cruz')
+                name = normalize_to_public_name(raw_name)
 
                 if name not in politicians:
                     # Determine chamber from trade or infer from data
@@ -468,33 +493,49 @@ class WeeklyDataUpdate:
                                        key=lambda x: x.get('transaction_date', ''),
                                        reverse=True)[:50]
 
-            # Merge trade data into existing officials
+            # Merge trade data into existing officials (from fetch_all_congress_members)
             if hasattr(self, '_officials_by_name') and self._officials_by_name:
-                enriched = 0
+                # We have the full Congress roster - merge trades into existing entries
+                enriched_count = 0
+                new_count = 0
                 for name, trade_data in politicians.items():
+                    # Try to find matching official
                     name_lower = name.lower().strip()
                     parts = name.split()
                     last_name = parts[-1].lower() if parts else name_lower
                     
-                    official = None
+                    matching_official = None
+                    # Try full name first
                     if name_lower in self._officials_by_name:
-                        official = self._officials_by_name[name_lower]
+                        matching_official = self._officials_by_name[name_lower]
+                    # Try last name
                     elif last_name in self._officials_by_name:
-                        official = self._officials_by_name[last_name]
+                        matching_official = self._officials_by_name[last_name]
                     
-                    if official:
-                        official['trades'] = trade_data['trades']
-                        official['total_trades'] = trade_data['total_trades']
-                        official['stock_trades_min'] = trade_data.get('total_min', 0)
-                        official['stock_trades_max'] = trade_data.get('total_max', 0)
-                        official['has_financial_activity'] = True
-                        official['trade_score'] = trade_data.get('trade_score', 0)
-                        enriched += 1
+                    if matching_official:
+                        # Enrich existing official with trade data
+                        matching_official['trades'] = trade_data['trades']
+                        matching_official['total_trades'] = trade_data['total_trades']
+                        matching_official['purchase_count'] = trade_data['purchase_count']
+                        matching_official['sale_count'] = trade_data['sale_count']
+                        matching_official['stock_trades_min'] = trade_data['total_min']
+                        matching_official['stock_trades_max'] = trade_data['total_max']
+                        matching_official['stock_trades_display'] = trade_data['stock_trades_display']
+                        matching_official['purchases_display'] = trade_data['purchases_display']
+                        matching_official['sales_display'] = trade_data['sales_display']
+                        matching_official['symbols_traded'] = trade_data['symbols_traded']
+                        matching_official['trade_score'] = trade_data.get('trade_score', 0)
+                        matching_official['has_financial_activity'] = True
+                        enriched_count += 1
                     else:
+                        # Official not in Congress roster - add as new (rare case)
                         trade_data['has_financial_activity'] = True
                         self.officials_data.append(trade_data)
-                logger.info(f"Enriched {enriched} officials with trade data")
+                        new_count += 1
+                
+                logger.info(f"Enriched {enriched_count} existing officials, added {new_count} new")
             else:
+                # No Congress roster - use trade data as officials (fallback)
                 self.officials_data = list(politicians.values())
 
             self.source_status['fmp'] = {
@@ -505,7 +546,7 @@ class WeeklyDataUpdate:
                 'officials': len(self.officials_data),
                 'timestamp': datetime.now().isoformat()
             }
-            logger.info(f"Total officials: {len(self.officials_data)}")
+            logger.info(f"Processed {len(self.officials_data)} officials from FMP trade data")
 
         except Exception as e:
             logger.error(f"FMP fetch failed: {e}")
@@ -588,7 +629,50 @@ class WeeklyDataUpdate:
                 # Keep only last 50 trades for each official
                 data['trades'] = data['trades'][:50]
 
-            self.officials_data = list(politicians.values())
+            # Merge trade data into existing officials (from fetch_all_congress_members)
+            if hasattr(self, '_officials_by_name') and self._officials_by_name:
+                # We have the full Congress roster - merge trades into existing entries
+                enriched_count = 0
+                new_count = 0
+                for name, trade_data in politicians.items():
+                    # Try to find matching official
+                    name_lower = name.lower().strip()
+                    parts = name.split()
+                    last_name = parts[-1].lower() if parts else name_lower
+                    
+                    matching_official = None
+                    # Try full name first
+                    if name_lower in self._officials_by_name:
+                        matching_official = self._officials_by_name[name_lower]
+                    # Try last name
+                    elif last_name in self._officials_by_name:
+                        matching_official = self._officials_by_name[last_name]
+                    
+                    if matching_official:
+                        # Enrich existing official with trade data
+                        matching_official['trades'] = trade_data['trades']
+                        matching_official['total_trades'] = trade_data['total_trades']
+                        matching_official['purchase_count'] = trade_data['purchase_count']
+                        matching_official['sale_count'] = trade_data['sale_count']
+                        matching_official['stock_trades_min'] = trade_data['total_min']
+                        matching_official['stock_trades_max'] = trade_data['total_max']
+                        matching_official['stock_trades_display'] = trade_data['stock_trades_display']
+                        matching_official['purchases_display'] = trade_data['purchases_display']
+                        matching_official['sales_display'] = trade_data['sales_display']
+                        matching_official['symbols_traded'] = trade_data['symbols_traded']
+                        matching_official['trade_score'] = trade_data.get('trade_score', 0)
+                        matching_official['has_financial_activity'] = True
+                        enriched_count += 1
+                    else:
+                        # Official not in Congress roster - add as new (rare case)
+                        trade_data['has_financial_activity'] = True
+                        self.officials_data.append(trade_data)
+                        new_count += 1
+                
+                logger.info(f"Enriched {enriched_count} existing officials, added {new_count} new")
+            else:
+                # No Congress roster - use trade data as officials (fallback)
+                self.officials_data = list(politicians.values())
 
             self.source_status['quiver'] = {
                 'status': 'success',
@@ -763,8 +847,15 @@ class WeeklyDataUpdate:
             'INDEPENDENT BANKER', 'AMERICAN BANKER', 'CREDIT UNION'
         ]
 
+        # Calculate rolling 12-month date window
+        rolling_end_date = datetime.now()
+        rolling_start_date = rolling_end_date - timedelta(days=365)
+        min_date_str = rolling_start_date.strftime('%Y-%m-%d')
+        max_date_str = rolling_end_date.strftime('%Y-%m-%d')
+        logger.info(f"  Using rolling 12-month window: {min_date_str} to {max_date_str}")
+
         def get_financial_pac_total(committee_id: str) -> tuple:
-            """Get total financial sector PAC contributions to a candidate's committee."""
+            """Get total financial sector PAC contributions to a candidate's committee (rolling 12 months)."""
             url = 'https://api.open.fec.gov/v1/schedules/schedule_a/'
             total = 0
             contributors = []
@@ -775,7 +866,8 @@ class WeeklyDataUpdate:
                 params = {
                     'api_key': api_key,
                     'committee_id': committee_id,
-                    'two_year_transaction_period': 2024,
+                    'min_date': min_date_str,
+                    'max_date': max_date_str,
                     'contributor_type': 'committee',
                     'per_page': 100,
                     'page': page
@@ -1180,17 +1272,21 @@ class WeeklyDataUpdate:
         # License: These images are from Wikimedia Commons under Creative Commons licenses.
         # Attribution: Photos sourced from Wikipedia/Wikimedia Commons. See individual file pages
         # at commons.wikimedia.org for specific license terms and attribution requirements.
+        # Citation format: "Title" by Creator (Year). Source: Wikimedia Commons. Public Domain.
         WIKIPEDIA_PHOTOS = {
             'Dave McCormick': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/McCormick_Portrait_%28HR%29.jpg/330px-McCormick_Portrait_%28HR%29.jpg',
             'David McCormick': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/McCormick_Portrait_%28HR%29.jpg/330px-McCormick_Portrait_%28HR%29.jpg',
             'Angus King': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg',
+            'Angus S. King': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg',  # Alias
             'Ted Cruz': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg/330px-Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg',
+            'Rafael Cruz': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg/330px-Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg',  # Alias (formal name)
             'Markwayne Mullin': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg',
             'Shelley Moore Capito': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg',
             'John Boozman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg',
             'Tina Smith': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Tina_Smith%2C_official_portrait%2C_116th_congress.jpg/330px-Tina_Smith%2C_official_portrait%2C_116th_congress.jpg',
             'John Kennedy': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/John_Kennedy%2C_official_portrait%2C_115th_Congress_%28cropped%29.jpg/330px-John_Kennedy%2C_official_portrait%2C_115th_Congress_%28cropped%29.jpg',
             'Tommy Tuberville': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg',
+            'Thomas Tuberville': 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg',  # Alias (formal name)
             'Sheldon Whitehouse': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg',
             'Mitch McConnell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Mitch_McConnell_2016_official_photo_%281%29.jpg/330px-Mitch_McConnell_2016_official_photo_%281%29.jpg',
             'John Fetterman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg',
@@ -1889,6 +1985,28 @@ Be factual and avoid speculation."""
             logger.warning(f"Industry highlights generation failed: {e}")
             return "Industry highlights unavailable."
 
+    def _generate_pattern_insights(self) -> List[Dict[str, Any]]:
+        """Generate AI pattern insights for the dashboard using the app's insight generator."""
+        try:
+            # Import the insight generator from the app
+            from apps.electwatch.app import _generate_ai_pattern_insights
+
+            logger.info("Calling AI to generate pattern insights...")
+            insights = _generate_ai_pattern_insights()
+
+            if insights and len(insights) > 0:
+                logger.info(f"Generated {len(insights)} pattern insights")
+                return insights
+            else:
+                logger.warning("AI returned no insights")
+                return []
+
+        except Exception as e:
+            logger.error(f"Pattern insight generation failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return []
+
     # =========================================================================
     # PHASE 4: SAVE DATA
     # =========================================================================
@@ -1897,7 +2015,7 @@ Be factual and avoid speculation."""
         """Save all processed data to storage."""
         from apps.electwatch.services.data_store import (
             save_officials, save_firms, save_industries,
-            save_committees, save_news, save_summaries, save_metadata
+            save_committees, save_news, save_summaries, save_insights, save_metadata
         )
 
         logger.info("Saving officials data...")
@@ -1917,6 +2035,16 @@ Be factual and avoid speculation."""
 
         logger.info("Saving AI summaries...")
         save_summaries(self.summaries, self.weekly_dir)
+
+        logger.info("Generating AI pattern insights...")
+        insights = self._generate_pattern_insights()
+        if insights:
+            logger.info(f"Saving {len(insights)} AI insights...")
+            save_insights(insights, self.weekly_dir)
+        else:
+            logger.warning("No insights generated - using sample insights")
+            from apps.electwatch.app import _get_sample_insights
+            save_insights(_get_sample_insights(), self.weekly_dir)
 
         # Calculate next update time (next Sunday midnight)
         now = datetime.now()

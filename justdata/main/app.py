@@ -159,73 +159,73 @@ def register_blueprints(app: Flask):
         from justdata.apps.branchseeker.blueprint import branchseeker_bp
         app.register_blueprint(branchseeker_bp, url_prefix='/branchseeker')
     except ImportError:
-        print("⚠️  BranchSeeker blueprint not yet created")
+        print("[WARN] BranchSeeker blueprint not yet created")
     
     try:
         from justdata.apps.bizsight.blueprint import bizsight_bp
         app.register_blueprint(bizsight_bp, url_prefix='/bizsight')
     except ImportError:
-        print("⚠️  BizSight blueprint not yet created")
+        print("[WARN] BizSight blueprint not yet created")
     
     try:
         from justdata.apps.lendsight.blueprint import lendsight_bp
         app.register_blueprint(lendsight_bp, url_prefix='/lendsight')
     except ImportError:
-        print("⚠️  LendSight blueprint not yet created")
+        print("[WARN] LendSight blueprint not yet created")
     
     try:
         from justdata.apps.mergermeter.blueprint import mergermeter_bp
         app.register_blueprint(mergermeter_bp, url_prefix='/mergermeter')
     except ImportError:
-        print("⚠️  MergerMeter blueprint not yet created")
+        print("[WARN] MergerMeter blueprint not yet created")
     
     try:
         from justdata.apps.branchmapper.blueprint import branchmapper_bp
         app.register_blueprint(branchmapper_bp, url_prefix='/branchmapper')
     except ImportError:
-        print("⚠️  BranchMapper blueprint not yet created")
+        print("[WARN] BranchMapper blueprint not yet created")
     
     try:
         from justdata.apps.dataexplorer.blueprint import dataexplorer_bp
         app.register_blueprint(dataexplorer_bp, url_prefix='/dataexplorer')
     except ImportError:
-        print("⚠️  DataExplorer blueprint not yet created")
+        print("[WARN] DataExplorer blueprint not yet created")
     
     try:
         from justdata.apps.lenderprofile.blueprint import lenderprofile_bp
         app.register_blueprint(lenderprofile_bp, url_prefix='/lenderprofile')
     except ImportError:
-        print("⚠️  LenderProfile blueprint not yet created")
+        print("[WARN] LenderProfile blueprint not yet created")
     
     try:
         from justdata.apps.loantrends.blueprint import loantrends_bp
         app.register_blueprint(loantrends_bp, url_prefix='/loantrends')
     except ImportError:
-        print("⚠️  LoanTrends blueprint not yet created")
+        print("[WARN] LoanTrends blueprint not yet created")
     
     try:
         from justdata.apps.memberview.blueprint import memberview_bp
         app.register_blueprint(memberview_bp, url_prefix='/memberview')
     except ImportError:
-        print("⚠️  MemberView blueprint not yet created")
+        print("[WARN] MemberView blueprint not yet created")
     
     # Apps in development (from User Access Matrix)
     try:
         from justdata.apps.commentmaker.blueprint import commentmaker_bp
         app.register_blueprint(commentmaker_bp, url_prefix='/commentmaker')
     except ImportError:
-        print("⚠️  CommentMaker blueprint not yet created (In Development)")
+        print("[WARN] CommentMaker blueprint not yet created (In Development)")
     
     try:
         from justdata.apps.justpolicy.blueprint import justpolicy_bp
         app.register_blueprint(justpolicy_bp, url_prefix='/justpolicy')
     except ImportError:
-        print("⚠️  JustPolicy blueprint not yet created (In Development)")
+        print("[WARN] JustPolicy blueprint not yet created (In Development)")
     
     # Administrative tools
     try:
         from justdata.apps.analytics.blueprint import analytics_bp
         app.register_blueprint(analytics_bp, url_prefix='/analytics')
     except ImportError:
-        print("⚠️  Analytics blueprint not yet created")
+        print("[WARN] Analytics blueprint not yet created")
 
