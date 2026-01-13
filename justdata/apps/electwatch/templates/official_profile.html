@@ -609,10 +609,6 @@
                             <!-- Links populated by JavaScript -->
                         </div>
                     </div>
-                    <div class="profile-score">
-                        <div id="involvement-score" class="score-value">--</div>
-                        <div class="score-label">Involvement Score</div>
-                    </div>
                 </div>
             </div>
 
@@ -666,6 +662,18 @@
                     </div>
                     <div class="card-body">
                         <div id="industry-bars" class="industry-bars">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial PAC Contributors -->
+                <div id="pac-contributors-section" class="card" style="display: none;">
+                    <div class="card-header">
+                        <h2><i class="fas fa-hand-holding-dollar"></i> Financial Sector PAC Contributors</h2>
+                    </div>
+                    <div class="card-body">
+                        <div id="pac-contributors-list" class="firms-list">
                             <!-- Populated by JS -->
                         </div>
                     </div>
@@ -763,10 +771,13 @@
             document.getElementById('official-name').textContent = official.name;
 
             // Show photo if available, otherwise show party badge
+            // Photos sourced from Wikimedia Commons or U.S. House Clerk / Bioguide (Public Domain)
             if (official.photo_url) {
                 const photoEl = document.getElementById('official-photo');
                 photoEl.src = official.photo_url;
                 photoEl.alt = `Photo of ${official.name}`;
+                // Add attribution as tooltip on hover
+                photoEl.title = official.photo_attribution || 'Official portrait. Public Domain.';
                 photoEl.style.display = 'block';
                 photoEl.onerror = () => {
                     photoEl.style.display = 'none';
@@ -809,16 +820,20 @@
 
             // Official House/Senate website
             if (official.state && official.name) {
-                const lastName = official.name.split(' ').pop().toLowerCase();
-                if (official.chamber === 'house') {
-                    linksHtml += `<a href="https://${lastName}.house.gov" target="_blank" class="profile-link" title="Official House Website">
-                        <i class="fas fa-globe"></i> Official Website
-                    </a>`;
-                } else {
-                    linksHtml += `<a href="https://www.${lastName}.senate.gov" target="_blank" class="profile-link" title="Official Senate Website">
-                        <i class="fas fa-globe"></i> Official Website
-                    </a>`;
+                // Use stored website_url if available, otherwise generate from name
+                let websiteUrl = official.website_url;
+                if (!websiteUrl) {
+                    const lastName = official.name.split(' ').pop().toLowerCase();
+                    if (official.chamber === 'house') {
+                        websiteUrl = `https://${lastName}.house.gov`;
+                    } else {
+                        websiteUrl = `https://www.${lastName}.senate.gov`;
+                    }
                 }
+                const websiteTitle = official.chamber === 'house' ? 'Official House Website' : 'Official Senate Website';
+                linksHtml += `<a href="${websiteUrl}" target="_blank" class="profile-link" title="${websiteTitle}">
+                    <i class="fas fa-globe"></i> Official Website
+                </a>`;
             }
 
             // Quiver Quant trade history
@@ -831,18 +846,23 @@
 
             linksContainer.innerHTML = linksHtml;
 
-            // Score
-            document.getElementById('involvement-score').textContent = official.involvement_score || '--';
-            const scoreEl = document.getElementById('involvement-score');
-            if (official.involvement_score >= 70) scoreEl.style.color = 'var(--danger)';
-            else if (official.involvement_score >= 40) scoreEl.style.color = 'var(--warning)';
-            else scoreEl.style.color = 'var(--success)';
-
             // Stats
             document.getElementById('stat-total').textContent = formatAmount(official.total_amount);
             document.getElementById('stat-contributions').textContent = formatAmount(official.contributions);
             document.getElementById('stat-trades').textContent = formatAmount(official.stock_trades);
-            document.getElementById('stat-contributions-count').textContent = (official.contributions_count || 0) + ' records';
+
+            // Contributions count - show meaningful info based on available data
+            const contribCount = official.contributions_count || 0;
+            const contribList = official.contributions_list || [];
+            if (contribCount > 0 || contribList.length > 0) {
+                document.getElementById('stat-contributions-count').textContent = (contribCount || contribList.length) + ' records';
+            } else if (official.contributions > 0) {
+                // Have aggregate total but no individual records
+                document.getElementById('stat-contributions-count').textContent = 'FEC total';
+                document.getElementById('stat-contributions-count').title = 'Aggregate from FEC. Individual PAC records not yet loaded.';
+            } else {
+                document.getElementById('stat-contributions-count').textContent = 'No records';
+            }
             document.getElementById('stat-trades-count').textContent = (official.trades_count || 0) + ' trades';
 
             // Net worth (supports both old net_worth_estimate and new net_worth field)
@@ -863,6 +883,9 @@
 
             // Firms
             renderFirms(official.firms);
+
+            // Financial PAC Contributors
+            renderPACContributors(official.top_financial_pacs, official.contributions_list, official.financial_sector_pac);
 
             // Activity (combine contributions and trades)
             renderActivity(official.contributions_list, official.trades_list);
@@ -942,6 +965,44 @@
                     <span class="firm-amount">${formatAmount(firm.total)}</span>
                 </div>
             `).join('');
+        }
+
+        function renderPACContributors(topPacs, contributionsList, financialSectorTotal) {
+            const section = document.getElementById('pac-contributors-section');
+            const container = document.getElementById('pac-contributors-list');
+
+            // Combine sources - prefer top_financial_pacs, fall back to contributions_list
+            const pacs = topPacs || contributionsList || [];
+
+            if (!pacs || pacs.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = 'block';
+
+            // Show total if available
+            const totalHtml = financialSectorTotal
+                ? `<div style="margin-bottom: 16px; padding: 12px; background: var(--ncrc-gray-light); border-radius: 8px;">
+                     <strong>Total from Financial Sector PACs:</strong> ${formatAmount(financialSectorTotal)}
+                   </div>`
+                : '';
+
+            container.innerHTML = totalHtml + pacs.map(pac => {
+                const pacName = pac.name || pac.source || pac.pac_name || 'Unknown PAC';
+                // Extract company name from PAC name for linking (e.g., "JPMORGAN CHASE & CO. PAC" -> "JPMorgan Chase")
+                const firmName = pacName.replace(/ PAC$| POLITICAL ACTION COMMITTEE$| POLITICAL FUND$/i, '').trim();
+                const firmUrl = `/firm/${encodeURIComponent(firmName)}`;
+
+                return `
+                <div class="firm-item" style="cursor: pointer;" onclick="window.location='${firmUrl}'">
+                    <div class="firm-info">
+                        <span class="firm-name" style="color: var(--ncrc-justdata-blue);">${pacName} <i class="fas fa-external-link-alt" style="font-size: 0.7rem; opacity: 0.6;"></i></span>
+                        <span class="firm-type">PAC Contribution</span>
+                    </div>
+                    <span class="firm-amount">${formatAmount(pac.amount)}</span>
+                </div>`;
+            }).join('');
         }
 
         // Global storage for activity filtering
@@ -1076,15 +1137,18 @@
                     const sectorDisplay = sector ? formatIndustryName(sector) : '';
                     const sectorIcon = sector ? getIndustryIcon(sector) : '';
 
+                    // Link to firm page using company name
+                    const firmUrl = `/firm/${encodeURIComponent(companyName)}`;
                     return `
-                    <div class="timeline-item">
+                    <div class="timeline-item" style="cursor: pointer;" onclick="window.location='${firmUrl}'">
                         <div class="timeline-icon ${tradeClass}">
                             <i class="fas fa-${tradeIcon}"></i>
                         </div>
                         <div class="timeline-content">
-                            <div class="timeline-title">
+                            <div class="timeline-title" style="color: var(--ncrc-justdata-blue);">
                                 ${companyName}
                                 ${ticker ? `<span style="background: var(--ncrc-gray-light); padding: 2px 6px; border-radius: 4px; margin-left: 8px; font-size: 0.8rem; color: var(--ncrc-gray);">${ticker}</span>` : ''}
+                                <i class="fas fa-external-link-alt" style="font-size: 0.7rem; opacity: 0.6; margin-left: 4px;"></i>
                             </div>
                             <div class="timeline-detail">
                                 <span class="trade-type-badge ${tradeClass}">${tradeLabel}</span>

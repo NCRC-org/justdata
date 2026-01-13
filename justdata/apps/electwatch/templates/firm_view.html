@@ -635,10 +635,10 @@
                 </div>
             </div>
 
-            <!-- Connected Officials -->
+            <!-- Connected Officials (Stock Trades) -->
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-users"></i> Connected Officials</h2>
+                    <h2><i class="fas fa-chart-line"></i> Connected Officials (Stock Trades)</h2>
                 </div>
                 <div class="card-body">
                     <table class="officials-table">
@@ -652,6 +652,41 @@
                         </thead>
                         <tbody id="officials-body">
                             <tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No officials found</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- PAC Contributions -->
+            <div id="pac-section" class="card" style="display: none;">
+                <div class="card-header">
+                    <h2><i class="fas fa-hand-holding-dollar"></i> PAC Contributions</h2>
+                    <span id="pac-name" class="meta-item" style="margin-left: auto; font-size: 0.85rem; color: var(--ncrc-gray);"></span>
+                </div>
+                <div class="card-body">
+                    <div id="pac-summary" style="margin-bottom: 16px; padding: 12px; background: var(--ncrc-gray-light); border-radius: 8px;">
+                        <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--ncrc-gray);">Total PAC Contributions</span>
+                                <div id="pac-total" style="font-size: 1.25rem; font-weight: 700; color: var(--ncrc-justdata-blue);">$0</div>
+                            </div>
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--ncrc-gray);">Recipients</span>
+                                <div id="pac-recipients" style="font-size: 1.25rem; font-weight: 700; color: var(--ncrc-gray-dark);">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="officials-table">
+                        <thead>
+                            <tr>
+                                <th>Recipient</th>
+                                <th>PAC</th>
+                                <th>Date</th>
+                                <th style="text-align: right;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="pac-contributions-body">
+                            <tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No PAC contributions found</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -807,8 +842,11 @@
             document.getElementById('r-amount').textContent = `${formatAmount(firm.r_amount || 0)} (${rPct}%)`;
             document.getElementById('d-amount').textContent = `${formatAmount(firm.d_amount || 0)} (${dPct}%)`;
 
-            // Officials
+            // Officials (Stock Trades)
             renderOfficials(firm.officials);
+
+            // PAC Contributions
+            renderPACContributions(firm);
 
             // Timeline
             renderTimeline(firm.activity);
@@ -859,6 +897,60 @@
                         <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
                         <td style="font-size: 0.85rem; color: var(--ncrc-gray);">${official.committee || 'N/A'}</td>
                         <td class="amount-cell">${formatAmount(official.total)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderPACContributions(firm) {
+            const section = document.getElementById('pac-section');
+            const tbody = document.getElementById('pac-contributions-body');
+
+            // Check if firm has PAC data
+            if (!firm.pac_contributions || firm.pac_contributions.length === 0) {
+                // Hide section if no PAC contributions
+                if (!firm.pac_name && !firm.pac_names?.length) {
+                    section.style.display = 'none';
+                    return;
+                }
+                // Show section with message if PAC exists but no contributions found
+                section.style.display = 'block';
+                if (firm.pac_name) {
+                    document.getElementById('pac-name').textContent = firm.pac_name;
+                }
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No PAC contributions found in tracked officials</td></tr>';
+                return;
+            }
+
+            // Show the section
+            section.style.display = 'block';
+
+            // Set PAC name if available
+            if (firm.pac_name) {
+                document.getElementById('pac-name').textContent = firm.pac_name;
+            }
+
+            // Update summary stats
+            document.getElementById('pac-total').textContent = formatAmount(firm.pac_contributions_total || 0);
+            document.getElementById('pac-recipients').textContent = firm.pac_recipients_count || 0;
+
+            // Render the contributions table
+            tbody.innerHTML = firm.pac_contributions.map(contrib => {
+                const officialId = contrib.official_id || contrib.official_name.toLowerCase().replace(/\s+/g, '_');
+                return `
+                    <tr>
+                        <td>
+                            <div class="official-cell">
+                                <div class="party-badge ${contrib.party}">${contrib.party}</div>
+                                <div>
+                                    <a href="/official/${officialId}" class="official-name">${contrib.official_name}</a>
+                                    <div class="official-meta">${contrib.chamber === 'house' ? 'Rep' : 'Sen'}. - ${contrib.state}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-size: 0.8rem; color: var(--ncrc-gray); max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${contrib.pac_name}</td>
+                        <td style="font-size: 0.85rem; color: var(--ncrc-gray);">${contrib.date || 'N/A'}</td>
+                        <td class="amount-cell">${formatAmount(contrib.amount)}</td>
                     </tr>
                 `;
             }).join('');

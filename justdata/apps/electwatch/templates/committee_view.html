@@ -251,8 +251,13 @@
         .members-table th,
         .members-table td {
             padding: 12px 16px;
-            text-align: left;
+            text-align: center;
             border-bottom: 1px solid #e5e7eb;
+        }
+
+        .members-table th:first-child,
+        .members-table td:first-child {
+            text-align: left;
         }
 
         .members-table th {
@@ -303,26 +308,10 @@
         }
 
         .amount-cell {
-            text-align: right;
+            text-align: center;
             font-family: 'SF Mono', monospace;
             font-weight: 600;
         }
-
-        .score-cell {
-            text-align: center;
-        }
-
-        .score-badge {
-            display: inline-block;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-weight: 700;
-            font-size: 0.8rem;
-        }
-
-        .score-badge.high { background: #fee2e2; color: #dc2626; }
-        .score-badge.medium { background: #fef3c7; color: #d97706; }
-        .score-badge.low { background: #d1fae5; color: #059669; }
 
         /* Votes Table */
         .votes-table {
@@ -616,13 +605,12 @@
                             <tr>
                                 <th>Member</th>
                                 <th>Role</th>
-                                <th style="text-align: right;">Contributions</th>
-                                <th style="text-align: right;">Stock Trades</th>
-                                <th style="text-align: center;">Score</th>
+                                <th>Fin PAC $</th>
+                                <th>Stock Trades</th>
                             </tr>
                         </thead>
                         <tbody id="members-body">
-                            <tr><td colspan="5" class="loading">Loading members...</td></tr>
+                            <tr><td colspan="4" class="loading">Loading members...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -800,7 +788,7 @@
             const tbody = document.getElementById('members-body');
 
             if (!members || members.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--ncrc-gray);">No members found</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No members found</td></tr>';
                 return;
             }
 
@@ -809,9 +797,8 @@
                 if (member.role === 'Chair') roleClass = 'chair';
                 else if (member.role === 'Ranking Member') roleClass = 'ranking';
 
-                let scoreClass = 'low';
-                if (member.score >= 80) scoreClass = 'high';
-                else if (member.score >= 60) scoreClass = 'medium';
+                // Use financial_sector_pac if available, otherwise fall back to contributions
+                const finPac = member.financial_sector_pac !== undefined ? member.financial_sector_pac : member.contributions;
 
                 return `
                     <tr onclick="window.location='/official/${member.id}'">
@@ -825,9 +812,8 @@
                             </div>
                         </td>
                         <td><span class="role-badge ${roleClass}">${member.role}</span></td>
-                        <td class="amount-cell">${formatAmount(member.contributions)}</td>
+                        <td class="amount-cell">${formatAmount(finPac)}</td>
                         <td class="amount-cell">${formatAmount(member.stock_trades)}</td>
-                        <td class="score-cell"><span class="score-badge ${scoreClass}">${member.score}</span></td>
                     </tr>
                 `;
             }).join('');
@@ -841,19 +827,57 @@
                 return;
             }
 
-            tbody.innerHTML = votes.map(vote => `
-                <tr onclick="window.location='/bill/${vote.bill_id.replace(/[.\\s]/g, '').toLowerCase()}'">
-                    <td>
-                        <div style="font-weight: 600; color: var(--ncrc-primary-blue);">${vote.bill_id}</div>
-                        <div style="font-size: 0.8rem; color: var(--ncrc-gray);">${vote.title.substring(0, 50)}${vote.title.length > 50 ? '...' : ''}</div>
-                        <div style="font-size: 0.75rem; color: var(--ncrc-gray);">${vote.date}</div>
-                    </td>
-                    <td><span class="vote-result ${vote.result.toLowerCase()}">${vote.result}</span></td>
-                    <td class="vote-count">
-                        <span class="yea">${vote.yeas} Yea</span> - <span class="nay">${vote.nays} Nay</span>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = votes.map(vote => {
+                // Build Congress.gov URL from bill_id (e.g., "H.R. 4763" -> "hr4763")
+                const congressUrl = buildCongressGovUrl(vote.bill_id, vote.congress || 119);
+                return `
+                    <tr onclick="window.open('${congressUrl}', '_blank')">
+                        <td>
+                            <div style="font-weight: 600; color: var(--ncrc-primary-blue);">${vote.bill_id}</div>
+                            <div style="font-size: 0.8rem; color: var(--ncrc-gray);">${vote.title.substring(0, 50)}${vote.title.length > 50 ? '...' : ''}</div>
+                            <div style="font-size: 0.75rem; color: var(--ncrc-gray);">${vote.date}</div>
+                        </td>
+                        <td><span class="vote-result ${vote.result.toLowerCase()}">${vote.result}</span></td>
+                        <td class="vote-count">
+                            <span class="yea">${vote.yeas} Yea</span> - <span class="nay">${vote.nays} Nay</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function buildCongressGovUrl(billId, congress = 119) {
+            // Convert "H.R. 4763" to "hr4763" for Congress.gov URL
+            // Format: https://www.congress.gov/bill/119th-congress/house-bill/4763
+            const cleaned = billId.toLowerCase().replace(/\s+/g, '').replace('.', '');
+
+            let billType = '';
+            let billNumber = '';
+
+            if (cleaned.startsWith('hr')) {
+                billType = 'house-bill';
+                billNumber = cleaned.replace('hr', '');
+            } else if (cleaned.startsWith('s')) {
+                billType = 'senate-bill';
+                billNumber = cleaned.replace('s', '');
+            } else if (cleaned.startsWith('hres')) {
+                billType = 'house-resolution';
+                billNumber = cleaned.replace('hres', '');
+            } else if (cleaned.startsWith('sres')) {
+                billType = 'senate-resolution';
+                billNumber = cleaned.replace('sres', '');
+            } else if (cleaned.startsWith('hjres')) {
+                billType = 'house-joint-resolution';
+                billNumber = cleaned.replace('hjres', '');
+            } else if (cleaned.startsWith('sjres')) {
+                billType = 'senate-joint-resolution';
+                billNumber = cleaned.replace('sjres', '');
+            } else {
+                // Fallback to search
+                return `https://www.congress.gov/search?q=${encodeURIComponent(billId)}`;
+            }
+
+            return `https://www.congress.gov/bill/${congress}th-congress/${billType}/${billNumber}`;
         }
 
         function renderLegislation(legislation) {
@@ -864,21 +888,24 @@
                 return;
             }
 
-            container.innerHTML = legislation.map(bill => `
-                <div class="bill-item" onclick="window.location='/bill/${bill.bill_id.replace(/[.\\s]/g, '').toLowerCase()}'">
-                    <div class="bill-header">
-                        <span class="bill-id">${bill.bill_id}</span>
-                        <span class="bill-status ${bill.status.includes('Passed') ? 'passed' : 'committee'}">${bill.status}</span>
-                    </div>
-                    <div class="bill-title">${bill.title}</div>
-                    <div class="bill-meta">${bill.sponsor} &bull; ${bill.date}</div>
-                    ${bill.industries && bill.industries.length > 0 ? `
-                        <div class="industry-tags">
-                            ${bill.industries.map(ind => `<span class="industry-tag ${ind}" onclick="event.stopPropagation(); window.location='/industry/${ind}'">${formatIndustry(ind)}</span>`).join('')}
+            container.innerHTML = legislation.map(bill => {
+                const congressUrl = buildCongressGovUrl(bill.bill_id, bill.congress || 119);
+                return `
+                    <div class="bill-item" onclick="window.open('${congressUrl}', '_blank')">
+                        <div class="bill-header">
+                            <span class="bill-id">${bill.bill_id}</span>
+                            <span class="bill-status ${bill.status.includes('Passed') ? 'passed' : 'committee'}">${bill.status}</span>
                         </div>
-                    ` : ''}
-                </div>
-            `).join('');
+                        <div class="bill-title">${bill.title}</div>
+                        <div class="bill-meta">${bill.sponsor} &bull; ${bill.date}</div>
+                        ${bill.industries && bill.industries.length > 0 ? `
+                            <div class="industry-tags">
+                                ${bill.industries.map(ind => `<span class="industry-tag ${ind}" onclick="event.stopPropagation(); window.location='/industry/${ind}'">${formatIndustry(ind)}</span>`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderNews(news) {

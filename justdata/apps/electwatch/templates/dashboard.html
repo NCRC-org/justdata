@@ -291,7 +291,7 @@
             font-weight: 400;
             text-transform: none;
             white-space: normal;
-            width: 240px;
+            width: 320px;
             line-height: 1.5;
             z-index: 100;
             opacity: 0;
@@ -1481,6 +1481,160 @@
             opacity: 0.6;
             text-align: right;
         }
+
+        /* Insight summary rich formatting */
+        .insight-summary p {
+            margin-bottom: 12px;
+        }
+
+        .insight-summary p:last-child {
+            margin-bottom: 0;
+        }
+
+        .insight-summary strong {
+            color: var(--ncrc-gray-dark);
+            font-weight: 700;
+        }
+
+        /* Inline entity links */
+        .insight-link {
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+            font-weight: 600;
+            padding: 1px 4px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .insight-link:hover {
+            text-decoration: underline;
+            background: var(--ncrc-light-blue);
+        }
+
+        .insight-link-official {
+            color: var(--ncrc-primary-blue);
+        }
+
+        .insight-link-firm {
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .insight-link-committee {
+            color: #6366f1;
+        }
+
+        .insight-link-industry {
+            color: #d97706;
+        }
+
+        /* Bullet lists in insights */
+        .insight-bullets {
+            margin: 12px 0;
+            padding-left: 24px;
+            list-style: none;
+        }
+
+        .insight-bullets li {
+            margin-bottom: 8px;
+            position: relative;
+            padding-left: 8px;
+        }
+
+        .insight-bullets li::before {
+            content: "•";
+            position: absolute;
+            left: -16px;
+            color: var(--ncrc-justdata-blue);
+            font-weight: bold;
+        }
+
+        /* Tables in insights */
+        .insight-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 0.9rem;
+        }
+
+        .insight-table th,
+        .insight-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .insight-table th {
+            background: var(--ncrc-gray-light);
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .insight-table tr:hover td {
+            background: var(--ncrc-light-blue);
+        }
+
+        /* News sources list */
+        .sources-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .source-item {
+            padding: 12px 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .source-item:hover {
+            background: var(--ncrc-light-blue);
+        }
+
+        .source-link {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .source-link:hover {
+            text-decoration: underline;
+        }
+
+        .source-link i {
+            flex-shrink: 0;
+            margin-top: 3px;
+            font-size: 0.75rem;
+            opacity: 0.7;
+        }
+
+        .source-title {
+            flex: 1;
+        }
+
+        .source-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 6px;
+            padding-left: 24px;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .source-name {
+            font-weight: 500;
+        }
+
+        .source-date {
+            opacity: 0.8;
+        }
     </style>
 </head>
 <body>
@@ -1639,21 +1793,25 @@
                         <thead>
                             <!-- Group header row -->
                             <tr class="header-group-row">
-                                <th colspan="3"></th>
+                                <th colspan="2"></th>
                                 <th colspan="4" class="financial-sector-group">
                                     <span class="header-tooltip">
                                         <i class="fas fa-landmark"></i> Financial Sector
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            <strong>Included Industries:</strong><br>
+                                            <strong>What We Track:</strong><br>
+                                            PAC contributions and stock trades involving financial sector firms over a rolling 12-month period.<br><br>
+                                            <strong>PAC Contributions Include:</strong><br>
+                                            • Direct PAC-to-candidate contributions from financial firm PACs (e.g., "Wells Fargo PAC")<br>
+                                            • Industry association PACs (e.g., "American Bankers Association PAC")<br><br>
+                                            <strong>Industries Covered:</strong><br>
                                             • Banking (WFC, JPM, BAC, C, GS, MS, USB, PNC...)<br>
                                             • Investment (BLK, SCHW, BX, KKR, APO...)<br>
                                             • Payments (V, MA, AXP, PYPL, SQ...)<br>
                                             • Insurance (MET, PRU, AIG, ALL, TRV...)<br>
-                                            • Mortgage (RKT, UWMC, PFSI, NLY...)<br>
-                                            • Crypto (COIN, HOOD, MSTR, RIOT, MARA...)<br>
-                                            • Consumer Finance (OMF, SLM, NAVI...)
-                                            <span class="tooltip-source">105+ financial sector tickers tracked</span>
+                                            • Mortgage & Consumer Finance<br>
+                                            • Crypto & Fintech
+                                            <span class="tooltip-source">Source: FEC Schedule A (receipts), STOCK Act disclosures</span>
                                         </span>
                                     </span>
                                 </th>
@@ -1672,23 +1830,21 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable active" data-sort="score" data-order="desc">
-                                    <span class="header-tooltip">
-                                        Score
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            <strong>Percentile Rank (1-100):</strong> Based on trading activity and PAC contributions. Score of 100 = most active, 50 = median, 1 = least active among officials tracked.
-                                            <span class="tooltip-source">Method: Percentile rank of raw activity score</span>
-                                        </span>
-                                    </span>
-                                </th>
-                                <th class="sortable" data-sort="financial_pac" data-order="desc">
+                                <th class="sortable active" data-sort="financial_pac" data-order="desc">
                                     <span class="header-tooltip">
                                         Fin PAC $
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            <strong>Financial Sector PAC $:</strong> Direct contributions from financial sector PACs (banks, investment firms, insurance, payment companies) to this candidate's campaign.
-                                            <span class="tooltip-source">Source: FEC Schedule B Disbursements (2024 cycle)</span>
+                                            <strong>Financial Sector PAC $:</strong> Total contributions from financial sector PACs to this candidate's principal campaign committee over the past 12 months.<br><br>
+                                            <strong>Includes:</strong><br>
+                                            • Company PACs (e.g., "JPMorgan Chase PAC")<br>
+                                            • Industry PACs (e.g., "American Bankers Assoc PAC")<br><br>
+                                            <strong>Does NOT include:</strong><br>
+                                            • Individual employee contributions<br>
+                                            • SuperPAC independent expenditures<br>
+                                            • Leadership PAC transfers<br><br>
+                                            <em>Note: FEC data has a 1-3 month reporting lag.</em>
+                                            <span class="tooltip-source">Source: FEC Schedule A Receipts (rolling 12 months)</span>
                                         </span>
                                     </span>
                                 </th>
@@ -1697,8 +1853,9 @@
                                         Fin PAC %
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            <strong>Financial Sector %:</strong> What percentage of this official's total PAC contributions come from financial sector PACs. Higher % = more reliant on financial industry money.
-                                            <span class="tooltip-source">Calculation: Fin PAC $ ÷ Total PAC $</span>
+                                            <strong>Financial Sector %:</strong> What percentage of this official's total PAC contributions come from financial sector PACs.<br><br>
+                                            Higher % = more reliant on financial industry money relative to other PAC sources.
+                                            <span class="tooltip-source">Calculation: Financial Sector PAC $ ÷ Total PAC $ (rolling 12 months)</span>
                                         </span>
                                     </span>
                                 </th>
@@ -2076,7 +2233,7 @@
             <div class="card">
                 <div class="card-header">
                     <h2><i class="fas fa-lightbulb"></i> AI Pattern Detection</h2>
-                    <button class="refresh-btn" onclick="refreshInsights()">
+                    <button class="refresh-btn" onclick="refreshInsights(true)">
                         <i class="fas fa-sync-alt"></i> Refresh Analysis
                     </button>
                 </div>
@@ -2279,7 +2436,14 @@
                     </div>
                 </div>
 
-                <div class="insight-section" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                <div id="modal-sources" class="insight-section" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                    <h3><i class="fas fa-newspaper"></i> News & Sources</h3>
+                    <div class="sources-list" id="modal-sources-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="insight-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
                     <h3><i class="fas fa-database"></i> Data Sources</h3>
                     <p id="modal-evidence" style="font-size: 0.9rem; color: var(--ncrc-gray);">
                         Based on FEC filings and STOCK Act disclosures
@@ -2312,7 +2476,7 @@
         });
 
         // Sorting state
-        let currentSort = { field: 'total', order: 'desc' };
+        let currentSort = { field: 'financial_pac', order: 'desc' };
         let allOfficials = [];
 
         // Load Leaderboard Data
@@ -2424,7 +2588,7 @@
             const loading = document.getElementById('leaderboard-loading');
 
             if (!officials || officials.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">No officials found matching filters</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">No officials found matching filters</td></tr>';
                 loading.style.display = 'none';
                 return;
             }
@@ -2436,7 +2600,7 @@
                         <div class="official-cell">
                             <div class="official-photo-container">
                                 ${official.photo_url
-                                    ? `<img class="official-photo" src="${official.photo_url}" alt="${official.name}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
+                                    ? `<img class="official-photo" src="${official.photo_url}" alt="${official.name}" title="${(official.photo_attribution || 'Official portrait').replace(/"/g, '&quot;')}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
                                     : `<div class="official-photo placeholder"><i class="fas fa-user"></i></div>`
                                 }
                                 <div class="party-indicator ${official.party}">${official.party}</div>
@@ -2446,9 +2610,6 @@
                                 <span class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}${official.district ? '-' + official.district : ''}</span>
                             </div>
                         </div>
-                    </td>
-                    <td class="score-cell">
-                        <span class="score-badge ${getScoreClass(official.involvement_score)}">${official.involvement_score.toLocaleString()}</span>
                     </td>
                     <td class="amount-cell">
                         <div class="sub">${formatPacAmount(official)}</div>
@@ -2590,12 +2751,13 @@
         // Store insights globally for click handling
         let insightsData = [];
 
-        async function refreshInsights() {
+        async function refreshInsights(forceRegenerate = false) {
             const container = document.getElementById('insights-container');
-            container.innerHTML = '<div class="loading">Generating AI insights...</div>';
+            container.innerHTML = '<div class="loading">Loading AI insights...</div>';
 
             try {
-                const response = await fetch('/api/insights');
+                const url = forceRegenerate ? '/api/insights?refresh=true' : '/api/insights';
+                const response = await fetch(url);
                 const data = await response.json();
 
                 if (data.success && data.insights) {
@@ -2615,13 +2777,78 @@
             }
         }
 
+        // Parse wiki-style links [[type:id|display text]] and convert to HTML links
+        function parseInsightLinks(text) {
+            if (!text) return '';
+
+            // Convert wiki-style links: [[type:id|display]] -> <a href="/type/id">display</a>
+            let parsed = text.replace(/\[\[(official|firm|committee|industry):([^\]|]+)\|([^\]]+)\]\]/g,
+                (match, type, id, display) => {
+                    let url;
+                    switch(type) {
+                        case 'official':
+                            url = `/official/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-official">${display}</a>`;
+                        case 'firm':
+                            url = `/firm/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-firm">${display}</a>`;
+                        case 'committee':
+                            url = `/committee/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-committee">${display}</a>`;
+                        case 'industry':
+                            url = `/industry/${encodeURIComponent(id)}`;
+                            return `<a href="${url}" class="insight-link insight-link-industry">${display}</a>`;
+                        default:
+                            return display;
+                    }
+                }
+            );
+
+            // Convert markdown bold **text** to <strong>
+            parsed = parsed.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+            // Convert bullet points (• or - at start of line)
+            parsed = parsed.replace(/^[•\-]\s+(.+)$/gm, '<li>$1</li>');
+
+            // Wrap consecutive <li> items in <ul>
+            parsed = parsed.replace(/(<li>.*<\/li>\n?)+/g, '<ul class="insight-bullets">$&</ul>');
+
+            // Convert markdown tables to HTML (simple implementation)
+            const tableRegex = /\|(.+)\|\n\|[-|]+\|\n((?:\|.+\|\n?)+)/g;
+            parsed = parsed.replace(tableRegex, (match, header, rows) => {
+                const headers = header.split('|').filter(h => h.trim());
+                const headerHtml = headers.map(h => `<th>${h.trim()}</th>`).join('');
+
+                const rowsHtml = rows.trim().split('\n').map(row => {
+                    const cells = row.split('|').filter(c => c.trim());
+                    return `<tr>${cells.map(c => `<td>${c.trim()}</td>`).join('')}</tr>`;
+                }).join('');
+
+                return `<table class="insight-table"><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table>`;
+            });
+
+            // Convert newlines to paragraphs (but not inside lists or tables)
+            parsed = parsed.split('\n\n').map(para => {
+                if (para.includes('<ul') || para.includes('<table') || para.includes('<li>')) {
+                    return para;
+                }
+                return `<p>${para}</p>`;
+            }).join('');
+
+            return parsed;
+        }
+
         function showInsightDetail(index) {
             const insight = insightsData[index];
             if (!insight) return;
 
             // Update modal content
             document.querySelector('#modal-title span').textContent = insight.title;
-            document.getElementById('modal-summary').textContent = insight.detailed_summary || insight.summary;
+
+            // Parse and render detailed summary with inline links
+            const summaryHtml = parseInsightLinks(insight.detailed_summary || insight.summary);
+            document.getElementById('modal-summary').innerHTML = summaryHtml;
+
             document.getElementById('modal-evidence').textContent = insight.evidence;
 
             // Render firms
@@ -2685,6 +2912,28 @@
                 </div>
             `).join('') || '<p style="color: var(--ncrc-gray);">No specific committees identified</p>';
             document.getElementById('modal-committees-list').innerHTML = committeesHtml;
+
+            // Render news sources
+            const sourcesSection = document.getElementById('modal-sources');
+            const sourcesList = document.getElementById('modal-sources-list');
+            if (insight.sources && insight.sources.length > 0) {
+                sourcesSection.style.display = 'block';
+                const sourcesHtml = insight.sources.map(source => `
+                    <div class="source-item">
+                        <a href="${source.url}" target="_blank" rel="noopener noreferrer" class="source-link">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span class="source-title">${source.title}</span>
+                        </a>
+                        <div class="source-meta">
+                            <span class="source-name">${source.source}</span>
+                            ${source.date ? `<span class="source-date">${source.date}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+                sourcesList.innerHTML = sourcesHtml;
+            } else {
+                sourcesSection.style.display = 'none';
+            }
 
             // Show modal
             document.getElementById('insight-modal').classList.add('active');
@@ -3012,6 +3261,7 @@
         loadLeaderboard();
         loadIndustrySummary();
         loadFirms();
+        refreshInsights();
     </script>
 </body>
 </html>
