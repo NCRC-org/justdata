@@ -163,6 +163,22 @@ def get_county_by_geoid5(geoid5: str) -> Optional[Dict]:
     return None
 
 
+
+def get_last_5_years_sb() -> List[int]:
+    """
+    Get the last 5 years dynamically from SB disclosure data.
+
+    Returns:
+        List of the 5 most recent years available
+    """
+    try:
+        bq_client = BigQueryClient()
+        return bq_client.get_last_5_years_sb()
+    except Exception as e:
+        print(f"Error loading SB years: {e}")
+        return list(range(2020, 2025))  # Fallback
+
+
 def validate_year_range(start_year: int, end_year: int) -> tuple[bool, Optional[str]]:
     """
     Validate year range.

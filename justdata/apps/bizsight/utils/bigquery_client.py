@@ -376,11 +376,11 @@ class BigQueryClient:
             results = query_job.result()
             years = [int(row.year) for row in results]
             if years:
-                print(f"✅ Fetched last 5 SB disclosure years: {years}")
+                print(f"[OK] Fetched last 5 SB disclosure years: {years}")
                 return years
             else:
                 # Fallback to recent years
-                print("⚠️  No SB disclosure years found, using fallback")
+                print("[WARN]  No SB disclosure years found, using fallback")
                 return list(range(2020, 2025))  # 2020-2024
         except Exception as e:
             print(f"Error fetching SB disclosure years: {e}")

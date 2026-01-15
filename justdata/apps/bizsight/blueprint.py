@@ -39,14 +39,19 @@ bizsight_bp = Blueprint(
 
 @bizsight_bp.record_once
 def configure_template_loader(state):
-    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    """Configure Jinja2 to search both blueprint templates and shared templates.
+
+    IMPORTANT: Blueprint templates must come FIRST in the ChoiceLoader so that
+    app-specific templates (like report_template.html) are found before shared
+    templates with the same name.
+    """
     app = state.app
     blueprint_loader = FileSystemLoader(TEMPLATES_DIR_STR)
     shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
     app.jinja_loader = ChoiceLoader([
-        app.jinja_loader,
-        blueprint_loader,
-        shared_loader
+        blueprint_loader,  # Blueprint templates first (highest priority)
+        shared_loader,     # Shared templates second
+        app.jinja_loader   # Main app loader last (fallback)
     ])
 
 
@@ -376,14 +381,110 @@ def get_states():
 
 @bizsight_bp.route('/api/counties-by-state/<state_code>', methods=['GET'])
 def get_counties_by_state(state_code):
-    """Get counties for a specific state."""
+    """Get counties for a specific state.
+
+    Uses the shared BigQuery client directly (like LendSight and the working app.py).
+    This fixes the issue where counties were returning empty results.
+    """
     try:
-        counties = get_available_counties(state_code=state_code)
+        from urllib.parse import unquote
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
+
+        # URL decode the state code
+        state_code = unquote(str(state_code)).strip()
+        print(f"[DEBUG] bizsight/api/counties-by-state called with state_code: '{state_code}'")
+
+        client = get_bigquery_client(BizSightConfig.GCP_PROJECT_ID)
+
+        # Check if state_code is a numeric FIPS code (2 digits) or a state name
+        is_numeric_code = state_code.isdigit() and len(state_code) <= 2
+
+        if is_numeric_code:
+            # Use geoid5 to match by state FIPS code (first 2 digits of geoid5)
+            # GEOID5 format: SSCCC where SS = state FIPS (2 digits), CCC = county FIPS (3 digits)
+            state_code_padded = state_code.zfill(2)
+            print(f"[DEBUG] Using state FIPS code: {state_code_padded}")
+            query = f"""
+            SELECT DISTINCT
+                county_state,
+                geoid5,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
+            FROM `{BizSightConfig.GCP_PROJECT_ID}.geo.cbsa_to_county`
+            WHERE geoid5 IS NOT NULL
+                AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
+                AND county_state IS NOT NULL
+                AND TRIM(county_state) != ''
+            ORDER BY county_state
+            """
+        else:
+            # Use state name to match (extract from county_state)
+            print(f"[DEBUG] Using state name: {state_code}")
+            query = f"""
+            SELECT DISTINCT
+                county_state,
+                geoid5,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
+            FROM `{BizSightConfig.GCP_PROJECT_ID}.geo.cbsa_to_county`
+            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{state_code}')
+                AND county_state IS NOT NULL
+                AND TRIM(county_state) != ''
+            ORDER BY county_state
+            """
+
+        query_job = client.query(query)
+        results = list(query_job.result())
+
+        # Return counties with proper structure
+        counties = []
+        seen_geoids = set()  # Track unique GEOIDs to avoid duplicates
+
+        for row in results:
+            # Ensure geoid5 is properly formatted as 5-digit string
+            geoid5 = str(row.geoid5).zfill(5) if row.geoid5 else None
+
+            # Skip if we've already seen this GEOID
+            if geoid5 and geoid5 in seen_geoids:
+                continue
+
+            if geoid5:
+                seen_geoids.add(geoid5)
+
+            # Extract state and county FIPS from GEOID5
+            state_fips = row.state_fips if hasattr(row, 'state_fips') else (geoid5[:2] if geoid5 and len(geoid5) >= 2 else None)
+            county_fips = row.county_fips if hasattr(row, 'county_fips') else (geoid5[2:] if geoid5 and len(geoid5) >= 5 else None)
+
+            # Parse county_name and state_name from county_state
+            county_name = ''
+            state_name = ''
+            if row.county_state and ',' in row.county_state:
+                parts = row.county_state.split(',', 1)
+                county_name = parts[0].strip()
+                state_name = parts[1].strip() if len(parts) > 1 else ''
+
+            counties.append({
+                'geoid5': geoid5,
+                'name': row.county_state,
+                'county_name': county_name,
+                'state_name': state_name,
+                'state_fips': state_fips,
+                'county_fips': county_fips
+            })
+
+        print(f"[DEBUG] bizsight/api/counties-by-state: Found {len(counties)} counties for state_code: {state_code}")
+        if counties:
+            print(f"[DEBUG] Sample counties: {counties[:3]}")
+        else:
+            print(f"[WARNING] No counties found for state_code: {state_code}")
+
         return jsonify(counties)
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+        error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
+        print(f"[ERROR] bizsight/api/counties-by-state error: {error_msg}")
+        return jsonify({'error': error_msg}), 500
 
 
 @bizsight_bp.route('/api/county-boundaries', methods=['GET'])

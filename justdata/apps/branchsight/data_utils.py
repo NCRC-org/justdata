@@ -11,17 +11,37 @@ from justdata.apps.branchsight.config import PROJECT_ID
 def find_exact_county_match(county_input: str) -> list:
     """
     Find all possible county matches from the database.
-    
+
     Args:
-        county_input: County input in format "County, State" or "County State"
-    
+        county_input: County input in format "County, State", "County State", or geoid5 FIPS code (e.g., "24031")
+
     Returns:
         List of possible county names from database (empty if none found)
     """
     try:
         client = get_bigquery_client(PROJECT_ID)
-        
-        # Parse county and state
+
+        # Check if input is a geoid5 (5-digit FIPS code)
+        county_input_stripped = county_input.strip()
+        if county_input_stripped.isdigit() and len(county_input_stripped) <= 5:
+            # Treat as geoid5 FIPS code
+            geoid5 = county_input_stripped.zfill(5)  # Pad to 5 digits if needed
+            county_query = f"""
+            SELECT DISTINCT county_state
+            FROM geo.cbsa_to_county
+            WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') = '{geoid5}'
+            ORDER BY county_state
+            """
+            county_job = client.query(county_query)
+            county_results = list(county_job.result())
+            matches = [row.county_state for row in county_results]
+            if matches:
+                print(f"Found county match for geoid5 {geoid5}: {matches}")
+                return matches
+            else:
+                print(f"No match found for geoid5 {geoid5}")
+
+        # Parse county and state from text format
         if ',' in county_input:
             county_name, state = county_input.split(',', 1)
             county_name = county_name.strip()
@@ -34,24 +54,24 @@ def find_exact_county_match(county_input: str) -> list:
             else:
                 county_name = county_input.strip()
                 state = None
-        
+
         # Build query to find matches
         if state:
             county_query = f"""
-            SELECT DISTINCT county_state 
-            FROM geo.cbsa_to_county 
+            SELECT DISTINCT county_state
+            FROM geo.cbsa_to_county
             WHERE LOWER(county_state) LIKE LOWER('%{county_name}%')
             AND LOWER(county_state) LIKE LOWER('%{state}%')
             ORDER BY county_state
             """
         else:
             county_query = f"""
-            SELECT DISTINCT county_state 
-            FROM geo.cbsa_to_county 
+            SELECT DISTINCT county_state
+            FROM geo.cbsa_to_county
             WHERE LOWER(county_state) LIKE LOWER('%{county_name}%')
             ORDER BY county_state
             """
-        
+
         county_job = client.query(county_query)
         county_results = list(county_job.result())
         matches = [row.county_state for row in county_results]

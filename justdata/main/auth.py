@@ -55,6 +55,15 @@ ACCESS_MATRIX = {
         'staff': 'full',
         'admin': 'full'
     },
+    'branchsight': {
+        'public': 'locked',       # Visible but requires membership
+        'economy': 'locked',
+        'member': 'full',
+        'member_plus': 'full',
+        'institutional': 'full',
+        'staff': 'full',
+        'admin': 'full'
+    },
     'bizsight': {
         'public': 'locked',
         'economy': 'locked',

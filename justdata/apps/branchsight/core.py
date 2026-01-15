@@ -27,7 +27,7 @@ def parse_web_parameters(counties_str: str, years_str: str, selection_type: str 
     Returns:
         Tuple of (counties_list, years_list)
     """
-    from data_utils import expand_state_to_counties, expand_metro_to_counties
+    from .data_utils import expand_state_to_counties, expand_metro_to_counties
     
     # Parse years
     # BranchSight uses fixed years 2021-2025 (most recent 5 years)

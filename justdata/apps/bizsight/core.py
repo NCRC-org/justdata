@@ -1170,7 +1170,7 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                 print(f"[DEBUG] AI insight '{key}': empty", flush=True)
         
         if progress_tracker:
-            progress_tracker.update_progress('completed', 95, 'Finalizing report... Dotting the i\'s and crossing the t\'s! ✅')
+            progress_tracker.update_progress('completed', 95, 'Finalizing report... Dotting the i\'s and crossing the t\'s! [OK]')
         
         # Add AI insights enabled flag to metadata
         metadata['ai_insights_enabled'] = ai_insights_enabled
