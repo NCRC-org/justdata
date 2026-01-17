@@ -35,8 +35,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <!-- Shared Population Demographics Module -->
-    <script src="/shared/population_demographics.js"></script>
+    <!-- Set base URL for API calls -->
+    <script>
+        window.APP_BASE_URL = '{{ app_base_url|default("/lendsight") }}';
+    </script>
     
     <style>
         /* Print-specific styles for PDF export - optimized for readability */
@@ -559,6 +561,7 @@
             font-weight: 600;
             color: #333;
             border-bottom: 2px solid #e0e0e0;
+            vertical-align: middle;
         }
         
         .data-table th[role="button"] {
@@ -727,19 +730,19 @@
     <div class="report-container">
         <!-- New Analysis Button at Top -->
         <div style="text-align: left; margin-bottom: 20px; padding: 10px 0;">
-            <a href="/" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
+            <a href="{{ app_base_url|default('/lendsight') }}" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
                 <i class="fas fa-arrow-left"></i> Back to New Analysis
             </a>
         </div>
         
         <!-- Download Actions -->
         <div class="report-actions" style="text-align: right; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-            <a href="/download?format=pdf" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer; margin-right: 10px; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; display: inline-block;">
-                <i class="fas fa-file-pdf"></i> Download PDF Report
-            </a>
-            <a href="/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
+            <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
                 <i class="fas fa-file-excel"></i> Export Data (Excel)
             </a>
+            <button class="action-btn" id="printReportBtn" onclick="window.print()" style="margin-left: 10px; cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
+                <i class="fas fa-print"></i> Print Report
+            </button>
         </div>
         
         
@@ -834,6 +837,7 @@
             <!-- Section 1: Loans by Race and Ethnicity -->
             <div class="report-section print-break">
                 <h2 class="section-title">Section 1: Loans by Race and Ethnicity</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Loans by Race and Ethnicity</h3>
                 <div style="display: flex; gap: 20px; align-items: flex-start;">
                     <!-- Intro Text - 25% width -->
                     <div style="flex: 0 0 25%;">
@@ -843,7 +847,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Table - 75% width -->
                     <div style="flex: 0 0 75%;">
                         <div class="table-container">
@@ -879,7 +883,7 @@
                 <!-- Table 1: Lending to Income Borrowers -->
                 <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Lending to Income Borrowers</h3>
                 <p class="table-introduction" id="incomeBorrowersIntro" style="margin-bottom: 20px; max-width: 100%;">
-                    This table shows lending activity by borrower income level over the selected time period. Borrower income is classified relative to the area median family income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) in which the property is located. Income thresholds are determined using FFIEC median family income data. <strong>Note:</strong> Between 2021 and 2022, boundary changes dramatically increased the number of tracts with higher minority populations.
+                    This table shows lending activity by borrower income level over the selected time period. Borrower income is classified relative to the area median family income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) in which the property is located. Income thresholds are determined using FFIEC median family income data. Population share refers to the percentage of the county residents that are in each income bracket as of 2020.
                 </p>
                 <div class="table-container" style="width: 100%;">
                     <table class="data-table" id="incomeBorrowersTable">
@@ -960,6 +964,7 @@
             <!-- Section 3: Top Lenders by Total Loans -->
             <div class="report-section print-break">
                 <h2 class="section-title">Section 3: Top Lenders by Total Loans</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Top Lenders by Total Loans</h3>
                 <p class="table-introduction" id="topLendersDetailedIntro">
                     <!-- Introduction will be populated by JavaScript -->
                 </p>
@@ -1060,12 +1065,14 @@
                 <div class="ai-insight-card">
                     <div class="ai-content">
                         <h3>Data Sources</h3>
-                        <p>This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff. Data is queried from NCRC datasets for the years specified in the analysis.</p>
-                        
+                        <p><strong>HMDA Data:</strong> This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff.</p>
+
                         <p><strong>HMDA Data Coverage:</strong> This analysis includes mortgage loan originations (action taken = 1) for owner-occupied, site-built, 1-4 unit properties. <span id="loanPurposeCoverage">Loan purpose information will be populated dynamically.</span> Reverse mortgages are excluded from the analysis. For more information about HMDA data collection and reporting requirements, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
-                        
-                        <p id="censusDataSource"><strong>Census Data Sources:</strong> <span id="censusDataSourceText">Population demographic data is sourced from the U.S. Census Bureau American Community Survey (ACS) 5-year estimates. Census data is used to provide context about the racial and ethnic composition of the selected geography and is displayed in the Population Demographics table. The most recent available ACS 5-year estimates are used for all years in the analysis period.</span></p>
-                        
+
+                        <p id="censusDataSource"><strong>Census Data:</strong> <span id="censusDataSourceText">Population demographic data is sourced from the U.S. Census Bureau and includes three time periods: the 2010 Decennial Census, 2020 Decennial Census, and the most recent American Community Survey (ACS) 5-year estimates. This data is displayed in the Population Demographics chart to show demographic trends over time.</span></p>
+
+                        <p><strong>HUD Data:</strong> Population Share data in Table 2 (Lending to Income Borrowers) is sourced from the U.S. Department of Housing and Urban Development (HUD) Low-Mod Summary Data. This data shows the percentage of county residents in each income bracket (Low, Moderate, Middle, and Upper income) based on 2020 ACS data. HUD defines income categories relative to the Area Median Family Income (AMFI).</p>
+
                         <p><strong>Data Filters Applied:</strong> The following filters are automatically applied to all analyses in this report:
                             <ul id="dataFiltersList" style="margin-top: 8px; padding-left: 20px;">
                                 <li>Originations only (action taken = 1)</li>
@@ -1075,18 +1082,33 @@
                                 <li>1-4 unit properties (total_units IN ('1','2','3','4'))</li>
                             </ul>
                         </p>
-                        
-                        <p><strong>Data Quality Assurance:</strong> All data used in this report has been downloaded, cleaned, and tested by NCRC Research staff to ensure accuracy and reliability. Users can download the complete raw dataset for their report using the Excel Export feature to verify any claims or statistics presented in the AI-generated narratives. When using AI-generated content, always keep a human in the loop—review AI interpretations against the underlying data and exercise professional judgment in your analysis.</p>
-                        
+
+                        <h3>Definitions</h3>
+
+                        <p><strong>Loan Originations:</strong> Completed mortgage loans where action taken = 1. This excludes applications, denials, and withdrawn/incomplete applications.</p>
+
+                        <p><strong>Low Income:</strong> Borrowers or census tracts with income at or below 50% of the Area Median Family Income (AMFI).</p>
+
+                        <p><strong>Moderate Income:</strong> Borrowers or census tracts with income greater than 50% but at or below 80% of AMFI.</p>
+
+                        <p><strong>Middle Income:</strong> Borrowers or census tracts with income greater than 80% but at or below 120% of AMFI.</p>
+
+                        <p><strong>Upper Income:</strong> Borrowers or census tracts with income greater than 120% of AMFI.</p>
+
+                        <p><strong>Low-to-Moderate Income Borrower (LMIB):</strong> Borrowers whose reported income is at or below 80% of AMFI for the MSA or MD where the property is located.</p>
+
+                        <p><strong>Low-to-Moderate Income Census Tract (LMICT):</strong> Census tracts where the tract median family income is at or below 80% of AMFI, as defined by HUD.</p>
+
+                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population.</p>
+
+                        <p><strong>Population Share:</strong> In Table 2, this column shows the percentage of county residents in each income category based on HUD Low-Mod Summary Data (2020). This allows comparison between lending patterns and the underlying population distribution.</p>
+
                         <h3>Calculations</h3>
-                        
-                        <p><strong>Loan Originations:</strong> This report analyzes mortgage loan originations, defined as loans where action taken = 1. Originations represent completed mortgage loans, not applications or denials.</p>
-                        
-                        <p><strong>Race and Ethnicity Classification:</strong> Race and ethnicity are determined from multiple applicant race and ethnicity fields in the HMDA data. The methodology follows these steps:</p>
+
+                        <p><strong>Race and Ethnicity Classification:</strong> Race and ethnicity are determined from HMDA applicant fields:</p>
                         <ol>
-                            <li><strong>Hispanic Classification:</strong> If any ethnicity field (applicant_ethnicity_1 through applicant_ethnicity_5) indicates Hispanic (codes 1, 11, 12, 13, or 14), the borrower is classified as Hispanic, regardless of race codes.</li>
-                            <li><strong>Race Classification for Non-Hispanic Borrowers:</strong> For borrowers not classified as Hispanic, the first valid race code is identified from applicant_race_1 through applicant_race_5. Valid race codes exclude codes 6 (Not Provided), 7 (Not Applicable), and 8 (Information not provided).</li>
-                            <li><strong>Race Categories:</strong> Based on the first valid race code identified:
+                            <li><strong>Hispanic:</strong> Classified if any ethnicity field indicates Hispanic (codes 1, 11, 12, 13, or 14), regardless of race codes.</li>
+                            <li><strong>Non-Hispanic Race:</strong> For non-Hispanic borrowers, race is determined from the first valid race code (excluding codes 6, 7, 8):
                                 <ul>
                                     <li>Code 1: Native American</li>
                                     <li>Code 2 or 21-27: Asian</li>
@@ -1095,66 +1117,40 @@
                                     <li>Code 5: White</li>
                                 </ul>
                             </li>
-                            <li><strong>Multi-Racial Classification (HMDA):</strong> Borrowers are classified as Multi-Racial if they meet either of the following criteria:
-                                <ul>
-                                    <li><strong>Hispanic + Non-White Race:</strong> If the borrower reports Hispanic ethnicity (any ethnicity field = 1, 11, 12, 13, or 14) AND reports any race code other than white alone (code 5), they are classified as Multi-Racial.</li>
-                                    <li><strong>Non-Hispanic + Multiple Races:</strong> If the borrower does not report Hispanic ethnicity AND reports two or more valid race codes across applicant_race_1 through applicant_race_5, they are classified as Multi-Racial.</li>
-                                </ul>
-                                Note: HMDA collects race and ethnicity separately, similar to Census data. The "Multi-Racial" category for non-Hispanic borrowers refers to individuals who identify with two or more race categories. Hispanic borrowers who report only white race are classified as Hispanic (not Multi-Racial). Non-Hispanic borrowers with only one race code are classified by that single race category.
-                            </li>
-                            <li><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100, where loans with demographic data = total loans minus loans without race/ethnicity data. Only groups representing ≥1% of all loans are included in demographic overview tables.</li>
+                            <li><strong>Multi-Racial:</strong> Non-Hispanic borrowers who report two or more distinct main race categories. This aligns with the Census Bureau's "Two or More Races" category.</li>
                         </ol>
-                        
-                        <p><strong>Exclusion of Loans Without Demographic Data:</strong> Loans without race/ethnicity data are excluded from the denominator before calculating percentages in the demographic overview table. This ensures that percentages reflect the distribution of loans among borrowers with known race/ethnicity classifications, rather than including loans where this information is missing. The exclusion of these loans from the calculation provides a more accurate representation of lending patterns by race and ethnicity.</p>
-                        
-                        <p><strong>Population Demographics Data (Census):</strong> Population demographics are obtained from the U.S. Census Bureau, including American Community Survey (ACS) 5-year estimates and Decennial Census data. The data includes three time periods: 2010 Decennial Census, 2020 Decennial Census, and the most recent available ACS 5-year estimates.</p>
-                        
-                        <p><strong>Multi-Racial Classification (Census):</strong> The Census Bureau defines "Two or more races" as individuals who identify with two or more of the following race categories: White, Black or African American, American Indian or Alaska Native, Asian, Native Hawaiian or Other Pacific Islander, or Some Other Race. In this report, this category is labeled as "Multi-Racial" and includes:
-                            <ul>
-                                <li><strong>ACS Data:</strong> Variable B03002_009E represents "Two or more races (not Hispanic)" from the ACS Detailed Race/Ethnicity table (B03002).</li>
-                                <li><strong>2020 Census:</strong> Variable P2_011N represents "Two or more races (not Hispanic)" from the 2020 Census Redistricting Data (PL94-171).</li>
-                                <li><strong>2010 Census:</strong> Variable P005009 represents "Not Hispanic or Latino!!Two or more races" from the 2010 Census Summary File 1 (SF1).</li>
-                            </ul>
-                            Note: Census collects race and ethnicity separately. Hispanic or Latino is considered an ethnicity that can be reported in combination with any race category. The "Two or more races" category specifically refers to non-Hispanic individuals who identify with multiple race categories. Hispanic individuals who identify with multiple races are included in the Hispanic category in Census data, but may be classified as Multi-Racial in HMDA data based on the methodology described above.
-                        </p>
-                        
-                        <p><strong>Low-to-Moderate Income Borrower (LMIB):</strong> Borrowers are classified as Low-to-Moderate Income when their reported income is below 80% of the area median family income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) in which the property is located. Income thresholds are determined using FFIEC median family income data.</p>
-                        
-                        <p><strong>Low-to-Moderate Income Census Tract (LMICT):</strong> Census tracts are classified as Low-to-Moderate Income when the tract's median family income is below 80% of the area median family income, as defined by the U.S. Department of Housing and Urban Development (HUD). This designation is based on the census tract where the property securing the loan is located.</p>
-                        
-                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts are classified as Majority-Minority when minority populations represent more than 50% of the total population in the census tract, as defined by the U.S. Census Bureau. This designation is based on the census tract where the property securing the loan is located.</p>
-                        
-                        <p><strong>2020 Census Boundary Changes:</strong> The 2020 census boundaries that took effect in 2022 resulted in a dramatic increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a dramatic increase in majority-minority mortgage originations between 2021 and 2022. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual lending pattern changes or lender strategy shifts. When analyzing MMCT origination changes between 2021 and 2022, this census boundary change effect should be considered.</p>
-                        
-                        <p><strong>Change Over Time:</strong> Calculated as the difference between values in the first year and the final year of the analysis period. Positive changes are displayed in blue (NCRC light blue #2fade3), and negative changes are displayed in red. Changes are shown as both count changes and percentage point changes (pp).</p>
-                        
-                        <p><strong>Top Lenders Selection:</strong> The top 10 lenders are identified based on total number of loan originations in the most recent year of the report. Lenders are sorted in descending order by total loans. For each lender, race/ethnicity percentages use the same methodology as the demographic overview, with denominator = loans with demographic data. Income and neighborhood indicator percentages use denominator = total loans.</p>
-                        
-                        <p><strong>Geographic Identifiers:</strong> Counties are identified using the 5-digit Federal Information Processing Standards (FIPS) county code. The county code is used to join HMDA data with geographic reference tables to obtain county names and state information.</p>
-                        
-                        <p><strong>Lender Identification:</strong> Lenders are identified using the Legal Entity Identifier (LEI) and matched to lender names from the HMDA Lenders table (lenders18) using the LEI as the linking field.</p>
-                        
-                        <h3>Abbreviations and Acronyms</h3>
+
+                        <p><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100. Loans without race/ethnicity data are excluded from the denominator. Only groups representing ≥1% of loans are displayed.</p>
+
+                        <p><strong>Change Over Time:</strong> The difference between values in the first and final year of the analysis period. Positive changes are displayed in blue; negative changes in red. Changes are shown in percentage points (pp).</p>
+
+                        <p><strong>Herfindahl-Hirschman Index (HHI):</strong> A measure of market concentration calculated as the sum of squared market shares of all lenders. HHI ranges from 0 to 10,000. Concentration levels: &lt;1,500 = Low; 1,500-2,500 = Moderate; &gt;2,500 = High.</p>
+
+                        <p><strong>Top Lenders:</strong> Lenders ranked by total loan originations. Race/ethnicity percentages use loans with demographic data as denominator; income and neighborhood indicators use total loans as denominator.</p>
+
+                        <h3>Abbreviations</h3>
                         <ul>
-                            <li><strong>HMDA:</strong> Home Mortgage Disclosure Act</li>
+                            <li><strong>ACS:</strong> American Community Survey</li>
+                            <li><strong>AMFI:</strong> Area Median Family Income</li>
                             <li><strong>CFPB:</strong> Consumer Financial Protection Bureau</li>
-                            <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
-                            <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                            <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+                            <li><strong>HMDA:</strong> Home Mortgage Disclosure Act</li>
+                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
+                            <li><strong>LEI:</strong> Legal Entity Identifier</li>
                             <li><strong>LMIB:</strong> Low-to-Moderate Income Borrower</li>
                             <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
-                            <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
-                            <li><strong>AMFI:</strong> Area Median Family Income</li>
-                            <li><strong>MSA:</strong> Metropolitan Statistical Area</li>
                             <li><strong>MD:</strong> Metropolitan Division</li>
-                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
-                            <li><strong>FFIEC:</strong> Federal Financial Institutions Examination Council</li>
-                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
-                            <li><strong>LEI:</strong> Legal Entity Identifier</li>
+                            <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
+                            <li><strong>MSA:</strong> Metropolitan Statistical Area</li>
+                            <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
                             <li><strong>pp:</strong> Percentage Points</li>
                         </ul>
-                        
-                        <h3>AI Disclosure</h3>
-                        <p>This report was generated using AI assistance through Cursor and other language models (primarily Claude Sonnet 4). AI-generated content includes narrative analysis, introductory paragraphs, key findings, and table discussions. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. All underlying data and calculations are based on HMDA data compiled by NCRC research staff. Users should verify specific claims and data points using the Excel Export, which contains the complete underlying dataset. For official HMDA data and documentation, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
+
+                        <h3>Data Quality and AI Disclosure</h3>
+                        <p>All data has been cleaned and validated by NCRC Research staff. Users can download the complete dataset via Excel Export to verify statistics. AI-generated narrative content (introductions, key findings, discussions) is produced using Claude language models. All data points and calculations are derived directly from NCRC databases—AI interprets patterns and generates summaries only. Always verify AI interpretations against the underlying data.</p>
+
+                        <p>For official HMDA data and documentation, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
                     </div>
                 </div>
             </div>
@@ -1216,7 +1212,8 @@
                 updateDownloadLinks();
                 
                 // Build URL with job_id if available
-                let url = '/report-data';
+                const baseUrl = window.APP_BASE_URL || '/lendsight';
+                let url = `${baseUrl}/report-data`;
                 if (jobId) {
                     url += `?job_id=${encodeURIComponent(jobId)}`;
                     console.log('Using job_id from URL:', jobId);
@@ -1289,9 +1286,9 @@
                 console.error('Error loading report:', error);
                 const errorMessage = error.message || 'Failed to load report data';
                 if (errorMessage.includes('No analysis') || errorMessage.includes('No analysis session') || errorMessage.includes('No report data')) {
-                    showError('No analysis data found. Please run an analysis first by selecting counties and years on the <a href="/">analysis page</a>.');
+                    showError('No analysis data found. Please run an analysis first by selecting counties and years on the <a href="' + (window.APP_BASE_URL || '/lendsight') + '">analysis page</a>.');
                 } else {
-                    showError('Error loading report: ' + errorMessage + '. Please try running a new analysis on the <a href="/">analysis page</a>.');
+                    showError('Error loading report: ' + errorMessage + '. Please try running a new analysis on the <a href="' + (window.APP_BASE_URL || '/lendsight') + '">analysis page</a>.');
                 }
             }
         }
@@ -1520,8 +1517,10 @@
                 const section = document.getElementById('introAndCensusSection');
                 if (section) {
                     section.style.display = 'block';
-                    const chartContainer = section.querySelector('#censusChart').parentElement;
-                    chartContainer.innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 40px;">Census demographic data is not available for the selected geography.</p>';
+                    const censusChart = section.querySelector('#censusChart');
+                    if (censusChart && censusChart.parentElement) {
+                        censusChart.parentElement.innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 40px;">Census demographic data is not available for the selected geography.</p>';
+                    }
                 }
                 return;
             }
@@ -1573,13 +1572,189 @@
                 return;
             }
             
-            // Fallback: Show error message if shared module not loaded
-            console.error('Shared Population Demographics module not loaded');
+            // Inline implementation for population demographics chart
+            // Shows 2010 Census, 2020 Census, and current ACS data as grouped bars
+            console.log('Using inline population demographics chart implementation');
+
             const section = document.getElementById('introAndCensusSection');
-            if (section) {
-                section.style.display = 'block';
-                const chartContainer = section.querySelector('#censusChart').parentElement;
-                chartContainer.innerHTML = '<p style="text-align: center; color: #666; font-style: italic; padding: 40px;">Census demographic chart unavailable - shared module not loaded.</p>';
+            if (!section) return;
+
+            section.style.display = 'block';
+
+            // Get the first county's data
+            const countyNames = Object.keys(censusData);
+            if (countyNames.length === 0) return;
+
+            const countyData = censusData[countyNames[0]];
+            if (!countyData || !countyData.time_periods) return;
+
+            const timePeriods = countyData.time_periods;
+
+            // Define race groups to display
+            const raceGroups = [
+                { key: 'white_percentage', label: 'White' },
+                { key: 'black_percentage', label: 'Black' },
+                { key: 'hispanic_percentage', label: 'Hispanic' },
+                { key: 'asian_percentage', label: 'Asian' },
+                { key: 'native_american_percentage', label: 'Native Am.' },
+                { key: 'hopi_percentage', label: 'Hawaiian/PI' },
+                { key: 'multi_racial_percentage', label: 'Multi-Racial' }
+            ];
+
+            // Determine which race groups to show (>= 1% in any time period)
+            const visibleGroups = raceGroups.filter(group => {
+                const vals = [];
+                if (timePeriods.census2010?.demographics) vals.push(timePeriods.census2010.demographics[group.key] || 0);
+                if (timePeriods.census2020?.demographics) vals.push(timePeriods.census2020.demographics[group.key] || 0);
+                if (timePeriods.acs?.demographics) vals.push(timePeriods.acs.demographics[group.key] || 0);
+                return Math.max(...vals) >= 1;
+            });
+
+            const labels = visibleGroups.map(g => g.label);
+
+            // NEW LAYOUT: Group by census vintage, with races as bars within each group
+            // X-axis: "2010 Census (Pop: X)", "2020 Census (Pop: Y)", "2024 ACS (Pop: Z)"
+            // Each group has bars for each race
+
+            // Colors for each race group
+            const raceColors = {
+                'White': { bg: 'rgba(65, 105, 225, 0.7)', border: 'rgb(65, 105, 225)' },
+                'Black': { bg: 'rgba(34, 139, 34, 0.7)', border: 'rgb(34, 139, 34)' },
+                'Hispanic': { bg: 'rgba(255, 140, 0, 0.7)', border: 'rgb(255, 140, 0)' },
+                'Asian': { bg: 'rgba(220, 20, 60, 0.7)', border: 'rgb(220, 20, 60)' },
+                'Native Am.': { bg: 'rgba(148, 103, 189, 0.7)', border: 'rgb(148, 103, 189)' },
+                'Hawaiian/PI': { bg: 'rgba(23, 190, 207, 0.7)', border: 'rgb(23, 190, 207)' },
+                'Multi-Racial': { bg: 'rgba(188, 189, 34, 0.7)', border: 'rgb(188, 189, 34)' }
+            };
+
+            // Track max population count for dynamic Y-axis scaling
+            let maxPopCount = 0;
+
+            // Helper to calculate population count from percentage
+            const getPopulationCount = (totalPop, percentage) => {
+                return Math.round((percentage / 100) * totalPop);
+            };
+
+            // Build vintage labels with population totals
+            const vintageLabels = [];
+            const vintageData = {};
+
+            if (timePeriods.census2010?.demographics) {
+                const demo = timePeriods.census2010.demographics;
+                const totalPop = demo.total_population || 0;
+                const label = `2010 Census\n(Pop: ${totalPop.toLocaleString()})`;
+                vintageLabels.push(label);
+                vintageData['2010'] = { demo, totalPop, label: '2010 Census' };
+            }
+
+            if (timePeriods.census2020?.demographics) {
+                const demo = timePeriods.census2020.demographics;
+                const totalPop = demo.total_population || 0;
+                const label = `2020 Census\n(Pop: ${totalPop.toLocaleString()})`;
+                vintageLabels.push(label);
+                vintageData['2020'] = { demo, totalPop, label: '2020 Census' };
+            }
+
+            if (timePeriods.acs?.demographics) {
+                const acsLabel = timePeriods.acs.year || '2024 ACS';
+                const demo = timePeriods.acs.demographics;
+                const totalPop = demo.total_population || 0;
+                const label = `${acsLabel}\n(Pop: ${totalPop.toLocaleString()})`;
+                vintageLabels.push(label);
+                vintageData['acs'] = { demo, totalPop, label: acsLabel };
+            }
+
+            // Build datasets - one dataset per race, with data points for each vintage
+            const datasets = [];
+            const vintageKeys = Object.keys(vintageData);
+
+            visibleGroups.forEach(group => {
+                const dataPoints = [];
+                const percentages = [];
+
+                vintageKeys.forEach(key => {
+                    const { demo, totalPop } = vintageData[key];
+                    const pct = parseFloat((demo[group.key] || 0).toFixed(1));
+                    const popCount = getPopulationCount(totalPop, demo[group.key] || 0);
+                    if (popCount > maxPopCount) maxPopCount = popCount;
+                    dataPoints.push(popCount);  // Use raw population count as data point
+                    percentages.push(pct);      // Store percentage for tooltip
+                });
+
+                const color = raceColors[group.label] || { bg: 'rgba(128, 128, 128, 0.7)', border: 'rgb(128, 128, 128)' };
+                datasets.push({
+                    label: group.label,
+                    data: dataPoints,
+                    backgroundColor: color.bg,
+                    borderColor: color.border,
+                    borderWidth: 1,
+                    percentages: percentages  // Store percentages for tooltip
+                });
+            });
+
+            // Calculate dynamic Y-axis max: 10% above highest population count, rounded to nice number
+            const yAxisMax = Math.ceil((maxPopCount * 1.10) / 10000) * 10000;
+
+            // Create/update chart
+            const ctx = document.getElementById('censusChart');
+            if (!ctx) return;
+
+            if (censusChartInstance) {
+                censusChartInstance.destroy();
+            }
+
+            censusChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: vintageLabels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: `Population Demographics Over Time: ${countyNames[0]}`,
+                            font: { size: 16, weight: 'bold' }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const dataset = context.dataset;
+                                    const count = context.raw;  // Raw data is now population count
+                                    const percentage = dataset.percentages ? dataset.percentages[context.dataIndex] : 0;
+                                    return `${dataset.label}: ${count.toLocaleString()} persons (${percentage}%)`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: yAxisMax,
+                            title: {
+                                display: true,
+                                text: 'Population'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Update caption
+            const caption = document.getElementById('populationDemographicsCaption');
+            if (caption) {
+                caption.innerHTML = `<strong>Source:</strong> U.S. Census Bureau - 2010 Decennial Census, 2020 Decennial Census, and American Community Survey. Population figures represent ${countyNames[0]}.`;
             }
         }
         
@@ -3195,10 +3370,15 @@
             }).join('');
             
             // Show expand button only if there are more than 10 lenders
+            console.log('[DEBUG] Checking if should show expand button: data.length =', data.length);
             if (data.length > 10) {
                 const expandBtn = document.getElementById('expandTopLendersBtn');
+                console.log('[DEBUG] expandBtn element found:', expandBtn ? 'yes' : 'no');
                 if (expandBtn) {
                     expandBtn.style.display = 'inline-block';
+                    console.log('[DEBUG] Set expandBtn display to inline-block');
+                } else {
+                    console.warn('[WARNING] expandTopLendersBtn element not found in DOM');
                 }
             }
             
@@ -3335,35 +3515,49 @@
         
         // Function to expand/collapse top lenders table to show all lenders or just top 10
         function expandTopLendersTable() {
+            console.log('[DEBUG] expandTopLendersTable called');
             const table = document.getElementById('topLendersDetailedTable');
-            const rows = Array.from(table.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none');
-            const expandBtn = document.getElementById('expandTopLendersBtn');
-            
-            // Only proceed if there are more than 10 visible lenders
-            if (rows.length <= 10) {
+            if (!table) {
+                console.error('topLendersDetailedTable not found');
                 return;
             }
-            
-            // Check if currently showing all (rows 10+ are visible)
-            const visibleRows = rows.filter(row => row.style.display !== 'none');
-            const isExpanded = visibleRows.length > 10 && visibleRows[10].style.display !== 'none';
-            
+
+            const allRows = Array.from(table.querySelectorAll('tbody tr'));
+            const expandBtn = document.getElementById('expandTopLendersBtn');
+
+            console.log('[DEBUG] Total rows:', allRows.length);
+
+            // Only proceed if there are more than 10 lenders
+            if (allRows.length <= 10) {
+                console.log('[DEBUG] 10 or fewer rows, nothing to expand');
+                return;
+            }
+
+            // Check if currently expanded (row 10 is visible)
+            const row10 = allRows[10];
+            const isExpanded = row10 && row10.style.display !== 'none';
+            console.log('[DEBUG] isExpanded:', isExpanded);
+
             if (isExpanded) {
                 // Collapse to top 10
-                rows.forEach((row, index) => {
+                allRows.forEach((row, index) => {
                     if (index >= 10) {
                         row.style.display = 'none';
                     }
                 });
-                expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show All Lenders';
+                if (expandBtn) {
+                    expandBtn.innerHTML = '<i class="fas fa-chevron-down"></i> Show All Lenders';
+                }
+                console.log('[DEBUG] Collapsed to top 10');
             } else {
-                // Expand to show all visible
-                rows.forEach((row) => {
-                    if (row.style.display !== 'none') {
-                        row.style.display = '';
-                    }
+                // Expand to show all
+                allRows.forEach((row) => {
+                    row.style.display = '';
                 });
-                expandBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Top 10 Only';
+                if (expandBtn) {
+                    expandBtn.innerHTML = '<i class="fas fa-chevron-up"></i> Show Top 10 Only';
+                }
+                console.log('[DEBUG] Expanded to show all');
             }
         }
         
@@ -3710,40 +3904,9 @@
         }
         
         // Setup PDF button click handler
+        // PDF button replaced with Print button - this function is kept for compatibility
         function setupPdfButton() {
-            const pdfBtn = document.getElementById('downloadPdfBtn');
-            console.log('Setting up PDF button, found:', !!pdfBtn);
-            if (pdfBtn) {
-                // Remove any existing listeners by cloning and replacing
-                const newBtn = pdfBtn.cloneNode(true);
-                pdfBtn.parentNode.replaceChild(newBtn, pdfBtn);
-                
-                // Get job_id from URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const jobId = urlParams.get('job_id');
-                
-                if (jobId) {
-                    // Update href with job_id if not already present
-                    let href = newBtn.getAttribute('href');
-                    if (href && !href.includes('job_id=')) {
-                        const separator = href.includes('?') ? '&' : '?';
-                        href = `${href}${separator}job_id=${encodeURIComponent(jobId)}`;
-                        newBtn.setAttribute('href', href);
-                    }
-                }
-                
-                // Add click handler
-                newBtn.addEventListener('click', function(e) {
-                    console.log('PDF download button clicked!');
-                    const currentHref = this.getAttribute('href');
-                    console.log('Current href:', currentHref);
-                    // Let the default link behavior proceed
-                });
-                
-                console.log('PDF button setup complete, href:', newBtn.getAttribute('href'));
-            } else {
-                console.error('PDF button not found!');
-            }
+            console.log('Print button available - use browser Print for PDF export');
         }
         
         // Load report data when page loads
