@@ -5,23 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>BizSight - Small Business Lending Report</title>
     
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet CSS disabled - map will be added in future version -->
+    <!-- <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" /> -->
     <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <!-- Shared Population Demographics Module -->
-    <script src="/shared/population_demographics.js"></script>
     
     <style>
         .report-container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
             background: white;
@@ -36,29 +35,44 @@
             border-radius: 8px;
         }
         
-        .map-and-table-container {
-            display: grid;
-            grid-template-columns: 1fr 500px;
-            gap: 20px;
+        /* Introduction and Summary Layout - Stacked vertically for better readability */
+        .intro-and-summary-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
             margin-bottom: 30px;
         }
-        
-        .map-container {
-            position: relative;
-            height: 600px;
-            border: 2px solid #e0e0e0;
+
+        .intro-container {
+            background: #f8f9fa;
+            padding: 25px;
             border-radius: 8px;
-            overflow: hidden;
+            border: 1px solid #e0e0e0;
         }
-        
-        #tractMap {
-            width: 100%;
-            height: 100%;
+
+        .intro-container h3 {
+            margin: 0 0 15px 0;
+            color: var(--ncrc-primary-blue);
+            font-size: 1.2rem;
         }
-        
+
+        .intro-content {
+            line-height: 1.7;
+            font-size: 1rem;
+            color: #333;
+        }
+
+        .intro-content p {
+            margin-bottom: 15px;
+        }
+
+        .intro-content p:last-child {
+            margin-bottom: 0;
+        }
+
+        /* Legacy map classes (kept for compatibility) */
         .map-controls {
-            position: absolute;
-            top: 10px;
+            display: none; /* Hide if still referenced */
             right: 10px;
             z-index: 1000;
             background: white;
@@ -98,8 +112,8 @@
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #e0e0e0;
-            height: 600px;
-            overflow-y: auto;
+            height: auto;
+            overflow-y: visible;
             display: flex;
             flex-direction: column;
             width: 100%;
@@ -158,38 +172,117 @@
         
         .summary-boxes-container {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 15px;
+            align-items: stretch;
         }
-        
+
         .summary-box {
             background: white;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
-            padding: 20px;
+            padding: 18px 20px;
             display: flex;
             flex-direction: column;
             transition: box-shadow 0.2s ease;
+            min-height: 100px;
         }
-        
+
         .summary-box:hover {
             box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-        
+
         .summary-box-label {
             font-size: 0.9rem;
             color: #666;
             margin-bottom: 8px;
             font-weight: 500;
+            line-height: 1.4;
         }
-        
+
         .summary-box-value {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             color: var(--ncrc-primary-blue);
             font-weight: 700;
             line-height: 1.2;
         }
-        
+
+        .summary-box-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        /* Info Tooltips */
+        .info-tooltips-container {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .info-tooltip-item {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #555;
+            cursor: help;
+            transition: background 0.2s ease;
+        }
+
+        .info-tooltip-item:hover {
+            background: #e0e0e0;
+        }
+
+        .info-tooltip-item i {
+            font-size: 0.75rem;
+        }
+
+        .info-tooltip-item.info { color: #2fade3; }
+        .info-tooltip-item.warning { color: #ffc107; }
+        .info-tooltip-item.alert { color: #dc3545; }
+
+        .info-tooltip-content {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 350px;
+            padding: 12px 15px;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: #333;
+            z-index: 1000;
+            margin-bottom: 8px;
+        }
+
+        .info-tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: white;
+        }
+
+        .info-tooltip-item:hover .info-tooltip-content {
+            display: block;
+        }
+
         .legend {
             position: absolute;
             bottom: 10px;
@@ -305,7 +398,7 @@
         .table-container {
             margin-top: 20px;
             width: 100%;
-            overflow-x: auto;
+            overflow-x: hidden;
         }
         
         .table-header {
@@ -369,9 +462,9 @@
         
         .data-table th:not(:first-child),
         .data-table td:not(:first-child) {
-            width: 100px;
-            min-width: 100px;
-            max-width: 100px;
+            width: auto;
+            min-width: 80px;
+            max-width: none;
         }
         
         /* Exception for Section 4 (Top Lenders) - Lender Name column already has special styling */
@@ -522,15 +615,14 @@
                 page-break-inside: avoid;
             }
             
-            .map-and-table-container {
+            .intro-and-summary-container {
                 grid-template-columns: 1fr;
             }
-            
-            .map-container {
-                height: 400px;
+
+            .intro-container {
                 page-break-inside: avoid;
             }
-            
+
             body {
                 background: white;
             }
@@ -562,32 +654,36 @@
         
         /* Mobile Responsiveness */
         @media (max-width: 1024px) {
-            .map-and-table-container {
-                grid-template-columns: 1fr;
+            .intro-and-summary-container {
+                flex-direction: column;
             }
-            
-            .map-container {
-                height: 500px;
+
+            .intro-container {
+                margin-bottom: 20px;
             }
-            
+
+            .summary-boxes-container {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
             .data-table {
                 font-size: 0.85rem;
                 display: block;
                 overflow-x: auto;
                 white-space: nowrap;
             }
-            
+
             .data-table th,
             .data-table td {
                 padding: 10px 8px;
             }
-            
+
             .toc-container {
                 position: relative;
                 top: 0;
                 margin-bottom: 20px;
             }
-            
+
             .tab-button {
                 padding: 10px 15px;
                 font-size: 0.9rem;
@@ -599,21 +695,25 @@
                 font-size: 1.3rem;
                 padding: 12px 15px 8px 15px;
             }
-            
+
+            .summary-boxes-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
             .data-table {
                 font-size: 0.8rem;
             }
-            
+
             .data-table th,
             .data-table td {
                 padding: 8px 6px;
             }
-            
+
             .table-introduction {
                 font-size: 0.9rem;
                 padding: 10px 12px;
             }
-            
+
             .table-narrative {
                 padding: 15px;
                 font-size: 0.9rem;
@@ -623,53 +723,21 @@
 </head>
 <body style="background: var(--ncrc-gray-light);">
     <div class="report-container">
-                <div class="logo">
-                    <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="/static/img/ncrc-logo.png" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-                    </a>
-                </div>
-                <div class="header-title-section">
-                    <h1>BizSight</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <div class="report-container">
-        <!-- New Analysis Button at Top -->
-        <div style="text-align: left; margin-bottom: 20px; padding: 10px 0;">
-            <a href="/" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
+        <!-- Header Actions Row - Back button on left, Export/Print on right -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+            <a href="/bizsight" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
                 <i class="fas fa-arrow-left"></i> Back to New Analysis
             </a>
-        </div>
-        
-        <!-- Download Actions -->
-        <div class="report-actions" style="text-align: right; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-            <a href="/download?format=pdf&job_id={{ job_id }}" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer; margin-right: 10px; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; display: inline-block;">
-                <i class="fas fa-file-pdf"></i> Download PDF Report
-            </a>
-            <div class="dropdown" style="display: inline-block; position: relative;">
-                <button class="action-btn primary dropdown-toggle" style="padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    <i class="fas fa-download"></i> Export Data
-                    <i class="fas fa-chevron-down"></i>
+            <div style="display: flex; gap: 10px;">
+                <a href="/bizsight/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
+                    <i class="fas fa-file-excel"></i> Export Data (Excel)
+                </a>
+                <button class="action-btn" id="printReportBtn" onclick="window.print()" style="cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
+                    <i class="fas fa-print"></i> Print Report
                 </button>
-                <div class="dropdown-menu" style="display: none; position: absolute; right: 0; top: 100%; background: white; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); min-width: 200px; z-index: 1000; margin-top: 5px;">
-                    <a href="/download?format=excel&job_id={{ job_id }}" class="dropdown-item" style="display: block; padding: 10px 15px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;">
-                        <i class="fas fa-file-excel"></i> Excel (.xlsx)
-                    </a>
-                    <a href="/download?format=pdf-maps&job_id={{ job_id }}" class="dropdown-item" style="display: block; padding: 10px 15px; color: #333; text-decoration: none;">
-                        <i class="fas fa-map"></i> Map PDFs (.zip)
-                    </a>
-                </div>
             </div>
         </div>
-        
+
         <div class="report-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 8px;">
             <h1 style="margin: 0 0 10px 0;">Small Business Lending Analysis</h1>
             <p id="reportMetadata" style="margin: 10px 0 0 0; opacity: 0.9;">Loading report data...</p>
@@ -682,76 +750,21 @@
             <h2 class="section-title">Section 1: Introduction</h2>
             <div id="section1Intro" style="margin-bottom: 20px; line-height: 1.8; color: #333;">
                 <p>This report provides a comprehensive analysis of small business lending activity in <span id="introCountyName">the selected county</span> for the most recent five years (2020-2024). The analysis is based on data collected under the <a href="https://ncrc.org/communityreinvestmentact" target="_blank" rel="noopener noreferrer">Community Reinvestment Act</a> (CRA), which requires financial institutions to report information about small business loan applications and originations.</p>
-                
-                <div style="margin: 20px 0; padding: 15px; background: #e8f4f8; border-left: 4px solid #2fade3; border-radius: 4px;">
-                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-info-circle"></i> Data Coverage:</strong> This report includes tract-level and county-level data on small business lending, including loan counts and amounts by loan size categories, lending to businesses with revenues under $1 million, and lending in Low- and Moderate-Income (LMI) census tracts. The data also includes demographic information from the <a href="https://www.census.gov/" target="_blank" rel="noopener noreferrer">U.S. Census Bureau</a>, including tract-level income, population, and racial/ethnic composition.</p>
-                </div>
-                
-                <div style="margin: 20px 0; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
-                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-exclamation-triangle"></i> Limitations:</strong> The data in this report reflects only lending activity reported by financial institutions subject to <a href="https://ncrc.org/communityreinvestmentact" target="_blank" rel="noopener noreferrer">Community Reinvestment Act</a> (CRA) reporting requirements. It does not include lending by institutions that are exempt from reporting, nor does it include non-traditional lending sources such as online lenders, fintech companies, or alternative financing providers that may not be subject to CRA reporting requirements.</p>
-                </div>
-                
-                <div style="margin: 20px 0; padding: 15px; background: #f8d7da; border-left: 4px solid #dc3545; border-radius: 4px;">
-                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-info-circle"></i> Section 1071 Data Not Available:</strong> <a href="https://ncrc.org/section1071/" target="_blank" rel="noopener noreferrer">Section 1071</a> of the Dodd-Frank Act has still not been implemented. As a result, this report does not include data on race, ethnicity, or other demographic details about borrowers or the businesses receiving loans. For more information on Section 1071 and its implementation status, visit <a href="https://ncrc.org/section1071/" target="_blank" rel="noopener noreferrer">NCRC's Section 1071 resource page</a>.</p>
-                </div>
-                
-                <div style="margin: 20px 0; padding: 15px; background: #e8f4f8; border-left: 4px solid #2fade3; border-radius: 4px;">
-                    <p style="margin: 0; color: #333; line-height: 1.7;"><strong><i class="fas fa-info-circle"></i> Paycheck Protection Program (PPP):</strong> In 2020 and 2021, the Paycheck Protection Program (PPP) significantly impacted small business lending patterns. PPP loans, which were government-guaranteed and designed to help businesses maintain payroll during the COVID-19 pandemic, are included in this data and may distort year-over-year comparisons for those years. The analysis in this report compares 2020 (baseline year) to 2024 (most recent) to provide a clearer picture of underlying lending trends. For more information, see NCRC's research on <a href="https://ncrc.org/lending-discrimination-during-covid-19-black-and-hispanic-women-owned-businesses/" target="_blank" rel="noopener noreferrer">lending discrimination during COVID-19</a>, <a href="https://ncrc.org/ncrc-paycheck-protection-plan-preliminary-analysis/" target="_blank" rel="noopener noreferrer">preliminary PPP analysis</a>, and <a href="https://www.ncrc.org/lending-discrimination-within-the-paycheck-protection-program/" target="_blank" rel="noopener noreferrer">lending discrimination within the PPP</a>.</p>
-                </div>
             </div>
         </div>
         
-        <!-- Population Demographics Section -->
-        {% if metadata and metadata.historical_census_data %}
-            {% set historical_census_data = metadata.historical_census_data %}
-            {% set section_title = "Population Demographics (Adult Population 18+)" %}
-            {% set chart_height = 400 %}
-            {% set canvas_id = "bizsightPopulationDemographicsChart" %}
-            {% include 'shared/web/templates/population_demographics_section.html' %}
-        {% endif %}
-        
-        <div class="map-and-table-container">
-            <!-- Map Container -->
-            <div class="map-container">
-                <div id="tractMap"></div>
-                
-                <!-- Map Controls -->
-                <div class="map-controls">
-                    <h4><i class="fas fa-layer-group"></i> Map Layers</h4>
-                    <div class="layer-control">
-                        <label>
-                            <input type="radio" name="mapLayer" value="income" id="incomeLayer" checked>
-                            <span>Income Classification</span>
-                        </label>
-                    </div>
-                    <div class="layer-control">
-                        <label>
-                            <input type="radio" name="mapLayer" value="race" id="raceLayer">
-                            <span>Race Demographics</span>
-                        </label>
-                    </div>
-                    <div class="layer-control">
-                        <label>
-                            <input type="radio" name="mapLayer" value="loanCount" id="loanCountLayer">
-                            <span>Number of Loans (Quartiles)</span>
-                        </label>
-                    </div>
-                    <div class="layer-control">
-                        <label>
-                            <input type="radio" name="mapLayer" value="loanAmount" id="loanAmountLayer">
-                            <span>Amount of Loans (Quartiles)</span>
-                        </label>
-                    </div>
-                </div>
-                
-                <!-- Legend -->
-                <div class="legend" id="legend">
-                    <h4>Legend</h4>
-                    <div id="legendContent"></div>
+        <div class="intro-and-summary-container">
+            <!-- Introduction Section -->
+            <div class="intro-container">
+                <h3><i class="fas fa-info-circle"></i> About This Report</h3>
+                <div class="intro-content" id="introContent">
+                    <p id="introParagraph1">Loading report introduction...</p>
+                    <p id="introParagraph2"></p>
+                    <p id="introParagraph3"></p>
                 </div>
             </div>
-            
-            <!-- Summary Statistics Boxes -->
+
+            <!-- Summary Statistics Boxes - All 5 in one row -->
             <div class="summary-table-container">
                 <h3><i class="fas fa-chart-bar"></i> Summary Statistics (2024)</h3>
                 <div class="summary-boxes-container" id="summaryBoxesContainer">
@@ -764,86 +777,106 @@
                         <div class="summary-box-value" id="summaryBoxAmount">-</div>
                     </div>
                     <div class="summary-box">
-                        <div class="summary-box-label">Amount to Businesses with Under $1M in Revenue</div>
+                        <div class="summary-box-label">Average Loan Amount</div>
+                        <div class="summary-box-value" id="summaryBoxAvgLoan">-</div>
+                    </div>
+                    <div class="summary-box">
+                        <div class="summary-box-label">Amount to Businesses Under $1M Revenue</div>
                         <div class="summary-box-value" id="summaryBoxUnder1M">-</div>
                     </div>
                     <div class="summary-box">
-                        <div class="summary-box-label">Amount to Businesses in Low and Moderate Income Neighborhoods</div>
+                        <div class="summary-box-label">Amount in LMI Neighborhoods</div>
                         <div class="summary-box-value" id="summaryBoxLMI">-</div>
+                    </div>
+                </div>
+                <!-- Data Notes -->
+                <div class="info-tooltips-container" style="margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div class="info-tooltip-item info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Data Coverage</span>
+                        <div class="info-tooltip-content">
+                            This report includes tract-level and county-level data on small business lending, including loan counts and amounts by loan size categories, lending to businesses with revenues under $1 million, and lending in Low- and Moderate-Income (LMI) census tracts.
+                        </div>
+                    </div>
+                    <div class="info-tooltip-item warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>PPP Impact</span>
+                        <div class="info-tooltip-content">
+                            In 2020 and 2021, the Paycheck Protection Program (PPP) significantly impacted small business lending patterns. Loan counts and amounts may be elevated during these years.
+                        </div>
+                    </div>
+                    <div class="info-tooltip-item alert">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Section 1071</span>
+                        <div class="info-tooltip-content">
+                            Section 1071 of the Dodd-Frank Act has still not been implemented. This report does not include borrower demographics.
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
+
         <!-- Section 2: County Summary (2020-2024) -->
         <div class="report-section print-break" id="section2" style="margin-top: 40px;">
             <h2 class="section-title">Section 2: County Summary (2020-2024)</h2>
-            
-            <!-- Intro Text - Full width above table -->
-            <div class="ai-insight-card" style="margin-bottom: 20px;">
-                <div class="ai-content" id="countySummaryIntro">
-                    <!-- 2 sentences will be populated by JavaScript -->
-                </div>
+
+            <!-- Table 1: Number of Loans -->
+            <h3 class="table-number" style="margin: 30px 0 10px 0; font-size: 1rem; color: #333;">Table 1: County Summary - Number of Loans (2020-2024)</h3>
+            <div class="table-intro" id="countySummaryNumberIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
             </div>
-            
-            <!-- Table - Full width -->
             <div class="table-container">
-                <!-- Tab Navigation -->
-                <div style="display: flex; border-bottom: 2px solid var(--ncrc-primary-blue); margin-bottom: 0;">
-                    <button class="tab-button active" id="tabCountySummaryNumber" onclick="switchCountySummaryTab('number')" style="flex: 1; padding: 12px 20px; background: var(--ncrc-primary-blue); color: white; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-                        Number of Loans
-                    </button>
-                    <button class="tab-button" id="tabCountySummaryAmount" onclick="switchCountySummaryTab('amount')" style="flex: 1; padding: 12px 20px; background: #e0e0e0; color: #333; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-                        Amount of Loans
-                    </button>
-                </div>
-                
-                <!-- Number of Loans Table -->
-                <div id="tableCountySummaryNumber" class="tab-content" style="display: block;">
-                    <table class="data-table" id="countySummaryTableNumber" role="table" aria-label="County Summary - Number of Loans">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Variable</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2020</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2021</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2022</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2023</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2024</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Change (2020→2024)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="countySummaryTableNumberBody">
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Amount of Loans Table -->
-                <div id="tableCountySummaryAmount" class="tab-content" style="display: none;">
-                    <table class="data-table" id="countySummaryTableAmount" role="table" aria-label="County Summary - Amount of Loans">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; white-space: nowrap; width: auto; min-width: 0;">Variable</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2020</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2021</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2022</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2023</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">2024</th>
-                            </tr>
-                        </thead>
-                        <tbody id="countySummaryTableAmountBody">
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
+                <table class="data-table" id="countySummaryTableNumber" role="table" aria-label="County Summary - Number of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Variable</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2020</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2021</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2022</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2023</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2024</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Change (2020→2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="countySummaryTableNumberBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
             </div>
-            
-            <!-- Source Caption - Full width below table -->
-            <p class="table-caption" id="countySummaryCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic; width: 100%;">
-                <!-- Caption will be populated by JavaScript -->
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC.
             </p>
-            
-            <div class="table-narrative" id="countySummaryDiscussion" role="region" aria-label="County Summary Analysis">
+            <div class="table-narrative" id="countySummaryNumberNarrative" role="region" aria-label="County Summary Number Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+
+            <!-- Table 2: Amount of Loans -->
+            <h3 class="table-number" style="margin: 40px 0 10px 0; font-size: 1rem; color: #333;">Table 2: County Summary - Amount of Loans (2020-2024)</h3>
+            <div class="table-intro" id="countySummaryAmountIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="countySummaryTableAmount" role="table" aria-label="County Summary - Amount of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Variable</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2020</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2021</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2022</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2023</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">2024</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Change (2020→2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="countySummaryTableAmountBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC. Amounts in thousands of dollars.
+            </p>
+            <div class="table-narrative" id="countySummaryAmountNarrative" role="region" aria-label="County Summary Amount Analysis" style="margin-top: 15px;">
                 <!-- AI narrative will be populated by JavaScript -->
             </div>
             <p id="countySummaryAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
@@ -854,69 +887,58 @@
         <!-- Section 3: County, State, and National Comparison (2024) -->
         <div class="report-section print-break" id="section3">
             <h2 class="section-title">Section 3: County, State, and National Comparison (2024)</h2>
-            
-            <!-- Intro Text - Full width above table -->
-            <div class="ai-insight-card" style="margin-bottom: 20px;">
-                <div class="ai-content" id="comparisonIntro">
-                    <!-- Will be populated by JavaScript -->
-                </div>
+
+            <!-- Table 1: Comparison - Number of Loans -->
+            <h3 class="table-number" style="margin: 30px 0 10px 0; font-size: 1rem; color: #333;">Table 1: Geographic Comparison - Number of Loans (2024)</h3>
+            <div class="table-intro" id="comparisonNumberIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
             </div>
-            
-            <!-- Table - Full width -->
             <div class="table-container">
-                <!-- Tab Navigation -->
-                <div style="display: flex; border-bottom: 2px solid var(--ncrc-primary-blue); margin-bottom: 0;">
-                    <button class="tab-button active" id="tabComparisonNumber" onclick="switchComparisonTab('number')" style="flex: 1; padding: 12px 20px; background: var(--ncrc-primary-blue); color: white; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-                        Number of Loans
-                    </button>
-                    <button class="tab-button" id="tabComparisonAmount" onclick="switchComparisonTab('amount')" style="flex: 1; padding: 12px 20px; background: #e0e0e0; color: #333; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-                        Amount of Loans
-                    </button>
-                </div>
-                
-                <!-- Number of Loans Table -->
-                <div id="tableComparisonNumber" class="tab-content" style="display: block;">
-                    <table class="data-table" id="comparisonTableNumber" role="table" aria-label="Comparison - Number of Loans">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; white-space: nowrap; width: auto; min-width: 0;">Metric</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">County (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">State (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">National (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">Change</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comparisonTableNumberBody">
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Amount of Loans Table -->
-                <div id="tableComparisonAmount" class="tab-content" style="display: none;">
-                    <table class="data-table" id="comparisonTableAmount" role="table" aria-label="Comparison - Amount of Loans">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; white-space: nowrap; width: auto; min-width: 0;">Metric</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">County (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">State (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">National (2024)</th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; width: 100px; min-width: 100px; max-width: 100px;">Change</th>
-                            </tr>
-                        </thead>
-                        <tbody id="comparisonTableAmountBody">
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
+                <table class="data-table" id="comparisonTableNumber" role="table" aria-label="Comparison - Number of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Metric</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">County (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">State (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">National (2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableNumberBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
             </div>
-            
-            <!-- Source Caption - Full width below table -->
-            <p class="table-caption" id="comparisonCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic; width: 100%;">
-                <!-- Caption will be populated by JavaScript -->
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC.
             </p>
-            
-            <div class="table-narrative" id="comparisonDiscussion" role="region" aria-label="Comparison Analysis">
+            <div class="table-narrative" id="comparisonNumberNarrative" role="region" aria-label="Comparison Number Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+
+            <!-- Table 2: Comparison - Amount of Loans -->
+            <h3 class="table-number" style="margin: 40px 0 10px 0; font-size: 1rem; color: #333;">Table 2: Geographic Comparison - Amount of Loans (2024)</h3>
+            <div class="table-intro" id="comparisonAmountIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <table class="data-table" id="comparisonTableAmount" role="table" aria-label="Comparison - Amount of Loans">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">Metric</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">County (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">State (2024)</th>
+                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white;">National (2024)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonTableAmountBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data, compiled by NCRC. Amounts in thousands of dollars.
+            </p>
+            <div class="table-narrative" id="comparisonAmountNarrative" role="region" aria-label="Comparison Amount Analysis" style="margin-top: 15px;">
                 <!-- AI narrative will be populated by JavaScript -->
             </div>
             <p id="comparisonAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
@@ -924,92 +946,83 @@
             </p>
         </div>
         
-        <!-- Section 4: Top Lenders by Number of Loans (2024) -->
+        <!-- Section 4: Top Lenders (2024) -->
         <div class="report-section print-break" id="section4">
-            <h2 class="section-title">Section 4: Top Lenders by Number of Loans (2024)</h2>
-            
-            <!-- Intro Text - Full width above table -->
-            <div class="ai-insight-card" style="margin-bottom: 20px;">
-                <div class="ai-content" id="topLendersIntro">
-                    <!-- 2 sentences will be populated by JavaScript -->
-                </div>
+            <h2 class="section-title">Section 4: Top Lenders (2024)</h2>
+
+            <!-- Table 1: Top Lenders - Number of Loans -->
+            <h3 class="table-number" style="margin: 30px 0 10px 0; font-size: 1rem; color: #333;">Table 1: Top Lenders - Number of Loans (2024)</h3>
+            <div class="table-intro" id="topLendersNumberIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
             </div>
-            
-            <!-- Table - Full width -->
             <div class="table-container">
-                <!-- Tab Navigation -->
-                <div style="display: flex; border-bottom: 2px solid var(--ncrc-primary-blue); margin-bottom: 0;">
-                    <button class="tab-button active" id="tabNumber" onclick="switchTopLendersTab('number')" style="flex: 1; padding: 12px 20px; background: var(--ncrc-primary-blue); color: white; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-                        Number of Loans
-                    </button>
-                    <button class="tab-button" id="tabAmount" onclick="switchTopLendersTab('amount')" style="flex: 1; padding: 12px 20px; background: #e0e0e0; color: #333; border: none; cursor: pointer; font-size: 1rem; font-weight: bold; border-top-left-radius: 8px; border-top-right-radius: 8px;">
-                        Amount of Loans
+                <div class="table-header">
+                    <button class="expand-btn" id="expandTopLendersBtnNumber" onclick="expandTopLendersTable('number')" style="display: none;">
+                        <i class="fas fa-chevron-down"></i> Show All Lenders
                     </button>
                 </div>
-                
-                <!-- Number of Loans Table -->
-                <div id="tableNumber" class="tab-content" style="display: block;">
-                    <div class="table-header">
-                        <button class="expand-btn" id="expandTopLendersBtnNumber" onclick="expandTopLendersTable('number')" style="display: none;">
-                            <i class="fas fa-chevron-down"></i> Show All Lenders
-                        </button>
-                    </div>
-                    <table class="data-table collapsible-table" id="topLendersTableNumber" role="table" aria-label="Top Lenders - Number of Loans">
-                        <thead>
-                            <tr>
-                                <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 450px; width: auto;" onclick="sortTable('topLendersTableNumber', 0)" aria-label="Sort by Lender Name" tabindex="0" role="button">Lender Name <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 1)" aria-label="Sort by Num Total" tabindex="0" role="button">Num Total <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 2)">Num Under 100K (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 3)">Num 100K 250K (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 4)">Num 250K 1M (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 5)">Numsb Under 1M (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 6)" id="headerLowIncomeNumber">Low Income (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 7)" id="headerModerateIncomeNumber">Moderate Income (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 8)" id="headerMiddleIncomeNumber">Middle Income (%) <i class="fas fa-sort"></i></th>
-                                <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableNumber', 9)" id="headerUpperIncomeNumber">Upper Income (%) <i class="fas fa-sort"></i></th>
-                            </tr>
-                        </thead>
-                        <tbody id="topLendersTableBodyNumber">
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-                
-                <!-- Amount of Loans Table -->
-                <div id="tableAmount" class="tab-content" style="display: none;">
-                    <div class="table-header">
-                        <button class="expand-btn" id="expandTopLendersBtnAmount" onclick="expandTopLendersTable('amount')" style="display: none;">
-                            <i class="fas fa-chevron-down"></i> Show All Lenders
-                        </button>
-                    </div>
-                    <table class="data-table collapsible-table" id="topLendersTableAmount" role="table" aria-label="Top Lenders - Amount of Loans">
+                <table class="data-table collapsible-table" id="topLendersTableNumber" role="table" aria-label="Top Lenders - Number of Loans" style="font-size: 0.85rem;">
                     <thead>
                         <tr>
-                            <th style="text-align: left; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 450px; width: auto;" onclick="sortTable('topLendersTableAmount', 0)" aria-label="Sort by Lender Name" tabindex="0" role="button">Lender Name <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 1)">Amt Total (in $000s) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 2)">Amt Under 100K (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 3)">Amt 100K 250K (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 4)">Amt 250K 1M (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 5)">Amtsb Under 1M (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 6)" id="headerLowIncomeAmount">Low Income (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 7)" id="headerModerateIncomeAmount">Moderate Income (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 8)" id="headerMiddleIncomeAmount">Middle Income (%) <i class="fas fa-sort"></i></th>
-                            <th style="text-align: center; padding: 12px 10px; background: var(--ncrc-primary-blue); color: white; cursor: pointer;" onclick="sortTable('topLendersTableAmount', 9)" id="headerUpperIncomeAmount">Upper Income (%) <i class="fas fa-sort"></i></th>
+                            <th style="text-align: left; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 180px;" onclick="sortTable('topLendersTableNumber', 0)">Lender Name</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 1)">Total</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 2)">&lt;100K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 3)">100-250K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 4)">250K-1M</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 5)">Sm Biz</th>
+                            <th id="headerLowNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 6)">Low</th>
+                            <th id="headerModNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 7)">Mod</th>
+                            <th id="headerMidNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 8)">Mid</th>
+                            <th id="headerUpperNumber" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableNumber', 9)">Upper</th>
                         </tr>
                     </thead>
-                        <tbody id="topLendersTableBodyAmount">
-                            <!-- Data will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
+                    <tbody id="topLendersTableBodyNumber">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
             </div>
-            
-            <!-- Source Caption - Full width below table -->
-            <p class="table-caption" id="topLendersCaption" style="margin-top: 15px; font-size: 0.85rem; color: #666; font-style: italic; width: 100%;">
-                <!-- Caption will be populated by JavaScript -->
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data. Column key: &lt;100K/100-250K/250K-1M = loan size categories; Sm Biz = loans to businesses with &lt;$1M revenue; Low/Mod/Mid/Upper = census tract income levels.
             </p>
-            
-            <div class="table-narrative" id="topLendersDiscussion" role="region" aria-label="Top Lenders Analysis">
+            <div class="table-narrative" id="topLendersNumberNarrative" role="region" aria-label="Top Lenders Number Analysis" style="margin-top: 15px;">
+                <!-- AI narrative will be populated by JavaScript -->
+            </div>
+
+            <!-- Table 2: Top Lenders - Amount of Loans -->
+            <h3 class="table-number" style="margin: 40px 0 10px 0; font-size: 1rem; color: #333;">Table 2: Top Lenders - Amount of Loans (2024)</h3>
+            <div class="table-intro" id="topLendersAmountIntro" style="margin-bottom: 15px; line-height: 1.6; color: #444;">
+                <!-- 2-3 sentences will be populated by JavaScript -->
+            </div>
+            <div class="table-container">
+                <div class="table-header">
+                    <button class="expand-btn" id="expandTopLendersBtnAmount" onclick="expandTopLendersTable('amount')" style="display: none;">
+                        <i class="fas fa-chevron-down"></i> Show All Lenders
+                    </button>
+                </div>
+                <table class="data-table collapsible-table" id="topLendersTableAmount" role="table" aria-label="Top Lenders - Amount of Loans" style="font-size: 0.85rem;">
+                    <thead>
+                        <tr>
+                            <th style="text-align: left; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap; min-width: 180px;" onclick="sortTable('topLendersTableAmount', 0)">Lender Name</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 1)">$000s</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 2)">&lt;100K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 3)">100-250K</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 4)">250K-1M</th>
+                            <th style="text-align: center; padding: 8px 6px; background: var(--ncrc-primary-blue); color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 5)">Sm Biz</th>
+                            <th id="headerLowAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 6)">Low</th>
+                            <th id="headerModAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 7)">Mod</th>
+                            <th id="headerMidAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 8)">Mid</th>
+                            <th id="headerUpperAmount" style="text-align: center; padding: 8px 6px; background: #6c757d; color: white; cursor: pointer; white-space: nowrap;" onclick="sortTable('topLendersTableAmount', 9)">Upper</th>
+                        </tr>
+                    </thead>
+                    <tbody id="topLendersTableBodyAmount">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+            <p class="table-caption" style="margin-top: 10px; font-size: 0.85rem; color: #666; font-style: italic;">
+                Source: FFIEC CRA Small Business Lending Data. $000s = amounts in thousands. Column key: &lt;100K/100-250K/250K-1M = loan size categories; Sm Biz = loans to businesses with &lt;$1M revenue; Low/Mod/Mid/Upper = census tract income levels.
+            </p>
+            <div class="table-narrative" id="topLendersAmountNarrative" role="region" aria-label="Top Lenders Amount Analysis" style="margin-top: 15px;">
                 <!-- AI narrative will be populated by JavaScript -->
             </div>
             <p id="topLendersAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
@@ -1030,7 +1043,7 @@
                         </div>
                     </div>
                     <p class="table-caption" style="margin-top: 15px;">
-                        <strong>Source:</strong> HMDA Section 1071 Small Business Lending data, compiled and maintained in NCRC's curated databases. 
+                        <strong>Source:</strong> FFIEC CRA Small Business Lending data, compiled and maintained in NCRC's curated databases. 
                         <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. 
                         HHI values range from 0 to 10,000. 
                         <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.
@@ -1039,21 +1052,9 @@
                 
                 <!-- Chart and Table - 2/3 width -->
                 <div style="flex: 0 0 66.667%;">
+                    <h3 class="table-number" style="margin-bottom: 10px; font-size: 1rem; color: #333;">Figure 1: Market Concentration (HHI) by Year</h3>
                     <div class="chart-container" style="height: 400px; margin-bottom: 20px;">
                         <canvas id="hhiByYearChart"></canvas>
-                    </div>
-                    <div class="table-container">
-                        <table class="data-table" id="hhiByYearTable">
-                            <thead>
-                                <tr>
-                                    <th style="text-align: left;">Year</th>
-                                    <th style="text-align: center;">HHI</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Data will be populated by JavaScript -->
-                            </tbody>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -1070,46 +1071,122 @@
             <h2 class="section-title">Section 6: Methods, Definitions, and AI Disclosure</h2>
             <div id="methodsContent" style="line-height: 1.8;">
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Data Sources</h3>
-                <p>This report uses data from HMDA Section 1071 Small Business Lending data, which requires financial institutions to report information about small business loan applications and originations. The data used in this report is sourced from NCRC's curated small business lending databases, compiled and maintained by NCRC Research staff. Data is queried from NCRC datasets for the years specified in the analysis.</p>
-                
+                <p><strong>CRA Small Business Lending Data:</strong> This report uses data collected under the Community Reinvestment Act (CRA), which requires depository institutions to report information about small business loans. The data is collected by the Federal Financial Institutions Examination Council (FFIEC) and includes lending activity from banks regulated by the Office of the Comptroller of the Currency (OCC), Federal Reserve, and Federal Deposit Insurance Corporation (FDIC). For more information, visit the <a href="https://www.ffiec.gov/cra/craproducts.htm" target="_blank">FFIEC CRA website</a>.</p>
+
+                <p><strong>Data Coverage:</strong> CRA small business lending data includes loans with original amounts of $1 million or less for commercial and industrial purposes. The data is reported at the county level and includes information about loan size categories, loans to businesses with revenues under $1 million, and lending in census tracts of different income levels. All institutions regulated by the OCC, Federal Reserve, and FDIC that meet asset size thresholds are subject to reporting requirements.</p>
+
+                <p><strong>NCRC Data Processing:</strong> The data used in this report is sourced from NCRC's curated small business lending databases, compiled and maintained by NCRC Research staff. State and national benchmark data is aggregated from the same FFIEC source data to enable geographic comparisons.</p>
+
+                <p><strong>Important Notes:</strong>
+                    <ul style="margin-top: 8px; padding-left: 20px;">
+                        <li><strong>PPP Impact (2020-2021):</strong> Small business lending volumes in 2020 and 2021 were significantly influenced by the Paycheck Protection Program (PPP), which may result in elevated loan counts and amounts during those years.</li>
+                        <li><strong>Section 1071:</strong> Section 1071 of the Dodd-Frank Act, which will require demographic data on small business loan applicants, has not yet been fully implemented. This report does not include borrower demographic information such as race, ethnicity, or gender of business owners.</li>
+                    </ul>
+                </p>
+
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Definitions</h3>
+
+                <p><strong>Small Business Loan:</strong> A loan with an original amount of $1 million or less made for commercial or industrial purposes to businesses.</p>
+
+                <p><strong>Small Business (Revenue Under $1M):</strong> Businesses with gross annual revenues of less than $1 million. CRA regulations require lenders to report the portion of small business loans made to these smaller enterprises.</p>
+
+                <h4 style="margin-top: 15px; color: #333;">Loan Size Categories</h4>
                 <ul style="padding-left: 20px;">
-                    <li><strong>LMI Tract:</strong> Low-to-Moderate Income Census Tract - areas where median income is below 80% of the area median income (AMI).</li>
-                    <li><strong>Num Total:</strong> Total number of small business loans.</li>
-                    <li><strong>Num Under 100K:</strong> Number of loans under $100,000.</li>
-                    <li><strong>Num 100K 250K:</strong> Number of loans between $100,000 and $250,000.</li>
-                    <li><strong>Num 250K 1M:</strong> Number of loans between $250,000 and $1,000,000.</li>
-                    <li><strong>Numsb Under 1M:</strong> Number of loans to businesses with revenue under $1 million.</li>
-                    <li><strong>Amt Total:</strong> Total amount of small business loans (in thousands of dollars).</li>
-                    <li><strong>Quartiles:</strong> Data divided into four equal groups (Q1 = lowest 25%, Q2 = 25-50%, Q3 = 50-75%, Q4 = highest 25%).</li>
+                    <li><strong>Under $100K:</strong> Loans with original amounts less than $100,000</li>
+                    <li><strong>$100K-$250K:</strong> Loans with original amounts from $100,000 to $250,000</li>
+                    <li><strong>$250K-$1M:</strong> Loans with original amounts from $250,000 to $1,000,000</li>
                 </ul>
-                
+
+                <h4 style="margin-top: 15px; color: #333;">Census Tract Income Categories</h4>
+                <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+                    <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+                    <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+                    <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+                    <li><strong>LMI Tract:</strong> Low-to-Moderate Income Census Tract - areas where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+                </ul>
+
+                <h4 style="margin-top: 15px; color: #333;">Table Column Definitions</h4>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Total:</strong> Total number or amount of small business loans</li>
+                    <li><strong>&lt;100K / 100-250K / 250K-1M:</strong> Percentage of loans in each size category</li>
+                    <li><strong>Sm Biz:</strong> Percentage of loans to businesses with annual revenues under $1 million</li>
+                    <li><strong>Low / Mod / Mid / Upper:</strong> Percentage of loans in census tracts of each income level</li>
+                    <li><strong>$000s:</strong> Dollar amounts expressed in thousands</li>
+                </ul>
+
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Calculations</h3>
+
+                <p><strong>Percentage Calculations:</strong> All percentages are calculated as: (category value / total value) × 100. For example, the percentage of loans under $100K equals (number of loans under $100K / total number of loans) × 100.</p>
+
+                <p><strong>Change Over Time (pp):</strong> Change is calculated as the difference between the final year value and the baseline year value. For percentages, change is expressed in percentage points (pp). For example, if loans under $100K increased from 89.1% to 96.7%, the change is +7.6 pp. Positive changes are displayed in blue; negative changes in red.</p>
+
+                <p><strong>Dollar Amount Aggregation:</strong> Loan amounts are aggregated from individual lender reports. All dollar figures in tables are expressed in thousands ($000s) or millions ($M) as noted.</p>
+
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Market Concentration (HHI)</h3>
-                <p><strong>Herfindahl-Hirschman Index (HHI):</strong> Market concentration is measured using the HHI, calculated as the sum of squared market shares of all lenders in the county based on the dollar amount of small business loans in 2024. Market shares are expressed as percentages, and the HHI scale ranges from 0 to 10,000:</p>
+                <p><strong>Herfindahl-Hirschman Index (HHI):</strong> A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all firms in a market:</p>
+                <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+                <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
                 <ul style="padding-left: 20px;">
-                    <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
-                    <li>HHI 1,500-2,500: Moderate concentration</li>
-                    <li>HHI &gt; 2,500: High concentration</li>
+                    <li><strong>HHI &lt; 1,500:</strong> Low concentration (competitive market)</li>
+                    <li><strong>HHI 1,500-2,500:</strong> Moderate concentration</li>
+                    <li><strong>HHI &gt; 2,500:</strong> High concentration</li>
                 </ul>
-                <p>The HHI calculation uses loan amount data from all lenders that reported small business lending data in 2024, not just the lenders shown in the report tables.</p>
-                
-                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">AI-Generated Content Disclosure</h3>
-                <p>This report includes AI-generated narrative analysis of small business lending data. The AI-generated content provides contextual analysis and interpretation of the data patterns shown in the tables and maps. All data and statistics are sourced from the databases described above. The AI-generated narratives are intended to help readers understand the data and identify trends, but should be read in conjunction with the underlying data tables.</p>
-                <p><strong>AI Model:</strong> The narratives in this report were generated using Claude AI (Anthropic) and/or OpenAI GPT models. The AI was provided with the data tables and instructed to write in plain English, avoid jargon, and focus on trends and patterns rather than specific numbers.</p>
-                <p><strong>Human Review:</strong> While AI-generated content has been reviewed for accuracy and appropriateness, users should verify any specific claims against the underlying data tables.</p>
+                <p>In this report, HHI is calculated using the dollar amount of small business loans from all lenders that reported CRA data for the county, not just the top lenders shown in the tables.</p>
+
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Abbreviations</h3>
+                <ul style="padding-left: 20px; column-count: 2; column-gap: 40px;">
+                    <li><strong>ACS:</strong> American Community Survey</li>
+                    <li><strong>AMFI:</strong> Area Median Family Income</li>
+                    <li><strong>CRA:</strong> Community Reinvestment Act</li>
+                    <li><strong>FDIC:</strong> Federal Deposit Insurance Corporation</li>
+                    <li><strong>FFIEC:</strong> Federal Financial Institutions Examination Council</li>
+                    <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                    <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+                    <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+                    <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
+                    <li><strong>OCC:</strong> Office of the Comptroller of the Currency</li>
+                    <li><strong>pp:</strong> Percentage Points</li>
+                    <li><strong>PPP:</strong> Paycheck Protection Program</li>
+                    <li><strong>Sm Biz:</strong> Small Business (revenue under $1M)</li>
+                </ul>
+
+                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Data Quality and AI Disclosure</h3>
+                <p>All data has been cleaned and validated by NCRC Research staff. Users can download the complete dataset via the Export Data option to verify statistics and conduct additional analysis.</p>
+
+                <p><strong>Use of Artificial Intelligence:</strong> This report includes AI-generated narrative content to help interpret data patterns. AI-generated sections are clearly marked with the notation "Above text is AI generated from NCRC data and analysis" appearing directly below each AI narrative. The following content is AI-generated:</p>
+                <ul style="padding-left: 20px;">
+                    <li>Section 2: County Summary discussion</li>
+                    <li>Section 3: Geographic Comparison analysis</li>
+                    <li>Section 4: Top Lenders analysis</li>
+                    <li>Section 5: Market Concentration trends discussion</li>
+                </ul>
+
+                <p><strong>AI Model:</strong> Narrative content is generated using Claude (Anthropic), a large language model. The AI is provided with the data tables and summary statistics and instructed to write in plain, accessible language while focusing on trends and patterns rather than repeating specific numbers from the tables.</p>
+
+                <p><strong>AI Limitations:</strong> AI-generated content is intended to assist readers in understanding data patterns but has limitations. AI may occasionally misinterpret data relationships or draw conclusions not fully supported by the data. AI narratives should be read in conjunction with the underlying data tables, which represent the authoritative source. Users should verify any specific claims or interpretations against the data before citing in research or policy documents.</p>
+
+                <p><strong>Human Review:</strong> All AI-generated content undergoes review for accuracy and appropriateness. However, NCRC cannot guarantee the accuracy of AI interpretations. For questions about methodology or data, contact NCRC Research.</p>
+
+                <p>For official CRA data and documentation, visit the <a href="https://www.ffiec.gov/cra/craproducts.htm" target="_blank">FFIEC CRA Data Products page</a>.</p>
             </div>
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet JS disabled - map will be added in future version -->
+    <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> -->
     <script>
-        // Initialize map
-        let map;
-        let tractLayer;
-        let incomeLayer;
-        let raceLayer;
-        let tractData = [];
-        
+        // Base URL for API calls (detect from current URL path)
+        const baseUrl = window.location.pathname.includes('/bizsight') ? '/bizsight' : '';
+
+        // Map variables disabled - map will be added in future version
+        // let map;
+        // let tractLayer;
+        // let incomeLayer;
+        // let raceLayer;
+        // let tractData = [];
+
         // Get job_id from URL
         const urlParams = new URLSearchParams(window.location.search);
         const jobId = urlParams.get('job_id');
@@ -1144,27 +1221,28 @@
                 // Update PDF download link
                 const pdfBtn = document.getElementById('downloadPdfBtn');
                 if (pdfBtn) {
-                    pdfBtn.href = `/download?format=pdf&job_id=${jobId}`;
+                    pdfBtn.href = `${baseUrl}/download?format=pdf&job_id=${jobId}`;
                 }
-                
+
                 // Update dropdown download links
-                const downloadLinks = document.querySelectorAll('.dropdown-item[href^="/download"]');
+                const downloadLinks = document.querySelectorAll('.dropdown-item[href*="/download"]');
                 downloadLinks.forEach(link => {
                     const currentHref = link.getAttribute('href');
-                    const url = new URL(currentHref, window.location.origin);
-                    url.searchParams.set('job_id', jobId);
-                    link.href = url.toString();
+                    // Extract format parameter if present
+                    const formatMatch = currentHref.match(/format=([^&]+)/);
+                    const format = formatMatch ? formatMatch[1] : 'excel';
+                    link.href = `${baseUrl}/download?format=${format}&job_id=${jobId}`;
                 });
             }
         }
-        
+
         function loadReportData(jobId, retryCount = 0) {
             const maxRetries = 10;
             const retryDelay = 1000; // 1 second
-            
+
             // Add cache-busting timestamp to force fresh data
             const cacheBuster = new Date().getTime();
-            fetch(`/report-data?job_id=${jobId}&_t=${cacheBuster}`)
+            fetch(`${baseUrl}/report-data?job_id=${jobId}&_t=${cacheBuster}`)
                 .then(r => {
                     if (r.status === 202) {
                         // Analysis still in progress, retry
@@ -1174,6 +1252,16 @@
                             return null;
                         } else {
                             throw new Error('Analysis is taking longer than expected. Please refresh the page.');
+                        }
+                    }
+                    if (r.status === 404) {
+                        // Storage might still be in progress, retry
+                        if (retryCount < maxRetries) {
+                            console.log(`Data not yet available (storage in progress), retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                            setTimeout(() => loadReportData(jobId, retryCount + 1), retryDelay);
+                            return null;
+                        } else {
+                            throw new Error('Report not found. Storage may have failed. Please try running a new analysis.');
                         }
                     }
                     return r.json();
@@ -1192,22 +1280,16 @@
                     
                     // Update summary cards (pass county summary data for 2020 baseline)
                     updateSummaryTable(data.summary_table, data.county_summary_table);
-                    
-                    // Load tract data for map
-                    tractData = data.tract_data_for_map || [];
-                    console.log('Loaded tract data:', tractData.length, 'tracts');
-                    
-                    // Initialize map
-                    initializeMap(metadata);
-                    
-                    // Fetch tract boundaries and create layers
-                    const geoid5 = metadata.geoid5;
-                    if (geoid5) {
-                        fetchTractBoundaries(geoid5);
-                    } else {
-                        console.error('No geoid5 in metadata, cannot fetch tract boundaries');
-                    }
-                    
+
+                    // Map functionality disabled - will be added in future version
+                    // tractData = data.tract_data_for_map || [];
+                    // console.log('Loaded tract data:', tractData.length, 'tracts');
+                    // initializeMap(metadata);
+                    // const geoid5 = metadata.geoid5;
+                    // if (geoid5) {
+                    //     fetchTractBoundaries(geoid5);
+                    // }
+
                     // Debug: Log data to console
                     console.log('Report data received:', {
                         county_summary_table: data.county_summary_table,
@@ -1279,11 +1361,8 @@
                         console.warn('[WARNING] No AI insights data provided');
                     }
                     
-                    // Populate Section 1 intro county name
-                    const introCountyName = document.getElementById('introCountyName');
-                    if (introCountyName && metadata) {
-                        introCountyName.textContent = metadata.county_name || 'the selected county';
-                    }
+                    // Generate intro paragraph and update Section 1 intro county name
+                    generateIntroParagraph(metadata, data.summary_table);
                 })
                 .catch(error => {
                     console.error('Error loading report data:', error);
@@ -1317,8 +1396,8 @@
         
         function fetchTractBoundaries(geoid5) {
             console.log('[DEBUG] Fetching tract boundaries for GEOID5:', geoid5);
-            
-            fetch(`/api/tract-boundaries/${geoid5}`)
+
+            fetch(`${baseUrl}/api/tract-boundaries/${geoid5}`)
                 .then(r => {
                     console.log('[DEBUG] Tract boundaries API response status:', r.status);
                     if (!r.ok) {
@@ -1369,41 +1448,68 @@
         
         function enrichGeoJSONWithTractData(geojson) {
             console.log('[DEBUG] Enriching GeoJSON with tract data. Tract data count:', tractData.length);
+            if (tractData.length > 0) {
+                console.log('[DEBUG] Sample tract data keys:', Object.keys(tractData[0]));
+                console.log('[DEBUG] Sample tract_geoid:', tractData[0].tract_geoid || tractData[0].census_tract_geoid);
+            }
             let matchedCount = 0;
-            
+
+            // Helper function to normalize GEOID for comparison
+            function normalizeGeoid(geoid) {
+                if (!geoid) return '';
+                // Convert to string and remove any decimal points (in case of float conversion)
+                let str = String(geoid).split('.')[0];
+                // Pad with leading zeros to 11 characters if shorter
+                if (str.length < 11 && str.length >= 6) {
+                    str = str.padStart(11, '0');
+                }
+                return str;
+            }
+
+            // Pre-process tract data for faster lookup
+            const tractLookup = new Map();
+            tractData.forEach(t => {
+                const tractGeoid = t.tract_geoid || t.census_tract_geoid;
+                if (tractGeoid) {
+                    const normalized = normalizeGeoid(tractGeoid);
+                    tractLookup.set(normalized, t);
+                    // Also store by last 6 digits (tract portion)
+                    if (normalized.length >= 6) {
+                        tractLookup.set(normalized.slice(-6), t);
+                    }
+                }
+            });
+
+            console.log('[DEBUG] Tract lookup map size:', tractLookup.size);
+
             // Add tract data properties to each feature
             geojson.features.forEach((feature, idx) => {
                 const geoid = feature.properties.GEOID;
-                
+
                 if (!geoid) {
                     console.warn(`[WARN] Feature ${idx} has no GEOID`);
                     return;
                 }
-                
-                // Try to match by full GEOID or just the tract portion
-                const tract = tractData.find(t => {
-                    const tractGeoid = t.tract_geoid || t.census_tract_geoid;
-                    if (!tractGeoid) return false;
-                    
-                    // Convert both to strings for comparison
-                    const geoidStr = String(geoid);
-                    const tractGeoidStr = String(tractGeoid);
-                    
-                    // Match by full GEOID (11 digits) or last 6 digits (tract portion)
-                    return tractGeoidStr === geoidStr || tractGeoidStr.endsWith(geoidStr.slice(-6));
-                });
-                
+
+                const normalizedGeoid = normalizeGeoid(geoid);
+
+                // Try to match by normalized full GEOID first, then last 6 digits
+                let tract = tractLookup.get(normalizedGeoid);
+                if (!tract && normalizedGeoid.length >= 6) {
+                    tract = tractLookup.get(normalizedGeoid.slice(-6));
+                }
+
                 if (tract) {
                     // Add all tract data to feature properties
                     Object.assign(feature.properties, tract);
                     matchedCount++;
                 } else if (idx < 5) {
                     // Log first few unmatched for debugging
-                    console.log(`[DEBUG] No match for GEOID ${geoid}. Sample tract GEOIDs:`, 
-                        tractData.slice(0, 3).map(t => t.tract_geoid || t.census_tract_geoid));
+                    console.log(`[DEBUG] No match for GEOID ${geoid} (normalized: ${normalizedGeoid}). Sample lookups:`,
+                        Array.from(tractLookup.keys()).slice(0, 5));
                 }
             });
-            
+
             console.log(`[DEBUG] Matched ${matchedCount} of ${geojson.features.length} tracts with data`);
             return geojson;
         }
@@ -1845,29 +1951,6 @@
             }
         }
         
-        function switchCountySummaryTab(tab) {
-            const numberTab = document.getElementById('tabCountySummaryNumber');
-            const amountTab = document.getElementById('tabCountySummaryAmount');
-            const numberTable = document.getElementById('tableCountySummaryNumber');
-            const amountTable = document.getElementById('tableCountySummaryAmount');
-            
-            if (tab === 'number') {
-                numberTab.style.background = 'var(--ncrc-primary-blue)';
-                numberTab.style.color = 'white';
-                amountTab.style.background = '#e0e0e0';
-                amountTab.style.color = '#333';
-                numberTable.style.display = 'block';
-                amountTable.style.display = 'none';
-            } else {
-                numberTab.style.background = '#e0e0e0';
-                numberTab.style.color = '#333';
-                amountTab.style.background = 'var(--ncrc-primary-blue)';
-                amountTab.style.color = 'white';
-                numberTable.style.display = 'none';
-                amountTable.style.display = 'block';
-            }
-        }
-        
         function populateCountySummaryTable(data, metadata, summaryTable) {
             if (!data || data.length === 0) return;
             
@@ -1979,7 +2062,7 @@
                     const value = row[year] !== undefined ? row[year] : (row[year.toLowerCase()] !== undefined ? row[year.toLowerCase()] : null);
                     const formatted = formatValue(varName, value);
                     // Other columns: fixed 100px width (matching LendSight)
-                    numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatted}</td>`;
+                    numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatted}</td>`;
                 });
                 
                 // Add change column
@@ -2016,7 +2099,7 @@
                     const value = row[year] !== undefined ? row[year] : (row[year.toLowerCase()] !== undefined ? row[year.toLowerCase()] : null);
                     const formatted = formatValue(varName, value);
                     // Other columns: fixed 100px width (matching LendSight)
-                    amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatted}</td>`;
+                    amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatted}</td>`;
                 });
                 
                 // Add change column
@@ -2073,12 +2156,19 @@
             
             tbodyNumber.innerHTML = numberRowsHtml;
             tbodyAmount.innerHTML = amountRowsHtml;
-            
-            // Populate table introduction (2 sentences)
-            const intro = document.getElementById('countySummaryIntro');
-            if (intro && metadata) {
+
+            // Populate Table 1 introduction (Number of Loans - 2-3 sentences)
+            const introNumber = document.getElementById('countySummaryNumberIntro');
+            if (introNumber && metadata) {
                 const yearRange = metadata.year_range || '2020-2024';
-                intro.textContent = `This table shows aggregate small business lending data for ${metadata.county_name} across the entire study period (${yearRange}). The data includes total loan counts and amounts by size category, lending to low-to-moderate income tracts, and loans to businesses with revenue under $1 million.`;
+                introNumber.textContent = `Table 1 presents the number of small business loans originated in ${metadata.county_name} from ${yearRange}. The data is broken down by loan size category and shows lending to businesses with revenue under $1 million. The rightmost column shows the percentage change comparing 2024 to the 2020 baseline.`;
+            }
+
+            // Populate Table 2 introduction (Amount of Loans - 2-3 sentences)
+            const introAmount = document.getElementById('countySummaryAmountIntro');
+            if (introAmount && metadata) {
+                const yearRange = metadata.year_range || '2020-2024';
+                introAmount.textContent = `Table 2 shows the dollar amount of small business loans (in thousands) originated in ${metadata.county_name} from ${yearRange}. The breakdown by loan size category reveals patterns in how lending volume is distributed. Note that 2020 and 2021 data may be influenced by Paycheck Protection Program (PPP) lending activity.`;
             }
             
             // Populate caption
@@ -2089,29 +2179,6 @@
                 captionText += `<strong>County:</strong> ${metadata.county_name || 'Unknown'}. `;
                 captionText += '<strong>Note:</strong> Data for 2020 and 2021 are distorted by the Paycheck Protection Program (PPP) lending activity.';
                 caption.innerHTML = captionText;
-            }
-        }
-        
-        function switchComparisonTab(tab) {
-            const numberTab = document.getElementById('tabComparisonNumber');
-            const amountTab = document.getElementById('tabComparisonAmount');
-            const numberTable = document.getElementById('tableComparisonNumber');
-            const amountTable = document.getElementById('tableComparisonAmount');
-            
-            if (tab === 'number') {
-                numberTab.style.background = 'var(--ncrc-primary-blue)';
-                numberTab.style.color = 'white';
-                amountTab.style.background = '#e0e0e0';
-                amountTab.style.color = '#333';
-                numberTable.style.display = 'block';
-                amountTable.style.display = 'none';
-            } else {
-                numberTab.style.background = '#e0e0e0';
-                numberTab.style.color = '#333';
-                amountTab.style.background = 'var(--ncrc-primary-blue)';
-                amountTab.style.color = 'white';
-                numberTable.style.display = 'none';
-                amountTable.style.display = 'block';
             }
         }
         
@@ -2188,43 +2255,43 @@
                 }
             }
             
-            // Build number table rows with proper column widths (matching LendSight)
+            // Build number table rows (3 columns: County, State, National - no Change column)
             let numberRowsHtml = '';
             numberRows.forEach(row => {
                 const metric = row['Metric'] || row['metric'] || '';
                 numberRowsHtml += '<tr>';
-                // First column: auto-width, no-wrap (matching LendSight)
-                numberRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; width: auto; min-width: 0; max-width: none;">${metric}</td>`;
-                // Other columns: fixed 100px width (matching LendSight)
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
-                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['Change'] || row['% Change Since 2020'], 'Change')}</td>`;
+                numberRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap;">${metric}</td>`;
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
+                numberRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
                 numberRowsHtml += '</tr>';
             });
-            
-            // Build amount table rows with proper column widths (matching LendSight)
+
+            // Build amount table rows (3 columns: County, State, National - no Change column)
             let amountRowsHtml = '';
             amountRows.forEach(row => {
                 const metric = row['Metric'] || row['metric'] || '';
                 amountRowsHtml += '<tr>';
-                // First column: auto-width, no-wrap (matching LendSight)
-                amountRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; width: auto; min-width: 0; max-width: none;">${metric}</td>`;
-                // Other columns: fixed 100px width (matching LendSight)
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
-                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatComparisonValue(metric, row['Change'] || row['% Change Since 2020'], 'Change')}</td>`;
+                amountRowsHtml += `<td style="text-align: left; padding: 12px 10px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap;">${metric}</td>`;
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['County (2024)'], 'County (2024)')}</td>`;
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['State (2024)'], 'State (2024)')}</td>`;
+                amountRowsHtml += `<td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0;">${formatComparisonValue(metric, row['National (2024)'], 'National (2024)')}</td>`;
                 amountRowsHtml += '</tr>';
             });
             
             tbodyNumber.innerHTML = numberRowsHtml;
             tbodyAmount.innerHTML = amountRowsHtml;
-            
-            // Populate table introduction
-            const intro = document.getElementById('comparisonIntro');
-            if (intro && metadata) {
-                intro.textContent = `This table compares ${metadata.county_name}'s 2024 small business lending data with state and national benchmarks. The final column shows the percentage change for each geography since 2020 (baseline year), allowing for a comparison of trends across different levels of aggregation.`;
+
+            // Populate Table 1 introduction (Number of Loans - 2-3 sentences)
+            const introNumber = document.getElementById('comparisonNumberIntro');
+            if (introNumber && metadata) {
+                introNumber.textContent = `Table 1 compares the number of small business loans in ${metadata.county_name} with state (${metadata.state_name || 'statewide'}) and national benchmarks for 2024. This comparison helps identify whether local lending patterns are consistent with broader trends or represent unique local market conditions.`;
+            }
+
+            // Populate Table 2 introduction (Amount of Loans - 2-3 sentences)
+            const introAmount = document.getElementById('comparisonAmountIntro');
+            if (introAmount && metadata) {
+                introAmount.textContent = `Table 2 compares the dollar amount of small business lending in ${metadata.county_name} with state and national figures for 2024. Loan amounts (in thousands) reveal how local lending volume compares to broader geographic benchmarks.`;
             }
             
             // Populate caption
@@ -2277,76 +2344,99 @@
                 }
             }
             
-            // County Summary Discussion (Section 2)
-            if (aiInsights.county_summary_discussion && aiInsights.county_summary_discussion.trim().length > 0) {
-                const discussionEl = document.getElementById('countySummaryDiscussion');
-                if (discussionEl) {
-                    // Format markdown-like content with proper paragraph breaks
-                    // Split by double newlines, single newlines, or periods followed by space and capital letter
-                    let text = aiInsights.county_summary_discussion.trim();
-                    // First split by double newlines
-                    let paragraphs = text.split(/\n\n+/);
-                    // If no double newlines, try splitting by periods followed by space and capital
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\.\s+(?=[A-Z])/);
-                    }
-                    // If still one paragraph, try single newlines
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\n+/);
-                    }
-                    paragraphs = paragraphs
-                        .filter(p => p.trim().length > 0)
-                        .map(p => p.trim().replace(/\n/g, ' '));
-                    discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
-                    const aiCaption = document.getElementById('countySummaryAICaption');
-                    if (aiCaption) {
-                        aiCaption.style.display = 'block';
-                    }
+            // County Summary Discussion (Section 2) - goes after Table 2 (Amount)
+            // Helper function to format paragraphs
+            const formatParagraphs = (text) => {
+                let paragraphs = text.split(/\n\n+/);
+                if (paragraphs.length === 1) {
+                    paragraphs = text.split(/\.\s+(?=[A-Z])/);
+                }
+                if (paragraphs.length === 1) {
+                    paragraphs = text.split(/\n+/);
+                }
+                return paragraphs
+                    .filter(p => p.trim().length > 0)
+                    .map(p => p.trim().replace(/\n/g, ' '))
+                    .map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`)
+                    .join('');
+            };
+
+            // County Summary Discussion (Section 2) - Table 1 (Number of Loans)
+            if (aiInsights.county_summary_number_discussion && aiInsights.county_summary_number_discussion.trim().length > 0) {
+                const formattedNarrative = formatParagraphs(aiInsights.county_summary_number_discussion.trim());
+                const discussionEl1 = document.getElementById('countySummaryNumberNarrative');
+                if (discussionEl1) {
+                    discussionEl1.innerHTML = formattedNarrative;
                 }
             } else {
-                const discussionEl = document.getElementById('countySummaryDiscussion');
+                const discussionEl = document.getElementById('countySummaryNumberNarrative');
                 if (discussionEl) {
                     if (aiDisabled) {
                         discussionEl.innerHTML = getAIDisabledMessage();
                     } else {
-                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this table is not available.</p>';
                     }
                 }
             }
-            
-            // Comparison Discussion (Section 3)
-            if (aiInsights.comparison_discussion) {
-                const discussionEl = document.getElementById('comparisonDiscussion');
-                if (discussionEl) {
-                    let text = aiInsights.comparison_discussion.trim();
-                    let paragraphs = text.split(/\n\n+/);
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\.\s+(?=[A-Z])/);
-                    }
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\n+/);
-                    }
-                    paragraphs = paragraphs
-                        .filter(p => p.trim().length > 0)
-                        .map(p => p.trim().replace(/\n/g, ' '));
-                    discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
-                    const aiCaption = document.getElementById('comparisonAICaption');
-                    if (aiCaption) {
-                        aiCaption.style.display = 'block';
-                    }
-                } else {
-                    const discussionEl = document.getElementById('comparisonDiscussion');
-                    if (discussionEl) {
-                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
-                    }
+
+            // County Summary Discussion (Section 2) - Table 2 (Amount of Loans)
+            if (aiInsights.county_summary_amount_discussion && aiInsights.county_summary_amount_discussion.trim().length > 0) {
+                const formattedNarrative = formatParagraphs(aiInsights.county_summary_amount_discussion.trim());
+                const discussionEl2 = document.getElementById('countySummaryAmountNarrative');
+                if (discussionEl2) {
+                    discussionEl2.innerHTML = formattedNarrative;
+                }
+                const aiCaption = document.getElementById('countySummaryAICaption');
+                if (aiCaption) {
+                    aiCaption.style.display = 'block';
                 }
             } else {
-                const discussionEl = document.getElementById('comparisonDiscussion');
+                const discussionEl = document.getElementById('countySummaryAmountNarrative');
                 if (discussionEl) {
                     if (aiDisabled) {
                         discussionEl.innerHTML = getAIDisabledMessage();
                     } else {
-                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this table is not available.</p>';
+                    }
+                }
+            }
+
+            // Comparison Discussion (Section 3) - Table 1 (Number of Loans)
+            if (aiInsights.comparison_number_discussion && aiInsights.comparison_number_discussion.trim().length > 0) {
+                const formattedNarrative = formatParagraphs(aiInsights.comparison_number_discussion.trim());
+                const discussionEl1 = document.getElementById('comparisonNumberNarrative');
+                if (discussionEl1) {
+                    discussionEl1.innerHTML = formattedNarrative;
+                }
+            } else {
+                const discussionEl = document.getElementById('comparisonNumberNarrative');
+                if (discussionEl) {
+                    if (aiDisabled) {
+                        discussionEl.innerHTML = getAIDisabledMessage();
+                    } else {
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this table is not available.</p>';
+                    }
+                }
+            }
+
+            // Comparison Discussion (Section 3) - Table 2 (Amount of Loans)
+            if (aiInsights.comparison_amount_discussion && aiInsights.comparison_amount_discussion.trim().length > 0) {
+                const formattedNarrative = formatParagraphs(aiInsights.comparison_amount_discussion.trim());
+                const discussionEl2 = document.getElementById('comparisonAmountNarrative');
+                if (discussionEl2) {
+                    discussionEl2.innerHTML = formattedNarrative;
+                }
+                const aiCaption = document.getElementById('comparisonAICaption');
+                if (aiCaption) {
+                    aiCaption.style.display = 'block';
+                }
+            } else {
+                const discussionEl = document.getElementById('comparisonAmountNarrative');
+                if (discussionEl) {
+                    if (aiDisabled) {
+                        discussionEl.innerHTML = getAIDisabledMessage();
+                    } else {
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this table is not available.</p>';
                     }
                 }
             }
@@ -2355,18 +2445,7 @@
             if (aiInsights.hhi_trends_discussion) {
                 const discussionEl = document.getElementById('hhiTrendsDiscussion');
                 if (discussionEl) {
-                    let text = aiInsights.hhi_trends_discussion.trim();
-                    let paragraphs = text.split(/\n\n+/);
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\.\s+(?=[A-Z])/);
-                    }
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\n+/);
-                    }
-                    paragraphs = paragraphs
-                        .filter(p => p.trim().length > 0)
-                        .map(p => p.trim().replace(/\n/g, ' '));
-                    discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
+                    discussionEl.innerHTML = formatParagraphs(aiInsights.hhi_trends_discussion.trim());
                     discussionEl.style.display = 'block';
                     const aiCaption = document.getElementById('hhiTrendsAICaption');
                     if (aiCaption) {
@@ -2385,70 +2464,44 @@
                 }
             }
             
-            // Top Lenders Discussion (Section 4)
-            if (aiInsights.top_lenders_discussion && aiInsights.top_lenders_discussion.trim().length > 0) {
-                const discussionEl = document.getElementById('topLendersDiscussion');
-                if (discussionEl) {
-                    let text = aiInsights.top_lenders_discussion.trim();
-                    let paragraphs = text.split(/\n\n+/);
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\.\s+(?=[A-Z])/);
-                    }
-                    if (paragraphs.length === 1) {
-                        paragraphs = text.split(/\n+/);
-                    }
-                    paragraphs = paragraphs
-                        .filter(p => p.trim().length > 0)
-                        .map(p => p.trim().replace(/\n/g, ' '));
-                    discussionEl.innerHTML = paragraphs.map(p => `<p style="margin-bottom: 15px;">${p}${p.endsWith('.') ? '' : '.'}</p>`).join('');
-                    const aiCaption = document.getElementById('topLendersAICaption');
-                    if (aiCaption) {
-                        aiCaption.style.display = 'block';
-                    }
+            // Top Lenders Discussion (Section 4) - Table 1 (Number of Loans)
+            if (aiInsights.top_lenders_number_discussion && aiInsights.top_lenders_number_discussion.trim().length > 0) {
+                const formattedNarrative = formatParagraphs(aiInsights.top_lenders_number_discussion.trim());
+                const discussionEl1 = document.getElementById('topLendersNumberNarrative');
+                if (discussionEl1) {
+                    discussionEl1.innerHTML = formattedNarrative;
                 }
             } else {
-                const discussionEl = document.getElementById('topLendersDiscussion');
+                const discussionEl = document.getElementById('topLendersNumberNarrative');
                 if (discussionEl) {
                     if (aiDisabled) {
                         discussionEl.innerHTML = getAIDisabledMessage();
                     } else {
-                        discussionEl.innerHTML = '<p>AI-generated analysis for this section is not available.</p>';
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this table is not available.</p>';
                     }
                 }
             }
-            
-            // Top Lenders Introduction (2 sentences)
-            const topLendersIntro = document.getElementById('topLendersIntro');
-            if (topLendersIntro && metadata) {
-                topLendersIntro.textContent = `This table shows the top lenders by total number of loans in 2024, displayed in descending order by total loans. For each lender, the table shows loan counts and amounts by size category, LMI tract percentage, and other key metrics.`;
-            }
-        }
-        
-        // Tab switching function
-        function switchTopLendersTab(tab) {
-            const tabNumber = document.getElementById('tabNumber');
-            const tabAmount = document.getElementById('tabAmount');
-            const tableNumber = document.getElementById('tableNumber');
-            const tableAmount = document.getElementById('tableAmount');
-            
-            if (tab === 'number') {
-                tabNumber.classList.add('active');
-                tabNumber.style.background = 'var(--ncrc-primary-blue)';
-                tabNumber.style.color = 'white';
-                tabAmount.classList.remove('active');
-                tabAmount.style.background = '#e0e0e0';
-                tabAmount.style.color = '#333';
-                tableNumber.style.display = 'block';
-                tableAmount.style.display = 'none';
+
+            // Top Lenders Discussion (Section 4) - Table 2 (Amount of Loans)
+            if (aiInsights.top_lenders_amount_discussion && aiInsights.top_lenders_amount_discussion.trim().length > 0) {
+                const formattedNarrative = formatParagraphs(aiInsights.top_lenders_amount_discussion.trim());
+                const discussionEl2 = document.getElementById('topLendersAmountNarrative');
+                if (discussionEl2) {
+                    discussionEl2.innerHTML = formattedNarrative;
+                }
+                const aiCaption = document.getElementById('topLendersAICaption');
+                if (aiCaption) {
+                    aiCaption.style.display = 'block';
+                }
             } else {
-                tabAmount.classList.add('active');
-                tabAmount.style.background = 'var(--ncrc-primary-blue)';
-                tabAmount.style.color = 'white';
-                tabNumber.classList.remove('active');
-                tabNumber.style.background = '#e0e0e0';
-                tabNumber.style.color = '#333';
-                tableAmount.style.display = 'block';
-                tableNumber.style.display = 'none';
+                const discussionEl = document.getElementById('topLendersAmountNarrative');
+                if (discussionEl) {
+                    if (aiDisabled) {
+                        discussionEl.innerHTML = getAIDisabledMessage();
+                    } else {
+                        discussionEl.innerHTML = '<p>AI-generated analysis for this table is not available.</p>';
+                    }
+                }
             }
         }
         
@@ -2498,15 +2551,15 @@
                 return `
                     <tr data-index="${rowIndex}" ${isHidden}>
                         <td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; min-width: 450px; width: auto;">${row['Lender Name'] || ''}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatNumTotal(row['Num Total'])}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Num Under 100K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Num 100K 250K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Num 250K 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Numsb Under 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${lowIncomeStyle}">${formatPercent(row['Low Income %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Middle Income %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Upper Income %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatNumTotal(row['Num Total'])}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Num Under 100K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Num 100K 250K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Num 250K 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Numsb Under 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto; ${lowIncomeStyle}">${formatPercent(row['Low Income %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Middle Income %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Upper Income %'] || 0)}</td>
                     </tr>
                 `;
             }).join('');
@@ -2520,15 +2573,15 @@
                 return `
                     <tr data-index="${rowIndex}" ${isHidden}>
                         <td style="text-align: left; padding: 8px; font-weight: 600; border-bottom: 1px solid #e0e0e0; white-space: nowrap; min-width: 450px; width: auto;">${row['Lender Name'] || ''}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatDollarAmount(row['Amt Total'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amt Under 100K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amt 100K 250K %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amt 250K 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Amtsb Under 1M %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${lowIncomeStyle}">${formatPercent(row['Low Income Amt %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income Amt %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Middle Income Amt %'] || 0)}</td>
-                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: 100px; min-width: 100px; max-width: 100px;">${formatPercent(row['Upper Income Amt %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatDollarAmount(row['Amt Total'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Amt Under 100K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Amt 100K 250K %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Amt 250K 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Amtsb Under 1M %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto; ${lowIncomeStyle}">${formatPercent(row['Low Income Amt %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto; ${moderateIncomeStyle}">${formatPercent(row['Moderate Income Amt %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Middle Income Amt %'] || 0)}</td>
+                        <td style="text-align: center; padding: 12px 10px; border-bottom: 1px solid #e0e0e0; width: auto;">${formatPercent(row['Upper Income Amt %'] || 0)}</td>
                     </tr>
                 `;
             }).join('');
@@ -2575,21 +2628,18 @@
                 missingCategories.push('Upper Income');
             }
             
-            // Populate caption
-            const caption = document.getElementById('topLendersCaption');
-            if (caption && metadata) {
-                let captionText = '<strong>Source:</strong> Community Reinvestment Act (CRA) Small Business Lending data, compiled and maintained in NCRC\'s curated databases. ';
-                captionText += '<strong>Year:</strong> 2024. ';
-                captionText += '<strong>Methodology:</strong> Lenders are sorted in descending order by total number of loans. ';
-                captionText += `County: ${metadata.county_name || 'Unknown'}.`;
-                
-                // Add note about missing income categories
-                if (missingCategories.length > 0) {
-                    const categoryList = missingCategories.join(', ');
-                    captionText += ` <strong>Note:</strong> Columns marked with an asterisk * show 0% because ${metadata.county_name} has no census tracts classified as ${categoryList} based on Area Median Income (AMI).`;
-                }
-                
-                caption.innerHTML = captionText;
+            // Populate Table 1 introduction (Number of Loans - 2-3 sentences)
+            const introNumber = document.getElementById('topLendersNumberIntro');
+            if (introNumber && metadata) {
+                const lenderCount = data.length;
+                introNumber.textContent = `Table 1 ranks the top ${Math.min(lenderCount, 10)} small business lenders in ${metadata.county_name} by number of loans originated in 2024. The table shows each lender's total loan count and the percentage distribution across loan size categories. The Small Biz column indicates the share of loans going to businesses with under $1 million in revenue.`;
+            }
+
+            // Populate Table 2 introduction (Amount of Loans - 2-3 sentences)
+            const introAmount = document.getElementById('topLendersAmountIntro');
+            if (introAmount && metadata) {
+                const lenderCount = data.length;
+                introAmount.textContent = `Table 2 shows the same top lenders ranked by loan amounts (in thousands of dollars) for 2024. Comparing this table to Table 1 reveals differences in lending patterns - some lenders may originate many small loans while others focus on fewer, larger transactions.`;
             }
         }
         
@@ -2720,9 +2770,9 @@
                 return `<span class="change ${className}">${sign}${change.toFixed(1)}% since 2020</span>`;
             };
             
-            const container = document.getElementById('summaryCardsContainer');
+            const container = document.getElementById('summaryBoxesContainer');
             if (!container) {
-                console.error('summaryCardsContainer not found');
+                console.error('summaryBoxesContainer not found');
                 return;
             }
             
@@ -2801,56 +2851,34 @@
             const changeUnder1m = calculateChange(amtUnder1m2024, amtUnder1m2020);
             const changeLMI = calculateChange(amtLMI2024, amtLMI2020Calculated || amtLMI2020);
             
-            container.innerHTML = `
-                <div class="summary-card-vertical">
-                    <div class="label">Number of Loans</div>
-                    <div class="value">${formatNumber(totalLoans2024)}</div>
-                    ${formatChange(changeLoans)}
-                </div>
-                <div class="summary-card-vertical">
-                    <div class="label">Amount of Loans</div>
-                    <div class="value">${formatCurrency(totalAmount2024)}</div>
-                    ${formatChange(changeAmount)}
-                </div>
-                <div class="summary-card-vertical">
-                    <div class="label">Average Loan Amount</div>
-                    <div class="value">${formatCurrency(avgLoanAmount2024, true)}</div>
-                    ${formatChange(changeAvgLoan)}
-                </div>
-                <div class="summary-card-vertical">
-                    <div class="label">Amount to Businesses with Under $1 Million in Revenue</div>
-                    <div class="value">${formatCurrency(amtUnder1m2024)}</div>
-                    ${formatChange(changeUnder1m)}
-                </div>
-                <div class="summary-card-vertical">
-                    <div class="label">Amount to Businesses in Low and Moderate Income Neighborhoods</div>
-                    <div class="value">${formatCurrency(amtLMI2024)}</div>
-                    ${formatChange(changeLMI)}
-                </div>
-            `;
-            
-            // Update summary boxes
+            // Update individual summary box elements by ID
+            const summaryBoxLoans = document.getElementById('summaryBoxLoans');
+            if (summaryBoxLoans) {
+                summaryBoxLoans.innerHTML = `${formatNumber(totalLoans2024)}<br><span style="font-size: 0.85rem; color: ${changeLoans >= 0 ? '#28a745' : '#dc3545'};">${changeLoans >= 0 ? '+' : ''}${changeLoans.toFixed(1)}% since 2020</span>`;
+            }
+
             const summaryBoxAmount = document.getElementById('summaryBoxAmount');
             if (summaryBoxAmount) {
-                summaryBoxAmount.textContent = formatCurrency(summary.total_loan_amount || 0);
+                summaryBoxAmount.innerHTML = `${formatCurrency(totalAmount2024)}<br><span style="font-size: 0.85rem; color: ${changeAmount >= 0 ? '#28a745' : '#dc3545'};">${changeAmount >= 0 ? '+' : ''}${changeAmount.toFixed(1)}% since 2020</span>`;
             }
-            
+
+            const summaryBoxAvgLoan = document.getElementById('summaryBoxAvgLoan');
+            if (summaryBoxAvgLoan) {
+                summaryBoxAvgLoan.innerHTML = `${formatCurrency(avgLoanAmount2024, true)}<br><span style="font-size: 0.85rem; color: ${changeAvgLoan >= 0 ? '#28a745' : '#dc3545'};">${changeAvgLoan >= 0 ? '+' : ''}${changeAvgLoan.toFixed(1)}% since 2020</span>`;
+            }
+
             const summaryBoxUnder1M = document.getElementById('summaryBoxUnder1M');
             if (summaryBoxUnder1M) {
-                // Use amtsb_under_1m from summary, or calculate from percentage if available
-                const under1MAmount = summary.amtsb_under_1m || 
-                                     (summary.total_loan_amount && summary.pct_amount_sb_under_1m ? 
-                                      (summary.total_loan_amount * summary.pct_amount_sb_under_1m / 100) : 0);
-                summaryBoxUnder1M.textContent = formatCurrency(under1MAmount);
+                summaryBoxUnder1M.innerHTML = `${formatCurrency(amtUnder1m2024)}<br><span style="font-size: 0.85rem; color: ${changeUnder1m >= 0 ? '#28a745' : '#dc3545'};">${changeUnder1m >= 0 ? '+' : ''}${changeUnder1m.toFixed(1)}% since 2020</span>`;
             }
-            
+
             const summaryBoxLMI = document.getElementById('summaryBoxLMI');
             if (summaryBoxLMI) {
-                // Use lmi_tract_amount from summary, or calculate from percentage if available
-                const lmiAmount = summary.lmi_tract_amount || 
-                                 (summary.total_loan_amount && summary.pct_dollars_to_lmi_tracts ? 
-                                  (summary.total_loan_amount * summary.pct_dollars_to_lmi_tracts / 100) : 0);
-                summaryBoxLMI.textContent = formatCurrency(lmiAmount);
+                if (amtLMI2024 > 0) {
+                    summaryBoxLMI.innerHTML = `${formatCurrency(amtLMI2024)}<br><span style="font-size: 0.85rem; color: ${changeLMI >= 0 ? '#28a745' : '#dc3545'};">${changeLMI >= 0 ? '+' : ''}${changeLMI.toFixed(1)}% since 2020</span>`;
+                } else {
+                    summaryBoxLMI.innerHTML = '<span style="color: #666;">$0</span><br><span style="font-size: 0.85rem; color: #999;">No LMI tracts in county</span>';
+                }
             }
         }
         
@@ -2998,6 +3026,9 @@
         let hhiByYearChartInstance = null;
         
         function populateHHIByYearChart(hhiData, metadata) {
+            console.log('[DEBUG HHI] Input hhiData:', JSON.stringify(hhiData));
+            console.log('[DEBUG HHI] hhiData length:', hhiData ? hhiData.length : 0);
+
             if (!hhiData || hhiData.length === 0) {
                 console.warn('No HHI by year data available.');
                 const section = document.getElementById('section5');
@@ -3013,15 +3044,23 @@
             }
 
             // Filter to only whole years (remove 2020.5, etc.) and sort
+            // Use Math.floor to handle float years more reliably
             const wholeYearData = hhiData.filter(d => {
                 const year = parseFloat(d.year);
-                return Number.isInteger(year) && year >= 2000 && year <= 2100;
+                const isWholeYear = Math.abs(year - Math.round(year)) < 0.01;
+                console.log(`[DEBUG HHI] Year ${d.year} -> parsed ${year}, isWhole: ${isWholeYear}`);
+                return isWholeYear && year >= 2000 && year <= 2100;
             });
-            
+
+            console.log('[DEBUG HHI] wholeYearData after filter:', wholeYearData.length, 'items');
+
             const sortedData = wholeYearData.sort((a, b) => parseInt(a.year) - parseInt(b.year));
-            
+
             const years = sortedData.map(d => d.year.toString());
             const hhiValues = sortedData.map(d => parseFloat(d.hhi_value || 0));
+
+            console.log('[DEBUG HHI] Final years:', years);
+            console.log('[DEBUG HHI] Final hhiValues:', hhiValues);
 
             // Populate table
             const table = document.getElementById('hhiByYearTable');
@@ -3053,21 +3092,17 @@
                 const yMax = Math.max(maxHHI * 1.15, 3000); // At least 3,000 to show thresholds clearly
 
                 hhiByYearChartInstance = new Chart(ctx, {
-                    type: 'line',
+                    type: 'bar',
                     data: {
                         labels: years,
                         datasets: [{
                             label: 'HHI',
                             data: hhiValues,
-                            borderColor: '#034ea0', // NCRC Dark Blue
-                            backgroundColor: '#034ea0',
-                            fill: false,
-                            tension: 0.1,
-                            pointRadius: 5,
-                            pointHoverRadius: 8,
-                            pointBackgroundColor: '#034ea0',
-                            pointBorderColor: 'white',
-                            pointBorderWidth: 2
+                            backgroundColor: '#034ea0', // NCRC Dark Blue
+                            borderColor: '#023c7d',
+                            borderWidth: 1,
+                            barPercentage: 0.7,
+                            categoryPercentage: 0.8
                         }]
                     },
                     options: {
@@ -3363,7 +3398,48 @@
                 });
             });
         }
-        
+
+        // Generate intro paragraph dynamically based on metadata
+        function generateIntroParagraph(metadata, summaryData) {
+            const countyName = metadata.county_name || 'the selected county';
+            const stateName = metadata.state_name || '';
+            const yearRange = metadata.year_range || '2020-2024';
+            const years = metadata.years || [2020, 2021, 2022, 2023, 2024];
+            const startYear = Math.min(...years);
+            const endYear = Math.max(...years);
+
+            // First paragraph: Overview of the report
+            let intro1 = `This report analyzes small business lending in ${countyName}`;
+            if (stateName) intro1 += `, ${stateName}`;
+            intro1 += ` from ${startYear} to ${endYear}. `;
+            intro1 += `The data is collected under the Community Reinvestment Act (CRA), which requires financial institutions to report information about small business loans. `;
+            intro1 += `Small business loans are defined as loans with original amounts of $1 million or less for commercial and industrial purposes.`;
+
+            // Second paragraph: Data context and limitations
+            let intro2 = `The analysis examines lending patterns by loan size, revenue category of borrowers, and neighborhood income levels. `;
+            intro2 += `Low- and Moderate-Income (LMI) tracts are census tracts where the median family income is less than 80% of the area median income. `;
+            intro2 += `Loans to businesses with revenues under $1 million are considered lending to small businesses.`;
+
+            // Third paragraph: PPP and Section 1071 notes
+            let intro3 = `Note: Small business lending in 2020 and 2021 was significantly impacted by the Paycheck Protection Program (PPP), which may result in elevated loan counts and amounts during those years. `;
+            intro3 += `Additionally, Section 1071 of the Dodd-Frank Act has not yet been fully implemented, so this report does not include borrower demographic information such as race, ethnicity, or gender of business owners.`;
+
+            // Update the intro paragraphs
+            const p1 = document.getElementById('introParagraph1');
+            const p2 = document.getElementById('introParagraph2');
+            const p3 = document.getElementById('introParagraph3');
+
+            if (p1) p1.textContent = intro1;
+            if (p2) p2.textContent = intro2;
+            if (p3) p3.textContent = intro3;
+
+            // Also update the old intro county name for Section 1
+            const introCountyNameEl = document.getElementById('introCountyName');
+            if (introCountyNameEl) {
+                introCountyNameEl.textContent = countyName + (stateName ? `, ${stateName}` : '');
+            }
+        }
+
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             const urlParams = new URLSearchParams(window.location.search);

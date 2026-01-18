@@ -19,7 +19,7 @@ from justdata.main.auth import require_access, get_user_permissions, get_user_ty
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID
-from .data_utils import get_available_counties, get_available_states, find_exact_county_match
+from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
 from .version import __version__
 
 # Get shared templates directory
@@ -58,10 +58,14 @@ def configure_template_loader(state):
 def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
+    user_type = get_user_type()
+    # Staff and admin users can see the "clear cache" checkbox
+    is_staff = (user_type in ('staff', 'admin'))
     cache_buster = int(time.time())
     app_base_url = url_for('branchsight.index').rstrip('/')
-    response = make_response(render_template('analysis_template.html',
+    response = make_response(render_template('branchsight_analysis.html',
                                            permissions=user_permissions,
+                                           is_staff=is_staff,
                                            cache_buster=cache_buster,
                                            app_base_url=app_base_url,
                                            version=__version__))
@@ -449,9 +453,15 @@ def states():
 @branchsight_bp.route('/metro-areas')
 def metro_areas():
     """Return a list of all available metro areas (CBSAs)"""
-    # Metro areas functionality not yet implemented for BranchSight
-    # Return empty list for now
-    return jsonify([])
+    try:
+        metros_list = get_available_metro_areas()
+        print(f"Metro areas endpoint: Returning {len(metros_list)} metro areas")
+        return jsonify(metros_list)
+    except Exception as e:
+        print(f"Error in metro_areas endpoint: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify([])
 
 
 @branchsight_bp.route('/counties-by-state/<state_code>')

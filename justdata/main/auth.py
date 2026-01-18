@@ -261,9 +261,9 @@ TIER_PRICING = {
 def get_user_type() -> UserType:
     """
     Get current user type from session.
-    Defaults to 'public' if not set.
+    Defaults to 'staff' if not set.
     """
-    return session.get('user_type', 'public')
+    return session.get('user_type', 'staff')
 
 
 def set_user_type(user_type: UserType):

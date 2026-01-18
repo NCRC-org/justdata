@@ -33,7 +33,10 @@ NET_WORTH_DATA = {
     'darrell issa': {'min': 200_000_000, 'max': 300_000_000, 'year': 2024},
     'ro khanna': {'min': 25_000_000, 'max': 75_000_000, 'year': 2024},
     'josh gottheimer': {'min': 10_000_000, 'max': 25_000_000, 'year': 2024},
-    'trey hollingsworth': {'min': 50_000_000, 'max': 100_000_000, 'year': 2024},
+        'trey hollingsworth': {'min': 50_000_000, 'max': 100_000_000, 'year': 2024},
+    # Dave McCormick - former CEO of Bridgewater Associates (world's largest hedge fund)
+    'dave mccormick': {'min': 150_000_000, 'max': 300_000_000, 'year': 2024},
+    'david mccormick': {'min': 150_000_000, 'max': 300_000_000, 'year': 2024},
 
     # Very wealthy members ($10M-$50M)
     'french hill': {'min': 10_000_000, 'max': 25_000_000, 'year': 2024},

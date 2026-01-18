@@ -17,6 +17,7 @@ from pathlib import Path
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
+from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.core.config.app_config import LendSightConfig
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR
@@ -24,6 +25,75 @@ from .config import TEMPLATES_DIR, STATIC_DIR
 # Get shared templates directory
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
+
+# State abbreviations mapping
+STATE_ABBREVIATIONS = {
+    'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+    'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+    'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+    'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+    'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+    'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+    'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+    'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+    'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+    'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+    'District of Columbia': 'DC', 'Puerto Rico': 'PR', 'Guam': 'GU', 'Virgin Islands': 'VI'
+}
+
+
+def generate_export_filename(metadata: dict, extension: str = 'xlsx') -> str:
+    """
+    Generate a descriptive filename for LendSight exports.
+
+    Format: LendSight_MortgageMarket_{CountyName}_{StateAbbrev}_{YYYYMMDD}_{HHMMSS}.{ext}
+
+    Examples:
+    - LendSight_MortgageMarket_MontgomeryCounty_MD_20250118_143022.xlsx
+    - LendSight_MortgageMarket_MultipleCounties_MD_20250118_143022.pdf
+    """
+    import re
+
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    counties = metadata.get('counties', [])
+
+    if not counties:
+        return f'LendSight_MortgageMarket_Report_{timestamp}.{extension}'
+
+    # Parse first county to get state
+    first_county = counties[0] if isinstance(counties[0], str) else str(counties[0])
+
+    # Extract state from "County Name, State" format
+    state_abbrev = 'XX'
+    county_name_clean = first_county
+
+    if ',' in first_county:
+        parts = first_county.rsplit(',', 1)
+        county_name_raw = parts[0].strip()
+        state_name = parts[1].strip()
+
+        # Get state abbreviation
+        state_abbrev = STATE_ABBREVIATIONS.get(state_name, state_name[:2].upper())
+
+        # Clean county name: remove special chars, spaces, and "County" suffix
+        county_name_clean = re.sub(r'[^\w\s]', '', county_name_raw)  # Remove special chars
+        county_name_clean = county_name_clean.replace(' ', '')  # Remove spaces
+        # Keep "County" in the name for clarity
+    else:
+        county_name_clean = re.sub(r'[^\w\s]', '', first_county).replace(' ', '')
+
+    # Truncate if too long (max 40 chars for county name)
+    if len(county_name_clean) > 40:
+        county_name_clean = county_name_clean[:40]
+
+    # Handle single vs multiple counties
+    if len(counties) == 1:
+        filename = f'LendSight_MortgageMarket_{county_name_clean}_{state_abbrev}_{timestamp}.{extension}'
+    else:
+        filename = f'LendSight_MortgageMarket_MultipleCounties_{state_abbrev}_{timestamp}.{extension}'
+
+    return filename
+
 
 # Create blueprint
 lendsight_bp = Blueprint(
@@ -53,11 +123,15 @@ def configure_template_loader(state):
 def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
+    user_type = get_user_type()
+    # Staff and admin users can see the "clear cache" checkbox
+    is_staff = (user_type in ('staff', 'admin'))
     cache_buster = int(time.time())  # Timestamp for cache-busting
     # Set base URL for JavaScript API calls
     app_base_url = url_for('lendsight.index').rstrip('/')
-    response = make_response(render_template('lendsight_analysis.html', 
-                                           permissions=user_permissions, 
+    response = make_response(render_template('lendsight_analysis.html',
+                                           permissions=user_permissions,
+                                           is_staff=is_staff,
                                            cache_buster=cache_buster,
                                            app_base_url=app_base_url))
     # Add cache-busting headers
@@ -121,7 +195,10 @@ def analyze():
         
         # Get user type for logging
         user_type = get_user_type()
-        
+
+        # Check for force_refresh parameter to bypass cache
+        force_refresh = data.get('force_refresh', False)
+
         # Parse counties - handle both new format (objects with FIPS) and old format (strings)
         counties_list = []
         counties_with_fips = []
@@ -166,9 +243,13 @@ def analyze():
             'loan_purpose': loan_purpose
         }
         
-        # Check cache first
-        cached_result = get_cached_result('lendsight', cache_params, user_type)
-        
+        # Check cache first (unless force_refresh is True)
+        cached_result = None
+        if not force_refresh:
+            cached_result = get_cached_result('lendsight', cache_params, user_type)
+        else:
+            print(f"[INFO] Force refresh requested - bypassing cache")
+
         if cached_result:
             # Cache hit - use cached result
             job_id = cached_result['job_id']
@@ -524,28 +605,19 @@ def download():
             from .mortgage_report_builder import save_mortgage_excel_report
             import tempfile
             import os
-            
+            import re
+
             # Create temporary file
             tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
             tmp_path = tmp_file.name
             tmp_file.close()
-            
+
             # Generate Excel report
             save_mortgage_excel_report(report_data, tmp_path, metadata=metadata)
-            
-            # Generate filename
-            from datetime import datetime
-            counties = metadata.get('counties', [])
-            if counties and len(counties) > 0:
-                first_county = counties[0]
-                if ',' in first_county:
-                    county_name, state_name = [part.strip() for part in first_county.rsplit(',', 1)]
-                    filename = f'NCRC_LendSight_{county_name}_{state_name}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-                else:
-                    filename = f'NCRC_LendSight_Report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-            else:
-                filename = f'NCRC_LendSight_Report_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
-            
+
+            # Generate descriptive filename
+            filename = generate_export_filename(metadata, 'xlsx')
+
             return send_file(
                 tmp_path,
                 as_attachment=True,
@@ -608,39 +680,15 @@ def counties():
 def states():
     """Return a list of available states for lending analysis"""
     try:
-        from justdata.shared.utils.bigquery_client import get_bigquery_client
-        
-        client = get_bigquery_client(LendSightConfig.PROJECT_ID)
-        query = """
-        SELECT DISTINCT 
-            s.state_abbrv as code,
-            s.state as name
-        FROM geo.states s
-        INNER JOIN geo.cbsa_to_county c ON s.state = c.state
-        WHERE s.state_abbrv IS NOT NULL AND s.state IS NOT NULL
-        ORDER BY s.state
-        """
-        query_job = client.query(query)
-        results = query_job.result()
-        states = [{"code": row.code, "name": row.name} for row in results if row.code and row.name]
-        
-        # Add debug logging
-        print(f"[DEBUG] /lendsight/states endpoint: Returning {len(states)} states")
-        if len(states) > 0:
-            print(f"[DEBUG] First state example: {states[0]}")
-        else:
-            print("[WARNING] /lendsight/states endpoint: No states returned from query!")
-        
-        return jsonify(states)
+        from .data_utils import get_available_states
+        states_list = get_available_states()
+        print(f"[DEBUG] /lendsight/states endpoint: Returning {len(states_list)} states")
+        return jsonify(states_list)
     except Exception as e:
         import traceback
         print(f"[ERROR] /lendsight/states endpoint failed: {e}")
         traceback.print_exc()
-        # Fallback to shared states
-        from justdata.shared.utils.geo_data import get_us_states
-        fallback_states = get_us_states()
-        print(f"[DEBUG] Using fallback states: {len(fallback_states)} states")
-        return jsonify(fallback_states)
+        return jsonify([])
 
 
 @lendsight_bp.route('/metro-areas')
@@ -652,48 +700,95 @@ def metro_areas():
 
 @lendsight_bp.route('/counties-by-state/<state_code>')
 def counties_by_state(state_code):
-    """Return a list of counties for a specific state"""
+    """Return a list of counties for a specific state.
+
+    Handles both FIPS codes (e.g., '02' for Alaska) and state names.
+    """
     try:
+        from urllib.parse import unquote
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        
+
+        # URL decode the state code
+        state_code = unquote(str(state_code)).strip()
+        print(f"[DEBUG] lendsight/counties-by-state called with state_code: '{state_code}'")
+
         client = get_bigquery_client(LendSightConfig.PROJECT_ID)
-        
-        # The frontend sends state_abbrv (e.g., "DC"), but geo.cbsa_to_county.state 
-        # contains FULL STATE NAMES (e.g., "District of Columbia")
-        # So we need to look up the state name from geo.states first
-        state_name_query = f"""
-        SELECT state
-        FROM `{LendSightConfig.PROJECT_ID}.geo.states`
-        WHERE state_abbrv = '{state_code.upper().strip()}'
-        LIMIT 1
-        """
-        
-        state_job = client.query(state_name_query)
-        state_result = list(state_job.result())
-        
-        if not state_result:
-            print(f"[WARNING] No state found for abbreviation: {state_code}")
-            return jsonify([])
-        
-        state_name = state_result[0].state
-        
-        # Now query counties using the FULL STATE NAME (not abbreviation)
-        query = f"""
-        SELECT DISTINCT county_state
-        FROM `{LendSightConfig.PROJECT_ID}.geo.cbsa_to_county` 
-        WHERE state = '{state_name}'
-        ORDER BY county_state
-        """
-        
-        print(f"[DEBUG] /lendsight/counties-by-state: State abbrv '{state_code}' -> State name '{state_name}'")
+
+        # Check if state_code is a numeric FIPS code (2 digits) or a state name
+        is_numeric_code = state_code.isdigit() and len(state_code) <= 2
+
+        if is_numeric_code:
+            # Use geoid5 to match by state FIPS code (first 2 digits of geoid5)
+            state_code_padded = state_code.zfill(2)
+            print(f"[DEBUG] Using state FIPS code: {state_code_padded}")
+            query = f"""
+            SELECT DISTINCT
+                county_state,
+                geoid5,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
+            FROM `{LendSightConfig.PROJECT_ID}.geo.cbsa_to_county`
+            WHERE geoid5 IS NOT NULL
+                AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
+                AND county_state IS NOT NULL
+                AND TRIM(county_state) != ''
+            ORDER BY county_state
+            """
+        else:
+            # Use state name to match
+            print(f"[DEBUG] Using state name: {state_code}")
+            escaped_state_code = escape_sql_string(state_code)
+            query = f"""
+            SELECT DISTINCT
+                county_state,
+                geoid5,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
+            FROM `{LendSightConfig.PROJECT_ID}.geo.cbsa_to_county`
+            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state_code}')
+                AND county_state IS NOT NULL
+                AND TRIM(county_state) != ''
+            ORDER BY county_state
+            """
+
         query_job = client.query(query)
-        results = query_job.result()
-        counties = [row.county_state for row in results]
-        
-        print(f"[DEBUG] /lendsight/counties-by-state: Returning {len(counties)} counties for state {state_name}")
-        if len(counties) > 0:
-            print(f"[DEBUG] First county example: {counties[0]}")
-        
+        results = list(query_job.result())
+
+        # Return counties with proper structure
+        counties = []
+        seen_geoids = set()
+
+        for row in results:
+            geoid5 = str(row.geoid5).zfill(5) if row.geoid5 else None
+
+            if geoid5 and geoid5 in seen_geoids:
+                continue
+            if geoid5:
+                seen_geoids.add(geoid5)
+
+            state_fips = row.state_fips if hasattr(row, 'state_fips') else (geoid5[:2] if geoid5 and len(geoid5) >= 2 else None)
+            county_fips = row.county_fips if hasattr(row, 'county_fips') else (geoid5[2:] if geoid5 and len(geoid5) >= 5 else None)
+
+            county_name = ''
+            state_name = ''
+            if row.county_state and ',' in row.county_state:
+                parts = row.county_state.split(',', 1)
+                county_name = parts[0].strip()
+                state_name = parts[1].strip() if len(parts) > 1 else ''
+
+            counties.append({
+                'geoid5': geoid5,
+                'name': row.county_state,
+                'county_name': county_name,
+                'state_name': state_name,
+                'state_fips': state_fips,
+                'county_fips': county_fips
+            })
+
+        print(f"[DEBUG] lendsight/counties-by-state: Found {len(counties)} counties for state_code: {state_code}")
+        if counties:
+            print(f"[DEBUG] Sample counties: {counties[:3]}")
+
         return jsonify(counties)
     except Exception as e:
         import traceback

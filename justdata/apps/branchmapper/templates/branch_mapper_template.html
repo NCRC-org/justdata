@@ -25,217 +25,134 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
     <style>
-        /* Branch Mapper specific styles */
+        /* Branch Mapper specific styles - Mobile-first responsive design */
+
+        /* Main container - simple flexbox layout */
+        .container {
+            display: flex !important;
+            flex-direction: column !important;
+            max-width: 1400px !important;
+            margin: 0 auto !important;
+            padding: 15px !important;
+            gap: 15px !important;
+        }
+
+        /* Controls sidebar - appears above map on all screen sizes */
+        .controls-sidebar {
+            width: 100% !important;
+            max-width: 100% !important;
+            order: 1;
+        }
+
+        /* Content wrapper with map */
+        .content-wrapper {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0;
+            overflow: hidden;
+            order: 2;
+        }
+
         .mapper-container {
             width: 100%;
             max-width: 100%;
             margin: 0 auto;
-            padding: 12px;
+            padding: 0;
             box-sizing: border-box;
         }
-        
-        .content-wrapper {
-            flex: 1 1 auto;
-            min-width: 0;
-            max-width: 100%;
-            overflow: hidden;
-        }
-        
+
         .map-container {
             width: 100%;
             max-width: 100%;
             box-sizing: border-box;
         }
-        
+
         #branchMap {
             width: 100%;
-            height: 560px;
+            height: 500px;
             box-sizing: border-box;
+            border-radius: 8px;
         }
-        
-        /* Force CSS Grid layout with LEFT controls sidebar - override ALL other styles including shared CSS */
-        body .container,
-        html body .container,
-        .container {
-            display: grid !important;
-            grid-template-columns: 280px 1fr !important;
-            grid-template-rows: auto !important;
-            gap: 20px !important;
-            align-items: start !important;
-            max-width: 100% !important;
-            width: 100% !important;
-            /* Completely disable flexbox */
-            flex-direction: unset !important;
-            flex-wrap: unset !important;
-            flex: unset !important;
-        }
-        
-        /* Make sure container is NOT using flexbox at any breakpoint */
-        @media all {
-            body .container,
-            html body .container,
+
+        /* Desktop layout - side by side */
+        @media (min-width: 992px) {
             .container {
-                display: grid !important;
+                flex-direction: row !important;
+                align-items: flex-start !important;
+            }
+
+            .controls-sidebar {
+                width: 300px !important;
+                min-width: 300px !important;
+                max-width: 300px !important;
+                position: sticky !important;
+                top: 20px !important;
+                order: 1;
+                max-height: calc(100vh - 40px);
+                overflow-y: auto;
+            }
+
+            .content-wrapper {
+                flex: 1 !important;
+                order: 2;
+            }
+
+            #branchMap {
+                height: 600px;
             }
         }
-        
-        /* Left controls sidebar in first column */
-        body .container > .controls-sidebar,
-        html body .container > .controls-sidebar,
-        body .container .controls-sidebar,
-        .container > .controls-sidebar,
-        .container .controls-sidebar {
-            grid-column: 1 !important;
-            grid-row: 1 !important;
-            width: 280px !important;
-            min-width: 280px !important;
-            max-width: 280px !important;
-            position: sticky !important;
-            top: 20px !important;
-            align-self: start !important;
-            display: block !important;
-            flex-shrink: 0 !important;
-            max-height: calc(100vh - 40px);
-            overflow-y: auto;
+
+        /* Tablet layout */
+        @media (min-width: 768px) and (max-width: 991px) {
+            .controls-sidebar {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 15px;
+            }
+
+            .controls-sidebar .mapper-controls {
+                flex: 1;
+                min-width: 280px;
+            }
+
+            #branchMap {
+                height: 450px;
+            }
         }
-        
-        /* Content wrapper in second column (middle) */
-        body .container > .content-wrapper,
-        html body .container > .content-wrapper,
-        .container > .content-wrapper {
-            grid-column: 2 !important;
-            grid-row: 1 !important;
-            min-width: 0 !important;
-            overflow: hidden;
-            flex: unset !important;
+
+        /* Mobile layout */
+        @media (max-width: 767px) {
+            .container {
+                padding: 10px !important;
+                gap: 10px !important;
+            }
+
+            #branchMap {
+                height: 350px;
+            }
+
+            .mapper-controls {
+                padding: 10px !important;
+            }
+
+            .control-group label {
+                font-size: 0.8rem;
+            }
+
+            .control-group select {
+                font-size: 0.9rem;
+                padding: 8px;
+            }
+
+            .map-actions button {
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
         }
-        
-        /* Right info sidebar - hidden */
-        body .container > .sidebar,
-        html body .container > .sidebar,
-        body .container .sidebar,
-        .container > .sidebar,
-        .container .sidebar {
+
+        /* Hide any right sidebar completely */
+        .sidebar:not(.controls-sidebar) {
             display: none !important;
-        }
-        
-        /* Override ALL media queries that might be affecting layout */
-        @media (max-width: 2000px) {
-            body .container,
-            html body .container,
-            .container {
-                display: grid !important;
-                grid-template-columns: 280px 1fr !important;
-                flex-direction: unset !important;
-            }
-            body .container > .controls-sidebar,
-            html body .container > .controls-sidebar,
-            body .container .controls-sidebar,
-            .container > .controls-sidebar,
-            .container .controls-sidebar {
-                grid-column: 1 !important;
-                grid-row: 1 !important;
-                width: 280px !important;
-                position: sticky !important;
-            }
-            body .container > .content-wrapper,
-            html body .container > .content-wrapper,
-            .container > .content-wrapper {
-                grid-column: 2 !important;
-            }
-            body .container > .sidebar,
-            html body .container > .sidebar,
-            body .container .sidebar,
-            .container > .sidebar,
-            .container .sidebar {
-                grid-column: 3 !important;
-                grid-row: 1 !important;
-                width: 320px !important;
-                position: sticky !important;
-            }
-        }
-        
-        @media (max-width: 1024px) {
-            body .container,
-            html body .container,
-            .container {
-                display: grid !important;
-                grid-template-columns: 280px 1fr 320px !important;
-                flex-direction: unset !important;
-            }
-            body .container > .controls-sidebar,
-            html body .container > .controls-sidebar,
-            body .container .controls-sidebar,
-            .container > .controls-sidebar,
-            .container .controls-sidebar {
-                grid-column: 1 !important;
-                grid-row: 1 !important;
-            }
-            body .container > .content-wrapper,
-            html body .container > .content-wrapper,
-            .container > .content-wrapper {
-                grid-column: 2 !important;
-            }
-            body .container > .sidebar,
-            html body .container > .sidebar,
-            body .container .sidebar,
-            .container > .sidebar,
-            .container .sidebar {
-                grid-column: 3 !important;
-                grid-row: 1 !important;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            body .container,
-            html body .container,
-            .container {
-                display: grid !important;
-                grid-template-columns: 280px 1fr !important;
-                flex-direction: unset !important;
-            }
-            body .container > .controls-sidebar,
-            html body .container > .controls-sidebar,
-            body .container .controls-sidebar,
-            .container > .controls-sidebar,
-            .container .controls-sidebar {
-                grid-column: 1 !important;
-                grid-row: 1 !important;
-            }
-            body .container > .content-wrapper,
-            html body .container > .content-wrapper,
-            .container > .content-wrapper {
-                grid-column: 2 !important;
-            }
-            body .container > .sidebar,
-            html body .container > .sidebar,
-            body .container .sidebar,
-            .container > .sidebar,
-            .container .sidebar {
-                grid-column: 3 !important;
-                grid-row: 1 !important;
-            }
-        }
-        
-        /* Feature cards - only show icon and title */
-        .sidebar .feature-card p {
-            display: none;
-        }
-        
-        .sidebar .feature-card {
-            text-align: center;
-            padding: 15px 10px;
-        }
-        
-        .sidebar .feature-card i {
-            font-size: 2rem;
-            margin-bottom: 8px;
-            color: var(--ncrc-primary-blue);
-        }
-        
-        .sidebar .feature-card h4 {
-            font-size: 0.9rem;
-            margin: 0;
         }
         
         .mapper-controls {
@@ -688,6 +605,9 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
+        // Base URL for API calls (handles blueprint prefix)
+        const APP_BASE_URL = '{{ app_base_url|default("/branchmapper") }}';
+
         let branchMap = null;
         let currentMarkers = [];
         let allBranches = [];
@@ -849,7 +769,7 @@
                 updateInfoPanel('Loading census tract income data...');
                 console.log('Loading income layer for county:', county);
                 
-                const url = `/api/census-tracts/${encodeURIComponent(county)}?income=true&minority=false`;
+                const url = `${APP_BASE_URL}/api/census-tracts/${encodeURIComponent(county)}?income=true&minority=false`;
                 console.log('Fetching from URL:', url);
                 
                 const response = await fetch(url);
@@ -993,7 +913,7 @@
             try {
                 updateInfoPanel('Loading census tract minority population data...');
                 
-                const response = await fetch(`/api/census-tracts/${encodeURIComponent(county)}?income=false&minority=true`);
+                const response = await fetch(`${APP_BASE_URL}/api/census-tracts/${encodeURIComponent(county)}?income=false&minority=true`);
                 
                 if (!response.ok) {
                     let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -1283,7 +1203,7 @@
             // Try to fetch from API if available and on server
             if (isServer) {
                 try {
-                    const response = await fetch('/states');
+                    const response = await fetch(`${APP_BASE_URL}/states`);
                     if (response.ok) {
                         const states = await response.json();
                         states.forEach(state => {
@@ -1372,7 +1292,7 @@
             if (isServer) {
                 try {
                     // Use the state-specific endpoint which queries BigQuery directly
-                    const response = await fetch(`/counties-by-state/${stateCode}`);
+                    const response = await fetch(`${APP_BASE_URL}/counties-by-state/${stateCode}`);
                     console.log('Response status:', response.status, response.statusText);
                     
                     if (response.ok) {
@@ -1424,7 +1344,7 @@
                         // Try the general counties endpoint as fallback
                         console.log('Trying general counties endpoint as fallback...');
                         try {
-                            const fallbackResponse = await fetch('/counties');
+                            const fallbackResponse = await fetch(`${APP_BASE_URL}/counties`);
                             if (fallbackResponse.ok) {
                                 const allCounties = await fallbackResponse.json();
                                 console.log('Total counties from API:', allCounties.length);
@@ -1524,7 +1444,7 @@
             // Load from API
             try {
                 updateInfoPanel('Loading data from API...');
-                const response = await fetch(`/api/branches?county=${encodeURIComponent(county)}&year=${year}`);
+                const response = await fetch(`${APP_BASE_URL}/api/branches?county=${encodeURIComponent(county)}&year=${year}`);
                 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
@@ -2376,6 +2296,35 @@
             updateInfoPanel('Map initialized. Select state and county, then click "Load Map" to view 2025 branch data.');
         });
     </script>
+
+    <!-- Footer (matching LendSight style) -->
+    <footer class="footer" style="background: var(--ncrc-dark-blue, #1a8fc9); padding: 2rem 0 0.5rem 0; margin-top: 2rem; width: 100%; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
+        <div class="footer-container" style="max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: flex-start; align-items: flex-start; flex-wrap: wrap; gap: 3rem;">
+            <div class="footer-col" style="flex: 1 1 0; min-width: 200px; max-width: 300px; margin-bottom: 1rem;">
+                <h4 style="color: #ffc23a; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">BranchMapper</h4>
+                <p style="color: #fff; margin: 0; line-height: 1.6;">Interactive bank branch mapping with demographic overlays</p>
+            </div>
+            <div class="footer-col" style="flex: 1 1 0; min-width: 200px; max-width: 300px; margin-bottom: 1rem;">
+                <h4 style="color: #ffc23a; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Developed by</h4>
+                <p style="color: #fff; margin: 0; line-height: 1.6;">NCRC - National Community Reinvestment Coalition<br>Jad Edlebi &amp; Jason Richardson</p>
+            </div>
+            <div class="footer-col" style="flex: 1 1 0; min-width: 200px; max-width: 300px; margin-bottom: 1rem;">
+                <h4 style="color: #ffc23a; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Links</h4>
+                <p style="color: #fff; margin: 0; line-height: 1.6;">
+                    <a href="/" style="color: #fff; text-decoration: none;"><i class="fas fa-home"></i> JustData Home</a><br>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank" style="color: #fff; text-decoration: none;"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank" style="color: #fff; text-decoration: none;"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo" style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; min-width: auto; max-width: none; margin-left: auto;">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" style="height: 90px; width: auto; border-radius: 8px;" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom" style="text-align: center; color: #ccc; font-size: 0.95rem; margin-top: 1.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08);">
+            &copy; 2025 JustData - BranchMapper. Powered by FDIC Summary of Deposits data.<br>
+            <span class="version-text" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem; display: inline-block;">Version {{ version|default('1.0.0') }}</span>
+        </div>
+    </footer>
 </body>
 </html>
 

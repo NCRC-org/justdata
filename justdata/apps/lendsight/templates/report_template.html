@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LendSight - JustData</title>
     <meta name="description" content="HMDA Mortgage Lending Analysis Report - Comprehensive mortgage market intelligence">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
     <!-- Skip to main content link for screen readers -->
     <style>
         .skip-link {
@@ -728,24 +728,21 @@
 </head>
 <body style="background: var(--ncrc-gray-light);">
     <div class="report-container">
-        <!-- New Analysis Button at Top -->
-        <div style="text-align: left; margin-bottom: 20px; padding: 10px 0;">
+        <!-- Header Actions Row - Back button on left, Export/Print on right -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
             <a href="{{ app_base_url|default('/lendsight') }}" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
                 <i class="fas fa-arrow-left"></i> Back to New Analysis
             </a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
+                    <i class="fas fa-file-excel"></i> Export Data (Excel)
+                </a>
+                <button class="action-btn" id="printReportBtn" onclick="window.print()" style="cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
+            </div>
         </div>
-        
-        <!-- Download Actions -->
-        <div class="report-actions" style="text-align: right; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-            <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
-                <i class="fas fa-file-excel"></i> Export Data (Excel)
-            </a>
-            <button class="action-btn" id="printReportBtn" onclick="window.print()" style="margin-left: 10px; cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
-                <i class="fas fa-print"></i> Print Report
-            </button>
-        </div>
-        
-        
+
         <!-- Loading State -->
         <div id="loadingState" class="loading">
             <i class="fas fa-spinner fa-spin fa-2x"></i>
@@ -958,6 +955,14 @@
                 <!-- Unified Source Caption -->
                 <p class="table-caption" id="section2SourceCaption" style="margin-top: 30px; max-width: 100%;">
                     <strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Census tract income classifications from HUD. <strong>Methodology:</strong> Borrower income is compared to FFIEC median family income for the MSA/MD. Census tract income is compared to area median family income. Minority quartiles are calculated from the distribution of minority population percentages across all census tracts in the CBSA. <strong>Note:</strong> The Change column indicates the change over time since 2020 through 2024. The Population Share (%) column shows the percentage of the population (for borrower income) or census tracts (for tract income and minority) in each category. <span id="section2AsteriskNote" style="display: none;"></span>
+                </p>
+
+                <!-- Section 2 Combined AI Discussion -->
+                <div class="table-narrative" id="incomeNeighborhoodDiscussion" style="margin-top: 20px;">
+                    <!-- AI narrative for Income and Neighborhood Indicators will be populated by JavaScript -->
+                </div>
+                <p id="incomeNeighborhoodAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
                 </p>
             </div>
             
@@ -2020,7 +2025,7 @@
                 }
             }
             
-            // Populate income borrowers discussion (Table 1)
+            // Populate income borrowers discussion (Table 1) - only if specific discussion exists
             if (aiInsights.income_borrowers_discussion) {
                 const discussionEl = document.getElementById('incomeBorrowersDiscussion');
                 if (discussionEl) {
@@ -2031,26 +2036,10 @@
                         aiCaption.style.display = 'block';
                     }
                 }
-            } else if (aiInsights.income_neighborhood_discussion) {
-                // Fallback to combined discussion if separate one doesn't exist
-                const discussionEl = document.getElementById('incomeBorrowersDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.income_neighborhood_discussion);
-                    discussionEl.style.display = 'block';
-                    const aiCaption = document.getElementById('incomeBorrowersAICaption');
-                    if (aiCaption) {
-                        aiCaption.style.display = 'block';
-                    }
-                }
-            } else if (aiDisabled) {
-                const discussionEl = document.getElementById('incomeBorrowersDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = getAIDisabledMessage();
-                    discussionEl.style.display = 'block';
-                }
             }
-            
-            // Populate income tracts discussion (Table 2)
+            // No fallback - combined discussion appears only in incomeNeighborhoodDiscussion section
+
+            // Populate income tracts discussion (Table 2) - only if specific discussion exists
             if (aiInsights.income_tracts_discussion) {
                 const discussionEl = document.getElementById('incomeTractsDiscussion');
                 if (discussionEl) {
@@ -2061,26 +2050,10 @@
                         aiCaption.style.display = 'block';
                     }
                 }
-            } else if (aiInsights.income_neighborhood_discussion) {
-                // Fallback to combined discussion if separate one doesn't exist
-                const discussionEl = document.getElementById('incomeTractsDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.income_neighborhood_discussion);
-                    discussionEl.style.display = 'block';
-                    const aiCaption = document.getElementById('incomeTractsAICaption');
-                    if (aiCaption) {
-                        aiCaption.style.display = 'block';
-                    }
-                }
-            } else if (aiDisabled) {
-                const discussionEl = document.getElementById('incomeTractsDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = getAIDisabledMessage();
-                    discussionEl.style.display = 'block';
-                }
             }
-            
-            // Populate minority tracts discussion (Table 3)
+            // No fallback - combined discussion appears only in incomeNeighborhoodDiscussion section
+
+            // Populate minority tracts discussion (Table 3) - only if specific discussion exists
             if (aiInsights.minority_tracts_discussion) {
                 const discussionEl = document.getElementById('minorityTractsDiscussion');
                 if (discussionEl) {
@@ -2091,27 +2064,27 @@
                         aiCaption.style.display = 'block';
                     }
                 }
-            } else if (aiInsights.income_neighborhood_discussion) {
-                // Fallback to combined discussion if separate one doesn't exist
-                const discussionEl = document.getElementById('minorityTractsDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.income_neighborhood_discussion);
-                    discussionEl.style.display = 'block';
-                    const aiCaption = document.getElementById('minorityTractsAICaption');
-                    if (aiCaption) {
-                        aiCaption.style.display = 'block';
-                    }
-                }
-            } else if (aiDisabled) {
-                const discussionEl = document.getElementById('minorityTractsDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = getAIDisabledMessage();
-                    discussionEl.style.display = 'block';
-                }
             }
-            
-            // Legacy: Populate income and neighborhood indicators discussion (for backward compatibility)
-            if (aiInsights.income_neighborhood_discussion) {
+            // No fallback - combined discussion appears only in incomeNeighborhoodDiscussion section
+
+            // Combined income and neighborhood indicators discussion (Section 2)
+            // Only show combined discussion if individual table narratives are NOT available
+            const hasIndividualSection2Narratives = aiInsights.income_borrowers_discussion ||
+                                                     aiInsights.income_tracts_discussion ||
+                                                     aiInsights.minority_tracts_discussion;
+
+            if (hasIndividualSection2Narratives) {
+                // Hide the combined narrative container since individual narratives are shown
+                const combinedDiscussionEl = document.getElementById('incomeNeighborhoodDiscussion');
+                if (combinedDiscussionEl) {
+                    combinedDiscussionEl.style.display = 'none';
+                }
+                const combinedAICaption = document.getElementById('incomeNeighborhoodAICaption');
+                if (combinedAICaption) {
+                    combinedAICaption.style.display = 'none';
+                }
+            } else if (aiInsights.income_neighborhood_discussion) {
+                // Fall back to combined discussion if no individual narratives
                 const discussionEl = document.getElementById('incomeNeighborhoodDiscussion');
                 if (discussionEl) {
                     discussionEl.innerHTML = formatMarkdownContent(aiInsights.income_neighborhood_discussion);

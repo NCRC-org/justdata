@@ -25,6 +25,49 @@ RESULTS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_results'
 SECTIONS_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_result_sections'
 
 
+def sanitize_nan_values(data: Any, precision: int = 4) -> Any:
+    """
+    Recursively sanitize NaN, Infinity, and other non-JSON-serializable values in data.
+    Converts float NaN/Inf to None for proper JSON serialization.
+    Also rounds floats to specified precision to avoid BigQuery JSON parsing issues
+    with numbers that can't round-trip through string representation.
+
+    Args:
+        data: The data to sanitize
+        precision: Number of decimal places to round floats to (default: 4)
+                   Using 4 instead of 6 to avoid BigQuery PARSE_JSON issues with
+                   numbers like 37.181006 that can't round-trip through string representation
+    """
+    import math
+
+    if isinstance(data, dict):
+        return {k: sanitize_nan_values(v, precision) for k, v in data.items()}
+    elif isinstance(data, list):
+        return [sanitize_nan_values(item, precision) for item in data]
+    elif isinstance(data, float):
+        if math.isnan(data) or math.isinf(data):
+            return None
+        # Round to avoid BigQuery JSON parsing issues with long decimals
+        return round(data, precision)
+    elif data is None:
+        return None
+    else:
+        # Check for numpy types if numpy is imported
+        try:
+            import numpy as np
+            if isinstance(data, (np.floating, np.integer)):
+                if np.isnan(data) or np.isinf(data):
+                    return None
+                if isinstance(data, np.floating):
+                    return round(float(data), precision)
+                return int(data)
+            elif isinstance(data, np.ndarray):
+                return sanitize_nan_values(data.tolist(), precision)
+        except (ImportError, TypeError):
+            pass
+        return data
+
+
 def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
     """
     Normalize parameters to ensure consistent cache keys.
@@ -237,16 +280,18 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
                 display_order += 1
     
     elif app_name.lower() == 'bizsight':
-        # Data tables
+        # Data tables - sanitize NaN values before storing
         for table_name in ['county_summary_table', 'comparison_table', 'top_lenders_table']:
             if table_name in result_data:
                 table_data = result_data[table_name]
                 if isinstance(table_data, list):
+                    # Sanitize NaN values to prevent JSON serialization errors
+                    sanitized_data = sanitize_nan_values(table_data)
                     sections.append({
                         'section_name': table_name,
                         'section_type': 'data_table',
                         'section_category': 'tables',
-                        'section_data': table_data,
+                        'section_data': sanitized_data,
                         'section_metadata': {
                             'row_count': len(table_data),
                             'columns': list(table_data[0].keys()) if table_data else []
@@ -254,42 +299,66 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
                         'display_order': display_order
                     })
                     display_order += 1
-        
+
         # HHI data
         if 'hhi' in result_data and result_data['hhi']:
             sections.append({
                 'section_name': 'hhi',
                 'section_type': 'data_table',
                 'section_category': 'metrics',
-                'section_data': result_data['hhi'],
+                'section_data': sanitize_nan_values(result_data['hhi']),
                 'section_metadata': {'data_type': 'hhi_metric'},
                 'display_order': display_order
             })
             display_order += 1
-        
+
         if 'hhi_by_year' in result_data:
             sections.append({
                 'section_name': 'hhi_by_year',
                 'section_type': 'data_table',
                 'section_category': 'metrics',
-                'section_data': result_data['hhi_by_year'],
+                'section_data': sanitize_nan_values(result_data['hhi_by_year']),
                 'section_metadata': {'row_count': len(result_data['hhi_by_year'])},
                 'display_order': display_order
             })
             display_order += 1
-        
+
         # Geographic data
         if 'tract_data_for_map' in result_data:
             sections.append({
                 'section_name': 'tract_data_for_map',
                 'section_type': 'data_table',
                 'section_category': 'geographic',
-                'section_data': result_data['tract_data_for_map'],
+                'section_data': sanitize_nan_values(result_data['tract_data_for_map']),
                 'section_metadata': {'row_count': len(result_data['tract_data_for_map'])},
                 'display_order': display_order
             })
             display_order += 1
-        
+
+        # Summary table (displayed next to the map)
+        if 'summary_table' in result_data:
+            sections.append({
+                'section_name': 'summary_table',
+                'section_type': 'data_table',
+                'section_category': 'summary',
+                'section_data': sanitize_nan_values(result_data['summary_table']),
+                'section_metadata': {'data_type': 'summary_statistics'},
+                'display_order': display_order
+            })
+            display_order += 1
+
+        # Metadata
+        if 'metadata' in result_data:
+            sections.append({
+                'section_name': 'metadata',
+                'section_type': 'metadata',
+                'section_category': 'metadata',
+                'section_data': sanitize_nan_values(result_data['metadata']),
+                'section_metadata': {},
+                'display_order': display_order
+            })
+            display_order += 1
+
         # AI insights
         ai_insights = result_data.get('ai_insights', {})
         for insight_name in ['county_summary_discussion', 'comparison_discussion', 
@@ -330,9 +399,27 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
         report_data = result_data.get('report_data', {})
         if isinstance(report_data, dict):
             import pandas as pd
+
+            # Handle hhi separately as a metrics section
+            if 'hhi' in report_data and report_data['hhi']:
+                hhi_data = report_data['hhi']
+                sections.append({
+                    'section_name': 'hhi',
+                    'section_type': 'data_table',
+                    'section_category': 'metrics',
+                    'section_data': hhi_data if isinstance(hhi_data, dict) else {'hhi': hhi_data},
+                    'section_metadata': {'data_type': 'hhi_metric'},
+                    'display_order': display_order
+                })
+                display_order += 1
+
+            # NOTE: raw_data is NOT stored - it's too large (can be 20k+ records)
+            # Excel exports will need to regenerate data from original query
+            # or use the stored summary tables instead
+
             for key, value in report_data.items():
-                # Skip non-table data that shouldn't be displayed as sections
-                # Note: census_data is metadata, hhi is a metric dict, raw_data is too large for display
+                # Skip items we've already handled or that are stored elsewhere
+                # Note: census_data is stored in result_summary
                 if key in ['census_data', 'hhi', 'raw_data']:
                     continue
                 
@@ -509,6 +596,15 @@ def get_cached_result(app_name: str, params: Dict[str, Any],
         
         sections_job = client.query(sections_query, job_config=sections_config)
         sections_rows = list(sections_job.result())
+
+        # Validate that we have enough sections for a complete result
+        # LendSight should have at least 5 sections (summary, demographic_overview, etc.)
+        # If not, the cache entry is incomplete and should be ignored
+        min_sections = {'lendsight': 5, 'branchseeker': 3, 'bizsight': 3, 'mergermeter': 2}
+        min_count = min_sections.get(app_name.lower(), 2)
+        if len(sections_rows) < min_count:
+            print(f"[WARNING] Cache entry has only {len(sections_rows)} sections, expected at least {min_count}. Ignoring incomplete cache.")
+            return None
         
         # Reconstruct result_data from sections
         result_data = {}
@@ -635,9 +731,33 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
             
             print(f"[DEBUG] Retrieved census_data: type={type(census_data_final)}, value={census_data_final if not isinstance(census_data_final, dict) or len(census_data_final) <= 3 else f'dict with {len(census_data_final)} keys'}")
             
+            # Extract county and year info
+            counties_list = summary.get('counties', [])
+            years_list = summary.get('years', [])
+
+            # Construct county_name from counties list
+            county_name = ''
+            if counties_list:
+                first_county = counties_list[0]
+                if isinstance(first_county, dict):
+                    county_name = first_county.get('name', '')
+                elif isinstance(first_county, str):
+                    county_name = first_county
+
+            # Construct year_range from years list
+            year_range = ''
+            if years_list:
+                sorted_years = sorted(years_list)
+                if len(sorted_years) == 1:
+                    year_range = str(sorted_years[0])
+                else:
+                    year_range = f"{sorted_years[0]}-{sorted_years[-1]}"
+
             metadata = {
-                'counties': summary.get('counties', []),
-                'years': summary.get('years', []),
+                'counties': counties_list,
+                'years': years_list,
+                'county_name': county_name,
+                'year_range': year_range,
                 'generated_at': summary.get('created_at', ''),
                 'app_name': summary.get('app_name', ''),
                 'total_records': summary.get('total_records', 0),
@@ -649,6 +769,8 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
             metadata = {
                 'counties': [],
                 'years': [],
+                'county_name': '',
+                'year_range': '',
                 'generated_at': '',
                 'app_name': '',
                 'total_records': 0,
@@ -693,21 +815,56 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
                         # Store as-is if not in expected format
                         ai_insights[row.section_name] = section_data
                         print(f"[DEBUG] Added AI insight (raw): {row.section_name}, type: {type(section_data)}")
+                elif row.section_type == 'metadata':
+                    # Merge stored metadata with default metadata
+                    if isinstance(section_data, dict):
+                        metadata.update(section_data)
+                        print(f"[DEBUG] Merged metadata from section: {row.section_name}")
                 else:
                     print(f"[DEBUG] Unknown section type: {row.section_type}, skipping")
-        
-        result = {
-            'report_data': report_data,
-            'ai_insights': ai_insights,
-            'metadata': metadata
-        }
-        
+
+        # Determine app name from metadata
+        app_name = metadata.get('app_name', '').lower()
+
+        # For BizSight, flatten the result to match frontend expectations
+        # The frontend expects data.summary_table, data.hhi, etc. at the top level
+        if app_name == 'bizsight':
+            result = {
+                'success': True,
+                'report_data': report_data.get('report_data', {}),  # Nested report_data if present
+                'ai_insights': ai_insights,
+                'metadata': metadata,
+                # Flatten BizSight-specific fields to top level
+                'summary_table': report_data.get('summary_table', {}),
+                'tract_data_for_map': report_data.get('tract_data_for_map', []),
+                'county_summary_table': report_data.get('county_summary_table', []),
+                'comparison_table': report_data.get('comparison_table', []),
+                'top_lenders_table': report_data.get('top_lenders_table', []),
+                'hhi': report_data.get('hhi', None),
+                'hhi_by_year': report_data.get('hhi_by_year', []),
+            }
+        else:
+            result = {
+                'report_data': report_data,
+                'ai_insights': ai_insights,
+                'metadata': metadata
+            }
+
         # Debug logging
-        print(f"[DEBUG] get_analysis_result_by_job_id returning:")
-        print(f"  - report_data keys: {list(report_data.keys())}")
+        print(f"[DEBUG] get_analysis_result_by_job_id returning (app: {app_name}):")
+        if app_name == 'bizsight':
+            print(f"  - summary_table keys: {list(result.get('summary_table', {}).keys()) if isinstance(result.get('summary_table'), dict) else 'N/A'}")
+            print(f"  - county_summary_table length: {len(result.get('county_summary_table', []))}")
+            print(f"  - comparison_table length: {len(result.get('comparison_table', []))}")
+            print(f"  - top_lenders_table length: {len(result.get('top_lenders_table', []))}")
+            print(f"  - hhi: {result.get('hhi')}")
+            print(f"  - hhi_by_year length: {len(result.get('hhi_by_year', []))}")
+            print(f"  - tract_data_for_map length: {len(result.get('tract_data_for_map', []))}")
+        else:
+            print(f"  - report_data keys: {list(report_data.keys())}")
         print(f"  - ai_insights keys: {list(ai_insights.keys())}")
         print(f"  - metadata keys: {list(metadata.keys())}")
-        
+
         return result
         
     except Exception as e:
@@ -827,7 +984,8 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
         client.query(results_insert, job_config=job_config_results).result()
         
         # Insert each section
-        for section in sections:
+        print(f"[DEBUG] Storing {len(sections)} sections to BigQuery...")
+        for idx, section in enumerate(sections):
             section_id = str(uuid.uuid4())
             section_insert = f"""
             INSERT INTO `{SECTIONS_TABLE}`
@@ -853,12 +1011,17 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
                 ]
             )
             
-            client.query(section_insert, job_config=section_config).result()
-        
-        print(f"✅ Stored cache entry, result summary, and {len(sections)} sections for job_id: {job_id}")
-        
+            try:
+                client.query(section_insert, job_config=section_config).result()
+                print(f"  [OK] Stored section {idx+1}/{len(sections)}: {section['section_name']}")
+            except Exception as section_error:
+                print(f"  [ERROR] Failed to store section {section['section_name']}: {section_error}")
+                raise
+
+        print(f"[OK] Stored cache entry, result summary, and {len(sections)} sections for job_id: {job_id}")
+
     except Exception as e:
-        print(f"❌ Error storing in BigQuery: {e}")
+        print(f"[ERROR] Error storing in BigQuery: {e}")
         import traceback
         traceback.print_exc()
         raise

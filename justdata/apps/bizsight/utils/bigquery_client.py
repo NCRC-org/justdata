@@ -9,26 +9,52 @@ from google.oauth2 import service_account
 from pathlib import Path
 from typing import List
 import os
+import json
+import tempfile
 import logging
 
 logger = logging.getLogger(__name__)
+
+# Cache for temp credential file
+_temp_cred_file = None
 
 
 def get_bigquery_client(project_id: str = None, credentials_path: str = None):
     """
     Get a BigQuery client instance.
-    
+
     Args:
         project_id: GCP project ID (defaults to env var)
         credentials_path: Path to service account JSON (defaults to env var)
-    
+
     Returns:
         BigQuery client instance
     """
+    global _temp_cred_file
+
+    # First, ensure unified environment is loaded (like shared client)
+    try:
+        from justdata.shared.utils.unified_env import ensure_unified_env_loaded
+        ensure_unified_env_loaded(verbose=False)
+    except ImportError:
+        logger.debug("Could not import unified_env, continuing with local config")
+
     if not project_id:
         project_id = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
-    
-    # Try to find credentials file (like shared BigQuery client does)
+
+    # Check for JSON credentials in environment variable (preferred method)
+    creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+    if creds_json:
+        try:
+            creds_dict = json.loads(creds_json)
+            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+            client = bigquery.Client(credentials=credentials, project=project_id)
+            logger.info(f"BigQuery client initialized using GOOGLE_APPLICATION_CREDENTIALS_JSON")
+            return client
+        except Exception as e:
+            logger.warning(f"Failed to use GOOGLE_APPLICATION_CREDENTIALS_JSON: {e}")
+
+    # Try to find credentials file
     cred_path = None
     base_dir = Path(__file__).parent.parent
     possible_paths = [
@@ -47,14 +73,14 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
         Path(__file__).parent.parent.parent.parent / 'config' / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
         Path(__file__).parent.parent.parent.parent / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
     ]
-    
+
     # Also check if C:\DREAM\config\credentials exists and search for any hdma1-*.json files
     cred_dir = Path('C:/DREAM/config/credentials')
     if cred_dir.exists():
         for json_file in cred_dir.glob('hdma1-*.json'):
             if json_file not in possible_paths:
                 possible_paths.append(json_file)
-    
+
     # First, check if credentials_path is provided and exists
     if credentials_path and os.path.exists(credentials_path):
         cred_path = Path(credentials_path)
@@ -67,7 +93,7 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
             logger.info(f"Using credentials from environment: {cred_path}")
         else:
             logger.warning(f"GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}")
-    
+
     # If not found yet, search common locations (like shared client)
     if not cred_path or not cred_path.exists():
         for path in possible_paths:
@@ -75,7 +101,7 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
                 cred_path = path
                 logger.info(f"Found credentials at: {cred_path}")
                 break
-    
+
     # Initialize client with credentials if found
     try:
         if cred_path and cred_path.exists():
@@ -140,20 +166,23 @@ class BigQueryClient:
         
         # Note: sb.disclosure is county-level data (geoid5), not tract-level (geoid10)
         # This function now returns county-level data instead of tract-level
+        # Note: income_group_total first digit indicates tract income level:
+        # 1=Low Income, 2=Moderate Income, 3=Middle Income, 4=Upper Income, 5=Unknown
+        # LMI tracts = Low (1) + Moderate (2)
+        # Note: income_group_total may be STRING or INT64, so we cast to STRING first
         sql = f"""
-        SELECT 
+        SELECT
             a.*,
             g.county_state,
             g.county as county_name,
             g.state as state_name,
             g.geoid5,
-            -- Use geoid5 as the identifier (county-level, not tract-level)
-            CAST(a.geoid5 AS STRING) as census_tract_geoid,
+            -- Use geoid5 + year + income_group_total as unique identifier for grouping
+            CONCAT(CAST(a.geoid5 AS STRING), '_', CAST(a.year AS STRING), '_', COALESCE(CAST(a.income_group_total AS STRING), '0')) as census_tract_geoid,
             -- Calculate loan_count and loan_amount from num_* and amt_* fields
             COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
             COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-            -- Note: Census tract-level demographics not available with county-level disclosure data
-            -- Using NULL values for tract-level census fields
+            -- Census tract-level demographics not available, but we can derive income level
             NULL as tract_to_msa_income_percentage,
             NULL as tract_median_income,
             NULL as tract_population,
@@ -163,11 +192,30 @@ class BigQueryClient:
             NULL as tract_asian_percent,
             NULL as tract_other_race_percent,
             NULL as tract_minority_population_percent,
-            NULL as income_category,
-            NULL as is_lmi_tract,
-            NULL as income_level
+            -- Income category derived from income_group_total first digit
+            -- Cast to STRING first, then use COALESCE with STRING '0'
+            CASE
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 'Low Income'
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 'Moderate Income'
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 'Middle Income'
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 'Upper Income'
+                ELSE 'Unknown'
+            END as income_category,
+            -- LMI tract = income level 1 (Low) or 2 (Moderate)
+            CASE
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) IN ('1', '2') THEN 1
+                ELSE 0
+            END as is_lmi_tract,
+            -- Income level as numeric (1=Low, 2=Moderate, 3=Middle, 4=Upper)
+            CASE
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
+                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                ELSE 0
+            END as income_level
         FROM `{self.project_id}.sb.disclosure` a
-        JOIN `{self.project_id}.geo.cbsa_to_county` g 
+        JOIN `{self.project_id}.geo.cbsa_to_county` g
             ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
         WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
             {year_filter}
@@ -176,14 +224,15 @@ class BigQueryClient:
         
         return self.query(sql)
     
-    def get_disclosure_data(self, geoid5: str, years: list = None):
+    def get_disclosure_data(self, geoid5: str, years: list = None, is_planning_region: bool = False):
         """
         Get disclosure (lender-level, county-level) small business lending data.
-        
+
         Args:
             geoid5: Single GEOID5 code (5-digit FIPS) for one county
             years: Optional list of years to filter
-        
+            is_planning_region: Whether this is a CT planning region (for future use)
+
         Returns:
             Query job result
         """
@@ -248,24 +297,20 @@ class BigQueryClient:
             WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
                 {year_filter}
         )
-        SELECT 
+        SELECT
             COUNT(DISTINCT tract_geoid) as total_tracts,
             SUM(loan_count) as total_loans,
             SUM(loan_amount) as total_loan_amount,
             -- LMI tract metrics (not available with county-level disclosure data)
             0 as lmi_tract_loans,
             0 as lmi_tract_amount,
-            -- LMI borrower metrics (using income field from disclosure table, in $000s)
-            -- Income is in $000s, so <= 80 means <= 80% of AMI
-            SUM(CASE WHEN COALESCE(income, 999) <= 80 THEN loan_count ELSE 0 END) as lmi_borrower_loans,
-            SUM(CASE WHEN COALESCE(income, 999) <= 80 THEN loan_amount ELSE 0 END) as lmi_borrower_amount,
-            -- Percentages (LMI tract percentages not available)
+            -- LMI borrower metrics (not available - small business data doesn't have borrower income)
+            0 as lmi_borrower_loans,
+            0 as lmi_borrower_amount,
+            -- Percentages (not available for small business data)
             0 as pct_loans_to_lmi_tracts,
             0 as pct_dollars_to_lmi_tracts,
-            SAFE_DIVIDE(
-                SUM(CASE WHEN COALESCE(income, 999) <= 80 THEN loan_count ELSE 0 END),
-                SUM(loan_count)
-            ) * 100 as pct_loans_to_lmi_borrowers
+            0 as pct_loans_to_lmi_borrowers
         FROM county_data
         """
         

@@ -55,10 +55,13 @@ def configure_template_loader(state):
 def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
+    user_type = get_user_type()
+    is_staff = (user_type in ('staff', 'admin'))
     app_base_url = url_for('branchseeker.index').rstrip('/')
-    return render_template('branchseeker_template.html', 
+    return render_template('branchseeker_template.html',
                          version=__version__,
                          permissions=user_permissions,
+                         is_staff=is_staff,
                          app_base_url=app_base_url)
 
 

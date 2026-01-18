@@ -791,20 +791,38 @@ def download_excel(analysis_result, metadata):
 
 
 def download_pdf_report(report_data, metadata, job_id):
-    """Download PDF file with written portions of the report using WeasyPrint."""
+    """Download PDF file with written portions of the report using WeasyPrint.
+
+    Args:
+        report_data: Either a dict with 'report_data' and 'ai_insights' keys (full analysis result),
+                     or just the report_data dict itself.
+        metadata: Report metadata dict
+        job_id: The job ID for this analysis
+    """
     try:
         import tempfile
         from weasyprint import HTML, CSS
         from flask import render_template
 
-        # Get AI insights from the analysis result
-        from justdata.shared.utils.progress_tracker import get_analysis_result
-        analysis_result = get_analysis_result(job_id) if job_id else {}
-        ai_insights = analysis_result.get('ai_insights', {})
+        # Handle both full analysis result and just report_data
+        # When called from blueprint.py, report_data is actually the full analysis result
+        if isinstance(report_data, dict) and 'ai_insights' in report_data:
+            # Full analysis result passed
+            ai_insights = report_data.get('ai_insights', {})
+            actual_report_data = report_data.get('report_data', report_data)
+        else:
+            # Just report_data passed, try to get AI insights from local progress tracker
+            try:
+                from justdata.apps.bizsight.utils.progress_tracker import get_analysis_result
+                analysis_result = get_analysis_result(job_id) if job_id else {}
+                ai_insights = analysis_result.get('ai_insights', {}) if analysis_result else {}
+            except:
+                ai_insights = {}
+            actual_report_data = report_data
 
         # Serialize report data for template
         serialized_data = {}
-        for key, value in report_data.items():
+        for key, value in actual_report_data.items():
             if hasattr(value, 'to_dict'):
                 import numpy as np
                 df_clean = value.replace({np.nan: None})

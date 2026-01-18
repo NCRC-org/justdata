@@ -16,6 +16,7 @@ from datetime import datetime
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
+from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
 from justdata.apps.bizsight.core import run_analysis
 from justdata.apps.bizsight.data_utils import get_available_counties, get_available_years
@@ -60,13 +61,17 @@ def configure_template_loader(state):
 def index():
     """Main page with the US map for county selection."""
     user_permissions = get_user_permissions()
+    user_type = get_user_type()
+    # Staff and admin users can see the "clear cache" checkbox
+    is_staff = (user_type in ('staff', 'admin'))
     app_base_url = url_for('bizsight.index').rstrip('/')
-    
+
     # Force template reload by clearing cache before rendering
     response = make_response(render_template(
-        'bizsight_analysis.html', 
+        'bizsight_analysis.html',
         version=BizSightConfig.APP_VERSION,
         permissions=user_permissions,
+        is_staff=is_staff,
         app_base_url=app_base_url
     ))
     # Add aggressive cache-busting headers
@@ -174,7 +179,10 @@ def analyze():
         
         # Get user type for logging
         user_type = get_user_type()
-        
+
+        # Check for force_refresh parameter to bypass cache
+        force_refresh = data.get('force_refresh', False)
+
         # Prepare parameters for cache lookup
         cache_params = {
             'county_data': county_data,
@@ -182,10 +190,14 @@ def analyze():
             'endYear': end_year,
             'years': years_str
         }
-        
-        # Check cache first
-        cached_result = get_cached_result('bizsight', cache_params, user_type)
-        
+
+        # Check cache first (unless force_refresh is True)
+        cached_result = None
+        if not force_refresh:
+            cached_result = get_cached_result('bizsight', cache_params, user_type)
+        else:
+            print(f"[INFO] Force refresh requested - bypassing cache")
+
         if cached_result:
             # Cache hit - use cached result
             job_id = cached_result['job_id']
@@ -266,18 +278,16 @@ def analyze():
                     )
                     return
                 
-                # Store in BigQuery only (no in-memory storage)
-                # store_cached_result stores everything in BigQuery
-                progress_tracker.complete(success=True)
-                
-                # Store in BigQuery cache
+                # Store in BigQuery cache BEFORE marking as complete
+                # This ensures report-data can retrieve the data
+                print(f"[DEBUG] Starting storage for job_id: {job_id}")
                 try:
                     metadata = {
                         'counties': [county_data] if not isinstance(county_data, list) else county_data,
                         'years': years,
                         'duration_seconds': time_module.time() - start_time
                     }
-                    
+
                     store_cached_result(
                         app_name='bizsight',
                         params=cache_params,
@@ -286,8 +296,14 @@ def analyze():
                         user_type=user_type,
                         metadata=metadata
                     )
+                    print(f"[DEBUG] Storage completed successfully for job_id: {job_id}")
                 except Exception as cache_error:
                     print(f"Warning: Failed to store in cache: {cache_error}")
+
+                # Mark as complete AFTER storage is done
+                print(f"[DEBUG] Marking progress complete for job_id: {job_id}")
+                progress_tracker.complete(success=True)
+                print(f"[DEBUG] Progress marked complete for job_id: {job_id}")
                 
                 # Log usage (cache miss, new analysis)
                 response_time_ms = int((time_module.time() - start_time) * 1000)
@@ -420,6 +436,7 @@ def get_counties_by_state(state_code):
         else:
             # Use state name to match (extract from county_state)
             print(f"[DEBUG] Using state name: {state_code}")
+            escaped_state_code = escape_sql_string(state_code)
             query = f"""
             SELECT DISTINCT
                 county_state,
@@ -427,7 +444,7 @@ def get_counties_by_state(state_code):
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
             FROM `{BizSightConfig.GCP_PROJECT_ID}.geo.cbsa_to_county`
-            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{state_code}')
+            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state_code}')
                 AND county_state IS NOT NULL
                 AND TRIM(county_state) != ''
             ORDER BY county_state
@@ -516,14 +533,16 @@ def get_state_boundaries():
 
 
 @bizsight_bp.route('/api/tract-boundaries/<geoid5>', methods=['GET'])
-def get_tract_boundaries(geoid5):
+def get_tract_boundaries_endpoint(geoid5):
     """Get census tract boundaries for a county."""
     try:
         from justdata.apps.bizsight.utils.tract_boundaries import get_tract_boundaries
         boundaries = get_tract_boundaries(geoid5)
-        return jsonify(boundaries)
+        if boundaries is None:
+            return jsonify({'success': False, 'error': 'No tract boundaries found', 'geojson': None}), 404
+        return jsonify({'success': True, 'geojson': boundaries})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e), 'geojson': None}), 500
 
 
 @bizsight_bp.route('/report', methods=['GET'])

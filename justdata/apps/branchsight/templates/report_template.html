@@ -11,16 +11,18 @@
     <meta property="og:title" content="BranchSight - Analysis Report">
     <meta property="og:description" content="Comprehensive FDIC bank branch analysis report">
     
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
-    <!-- Shared Population Demographics Module -->
-    <script src="/shared/population_demographics.js"></script>
+    <!-- Set base URL for API calls -->
+    <script>
+        window.APP_BASE_URL = '{{ app_base_url|default("/branchsight") }}';
+    </script>
     
     <style>
         /* Print-specific styles */
@@ -502,52 +504,29 @@
 </head>
 <body>
     <div class="report-container">
-        <!-- Back Button -->
-        <a href="/" class="back-btn no-print">
-            <i class="fas fa-arrow-left"></i>
-            Back to Analysis
-        </a>
-        
-        <!-- Report Header -->
-        <div class="report-header">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-            </div>
-            <h1 class="report-title">Bank Branch Analysis</h1>
-            <p class="report-subtitle">Data drives the <em>movement</em></p>
-            <div class="report-meta">
-                <div>
-                    <strong>Counties:</strong> <span id="counties">Loading...</span><br>
-                    <strong>Years:</strong> <span id="years">Loading...</span>
-                </div>
-                <div class="report-actions no-print">
-                    <button class="action-btn" onclick="window.print()">
-                        <i class="fas fa-print"></i> Print Report
-                    </button>
-                    <div class="dropdown">
-                        <button class="action-btn primary dropdown-toggle">
-                            <i class="fas fa-download"></i> Export Data
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a href="/download?format=excel" class="dropdown-item">
-                                <i class="fas fa-file-excel"></i> Excel (.xlsx)
-                            </a>
-                            <a href="/download?format=csv" class="dropdown-item">
-                                <i class="fas fa-file-csv"></i> CSV (.csv)
-                            </a>
-                            <a href="/download?format=json" class="dropdown-item">
-                                <i class="fas fa-file-code"></i> JSON (.json)
-                            </a>
-                            <a href="/download?format=zip" class="dropdown-item">
-                                <i class="fas fa-file-archive"></i> ZIP (.zip)
-                            </a>
-                        </div>
-                    </div>
-                </div>
+        <!-- Header Actions Row - Back button on left, Export/Print on right -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+            <a href="{{ app_base_url|default('/branchsight') }}" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
+                <i class="fas fa-arrow-left"></i> Back to New Analysis
+            </a>
+            <div style="display: flex; gap: 10px;">
+                <a href="{{ url_for('branchsight.download', format='excel') }}" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
+                    <i class="fas fa-file-excel"></i> Export Data (Excel)
+                </a>
+                <button class="action-btn" id="printReportBtn" onclick="window.print()" style="cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
+                    <i class="fas fa-print"></i> Print Report
+                </button>
             </div>
         </div>
-        
+
+        <!-- Report Header -->
+        <div class="report-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 8px;">
+            <h1 style="margin: 0 0 10px 0;">Bank Branch Analysis</h1>
+            <p id="reportMetadata" style="margin: 10px 0 0 0; opacity: 0.9;">
+                <span id="counties">Loading...</span> | <span id="years">Loading...</span>
+            </p>
+        </div>
+
         <!-- Loading State -->
         <div id="loadingState" class="loading">
             <i class="fas fa-spinner fa-spin fa-2x"></i>
@@ -600,7 +579,46 @@
                     <strong>Note:</strong> It is important to note that shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts.
                 </p>
             </div>
-            
+
+            <!-- Geography Context Section -->
+            <div class="report-section" id="geographyContextSection" style="display: none; margin-top: 20px;">
+                <h2 class="section-title">Geography Context</h2>
+                <p style="margin-bottom: 15px; color: #666; font-size: 0.95em;">
+                    Census tract characteristics for the selected geography based on the most recent American Community Survey (ACS) 5-year estimates.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
+                    <!-- Total Census Tracts -->
+                    <div class="stat-card" style="background: #f8f9fa; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #e0e0e0;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #034ea0;" id="totalTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Total Census Tracts</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="totalTractsPop">--</span></div>
+                    </div>
+                    <!-- LMI Tracts (Majority White) -->
+                    <div class="stat-card" style="background: #e8f4fd; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #b8d4e8;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #0066cc;" id="lmiTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Low-to-Moderate Income Tracts</div>
+                        <div style="font-size: 0.8rem; color: #888; margin-top: 2px;">(Majority White)</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="lmiTractsPop">--</span> (<span id="lmiTractsPercent">--</span>%)</div>
+                    </div>
+                    <!-- Majority-Minority Tracts (Middle/Upper Income) -->
+                    <div class="stat-card" style="background: #f0e8f8; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #d4c4e8;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #6a3d9a;" id="mmctTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Majority-Minority Tracts</div>
+                        <div style="font-size: 0.8rem; color: #888; margin-top: 2px;">(Middle/Upper Income)</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="mmctTractsPop">--</span> (<span id="mmctTractsPercent">--</span>%)</div>
+                    </div>
+                    <!-- Both LMI and MMCT -->
+                    <div class="stat-card" style="background: #e8f8e8; padding: 20px; border-radius: 8px; text-align: center; border: 1px solid #b8e8b8;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #2d8a2d;" id="bothTractsCount">--</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">Both LMI & Majority-Minority</div>
+                        <div style="font-size: 0.85rem; color: #888; margin-top: 3px;">Pop: <span id="bothTractsPop">--</span> (<span id="bothTractsPercent">--</span>%)</div>
+                    </div>
+                </div>
+                <p id="geographyContextNote" style="margin-top: 15px; font-size: 0.85em; color: #666; font-style: italic;">
+                    Source: U.S. Census Bureau, American Community Survey 5-Year Estimates. LMI tracts are those with median family income at or below 80% of the area median. Majority-minority tracts have a non-white population exceeding 50%.
+                </p>
+            </div>
+
             <!-- AI Key Findings -->
             <div class="report-section print-break" id="aiKeyFindingsSection" style="display: none;">
                 <h2 class="section-title">Key Findings</h2>
@@ -617,6 +635,7 @@
             <!-- Section 1: Yearly Breakdown -->
             <div class="report-section print-break">
                 <h2 class="section-title">Section 1: Yearly Breakdown</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Yearly Branch Summary</h3>
                 <div style="display: flex; gap: 20px; align-items: flex-start;">
                     <!-- Intro Text - 1/3 width -->
                     <div style="flex: 0 0 33.333%;">
@@ -626,7 +645,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     <!-- Table - 2/3 width -->
                     <div style="flex: 0 0 66.667%;">
                         <div class="table-container">
@@ -658,7 +677,8 @@
             <!-- Section 2: Top Bank Networks -->
             <div class="report-section print-break">
                 <h2 class="section-title">Section 2: Bank Networks</h2>
-                
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Top Banks by Branch Count</h3>
+
                 <!-- Intro Text - Full width above table -->
                 <div class="ai-insight-card" style="margin-bottom: 20px;">
                     <div class="ai-content" id="bankTableIntroduction">
@@ -709,6 +729,7 @@
             <!-- Section 3: County by County Analysis (only shown for multiple counties) -->
             <div class="report-section print-break" id="countyTableSection" style="display: none;">
                 <h2 class="section-title">Section 3: County by County Analysis</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Branch Distribution by County</h3>
                 <div style="display: flex; gap: 20px; align-items: flex-start;">
                     <!-- Intro Text - 1/3 width -->
                     <div style="flex: 0 0 33.333%;">
@@ -754,21 +775,26 @@
             <!-- Section 4: Market Concentration (Added before Methods) -->
             <div class="report-section print-break" id="marketConcentrationSection" style="display: none;">
                 <h2 class="section-title">Section 4: Market Concentration</h2>
-                
-                <!-- Intro Text - Full width above chart -->
-                <div class="ai-insight-card" style="margin-bottom: 20px;">
-                    <div class="ai-content" id="marketConcentrationIntro">
-                        <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
-                        <p>This chart presents the HHI for bank branch deposits in the selected counties across the selected years, providing insight into how competitive the banking market is.</p>
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <!-- Intro Text - 1/3 width -->
+                    <div style="flex: 0 0 33.333%;">
+                        <div class="ai-insight-card">
+                            <div class="ai-content" id="marketConcentrationIntro">
+                                <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+                                <p>This chart presents the HHI for bank branch deposits in the selected counties across the selected years, providing insight into how competitive the banking market is.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chart - 2/3 width -->
+                    <div style="flex: 0 0 66.667%;">
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="branchHHIChart"></canvas>
+                        </div>
                     </div>
                 </div>
-                
-                <!-- Chart - Full width -->
-                <div class="chart-container" style="height: 400px; margin-bottom: 20px; width: 100%;">
-                    <canvas id="branchHHIChart"></canvas>
-                </div>
-                
-                <!-- Source Caption - Full width below intro text and chart -->
+
+                <!-- Source Caption - Full width below -->
                 <p class="table-caption" style="margin-top: 15px; width: 100%;">
                     <strong>Source:</strong> FDIC Summary of Deposits (SOD) data, compiled and maintained in NCRC's curated databases. 
                     <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all bank networks in the market based on total deposit amounts. 
@@ -844,7 +870,8 @@
         // Load and display report data
         async function loadReportData() {
             try {
-                const response = await fetch('/report-data');
+                const baseUrl = window.APP_BASE_URL || '/branchsight';
+                const response = await fetch(`${baseUrl}/report-data`);
                 const result = await response.json();
                 
                 if (!result.success) {
@@ -895,7 +922,10 @@
             
             // Generate Executive Summary in JavaScript
             generateExecutiveSummary(metadata);
-            
+
+            // Load geography context from Census ACS data
+            loadGeographyContext(metadata.counties);
+
             // Populate summary cards using raw_data to ensure unique branch counts by uninumbr
             populateSummaryCards(data.raw_data);
             
@@ -934,21 +964,8 @@
                 }
             }
             
-            // Populate table introductions and narratives
-            if (metadata.ai_insights && metadata.ai_insights.table_introductions) {
-                if (metadata.ai_insights.table_introductions.table1) {
-                    const introEl = document.getElementById('summaryTableIntroduction');
-                    if (introEl) introEl.textContent = metadata.ai_insights.table_introductions.table1;
-                }
-                if (metadata.ai_insights.table_introductions.table2) {
-                    const introEl = document.getElementById('bankTableIntroduction');
-                    if (introEl) introEl.textContent = metadata.ai_insights.table_introductions.table2;
-                }
-                if (metadata.ai_insights.table_introductions.table3) {
-                    const introEl = document.getElementById('countyTableIntroduction');
-                    if (introEl) introEl.textContent = metadata.ai_insights.table_introductions.table3;
-                }
-            }
+            // Generate JavaScript-based section introductions (replaces AI-generated intros)
+            generateSectionIntroductions(data, metadata);
             
             // Populate table narratives
             console.log('Checking for table narratives...', metadata.ai_insights);
@@ -1668,6 +1685,8 @@
                 });
             }
 
+            // HHI table removed - chart only is displayed
+
             // Populate AI discussion
             const aiInsights = metadata.ai_insights;
             const aiDisabled = metadata && metadata.ai_insights_enabled === false;
@@ -1677,8 +1696,10 @@
 
             const discussionEl = document.getElementById('marketConcentrationDiscussion');
             if (discussionEl) {
-                if (aiInsights && aiInsights.market_concentration_discussion) {
-                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.market_concentration_discussion);
+                // Backend stores as hhi_trends_discussion
+                if (aiInsights && (aiInsights.hhi_trends_discussion || aiInsights.market_concentration_discussion)) {
+                    const hhiNarrative = aiInsights.hhi_trends_discussion || aiInsights.market_concentration_discussion;
+                    discussionEl.innerHTML = formatMarkdownContent(hhiNarrative);
                     discussionEl.style.display = 'block';
                     const aiCaption = document.getElementById('marketConcentrationAICaption');
                     if (aiCaption) {
@@ -1700,7 +1721,161 @@
             document.getElementById('errorState').style.display = 'block';
             document.getElementById('errorMessage').textContent = message;
         }
-        
+
+        // State name to FIPS code mapping
+        const stateFipsMap = {
+            'Alabama': '01', 'Alaska': '02', 'Arizona': '04', 'Arkansas': '05', 'California': '06',
+            'Colorado': '08', 'Connecticut': '09', 'Delaware': '10', 'District of Columbia': '11',
+            'Florida': '12', 'Georgia': '13', 'Hawaii': '15', 'Idaho': '16', 'Illinois': '17',
+            'Indiana': '18', 'Iowa': '19', 'Kansas': '20', 'Kentucky': '21', 'Louisiana': '22',
+            'Maine': '23', 'Maryland': '24', 'Massachusetts': '25', 'Michigan': '26', 'Minnesota': '27',
+            'Mississippi': '28', 'Missouri': '29', 'Montana': '30', 'Nebraska': '31', 'Nevada': '32',
+            'New Hampshire': '33', 'New Jersey': '34', 'New Mexico': '35', 'New York': '36',
+            'North Carolina': '37', 'North Dakota': '38', 'Ohio': '39', 'Oklahoma': '40', 'Oregon': '41',
+            'Pennsylvania': '42', 'Puerto Rico': '72', 'Rhode Island': '44', 'South Carolina': '45',
+            'South Dakota': '46', 'Tennessee': '47', 'Texas': '48', 'Utah': '49', 'Vermont': '50',
+            'Virginia': '51', 'Washington': '53', 'West Virginia': '54', 'Wisconsin': '55', 'Wyoming': '56'
+        };
+
+        // Fetch and display geography context from Census ACS data
+        async function loadGeographyContext(counties) {
+            const section = document.getElementById('geographyContextSection');
+            if (!section || !counties || counties.length === 0) return;
+
+            try {
+                // Parse county name to get state and county FIPS
+                const countyName = counties[0]; // Use first county for now
+                const parts = countyName.split(',');
+                if (parts.length < 2) {
+                    console.log('Could not parse county name:', countyName);
+                    return;
+                }
+
+                const stateName = parts[1].trim();
+                const stateFips = stateFipsMap[stateName];
+                if (!stateFips) {
+                    console.log('Could not find state FIPS for:', stateName);
+                    return;
+                }
+
+                // Fetch county FIPS from Census API
+                const geoUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME&for=county:*&in=state:${stateFips}`;
+                const geoResponse = await fetch(geoUrl);
+                const geoData = await geoResponse.json();
+
+                // Find matching county
+                const countyPart = parts[0].trim().toLowerCase();
+                let countyFips = null;
+                for (let i = 1; i < geoData.length; i++) {
+                    const name = geoData[i][0].toLowerCase();
+                    if (name.includes(countyPart.replace(' county', ''))) {
+                        countyFips = geoData[i][2];
+                        break;
+                    }
+                }
+
+                if (!countyFips) {
+                    console.log('Could not find county FIPS for:', countyName);
+                    return;
+                }
+
+                // Fetch tract-level data: population, income, and race
+                // B01003_001E = Total population
+                // B19113_001E = Median family income
+                // B03002_001E = Total (for race), B03002_003E = White alone non-Hispanic
+                const tractUrl = `https://api.census.gov/data/2022/acs/acs5?get=NAME,B01003_001E,B19113_001E,B03002_001E,B03002_003E&for=tract:*&in=state:${stateFips}&in=county:${countyFips}`;
+                const tractResponse = await fetch(tractUrl);
+                const tractData = await tractResponse.json();
+
+                // Get county median family income for LMI calculation
+                const countyIncomeUrl = `https://api.census.gov/data/2022/acs/acs5?get=B19113_001E&for=county:${countyFips}&in=state:${stateFips}`;
+                const countyIncomeResponse = await fetch(countyIncomeUrl);
+                const countyIncomeData = await countyIncomeResponse.json();
+                const countyMedianIncome = parseFloat(countyIncomeData[1][0]) || 0;
+                const lmiThreshold = countyMedianIncome * 0.80; // 80% of median
+
+                // Process tract data
+                // Categories are MUTUALLY EXCLUSIVE:
+                // - LMI Only = LMI but NOT majority-minority (majority white)
+                // - MMCT Only = Majority-minority but NOT LMI (middle/upper income)
+                // - Both = Both LMI AND majority-minority
+                let totalTracts = 0;
+                let totalPop = 0;
+                let lmiOnlyTracts = 0;  // LMI but NOT MMCT (majority white)
+                let lmiOnlyPop = 0;
+                let mmctOnlyTracts = 0;  // MMCT but NOT LMI (middle/upper income)
+                let mmctOnlyPop = 0;
+                let bothTracts = 0;
+                let bothPop = 0;
+
+                for (let i = 1; i < tractData.length; i++) {
+                    const row = tractData[i];
+                    const pop = parseFloat(row[1]) || 0;
+                    const tractIncome = parseFloat(row[2]) || 0;
+                    const totalForRace = parseFloat(row[3]) || 0;
+                    const whiteNonHispanic = parseFloat(row[4]) || 0;
+
+                    if (pop === 0) continue; // Skip zero-population tracts
+
+                    totalTracts++;
+                    totalPop += pop;
+
+                    const minorityPct = totalForRace > 0 ? ((totalForRace - whiteNonHispanic) / totalForRace) * 100 : 0;
+                    const isLMI = tractIncome > 0 && tractIncome <= lmiThreshold;
+                    const isMMCT = minorityPct > 50;
+
+                    if (isLMI && isMMCT) {
+                        // Both LMI and majority-minority
+                        bothTracts++;
+                        bothPop += pop;
+                    } else if (isLMI && !isMMCT) {
+                        // LMI only (majority white)
+                        lmiOnlyTracts++;
+                        lmiOnlyPop += pop;
+                    } else if (isMMCT && !isLMI) {
+                        // MMCT only (middle/upper income)
+                        mmctOnlyTracts++;
+                        mmctOnlyPop += pop;
+                    }
+                    // else: neither LMI nor MMCT (not counted in these categories)
+                }
+
+                // Format numbers with commas
+                const formatNum = (n) => n.toLocaleString();
+                const formatPct = (n, total) => total > 0 ? ((n / total) * 100).toFixed(1) : '0.0';
+
+                // Update the display
+                document.getElementById('totalTractsCount').textContent = formatNum(totalTracts);
+                document.getElementById('totalTractsPop').textContent = formatNum(totalPop);
+
+                document.getElementById('lmiTractsCount').textContent = formatNum(lmiOnlyTracts);
+                document.getElementById('lmiTractsPop').textContent = formatNum(lmiOnlyPop);
+                document.getElementById('lmiTractsPercent').textContent = formatPct(lmiOnlyPop, totalPop);
+
+                document.getElementById('mmctTractsCount').textContent = formatNum(mmctOnlyTracts);
+                document.getElementById('mmctTractsPop').textContent = formatNum(mmctOnlyPop);
+                document.getElementById('mmctTractsPercent').textContent = formatPct(mmctOnlyPop, totalPop);
+
+                document.getElementById('bothTractsCount').textContent = formatNum(bothTracts);
+                document.getElementById('bothTractsPop').textContent = formatNum(bothPop);
+                document.getElementById('bothTractsPercent').textContent = formatPct(bothPop, totalPop);
+
+                // Update source note with year
+                document.getElementById('geographyContextNote').innerHTML =
+                    `<strong>Source:</strong> U.S. Census Bureau, 2018-2022 American Community Survey 5-Year Estimates. ` +
+                    `LMI tracts are those with median family income at or below 80% of the county median ($${formatNum(Math.round(lmiThreshold))}). ` +
+                    `Majority-minority tracts have a non-white population exceeding 50%.`;
+
+                // Show the section
+                section.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error loading geography context:', error);
+                // Hide the section on error
+                section.style.display = 'none';
+            }
+        }
+
         // Map initialization and branch plotting
         let branchMap = null;
         
@@ -1825,6 +2000,56 @@
             }
         }
         
+        // Generate JavaScript-based section introductions (not AI-generated)
+        function generateSectionIntroductions(data, metadata) {
+            const counties = metadata.counties || [];
+            const years = metadata.years || [];
+            const sortedYears = [...years].sort((a, b) => a - b);
+            const startYear = sortedYears[0];
+            const endYear = sortedYears[sortedYears.length - 1];
+            const yearRange = years.length > 1 ? `${startYear} to ${endYear}` : startYear.toString();
+            const countyText = counties.length === 1 ? counties[0] : `${counties.length} counties`;
+
+            // Section 1: Yearly Breakdown Introduction
+            const section1Intro = document.getElementById('summaryTableIntroduction');
+            if (section1Intro) {
+                let intro = `<p>This table presents the yearly summary of bank branch activity in ${countyText} from ${yearRange}. `;
+                intro += `The data shows total branch counts, as well as branches located in Low-to-Moderate Income (LMI) census tracts, `;
+                intro += `Majority-Minority Census Tracts (MMCT), and tracts that qualify as both.</p>`;
+                intro += `<p>The Net Change column shows the difference between the first and last year of the analysis period, `;
+                intro += `helping identify overall trends in branch presence across different community types.</p>`;
+                section1Intro.innerHTML = intro;
+            }
+
+            // Section 2: Bank Networks Introduction (with merger disclaimer)
+            const section2Intro = document.getElementById('bankTableIntroduction');
+            if (section2Intro) {
+                let intro = `<p>This table shows the top bank networks by branch count in the selected geography, `;
+                intro += `ranked by total branches in the most recent year (${endYear}). `;
+                intro += `The table includes branch distribution across LMI and majority-minority census tracts, `;
+                intro += `as well as net changes over the analysis period.</p>`;
+                intro += `<p><strong>Note on significant changes:</strong> Large changes in branch counts may reflect mergers, acquisitions, `;
+                intro += `divestitures, or branch network restructuring rather than organic growth or decline. `;
+                intro += `Researchers should consult FDIC merger records for the ${yearRange} period to identify `;
+                intro += `specific transactions that may have affected these figures.</p>`;
+                section2Intro.innerHTML = intro;
+            }
+
+            // Section 3: County by County Introduction (if multiple counties)
+            const section3Intro = document.getElementById('countyTableIntroduction');
+            if (section3Intro && counties.length > 1) {
+                let intro = `<p>This table compares branch distribution across the ${counties.length} counties included in this analysis. `;
+                intro += `Data shown reflects the most recent year (${endYear}) and includes branch counts `;
+                intro += `in LMI and majority-minority census tracts for each county.</p>`;
+                intro += `<p>Comparing branch presence across counties can help identify disparities in banking access `;
+                intro += `and highlight areas where communities may be underserved.</p>`;
+                section3Intro.innerHTML = intro;
+            }
+
+            // Section 4: Market Concentration Introduction is already hardcoded in HTML
+            // No changes needed there
+        }
+
         // Load report data when page loads
         document.addEventListener('DOMContentLoaded', loadReportData);
     </script>

@@ -6,36 +6,7 @@
       "description": "Commercial banks, credit unions, bank holding companies",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     {
@@ -44,22 +15,7 @@
       "description": "Mortgage lenders, servicers, GSEs, title companies",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Why Trump's big housing move could pose a 'threat' to these stocks",
-          "description": "In a post on Truth Social, President Trump said that he is \"immediately taking steps to ban large institutional investors from buying more single-family...",
-          "url": "https://finance.yahoo.com/video/why-trumps-big-housing-move-174418176.html",
-          "source": "Yahoo Entertainment",
-          "published_at": "2026-01-09T17:44:18Z",
-          "image_url": "https://s.yimg.com/ny/api/res/1.2/zNp.uWejg4I5WBFO7saLyg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD02NzY-/https://s.yimg.com/os/creatr-uploaded-images/2026-01/61e4c780-ed82-11f0-b7de-247d69917ad4",
-          "author": "Yahoo Finance Video",
-          "source_score": 65,
-          "source_canonical": "Yahoo",
-          "is_verified_source": true,
-          "authority_score": 65,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     {
@@ -95,148 +51,7 @@
       "description": "Exchanges, stablecoins, custody, DeFi, mining",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Goldman Sachs sees regulation driving next wave of institutional crypto adoption",
-          "description": "Regulatory clarity and expanding use cases beyond trading are setting the stage for deeper institutional participation in digital assets, the bank said.",
-          "url": "https://www.coindesk.com/markets/2026/01/05/goldman-sachs-sees-regulation-driving-next-wave-of-institutional-crypto-adoption",
-          "source": "CoinDesk",
-          "published_at": "2026-01-05T16:26:03Z",
-          "image_url": "https://cdn.sanity.io/images/s3y3vcno/production/bc5ee13cf9751912deef7f90a5b88962bb1c442d-1920x1080.jpg?auto=format&w=960&h=540&crop=focalpoint&fit=clip&q=75&fm=jpg",
-          "author": "Will Canny, AI Boost",
-          "source_score": 75,
-          "source_canonical": "CoinDesk",
-          "is_verified_source": true,
-          "authority_score": 75,
-          "coverage_count": 1
-        },
-        {
-          "title": "Crypto reps fly to US capitol this week to address market structure bill",
-          "description": "According to The Digital Chamber CEO Cody Carbone, representatives from crypto companies will come to Washington, DC on Thursday to engage with lawmakers and discuss a market structure bill.",
-          "url": "https://cointelegraph.com/news/crypto-companies-dc-market-structure-bill",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-07T21:50:58Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019b99f1-b63e-705d-a869-3dda7dceab17.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Senate Republicans Schedule Crypto Bill Vote Despite Divide on Key Issues",
-          "description": "The Senate Banking Committee will vote on its crypto market structure bill next week, even as Democrats and Republicans still appear far apart on major sticking points.",
-          "url": "https://decrypt.co/353799/senate-republicans-schedule-crypto-bill-vote-key-issues",
-          "source": "Decrypt",
-          "published_at": "2026-01-06T23:17:24Z",
-          "image_url": "https://cdn.decrypt.co/resize/1024/height/512/wp-content/uploads/2025/05/US-Capitol-decrypt-style-04-gID_7.png",
-          "author": "Sander Lutz",
-          "source_score": 68,
-          "source_canonical": "Decrypt",
-          "is_verified_source": true,
-          "authority_score": 68,
-          "coverage_count": 1
-        },
-        {
-          "title": "Bitwise Flags Three Conditions Crypto Must Meet To Reach New All-Time Highs In 2026",
-          "description": "The crypto market started 2026 on a strong footing, but reaching new peaks this year will depend on clearing three key hurdles.",
-          "url": "https://zycrypto.com/bitwise-flags-three-conditions-crypto-must-meet-to-reach-new-all-time-highs-in-2026/",
-          "source": "ZyCrypto",
-          "published_at": "2026-01-08T09:38:21Z",
-          "image_url": "https://zycrypto.com/wp-content/uploads/2021/08/On-Chain-Data-Suggests-Ether-Will-Be-Blazing-Through-New-All-Time-Highs-Before-Bitcoin.jpg",
-          "author": "Brenda Ngari",
-          "source_score": 55,
-          "source_canonical": "ZyCrypto",
-          "is_verified_source": true,
-          "authority_score": 55,
-          "coverage_count": 1
-        },
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "BlackRock predicts major shift in retail investors' access to cryptocurrencies",
-          "description": "It could be the year Main Street's appetite for cryptocurrency exposure meaningfully grows.",
-          "url": "https://www.cnbc.com/2026/01/09/blackrocks-bull-case-for-bitcoin-access-among-retail-investors.html",
-          "source": "CNBC",
-          "published_at": "2026-01-09T12:00:01Z",
-          "image_url": "https://image.cnbcfm.com/api/v1/image/108171292-1752472035793-gettyimages-2219214461-HL_RCOSTASECA_2799512.jpeg?v=1767906687&w=1920&h=1080",
-          "author": null,
-          "source_score": 85,
-          "source_canonical": "CNBC",
-          "is_verified_source": true,
-          "authority_score": 85,
-          "coverage_count": 1
-        },
-        {
-          "title": "Rumors are swirling about Venezuela holding $60 billion in Bitcoin—but crypto experts are skeptical",
-          "description": "What we know about the South American country’s crypto holdings.",
-          "url": "https://fortune.com/2026/01/09/rumors-swirling-about-venezuela-bitcoin-crypto-experts-are-skeptical/",
-          "source": "Fortune",
-          "published_at": "2026-01-09T18:20:46Z",
-          "image_url": "https://fortune.com/img-assets/wp-content/uploads/2026/01/GettyImages-2254194605-e1767982366129.jpg?resize=1200,600",
-          "author": "Carlos Garcia",
-          "source_score": 82,
-          "source_canonical": "Fortune",
-          "is_verified_source": true,
-          "authority_score": 82,
-          "coverage_count": 1
-        },
-        {
-          "title": "Colombia advances crypto tax rules as global reporting standards take shape",
-          "description": "Colombia’s tax authority has rolled out new reporting requirements for crypto service providers, requiring exchanges to collect and submit user and transaction data starting in 2026.",
-          "url": "https://cointelegraph.com/news/colombia-advances-crypto-tax-rules-global-reporting-standards-take-shape",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:35:22Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba480-0d20-7a4e-9244-d6119934edf5.jpg",
-          "author": "Cointelegraph by Nate Kostar",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Trading bots gain traction as crypto markets move sideways: HTX 2025 recap",
-          "description": "Crypto traders increasingly relied on grid trading bots in 2025 as markets moved sideways, according to data from crypto exchange HTX.",
-          "url": "https://cointelegraph.com/news/trading-bots-gain-traction-crypto-markets-move-sideways-htx-2025-recap",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T19:37:05Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba3f1-50a0-71f0-94e0-aa2b7673524d.jpg",
-          "author": "Cointelegraph by Nate Kostar",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     {
@@ -245,50 +60,7 @@
       "description": "Payments, credit bureaus, data providers",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Mega Matrix, Ihsan Dhahab enter MOU to operate fintech projects in Saudi Arabia",
-          "description": "See the rest of the story here.\n\nthefly.com provides the latest financial news as it breaks. Known as a leader in market intelligence, The Fly's real-time, streaming news feed keeps individual investors, professional money managers, active traders, and corpor…",
-          "url": "https://thefly.com/permalinks/entry.php/id4267763/MPU-Mega-Matrix-Ihsan-Dhahab-enter-MOU-to-operate-fintech-projects-in-Saudi-Arabia",
-          "source": "Thefly.com",
-          "published_at": "2026-01-09T10:08:52Z",
-          "image_url": "https://thefly.com/images/meta/hotstocks.jpg",
-          "author": null,
-          "source_score": 72,
-          "source_canonical": "The Fly",
-          "is_verified_source": true,
-          "authority_score": 72,
-          "coverage_count": 1
-        },
-        {
-          "title": "Future FinTech unit signs framework agreement to acquire TransGen SC Tech",
-          "description": "See the rest of the story here.\n\nthefly.com provides the latest financial news as it breaks. Known as a leader in market intelligence, The Fly's real-time, streaming news feed keeps individual investors, professional money managers, active traders, and corpor…",
-          "url": "https://thefly.com/permalinks/entry.php/id4267100/FTFT-Future-FinTech-unit-signs-framework-agreement-to-acquire-TransGen-SC-Tech",
-          "source": "Thefly.com",
-          "published_at": "2026-01-08T13:16:45Z",
-          "image_url": "https://thefly.com/images/meta/hotstocks.jpg",
-          "author": null,
-          "source_score": 72,
-          "source_canonical": "The Fly",
-          "is_verified_source": true,
-          "authority_score": 72,
-          "coverage_count": 1
-        },
-        {
-          "title": "This Fintech Stock Poised for Explosive Growth Could Surge Over 100% by 2028.",
-          "description": null,
-          "url": "https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_023c6b88-9fe7-48b5-9428-43cbc39b59b4",
-          "source": "Yahoo Entertainment",
-          "published_at": "2026-01-09T10:05:00Z",
-          "image_url": null,
-          "author": null,
-          "source_score": 65,
-          "source_canonical": "Yahoo",
-          "is_verified_source": true,
-          "authority_score": 65,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     {
@@ -317,36 +89,7 @@
       "description": "Commercial banks, credit unions, bank holding companies",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     "mortgage": {
@@ -355,22 +98,7 @@
       "description": "Mortgage lenders, servicers, GSEs, title companies",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Why Trump's big housing move could pose a 'threat' to these stocks",
-          "description": "In a post on Truth Social, President Trump said that he is \"immediately taking steps to ban large institutional investors from buying more single-family...",
-          "url": "https://finance.yahoo.com/video/why-trumps-big-housing-move-174418176.html",
-          "source": "Yahoo Entertainment",
-          "published_at": "2026-01-09T17:44:18Z",
-          "image_url": "https://s.yimg.com/ny/api/res/1.2/zNp.uWejg4I5WBFO7saLyg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD02NzY-/https://s.yimg.com/os/creatr-uploaded-images/2026-01/61e4c780-ed82-11f0-b7de-247d69917ad4",
-          "author": "Yahoo Finance Video",
-          "source_score": 65,
-          "source_canonical": "Yahoo",
-          "is_verified_source": true,
-          "authority_score": 65,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     "consumer_lending": {
@@ -406,148 +134,7 @@
       "description": "Exchanges, stablecoins, custody, DeFi, mining",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Goldman Sachs sees regulation driving next wave of institutional crypto adoption",
-          "description": "Regulatory clarity and expanding use cases beyond trading are setting the stage for deeper institutional participation in digital assets, the bank said.",
-          "url": "https://www.coindesk.com/markets/2026/01/05/goldman-sachs-sees-regulation-driving-next-wave-of-institutional-crypto-adoption",
-          "source": "CoinDesk",
-          "published_at": "2026-01-05T16:26:03Z",
-          "image_url": "https://cdn.sanity.io/images/s3y3vcno/production/bc5ee13cf9751912deef7f90a5b88962bb1c442d-1920x1080.jpg?auto=format&w=960&h=540&crop=focalpoint&fit=clip&q=75&fm=jpg",
-          "author": "Will Canny, AI Boost",
-          "source_score": 75,
-          "source_canonical": "CoinDesk",
-          "is_verified_source": true,
-          "authority_score": 75,
-          "coverage_count": 1
-        },
-        {
-          "title": "Crypto reps fly to US capitol this week to address market structure bill",
-          "description": "According to The Digital Chamber CEO Cody Carbone, representatives from crypto companies will come to Washington, DC on Thursday to engage with lawmakers and discuss a market structure bill.",
-          "url": "https://cointelegraph.com/news/crypto-companies-dc-market-structure-bill",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-07T21:50:58Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019b99f1-b63e-705d-a869-3dda7dceab17.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Senate Republicans Schedule Crypto Bill Vote Despite Divide on Key Issues",
-          "description": "The Senate Banking Committee will vote on its crypto market structure bill next week, even as Democrats and Republicans still appear far apart on major sticking points.",
-          "url": "https://decrypt.co/353799/senate-republicans-schedule-crypto-bill-vote-key-issues",
-          "source": "Decrypt",
-          "published_at": "2026-01-06T23:17:24Z",
-          "image_url": "https://cdn.decrypt.co/resize/1024/height/512/wp-content/uploads/2025/05/US-Capitol-decrypt-style-04-gID_7.png",
-          "author": "Sander Lutz",
-          "source_score": 68,
-          "source_canonical": "Decrypt",
-          "is_verified_source": true,
-          "authority_score": 68,
-          "coverage_count": 1
-        },
-        {
-          "title": "Bitwise Flags Three Conditions Crypto Must Meet To Reach New All-Time Highs In 2026",
-          "description": "The crypto market started 2026 on a strong footing, but reaching new peaks this year will depend on clearing three key hurdles.",
-          "url": "https://zycrypto.com/bitwise-flags-three-conditions-crypto-must-meet-to-reach-new-all-time-highs-in-2026/",
-          "source": "ZyCrypto",
-          "published_at": "2026-01-08T09:38:21Z",
-          "image_url": "https://zycrypto.com/wp-content/uploads/2021/08/On-Chain-Data-Suggests-Ether-Will-Be-Blazing-Through-New-All-Time-Highs-Before-Bitcoin.jpg",
-          "author": "Brenda Ngari",
-          "source_score": 55,
-          "source_canonical": "ZyCrypto",
-          "is_verified_source": true,
-          "authority_score": 55,
-          "coverage_count": 1
-        },
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "BlackRock predicts major shift in retail investors' access to cryptocurrencies",
-          "description": "It could be the year Main Street's appetite for cryptocurrency exposure meaningfully grows.",
-          "url": "https://www.cnbc.com/2026/01/09/blackrocks-bull-case-for-bitcoin-access-among-retail-investors.html",
-          "source": "CNBC",
-          "published_at": "2026-01-09T12:00:01Z",
-          "image_url": "https://image.cnbcfm.com/api/v1/image/108171292-1752472035793-gettyimages-2219214461-HL_RCOSTASECA_2799512.jpeg?v=1767906687&w=1920&h=1080",
-          "author": null,
-          "source_score": 85,
-          "source_canonical": "CNBC",
-          "is_verified_source": true,
-          "authority_score": 85,
-          "coverage_count": 1
-        },
-        {
-          "title": "Rumors are swirling about Venezuela holding $60 billion in Bitcoin—but crypto experts are skeptical",
-          "description": "What we know about the South American country’s crypto holdings.",
-          "url": "https://fortune.com/2026/01/09/rumors-swirling-about-venezuela-bitcoin-crypto-experts-are-skeptical/",
-          "source": "Fortune",
-          "published_at": "2026-01-09T18:20:46Z",
-          "image_url": "https://fortune.com/img-assets/wp-content/uploads/2026/01/GettyImages-2254194605-e1767982366129.jpg?resize=1200,600",
-          "author": "Carlos Garcia",
-          "source_score": 82,
-          "source_canonical": "Fortune",
-          "is_verified_source": true,
-          "authority_score": 82,
-          "coverage_count": 1
-        },
-        {
-          "title": "Colombia advances crypto tax rules as global reporting standards take shape",
-          "description": "Colombia’s tax authority has rolled out new reporting requirements for crypto service providers, requiring exchanges to collect and submit user and transaction data starting in 2026.",
-          "url": "https://cointelegraph.com/news/colombia-advances-crypto-tax-rules-global-reporting-standards-take-shape",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:35:22Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba480-0d20-7a4e-9244-d6119934edf5.jpg",
-          "author": "Cointelegraph by Nate Kostar",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Wall Street’s crypto debate is over as banks go all-in on BTC, stablecoins, tokenized cash",
-          "description": "Big banks aren’t debating crypto anymore — they’re building it. From tokenized cash to ETFs, Wall Street is quietly going onchain.",
-          "url": "https://cointelegraph.com/news/wall-street-banks-crypto-etfs-tokenized-cash",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T21:00:00Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba39c-4914-7ced-884e-688b7be18760.jpg",
-          "author": "Cointelegraph by Sam Bourgi",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        },
-        {
-          "title": "Trading bots gain traction as crypto markets move sideways: HTX 2025 recap",
-          "description": "Crypto traders increasingly relied on grid trading bots in 2025 as markets moved sideways, according to data from crypto exchange HTX.",
-          "url": "https://cointelegraph.com/news/trading-bots-gain-traction-crypto-markets-move-sideways-htx-2025-recap",
-          "source": "Cointelegraph",
-          "published_at": "2026-01-09T19:37:05Z",
-          "image_url": "https://images.cointelegraph.com/cdn-cgi/image/f=auto,onerror=redirect,w=1200/https://s3.cointelegraph.com/uploads/2026-01/019ba3f1-50a0-71f0-94e0-aa2b7673524d.jpg",
-          "author": "Cointelegraph by Nate Kostar",
-          "source_score": 70,
-          "source_canonical": "Cointelegraph",
-          "is_verified_source": true,
-          "authority_score": 70,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     "fintech": {
@@ -556,50 +143,7 @@
       "description": "Payments, credit bureaus, data providers",
       "firms": [],
       "officials": [],
-      "news": [
-        {
-          "title": "Mega Matrix, Ihsan Dhahab enter MOU to operate fintech projects in Saudi Arabia",
-          "description": "See the rest of the story here.\n\nthefly.com provides the latest financial news as it breaks. Known as a leader in market intelligence, The Fly's real-time, streaming news feed keeps individual investors, professional money managers, active traders, and corpor…",
-          "url": "https://thefly.com/permalinks/entry.php/id4267763/MPU-Mega-Matrix-Ihsan-Dhahab-enter-MOU-to-operate-fintech-projects-in-Saudi-Arabia",
-          "source": "Thefly.com",
-          "published_at": "2026-01-09T10:08:52Z",
-          "image_url": "https://thefly.com/images/meta/hotstocks.jpg",
-          "author": null,
-          "source_score": 72,
-          "source_canonical": "The Fly",
-          "is_verified_source": true,
-          "authority_score": 72,
-          "coverage_count": 1
-        },
-        {
-          "title": "Future FinTech unit signs framework agreement to acquire TransGen SC Tech",
-          "description": "See the rest of the story here.\n\nthefly.com provides the latest financial news as it breaks. Known as a leader in market intelligence, The Fly's real-time, streaming news feed keeps individual investors, professional money managers, active traders, and corpor…",
-          "url": "https://thefly.com/permalinks/entry.php/id4267100/FTFT-Future-FinTech-unit-signs-framework-agreement-to-acquire-TransGen-SC-Tech",
-          "source": "Thefly.com",
-          "published_at": "2026-01-08T13:16:45Z",
-          "image_url": "https://thefly.com/images/meta/hotstocks.jpg",
-          "author": null,
-          "source_score": 72,
-          "source_canonical": "The Fly",
-          "is_verified_source": true,
-          "authority_score": 72,
-          "coverage_count": 1
-        },
-        {
-          "title": "This Fintech Stock Poised for Explosive Growth Could Surge Over 100% by 2028.",
-          "description": null,
-          "url": "https://consent.yahoo.com/v2/collectConsent?sessionId=1_cc-session_023c6b88-9fe7-48b5-9428-43cbc39b59b4",
-          "source": "Yahoo Entertainment",
-          "published_at": "2026-01-09T10:05:00Z",
-          "image_url": null,
-          "author": null,
-          "source_score": 65,
-          "source_canonical": "Yahoo",
-          "is_verified_source": true,
-          "authority_score": 65,
-          "coverage_count": 1
-        }
-      ],
+      "news": [],
       "total_trades": 0
     },
     "proptech": {
@@ -622,5 +166,5 @@
     }
   },
   "count": 9,
-  "generated_at": "2026-01-10T21:07:33.099340"
+  "generated_at": "2026-01-15T17:59:29.625350"
 }

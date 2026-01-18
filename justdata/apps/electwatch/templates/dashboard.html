@@ -2454,7 +2454,7 @@
             if (industry) params.append('industry', industry);
 
             try {
-                const response = await fetch(`/api/officials?${params}`);
+                const response = await fetch(`/electwatch/api/officials?${params}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -2939,7 +2939,7 @@
         // Load Data Freshness Info
         async function loadDataFreshness() {
             try {
-                const response = await fetch('/api/freshness');
+                const response = await fetch('/electwatch/api/freshness');
                 const data = await response.json();
 
                 if (data.success) {
@@ -3047,7 +3047,7 @@
         let allFirms = [];
         async function loadFirms() {
             try {
-                const response = await fetch('/api/firms?limit=100');
+                const response = await fetch('/electwatch/api/firms?limit=100');
                 const data = await response.json();
 
                 if (data.success) {
@@ -3110,7 +3110,7 @@
         // Load Industry Summary Stats
         async function loadIndustrySummary() {
             try {
-                const response = await fetch('/api/sectors');
+                const response = await fetch('/electwatch/api/sectors');
                 const data = await response.json();
 
                 if (data.success && data.sectors) {
@@ -3155,7 +3155,7 @@
 
             // Otherwise, search for bills
             try {
-                const response = await fetch(`/api/bills/search?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`/electwatch/api/bills/search?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
 
                 if (data.success) {

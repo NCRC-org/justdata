@@ -64,3 +64,23 @@ def get_tract_boundaries_geojson(state_fips: str, county_fips: str) -> Optional[
         traceback.print_exc()
         return None
 
+
+def get_tract_boundaries(geoid5: str) -> Optional[Dict]:
+    """
+    Fetch census tract boundaries using a 5-digit FIPS code (geoid5).
+
+    Args:
+        geoid5: 5-digit county FIPS code (2-digit state + 3-digit county, e.g., "17023")
+
+    Returns:
+        GeoJSON dictionary with tract boundaries, or None if unavailable
+    """
+    if not geoid5 or len(geoid5) != 5:
+        logger.error(f"Invalid geoid5: {geoid5}. Must be exactly 5 digits.")
+        return None
+
+    state_fips = geoid5[:2]
+    county_fips = geoid5[2:]
+
+    return get_tract_boundaries_geojson(state_fips, county_fips)
+

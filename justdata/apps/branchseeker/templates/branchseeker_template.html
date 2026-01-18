@@ -151,6 +151,16 @@
                         </small>
                     </div>
 
+                    {% if is_staff %}
+                    <!-- Clear cache checkbox (staff/admin only) -->
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95em; color: #333; padding: 12px 15px; background: #fff8e1; border: 2px solid #ffc107; border-radius: 6px;">
+                            <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer; width: 18px; height: 18px; accent-color: #ff9800;">
+                            <span><i class="fas fa-sync-alt" style="margin-right: 6px; color: #ff9800;"></i><strong>Clear cache and regenerate report</strong></span>
+                        </label>
+                    </div>
+                    {% endif %}
+
                     <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your analysis. Make sure you've selected counties and a year range first.">
                         <i class="fas fa-magic"></i>
                         <span>Generate Analysis</span>

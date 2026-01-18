@@ -22,10 +22,43 @@ class LendSightAnalyzer(AIAnalyzer):
         - Part 3: Native American and Hawaiian Lending: https://ncrc.org/mortgage-market-report-series-part-3-native-american-and-hawaiian-lending/
         - Part 4: Mortgage Lending Across American Cities: https://ncrc.org/mortgage-market-report-series-part-4-mortgage-lending-across-american-cities/
         - Part 5: Top 50 Home Purchase Lenders Analysis for 2024: https://ncrc.org/mortgage-market-report-series-part-5-top-50-home-purchase-lenders-analysis-for-2024/
-        
+
         If you reference any of these reports, you MUST include a hypertext link using markdown format: [link text](URL)
         Example: "As noted in NCRC's mortgage market analysis ([Part 1: Introduction to Mortgage Market Trends](https://ncrc.org/mortgage-market-report-series-part-1-introduction-to-mortgage-market-trends/)), non-bank lenders now dominate the market."
         Only reference these sources if the information is directly relevant and supports your analysis.
+        """
+
+    def _get_data_source_distinction(self) -> str:
+        """Return guidance on distinguishing lending gaps from homeownership gaps."""
+        return """
+        CRITICAL DATA SOURCE DISTINCTION - Housing Analysis:
+        When analyzing housing disparities, you MUST distinguish between two related but DISTINCT metrics:
+
+        1. MORTGAGE LENDING GAP (what THIS report shows):
+           - Measures ACCESS TO CREDIT, not homeownership rates
+           - Example: "Black residents = 9% of county population but received 4% of mortgage approvals"
+           - This shows barriers to OBTAINING mortgages
+           - Source: LendSight report data (HMDA mortgage originations)
+
+        2. HOMEOWNERSHIP GAP (a DIFFERENT metric, NOT in this report):
+           - Measures actual homeownership RATES by race
+           - For homeownership rate data, reference the NCRC Racial Wealth Gap report:
+             https://ncrc.org/the-racial-wealth-gap-1992-to-2022/
+           - This documents who ALREADY OWNS homes, not who is getting new mortgages
+
+        KEY RULE: NEVER conflate lending approval gaps with homeownership gaps.
+        - They measure DIFFERENT points in the housing access pipeline
+        - Lending gaps show barriers to credit ACCESS
+        - Homeownership gaps show ultimate OUTCOMES
+        - Both are important, but they are NOT the same thing
+
+        When discussing either metric, you MAY appropriately reference:
+        - Redlining's legacy and ongoing effects
+        - Algorithmic bias in lending
+        - Neighborhood disinvestment
+        - Intergenerational wealth impacts
+
+        In THIS report, focus on LENDING ACCESS gaps from the HMDA data provided.
         """
     
     def generate_intro_paragraph(self, data: Dict[str, Any]) -> str:
@@ -158,19 +191,25 @@ class LendSightAnalyzer(AIAnalyzer):
         
         prompt = f"""
         Generate 3-5 key findings for mortgage lending analysis. Each finding should have a BOLD TITLE followed by a colon and then a sentence summarizing the major data point.
-        
+
         Counties: {counties}
         Years: {years[0]} to {years[-1]}
         Data: {json.dumps(json_data, indent=2)[:2000]}
         Demographic Overview Data: {json.dumps(demographic_data, indent=2)[:1500] if demographic_data else 'Not available'}
-        
+
         {self._get_ncrc_report_sources()}
-        
+
         IMPORTANT DEFINITIONS:
         - LMIB = Low-to-Moderate Income Borrowers
         - LMICT = Low-to-Moderate Income Census Tracts
         - MMCT = Majority-Minority Census Tracts
-        
+
+        CRITICAL DATA DISTINCTION:
+        - This data shows MORTGAGE APPROVALS (access to credit), NOT homeownership rates
+        - When discussing racial/ethnic lending patterns, use "lending gap" or "mortgage access gap"
+        - NEVER use "homeownership gap" - that's a different metric measuring actual ownership rates
+        - Example: "Black borrowers received X% of mortgage approvals" (correct) vs "Black homeownership rate" (wrong metric)
+
         FORMAT REQUIREMENTS:
         - Each finding must be formatted as: **Title:** Sentence describing the finding
         - The title should be a short, descriptive phrase (3-8 words) that summarizes the finding
@@ -178,12 +217,12 @@ class LendSightAnalyzer(AIAnalyzer):
         - Format as bullet points starting with "•"
         - Example format: • **Total Originations:** Mortgage originations in Hillsborough County, Florida declined by 38.5% from 25,510 loans in 2020 to 15,701 loans in 2024, representing a net decrease of 9,809 loans over the five-year period.
         - Include specific numbers/percentages when available
-        
+
         Focus on:
         - Most significant and compelling statistics from the data
         - Particularly notable trends or patterns
-        - Title should be concise and descriptive (e.g., "Total Originations", "LMI Borrower Lending", "Hispanic Borrower Share", "MMCT Originations", "White Borrower Share")
-        
+        - Title should be concise and descriptive (e.g., "Total Originations", "LMI Borrower Lending", "Hispanic Mortgage Access", "MMCT Originations", "White Borrower Share")
+
         WRITING REQUIREMENTS:
         - Write in objective, third-person style
         - NO first-person language (no "I", "we", "my", "our")
@@ -501,70 +540,103 @@ Top Lenders by Loan Volume:
         """
         
         prompt = f"""
-        Generate at least 2 paragraphs (minimum 2 paragraphs required) discussing the lending data shown in the demographic overview table.
-        
-        IMPORTANT: This is LENDING DATA for {counties_str}, NOT demographic data about the population.
-        The table shows mortgage lending patterns by race and ethnicity of BORROWERS, not population demographics.
-        
-        Counties: {counties}
-        Years: {year_range}
-        Most Recent Year: {latest_year}
-        Lending Table Data: {json.dumps(demographic_data, indent=2)[:2000] if demographic_data else 'Not available'}
-        {population_context if population_context else "Population demographics data not available for comparison."}
-        
-        {self._get_ncrc_report_sources()}
-        
-        CRITICAL: {f"The population demographics data IS PROVIDED ABOVE and MUST be used. Do NOT say the data is missing or unavailable." if population_context else "Population demographics data is not available for this analysis."}
-        
-        CRITICAL ANALYSIS REQUIREMENT - COMPARE LENDING TO POPULATION:
-        {f"You MUST compare the lending percentage for each race/ethnicity group to their share of the population in the most recent year ({latest_year}). The population data IS PROVIDED ABOVE - use it." if population_context else "Population demographics data is not available, so you cannot compare lending to population shares. Focus only on lending trends over time."}
-        For each group shown in the lending table, compare:
-        - The percentage of loans to that group (from the lending data for {latest_year})
-        - The percentage of the population that is that group (from the population demographics above)
-        - Note whether lending to that group is higher, lower, or approximately equal to their population share
-        - Calculate and mention the difference (e.g., "White borrowers received X% of loans, compared to Y% of the population, a difference of Z percentage points")
-        - DO NOT say the population data is missing - it is provided above
-        
-        The discussion should:
-        1. FIRST PARAGRAPH: Explain how to interpret the table and identify the most significant patterns
-           - Explain what the table shows (lending percentages vs. population shares) in plain English
-           - Explain HOW TO READ the table - what each column means and how to interpret the data
-           - Identify the MOST COMPELLING disparities - ONLY cite 1-2 groups with the LARGEST gaps or most notable differences
-           - For those selected groups, briefly note whether lending is above, below, or approximately equal to population share
-           - DO NOT list every single group's numbers - the reader can see those in the table
-           - DO NOT recite all the data - focus on explaining what the patterns mean
-           - Reference national trends from NCRC reports when relevant (e.g., "This pattern aligns with [national trends](link) showing...")
-           - Use plain English to explain what the disparities mean, not just what they are
-        2. SECOND PARAGRAPH: Explain the trends over time in plain English
-           - Describe the overall direction of changes (which groups are gaining or losing share) in simple terms
-           - ONLY cite the MOST SIGNIFICANT changes - the BIGGEST percentage point shifts or those that differ most from national trends
-           - Explain what these trends suggest about the market in plain English (e.g., "The data shows a shift toward greater representation of certain groups")
-           - DO NOT list every single change - focus ONLY on the most compelling trends
-           - Help readers understand how to interpret the "Change Over Time" column
-           - Reference national trends from NCRC reports when the local pattern differs or aligns with broader patterns
-           - Use plain English to explain what the trends mean, not just what they are
-        
-        CRITICAL WRITING REQUIREMENTS (SAME AS SECTION 2):
-        - Write in PLAIN ENGLISH - explain what the data means, not just what it says
-        - The reader can see all the numbers in the table - your job is to explain the trends and patterns
-        - ONLY cite the MOST COMPELLING numbers: the biggest changes, largest gaps, or patterns that differ most from national trends
-        - DO NOT create a "wall of numbers" - cite at most 2-3 specific percentages per paragraph
-        - Focus on explaining HOW TO READ the table and WHAT TRENDS are visible
-        - Use simple, clear language accessible to non-technical readers
-        - Explain trends in plain English, not just cite numbers
-        - Use "lending data" or "mortgage lending patterns" - NEVER say "demographic data"
-        - Use "borrowers" - NEVER use "individuals" or "people"
-        - Write in objective, third-person style
-        - NO first-person language (no "I", "we", "my", "our")
-        - NO assumptions about causality or why patterns exist
-        - NO policy recommendations
-        - NO speculation about underlying reasons
-        - Present ONLY what the lending data shows compared to population demographics
-        - Use professional, analytical tone
-        - AT LEAST 2 PARAGRAPHS (minimum requirement)
-        - The first paragraph MUST explain how to interpret the table and identify the most significant patterns
-        - If referencing NCRC reports, include hypertext links in markdown format: [link text](URL)
-        """
+You are writing for a general audience unfamiliar with mortgage discrimination and lending disparities.
+
+{self._get_data_source_distinction()}
+
+=== ABSOLUTE HARD LIMITS - YOU WILL BE SCORED ON THESE ===
+
+NUMBER LIMIT: You may cite AT MOST THREE (3) numbers in your ENTIRE response.
+- Example of 3 numbers: "Black residents represent 18% of population, received 6% of mortgage approvals—a 12-point gap"
+- That uses your entire budget: 18%, 6%, 12 points = 3 numbers
+- If you cite 4 or more numbers anywhere in your response, you have FAILED
+- Focus on the SINGLE most egregious disparity only
+- For all other groups, describe patterns WITHOUT citing specific percentages
+
+MANDATORY EDUCATIONAL CONTENT (must include ALL of these):
+1. Define the "mortgage lending gap" (disparity in ACCESS to credit, not homeownership rates) in one sentence
+2. Mention redlining's legacy in one sentence (explain it was legally banned 1968 but effects persist through algorithmic bias and disinvestment)
+3. Explain why mortgage access = wealth building opportunity in one sentence
+4. Connect one disparity to real-world impact on families/communities
+
+WHAT YOU MUST NOT DO:
+❌ List percentages for multiple demographic groups
+❌ Cite year-over-year changes with numbers
+❌ Recite what's already visible in the table
+❌ Use phrases like "the data shows" or "according to the table"
+❌ Cite population percentages AND lending percentages for multiple groups
+❌ Conflate lending approval gaps with homeownership rate gaps (they are DIFFERENT metrics)
+❌ Use "homeownership gap" when referring to this lending data - use "lending gap" or "mortgage access gap"
+
+=== THE DATA (for context only, NOT to recite) ===
+
+Counties: {counties_str}
+Years: {year_range}
+Latest Year: {latest_year}
+
+POPULATION DEMOGRAPHICS (Most Recent Census):
+{population_context if population_context else 'Population data not available for comparison.'}
+
+LENDING DATA BY RACE/ETHNICITY (shows mortgage APPROVALS, not homeownership rates):
+{json.dumps(demographic_data, indent=2)[:2000] if demographic_data else 'Lending data not available'}
+
+=== YOUR TASK ===
+
+Write exactly 2 paragraphs (250 words maximum total):
+
+PARAGRAPH 1 - Educational Context + Most Striking Disparity:
+- Start by explaining what the MORTGAGE LENDING GAP is (disparity in access to mortgage credit, distinct from homeownership rates)
+- Note this measures ACCESS to credit - a barrier BEFORE homeownership
+- Mention redlining's historical impact and ongoing effects (algorithmic bias, neighborhood disinvestment)
+- Identify the SINGLE most egregious LENDING disparity in the data (pick ONE group with largest population-to-approval gap)
+- For that ONE group, cite AT MOST 3 numbers showing: population %, mortgage approval %, gap
+- Example: "Black residents represent 18% of population, received 6% of mortgage approvals—a 12-point gap"
+
+PARAGRAPH 2 - Broader Pattern + Real-World Impact:
+- Describe the OVERALL trend for other groups WITHOUT citing specific percentages
+- Use qualitative language: "Some groups received mortgage approvals at rates exceeding their population share, others fell short"
+- Explain what these lending disparities mean for families trying to build wealth
+- Connect to structural barriers (algorithmic bias, neighborhood disinvestment, etc.)
+- Reference national patterns from NCRC research if relevant
+- For context on actual homeownership rates (a different metric), reference the [NCRC Racial Wealth Gap report](https://ncrc.org/the-racial-wealth-gap-1992-to-2022/)
+
+=== REFERENCE SOURCES ===
+{self._get_ncrc_report_sources()}
+
+You may reference NCRC reports using markdown hyperlinks: [link text](URL)
+
+=== EXAMPLES OF SUCCESS vs FAILURE ===
+
+❌ FAILURE EXAMPLE (conflates metrics and cites 8+ numbers):
+"White borrowers received 44.7% of loans in 2024 despite comprising only 37.9% of the population, revealing the racial homeownership gap of 6.8 percentage points. Hispanic borrowers received 16.9% of loans..."
+[This conflates lending gaps with homeownership gaps and cites too many numbers - FAILED]
+
+✅ SUCCESS EXAMPLE (cites exactly 3 numbers, correct terminology):
+"Montgomery County's lending patterns reveal a persistent mortgage lending gap—the disparity in access to mortgage credit that creates barriers to homeownership for communities of color. This gap in credit access has roots in redlining, the discriminatory practice legally banned in 1968 whose effects persist through algorithmic bias and neighborhood disinvestment. Most striking: Black residents represent 18% of the county's population but received only 6% of mortgage approvals, a 12-percentage-point gap in credit access that compounds across generations.
+
+While some demographic groups received mortgage approvals at rates exceeding their population share and others fell short, these lending disparities reflect structural barriers rather than individual lender decisions. Limited mortgage access means limited opportunity to build home equity—the primary wealth-building mechanism for American families. For broader context on how lending gaps translate to actual homeownership disparities, see the [NCRC Racial Wealth Gap report](https://ncrc.org/the-racial-wealth-gap-1992-to-2022/)."
+[This cites exactly 3 numbers, uses correct terminology (lending gap, mortgage access), and properly distinguishes from homeownership rates - SUCCESS]
+
+=== CRITICAL WRITING REQUIREMENTS ===
+
+- Write in PLAIN ENGLISH accessible to non-experts
+- Use "lending data" or "mortgage lending patterns" - NEVER "demographic data"
+- Use "mortgage lending gap" or "credit access gap" - NOT "homeownership gap" (different metric)
+- Use "borrowers" - NEVER "individuals" or "people"
+- Write in objective, third-person style
+- NO first-person language (no "I", "we", "my", "our")
+- NO assumptions about WHY disparities exist beyond structural barriers
+- NO policy recommendations
+- Present what the data reveals about access and barriers
+- Professional, analytical tone
+- Maximum 250 words total
+
+=== FINAL REMINDER ===
+
+Count your numbers before submitting. If you cite more than 3 numbers ANYWHERE in your response, start over.
+
+The reader can see all the percentages in the table above. Your job is to EDUCATE them about what those numbers MEAN for families trying to ACCESS mortgage credit, not to recite them. Remember: this data shows LENDING ACCESS gaps, not homeownership rates.
+"""
         
         return self._call_ai(prompt, max_tokens=1000, temperature=0.3)
     
@@ -687,10 +759,174 @@ Top Lenders by Loan Volume:
         """
         
         return self._call_ai(prompt, max_tokens=1000, temperature=0.3)
-    
+
+    def generate_income_borrowers_discussion(self, data: Dict[str, Any]) -> str:
+        """Generate 1 paragraph (max) discussing Section 2 Table 1: Lending to Income Borrowers."""
+        counties = data.get('counties', [])
+        years = data.get('years', [])
+        income_borrowers_data = data.get('income_borrowers', [])
+
+        # Debug logging
+        print(f"[DEBUG] generate_income_borrowers_discussion: counties={counties}, years={years}")
+        print(f"[DEBUG] income_borrowers_data length: {len(income_borrowers_data) if income_borrowers_data else 0}")
+        if income_borrowers_data:
+            print(f"[DEBUG] income_borrowers_data sample: {income_borrowers_data[0] if income_borrowers_data else 'empty'}")
+
+        if len(years) > 1:
+            year_range = f"{min(years)} to {max(years)}"
+        else:
+            year_range = str(years[0]) if years else "the selected years"
+
+        counties_str = ', '.join(counties) if counties else 'the selected counties'
+
+        prompt = f"""
+You are writing for a general audience that may not understand mortgage lending patterns or income-based lending analysis.
+
+EDUCATIONAL CONTEXT:
+This table shows who is getting mortgage loans based on their income level relative to the area median income (AMI):
+- "Low Income" = borrowers earning less than 50% of AMI (often minimum wage workers, part-time employees)
+- "Moderate Income" = borrowers earning 50-80% of AMI (teachers, nurses, service workers)
+- "Middle Income" = borrowers earning 80-120% of AMI (typical working families)
+- "Upper Income" = borrowers earning more than 120% of AMI
+
+When mortgage lending concentrates among upper-income borrowers, it suggests potential barriers for working families trying to build wealth through homeownership.
+
+YOUR TASK:
+Analyze the Income Borrowers table for {counties_str} ({year_range}) and write ONE focused paragraph (3-5 sentences):
+
+1. Identify the MOST significant trend - is lending to low/moderate income borrowers increasing or declining?
+2. Explain what this means for housing access - are working families gaining or losing mortgage access?
+3. If there's a dramatic shift (10+ percentage points), highlight it and explain the implications
+
+CRITICAL RULES:
+- DO NOT recite every number from the table - the reader can see them
+- DO explain what the trends MEAN for families trying to buy homes
+- Cite maximum 1-2 numbers, only if they show dramatic changes
+- Write in plain, conversational English
+- NO first-person language (no "I", "we", "my", "our")
+- Maximum 150 words
+
+TABLE DATA:
+{json.dumps(income_borrowers_data, indent=2)[:2000] if income_borrowers_data else 'Not available - cannot generate analysis without data'}
+"""
+
+        return self._call_ai(prompt, max_tokens=300, temperature=0.3)
+
+    def generate_income_tracts_discussion(self, data: Dict[str, Any]) -> str:
+        """Generate 1 paragraph (max) discussing Section 2 Table 2: Lending to Census Tracts by Income Level."""
+        counties = data.get('counties', [])
+        years = data.get('years', [])
+        income_tracts_data = data.get('income_tracts', [])
+
+        # Debug logging
+        print(f"[DEBUG] generate_income_tracts_discussion: counties={counties}, years={years}")
+        print(f"[DEBUG] income_tracts_data length: {len(income_tracts_data) if income_tracts_data else 0}")
+        if income_tracts_data:
+            print(f"[DEBUG] income_tracts_data sample: {income_tracts_data[0] if income_tracts_data else 'empty'}")
+
+        if len(years) > 1:
+            year_range = f"{min(years)} to {max(years)}"
+        else:
+            year_range = str(years[0]) if years else "the selected years"
+
+        counties_str = ', '.join(counties) if counties else 'the selected counties'
+
+        prompt = f"""
+You are writing for a general audience that may not understand housing policy or community investment patterns.
+
+EDUCATIONAL CONTEXT:
+This table shows WHERE mortgage loans are going based on the income level of NEIGHBORHOODS (not individual borrowers):
+- "Low Income Census Tracts" = neighborhoods where the typical family earns less than 50% of area median
+- "Moderate Income Census Tracts" = neighborhoods earning 50-80% of area median
+- "LMICT" = Low-to-Moderate Income Census Tracts (combines both above categories)
+
+WHY THIS MATTERS:
+When mortgage lending bypasses lower-income neighborhoods, those communities face:
+- Declining property values and tax revenue
+- Less investment in local businesses and schools
+- Residents locked out of the primary path to building family wealth
+This perpetuates cycles of disinvestment that can last generations.
+
+YOUR TASK:
+Analyze the Income Census Tracts table for {counties_str} ({year_range}) and write ONE focused paragraph (3-5 sentences):
+
+1. Identify the KEY trend - is lending in lower-income neighborhoods increasing or declining?
+2. Explain what this means for community investment - are underserved neighborhoods gaining access or being left behind?
+3. If there's a dramatic shift, explain what it means for residents of these neighborhoods
+
+CRITICAL RULES:
+- DO NOT recite every number from the table - the reader can see them
+- DO explain what neighborhood lending patterns mean for community well-being
+- Cite maximum 1-2 numbers, only if they show dramatic changes
+- Write in plain, conversational English
+- NO first-person language (no "I", "we", "my", "our")
+- Maximum 150 words
+
+TABLE DATA:
+{json.dumps(income_tracts_data, indent=2)[:2000] if income_tracts_data else 'Not available - cannot generate analysis without data'}
+"""
+
+        return self._call_ai(prompt, max_tokens=300, temperature=0.3)
+
+    def generate_minority_tracts_discussion(self, data: Dict[str, Any]) -> str:
+        """Generate 1 paragraph (max) discussing Section 2 Table 3: Lending to Census Tracts by Minority Population."""
+        counties = data.get('counties', [])
+        years = data.get('years', [])
+        minority_tracts_data = data.get('minority_tracts', [])
+
+        # Debug logging
+        print(f"[DEBUG] generate_minority_tracts_discussion: counties={counties}, years={years}")
+        print(f"[DEBUG] minority_tracts_data length: {len(minority_tracts_data) if minority_tracts_data else 0}")
+        if minority_tracts_data:
+            print(f"[DEBUG] minority_tracts_data sample: {minority_tracts_data[0] if minority_tracts_data else 'empty'}")
+
+        if len(years) > 1:
+            year_range = f"{min(years)} to {max(years)}"
+        else:
+            year_range = str(years[0]) if years else "the selected years"
+
+        counties_str = ', '.join(counties) if counties else 'the selected counties'
+
+        prompt = f"""
+You are writing for a general audience that may not understand fair lending or racial patterns in mortgage access.
+
+EDUCATIONAL CONTEXT:
+This table shows WHERE mortgage loans are going based on the racial/ethnic composition of NEIGHBORHOODS:
+- "Majority-Minority Census Tract" (MMCT) = neighborhoods where more than 50% of residents are people of color
+- Quartile categories group neighborhoods from lowest to highest minority population percentage
+
+HISTORICAL CONTEXT:
+Redlining (legal until 1968) systematically denied mortgages to communities of color. While outlawed, its effects persist:
+- Formerly redlined neighborhoods still have lower property values
+- Communities of color often face higher denial rates and worse loan terms
+- Mortgage access patterns can indicate ongoing structural barriers
+
+IMPORTANT NOTE: The 2020 Census redrew tract boundaries, increasing MMCT designations by ~30% nationally. Shifts between 2021-2022 may partly reflect boundary changes, not just lending changes.
+
+YOUR TASK:
+Analyze the Minority Census Tracts table for {counties_str} ({year_range}) and write ONE focused paragraph (3-5 sentences):
+
+1. Identify the KEY pattern - is lending in majority-minority neighborhoods keeping pace with predominantly white neighborhoods?
+2. Explain what this means for racial equity in housing - are communities of color gaining or losing mortgage access?
+3. If there's a significant shift around 2022, note the census boundary change as a possible factor
+
+CRITICAL RULES:
+- DO NOT recite every number from the table - the reader can see them
+- DO explain what lending patterns mean for fair housing and community investment
+- Cite maximum 1-2 numbers, only if they show dramatic changes
+- Write in plain, conversational English
+- NO first-person language (no "I", "we", "my", "our")
+- Maximum 150 words
+
+TABLE DATA:
+{json.dumps(minority_tracts_data, indent=2)[:2000] if minority_tracts_data else 'Not available - cannot generate analysis without data'}
+"""
+
+        return self._call_ai(prompt, max_tokens=300, temperature=0.3)
+
     def generate_all_table_discussions(self, data: Dict[str, Any]) -> Dict[str, str]:
         """Generate all four table discussions in a single API call to reduce rate limit issues.
-        
+
         Returns a dictionary with keys:
         - demographic_overview_discussion
         - income_neighborhood_discussion

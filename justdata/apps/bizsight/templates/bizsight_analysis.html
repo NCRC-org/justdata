@@ -13,8 +13,27 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+
     <style>
+        /* Constrain the analysis card width with side buffers */
+        .analysis-card {
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Constrain selection form width */
+        .county-selection-container {
+            max-width: 100%;
+        }
+
+        .selection-form {
+            max-width: 100%;
+        }
+
         .map-selection-container {
             display: grid;
             grid-template-columns: 350px 1fr;
@@ -222,8 +241,8 @@
                             <ul style="margin: 10px 0; padding-left: 20px;">
                                 <li><strong>Single County Only:</strong> Analysis focuses on one county at a time for detailed tract-level mapping</li>
                                 <li><strong>No Borrower Details:</strong> Unlike mortgage data, we don't have detailed borrower demographics</li>
-                                <li><strong>Tract-Level Data:</strong> Aggregate table provides census tract-level lending patterns</li>
-                                <li><strong>County-Level Lender Data:</strong> Disclosure table shows lender activity at county level</li>
+                                <li><strong>Tract-Level Data:</strong> Shows lending patterns by census tract, but does not include individual lender names</li>
+                                <li><strong>Lender Data:</strong> To see activity by specific lenders, data is only available at the county level (not by tract)</li>
                             </ul>
                         </div>
                     </div>
@@ -241,7 +260,18 @@
                             <strong>Year Range:</strong> This report will analyze data from <strong>2020 to 2024</strong> (all available years).
                         </p>
                     </div>
-                    
+
+                    <!-- Clear Cache Checkbox (Staff/Admin Only) -->
+                    {% if is_staff %}
+                    <div class="form-group" style="margin-bottom: 20px; margin-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95em; color: #333; padding: 12px 15px; background: #fff8e1; border: 2px solid #ffc107; border-radius: 6px;">
+                            <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer; width: 18px; height: 18px; accent-color: #ff9800;">
+                            <span><i class="fas fa-sync-alt" style="margin-right: 6px; color: #ff9800;"></i><strong>Clear cache and regenerate report</strong></span>
+                        </label>
+                        <small style="display: block; margin-top: 6px; color: #666; font-size: 0.85em; padding-left: 15px;">Check this box to bypass cached data and generate a fresh report with new AI analysis</small>
+                    </div>
+                    {% endif %}
+
                     <button type="button" class="submit-btn" id="generateAnalysisBtn" style="width: 100%;">
                         <i class="fas fa-magic"></i>
                         <span>Generate Analysis</span>
@@ -255,6 +285,12 @@
                             <i class="fas fa-cog fa-spin"></i>
                             <h3>Analyzing Data...</h3>
                         </div>
+
+                        <!-- Progress Steps List -->
+                        <div class="progress-steps" id="progressSteps">
+                            <!-- Steps will be populated by initializeProgressSteps() -->
+                        </div>
+
                         <div class="progress-bar">
                             <div class="progress-fill" id="progressFill"></div>
                         </div>
@@ -337,10 +373,71 @@
     <!-- Select2 (for enhanced dropdowns) -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Set base URL for API calls BEFORE loading app.js -->
+    <!-- Set base URL and progress steps for BizSight BEFORE loading app.js -->
     <script>
         // Set base URL for API calls (with blueprint prefix)
         window.APP_BASE_URL = '{{ app_base_url|default("/bizsight") }}';
+
+        // Override progress steps for BizSight (use small business lending terminology)
+        window.PROGRESS_STEPS = [
+            { id: 'initializing', label: 'Starting up', icon: 'fa-play-circle' },
+            { id: 'fetching_data', label: 'Fetching CRA data', icon: 'fa-database' },
+            { id: 'processing_data', label: 'Building report tables', icon: 'fa-table' },
+            { id: 'generating_ai', label: 'Generating AI insights', icon: 'fa-brain' },
+            { id: 'completed', label: 'Analysis complete', icon: 'fa-check-circle' }
+        ];
+
+        // Initialize progress steps display
+        function initializeProgressSteps() {
+            const stepsContainer = document.getElementById('progressSteps');
+            if (!stepsContainer || !window.PROGRESS_STEPS) return;
+
+            stepsContainer.innerHTML = window.PROGRESS_STEPS.map((step, index) => `
+                <div class="progress-step pending" id="step-${step.id}">
+                    <i class="fas ${step.icon}"></i>
+                    <span>${index + 1}. ${step.label}</span>
+                </div>
+            `).join('');
+        }
+
+        // Update progress step status
+        function updateProgressStep(stepId, status = 'active') {
+            const stepElement = document.getElementById(`step-${stepId}`);
+            if (!stepElement) return;
+
+            stepElement.classList.remove('pending', 'active', 'completed');
+            stepElement.classList.add(status);
+
+            const iconElement = stepElement.querySelector('i');
+            if (iconElement && status === 'completed') {
+                iconElement.className = 'fas fa-check-circle';
+            }
+
+            // Mark previous steps as completed
+            if (status === 'completed' || status === 'active') {
+                const currentIndex = window.PROGRESS_STEPS.findIndex(s => s.id === stepId);
+                for (let i = 0; i < currentIndex; i++) {
+                    const prevStep = document.getElementById(`step-${window.PROGRESS_STEPS[i].id}`);
+                    if (prevStep && !prevStep.classList.contains('completed')) {
+                        prevStep.classList.remove('pending', 'active');
+                        prevStep.classList.add('completed');
+                        const prevIcon = prevStep.querySelector('i');
+                        if (prevIcon) prevIcon.className = 'fas fa-check-circle';
+                    }
+                }
+            }
+        }
+
+        // Map progress messages to step IDs
+        function mapStepToId(stepName) {
+            const lowerStep = stepName.toLowerCase();
+            if (lowerStep.includes('initializ') || lowerStep.includes('starting')) return 'initializing';
+            if (lowerStep.includes('fetch') || lowerStep.includes('query') || lowerStep.includes('cra')) return 'fetching_data';
+            if (lowerStep.includes('build') || lowerStep.includes('process') || lowerStep.includes('table')) return 'processing_data';
+            if (lowerStep.includes('ai') || lowerStep.includes('generat') || lowerStep.includes('insight')) return 'generating_ai';
+            if (lowerStep.includes('complete') || lowerStep.includes('done')) return 'completed';
+            return null;
+        }
     </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     
@@ -416,7 +513,7 @@
                 
                 // Load counties for selected state
                 console.log(`Loading counties for state code: ${stateCode}`);
-                fetch(`/api/counties-by-state/${stateCode}`)
+                fetch(`${baseUrl}/api/counties-by-state/${stateCode}`)
                     .then(r => {
                         if (!r.ok) {
                             throw new Error(`HTTP error! status: ${r.status}`);
@@ -500,8 +597,10 @@
             }
 
             // Automatically use 2020-2024 for all reports
-            const start = 2018;
+            const start = 2020;
             const end = 2024;
+            const baseUrl = window.APP_BASE_URL || '/bizsight';
+            const forceRefresh = document.getElementById('forceRefreshCheckbox')?.checked || false;
 
             // Show progress
             document.getElementById('yearSelectionCard').style.display = 'none';
@@ -510,13 +609,14 @@
             document.getElementById('errorSection').style.display = 'none';
 
             try {
-                const response = await fetch('/analyze', {
+                const response = await fetch(`${baseUrl}/analyze`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         county_data: selectedCounty,
                         startYear: start,
-                        endYear: end
+                        endYear: end,
+                        force_refresh: forceRefresh
                     })
                 });
                 
@@ -534,25 +634,48 @@
         });
         
         function listenForProgress(jobId) {
-            const eventSource = new EventSource(`/progress/${jobId}`);
-            
+            const baseUrl = window.APP_BASE_URL || '/bizsight';
+            const eventSource = new EventSource(`${baseUrl}/progress/${jobId}`);
+            let currentStepId = null;
+
+            // Initialize progress steps
+            initializeProgressSteps();
+            updateProgressStep('initializing', 'active');
+
             eventSource.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 document.getElementById('progressFill').style.width = data.percent + '%';
                 document.getElementById('progressText').textContent = data.step;
-                
+
+                // Update progress steps
+                const stepId = mapStepToId(data.step);
+                if (stepId && stepId !== currentStepId) {
+                    if (currentStepId) {
+                        updateProgressStep(currentStepId, 'completed');
+                    }
+                    updateProgressStep(stepId, 'active');
+                    currentStepId = stepId;
+                }
+
                 if (data.done) {
                     eventSource.close();
+                    if (currentStepId) {
+                        updateProgressStep(currentStepId, 'completed');
+                    }
                     if (data.error) {
                         document.getElementById('errorMessage').textContent = data.error;
                         document.getElementById('errorSection').style.display = 'block';
                         document.getElementById('progressSection').style.display = 'none';
                     } else {
-                        document.getElementById('progressSection').style.display = 'none';
-                        document.getElementById('resultsSection').style.display = 'block';
-                        document.getElementById('viewReportBtn').onclick = function() {
-                            window.location.href = `/report?job_id=${jobId}`;
-                        };
+                        updateProgressStep('completed', 'completed');
+                        const progressTextEl = document.getElementById('progressText');
+                        if (progressTextEl) {
+                            progressTextEl.textContent = 'Analysis complete! Redirecting to report...';
+                        }
+                        // Auto-redirect to report after 1 second (like LendSight/BranchSight)
+                        setTimeout(function() {
+                            window.location.href = `${baseUrl}/report?job_id=${jobId}`;
+                        }, 1000);
                     }
                 }
             };

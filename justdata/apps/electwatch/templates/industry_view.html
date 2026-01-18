@@ -538,7 +538,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <a href="/" class="back-link">
+            <a href="/electwatch/" class="back-link">
                 <i class="fas fa-arrow-left"></i>
                 Back to Dashboard
             </a>
@@ -700,7 +700,7 @@
 
         async function loadIndustryData() {
             try {
-                const response = await fetch(`/api/industry/${sector}`);
+                const response = await fetch(`/electwatch/api/industry/${sector}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -758,7 +758,7 @@
                         <div class="official-cell">
                             <div class="party-badge ${official.party}">${official.party}</div>
                             <div>
-                                <a href="/official/${official.id}" class="official-name">${official.name}</a>
+                                <a href="/electwatch/official/${official.id}" class="official-name">${official.name}</a>
                                 <div class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}</div>
                             </div>
                         </div>
@@ -777,7 +777,7 @@
             }
 
             container.innerHTML = firms.slice(0, 8).map(firm => `
-                <div class="firm-card" onclick="window.location='/firm/${encodeURIComponent(firm.name)}'">
+                <div class="firm-card" onclick="window.location='/electwatch/firm/${encodeURIComponent(firm.name)}'">
                     <div class="firm-header">
                         <span class="firm-name">${firm.name}</span>
                         ${firm.ticker ? `<span class="firm-ticker">${firm.ticker}</span>` : ''}
@@ -839,7 +839,7 @@
             }
 
             container.innerHTML = legislation.map(bill => `
-                <div class="bill-item" onclick="window.location='/bill/${bill.bill_id.replace(/[.\s]/g, '').toLowerCase()}'">
+                <div class="bill-item" onclick="window.location='/electwatch/bill/${bill.bill_id.replace(/[.\s]/g, '').toLowerCase()}'">
                     <div class="bill-header">
                         <span class="bill-id">${bill.bill_id}</span>
                         <span class="bill-status ${bill.status.includes('Passed') ? 'passed' : 'committee'}">${bill.status}</span>

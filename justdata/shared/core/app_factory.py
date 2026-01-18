@@ -4,6 +4,7 @@ Shared across all JustData apps (LendSight, BizSight, BranchSight, etc.)
 """
 
 from flask import Flask, jsonify, send_from_directory
+from jinja2 import ChoiceLoader, FileSystemLoader
 from datetime import datetime
 import os
 from pathlib import Path
@@ -27,6 +28,15 @@ def create_app(app_name: str, template_folder: str = None, static_folder: str = 
         template_folder=template_folder,
         static_folder=static_folder
     )
+
+    # Add shared templates folder to Jinja2 loader
+    # This allows templates to {% include "shared_header.html" %} etc.
+    shared_templates_dir = Path(__file__).parent.parent / 'web' / 'templates'
+    if shared_templates_dir.exists() and template_folder:
+        app.jinja_loader = ChoiceLoader([
+            FileSystemLoader(template_folder),
+            FileSystemLoader(str(shared_templates_dir))
+        ])
 
     # Default configuration
     app.secret_key = os.environ.get('SECRET_KEY', f'{app_name}-secret-key-change-this')

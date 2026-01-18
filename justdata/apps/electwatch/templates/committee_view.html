@@ -525,7 +525,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <a href="/" class="back-link">
+            <a href="/electwatch/" class="back-link">
                 <i class="fas fa-arrow-left"></i>
                 Back to Dashboard
             </a>
@@ -687,7 +687,7 @@
 
         async function loadCommitteeData() {
             try {
-                const response = await fetch(`/api/committee/${encodeURIComponent(committeeId)}`);
+                const response = await fetch(`/electwatch/api/committee/${encodeURIComponent(committeeId)}`);
                 const data = await response.json();
 
                 document.getElementById('loading').style.display = 'none';
@@ -771,7 +771,7 @@
                     <div class="leader-state">${chair.state}</div>
                 </div>
             `;
-            document.getElementById('chair-card').onclick = () => window.location = `/official/${chair.id}`;
+            document.getElementById('chair-card').onclick = () => window.location = `/electwatch/official/${chair.id}`;
 
             document.getElementById('ranking-card').innerHTML = `
                 <div class="party-badge ${ranking.party}">${ranking.party}</div>
@@ -781,7 +781,7 @@
                     <div class="leader-state">${ranking.state}</div>
                 </div>
             `;
-            document.getElementById('ranking-card').onclick = () => window.location = `/official/${ranking.id}`;
+            document.getElementById('ranking-card').onclick = () => window.location = `/electwatch/official/${ranking.id}`;
         }
 
         function renderMembers(members) {
@@ -801,7 +801,7 @@
                 const finPac = member.financial_sector_pac !== undefined ? member.financial_sector_pac : member.contributions;
 
                 return `
-                    <tr onclick="window.location='/official/${member.id}'">
+                    <tr onclick="window.location='/electwatch/official/${member.id}'">
                         <td>
                             <div class="member-cell">
                                 <div class="party-badge ${member.party}">${member.party}</div>
@@ -900,7 +900,7 @@
                         <div class="bill-meta">${bill.sponsor} &bull; ${bill.date}</div>
                         ${bill.industries && bill.industries.length > 0 ? `
                             <div class="industry-tags">
-                                ${bill.industries.map(ind => `<span class="industry-tag ${ind}" onclick="event.stopPropagation(); window.location='/industry/${ind}'">${formatIndustry(ind)}</span>`).join('')}
+                                ${bill.industries.map(ind => `<span class="industry-tag ${ind}" onclick="event.stopPropagation(); window.location='/electwatch/industry/${ind}'">${formatIndustry(ind)}</span>`).join('')}
                             </div>
                         ` : ''}
                     </div>

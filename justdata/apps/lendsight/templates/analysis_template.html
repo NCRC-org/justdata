@@ -25,9 +25,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
@@ -138,6 +138,15 @@
                                 <strong>Year Range:</strong> This report will analyze data from <strong>2020 to 2024</strong> (Most recent five years).
                             </p>
                         </div>
+                    </div>
+
+                    <!-- Force Refresh Option -->
+                    <div class="form-group" style="margin-bottom: 20px; margin-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95em; color: #333; padding: 12px 15px; background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; transition: all 0.2s ease;">
+                            <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer; width: 18px; height: 18px; accent-color: #0066cc;">
+                            <span><i class="fas fa-sync-alt" style="margin-right: 6px; color: #0066cc;"></i>Clear cache and regenerate report</span>
+                        </label>
+                        <small style="display: block; margin-top: 6px; color: #666; font-size: 0.85em; padding-left: 15px;">Check this box if you want to bypass cached data and fetch fresh results</small>
                     </div>
 
                     <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your analysis. Make sure you've selected a state, county, and loan purpose first.">
@@ -879,11 +888,13 @@
                 }
                 
                 // Build request data
+                const forceRefresh = document.getElementById('forceRefreshCheckbox')?.checked || false;
                 let requestData = {
                     selection_type: 'county',
                     state_code: selectedState,  // Always include state_code
                     years: '2020,2021,2022,2023,2024',  // Fixed years 2020-2024
-                    loan_purpose: loanPurposeCheckboxes.length > 0 ? loanPurposeCheckboxes : ['purchase']  // Default to purchase only
+                    loan_purpose: loanPurposeCheckboxes.length > 0 ? loanPurposeCheckboxes : ['purchase'],  // Default to purchase only
+                    force_refresh: forceRefresh
                 };
                 
                 // Single county selection

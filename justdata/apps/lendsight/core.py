@@ -32,10 +32,16 @@ def parse_web_parameters(counties_str: str, years_str: str, selection_type: str 
     from justdata.apps.lendsight.data_utils import expand_state_to_counties, expand_metro_to_counties
     
     # Parse years
-    if years_str.lower() == "all":
+    # Handle empty string, "auto", or "auto (last 5)" - default to last 5 years
+    if not years_str or years_str.strip() == "" or years_str.lower().startswith("auto"):
+        years = list(range(2020, 2025))  # HMDA data 2020-2024 (last 5 years)
+    elif years_str.lower() == "all":
         years = list(range(2020, 2025))  # HMDA data 2020-2024
     else:
         years = [int(y.strip()) for y in years_str.split(",") if y.strip().isdigit()]
+        # If parsing failed, default to last 5 years
+        if not years:
+            years = list(range(2020, 2025))
     
     # Parse counties based on selection type
     if selection_type == 'state' and state_code:
@@ -419,6 +425,16 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 market_concentration_data = convert_numpy_types(market_concentration_data)
             else:
                 market_concentration_data = []
+
+            # Prepare individual Section 2 table data for AI analysis
+            income_borrowers_df = report_data.get('income_borrowers', pd.DataFrame())
+            income_borrowers_data = convert_numpy_types(income_borrowers_df.to_dict('records') if not income_borrowers_df.empty else [])
+
+            income_tracts_df = report_data.get('income_tracts', pd.DataFrame())
+            income_tracts_data = convert_numpy_types(income_tracts_df.to_dict('records') if not income_tracts_df.empty else [])
+
+            minority_tracts_df = report_data.get('minority_tracts', pd.DataFrame())
+            minority_tracts_data = convert_numpy_types(minority_tracts_df.to_dict('records') if not minority_tracts_df.empty else [])
             
             # Safely get top lenders list
             top_lenders_list = []
@@ -444,6 +460,9 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'summary_data': convert_numpy_types(report_data.get('summary', {}).to_dict('records') if not report_data.get('summary', pd.DataFrame()).empty else []),
                 'demographic_overview': demographic_data,
                 'income_neighborhood_indicators': income_neighborhood_data,
+                'income_borrowers': income_borrowers_data,  # Section 2 Table 1
+                'income_tracts': income_tracts_data,  # Section 2 Table 2
+                'minority_tracts': minority_tracts_data,  # Section 2 Table 3
                 'top_lenders_detailed': top_lenders_detailed_data,
                 'market_concentration': market_concentration_data,
                 'trends_data': convert_numpy_types(report_data.get('trends', {}).to_dict('records') if not report_data.get('trends', pd.DataFrame()).empty else []),
@@ -577,6 +596,29 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                     ai_insights['market_concentration_discussion'] = market_conc_disc
 
                     print("  [OK] All table discussions generated successfully")
+
+                    # Generate individual Section 2 narratives (one per table)
+                    print("  Generating individual Section 2 table narratives...")
+                    try:
+                        ai_insights['income_borrowers_discussion'] = analyzer.generate_income_borrowers_discussion(ai_data)
+                        print(f"    [OK] income_borrowers_discussion length: {len(ai_insights.get('income_borrowers_discussion', ''))}")
+                    except Exception as e:
+                        print(f"    [WARNING] Failed to generate income_borrowers_discussion: {e}")
+                        ai_insights['income_borrowers_discussion'] = ''
+
+                    try:
+                        ai_insights['income_tracts_discussion'] = analyzer.generate_income_tracts_discussion(ai_data)
+                        print(f"    [OK] income_tracts_discussion length: {len(ai_insights.get('income_tracts_discussion', ''))}")
+                    except Exception as e:
+                        print(f"    [WARNING] Failed to generate income_tracts_discussion: {e}")
+                        ai_insights['income_tracts_discussion'] = ''
+
+                    try:
+                        ai_insights['minority_tracts_discussion'] = analyzer.generate_minority_tracts_discussion(ai_data)
+                        print(f"    [OK] minority_tracts_discussion length: {len(ai_insights.get('minority_tracts_discussion', ''))}")
+                    except Exception as e:
+                        print(f"    [WARNING] Failed to generate minority_tracts_discussion: {e}")
+                        ai_insights['minority_tracts_discussion'] = ''
                     print(f"  [DEBUG] ai_insights keys after storing: {list(ai_insights.keys())}")
                     print(f"  [DEBUG] Stored demographic_overview_discussion length: {len(ai_insights.get('demographic_overview_discussion', ''))}")
                     print(f"  [DEBUG] Stored income_neighborhood_discussion length: {len(ai_insights.get('income_neighborhood_discussion', ''))}")
@@ -604,6 +646,29 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                         # Note: market_concentration_discussion is only available via combined call
                         print("    [INFO] market_concentration_discussion not available in fallback mode")
                         ai_insights['market_concentration_discussion'] = ''
+
+                        # Generate individual Section 2 narratives in fallback mode
+                        print("    Generating individual Section 2 table narratives...")
+                        try:
+                            ai_insights['income_borrowers_discussion'] = analyzer.generate_income_borrowers_discussion(ai_data)
+                            print(f"      [OK] income_borrowers_discussion length: {len(ai_insights.get('income_borrowers_discussion', ''))}")
+                        except Exception as e:
+                            print(f"      [WARNING] Failed to generate income_borrowers_discussion: {e}")
+                            ai_insights['income_borrowers_discussion'] = ''
+
+                        try:
+                            ai_insights['income_tracts_discussion'] = analyzer.generate_income_tracts_discussion(ai_data)
+                            print(f"      [OK] income_tracts_discussion length: {len(ai_insights.get('income_tracts_discussion', ''))}")
+                        except Exception as e:
+                            print(f"      [WARNING] Failed to generate income_tracts_discussion: {e}")
+                            ai_insights['income_tracts_discussion'] = ''
+
+                        try:
+                            ai_insights['minority_tracts_discussion'] = analyzer.generate_minority_tracts_discussion(ai_data)
+                            print(f"      [OK] minority_tracts_discussion length: {len(ai_insights.get('minority_tracts_discussion', ''))}")
+                        except Exception as e:
+                            print(f"      [WARNING] Failed to generate minority_tracts_discussion: {e}")
+                            ai_insights['minority_tracts_discussion'] = ''
                     except Exception as fallback_error:
                         print(f"  [ERROR] Fallback also failed: {fallback_error}")
                         traceback.print_exc()
@@ -696,18 +761,12 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'methods': 'Methods section not available - AI analysis failed.'
             }
         
-        # Finalize and complete
+        # Finalize - but don't mark as complete yet!
+        # The blueprint.py will call progress_tracker.complete() AFTER storing results to BigQuery
         if progress_tracker:
-            progress_tracker.update_progress('completed', 100, 'Finalizing report... Dotting the i\'s and crossing the t\'s! ✅')
-            # Add a small delay to ensure the message is sent and displayed before completion
-            import time
-            time.sleep(0.5)  # Brief pause to ensure SSE message is sent and user sees it
-        
+            progress_tracker.update_progress('saving', 95, 'Saving results... Almost done! 💾')
+
         print("Analysis completed successfully!")
-        
-        # Mark as completed (this will call complete() which sends the final message)
-        if progress_tracker:
-            progress_tracker.complete(success=True)
         
         # Ensure census_data is properly formatted for JSON serialization
         census_data_serialized = {}

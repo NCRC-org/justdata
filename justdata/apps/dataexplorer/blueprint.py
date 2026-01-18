@@ -198,4 +198,11 @@ def api_clear_cache():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-# Health check is handled by main app
+@dataexplorer_bp.route('/health')
+def health():
+    """Health check endpoint."""
+    return jsonify({
+        'status': 'healthy',
+        'app': 'dataexplorer',
+        'version': __version__
+    })

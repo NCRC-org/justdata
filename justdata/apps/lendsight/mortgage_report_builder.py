@@ -1028,11 +1028,14 @@ def create_income_borrowers_table(df: pd.DataFrame, years: List[int], hud_data: 
     hud_moderate_pct = 0.0
     hud_middle_pct = 0.0
     hud_upper_pct = 0.0
-    
+    total_persons = 0
+
     if hud_data:
         # Aggregate HUD data across all counties in the report
         geoids = df['geoid5'].unique()
+        print(f"  [DEBUG] Table 1 - HUD data available with {len(hud_data)} counties, checking geoids: {list(geoids)[:5]}...")
         total_persons = sum(hud_data.get(str(geoid).zfill(5), {}).get('total_persons', 0) for geoid in geoids)
+        print(f"  [DEBUG] Table 1 - Total persons from HUD data: {total_persons:,}")
         if total_persons > 0:
             hud_low_mod_pct = sum(hud_data.get(str(geoid).zfill(5), {}).get('low_mod_income_pct', 0) * 
                                   hud_data.get(str(geoid).zfill(5), {}).get('total_persons', 0) 
@@ -1046,10 +1049,13 @@ def create_income_borrowers_table(df: pd.DataFrame, years: List[int], hud_data: 
             hud_middle_pct = sum(hud_data.get(str(geoid).zfill(5), {}).get('middle_income_pct', 0) * 
                                hud_data.get(str(geoid).zfill(5), {}).get('total_persons', 0) 
                                for geoid in geoids) / total_persons
-            hud_upper_pct = sum(hud_data.get(str(geoid).zfill(5), {}).get('upper_income_pct', 0) * 
-                               hud_data.get(str(geoid).zfill(5), {}).get('total_persons', 0) 
+            hud_upper_pct = sum(hud_data.get(str(geoid).zfill(5), {}).get('upper_income_pct', 0) *
+                               hud_data.get(str(geoid).zfill(5), {}).get('total_persons', 0)
                                for geoid in geoids) / total_persons
-    
+            print(f"  [DEBUG] Table 1 - HUD percentages: low={hud_low_pct:.1f}%, mod={hud_moderate_pct:.1f}%, mid={hud_middle_pct:.1f}%, upper={hud_upper_pct:.1f}%")
+    else:
+        print(f"  [WARNING] Table 1 - No HUD data provided, Population Share column will not be added")
+
     # Add Population Share column (if HUD data available)
     if hud_data and total_persons > 0:
         result_data['Population Share (%)'] = []
@@ -1336,21 +1342,21 @@ def create_income_neighborhood_tracts_table(df: pd.DataFrame, years: List[int],
     return result
 
 
-def create_income_tracts_table(df: pd.DataFrame, years: List[int], 
+def create_income_tracts_table(df: pd.DataFrame, years: List[int],
                                 hud_data: Dict[str, Dict[str, float]] = None,
                                 census_data: Dict = None) -> pd.DataFrame:
     """
     Create Table 2: Lending to Census Tracts by Income Level.
-    
+
     Shows:
     - Low to Moderate Income Census Tracts (aggregate)
     - Low Income Census Tracts
     - Moderate Income Census Tracts
     - Middle Income Census Tracts
     - Upper Income Census Tracts
-    
+
     Population Share column uses ACS tract-level data (percentage of census tracts in each income category).
-    
+
     Args:
         df: DataFrame with loan data (must include tract_code and tract_to_msa_income_percentage columns)
         years: List of years
@@ -1397,7 +1403,7 @@ def create_income_tracts_table(df: pd.DataFrame, years: List[int],
         result_data[str(year)] = []
     
     # Calculate tract income shares from ACS tract-level data
-    # For Table 3 (Neighborhood Income), Population Share represents the percentage of census tracts
+    # For Table 2 (Neighborhood Income), Population Share represents the percentage of census tracts
     # (not population) in each income category, calculated from the tract data in the DataFrame
     tract_income_shares = {}
     if 'tract_code' in df.columns:
@@ -1405,7 +1411,7 @@ def create_income_tracts_table(df: pd.DataFrame, years: List[int],
             # Get unique tracts and their income classifications
             unique_tracts = df[['tract_code', 'tract_to_msa_income_percentage']].drop_duplicates()
             total_tracts = len(unique_tracts)
-            
+
             if total_tracts > 0:
                 # Classify tracts by income category based on tract_to_msa_income_percentage
                 # Low: <= 50%, Moderate: >50% and <=80%, Middle: >80% and <=120%, Upper: >120%
@@ -1413,14 +1419,14 @@ def create_income_tracts_table(df: pd.DataFrame, years: List[int],
                 unique_tracts_clean = unique_tracts.dropna(subset=['tract_to_msa_income_percentage'])
                 if len(unique_tracts_clean) > 0:
                     low_tracts = len(unique_tracts_clean[unique_tracts_clean['tract_to_msa_income_percentage'] <= 50])
-                    moderate_tracts = len(unique_tracts_clean[(unique_tracts_clean['tract_to_msa_income_percentage'] > 50) & 
+                    moderate_tracts = len(unique_tracts_clean[(unique_tracts_clean['tract_to_msa_income_percentage'] > 50) &
                                                            (unique_tracts_clean['tract_to_msa_income_percentage'] <= 80)])
-                    middle_tracts = len(unique_tracts_clean[(unique_tracts_clean['tract_to_msa_income_percentage'] > 80) & 
+                    middle_tracts = len(unique_tracts_clean[(unique_tracts_clean['tract_to_msa_income_percentage'] > 80) &
                                                           (unique_tracts_clean['tract_to_msa_income_percentage'] <= 120)])
                     upper_tracts = len(unique_tracts_clean[unique_tracts_clean['tract_to_msa_income_percentage'] > 120])
-                    
+
                     total_valid_tracts = len(unique_tracts_clean)
-                    
+
                     # Calculate percentages of tracts in each category
                     tract_income_shares['low'] = (low_tracts / total_valid_tracts * 100) if total_valid_tracts > 0 else 0
                     tract_income_shares['moderate'] = (moderate_tracts / total_valid_tracts * 100) if total_valid_tracts > 0 else 0
@@ -1430,12 +1436,12 @@ def create_income_tracts_table(df: pd.DataFrame, years: List[int],
                     print(f"  [DEBUG] Calculated tract income shares from ACS data: {tract_income_shares}")
         else:
             print(f"  [WARNING] tract_to_msa_income_percentage column not found in DataFrame. Available columns: {list(df.columns)}")
-            print(f"  [WARNING] Population Share column will not be added to Table 3")
-    
+            print(f"  [WARNING] Population Share column will not be added to Table 2")
+
     # Always add Population Share column if we have tract_income_shares data
     if tract_income_shares:
         result_data['Population Share (%)'] = []
-        print(f"  [DEBUG] Added Population Share (%) column to Table 3")
+        print(f"  [DEBUG] Added Population Share (%) column to Table 2")
     else:
         print(f"  [WARNING] No tract_income_shares calculated - Population Share column will not be added")
     
@@ -1445,13 +1451,13 @@ def create_income_tracts_table(df: pd.DataFrame, years: List[int],
         result_data['Change'] = []
     
     # Check if low income tracts exist
-    # Use multiple checks: HUD population share, loan data, or tract classification
+    # Use multiple checks: tract income share, loan data, or tract classification
     has_low_income_tracts = False
-    
-    # First check: If HUD data shows population share > 0, tracts definitely exist
+
+    # First check: If tract income shares show > 0, tracts definitely exist
     if tract_income_shares and tract_income_shares.get('low', 0) > 0:
         has_low_income_tracts = True
-        print(f"  [DEBUG] Low income tracts detected via HUD population share: {tract_income_shares.get('low', 0):.1f}%")
+        print(f"  [DEBUG] Low income tracts detected via tract income share: {tract_income_shares.get('low', 0):.1f}%")
     # Second check: If there are any loans to low-income tracts in any year
     elif any(d['low_tract'] > 0 for d in yearly_data):
         has_low_income_tracts = True
@@ -1462,10 +1468,10 @@ def create_income_tracts_table(df: pd.DataFrame, years: List[int],
         has_low_income_tracts = len(unique_tracts[unique_tracts['tract_to_msa_income_percentage'] <= 50]) > 0
         if has_low_income_tracts:
             print(f"  [DEBUG] Low income tracts detected via tract classification")
-    
+
     if not has_low_income_tracts:
         print(f"  [DEBUG] No low income tracts detected - will add asterisk")
-    
+
     # Define metrics in order
     # Note: For 'lmict', we'll calculate it as low_tract + moderate_tract to ensure mathematical consistency
     metrics = [
@@ -2998,9 +3004,16 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
     # Get raw data for creating Excel-specific tables
     raw_df = report_data.get('raw_data', pd.DataFrame())
     years = metadata.get('years', []) if metadata else []
-    
-    if raw_df.empty or not years:
-        raise ValueError("Cannot create Excel report: missing raw data or years")
+
+    # Check if raw_data is available (it's not stored in cache due to size)
+    if raw_df.empty:
+        # For cached results, raw_data is not available
+        # Create a minimal Excel with just the summary tables
+        print("[WARNING] raw_data not available - creating Excel from summary tables only")
+        raw_df = None  # Signal that we don't have raw data
+
+    if not years:
+        raise ValueError("Cannot create Excel report: missing years information")
     
     # Create Excel writer
     with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
@@ -3096,33 +3109,57 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
         
         # Section 1: Demographic Overview (with ALL categories and No Data)
         # Pass census_data if available for population share column
-        demo_table = create_demographic_overview_table_for_excel(raw_df, years, census_data=census_data_for_excel)
-        if not demo_table.empty:
-            demo_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 1 - Demographic Overview'), index=False)
-        
+        if raw_df is not None:
+            demo_table = create_demographic_overview_table_for_excel(raw_df, years, census_data=census_data_for_excel)
+            if not demo_table.empty:
+                demo_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 1 - Demographic Overview'), index=False)
+        else:
+            # Use pre-computed demographic_overview table from report_data
+            demographic_overview = report_data.get('demographic_overview', pd.DataFrame())
+            if isinstance(demographic_overview, list):
+                demographic_overview = pd.DataFrame(demographic_overview)
+            if not demographic_overview.empty:
+                demographic_overview.to_excel(writer, sheet_name=sanitize_sheet_name('Section 1 - Demographic Overview'), index=False)
+
         # Section 2: Income and Neighborhood Indicators
         # This matches the report table exactly
-        income_table = create_income_neighborhood_indicators_table_for_excel(raw_df, years)
-        if not income_table.empty:
-            income_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2 - Income and Neighborhood'), index=False)
+        if raw_df is not None:
+            income_table = create_income_neighborhood_indicators_table_for_excel(raw_df, years)
+            if not income_table.empty:
+                income_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2 - Income and Neighborhood'), index=False)
+        else:
+            # Use pre-computed income_neighborhood_indicators table from report_data
+            income_indicators = report_data.get('income_neighborhood_indicators', pd.DataFrame())
+            if isinstance(income_indicators, list):
+                income_indicators = pd.DataFrame(income_indicators)
+            if not income_indicators.empty:
+                income_indicators.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2 - Income and Neighborhood'), index=False)
         
         # Section 3: Top Lenders (with ALL categories and No Data)
         # This matches the report table exactly but includes ALL categories
-        top_lenders_table = create_top_lenders_table_for_excel(raw_df, years)
-        if not top_lenders_table.empty:
-            top_lenders_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 3 - Top Lenders'), index=False)
-        
-        # Section 3b: Top 10 Lenders Over Time (2020-2024) - Excel Export Only
-        export_years = [y for y in years if 2020 <= y <= 2024]
-        if export_years:
-            top_lenders_by_year_table = create_top_lenders_by_year_table_for_excel(raw_df, export_years, top_n=10)
-            if not top_lenders_by_year_table.empty:
-                top_lenders_by_year_table.to_excel(writer, sheet_name=sanitize_sheet_name('Top 10 Lenders Over Time'), index=False)
-        
-        # Raw Data sheet - all raw data used in the report
-        if not raw_df.empty:
-            raw_export_df = raw_df.copy()
-            raw_export_df.to_excel(writer, sheet_name=sanitize_sheet_name('Raw Data'), index=False)
+        if raw_df is not None:
+            top_lenders_table = create_top_lenders_table_for_excel(raw_df, years)
+            if not top_lenders_table.empty:
+                top_lenders_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 3 - Top Lenders'), index=False)
+
+            # Section 3b: Top 10 Lenders Over Time (2020-2024) - Excel Export Only
+            export_years = [y for y in years if 2020 <= y <= 2024]
+            if export_years:
+                top_lenders_by_year_table = create_top_lenders_by_year_table_for_excel(raw_df, export_years, top_n=10)
+                if not top_lenders_by_year_table.empty:
+                    top_lenders_by_year_table.to_excel(writer, sheet_name=sanitize_sheet_name('Top 10 Lenders Over Time'), index=False)
+
+            # Raw Data sheet - all raw data used in the report
+            if not raw_df.empty:
+                raw_export_df = raw_df.copy()
+                raw_export_df.to_excel(writer, sheet_name=sanitize_sheet_name('Raw Data'), index=False)
+        else:
+            # Use pre-computed top_lenders_detailed table from report_data if available
+            top_lenders_detailed = report_data.get('top_lenders_detailed', pd.DataFrame())
+            if isinstance(top_lenders_detailed, list):
+                top_lenders_detailed = pd.DataFrame(top_lenders_detailed)
+            if not top_lenders_detailed.empty:
+                top_lenders_detailed.to_excel(writer, sheet_name=sanitize_sheet_name('Section 3 - Top Lenders'), index=False)
         
         # Style the header row for all data sheets (not Methods sheet)
         from openpyxl.styles import NamedStyle

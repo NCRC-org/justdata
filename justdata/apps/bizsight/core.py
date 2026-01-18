@@ -937,14 +937,33 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         pct_amount_sb_under_1m = 0.0
         if summary_total_amount > 0 and amtsb_under_1m > 0:
             pct_amount_sb_under_1m = (amtsb_under_1m / summary_total_amount * 100)
-        
+
+        # Calculate LMI tract data from aggregate data (since county summary returns 0)
+        lmi_tract_loans_calculated = 0
+        lmi_tract_amount_calculated = 0.0
+        if not summary_2024_df.empty and 'is_lmi_tract' in summary_2024_df.columns:
+            lmi_mask = (summary_2024_df['is_lmi_tract'] == 1) | (summary_2024_df['is_lmi_tract'] == True) | (summary_2024_df['is_lmi_tract'].astype(str) == '1')
+            lmi_tract_loans_calculated = int(summary_2024_df[lmi_mask]['loan_count'].sum() if 'loan_count' in summary_2024_df.columns else 0)
+            lmi_tract_amount_calculated = float(summary_2024_df[lmi_mask]['loan_amount'].sum() if 'loan_amount' in summary_2024_df.columns else 0.0)
+            print(f"DEBUG: LMI tract data calculated from aggregate: loans={lmi_tract_loans_calculated}, amount={lmi_tract_amount_calculated}")
+        elif not summary_2024_df.empty and 'income_level' in summary_2024_df.columns:
+            # LMI = Low (1) + Moderate (2) income levels
+            lmi_mask = summary_2024_df['income_level'].fillna(0).isin([1, 2])
+            lmi_tract_loans_calculated = int(summary_2024_df[lmi_mask]['loan_count'].sum() if 'loan_count' in summary_2024_df.columns else 0)
+            lmi_tract_amount_calculated = float(summary_2024_df[lmi_mask]['loan_amount'].sum() if 'loan_amount' in summary_2024_df.columns else 0.0)
+            print(f"DEBUG: LMI tract data calculated from income_level: loans={lmi_tract_loans_calculated}, amount={lmi_tract_amount_calculated}")
+
+        # Calculate LMI percentages
+        pct_loans_to_lmi = (lmi_tract_loans_calculated / summary_total_loans * 100) if summary_total_loans > 0 else 0.0
+        pct_dollars_to_lmi = (lmi_tract_amount_calculated / summary_total_amount * 100) if summary_total_amount > 0 else 0.0
+
         summary_table = {
             'total_loans': safe_int(summary_row.get('total_loans', 0)),
             'total_loan_amount': float(summary_row.get('total_loan_amount', 0) or summary_row.get('total_amount', 0)),
-            'pct_loans_to_lmi_tracts': float(summary_row.get('pct_loans_to_lmi_tracts', 0)),
-            'pct_dollars_to_lmi_tracts': float(summary_row.get('pct_dollars_to_lmi_tracts', 0)),
-            'lmi_tract_loans': safe_int(summary_row.get('lmi_tract_loans', 0)),
-            'lmi_tract_amount': float(summary_row.get('lmi_tract_amount', 0)),
+            'pct_loans_to_lmi_tracts': pct_loans_to_lmi,
+            'pct_dollars_to_lmi_tracts': pct_dollars_to_lmi,
+            'lmi_tract_loans': lmi_tract_loans_calculated,
+            'lmi_tract_amount': lmi_tract_amount_calculated,
             'amtsb_under_1m': amtsb_under_1m,  # Use value extracted from aggregate data (in thousands)
             'pct_amount_sb_under_1m': pct_amount_sb_under_1m,  # Percentage for JavaScript fallback
             # Income category percentages
@@ -1013,7 +1032,16 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         if progress_tracker:
             progress_tracker.update_progress('generating_ai', 90, 'Generating AI narratives... Let the AI work its magic! ✨')
         
-        ai_insights = {}
+        # Initialize all AI insights keys with empty strings (ensures keys exist even if threads fail)
+        ai_insights = {
+            'county_summary_number_discussion': "",
+            'county_summary_amount_discussion': "",
+            'comparison_number_discussion': "",
+            'comparison_amount_discussion': "",
+            'top_lenders_number_discussion': "",
+            'top_lenders_amount_discussion': "",
+            'hhi_trends_discussion': ""
+        }
         ai_insights_enabled = False  # Track whether AI insights are enabled
         
         # Check for API key before initializing (using unified environment system)
@@ -1059,42 +1087,82 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     'year': 2024
                 } if hhi_value is not None else None
             }
-            
+
+            # Debug: Log data being passed to AI
+            print(f"DEBUG: AI data being prepared:", flush=True)
+            print(f"DEBUG:   county_name: {ai_data['county_name']}", flush=True)
+            print(f"DEBUG:   years: {ai_data['years']}", flush=True)
+            print(f"DEBUG:   county_summary_table length: {len(ai_data['county_summary_table'])}", flush=True)
+            print(f"DEBUG:   comparison_table length: {len(ai_data['comparison_table'])}", flush=True)
+            print(f"DEBUG:   top_lenders_table length: {len(ai_data['top_lenders_table'])}", flush=True)
+            if ai_data['county_summary_table']:
+                print(f"DEBUG:   county_summary_table first item keys: {list(ai_data['county_summary_table'][0].keys())}", flush=True)
+
             # Generate AI insights with timeout protection (using threading for Windows compatibility)
             import threading
             import queue
             
             result_queue = queue.Queue()
             
-            def generate_county():
+            def generate_county_number():
                 try:
-                    result = ai_analyzer.generate_county_summary_discussion(ai_data)
-                    result_queue.put(('county', result))
+                    result = ai_analyzer.generate_county_summary_number_discussion(ai_data)
+                    result_queue.put(('county_number', result))
                 except Exception as e:
-                    print(f"Warning: Failed to generate county summary discussion: {e}")
+                    print(f"Warning: Failed to generate county summary number discussion: {e}")
                     import traceback
                     traceback.print_exc()
-                    result_queue.put(('county', ""))
-            
-            def generate_comparison():
+                    result_queue.put(('county_number', ""))
+
+            def generate_county_amount():
                 try:
-                    result = ai_analyzer.generate_comparison_discussion(ai_data)
-                    result_queue.put(('comparison', result))
+                    result = ai_analyzer.generate_county_summary_amount_discussion(ai_data)
+                    result_queue.put(('county_amount', result))
                 except Exception as e:
-                    print(f"Warning: Failed to generate comparison discussion: {e}")
+                    print(f"Warning: Failed to generate county summary amount discussion: {e}")
                     import traceback
                     traceback.print_exc()
-                    result_queue.put(('comparison', ""))
-            
-            def generate_lenders():
+                    result_queue.put(('county_amount', ""))
+
+            def generate_comparison_number():
                 try:
-                    result = ai_analyzer.generate_top_lenders_discussion(ai_data)
-                    result_queue.put(('lenders', result))
+                    result = ai_analyzer.generate_comparison_number_discussion(ai_data)
+                    result_queue.put(('comparison_number', result))
                 except Exception as e:
-                    print(f"Warning: Failed to generate top lenders discussion: {e}")
+                    print(f"Warning: Failed to generate comparison number discussion: {e}")
                     import traceback
                     traceback.print_exc()
-                    result_queue.put(('lenders', ""))
+                    result_queue.put(('comparison_number', ""))
+
+            def generate_comparison_amount():
+                try:
+                    result = ai_analyzer.generate_comparison_amount_discussion(ai_data)
+                    result_queue.put(('comparison_amount', result))
+                except Exception as e:
+                    print(f"Warning: Failed to generate comparison amount discussion: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    result_queue.put(('comparison_amount', ""))
+
+            def generate_lenders_number():
+                try:
+                    result = ai_analyzer.generate_top_lenders_number_discussion(ai_data)
+                    result_queue.put(('lenders_number', result))
+                except Exception as e:
+                    print(f"Warning: Failed to generate top lenders number discussion: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    result_queue.put(('lenders_number', ""))
+
+            def generate_lenders_amount():
+                try:
+                    result = ai_analyzer.generate_top_lenders_amount_discussion(ai_data)
+                    result_queue.put(('lenders_amount', result))
+                except Exception as e:
+                    print(f"Warning: Failed to generate top lenders amount discussion: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    result_queue.put(('lenders_amount', ""))
             
             def generate_hhi_trends():
                 try:
@@ -1111,53 +1179,78 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     traceback.print_exc()
                     result_queue.put(('hhi_trends', ""))
             
-            # Start all four AI calls in separate threads
-            county_thread = threading.Thread(target=generate_county, daemon=True)
-            comparison_thread = threading.Thread(target=generate_comparison, daemon=True)
-            lenders_thread = threading.Thread(target=generate_lenders, daemon=True)
+            # Start all AI calls in separate threads (7 threads total: 6 table narratives + 1 HHI)
+            county_number_thread = threading.Thread(target=generate_county_number, daemon=True)
+            county_amount_thread = threading.Thread(target=generate_county_amount, daemon=True)
+            comparison_number_thread = threading.Thread(target=generate_comparison_number, daemon=True)
+            comparison_amount_thread = threading.Thread(target=generate_comparison_amount, daemon=True)
+            lenders_number_thread = threading.Thread(target=generate_lenders_number, daemon=True)
+            lenders_amount_thread = threading.Thread(target=generate_lenders_amount, daemon=True)
             hhi_trends_thread = threading.Thread(target=generate_hhi_trends, daemon=True)
-            
-            county_thread.start()
-            comparison_thread.start()
-            lenders_thread.start()
+
+            county_number_thread.start()
+            county_amount_thread.start()
+            comparison_number_thread.start()
+            comparison_amount_thread.start()
+            lenders_number_thread.start()
+            lenders_amount_thread.start()
             hhi_trends_thread.start()
-            
+
             # Wait for all with 30 second timeout each
-            county_thread.join(timeout=30)
-            comparison_thread.join(timeout=30)
-            lenders_thread.join(timeout=30)
+            county_number_thread.join(timeout=30)
+            county_amount_thread.join(timeout=30)
+            comparison_number_thread.join(timeout=30)
+            comparison_amount_thread.join(timeout=30)
+            lenders_number_thread.join(timeout=30)
+            lenders_amount_thread.join(timeout=30)
             hhi_trends_thread.join(timeout=30)
             
             # Collect results
             while not result_queue.empty():
                 try:
                     key, value = result_queue.get_nowait()
-                    if key == 'county':
-                        ai_insights['county_summary_discussion'] = value
-                    elif key == 'comparison':
-                        ai_insights['comparison_discussion'] = value
-                    elif key == 'lenders':
-                        ai_insights['top_lenders_discussion'] = value
+                    if key == 'county_number':
+                        ai_insights['county_summary_number_discussion'] = value
+                    elif key == 'county_amount':
+                        ai_insights['county_summary_amount_discussion'] = value
+                    elif key == 'comparison_number':
+                        ai_insights['comparison_number_discussion'] = value
+                    elif key == 'comparison_amount':
+                        ai_insights['comparison_amount_discussion'] = value
+                    elif key == 'lenders_number':
+                        ai_insights['top_lenders_number_discussion'] = value
+                    elif key == 'lenders_amount':
+                        ai_insights['top_lenders_amount_discussion'] = value
                     elif key == 'hhi_trends':
                         ai_insights['hhi_trends_discussion'] = value
                 except queue.Empty:
                     break
-            
+
             # If threads are still alive, they timed out
-            if county_thread.is_alive():
-                print("Warning: County summary AI analysis timed out after 30 seconds")
-            if comparison_thread.is_alive():
-                print("Warning: Comparison AI analysis timed out after 30 seconds")
-            if lenders_thread.is_alive():
-                print("Warning: Top lenders AI analysis timed out after 30 seconds")
+            if county_number_thread.is_alive():
+                print("Warning: County summary number AI analysis timed out after 30 seconds")
+            if county_amount_thread.is_alive():
+                print("Warning: County summary amount AI analysis timed out after 30 seconds")
+            if comparison_number_thread.is_alive():
+                print("Warning: Comparison number AI analysis timed out after 30 seconds")
+            if comparison_amount_thread.is_alive():
+                print("Warning: Comparison amount AI analysis timed out after 30 seconds")
+            if lenders_number_thread.is_alive():
+                print("Warning: Top lenders number AI analysis timed out after 30 seconds")
+            if lenders_amount_thread.is_alive():
+                print("Warning: Top lenders amount AI analysis timed out after 30 seconds")
         except Exception as e:
             print(f"Warning: AI analysis failed completely: {e}")
             import traceback
             traceback.print_exc()
             ai_insights = {
-                'county_summary_discussion': "",
-                'comparison_discussion': "",
-                'top_lenders_discussion': ""
+                'county_summary_number_discussion': "",
+                'county_summary_amount_discussion': "",
+                'comparison_number_discussion': "",
+                'comparison_amount_discussion': "",
+                'top_lenders_number_discussion': "",
+                'top_lenders_amount_discussion': "",
+                'hhi_trends_discussion': ""
             }
             ai_insights_enabled = False  # Ensure flag is set when AI fails
         

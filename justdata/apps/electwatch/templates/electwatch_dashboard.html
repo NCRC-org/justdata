@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ElectWatch - Financial Influence Monitor | NCRC JustData</title>
+    <link rel="icon" type="image/png" href="{{ url_for('electwatch.static', filename='img/favicon.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
@@ -829,6 +830,32 @@
 
         .slack-link i {
             color: #E01E5A;
+        }
+
+        /* Refresh Data Button - Staff Only */
+        .refresh-data-btn {
+            background: #ff9800 !important;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .refresh-data-btn:hover {
+            background: #f57c00 !important;
+        }
+
+        .refresh-data-btn.refreshing {
+            opacity: 0.7;
+            cursor: wait;
+        }
+
+        .refresh-data-btn.refreshing i {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         .version {
@@ -1672,7 +1699,7 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo-white.png') }}" alt="NCRC" onerror="this.style.display='none'">
+                <img src="{{ url_for('electwatch.static', filename='img/justdata-logo.png') }}" alt="JustData" onerror="this.style.display='none'">
                 <div class="logo-text">
                     <h1>ElectWatch</h1>
                     <div class="tagline">Financial Influence Monitor • A JustData Tool</div>
@@ -1743,6 +1770,11 @@
                 </div>
             </div>
             <div class="support-links">
+                {% if is_staff %}
+                <button id="refreshDataBtn" class="support-link refresh-data-btn" title="Refresh data from all sources (staff only)" onclick="refreshElectWatchData()">
+                    <i class="fas fa-sync-alt"></i> Refresh Data
+                </button>
+                {% endif %}
                 <a href="mailto:research@ncrc.org" class="support-link" title="Email Support">
                     <i class="fas fa-envelope"></i> Email
                 </a>
@@ -2357,7 +2389,7 @@
                             <i class="fas fa-star"></i> Key Finance Bills (119th Congress)
                         </h3>
                         <div class="bill-grid">
-                            <div class="bill-card" onclick="window.location='/bill/hr4763'">
+                            <div class="bill-card" onclick="window.location='bill/hr4763'">
                                 <div class="bill-card-header">
                                     <span class="bill-id-badge">H.R. 4763</span>
                                     <div class="bill-industries">
@@ -2373,7 +2405,7 @@
                                 </div>
                             </div>
 
-                            <div class="bill-card" onclick="window.location='/bill/hr5403'">
+                            <div class="bill-card" onclick="window.location='bill/hr5403'">
                                 <div class="bill-card-header">
                                     <span class="bill-id-badge">H.R. 5403</span>
                                     <div class="bill-industries">
@@ -2523,7 +2555,7 @@
             if (industry) params.append('industry', industry);
 
             try {
-                const response = await fetch(`/api/officials?${params}`);
+                const response = await fetch(`api/officials?${params}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -2651,14 +2683,14 @@
                     <td>
                         <div class="official-cell">
                             <div class="official-photo-container">
-                                ${official.photo_url
-                                    ? `<img class="official-photo" src="${official.photo_url}" alt="${official.name}" title="${(official.photo_attribution || 'Official portrait').replace(/"/g, '&quot;')}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
+                                ${(official.photo_url || (official.bioguide_id ? 'https://clerk.house.gov/content/assets/img/members/' + official.bioguide_id + '.jpg' : null))
+                                    ? `<img class="official-photo" src="${official.photo_url || 'https://clerk.house.gov/content/assets/img/members/' + official.bioguide_id + '.jpg'}" alt="${official.name}" title="${(official.photo_attribution || 'Official portrait').replace(/"/g, '&quot;')}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
                                     : `<div class="official-photo placeholder"><i class="fas fa-user"></i></div>`
                                 }
                                 <div class="party-indicator ${official.party}">${official.party}</div>
                             </div>
                             <div class="official-info">
-                                <a href="/official/${official.id}" class="official-name">${official.name}</a>
+                                <a href="official/${official.id}" class="official-name">${official.name}</a>
                                 <span class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}${official.district ? '-' + official.district : ''}</span>
                             </div>
                         </div>
@@ -2790,14 +2822,14 @@
         }
 
         function showIndustryDetail(industryCode) {
-            window.location.href = `/industry/${industryCode}`;
+            window.location.href = `industry/${industryCode}`;
         }
 
         function showCommittee(committeeId) {
             // Navigate to committee detail page
             // Convert underscore IDs to hyphenated format
             const formattedId = committeeId.replace(/_/g, '-');
-            window.location.href = `/committee/${formattedId}`;
+            window.location.href = `committee/${formattedId}`;
         }
 
         // Store insights globally for click handling
@@ -2808,7 +2840,7 @@
             container.innerHTML = '<div class="loading">Loading AI insights...</div>';
 
             try {
-                const url = forceRegenerate ? '/api/insights?refresh=true' : '/api/insights';
+                const url = forceRegenerate ? 'api/insights?refresh=true' : 'api/insights';
                 const response = await fetch(url);
                 const data = await response.json();
 
@@ -2839,16 +2871,16 @@
                     let url;
                     switch(type) {
                         case 'official':
-                            url = `/official/${encodeURIComponent(id)}`;
+                            url = `official/${encodeURIComponent(id)}`;
                             return `<a href="${url}" class="insight-link insight-link-official">${display}</a>`;
                         case 'firm':
-                            url = `/firm/${encodeURIComponent(id)}`;
+                            url = `firm/${encodeURIComponent(id)}`;
                             return `<a href="${url}" class="insight-link insight-link-firm">${display}</a>`;
                         case 'committee':
-                            url = `/committee/${encodeURIComponent(id)}`;
+                            url = `committee/${encodeURIComponent(id)}`;
                             return `<a href="${url}" class="insight-link insight-link-committee">${display}</a>`;
                         case 'industry':
-                            url = `/industry/${encodeURIComponent(id)}`;
+                            url = `industry/${encodeURIComponent(id)}`;
                             return `<a href="${url}" class="insight-link insight-link-industry">${display}</a>`;
                         default:
                             return display;
@@ -2905,7 +2937,7 @@
 
             // Render firms
             const firmsHtml = (insight.firms || []).map(firm => `
-                <div class="entity-item" onclick="window.location='/firm/${encodeURIComponent(firm.name)}'">
+                <div class="entity-item" onclick="window.location='firm/${encodeURIComponent(firm.name)}'">
                     <div class="entity-info">
                         <div class="entity-badge firm"><i class="fas fa-building"></i></div>
                         <div>
@@ -2920,7 +2952,7 @@
 
             // Render officials
             const officialsHtml = (insight.officials || []).map(official => `
-                <div class="entity-item" onclick="window.location='/official/${official.id}'">
+                <div class="entity-item" onclick="window.location='official/${official.id}'">
                     <div class="entity-info">
                         <div class="entity-badge official">${official.party}</div>
                         <div>
@@ -2935,7 +2967,7 @@
 
             // Render industries
             const industriesHtml = (insight.industries || []).map(ind => `
-                <div class="entity-item" onclick="window.location='/industry/${ind.code}'">
+                <div class="entity-item" onclick="window.location='industry/${ind.code}'">
                     <div class="entity-info">
                         <div class="entity-badge industry"><i class="fas fa-industry"></i></div>
                         <div>
@@ -2950,7 +2982,7 @@
 
             // Render committees
             const committeesHtml = (insight.committees || []).map(cmte => `
-                <div class="entity-item" onclick="window.location='/committee/${cmte.id}'">
+                <div class="entity-item" onclick="window.location='committee/${cmte.id}'">
                     <div class="entity-info">
                         <div class="entity-badge" style="background: ${cmte.chamber === 'senate' ? 'var(--party-d)' : 'var(--party-r)'}">
                             <i class="fas fa-gavel"></i>
@@ -3033,22 +3065,25 @@
         // Load Data Freshness Info
         async function loadDataFreshness() {
             try {
-                const response = await fetch('/api/freshness');
+                const response = await fetch('api/freshness');
                 const data = await response.json();
 
-                if (data.success) {
-                    // Show date range (e.g., "Jan 1, 2025 - Jan 10, 2026")
-                    if (data.data_window) {
-                        document.getElementById('freshness-date').textContent =
-                            `${data.data_window.start} - ${data.data_window.end}`;
-                    } else {
-                        document.getElementById('freshness-date').textContent = data.last_updated;
-                    }
+                // Show date range (e.g., "Jan 1, 2025 - Jan 10, 2026")
+                if (data.data_window) {
+                    document.getElementById('freshness-date').textContent =
+                        `${data.data_window.start} - ${data.data_window.end}`;
+                } else if (data.last_updated_display) {
+                    document.getElementById('freshness-date').textContent = data.last_updated_display;
+                } else if (data.last_updated) {
+                    document.getElementById('freshness-date').textContent = data.last_updated;
+                }
 
-                    // Individual sources - show "Updated" date
+                // Individual sources - map API field names to display
+                // API returns: fec, fmp (stock trades), congress (committees)
+                if (data.sources) {
                     updateSourceStatus('fec', data.sources.fec);
-                    updateSourceStatus('stock', data.sources.stock_act);
-                    updateSourceStatus('committee', data.sources.committees);
+                    updateSourceStatus('stock', data.sources.fmp);  // fmp = STOCK Act trades
+                    updateSourceStatus('committee', data.sources.congress);  // congress = committees
                 }
             } catch (error) {
                 console.error('Error loading freshness data:', error);
@@ -3060,11 +3095,16 @@
             const dateEl = document.getElementById(`${prefix}-date`);
             const statusEl = document.getElementById(`${prefix}-status`);
 
-            if (source) {
-                dateEl.textContent = source.date;
+            if (source && source.timestamp) {
+                // Parse timestamp and format as readable date
+                const timestamp = new Date(source.timestamp);
+                const options = { month: 'short', day: 'numeric' };
+                dateEl.textContent = timestamp.toLocaleDateString('en-US', options);
 
-                // Calculate staleness
-                const daysSince = source.days_old || 0;
+                // Calculate days since update
+                const now = new Date();
+                const daysSince = Math.floor((now - timestamp) / (1000 * 60 * 60 * 24));
+
                 statusEl.classList.remove('stale', 'old');
                 if (daysSince > 14) {
                     statusEl.classList.add('old');
@@ -3075,6 +3115,51 @@
                 } else {
                     statusEl.title = 'Data is current';
                 }
+            } else if (source && source.date) {
+                // Fallback if pre-formatted date is provided
+                dateEl.textContent = source.date;
+            }
+        }
+
+        // Refresh Data Function (staff/admin only)
+        async function refreshElectWatchData() {
+            const btn = document.getElementById('refreshDataBtn');
+            if (!btn || btn.classList.contains('refreshing')) return;
+
+            if (!confirm('This will refresh all ElectWatch data from external sources. This process may take several minutes. Continue?')) {
+                return;
+            }
+
+            btn.classList.add('refreshing');
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refreshing...';
+
+            try {
+                const response = await fetch('api/refresh-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    alert('Data refresh started! This process runs in the background and may take several minutes. The page will update automatically when complete. You can continue using the dashboard.');
+                    // Poll for completion and reload freshness data
+                    setTimeout(() => {
+                        loadDataFreshness();
+                        btn.classList.remove('refreshing');
+                        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+                    }, 5000);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to start data refresh'));
+                    btn.classList.remove('refreshing');
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+                }
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                alert('Error starting data refresh. Please try again.');
+                btn.classList.remove('refreshing');
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
             }
         }
 
@@ -3141,7 +3226,7 @@
         let allFirms = [];
         async function loadFirms() {
             try {
-                const response = await fetch('/api/firms?limit=100');
+                const response = await fetch('api/firms?limit=100');
                 const data = await response.json();
 
                 if (data.success) {
@@ -3164,7 +3249,7 @@
             }
 
             tbody.innerHTML = firms.map((firm, index) => `
-                <tr style="cursor: pointer;" onclick="window.location='/firm/${encodeURIComponent(firm.name)}'">
+                <tr style="cursor: pointer;" onclick="window.location='firm/${encodeURIComponent(firm.name)}'">
                     <td class="rank">${index + 1}</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 8px;">
@@ -3204,7 +3289,7 @@
         // Load Industry Summary Stats
         async function loadIndustrySummary() {
             try {
-                const response = await fetch('/api/sectors');
+                const response = await fetch('api/sectors');
                 const data = await response.json();
 
                 if (data.success && data.sectors) {
@@ -3243,13 +3328,13 @@
             if (billIdPattern.test(query.replace(/\s/g, ''))) {
                 // Navigate directly to bill page
                 const cleanId = query.replace(/\./g, '').replace(/\s+/g, '').toLowerCase();
-                window.location.href = `/bill/${cleanId}`;
+                window.location.href = `bill/${cleanId}`;
                 return;
             }
 
             // Otherwise, search for bills
             try {
-                const response = await fetch(`/api/bills/search?q=${encodeURIComponent(query)}`);
+                const response = await fetch(`api/bills/search?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -3277,7 +3362,7 @@
                 `;
             } else {
                 resultsList.innerHTML = bills.map(bill => `
-                    <div class="bill-result-item" onclick="window.location='/bill/${bill.bill_id.replace(/[.\s]/g, '').toLowerCase()}'">
+                    <div class="bill-result-item" onclick="window.location='bill/${bill.bill_id.replace(/[.\s]/g, '').toLowerCase()}'">
                         <div class="bill-result-info">
                             <div>
                                 <span class="bill-result-id">${bill.bill_id}</span>

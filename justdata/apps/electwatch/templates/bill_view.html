@@ -383,7 +383,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <a href="/" class="back-link">
+            <a href="/electwatch/" class="back-link">
                 <i class="fas fa-arrow-left"></i>
                 Back to Dashboard
             </a>
@@ -506,7 +506,7 @@
 
         async function loadBill() {
             try {
-                const response = await fetch(`/api/bills/${encodeURIComponent(billId)}`);
+                const response = await fetch(`/electwatch/api/bills/${encodeURIComponent(billId)}`);
                 const data = await response.json();
 
                 if (data.success) {
@@ -517,7 +517,7 @@
                         <div style="text-align: center; color: var(--danger);">
                             <i class="fas fa-exclamation-circle" style="font-size: 2rem; margin-bottom: 12px;"></i>
                             <p>${data.error || 'Bill not found'}</p>
-                            <a href="/" style="color: var(--ncrc-justdata-blue);">Return to Dashboard</a>
+                            <a href="/electwatch/" style="color: var(--ncrc-justdata-blue);">Return to Dashboard</a>
                         </div>
                     `;
                 }

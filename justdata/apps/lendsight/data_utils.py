@@ -55,8 +55,8 @@ def find_exact_county_match(county_input: str) -> list:
                 print(f"No exact match found for {county_input}, trying case-insensitive match...")
                 county_query_ci = f"""
                     SELECT DISTINCT county_state, geoid5
-                    FROM geo.cbsa_to_county 
-                    WHERE LOWER(county_state) = LOWER('{county_input}')
+                    FROM geo.cbsa_to_county
+                    WHERE LOWER(county_state) = LOWER('{escaped_county}')
                     ORDER BY geoid5
                     LIMIT 1
                     """

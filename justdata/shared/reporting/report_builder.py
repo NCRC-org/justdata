@@ -69,10 +69,13 @@ def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: Lis
     
     # Clean and prepare data
     df = clean_data(df)
-    
+
     # Calculate HHI for deposits in latest year
     hhi_data = calculate_hhi(df)
-    
+
+    # Calculate HHI for all years (for chart and table)
+    hhi_by_year_data = calculate_hhi_by_year(df)
+
     # Build different report sections
     report_data = {
         'summary': create_summary_table(df, counties, years),
@@ -80,9 +83,10 @@ def build_report(raw_data: List[Dict[str, Any]], counties: List[str], years: Lis
         'by_county': create_county_summary(df, counties, years),
         'trends': create_trend_analysis(df, years),
         'raw_data': df,
-        'hhi': hhi_data
+        'hhi': hhi_data,
+        'hhi_by_year': hhi_by_year_data
     }
-    
+
     return report_data
 
 
@@ -151,6 +155,47 @@ def calculate_hhi(df: pd.DataFrame) -> Dict[str, Any]:
         'top_banks': top_banks,
         'total_banks': len(bank_deposits)
     }
+
+
+def calculate_hhi_by_year(df: pd.DataFrame) -> List[Dict[str, Any]]:
+    """
+    Calculate Herfindahl-Hirschman Index (HHI) for bank deposits for each year.
+
+    Returns:
+        List of dictionaries with year and hhi_value for each year in the data
+    """
+    if 'total_deposits' not in df.columns or 'year' not in df.columns:
+        return []
+
+    results = []
+    years = sorted(df['year'].unique())
+
+    for year in years:
+        year_df = df[df['year'] == year].copy()
+
+        # Aggregate deposits by bank (across all counties)
+        bank_deposits = year_df.groupby('bank_name')['total_deposits'].sum().reset_index()
+        bank_deposits = bank_deposits[bank_deposits['total_deposits'] > 0]
+
+        if bank_deposits.empty:
+            continue
+
+        total_deposits = bank_deposits['total_deposits'].sum()
+        if total_deposits == 0:
+            continue
+
+        # Calculate market shares (as percentages)
+        bank_deposits['market_share'] = (bank_deposits['total_deposits'] / total_deposits) * 100
+
+        # Calculate HHI: sum of squared market shares (0-10,000 scale)
+        hhi = (bank_deposits['market_share'] ** 2).sum()
+
+        results.append({
+            'year': int(year),
+            'hhi_value': round(hhi, 2)
+        })
+
+    return results
 
 
 def clean_data(df: pd.DataFrame) -> pd.DataFrame:

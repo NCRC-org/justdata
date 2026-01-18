@@ -8,6 +8,8 @@ from typing import Dict, List, Optional, Any
 import requests
 import json
 
+from justdata.shared.utils.bigquery_client import escape_sql_string
+
 
 def get_census_api_key() -> Optional[str]:
     """Get Census API key from environment variable."""
@@ -97,13 +99,14 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
             print(f"No rows found in geo.cbsa_to_county for GEOID5 {geoid5} ({county_state})")
             # Try querying by county_state as a fallback
             print(f"Trying fallback query by county_state: '{county_state}'")
+            escaped_county_state = escape_sql_string(county_state)
             fallback_query = f"""
             SELECT DISTINCT
                 CAST(cbsa_code AS STRING) as cbsa_code,
                 CBSA as cbsa_name,
                 geoid5
             FROM geo.cbsa_to_county
-            WHERE county_state = '{county_state}'
+            WHERE county_state = '{escaped_county_state}'
                 AND cbsa_code IS NOT NULL
             LIMIT 1
             """
@@ -165,15 +168,18 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
         from apps.branchseeker.config import PROJECT_ID
         
         client = get_bigquery_client(PROJECT_ID)
-        
+
+        # Escape county_state for SQL safety (handles apostrophes like O'Brien County)
+        escaped_county_state = escape_sql_string(county_state)
+
         # Try exact match first
         query = f"""
         SELECT DISTINCT geoid5
         FROM geo.cbsa_to_county
-        WHERE county_state = '{county_state}'
+        WHERE county_state = '{escaped_county_state}'
         LIMIT 1
         """
-        
+
         print(f"Extracting FIPS codes for: '{county_state}'")
         query_job = client.query(query)
         results = list(query_job.result())
@@ -195,7 +201,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
         query_case_insensitive = f"""
         SELECT DISTINCT geoid5, county_state
         FROM geo.cbsa_to_county
-        WHERE UPPER(county_state) = UPPER('{county_state}')
+        WHERE UPPER(county_state) = UPPER('{escaped_county_state}')
         LIMIT 1
         """
         

@@ -27,7 +27,8 @@ from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Set up paths
-REPO_ROOT = Path(__file__).resolve().parents[2]
+# parents[2] = justdata, parents[3] = JustData (repo root where .env lives)
+REPO_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(REPO_ROOT))
 
 # Load environment variables FIRST
@@ -339,12 +340,15 @@ class WeeklyDataUpdate:
 
         # Then enrich with financial activity data
         self.fetch_fmp_data()  # FMP for congressional stock trades (replaced Quiver)
-        self.fetch_fec_data()
+        self.fetch_fec_data()  # Aggregate FEC data + committee IDs
+
+        # Financial sector deep dive
+        self.fetch_financial_pac_data()  # PAC contributions from financial sector
+        self.fetch_individual_financial_contributions()  # Personal money from financial execs
 
     def fetch_all_congress_members(self):
         """Fetch complete list of all Congress members from Congress.gov API."""
-        logger.info("
---- Fetching ALL Congress Members from Congress.gov ---")
+        logger.info("--- Fetching ALL Congress Members from Congress.gov ---")
         try:
             from justdata.apps.electwatch.services.congress_api_client import CongressAPIClient
             client = CongressAPIClient()
@@ -702,12 +706,17 @@ class WeeklyDataUpdate:
             officials_enriched = 0
             total_contributions = 0
             api_calls = 0
-            max_api_calls = 100  # Limit to avoid rate limiting
+            max_api_calls = 700  # Increased limit - FEC allows 1000/hour
 
             for official in self.officials_data:
                 if api_calls >= max_api_calls:
                     logger.info(f"FEC: Reached API call limit ({max_api_calls}), stopping")
                     break
+
+                # Every 100 API calls, pause for 60 seconds to respect rate limits
+                if api_calls > 0 and api_calls % 100 == 0:
+                    logger.info(f"  FEC: Pausing 60s after {api_calls} API calls (rate limit protection)...")
+                    time.sleep(60)
 
                 try:
                     name = official.get('name', '')
@@ -854,10 +863,19 @@ class WeeklyDataUpdate:
         max_date_str = rolling_end_date.strftime('%Y-%m-%d')
         logger.info(f"  Using rolling 12-month window: {min_date_str} to {max_date_str}")
 
-        def get_financial_pac_total(committee_id: str) -> tuple:
-            """Get total financial sector PAC contributions to a candidate's committee (rolling 12 months)."""
+        def get_financial_pac_total(committee_id: str) -> dict:
+            """
+            Get PAC contributions to a candidate's committee (rolling 12 months).
+
+            Returns dict with:
+                - financial_total: $ from financial sector PACs (numerator)
+                - all_pac_total: $ from ALL PACs (denominator)
+                - financial_pct: Percentage from financial sector
+                - financial_contributors: List of financial PAC contributors
+            """
             url = 'https://api.open.fec.gov/v1/schedules/schedule_a/'
-            total = 0
+            financial_total = 0
+            all_pac_total = 0
             contributors = []
             page = 1
             max_pages = 20  # Limit pages to avoid excessive API calls
@@ -894,14 +912,19 @@ class WeeklyDataUpdate:
                         name = c.get('contributor_name', '').upper()
                         amt = c.get('contribution_receipt_amount', 0)
                         # Only count PAC contributions (not employee contributions)
-                        # Must have "PAC" or "POLITICAL ACTION" in name AND match financial keywords
                         is_pac = 'PAC' in name or 'POLITICAL ACTION' in name or 'POLITICAL FUND' in name
-                        if amt > 0 and is_pac and any(kw in name for kw in FINANCIAL_KEYWORDS):
-                            total += amt
-                            contributors.append({
-                                'name': c.get('contributor_name', ''),
-                                'amount': amt
-                            })
+
+                        if amt > 0 and is_pac:
+                            # Track ALL PAC contributions (denominator)
+                            all_pac_total += amt
+
+                            # Track financial sector PACs (numerator)
+                            if any(kw in name for kw in FINANCIAL_KEYWORDS):
+                                financial_total += amt
+                                contributors.append({
+                                    'name': c.get('contributor_name', ''),
+                                    'amount': amt
+                                })
 
                     pages = data.get('pagination', {}).get('pages', 1)
                     if page >= pages:
@@ -912,7 +935,17 @@ class WeeklyDataUpdate:
                     logger.error(f"  Error fetching receipts: {e}")
                     break
 
-            return total, contributors
+            # Calculate percentage
+            financial_pct = 0
+            if all_pac_total > 0:
+                financial_pct = round((financial_total / all_pac_total) * 100, 1)
+
+            return {
+                'financial_total': financial_total,
+                'all_pac_total': all_pac_total,
+                'financial_pct': financial_pct,
+                'financial_contributors': contributors
+            }
 
         def find_candidate_committee(name: str, state: str, chamber: str) -> Optional[str]:
             """Find a candidate's principal campaign committee ID."""
@@ -999,9 +1032,22 @@ class WeeklyDataUpdate:
                 committee_id = find_candidate_committee(name, state, chamber)
 
                 if committee_id:
-                    fin_total, contributors = get_financial_pac_total(committee_id)
+                    pac_result = get_financial_pac_total(committee_id)
+                    fin_total = pac_result.get('financial_total', 0)
+                    all_pac_total = pac_result.get('all_pac_total', 0)
+                    financial_pct = pac_result.get('financial_pct', 0)
+                    contributors = pac_result.get('financial_contributors', [])
+
                     official['financial_sector_pac'] = fin_total
                     official['fec_committee_id'] = committee_id
+                    # Store calculated percentage from Schedule A data
+                    official['financial_pac_pct'] = financial_pct
+
+                    # If we don't have contributions from the initial FEC fetch,
+                    # use the total from this Schedule A fetch as denominator
+                    if not official.get('contributions') and all_pac_total > 0:
+                        official['contributions'] = all_pac_total
+                        official['pac_contributions'] = all_pac_total
 
                     if fin_total > 0:
                         matched_count += 1
@@ -1009,10 +1055,13 @@ class WeeklyDataUpdate:
                         # Store top contributors
                         top_contributors = sorted(contributors, key=lambda x: x['amount'], reverse=True)[:5]
                         official['top_financial_pacs'] = top_contributors
-                        logger.info(f"  {name}: ${fin_total:,.0f} from {len(contributors)} financial PACs")
+                        logger.info(f"  {name}: ${fin_total:,.0f} from {len(contributors)} financial PACs ({financial_pct}% of ${all_pac_total:,.0f} total PACs)")
                     else:
                         official['financial_sector_pac'] = 0
-                        logger.info(f"  {name}: $0 from financial PACs")
+                        if all_pac_total > 0:
+                            logger.info(f"  {name}: $0 financial PACs (of ${all_pac_total:,.0f} total PACs)")
+                        else:
+                            logger.info(f"  {name}: $0 from PACs")
                 else:
                     # Couldn't find committee - set to None (unknown)
                     logger.debug(f"  {name}: Could not find FEC committee")
@@ -1033,6 +1082,17 @@ class WeeklyDataUpdate:
             logger.error(f"Financial PAC fetch failed: {e}")
             self.warnings.append(f"Financial PACs: {e}")
             self.source_status['financial_pacs'] = {'status': 'failed', 'error': str(e)}
+
+    
+    def fetch_individual_financial_contributions(self):
+        """Fetch individual contributions from financial sector executives."""
+        try:
+            from justdata.apps.electwatch.services.individual_contributions import enrich_officials_with_individual_contributions
+            status = enrich_officials_with_individual_contributions(self.officials_data)
+            self.source_status['individual_financial'] = status
+        except Exception as e:
+            logger.error(f"Individual financial contributions fetch failed: {e}")
+            self.source_status['individual_financial'] = {'status': 'failed', 'error': str(e)}
 
     def fetch_congress_data(self):
         """Fetch bills and member data from Congress.gov."""
@@ -1266,6 +1326,20 @@ class WeeklyDataUpdate:
             'Scott Mr Franklin': 'F000472',
             'Gilbert Cisneros': 'C001123',
             'Jonathan Jackson': 'J000309',
+            # 119th Congress freshmen - added for photo support
+            'George Whitesides': 'W000830',  # https://www.congress.gov/member/george-whitesides/W000830
+            'Rob Bresnahan': 'B001327',      # https://www.congress.gov/member/robert-bresnahan/B001327
+            'Robert Bresnahan': 'B001327',
+            'Julie Johnson': 'J000310',       # https://www.congress.gov/member/julie-johnson/J000310
+            'Tony Wied': 'W000829',           # https://www.congress.gov/member/tony-wied/W000829
+            'Richard McCormick': 'M001218',   # https://www.congress.gov/member/richard-mccormick/M001218
+            'April Delaney': 'M001232',       # https://www.congress.gov/member/april-mcclain-delaney/M001232
+            'April McClain Delaney': 'M001232',
+            'Sheri Biggs': 'B001325',         # https://www.congress.gov/member/sheri-biggs/B001325
+            'David Taylor': 'T000490',        # https://www.congress.gov/member/david-taylor/T000490
+            'Dave Taylor': 'T000490',
+            # New Senators (2025)
+            'Ashley Moody': 'M001244',        # https://www.congress.gov/member/ashley-moody/M001244
         }
 
         # Wikipedia photo URLs for Senate members (no House Clerk photos available)
@@ -1290,6 +1364,7 @@ class WeeklyDataUpdate:
             'Sheldon Whitehouse': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg',
             'Mitch McConnell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Mitch_McConnell_2016_official_photo_%281%29.jpg/330px-Mitch_McConnell_2016_official_photo_%281%29.jpg',
             'John Fetterman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg',
+            'Ashley Moody': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg/330px-Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg',
         }
 
         # Known member data: name -> (first_elected_year, chamber, party)
@@ -1669,19 +1744,47 @@ class WeeklyDataUpdate:
                 'total_trades': official.get('total_trades', 0)
             }
 
-            # Calculate financial sector percentage of PAC contributions
-            total_pac = official.get('contributions', 0)
-            financial_pac = official.get('financial_sector_pac', 0)
-            if total_pac > 0:
-                financial_pct = round((financial_pac / total_pac) * 100)
-            else:
-                financial_pct = 0
+            # Calculate combined Financial Sector Influence %
+            # Formula: (Financial PAC $ + Financial Individual $) / (Total PAC $ + Total Individual $)
+            # This captures both organized PAC money AND personal relationships
 
-            official['financial_sector_pct'] = financial_pct
+            # PAC contributions
+            total_pac = official.get('contributions', 0) or 0
+            financial_pac = official.get('financial_sector_pac', 0) or 0
+
+            # Individual contributions (from individual_contributions.py)
+            total_individual = official.get('individual_contributions_total', 0) or 0
+            financial_individual = official.get('individual_financial_total', 0) or 0
+
+            # Combined numerator and denominator
+            financial_total = financial_pac + financial_individual
+            contribution_total = total_pac + total_individual
+
+            # Calculate combined percentage
+            if contribution_total > 0:
+                combined_financial_pct = round((financial_total / contribution_total) * 100, 1)
+            else:
+                combined_financial_pct = 0
+
+            # Also calculate component percentages for transparency
+            pac_pct = round((financial_pac / total_pac) * 100, 1) if total_pac > 0 else 0
+            individual_pct = round((financial_individual / total_individual) * 100, 1) if total_individual > 0 else 0
+
+            # Store all metrics
+            official['financial_sector_pct'] = combined_financial_pct
             official['contributions_display'] = {
-                'total': total_pac,
-                'financial': financial_pac,
-                'financial_pct': financial_pct
+                # Combined totals
+                'total': contribution_total,
+                'financial': financial_total,
+                'financial_pct': combined_financial_pct,
+                # PAC breakdown
+                'pac_total': total_pac,
+                'pac_financial': financial_pac,
+                'pac_pct': pac_pct,
+                # Individual breakdown
+                'individual_total': total_individual,
+                'individual_financial': financial_individual,
+                'individual_pct': individual_pct
             }
 
         # Filter out officials with no financial industry affiliation

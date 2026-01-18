@@ -10,7 +10,38 @@ from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
 
 class BranchSeekerAnalyzer(AIAnalyzer):
     """AI analyzer specifically for bank branch data."""
-    
+
+    def _get_data_source_context(self) -> str:
+        """Return context about what FDIC Summary of Deposits branch data represents."""
+        return """
+        DATA SOURCE CONTEXT - FDIC Summary of Deposits (SOD):
+        This report uses FDIC Summary of Deposits data, which tracks bank branch locations and deposits (NOT lending data).
+
+        KEY DISTINCTIONS:
+        - This is BRANCH LOCATION data, not lending or mortgage data
+        - Shows where banks have physical branch offices
+        - Includes deposit amounts at each branch
+        - Geographic breakdown by census tract characteristics (income level, minority population)
+
+        TERMINOLOGY:
+        - "Branches" = physical bank office locations, NOT loans or lending activity
+        - "LMICT" = Low-to-Moderate Income Census Tracts (areas with median family income below 80% of area median)
+        - "MMCT" = Majority-Minority Census Tracts (areas where minority populations exceed 50%)
+        - "Deposits" = money held at branches, NOT loans made
+        - Do NOT confuse branch presence with lending activity - they are different measures
+
+        CENSUS BOUNDARY NOTE:
+        The 2020 Census boundaries took effect in 2022, causing a ~30% national increase in MMCT designations.
+        Large changes in MMCT branch counts between 2021 and 2022 are likely due to boundary changes, not actual branch movements.
+
+        PLAIN ENGLISH REQUIREMENTS:
+        - Write for a general audience unfamiliar with banking regulations
+        - Explain acronyms and technical terms in simple language
+        - Use "bank branches" or "branch locations" not technical terms
+        - Use "low-to-moderate income areas" not just "LMICT"
+        - Use "majority-minority areas" not just "MMCT"
+        """
+
     def generate_executive_summary(self, data: Dict[str, Any]) -> str:
         """Generate an executive summary of the bank branch analysis."""
         counties = data.get('counties', [])
@@ -45,25 +76,27 @@ class BranchSeekerAnalyzer(AIAnalyzer):
         
         prompt = f"""
         Generate a concise executive summary for bank branch analysis:
-        
+
+        {self._get_data_source_context()}
+
         Counties: {counties_str}
         Years: {years_str}
         Total Branches in {final_year}: {final_year_branch_count}
         Top Banks: {top_banks_str}
-        
+
         CRITICAL: When mentioning the total number of branches, you MUST explicitly state that this is the number of branches present in {final_year} (the final year of the report). Do NOT sum branches across all years. The number {final_year_branch_count} represents unique branches that existed in {final_year} only.
-        
-        IMPORTANT DEFINITIONS:
-        - LMICT = Low-to-Moderate Income Census Tracts (areas with median family income below 80% of area median)
-        - MMCT = Majority-Minority Census Tracts (areas where minority populations represent more than 50% of total population)
+
         {census_note}
+
         Focus on:
         - Key trends in branch counts over the time period
         - Market concentration among major banks
         - MMCT percentage changes around 2022 (2020 census effect)
         - 2-3 paragraphs maximum
-        
+
         WRITING REQUIREMENTS:
+        - Write in PLAIN ENGLISH accessible to non-technical readers
+        - Explain terms like LMICT (low-to-moderate income areas) and MMCT (majority-minority areas) in plain language
         - Write in objective, third-person style
         - NO first-person language (no "I", "we", "my", "our")
         - NO personal opinions or subjective statements
@@ -686,4 +719,68 @@ Top Banks by Deposits:
         """
         
         return self._call_ai(prompt, max_tokens=600, temperature=0.3)
+
+    def generate_hhi_trends_narrative(self, data: Dict[str, Any]) -> str:
+        """Generate AI narrative for HHI market concentration trends section."""
+        json_data = convert_numpy_types(data)
+        counties = data.get('counties', [])
+        years = data.get('years', [])
+        hhi_by_year = data.get('hhi_by_year', [])
+
+        if not hhi_by_year or len(hhi_by_year) == 0:
+            return "Market concentration data is not available for this analysis period."
+
+        # Sort by year
+        sorted_hhi = sorted(hhi_by_year, key=lambda x: int(x.get('year', 0)))
+        hhi_text = json.dumps(sorted_hhi, indent=2)
+
+        years_str = f"{years[0]} to {years[-1]}" if len(years) > 1 else str(years[0]) if years else "the study period"
+
+        prompt = f"""
+        Analyze market concentration trends using Herfindahl-Hirschman Index (HHI) data:
+
+        Counties: {counties}
+        Analysis Period: {years_str}
+
+        HHI Data by Year:
+        {hhi_text}
+
+        IMPORTANT DEFINITIONS:
+        - HHI (Herfindahl-Hirschman Index) measures market concentration based on deposit market share
+        - HHI scale: 0-10,000
+          * HHI < 1,500: Low concentration (competitive market)
+          * HHI 1,500-2,500: Moderate concentration
+          * HHI > 2,500: High concentration
+        - Higher HHI values indicate greater market concentration (fewer banks controlling more of the market)
+        - Lower HHI values suggest a more competitive market with diverse banking options
+
+        ANALYSIS REQUIREMENTS:
+
+        1. FIRST PARAGRAPH - Overall Market Concentration:
+           - State the current HHI level (latest year) and concentration category
+           - Describe the overall market structure (competitive, moderately concentrated, or highly concentrated)
+           - Explain what the concentration level means for banking competition and service availability
+
+        2. SECOND PARAGRAPH - Trends Over Time:
+           - Analyze how HHI has changed over the study period
+           - Identify whether the market has become more or less concentrated over time
+           - Note any significant changes in concentration levels (e.g., moved from low to moderate, or moderate to high)
+           - Discuss what these trends might indicate about market dynamics
+
+        3. THIRD PARAGRAPH - Market Implications:
+           - Explain how the concentration level affects competition, pricing, and service availability
+           - Discuss implications for community access to banking services
+           - Note any relationship between concentration trends and branch network changes
+
+        WRITING REQUIREMENTS:
+        - Use PLAIN ENGLISH - avoid excessive technical jargon
+        - Write in objective, third-person style
+        - NO first-person language (no "I", "we", "my", "our")
+        - NO policy recommendations
+        - Present ONLY what the data shows
+        - Use professional, analytical tone
+        - Include specific HHI values where relevant to support your analysis
+        """
+
+        return self._call_ai(prompt, max_tokens=800, temperature=0.3)
 

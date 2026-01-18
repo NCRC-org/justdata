@@ -19,7 +19,7 @@ function initDOMElements() {
 // Form submission handler
 function setupFormHandler() {
     if (!analysisForm) {
-        console.warn('Analysis form not found');
+        // Form doesn't exist on this page (e.g., report page or BizSight) - silently return
         return;
     }
     

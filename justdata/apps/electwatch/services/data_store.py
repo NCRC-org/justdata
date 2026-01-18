@@ -414,6 +414,111 @@ def get_firm(firm_name: str) -> Optional[Dict]:
     return firms_by_name.get(normalized) or firms_by_name.get(firm_name)
 
 
+
+
+def get_firms_with_stats() -> List[Dict]:
+    """
+    Get all firms data with computed statistics from officials' trades.
+    
+    Returns firms with the following fields expected by the frontend:
+    - name: Company name
+    - ticker: Stock ticker symbol
+    - industry: Industry/sector code (lowercase)
+    - total: Total trade value (using midpoint of ranges)
+    - officials: Count of officials who traded this firm
+    - stock_trades: Total number of stock trades for this firm
+    """
+    # Get raw firms data
+    firms_data = load_json('firms.json')
+    raw_firms = firms_data.get('firms', []) if firms_data else []
+    
+    # Get officials data to aggregate trades by firm
+    officials = get_officials()
+    
+    # Build aggregated stats by ticker
+    firm_stats = {}
+    for official in officials:
+        trades = official.get('trades', [])
+        for trade in trades:
+            ticker = trade.get('ticker', '')
+            if not ticker:
+                continue
+            
+            if ticker not in firm_stats:
+                firm_stats[ticker] = {
+                    'trade_count': 0,
+                    'officials': set(),
+                    'total_value': 0,
+                    'company_name': trade.get('company', ''),
+                }
+            
+            firm_stats[ticker]['trade_count'] += 1
+            firm_stats[ticker]['officials'].add(official.get('name', ''))
+            
+            # Calculate trade value using midpoint of range
+            amount = trade.get('amount', {})
+            if isinstance(amount, dict):
+                min_val = amount.get('min', 0)
+                max_val = amount.get('max', 0)
+                midpoint = (min_val + max_val) / 2
+                firm_stats[ticker]['total_value'] += midpoint
+    
+    # Industry mapping (lowercase for consistent matching)
+    industry_map = {
+        'Banking': 'banking',
+        'Investment': 'investment',
+        'Insurance': 'insurance',
+        'Crypto': 'crypto',
+        'Fintech': 'fintech',
+        'Mortgage': 'mortgage',
+        'Consumer': 'consumer_lending',
+        'Consumer Lending': 'consumer_lending',
+    }
+    
+    # Merge raw firm data with aggregated stats
+    result = []
+    processed_tickers = set()
+    
+    # First, process firms from firms.json that have trade activity
+    for firm in raw_firms:
+        ticker = firm.get('ticker', '')
+        stats = firm_stats.get(ticker, {})
+        
+        industry = firm.get('industry', '')
+        industry_lower = industry_map.get(industry, industry.lower()) if industry else 'other'
+        
+        result.append({
+            'name': firm.get('name', ''),
+            'ticker': ticker,
+            'industry': industry_lower,
+            'total': stats.get('total_value', 0),
+            'officials': len(stats.get('officials', set())),
+            'stock_trades': stats.get('trade_count', 0),
+            'quote': firm.get('quote'),
+            'news': firm.get('news', [])[:3] if firm.get('news') else [],  # Limit news items
+        })
+        processed_tickers.add(ticker)
+    
+    # Add any firms from trades that aren't in firms.json
+    for ticker, stats in firm_stats.items():
+        if ticker not in processed_tickers:
+            result.append({
+                'name': stats.get('company_name', ticker),
+                'ticker': ticker,
+                'industry': 'other',
+                'total': stats.get('total_value', 0),
+                'officials': len(stats.get('officials', set())),
+                'stock_trades': stats.get('trade_count', 0),
+                'quote': None,
+                'news': [],
+            })
+    
+    # Sort by total trade value (descending)
+    result.sort(key=lambda x: x.get('total', 0), reverse=True)
+    
+    return result
+
+
 def get_industries() -> List[Dict]:
     """Get all industries data."""
     data = load_json('industries.json')

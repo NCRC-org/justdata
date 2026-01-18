@@ -1,47 +1,61 @@
 #!/usr/bin/env python3
 """
-BranchSeeker-specific data utilities for BigQuery and county reference.
+BranchSight-specific data utilities for BigQuery and county reference.
+Adapted from ncrc-test-apps branchseeker.
 """
 
-from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
 from typing import List, Optional, Dict
-from justdata.apps.branchsight.config import PROJECT_ID
+from .config import PROJECT_ID
 
 
 def find_exact_county_match(county_input: str) -> list:
     """
     Find all possible county matches from the database.
+    Handles Connecticut planning regions and counties specially.
 
     Args:
-        county_input: County input in format "County, State", "County State", or geoid5 FIPS code (e.g., "24031")
+        county_input: County input in format "County, State" or "County State"
+                     OR Connecticut planning region name
 
     Returns:
         List of possible county names from database (empty if none found)
+        For Connecticut planning regions, returns all counties in that region
     """
     try:
+        # Check if this is a Connecticut planning region or county
+        from justdata.shared.utils.connecticut_county_mapper import (
+            is_planning_region,
+            normalize_connecticut_selection,
+            get_connecticut_county_name
+        )
+
+        is_ct_planning_region = is_planning_region(county_input)
+        is_ct_county = ', Connecticut' in county_input or county_input.endswith(', CT')
+
+        if is_ct_planning_region:
+            # Return all counties in this planning region
+            normalized_name, selection_type, county_fips_list = normalize_connecticut_selection(county_input)
+            county_names = [get_connecticut_county_name(fips) + ', Connecticut'
+                          for fips in county_fips_list if get_connecticut_county_name(fips)]
+            if county_names:
+                print(f"Connecticut planning region '{county_input}' maps to counties: {county_names}")
+                return county_names
+
+        if is_ct_county:
+            # For Connecticut counties, verify and return the county name
+            normalized_name, selection_type, county_fips_list = normalize_connecticut_selection(county_input)
+            if county_fips_list:
+                county_name = get_connecticut_county_name(county_fips_list[0])
+                if county_name:
+                    result = [f"{county_name}, Connecticut"]
+                    print(f"Connecticut county '{county_input}' normalized to: {result[0]}")
+                    return result
+
+        # For non-Connecticut counties, use BigQuery lookup
         client = get_bigquery_client(PROJECT_ID)
 
-        # Check if input is a geoid5 (5-digit FIPS code)
-        county_input_stripped = county_input.strip()
-        if county_input_stripped.isdigit() and len(county_input_stripped) <= 5:
-            # Treat as geoid5 FIPS code
-            geoid5 = county_input_stripped.zfill(5)  # Pad to 5 digits if needed
-            county_query = f"""
-            SELECT DISTINCT county_state
-            FROM geo.cbsa_to_county
-            WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') = '{geoid5}'
-            ORDER BY county_state
-            """
-            county_job = client.query(county_query)
-            county_results = list(county_job.result())
-            matches = [row.county_state for row in county_results]
-            if matches:
-                print(f"Found county match for geoid5 {geoid5}: {matches}")
-                return matches
-            else:
-                print(f"No match found for geoid5 {geoid5}")
-
-        # Parse county and state from text format
+        # Parse county and state
         if ',' in county_input:
             county_name, state = county_input.split(',', 1)
             county_name = county_name.strip()
@@ -55,20 +69,24 @@ def find_exact_county_match(county_input: str) -> list:
                 county_name = county_input.strip()
                 state = None
 
+        # Escape apostrophes in county and state names for SQL
+        escaped_county_name = escape_sql_string(county_name)
+        escaped_state = escape_sql_string(state) if state else None
+
         # Build query to find matches
         if state:
             county_query = f"""
             SELECT DISTINCT county_state
             FROM geo.cbsa_to_county
-            WHERE LOWER(county_state) LIKE LOWER('%{county_name}%')
-            AND LOWER(county_state) LIKE LOWER('%{state}%')
+            WHERE LOWER(county_state) LIKE LOWER('%{escaped_county_name}%')
+            AND LOWER(county_state) LIKE LOWER('%{escaped_state}%')
             ORDER BY county_state
             """
         else:
             county_query = f"""
             SELECT DISTINCT county_state
             FROM geo.cbsa_to_county
-            WHERE LOWER(county_state) LIKE LOWER('%{county_name}%')
+            WHERE LOWER(county_state) LIKE LOWER('%{escaped_county_name}%')
             ORDER BY county_state
             """
 
@@ -78,57 +96,32 @@ def find_exact_county_match(county_input: str) -> list:
         return matches
     except Exception as e:
         print(f"Error finding county match for {county_input}: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 
-def get_available_counties() -> List[Dict[str, str]]:
-    """Get list of available counties from the database with FIPS codes.
-    
-    Returns:
-        List of dictionaries with 'name', 'geoid5', 'state_fips', 'county_fips'
-    """
+def get_available_counties() -> List[str]:
+    """Get list of available counties from the database."""
     try:
         print("Attempting to connect to BigQuery...")
         client = get_bigquery_client(PROJECT_ID)
         query = """
-        SELECT DISTINCT 
-            county_state,
-            geoid5,
-            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
-            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-        FROM geo.cbsa_to_county 
-        WHERE geoid5 IS NOT NULL
-            AND county_state IS NOT NULL
-            AND TRIM(county_state) != ''
+        SELECT DISTINCT county_state
+        FROM geo.cbsa_to_county
         ORDER BY county_state
         """
         print("Executing county query...")
         query_job = client.query(query)
         results = query_job.result()
-        counties = []
-        seen_geoids = set()  # Track unique GEOIDs to avoid duplicates
-        for row in results:
-            geoid5 = str(row.geoid5).zfill(5) if row.geoid5 else None
-            if geoid5 and geoid5 in seen_geoids:
-                continue
-            if geoid5:
-                seen_geoids.add(geoid5)
-            counties.append({
-                'name': row.county_state,
-                'geoid5': geoid5,
-                'state_fips': row.state_fips,
-                'county_fips': row.county_fips
-            })
+        counties = [row.county_state for row in results]
         print(f"Fetched {len(counties)} counties from BigQuery")
         return counties
     except Exception as e:
         print(f"BigQuery not available: {e}")
         print("Using fallback county list...")
-        # Return fallback list (convert to standard format)
-        fallback_strings = get_fallback_counties()
-        # Convert fallback strings to dict format (without geoid5 since we don't have it)
-        return [{'name': county, 'geoid5': None, 'state_fips': None, 'county_fips': None} 
-                for county in fallback_strings]
+        # Return fallback list
+        return get_fallback_counties()
 
 
 def get_fallback_counties() -> List[str]:
@@ -176,49 +169,34 @@ def get_fallback_counties() -> List[str]:
 
 def get_available_states() -> List[Dict[str, str]]:
     """
-    Get list of all available US states with FIPS codes.
-    
-    Returns all 50 states + DC + territories with their FIPS codes.
-    This ensures all states are visible in the dropdown regardless of database content.
-    
+    Get list of all available states from the database.
+
     Returns:
-        List of dictionaries with 'code' and 'name' keys (code is FIPS code)
+        List of dictionaries with 'name' and 'code' keys
     """
-    # Use hardcoded list like LendSight for consistency and reliability
-    all_states = [
-        {'code': '01', 'name': 'Alabama'}, {'code': '02', 'name': 'Alaska'},
-        {'code': '04', 'name': 'Arizona'}, {'code': '05', 'name': 'Arkansas'},
-        {'code': '06', 'name': 'California'}, {'code': '08', 'name': 'Colorado'},
-        {'code': '09', 'name': 'Connecticut'}, {'code': '10', 'name': 'Delaware'},
-        {'code': '11', 'name': 'District of Columbia'}, {'code': '12', 'name': 'Florida'},
-        {'code': '13', 'name': 'Georgia'}, {'code': '15', 'name': 'Hawaii'},
-        {'code': '16', 'name': 'Idaho'}, {'code': '17', 'name': 'Illinois'},
-        {'code': '18', 'name': 'Indiana'}, {'code': '19', 'name': 'Iowa'},
-        {'code': '20', 'name': 'Kansas'}, {'code': '21', 'name': 'Kentucky'},
-        {'code': '22', 'name': 'Louisiana'}, {'code': '23', 'name': 'Maine'},
-        {'code': '24', 'name': 'Maryland'}, {'code': '25', 'name': 'Massachusetts'},
-        {'code': '26', 'name': 'Michigan'}, {'code': '27', 'name': 'Minnesota'},
-        {'code': '28', 'name': 'Mississippi'}, {'code': '29', 'name': 'Missouri'},
-        {'code': '30', 'name': 'Montana'}, {'code': '31', 'name': 'Nebraska'},
-        {'code': '32', 'name': 'Nevada'}, {'code': '33', 'name': 'New Hampshire'},
-        {'code': '34', 'name': 'New Jersey'}, {'code': '35', 'name': 'New Mexico'},
-        {'code': '36', 'name': 'New York'}, {'code': '37', 'name': 'North Carolina'},
-        {'code': '38', 'name': 'North Dakota'}, {'code': '39', 'name': 'Ohio'},
-        {'code': '40', 'name': 'Oklahoma'}, {'code': '41', 'name': 'Oregon'},
-        {'code': '42', 'name': 'Pennsylvania'}, {'code': '44', 'name': 'Rhode Island'},
-        {'code': '45', 'name': 'South Carolina'}, {'code': '46', 'name': 'South Dakota'},
-        {'code': '47', 'name': 'Tennessee'}, {'code': '48', 'name': 'Texas'},
-        {'code': '49', 'name': 'Utah'}, {'code': '50', 'name': 'Vermont'},
-        {'code': '51', 'name': 'Virginia'}, {'code': '53', 'name': 'Washington'},
-        {'code': '54', 'name': 'West Virginia'}, {'code': '55', 'name': 'Wisconsin'},
-        {'code': '56', 'name': 'Wyoming'},
-        # Territories
-        {'code': '60', 'name': 'American Samoa'}, {'code': '66', 'name': 'Guam'},
-        {'code': '69', 'name': 'Northern Mariana Islands'}, {'code': '72', 'name': 'Puerto Rico'},
-        {'code': '78', 'name': 'U.S. Virgin Islands'}
-    ]
-    print(f"Returning all {len(all_states)} US states and territories")
-    return all_states
+    try:
+        print("Attempting to get states from BigQuery...")
+        client = get_bigquery_client(PROJECT_ID)
+        query = """
+        SELECT DISTINCT
+            TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)]) as state_name
+        FROM geo.cbsa_to_county
+        WHERE county_state LIKE '%,%'
+        ORDER BY state_name
+        """
+        print("Executing state query...")
+        query_job = client.query(query)
+        results = query_job.result()
+        states = []
+        for row in results:
+            if row.state_name:
+                states.append({'name': row.state_name, 'code': row.state_name})
+        print(f"Fetched {len(states)} states from BigQuery")
+        return states
+    except Exception as e:
+        print(f"BigQuery not available for states: {e}")
+        print("Using fallback state list...")
+        return get_fallback_states()
 
 
 def get_fallback_states() -> List[Dict[str, str]]:
@@ -283,42 +261,25 @@ def get_fallback_states() -> List[Dict[str, str]]:
 def expand_state_to_counties(state_code: str) -> List[str]:
     """
     Expand a state code/name to a list of counties in that state.
-    
+
     Args:
         state_code: State name (e.g., "Delaware", "Maryland")
-    
+
     Returns:
         List of county names in "County, State" format
     """
     try:
         all_counties = get_available_counties()
-        # Filter counties by state (state_code can be FIPS code or state name)
+        # Filter counties by state name (state_code is the state name from the dropdown)
+        # County format is "County Name, State"
         filtered = []
         for county in all_counties:
-            # Handle both dict format (new) and string format (old/fallback)
-            if isinstance(county, dict):
-                county_name = county.get('name', '')
-                state_fips = county.get('state_fips', '')
-                # Check if state_code is a FIPS code (2 digits) or state name
-                if state_code.isdigit() and len(state_code) <= 2:
-                    # Match by state FIPS code
-                    state_code_padded = state_code.zfill(2)
-                    if state_fips and state_fips == state_code_padded:
-                        filtered.append(county.get('name', ''))  # Return just the name for backward compatibility
-                else:
-                    # Match by state name
-                    if ',' in county_name:
-                        _, state_name = county_name.split(',', 1)
-                        state_name = state_name.strip()
-                        if state_name.lower() == state_code.lower():
-                            filtered.append(county.get('name', ''))  # Return just the name for backward compatibility
-            else:
-                # Old format: string
-                if ',' in county:
-                    county_name, state_name = county.split(',', 1)
-                    state_name = state_name.strip()
-                    if state_name.lower() == state_code.lower():
-                        filtered.append(county)
+            if ',' in county:
+                county_name, state_name = county.split(',', 1)
+                state_name = state_name.strip()
+                # Match by state name (case-insensitive)
+                if state_name.lower() == state_code.lower():
+                    filtered.append(county)
         return filtered
     except Exception as e:
         print(f"Error expanding state to counties: {e}")
@@ -328,10 +289,10 @@ def expand_state_to_counties(state_code: str) -> List[str]:
 def expand_metro_to_counties(metro_code: str) -> List[str]:
     """
     Expand a metro area code to a list of counties in that metro area.
-    
+
     Args:
         metro_code: Metro area/CBSA code
-    
+
     Returns:
         List of county names in "County, State" format
     """
@@ -345,40 +306,96 @@ def expand_metro_to_counties(metro_code: str) -> List[str]:
         return []
 
 
+def get_available_metro_areas() -> List[Dict[str, str]]:
+    """
+    Get list of all available metro areas (CBSAs) from the database.
+
+    Returns:
+        List of dictionaries with 'name' and 'code' keys
+    """
+    try:
+        print("Attempting to get metro areas from BigQuery...")
+        client = get_bigquery_client(PROJECT_ID)
+        query = """
+        SELECT DISTINCT
+            cbsa_name as metro_name,
+            cbsa_code as metro_code
+        FROM geo.cbsa_to_county
+        WHERE cbsa_name IS NOT NULL AND cbsa_code IS NOT NULL
+        ORDER BY cbsa_name
+        """
+        print("Executing metro areas query...")
+        query_job = client.query(query)
+        results = query_job.result()
+        metros = []
+        for row in results:
+            if row.metro_name and row.metro_code:
+                metros.append({'name': row.metro_name, 'code': str(row.metro_code)})
+        print(f"Fetched {len(metros)} metro areas from BigQuery")
+        return metros
+    except Exception as e:
+        print(f"BigQuery not available for metro areas: {e}")
+        return []
+
+
 def execute_branch_query(sql_template: str, county: str, year: int) -> List[dict]:
     """
     Execute a BigQuery SQL query for branch data with parameter substitution.
-    
+
     Args:
         sql_template: SQL query template with @county and @year parameters
         county: County name in "County, State" format
         year: Year as integer
-        
+
     Returns:
         List of dictionaries containing query results
     """
     try:
         client = get_bigquery_client(PROJECT_ID)
-        
+
         # Find the exact county match from the database
         county_matches = find_exact_county_match(county)
-        
+
         if not county_matches:
             raise Exception(f"No matching counties found for: {county}")
-        
+
         # Use the first match
         exact_county = county_matches[0]
-        
+
         # Escape apostrophes in county name for SQL safety
-        from justdata.shared.utils.bigquery_client import escape_sql_string
         escaped_county = escape_sql_string(exact_county)
-        
+
         # Substitute parameters in SQL template
         sql = sql_template.replace('@county', f"'{escaped_county}'").replace('@year', f"'{year}'")
-        
+
         # Execute query
         return execute_query(client, sql)
-        
+
     except Exception as e:
         raise Exception(f"Error executing BigQuery query for {county} {year}: {e}")
 
+
+def get_available_years() -> List[int]:
+    """
+    Get list of available years from the FDIC SOD data.
+
+    Returns:
+        List of years as integers
+    """
+    try:
+        client = get_bigquery_client(PROJECT_ID)
+        query = """
+        SELECT DISTINCT year
+        FROM fdic_data.sod
+        WHERE year IS NOT NULL
+        ORDER BY year DESC
+        """
+        query_job = client.query(query)
+        results = query_job.result()
+        years = [int(row.year) for row in results]
+        print(f"Fetched {len(years)} years from BigQuery: {years}")
+        return years
+    except Exception as e:
+        print(f"BigQuery not available for years: {e}")
+        # Return fallback years
+        return list(range(2025, 2016, -1))  # 2025 down to 2017

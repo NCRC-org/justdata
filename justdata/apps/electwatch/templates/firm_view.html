@@ -559,7 +559,7 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <a href="/" class="back-link">
+            <a href="/electwatch" class="back-link">
                 <i class="fas fa-arrow-left"></i>
                 Back to Dashboard
             </a>
@@ -766,7 +766,7 @@
 
         async function loadFirmData() {
             try {
-                const response = await fetch(`/api/firm/${encodeURIComponent(firmName)}`);
+                const response = await fetch(`/electwatch/api/firm/${encodeURIComponent(firmName)}`);
                 const data = await response.json();
 
                 document.getElementById('loading').style.display = 'none';
@@ -830,7 +830,7 @@
             // Industries
             if (firm.industries && firm.industries.length > 0) {
                 document.getElementById('industry-tags').innerHTML = firm.industries.map(ind =>
-                    `<span class="industry-tag ${ind}">${formatIndustry(ind)}</span>`
+                    `<a href="/electwatch/industry/${ind}" class="industry-tag ${ind}" style="text-decoration: none;">${formatIndustry(ind)}</a>`
                 ).join('');
             }
 
@@ -889,7 +889,7 @@
                             <div class="official-cell">
                                 <div class="party-badge ${official.party}">${official.party}</div>
                                 <div>
-                                    <a href="/official/${official.id}" class="official-name">${official.name}</a>
+                                    <a href="/electwatch/official/${official.id}" class="official-name">${official.name}</a>
                                     <div class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}</div>
                                 </div>
                             </div>
@@ -943,7 +943,7 @@
                             <div class="official-cell">
                                 <div class="party-badge ${contrib.party}">${contrib.party}</div>
                                 <div>
-                                    <a href="/official/${officialId}" class="official-name">${contrib.official_name}</a>
+                                    <a href="/electwatch/official/${officialId}" class="official-name">${contrib.official_name}</a>
                                     <div class="official-meta">${contrib.chamber === 'house' ? 'Rep' : 'Sen'}. - ${contrib.state}</div>
                                 </div>
                             </div>

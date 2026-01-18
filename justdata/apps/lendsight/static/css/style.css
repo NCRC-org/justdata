@@ -719,6 +719,88 @@ body {
     line-height: 1.4;
 }
 
+/* Progress Steps */
+.progress-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 20px 0;
+    text-align: left;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.progress-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.6);
+    border: 1px solid transparent;
+}
+
+.progress-step i {
+    font-size: 16px;
+    color: #ccc;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.progress-step span {
+    font-size: 0.9rem;
+    color: #888;
+}
+
+.progress-step.pending i {
+    color: #ccc;
+}
+
+.progress-step.pending span {
+    color: #999;
+}
+
+.progress-step.active {
+    background: rgba(0, 84, 166, 0.1);
+    border: 1px solid var(--ncrc-primary-blue);
+    border-left: 3px solid var(--ncrc-primary-blue);
+}
+
+.progress-step.active i {
+    color: var(--ncrc-primary-blue);
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+.progress-step.active span {
+    color: var(--ncrc-primary-blue);
+    font-weight: 600;
+}
+
+.progress-step.completed {
+    background: rgba(40, 167, 69, 0.08);
+    border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.progress-step.completed i {
+    color: #28a745;
+}
+
+.progress-step.completed i::before {
+    content: "\f00c" !important;  /* Font Awesome check icon */
+}
+
+.progress-step.completed span {
+    color: #28a745;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.1); }
+}
+
 /* Results Section */
 .results-section {
     margin-top: 30px;
