@@ -45,9 +45,9 @@ credentials/
 gcp-service-account-key.json
 .secrets/
 
-# Data directories
-data/
-logs/
+# Data directories (root level only)
+/data/
+/logs/
 *.log
 
 # Node modules (if any)

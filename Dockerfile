@@ -36,7 +36,12 @@ COPY . .
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
-# Create non-root user
+# Create data directories needed by apps (before changing to non-root user)
+RUN mkdir -p /app/justdata/apps/data/reports && \
+    mkdir -p /app/justdata/apps/credentials && \
+    mkdir -p /app/justdata/data/reports
+
+# Create non-root user and give ownership of all app files
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
