@@ -216,6 +216,70 @@ def get_all_lenders():
         return jsonify({'error': f'An error occurred loading lenders: {str(e)}'}), 500
 
 
+@dataexplorer_bp.route('/api/lender/lookup-by-lei', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def lookup_lender_by_lei():
+    """Look up lender RSSD and SB_RESID by LEI."""
+    try:
+        data = request.get_json()
+        lei = data.get('lei', '').strip()
+
+        if not lei:
+            return jsonify({'error': 'LEI is required'}), 400
+
+        from .data_utils import get_lender_by_lei
+        lender_info = get_lender_by_lei(lei)
+
+        if lender_info:
+            return jsonify({
+                'success': True,
+                'rssd': lender_info.get('rssd'),
+                'sb_resid': lender_info.get('sb_resid'),
+                'name': lender_info.get('name'),
+                'type': lender_info.get('type')
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'rssd': None,
+                'sb_resid': None,
+                'message': 'Lender not found for this LEI'
+            })
+    except Exception as e:
+        logger.error(f"Error looking up lender by LEI: {e}", exc_info=True)
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@dataexplorer_bp.route('/api/lender/gleif-data', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def get_lender_gleif_data():
+    """Get GLEIF data (legal/hq addresses, parent/child relationships) by LEI."""
+    try:
+        data = request.get_json()
+        lei = data.get('lei', '').strip()
+
+        if not lei:
+            return jsonify({'error': 'LEI is required'}), 400
+
+        from .data_utils import get_gleif_data_by_lei
+        gleif_data = get_gleif_data_by_lei(lei)
+
+        if gleif_data:
+            return jsonify({
+                'success': True,
+                'data': gleif_data
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'data': None,
+                'message': 'No GLEIF data found for this LEI'
+            })
+    except Exception as e:
+        logger.error(f"Error fetching GLEIF data: {e}", exc_info=True)
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
 @dataexplorer_bp.route('/api/clear-cache', methods=['POST'])
 @require_access('dataexplorer', 'full')
 def api_clear_cache():

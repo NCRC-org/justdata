@@ -35,6 +35,16 @@ def create_app():
             mimetype='image/png'
         )
 
+    # Shared JS files route
+    @app.route('/shared/<path:filename>')
+    def shared_files(filename):
+        """Serve shared static files (JS modules, etc.)."""
+        from pathlib import Path
+        shared_js_dir = Path(MainConfig.STATIC_DIR) / 'js'
+        if shared_js_dir.exists() and (shared_js_dir / filename).exists():
+            return send_from_directory(str(shared_js_dir), filename)
+        return '', 404
+
     # Main landing page route
     @app.route('/')
     def landing():
