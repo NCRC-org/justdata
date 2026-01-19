@@ -103,8 +103,8 @@ CLAUDE.md
 .claude/
 archive/
 cursor_backup/
-apps/
-shared/
+/apps/
+/shared/
 _ul*
 *.csv
 *.xlsx
