@@ -1,6 +1,11 @@
 # Use Python 3.11 slim image
 FROM python:3.11-slim
 
+# Build argument to specify which app to run
+# If not provided or empty, defaults to unified "justdata" app
+ARG APP_NAME=
+ENV APP_NAME=${APP_NAME:-justdata}
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/app
@@ -14,6 +19,7 @@ RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
     libpq-dev \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements first for better caching
@@ -26,17 +32,18 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
+# Copy and make startup script executable
+COPY start.sh /app/start.sh
+RUN chmod +x /app/start.sh
+
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash app && \
     chown -R app:app /app
 USER app
 
-# Expose port
-EXPOSE 8000
+# Expose port (Cloud Run will set PORT env var)
+EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8000/health || exit 1
+# Run the startup script which handles PORT variable correctly
+CMD ["/app/start.sh"]
 
-# Run the application
-CMD ["python", "-m", "justdata.api.main"]

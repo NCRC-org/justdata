@@ -257,25 +257,115 @@ def get_cbsa_deposit_shares(
         return pd.DataFrame(), 0.0
 
 
+def _get_assessment_areas_from_branch_counties(branch_df: pd.DataFrame, client) -> List[Dict[str, any]]:
+    """
+    Build assessment areas from branch counties only (not all counties in CBSA).
+
+    This function groups branch locations by CBSA but only includes counties
+    where the bank actually has branches, not all counties in the metro area.
+
+    Args:
+        branch_df: DataFrame from get_all_branches_for_bank() with columns:
+                   geoid5, county_state, cbsa_code, cbsa_name, branch_count
+        client: BigQuery client
+
+    Returns:
+        List of assessment area dictionaries
+    """
+    if branch_df.empty:
+        return []
+
+    assessment_areas = []
+
+    # Get county details for all branch counties
+    branch_geoids = branch_df['geoid5'].unique().tolist()
+    if not branch_geoids:
+        return []
+
+    # Build a query to get county names for all branch counties
+    geoid_list = "', '".join([str(g) for g in branch_geoids])
+    query = f"""
+    SELECT DISTINCT
+        CAST(geoid5 AS STRING) as geoid5,
+        County as county_name,
+        State as state_name,
+        CAST(cbsa_code AS STRING) as cbsa_code,
+        CBSA as cbsa_name,
+        CONCAT(County, ', ', State) as county_state
+    FROM `{PROJECT_ID}.geo.cbsa_to_county`
+    WHERE CAST(geoid5 AS STRING) IN ('{geoid_list}')
+    ORDER BY cbsa_code, State, County
+    """
+
+    county_results = execute_query(client, query)
+
+    if not county_results:
+        print(f"  Warning: No county details found for branch locations")
+        return []
+
+    # Group counties by CBSA
+    cbsa_counties = {}
+    for row in county_results:
+        geoid5 = str(row.get('geoid5', '')).zfill(5)
+        cbsa_code = str(row.get('cbsa_code', 'N/A'))
+        state_name = row.get('state_name', '')
+
+        # Handle non-metro areas (N/A or 99999 cbsa_code)
+        if cbsa_code in ('N/A', '99999', '', None):
+            cbsa_key = f'NON-METRO-{state_name}'
+            cbsa_name = f"{state_name} Non-Metro Area"
+        else:
+            cbsa_key = cbsa_code
+            cbsa_name = row.get('cbsa_name', f"CBSA {cbsa_code}")
+
+        if cbsa_key not in cbsa_counties:
+            cbsa_counties[cbsa_key] = {
+                'cbsa_name': cbsa_name,
+                'counties': []
+            }
+
+        if len(geoid5) == 5:
+            state_code = geoid5[:2]
+            county_code = geoid5[2:]
+            cbsa_counties[cbsa_key]['counties'].append({
+                'state_code': state_code,
+                'county_code': county_code,
+                'county_name': row.get('county_name', ''),
+                'state_name': state_name,
+                'geoid5': geoid5
+            })
+
+    # Convert to list format
+    for cbsa_key, cbsa_data in cbsa_counties.items():
+        if cbsa_data['counties']:
+            assessment_areas.append(cbsa_data)
+
+    return assessment_areas
+
+
 def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any]]:
     """
     Helper function to get all counties for a list of CBSA codes.
-    
+
+    NOTE: This function returns ALL counties in each CBSA, not just counties
+    where branches exist. For branch-only counties, use
+    _get_assessment_areas_from_branch_counties() instead.
+
     Args:
         cbsa_codes: List of CBSA codes (strings)
         client: BigQuery client
-    
+
     Returns:
         List of assessment area dictionaries
     """
     assessment_areas = []
-    
+
     for cbsa_code in cbsa_codes:
         # Handle non-metro areas
         if cbsa_code.startswith('NON-METRO-'):
             state_name = cbsa_code.replace('NON-METRO-', '')
             cbsa_name = f"{state_name} Non-Metro Area"
-            
+
             non_metro_query = f"""
             SELECT DISTINCT
                 CAST(geoid5 AS STRING) as geoid5,
@@ -287,9 +377,9 @@ def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any
                 AND State = '{escape_sql_string(state_name)}'
             ORDER BY County
             """
-            
+
             non_metro_results = execute_query(client, non_metro_query)
-            
+
             if non_metro_results:
                 counties = []
                 for county_row in non_metro_results:
@@ -304,14 +394,14 @@ def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any
                             'state_name': county_row.get('state_name', ''),
                             'geoid5': geoid5
                         })
-                
+
                 if counties:
                     assessment_areas.append({
                         'cbsa_name': cbsa_name,
                         'counties': counties
                     })
             continue
-        
+
         # Query all counties in this CBSA (get CBSA name from first row) - exclude rural areas
         query = f"""
         SELECT DISTINCT
@@ -325,16 +415,16 @@ def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any
             AND CAST(cbsa_code AS STRING) != '99999'
         ORDER BY State, County
         """
-        
+
         county_results = execute_query(client, query)
-        
+
         if not county_results:
             print(f"  Warning: No counties found for CBSA {cbsa_code}")
             continue
-        
+
         # Get CBSA name from first result
         cbsa_name = county_results[0].get('cbsa_name', f"CBSA {cbsa_code}")
-        
+
         # Build counties list
         counties = []
         for county_row in county_results:
@@ -349,13 +439,13 @@ def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any
                     'state_name': county_row.get('state_name', ''),
                     'geoid5': geoid5
                 })
-        
+
         if counties:
             assessment_areas.append({
                 'cbsa_name': cbsa_name,
                 'counties': counties
             })
-    
+
     return assessment_areas
 
 
@@ -368,12 +458,13 @@ def generate_assessment_areas_from_branches(
 ) -> List[Dict[str, any]]:
     """
     Generate assessment areas from branch locations using one of three methods.
-    
+
     Method 1: 'all_branches' - All CBSAs where the bank has branches
     Method 2: 'deposits' - CBSAs where bank has >=1% of its total branch deposits
     Method 3: 'loans' - CBSAs where bank has >=1% of its total loan applications
-    
-    For all methods, ALL counties in qualifying CBSAs are included.
+
+    For all methods, ONLY counties where the bank has branches are included
+    (not all counties in the metro area).
     
     Args:
         rssd: Bank's RSSD ID (string)
@@ -401,15 +492,17 @@ def generate_assessment_areas_from_branches(
         client = get_bigquery_client(PROJECT_ID)
         qualifying_cbsas = []
         
+        # Get branch data - needed for all methods to filter to branch-only counties
+        branch_df = get_all_branches_for_bank(rssd, year)
+
+        if branch_df.empty:
+            print(f"  No branches found for RSSD {rssd}")
+            return []
+
         if method == 'all_branches':
             # Method 1: All CBSAs where bank has branches
-            print(f"  Method: All CBSAs where bank has branches")
-            branch_df = get_all_branches_for_bank(rssd, year)
-            
-            if branch_df.empty:
-                print(f"  No branches found for RSSD {rssd}")
-                return []
-            
+            print(f"  Method: All counties where bank has branches (grouped by CBSA)")
+
             # Get unique CBSA codes where bank has branches (exclude rural areas with code 99999)
             cbsa_codes = branch_df[(branch_df['cbsa_code'] != 'N/A') & (branch_df['cbsa_code'] != '99999')]['cbsa_code'].unique().tolist()
             # Handle non-metro areas
@@ -417,34 +510,46 @@ def generate_assessment_areas_from_branches(
             for state in non_metro_states:
                 if state:
                     cbsa_codes.append(f'NON-METRO-{state}')
-            
+
             print(f"  Found {len(cbsa_codes)} CBSAs where bank has branches (excluding rural areas)")
+            print(f"  Using {len(branch_df)} branch counties (not all counties in metro areas)")
             qualifying_cbsas = cbsa_codes
+
+            # Use branch-only counties directly
+            assessment_areas = _get_assessment_areas_from_branch_counties(branch_df, client)
+            return assessment_areas
             
         elif method == 'deposits':
             # Method 2: CBSAs with >=1% of bank's branch deposits
             print(f"  Method: CBSAs with >={min_share*100:.1f}% of bank's branch deposits")
             cbsa_df, total_national_deposits = get_cbsa_deposit_shares(rssd, year)
-            
+
             if cbsa_df.empty or total_national_deposits == 0:
                 print(f"  No deposit data found for RSSD {rssd}")
                 return []
-            
+
             print(f"  Bank total national deposits: ${total_national_deposits:,.0f}")
-            
+
             min_share_pct = min_share * 100
             # Filter by threshold and exclude rural areas (CBSA code 99999)
             qualifying_df = cbsa_df[
-                (cbsa_df['national_deposit_share_pct'] >= min_share_pct) & 
+                (cbsa_df['national_deposit_share_pct'] >= min_share_pct) &
                 (cbsa_df['cbsa_code'].astype(str) != '99999')
             ].copy()
-            
+
             print(f"  Found {len(qualifying_df)} CBSAs where bank has >={min_share_pct:.1f}% of national deposits (excluding rural areas)")
-            
+
             if qualifying_df.empty:
                 return []
-            
+
             qualifying_cbsas = qualifying_df['cbsa_code'].astype(str).tolist()
+
+            # Filter branch_df to only qualifying CBSAs, then use branch-only counties
+            filtered_branch_df = branch_df[branch_df['cbsa_code'].isin(qualifying_cbsas)].copy()
+            print(f"  Using {len(filtered_branch_df)} branch counties in qualifying CBSAs")
+
+            assessment_areas = _get_assessment_areas_from_branch_counties(filtered_branch_df, client)
+            return assessment_areas
             
         elif method == 'loans':
             # Method 3: CBSAs with >=1% of bank's loan applications
@@ -559,17 +664,16 @@ def generate_assessment_areas_from_branches(
                 return []
             
             qualifying_cbsas = qualifying_df['cbsa_code'].astype(str).tolist()
-            
+
+            # Filter branch_df to only qualifying CBSAs, then use branch-only counties
+            filtered_branch_df = branch_df[branch_df['cbsa_code'].isin(qualifying_cbsas)].copy()
+            print(f"  Using {len(filtered_branch_df)} branch counties in qualifying CBSAs")
+
+            assessment_areas = _get_assessment_areas_from_branch_counties(filtered_branch_df, client)
+            return assessment_areas
+
         else:
             raise ValueError(f"Unknown method: {method}. Must be 'all_branches', 'deposits', or 'loans'")
-        
-        if not qualifying_cbsas:
-            return []
-        
-        # Get all counties for qualifying CBSAs
-        assessment_areas = _get_counties_for_cbsas(qualifying_cbsas, client)
-        
-        return assessment_areas
         
     except Exception as e:
         print(f"Error generating assessment areas for RSSD {rssd}: {e}")
