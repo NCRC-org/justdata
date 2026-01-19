@@ -231,12 +231,11 @@
                                         Generate assessment areas automatically from branch locations
                                     </p>
                                     <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">
-                                        This will query all branch locations and deposits for Bank A, calculate deposit shares by CBSA/metro area, and create assessment areas based on CBSAs where the bank has significant deposit presence. 
-                                        All counties within qualifying CBSAs are automatically included.
+                                        This will query all branch locations for Bank A and create assessment areas grouped by CBSA/metro area. Only counties where the bank has branches are included.
                                     </p>
                                     <p style="margin: 0 0 15px 0; color: #0c5460; font-size: 0.9rem; font-weight: 600; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
                                         <i class="fas fa-filter"></i>
-                                        <strong>Filter Applied:</strong> CBSAs with 1% or more of the bank's total deposits are included as assessment areas. All counties within qualifying CBSAs are automatically included.
+                                        <strong>Note:</strong> Assessment areas include only counties where the bank has physical branch presence.
                                     </p>
                                     <button type="button" class="generate-from-branches-btn" data-bank="acquirer" style="padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
                                         <i class="fas fa-magic"></i> Generate Assessment Areas from Branches
@@ -344,12 +343,11 @@
                                         Generate assessment areas automatically from branch locations
                                     </p>
                                     <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">
-                                        This will query all branch locations and deposits for Bank B, calculate deposit shares by CBSA/metro area, and create assessment areas based on CBSAs where the bank has significant deposit presence. 
-                                        All counties within qualifying CBSAs are automatically included.
+                                        This will query all branch locations for Bank B and create assessment areas grouped by CBSA/metro area. Only counties where the bank has branches are included.
                                     </p>
                                     <p style="margin: 0 0 15px 0; color: #0c5460; font-size: 0.9rem; font-weight: 600; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
                                         <i class="fas fa-filter"></i>
-                                        <strong>Filter Applied:</strong> CBSAs with 1% or more of the bank's total deposits are included as assessment areas. All counties within qualifying CBSAs are automatically included.
+                                        <strong>Note:</strong> Assessment areas include only counties where the bank has physical branch presence.
                                     </p>
                                     <button type="button" class="generate-from-branches-btn" data-bank="target" style="padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
                                         <i class="fas fa-magic"></i> Generate Assessment Areas from Branches
@@ -1099,7 +1097,8 @@
                 
                 try {
                     // Fetch bank names from backend
-                    const response = await fetch('/api/load-bank-names', {
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    const response = await fetch(`${baseUrl}/api/load-bank-names`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1206,7 +1205,8 @@
                 });
                 
                 try {
-                    const response = await fetch('/api/generate-assessment-areas-from-branches', {
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    const response = await fetch(`${baseUrl}/api/generate-assessment-areas-from-branches`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -1311,7 +1311,8 @@
                 previewDiv.hide();
                 
                 try {
-                    const response = await fetch('/api/upload-assessment-areas', {
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    const response = await fetch(`${baseUrl}/api/upload-assessment-areas`, {
                         method: 'POST',
                         body: formData
                     });

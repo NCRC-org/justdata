@@ -438,11 +438,11 @@ def api_generate_assessment_areas():
                 'error': 'RSSD number is required to generate assessment areas from branches.'
             }), 400
         
-        # Generate assessment areas based on CBSA deposit share (>1% of bank's national deposits)
+        # Generate assessment areas based on branch locations
         assessment_areas = _generate_assessment_areas(
             rssd=rssd,
             year=year,
-            min_deposit_share=0.01  # 1% of bank's national deposits
+            min_share=0.01  # 1% threshold for deposits/loans methods
         )
         
         if not assessment_areas:
