@@ -1,0 +1,92 @@
+name: Deploy to Cloud Run
+
+on:
+  push:
+    branches:
+      - Jason_TestApps
+      - main
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  PROJECT_ID: hdma1-242116
+  REGION: us-east1
+  REPOSITORY: justdata-repo
+  SERVICE_NAME: justdata
+  # For test branch, use a different service name
+  TEST_SERVICE_NAME: justdata-test
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    # Set the branch-specific service name
+    env:
+      DEPLOY_SERVICE_NAME: ${{ github.ref == 'refs/heads/main' && 'justdata' || 'justdata-test' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -f Dockerfile.app \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:${{ github.sha }} \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:${{ github.sha }}
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:latest
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.DEPLOY_SERVICE_NAME }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.DEPLOY_SERVICE_NAME }}:${{ github.sha }} \
+            --platform managed \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --memory 2Gi \
+            --cpu 2 \
+            --timeout 3600 \
+            --max-instances 10 \
+            --min-instances 0 \
+            --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-env-vars "PYTHONPATH=/app" \
+            --update-secrets "CLAUDE_API_KEY=claude-api-key:latest" \
+            --update-secrets "ANTHROPIC_API_KEY=claude-api-key:latest" \
+            --update-secrets "CENSUS_API_KEY=census-api-key:latest" \
+            --update-secrets "GOOGLE_APPLICATION_CREDENTIALS_JSON=bigquery-credentials:latest"
+
+      - name: Get Service URL
+        run: |
+          SERVICE_URL=$(gcloud run services describe ${{ env.DEPLOY_SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format "value(status.url)")
+          echo "## Deployment Successful! :rocket:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Service URL:** $SERVICE_URL" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Available Apps:" >> $GITHUB_STEP_SUMMARY
+          echo "- Landing Page: $SERVICE_URL/" >> $GITHUB_STEP_SUMMARY
+          echo "- BranchSight: $SERVICE_URL/branchsight/" >> $GITHUB_STEP_SUMMARY
+          echo "- BizSight: $SERVICE_URL/bizsight/" >> $GITHUB_STEP_SUMMARY
+          echo "- LendSight: $SERVICE_URL/lendsight/" >> $GITHUB_STEP_SUMMARY
+          echo "- MergerMeter: $SERVICE_URL/mergermeter/" >> $GITHUB_STEP_SUMMARY
+          echo "- BranchMapper: $SERVICE_URL/branchmapper/" >> $GITHUB_STEP_SUMMARY
+          echo "- ElectWatch: $SERVICE_URL/electwatch/" >> $GITHUB_STEP_SUMMARY
