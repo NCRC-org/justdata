@@ -965,6 +965,22 @@
             margin-bottom: 12px;
         }
 
+        .remove-key-bill-btn {
+            background: transparent;
+            border: none;
+            color: var(--ncrc-gray);
+            cursor: pointer;
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .remove-key-bill-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
         .bill-id-badge {
             display: inline-block;
             background: var(--ncrc-primary-blue);
@@ -1698,13 +1714,13 @@
     <!-- Header -->
     <header class="header">
         <div class="header-content">
-            <div class="logo">
-                <img src="{{ url_for('electwatch.static', filename='img/justdata-logo.png') }}" alt="JustData" onerror="this.style.display='none'">
+            <a href="/" class="logo" style="text-decoration: none; color: inherit;" aria-label="Return to JustData Home">
+                <img src="/static/img/justdata-logo.png" alt="JustData Logo" onerror="this.src='{{ url_for('electwatch.static', filename='img/ncrc-logo.png') }}'">
                 <div class="logo-text">
                     <h1>ElectWatch</h1>
                     <div class="tagline">Financial Influence Monitor • A JustData Tool</div>
                 </div>
-            </div>
+            </a>
             <nav class="nav-tabs">
                 <button class="nav-tab active" data-panel="leaderboard">
                     <i class="fas fa-trophy"></i>
@@ -2383,10 +2399,20 @@
                         </div>
                     </div>
 
-                    <!-- Featured Bills -->
+                    <!-- Dynamic Key Bills (loaded from API) -->
+                    <div id="staff-key-bills">
+                        <h3 style="margin: 30px 0 16px; font-size: 1rem; color: var(--ncrc-gray-dark);">
+                            <i class="fas fa-star" style="color: var(--ncrc-gold);"></i> Staff-Curated Key Bills
+                        </h3>
+                        <div id="dynamic-key-bills" class="bill-grid">
+                            <!-- Populated by loadKeyBills() -->
+                        </div>
+                    </div>
+
+                    <!-- Featured Bills (Static) -->
                     <div id="featured-bills">
                         <h3 style="margin: 30px 0 16px; font-size: 1rem; color: var(--ncrc-gray-dark);">
-                            <i class="fas fa-star"></i> Key Finance Bills (119th Congress)
+                            <i class="fas fa-scroll"></i> Notable Finance Bills (119th Congress)
                         </h3>
                         <div class="bill-grid">
                             <div class="bill-card" onclick="window.location='bill/hr4763'">
@@ -3326,13 +3352,32 @@
             // Check if it looks like a bill ID (H.R. 4763, S. 1234, etc.)
             const billIdPattern = /^[HS]\.?\s*R?\.?\s*\d+$/i;
             if (billIdPattern.test(query.replace(/\s/g, ''))) {
-                // Navigate directly to bill page
-                const cleanId = query.replace(/\./g, '').replace(/\s+/g, '').toLowerCase();
-                window.location.href = `bill/${cleanId}`;
+                // Use new bill search API for direct lookup
+                try {
+                    const response = await fetch(`api/bill/search?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+
+                    if (data.success && data.bill) {
+                        // Navigate to bill page
+                        window.location.href = `bill/${data.bill.id}`;
+                    } else {
+                        // If not found, try keyword search
+                        const keywordResponse = await fetch(`api/bills/search?q=${encodeURIComponent(query)}`);
+                        const keywordData = await keywordResponse.json();
+                        if (keywordData.success) {
+                            renderBillSearchResults(keywordData.bills, query);
+                        } else {
+                            alert(data.error || 'Bill not found');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error searching bill:', error);
+                    alert('Error searching bill. Please try again.');
+                }
                 return;
             }
 
-            // Otherwise, search for bills
+            // Otherwise, search for bills by keyword
             try {
                 const response = await fetch(`api/bills/search?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
@@ -3347,6 +3392,71 @@
                 alert('Error searching bills. Please try again.');
             }
         }
+
+        // Load and display Key Finance Bills from API
+        async function loadKeyBills() {
+            const keyBillsContainer = document.getElementById('dynamic-key-bills');
+            if (!keyBillsContainer) return;
+
+            try {
+                const response = await fetch('api/key-bills');
+                const data = await response.json();
+
+                if (data.bills && data.bills.length > 0) {
+                    keyBillsContainer.innerHTML = data.bills.map(bill => `
+                        <div class="bill-card" onclick="window.location='bill/${bill.id}'">
+                            <div class="bill-card-header">
+                                <span class="bill-id-badge">${bill.id.toUpperCase().replace(/([A-Z]+)(\d+)/, '$1 $2')}</span>
+                                {% if is_staff %}
+                                <button class="remove-key-bill-btn" onclick="event.stopPropagation(); removeKeyBill('${bill.id}')" title="Remove from Key Bills">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                {% endif %}
+                            </div>
+                            <h4>${bill.title || 'Key Finance Bill'}</h4>
+                            <p>${bill.summary ? bill.summary.substring(0, 150) + '...' : 'Click to view bill details'}</p>
+                            <div class="bill-card-footer">
+                                <span style="font-size: 0.75rem; color: var(--ncrc-gray);">Added ${new Date(bill.added_at).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    keyBillsContainer.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 20px; color: var(--ncrc-gray);">
+                            <i class="fas fa-star" style="font-size: 1.5rem; opacity: 0.5; margin-bottom: 8px;"></i>
+                            <p>No key bills saved yet. Staff can add bills using the bill detail pages.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading key bills:', error);
+            }
+        }
+
+        {% if is_staff %}
+        // Remove a bill from key bills list (staff only)
+        async function removeKeyBill(billId) {
+            if (!confirm('Remove this bill from Key Finance Bills?')) return;
+
+            try {
+                const response = await fetch('api/bill/remove-key-bill', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ bill_id: billId })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    loadKeyBills();  // Reload the list
+                } else {
+                    alert(data.error || 'Failed to remove bill');
+                }
+            } catch (error) {
+                console.error('Error removing key bill:', error);
+                alert('Error removing bill. Please try again.');
+            }
+        }
+        {% endif %}
 
         function renderBillSearchResults(bills, query) {
             const resultsContainer = document.getElementById('bill-search-results');
@@ -3404,6 +3514,7 @@
         loadIndustrySummary();
         loadFirms();
         refreshInsights();
+        loadKeyBills();
     </script>
 </body>
 </html>
