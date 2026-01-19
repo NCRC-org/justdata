@@ -15,6 +15,29 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _get_census_api_key() -> Optional[str]:
+    """
+    Get Census API key, ensuring .env file is loaded first.
+    Uses unified_env system to ensure environment is properly loaded.
+
+    Returns:
+        Census API key or None if not found
+    """
+    # First, ensure the unified environment is loaded (loads .env file)
+    try:
+        from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+        ensure_unified_env_loaded(verbose=False)
+        config = get_unified_config(load_env=True, verbose=False)
+        api_key = config.get('CENSUS_API_KEY')
+        if api_key:
+            return api_key
+    except ImportError:
+        logger.warning("Could not import unified_env, falling back to direct env check")
+
+    # Fallback: Try uppercase first (standard), then lowercase (some systems use lowercase)
+    return os.getenv('CENSUS_API_KEY') or os.getenv('census_api_key')
+
+
 def _safe_int(value) -> int:
     """Safely convert value to int, handling None and empty strings."""
     if value is None or value == '':
@@ -46,11 +69,11 @@ def get_most_recent_acs_year() -> str:
 def get_census_data_for_geoids(geoids: List[str], api_key: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
     """
     Get census data (2010, 2020, most recent ACS) for multiple counties by GEOID5.
-    
+
     Args:
         geoids: List of 5-digit GEOID5 codes (counties)
-        api_key: Census API key (if None, tries CENSUS_API_KEY env var)
-    
+        api_key: Census API key (if None, uses unified_env to get from .env or environment)
+
     Returns:
         Dictionary mapping geoid5 to census data with structure:
         {
@@ -67,12 +90,12 @@ def get_census_data_for_geoids(geoids: List[str], api_key: Optional[str] = None)
         }
     """
     if api_key is None:
-        # Try uppercase first (standard), then lowercase (some systems use lowercase)
-        api_key = os.getenv('CENSUS_API_KEY') or os.getenv('census_api_key')
-    
+        # Use helper function that ensures .env is loaded via unified_env
+        api_key = _get_census_api_key()
+
     if not api_key:
         logger.error("[CRITICAL] CENSUS_API_KEY not set - cannot fetch Census data. This will cause empty historical_census_data!")
-        logger.error("[CRITICAL] Checked both CENSUS_API_KEY and census_api_key environment variables")
+        logger.error("[CRITICAL] Ensure CENSUS_API_KEY is set in .env file or environment variables")
         return {}
     
     if not geoids:
@@ -134,25 +157,24 @@ def get_census_data_for_county(
     - Most recent ACS 5-year estimates (2024/2022)
     - 2020 Decennial Census
     - 2010 Decennial Census
-    
+
     Args:
         state_fips: Two-digit state FIPS code (e.g., "24" for Maryland)
         county_fips: Three-digit county FIPS code (e.g., "031" for Montgomery County)
         county_name: Optional county name for logging
-        api_key: Census API key (if None, tries CENSUS_API_KEY env var)
-    
+        api_key: Census API key (if None, uses unified_env to get from .env or environment)
+
     Returns:
         Dictionary with demographic data for all three time periods, or empty dict if unavailable
     """
     try:
-        # Get API key
+        # Get API key using helper that ensures .env is loaded
         if api_key is None:
-            # Try uppercase first (standard), then lowercase (some systems use lowercase)
-            api_key = os.getenv('CENSUS_API_KEY') or os.getenv('census_api_key')
-        
+            api_key = _get_census_api_key()
+
         if not api_key:
             logger.error("[CRITICAL] CENSUS_API_KEY not set - Cannot fetch Census data")
-            logger.error("[CRITICAL] Checked both CENSUS_API_KEY and census_api_key environment variables")
+            logger.error("[CRITICAL] Ensure CENSUS_API_KEY is set in .env file or environment variables")
             return {}
         
         # Log API key status (first 8 and last 4 chars for debugging)
@@ -629,13 +651,9 @@ def get_census_data_for_county(
                     logger.info(f"✓ Successfully fetched 2010 Census data for {display_name}: adult_pop={adult_pop if adult_pop else 'N/A'}, total_pop={total_pop}, pop_denominator={pop_denominator}")
                     logger.info(f"[2010 Census] Demographics: white={white}, black={black}, asian={asian}, hispanic={hispanic}, multi_racial={multi_racial}")
         except Exception as e:
-            logger.error(f"✗ Failed to fetch 2010 Census data for {display_name}: {e}")
+            logger.error(f"Failed to fetch 2010 Census data for {display_name}: {e}")
             import traceback
             logger.error(traceback.format_exc())
-        except Exception as e:
-            logger.warning(f"Failed to fetch 2010 Census data for {display_name}: {e}")
-            import traceback
-            traceback.print_exc()
         
         # Return empty dict if no data was retrieved
         time_periods = result.get('time_periods', {})

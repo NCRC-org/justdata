@@ -218,27 +218,31 @@ def run_area_analysis(
                             }
                             logger.info(f"Added ACS data to historical_census_data for {geoid} from census_data")
         
-        # Check if cached historical data has all required time periods (2010, 2020, ACS)
-        # This is important for Connecticut planning regions which may have been cached before normalization
+        # Check if cached historical data has all three time periods per geoid
+        # All three periods (census2010, census2020, acs) ARE required
         if historical_census_data:
-            has_all_periods = True
+            has_valid_data = True
             for geoid, county_data in historical_census_data.items():
                 if not county_data:
-                    has_all_periods = False
+                    has_valid_data = False
                     logger.info(f"Cached historical census data is empty for {geoid}, will refetch")
                     break
                 time_periods = county_data.get('time_periods', {})
-                # Check if time_periods is empty or missing required periods
+                # Require all three time periods
                 if not time_periods or len(time_periods) == 0:
-                    has_all_periods = False
+                    has_valid_data = False
                     logger.info(f"Cached historical census data has empty time_periods for {geoid}, will refetch")
                     break
-                if 'census2010' not in time_periods or 'census2020' not in time_periods or 'acs' not in time_periods:
-                    has_all_periods = False
-                    logger.info(f"Cached historical census data missing time periods for {geoid}, will refetch")
+                # Check for all required periods
+                available = list(time_periods.keys())
+                required_periods = ['census2010', 'census2020', 'acs']
+                missing_periods = [p for p in required_periods if p not in time_periods]
+                if missing_periods:
+                    has_valid_data = False
+                    logger.info(f"Cached historical census data for {geoid} missing periods: {missing_periods} (has: {available}), will refetch")
                     break
-            
-            if not has_all_periods:
+
+            if not has_valid_data:
                 historical_census_data = None  # Force refetch
         
         if census_data is None:
@@ -293,8 +297,10 @@ def run_area_analysis(
                         else:
                             logger.warning(f"[DEBUG] time_periods missing in fetched data!")
                 
-                # Verify all geoids have all required time periods
+                # Verify geoids have all three time periods (strict validation)
+                # All three periods (census2010, census2020, acs) ARE required
                 valid_data = {}
+                required_periods = ['census2010', 'census2020', 'acs']
                 for geoid, county_data in historical_census_data.items():
                     if not county_data:
                         logger.warning(f"Historical census data for {geoid} is empty, skipping")
@@ -303,26 +309,25 @@ def run_area_analysis(
                     if not time_periods or len(time_periods) == 0:
                         logger.error(f"[CRITICAL] Historical census data for {geoid} has empty time_periods, skipping")
                         continue
-                    missing_periods = []
-                    if 'census2010' not in time_periods:
-                        missing_periods.append('census2010')
-                    if 'census2020' not in time_periods:
-                        missing_periods.append('census2020')
-                    if 'acs' not in time_periods:
-                        missing_periods.append('acs')
+                    # Check which periods are available
+                    available_periods = list(time_periods.keys())
+                    missing_periods = [p for p in required_periods if p not in time_periods]
                     if missing_periods:
-                        logger.warning(f"Historical census data for {geoid} missing periods: {missing_periods}")
-                    else:
+                        logger.warning(f"Historical census data for {geoid} missing periods: {missing_periods} (has: {available_periods})")
+                    # Only accept data with all three time periods
+                    if not missing_periods:
                         valid_data[geoid] = county_data
-                
-                # Only use valid data (with all time periods)
+                    else:
+                        logger.error(f"[CRITICAL] Historical census data for {geoid} incomplete - missing: {missing_periods}")
+
+                # Use valid data (with all three time periods)
                 if valid_data:
                     historical_census_data = valid_data
-                    # Only save to cache if we have valid data
+                    # Only save to cache if we have valid data with all periods
                     save_historical_census_data(validated_geoids, historical_census_data)
-                    logger.info("Cached historical census demographics data")
+                    logger.info(f"Cached historical census demographics data for {len(valid_data)} counties (all 3 time periods)")
                 else:
-                    logger.error("[CRITICAL] No valid historical census data found after fetching - all counties had empty or incomplete time_periods")
+                    logger.error("[CRITICAL] No valid historical census data found after fetching - all counties missing required time periods")
                     historical_census_data = {}
                     # Don't save empty/invalid data to cache
                 
@@ -367,25 +372,29 @@ def run_area_analysis(
                                     }
                                     logger.info(f"Added ACS data to historical_census_data for {geoid} from census_data")
                 
-                # Only save to cache if we have valid data with all time periods
+                # Save to cache if we have valid data with all three time periods
                 if historical_census_data:
-                    # Verify all geoids have all required time periods before saving
-                    all_valid = True
+                    # Verify all geoids have all three time periods before saving
+                    has_all_periods = True
+                    required_periods = ['census2010', 'census2020', 'acs']
                     for geoid, county_data in historical_census_data.items():
                         if not county_data:
-                            all_valid = False
+                            has_all_periods = False
                             break
                         time_periods = county_data.get('time_periods', {})
                         if not time_periods or len(time_periods) == 0:
-                            all_valid = False
+                            has_all_periods = False
                             break
-                        if 'census2010' not in time_periods or 'census2020' not in time_periods or 'acs' not in time_periods:
-                            all_valid = False
+                        # Require all three time periods for caching
+                        missing = [p for p in required_periods if p not in time_periods]
+                        if missing:
+                            has_all_periods = False
+                            logger.warning(f"Not caching - {geoid} missing: {missing}")
                             break
-                    
-                    if all_valid:
+
+                    if has_all_periods:
                         save_historical_census_data(validated_geoids, historical_census_data)
-                        logger.info("Cached historical census data (normalized for Connecticut)")
+                        logger.info("Cached historical census data (all 3 time periods)")
                     else:
                         logger.warning("Not saving historical census data to cache - missing required time periods")
             except Exception as e:

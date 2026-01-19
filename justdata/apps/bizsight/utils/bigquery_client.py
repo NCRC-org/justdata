@@ -266,33 +266,38 @@ class BigQueryClient:
     def get_county_summary_stats(self, geoid5: str, years: list = None):
         """
         Get summary statistics for a county including LMI metrics.
-        
+
         Args:
             geoid5: Single GEOID5 code (5-digit FIPS) for one county
             years: Optional list of years to filter
-        
+
         Returns:
             Query job result with summary statistics
         """
         geoid5_padded = str(geoid5).zfill(5)
-        
+
         year_filter = ""
         if years:
             year_list = ", ".join(str(y) for y in years)
             year_filter = f"AND CAST(a.year AS INT64) IN ({year_list})"
-        
+
         sql = f"""
         WITH county_data AS (
-            SELECT 
+            SELECT
                 a.*,
-                -- Note: sb.disclosure is county-level, not tract-level
-                -- Using geoid5 as the identifier
                 CAST(a.geoid5 AS STRING) as tract_geoid,
-                -- Calculate loan_count and loan_amount from num_* and amt_* fields
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
-                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount
+                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
+                -- Derive income level from income_group_total first digit (1=Low, 2=Moderate, 3=Middle, 4=Upper)
+                CASE
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                    ELSE 0
+                END as income_level
             FROM `{self.project_id}.sb.disclosure` a
-            JOIN `{self.project_id}.geo.cbsa_to_county` g 
+            JOIN `{self.project_id}.geo.cbsa_to_county` g
                 ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
             WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
                 {year_filter}
@@ -301,19 +306,19 @@ class BigQueryClient:
             COUNT(DISTINCT tract_geoid) as total_tracts,
             SUM(loan_count) as total_loans,
             SUM(loan_amount) as total_loan_amount,
-            -- LMI tract metrics (not available with county-level disclosure data)
-            0 as lmi_tract_loans,
-            0 as lmi_tract_amount,
+            -- LMI tract loans (income_level 1=Low or 2=Moderate)
+            SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END) as lmi_tract_loans,
+            SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END) as lmi_tract_amount,
             -- LMI borrower metrics (not available - small business data doesn't have borrower income)
             0 as lmi_borrower_loans,
             0 as lmi_borrower_amount,
-            -- Percentages (not available for small business data)
-            0 as pct_loans_to_lmi_tracts,
-            0 as pct_dollars_to_lmi_tracts,
+            -- Calculate percentages
+            SAFE_DIVIDE(SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END), SUM(loan_count)) * 100 as pct_loans_to_lmi_tracts,
+            SAFE_DIVIDE(SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END), SUM(loan_amount)) * 100 as pct_dollars_to_lmi_tracts,
             0 as pct_loans_to_lmi_borrowers
         FROM county_data
         """
-        
+
         return self.query(sql)
     
     def get_county_minority_threshold(self, geoid5: str):
@@ -447,45 +452,52 @@ class BigQueryClient:
     def get_state_benchmarks(self, state_fips: str, year: int = 2024):
         """
         Get state-level benchmark statistics for comparison.
-        
+
         Args:
             state_fips: 2-digit state FIPS code
             year: Year to get benchmarks for (default 2024)
-        
+
         Returns:
             Query job result with state-level statistics
         """
         state_fips_padded = str(state_fips).zfill(2)
-        
+
         sql = f"""
         WITH county_data AS (
-            SELECT 
+            SELECT
                 a.*,
-                -- Note: LMI tract metrics not available with county-level disclosure data
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
-                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount
+                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
+                -- Derive income level from income_group_total first digit (1=Low, 2=Moderate, 3=Middle, 4=Upper)
+                CASE
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                    ELSE 0
+                END as income_level
             FROM `{self.project_id}.sb.disclosure` a
-            JOIN `{self.project_id}.geo.cbsa_to_county` g 
+            JOIN `{self.project_id}.geo.cbsa_to_county` g
                 ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
             WHERE SUBSTR(LPAD(CAST(g.geoid5 AS STRING), 5, '0'), 1, 2) = '{state_fips_padded}'
                 AND CAST(a.year AS INT64) = {year}
         )
-        SELECT 
+        SELECT
             SUM(loan_count) as total_loans,
             SUM(loan_amount) as total_amount,
-            -- LMI tract metrics not available with county-level disclosure data
-            0 as lmi_tract_loans,
-            0 as lmi_tract_amount,
-            -- Income category breakdowns (not available with county-level disclosure data)
-            0 as low_income_loans,
-            0 as moderate_income_loans,
-            0 as middle_income_loans,
-            0 as upper_income_loans,
-            -- Income category breakdowns (by loan amount) - not available
-            0 as low_income_amount,
-            0 as moderate_income_amount,
-            0 as middle_income_amount,
-            0 as upper_income_amount,
+            -- LMI tract loans (income_level 1=Low or 2=Moderate)
+            SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END) as lmi_tract_loans,
+            SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END) as lmi_tract_amount,
+            -- Income category breakdowns by number of loans
+            SUM(CASE WHEN income_level = 1 THEN loan_count ELSE 0 END) as low_income_loans,
+            SUM(CASE WHEN income_level = 2 THEN loan_count ELSE 0 END) as moderate_income_loans,
+            SUM(CASE WHEN income_level = 3 THEN loan_count ELSE 0 END) as middle_income_loans,
+            SUM(CASE WHEN income_level = 4 THEN loan_count ELSE 0 END) as upper_income_loans,
+            -- Income category breakdowns by loan amount
+            SUM(CASE WHEN income_level = 1 THEN loan_amount ELSE 0 END) as low_income_amount,
+            SUM(CASE WHEN income_level = 2 THEN loan_amount ELSE 0 END) as moderate_income_amount,
+            SUM(CASE WHEN income_level = 3 THEN loan_amount ELSE 0 END) as middle_income_amount,
+            SUM(CASE WHEN income_level = 4 THEN loan_amount ELSE 0 END) as upper_income_amount,
             SUM(COALESCE(num_under_100k, 0)) as num_under_100k,
             SUM(COALESCE(num_100k_250k, 0)) as num_100k_250k,
             SUM(COALESCE(num_250k_1m, 0)) as num_250k_1m,
@@ -495,45 +507,52 @@ class BigQueryClient:
             SUM(COALESCE(amtsb_under_1m, 0)) as amtsb_under_1m
         FROM county_data
         """
-        
+
         return self.query(sql)
     
     def get_national_benchmarks(self, year: int = 2024):
         """
         Get national-level benchmark statistics for comparison.
-        
+
         Args:
             year: Year to get benchmarks for (default 2024)
-        
+
         Returns:
             Query job result with national-level statistics
         """
         sql = f"""
         WITH county_data AS (
-            SELECT 
+            SELECT
                 a.*,
-                -- Note: LMI tract metrics not available with county-level disclosure data
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
-                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount
+                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
+                -- Derive income level from income_group_total first digit (1=Low, 2=Moderate, 3=Middle, 4=Upper)
+                CASE
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
+                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                    ELSE 0
+                END as income_level
             FROM `{self.project_id}.sb.disclosure` a
             WHERE CAST(a.year AS INT64) = {year}
         )
-        SELECT 
+        SELECT
             SUM(loan_count) as total_loans,
             SUM(loan_amount) as total_amount,
-            -- LMI tract metrics not available with county-level disclosure data
-            0 as lmi_tract_loans,
-            0 as lmi_tract_amount,
-            -- Income category breakdowns (not available with county-level disclosure data)
-            0 as low_income_loans,
-            0 as moderate_income_loans,
-            0 as middle_income_loans,
-            0 as upper_income_loans,
-            -- Income category breakdowns (by loan amount) - not available
-            0 as low_income_amount,
-            0 as moderate_income_amount,
-            0 as middle_income_amount,
-            0 as upper_income_amount,
+            -- LMI tract loans (income_level 1=Low or 2=Moderate)
+            SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END) as lmi_tract_loans,
+            SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END) as lmi_tract_amount,
+            -- Income category breakdowns by number of loans
+            SUM(CASE WHEN income_level = 1 THEN loan_count ELSE 0 END) as low_income_loans,
+            SUM(CASE WHEN income_level = 2 THEN loan_count ELSE 0 END) as moderate_income_loans,
+            SUM(CASE WHEN income_level = 3 THEN loan_count ELSE 0 END) as middle_income_loans,
+            SUM(CASE WHEN income_level = 4 THEN loan_count ELSE 0 END) as upper_income_loans,
+            -- Income category breakdowns by loan amount
+            SUM(CASE WHEN income_level = 1 THEN loan_amount ELSE 0 END) as low_income_amount,
+            SUM(CASE WHEN income_level = 2 THEN loan_amount ELSE 0 END) as moderate_income_amount,
+            SUM(CASE WHEN income_level = 3 THEN loan_amount ELSE 0 END) as middle_income_amount,
+            SUM(CASE WHEN income_level = 4 THEN loan_amount ELSE 0 END) as upper_income_amount,
             SUM(COALESCE(num_under_100k, 0)) as num_under_100k,
             SUM(COALESCE(num_100k_250k, 0)) as num_100k_250k,
             SUM(COALESCE(num_250k_1m, 0)) as num_250k_1m,
@@ -543,5 +562,5 @@ class BigQueryClient:
             SUM(COALESCE(amtsb_under_1m, 0)) as amtsb_under_1m
         FROM county_data
         """
-        
+
         return self.query(sql)

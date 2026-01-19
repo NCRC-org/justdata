@@ -742,8 +742,21 @@
             <h1 style="margin: 0 0 10px 0;">Small Business Lending Analysis</h1>
             <p id="reportMetadata" style="margin: 10px 0 0 0; opacity: 0.9;">Loading report data...</p>
         </div>
-        
-        <div id="reportContent">
+
+        <!-- Loading Indicator -->
+        <div id="loadingIndicator" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center;">
+            <div class="loading-spinner" style="width: 50px; height: 50px; border: 4px solid #e0e0e0; border-top: 4px solid var(--ncrc-primary-blue); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+            <p id="loadingMessage" style="font-size: 1.1rem; color: #666; margin: 0;">Loading report data...</p>
+            <p id="loadingSubMessage" style="font-size: 0.9rem; color: #999; margin-top: 10px;">This may take a few moments.</p>
+        </div>
+        <style>
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+        </style>
+
+        <div id="reportContent" style="display: none;">
         
         <!-- Section 1: Introduction -->
         <div class="report-section" id="section1" style="margin-bottom: 30px;">
@@ -1248,6 +1261,9 @@
                         // Analysis still in progress, retry
                         if (retryCount < maxRetries) {
                             console.log(`Analysis still in progress, retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                            // Update loading message
+                            const loadingSubMessage = document.getElementById('loadingSubMessage');
+                            if (loadingSubMessage) loadingSubMessage.textContent = `Analysis in progress... (attempt ${retryCount + 1}/${maxRetries})`;
                             setTimeout(() => loadReportData(jobId, retryCount + 1), retryDelay);
                             return null;
                         } else {
@@ -1258,6 +1274,9 @@
                         // Storage might still be in progress, retry
                         if (retryCount < maxRetries) {
                             console.log(`Data not yet available (storage in progress), retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                            // Update loading message
+                            const loadingSubMessage = document.getElementById('loadingSubMessage');
+                            if (loadingSubMessage) loadingSubMessage.textContent = `Preparing report data... (attempt ${retryCount + 1}/${maxRetries})`;
                             setTimeout(() => loadReportData(jobId, retryCount + 1), retryDelay);
                             return null;
                         } else {
@@ -1363,15 +1382,34 @@
                     
                     // Generate intro paragraph and update Section 1 intro county name
                     generateIntroParagraph(metadata, data.summary_table);
+
+                    // Hide loading indicator and show report content
+                    const loadingIndicator = document.getElementById('loadingIndicator');
+                    const reportContent = document.getElementById('reportContent');
+                    if (loadingIndicator) loadingIndicator.style.display = 'none';
+                    if (reportContent) reportContent.style.display = 'block';
+
+                    console.log('[SUCCESS] Report loaded successfully');
                 })
                 .catch(error => {
                     console.error('Error loading report data:', error);
                     const errorMsg = error.message || 'Unknown error';
                     document.getElementById('reportMetadata').textContent = 'Error: ' + errorMsg;
-                    
+
+                    // Update loading indicator to show error
+                    const loadingMessage = document.getElementById('loadingMessage');
+                    const loadingSubMessage = document.getElementById('loadingSubMessage');
+                    const loadingSpinner = document.querySelector('.loading-spinner');
+                    if (loadingMessage) loadingMessage.textContent = 'Error loading report';
+                    if (loadingSubMessage) loadingSubMessage.textContent = errorMsg;
+                    if (loadingSpinner) loadingSpinner.style.display = 'none';
+
                     // If it's a 404 and we haven't retried much, try again
                     if (retryCount < 3 && errorMsg.includes('No analysis data found')) {
                         console.log('Retrying after delay...');
+                        if (loadingMessage) loadingMessage.textContent = 'Loading report data...';
+                        if (loadingSubMessage) loadingSubMessage.textContent = `Retrying... (attempt ${retryCount + 2})`;
+                        if (loadingSpinner) loadingSpinner.style.display = 'block';
                         setTimeout(() => loadReportData(jobId, retryCount + 1), 2000);
                     }
                 });
@@ -2307,11 +2345,36 @@
         }
         
         function populateAINarratives(aiInsights, metadata) {
+            // Debug: Log AI insights values
+            console.log('[DEBUG] populateAINarratives called with:', {
+                aiInsights: aiInsights,
+                metadata_ai_enabled: metadata?.ai_insights_enabled,
+                county_summary_number: aiInsights?.county_summary_number_discussion?.substring(0, 100),
+                county_summary_amount: aiInsights?.county_summary_amount_discussion?.substring(0, 100),
+                comparison_number: aiInsights?.comparison_number_discussion?.substring(0, 100),
+                comparison_amount: aiInsights?.comparison_amount_discussion?.substring(0, 100),
+                top_lenders_number: aiInsights?.top_lenders_number_discussion?.substring(0, 100),
+                top_lenders_amount: aiInsights?.top_lenders_amount_discussion?.substring(0, 100),
+                hhi_trends: aiInsights?.hhi_trends_discussion?.substring(0, 100)
+            });
+
             // Check if AI insights are disabled
             const aiDisabled = metadata && metadata.ai_insights_enabled === false;
             const getAIDisabledMessage = () => {
                 return '<div class="alert alert-info" style="padding: 15px; margin: 15px 0; background-color: #d1ecf1; border: 1px solid #bee5eb; border-radius: 4px;"><strong>AI Insights Not Available:</strong> AI-powered analysis is currently disabled. To enable AI insights, please configure the CLAUDE_API_KEY environment variable in your deployment settings.</div>';
             };
+
+            // Check if any AI insight has actual content (not just empty strings)
+            const hasAnyAIContent = aiInsights && (
+                (aiInsights.county_summary_number_discussion && aiInsights.county_summary_number_discussion.trim().length > 0) ||
+                (aiInsights.county_summary_amount_discussion && aiInsights.county_summary_amount_discussion.trim().length > 0) ||
+                (aiInsights.comparison_number_discussion && aiInsights.comparison_number_discussion.trim().length > 0) ||
+                (aiInsights.comparison_amount_discussion && aiInsights.comparison_amount_discussion.trim().length > 0) ||
+                (aiInsights.top_lenders_number_discussion && aiInsights.top_lenders_number_discussion.trim().length > 0) ||
+                (aiInsights.top_lenders_amount_discussion && aiInsights.top_lenders_amount_discussion.trim().length > 0) ||
+                (aiInsights.hhi_trends_discussion && aiInsights.hhi_trends_discussion.trim().length > 0)
+            );
+            console.log('[DEBUG] AI insights has any content:', hasAnyAIContent, 'AI disabled:', aiDisabled);
             
             // Key Findings Section
             if (aiInsights.key_findings && aiInsights.key_findings.trim().length > 0) {

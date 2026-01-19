@@ -1369,18 +1369,30 @@ def build_lender_report(
         'hhi_by_year_purpose': hhi_by_year_purpose
     }
     
-    # Convert all DataFrames to dict format for JSON serialization
+    # Convert all DataFrames and numpy types to JSON-serializable format
     def convert_dataframes_to_dicts(obj):
-        """Recursively convert DataFrames to dicts."""
+        """Recursively convert DataFrames and pandas/numpy types to JSON-serializable format."""
         if isinstance(obj, pd.DataFrame):
             return obj.to_dict('records') if not obj.empty else []
+        elif isinstance(obj, pd.Series):
+            return obj.to_dict()
         elif isinstance(obj, dict):
             return {k: convert_dataframes_to_dicts(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
+        elif isinstance(obj, (list, tuple)):
             return [convert_dataframes_to_dicts(item) for item in obj]
+        elif isinstance(obj, (np.integer, np.int64, np.int32, np.int16, np.int8)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, np.float64, np.float32, np.float16)):
+            return float(obj)
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif pd.isna(obj):
+            return None
         else:
             return obj
-    
+
     report_data = convert_dataframes_to_dicts(report_data)
     
     logger.info(f"[DEBUG] Created lender report with {len(recent_years)} years of comparison data")

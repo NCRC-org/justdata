@@ -359,11 +359,21 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
             })
             display_order += 1
 
-        # AI insights
+        # AI insights - include both legacy and new split insight names
         ai_insights = result_data.get('ai_insights', {})
-        for insight_name in ['county_summary_discussion', 'comparison_discussion', 
-                            'top_lenders_discussion', 'hhi_trends_discussion']:
-            if insight_name in ai_insights:
+        ai_insight_names = [
+            # Legacy names (combined discussions)
+            'county_summary_discussion', 'comparison_discussion',
+            'top_lenders_discussion', 'hhi_trends_discussion',
+            # New split names (separate number and amount discussions)
+            'county_summary_number_discussion', 'county_summary_amount_discussion',
+            'comparison_number_discussion', 'comparison_amount_discussion',
+            'top_lenders_number_discussion', 'top_lenders_amount_discussion',
+            # Key findings
+            'key_findings'
+        ]
+        for insight_name in ai_insight_names:
+            if insight_name in ai_insights and ai_insights[insight_name]:
                 sections.append({
                     'section_name': insight_name,
                     'section_type': 'ai_narrative',

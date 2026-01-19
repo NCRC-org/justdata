@@ -2113,23 +2113,29 @@ async function selectLender(lender) {
     wizardState.cache.selectedLenderIndex = -1;
 }
 
-// Update branch option state based on lender type
+// Update branch option state based on lender type and RSSD availability
 function updateBranchOptionState() {
     const lenderType = wizardState.data.lender?.type || wizardState.data.lender?.type_name || '';
     const lenderTypeLower = lenderType.toLowerCase();
-    
+    const lenderRssd = wizardState.data.lender?.rssd;
+
     // Check if lender is a bank (contains "bank" or "affiliate" in type name)
-    const isBank = lenderTypeLower.includes('bank') || lenderTypeLower.includes('affiliate');
-    
+    // OR has an RSSD number (which indicates they have branch data)
+    const isBankByType = lenderTypeLower.includes('bank') || lenderTypeLower.includes('affiliate');
+    const hasRssd = lenderRssd && lenderRssd.trim() !== '' && lenderRssd !== '0000000000';
+    const canUseBranchOption = isBankByType || hasRssd;
+
+    console.log('[updateBranchOptionState] lenderType:', lenderType, 'rssd:', lenderRssd, 'isBankByType:', isBankByType, 'hasRssd:', hasRssd, 'canUseBranchOption:', canUseBranchOption);
+
     const branchOption = document.querySelector('input[name="geoScope"][value="branch_cbsas"]');
     const branchLabel = branchOption?.closest('label');
-    
+
     if (branchOption) {
-        if (!isBank) {
-            // Not a bank - disable branch option
+        if (!canUseBranchOption) {
+            // Cannot use branch option - disable it
             branchOption.disabled = true;
             branchOption.setAttribute('aria-disabled', 'true');
-            
+
             // If branch_cbsas is currently selected, clear it and select all_cbsas instead
             if (branchOption.checked) {
                 branchOption.checked = false;
@@ -2139,17 +2145,17 @@ function updateBranchOptionState() {
                 }
             }
         } else {
-            // Is a bank - enable branch option
+            // Can use branch option - enable it
             branchOption.disabled = false;
             branchOption.removeAttribute('aria-disabled');
         }
     }
-    
+
     if (branchLabel) {
-        if (!isBank) {
+        if (!canUseBranchOption) {
             branchLabel.style.opacity = '0.5';
             branchLabel.style.cursor = 'not-allowed';
-            branchLabel.title = 'Branch data is only available for banks';
+            branchLabel.title = 'Branch data is only available for banks with RSSD';
         } else {
             branchLabel.style.opacity = '1';
             branchLabel.style.cursor = 'pointer';
@@ -3331,14 +3337,17 @@ function confirmGeoScope() {
         return;
     }
     
-    // Validate: Only banks can use branch_cbsas
+    // Validate: Only banks/lenders with RSSD can use branch_cbsas
     if (selected.value === 'branch_cbsas') {
         const lenderType = wizardState.data.lender?.type || wizardState.data.lender?.type_name || '';
         const lenderTypeLower = lenderType.toLowerCase();
-        const isBank = lenderTypeLower.includes('bank') || lenderTypeLower.includes('affiliate');
-        
-        if (!isBank) {
-            showError('Branch data is only available for banks. Please select a different geographic scope.');
+        const lenderRssd = wizardState.data.lender?.rssd;
+        const isBankByType = lenderTypeLower.includes('bank') || lenderTypeLower.includes('affiliate');
+        const hasRssd = lenderRssd && lenderRssd.trim() !== '' && lenderRssd !== '0000000000';
+        const canUseBranchOption = isBankByType || hasRssd;
+
+        if (!canUseBranchOption) {
+            showError('Branch data is only available for banks with RSSD. Please select a different geographic scope.');
             // Auto-select loan_cbsas as fallback (first option)
             const loanCbsasOption = document.querySelector('input[name="geoScope"][value="loan_cbsas"]');
             if (loanCbsasOption) {
