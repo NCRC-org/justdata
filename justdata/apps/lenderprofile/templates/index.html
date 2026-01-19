@@ -405,7 +405,7 @@
             searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
             
             try {
-                const response = await fetch('/api/search-lender', {
+                const response = await fetch('/lenderprofile/api/search-lender', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -481,7 +481,7 @@
             // Redirect to report generation with progress tracking
             const reportFocus = ''; // Can add optional focus field later
             
-            fetch('/api/generate-report', {
+            fetch('/lenderprofile/api/generate-report', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -496,7 +496,7 @@
             .then(data => {
                 if (data.success && data.report_id) {
                     // Redirect to progress page
-                    window.location.href = `/report/${data.report_id}`;
+                    window.location.href = `/lenderprofile/report/${data.report_id}`;
                 } else {
                     throw new Error(data.error || 'Failed to generate report');
                 }

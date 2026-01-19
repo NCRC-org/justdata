@@ -199,6 +199,23 @@ def api_lender_lookup():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@dataexplorer_bp.route('/api/lenders', methods=['GET'])
+@require_access('dataexplorer', 'full')
+def get_all_lenders():
+    """Get all lenders from Lenders18 table."""
+    try:
+        from .data_utils import load_all_lenders18
+        lenders = load_all_lenders18()
+        logger.info(f"Returning {len(lenders)} lenders")
+        return jsonify({
+            'success': True,
+            'lenders': lenders
+        })
+    except Exception as e:
+        logger.error(f"Error loading lenders: {e}", exc_info=True)
+        return jsonify({'error': f'An error occurred loading lenders: {str(e)}'}), 500
+
+
 @dataexplorer_bp.route('/api/clear-cache', methods=['POST'])
 @require_access('dataexplorer', 'full')
 def api_clear_cache():

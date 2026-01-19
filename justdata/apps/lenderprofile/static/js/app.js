@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function() {
             lenderSummary.appendChild(progressMsg);
             
             try {
-                const response = await fetch('/api/generate-report', {
+                const response = await fetch('/lenderprofile/api/generate-report', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -117,7 +117,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 sessionStorage.setItem('lenderprofile_report_id', data.report_id);
                 
                 // Redirect to report view
-                window.location.href = `/report/${data.report_id}`;
+                window.location.href = `/lenderprofile/report/${data.report_id}`;
                 
             } catch (error) {
                 showError(error.message || 'An error occurred while generating the report');
@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Get rejected lenders to exclude
                 const excludedLenders = getRejectedLenders();
                 
-                const response = await fetch('/api/search-lender', {
+                const response = await fetch('/lenderprofile/api/search-lender', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Fetch full details for selected candidate
                 try {
-                    const response = await fetch('/api/search-lender', {
+                    const response = await fetch('/lenderprofile/api/search-lender', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
