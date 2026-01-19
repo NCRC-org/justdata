@@ -99,4 +99,26 @@ HUBSPOT_*.md
 CLAUDE.md
 *.plan.md
 
+# Additional exclusions for Cloud Run
+.claude/
+archive/
+cursor_backup/
+apps/
+shared/
+_ul*
+*.csv
+*.xlsx
+*.pdf
+tmpclaude-*
+nul
+docs/
+backup.ps1
+report_check.html
+map_test.html
+github-secret.txt
+copy_to_backup.py
+fix_*.py
+test_*.py
+add_*.py
+
 
