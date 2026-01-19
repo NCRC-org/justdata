@@ -34,7 +34,7 @@ dataexplorer_bp = Blueprint(
     __name__,
     template_folder=str(TEMPLATES_DIR),
     static_folder=str(STATIC_DIR),
-    static_url_path='/dataexplorer/static'
+    static_url_path='/static'
 )
 
 
@@ -106,17 +106,30 @@ def api_get_counties():
     try:
         data = request.get_json()
         selection_type = data.get('type', 'state')
-        
+
         if selection_type == 'state':
             state_fips = data.get('state_fips')
             counties = get_counties_for_state(state_fips)
         else:
             cbsa_code = data.get('cbsa_code')
             counties = get_counties_for_metro(cbsa_code)
-            
+
         return jsonify({'success': True, 'counties': counties})
     except Exception as e:
         logger.error(f"Error getting counties: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@dataexplorer_bp.route('/api/metros/<cbsa_code>/counties', methods=['GET'])
+@require_access('dataexplorer', 'full')
+def api_metros_counties(cbsa_code):
+    """Get counties for a specific metro area (CBSA)."""
+    from .data_utils import get_counties_for_metro
+    try:
+        counties = get_counties_for_metro(cbsa_code)
+        return jsonify({'success': True, 'counties': counties})
+    except Exception as e:
+        logger.error(f"Error getting counties for metro {cbsa_code}: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
@@ -196,6 +209,304 @@ def api_clear_cache():
     except Exception as e:
         logger.error(f"Error clearing cache: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@dataexplorer_bp.route('/api/generate-area-report', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def api_generate_area_report():
+    """Generate area analysis report from wizard data."""
+    import uuid
+    import threading
+    from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
+    from justdata.apps.dataexplorer.core import run_area_analysis
+
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        # Validate required fields
+        geography = data.get('geography', {})
+        counties = geography.get('counties', [])
+        if not counties:
+            return jsonify({'success': False, 'error': 'At least one county is required'}), 400
+
+        # Create job ID
+        job_id = str(uuid.uuid4())
+        try:
+            progress_tracker = create_progress_tracker(job_id)
+            progress_tracker.update_progress('initializing', 0, 'Initializing area analysis...')
+        except Exception as e:
+            logger.error(f"Error creating progress tracker: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Failed to create progress tracker: {str(e)}',
+                'error_type': type(e).__name__
+            }), 500
+
+        def run_job():
+            try:
+                result = run_area_analysis(
+                    wizard_data=data,
+                    job_id=job_id,
+                    progress_tracker=progress_tracker
+                )
+
+                if result.get('success'):
+                    store_analysis_result(job_id, result)
+                    logger.info(f"Area analysis completed successfully for job {job_id}")
+                else:
+                    logger.error(f"Area analysis failed for job {job_id}: {result.get('error')}")
+                    if progress_tracker:
+                        progress_tracker.complete(success=False, error=result.get('error', 'Unknown error'))
+
+            except Exception as e:
+                logger.error(f"Error in area analysis job {job_id}: {e}", exc_info=True)
+                if progress_tracker:
+                    progress_tracker.complete(success=False, error=str(e))
+
+        threading.Thread(target=run_job, daemon=True).start()
+        return jsonify({'success': True, 'report_id': job_id})
+
+    except Exception as e:
+        logger.error(f"Error in generate area report: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': type(e).__name__
+        }), 500
+
+
+@dataexplorer_bp.route('/api/generate-lender-report', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def api_generate_lender_report():
+    """Generate lender analysis report from wizard data."""
+    import uuid
+    import threading
+    from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
+    from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis
+
+    try:
+        data = request.get_json()
+
+        if not data:
+            return jsonify({'success': False, 'error': 'No data provided'}), 400
+
+        # Validate required fields
+        lender = data.get('lender', {})
+        if not lender.get('lei'):
+            return jsonify({'success': False, 'error': 'Lender LEI is required'}), 400
+
+        # Create job ID
+        job_id = str(uuid.uuid4())
+        try:
+            progress_tracker = create_progress_tracker(job_id)
+            progress_tracker.update_progress('initializing', 0, 'Initializing lender analysis...')
+        except Exception as e:
+            logger.error(f"Error creating progress tracker: {e}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': f'Failed to create progress tracker: {str(e)}',
+                'error_type': type(e).__name__
+            }), 500
+
+        def run_job():
+            try:
+                result = run_lender_analysis(
+                    wizard_data=data,
+                    job_id=job_id,
+                    progress_tracker=progress_tracker
+                )
+
+                if result.get('success'):
+                    logger.info(f"Lender analysis completed successfully for job {job_id}")
+                else:
+                    logger.error(f"Lender analysis failed for job {job_id}: {result.get('error')}")
+
+            except Exception as e:
+                logger.error(f"Error in lender analysis job {job_id}: {e}", exc_info=True)
+                if progress_tracker:
+                    progress_tracker.complete(success=False, error=str(e))
+
+        threading.Thread(target=run_job, daemon=True).start()
+        return jsonify({'success': True, 'report_id': job_id})
+
+    except Exception as e:
+        logger.error(f"Error in generate lender report: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'error_type': type(e).__name__
+        }), 500
+
+
+@dataexplorer_bp.route('/progress/<job_id>', methods=['GET'])
+def progress_handler(job_id):
+    """Progress tracking endpoint using Server-Sent Events."""
+    from justdata.shared.utils.progress_tracker import get_progress
+    import time
+    import sys
+
+    def event_stream():
+        last_percent = -1
+        last_step = ""
+        keepalive_counter = 0
+        max_keepalive = 4
+        max_iterations = 3600
+        iteration_count = 0
+        consecutive_errors = 0
+        max_consecutive_errors = 10
+
+        try:
+            # Send initial progress data
+            try:
+                initial_progress = get_progress(job_id)
+                if not initial_progress:
+                    initial_progress = {'percent': 0, 'step': 'Processing...', 'done': False, 'error': None}
+
+                percent = initial_progress.get("percent", 0)
+                step = initial_progress.get("step", "Processing...")
+                done = initial_progress.get("done", False)
+                error = initial_progress.get("error", None)
+
+                try:
+                    step_escaped = step.replace('"', '\\"').replace('\n', '\\n').replace('\r', '')
+                except:
+                    step_escaped = "Processing..."
+
+                initial_message = f"data: {{\"percent\": {percent}, \"step\": \"{step_escaped}\", \"done\": {str(done).lower()}, \"error\": {json.dumps(error) if error else 'null'}}}\n\n"
+                yield initial_message
+                sys.stdout.flush()
+
+                last_percent = percent
+                last_step = step
+            except Exception as e:
+                logger.error(f"Error sending initial progress: {e}")
+                yield f"data: {{\"percent\": 0, \"step\": \"Processing...\", \"done\": false, \"error\": null}}\n\n"
+                sys.stdout.flush()
+
+            while iteration_count < max_iterations:
+                try:
+                    iteration_count += 1
+
+                    try:
+                        progress = get_progress(job_id)
+                        if not progress:
+                            progress = {'percent': max(0, last_percent), 'step': 'Processing...', 'done': False, 'error': None}
+                        consecutive_errors = 0
+                    except Exception as e:
+                        consecutive_errors += 1
+                        progress = {'percent': max(0, last_percent), 'step': 'Processing...', 'done': False, 'error': None}
+                        if consecutive_errors >= max_consecutive_errors:
+                            yield f"data: {{\"percent\": {max(0, last_percent)}, \"step\": \"Connection issue - please refresh\", \"done\": false, \"error\": null}}\n\n"
+                            break
+
+                    percent = progress.get("percent", 0)
+                    step = progress.get("step", "Processing...")
+                    done = progress.get("done", False)
+                    error = progress.get("error", None)
+
+                    if percent != last_percent or step != last_step or done:
+                        try:
+                            step_escaped = step.replace('"', '\\"').replace('\n', '\\n').replace('\r', '')
+                        except:
+                            step_escaped = "Processing..."
+
+                        message = f"data: {{\"percent\": {percent}, \"step\": \"{step_escaped}\", \"done\": {str(done).lower()}, \"error\": {json.dumps(error) if error else 'null'}}}\n\n"
+                        yield message
+                        sys.stdout.flush()
+
+                        last_percent = percent
+                        last_step = step
+
+                        if done:
+                            break
+                    else:
+                        keepalive_counter += 1
+                        if keepalive_counter >= max_keepalive:
+                            yield ": keepalive\n\n"
+                            sys.stdout.flush()
+                            keepalive_counter = 0
+
+                    time.sleep(0.5)
+
+                except GeneratorExit:
+                    break
+                except Exception as e:
+                    logger.error(f"Error in progress stream: {e}")
+                    time.sleep(1)
+
+        except GeneratorExit:
+            pass
+
+    return Response(
+        event_stream(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no'
+        }
+    )
+
+
+@dataexplorer_bp.route('/report/<job_id>', methods=['GET'])
+@require_access('dataexplorer', 'full')
+def show_report(job_id):
+    """Display the analysis report (area or lender)."""
+    from justdata.shared.utils.progress_tracker import get_analysis_result, get_progress
+
+    try:
+        result = get_analysis_result(job_id)
+
+        if not result:
+            progress = get_progress(job_id)
+            if progress and not progress.get('done', False):
+                return render_template('area_report_progress.html',
+                                     job_id=job_id,
+                                     version=__version__)
+
+            return f"""
+            <html><body style="font-family: Arial; padding: 40px; text-align: center;">
+                <h2>Report Not Found</h2>
+                <p>Report not found. The analysis may still be running or may have expired.</p>
+                <p>Job ID: {job_id}</p>
+                <a href="/">Return to Home</a>
+            </body></html>
+            """, 404
+
+        if not result.get('success'):
+            return render_template('error_template.html',
+                                 error=result.get('error', 'Unknown error'),
+                                 job_id=job_id), 500
+
+        metadata = result.get('metadata', {})
+        report_data = result.get('report_data', {})
+
+        if metadata.get('lender'):
+            return render_template('lender_report_template.html',
+                                 report_data=report_data,
+                                 metadata=metadata,
+                                 version=__version__)
+        else:
+            historical_census_data = result.get('historical_census_data', {})
+            return render_template('area_report_template.html',
+                                 report_data=report_data,
+                                 metadata=metadata,
+                                 census_data=result.get('census_data', {}),
+                                 historical_census_data=historical_census_data,
+                                 version=__version__)
+
+    except Exception as e:
+        logger.error(f"Error displaying report {job_id}: {e}", exc_info=True)
+        return f"""
+        <html><body style="font-family: Arial; padding: 40px; text-align: center;">
+            <h2>Error</h2>
+            <p>An error occurred displaying the report: {str(e)}</p>
+            <a href="/">Return to Home</a>
+        </body></html>
+        """, 500
 
 
 @dataexplorer_bp.route('/health')

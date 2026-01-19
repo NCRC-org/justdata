@@ -672,7 +672,8 @@ function getSelectedCounties() {
     const checkboxes = document.querySelectorAll('#countyCheckboxes input[type="checkbox"]:checked');
     return Array.from(checkboxes).map(cb => {
         return {
-            fips: cb.value,
+            geoid: cb.value,
+            fips: cb.dataset.fips,
             name: cb.dataset.name,
             cbsa: cb.dataset.cbsa,
             cbsa_name: cb.dataset.cbsaName

@@ -1420,6 +1420,8 @@ async function loadCountiesByMetro() {
                 checkbox.value = fullFips;
                 checkbox.checked = true;
                 checkbox.style.display = 'none';
+                checkbox.setAttribute('data-geoid', fullFips);
+                checkbox.setAttribute('data-fips', county.fips || '');
                 checkbox.setAttribute('data-name', countyName);
                 checkbox.setAttribute('data-state', stateName);
                 checkbox.setAttribute('data-cbsa', cbsa);
@@ -1525,9 +1527,11 @@ async function loadCounties() {
                 const label = document.createElement('label');
                 label.className = 'checkbox-item';
                 label.innerHTML = `
-                    <input type="checkbox" 
-                           value="${county.fips}" 
+                    <input type="checkbox"
+                           value="${county.geoid}"
                            data-name="${county.name}"
+                           data-geoid="${county.geoid}"
+                           data-fips="${county.fips}"
                            data-cbsa="${county.cbsa}"
                            data-cbsa-name="${county.cbsa_name}"
                            onchange="validateCountySelection()">
@@ -1603,7 +1607,7 @@ function confirmGeography() {
         return;
     }
     
-    wizardState.data.geography.counties = selectedCounties.map(c => c.fips);
+    wizardState.data.geography.counties = selectedCounties.map(c => c.geoid);
     wizardState.data.geography.cbsa = selectedCounties[0].cbsa;
     wizardState.data.geography.cbsa_name = selectedCounties[0].cbsa_name;
     
@@ -3410,7 +3414,7 @@ function confirmCustomCounties() {
         return;
     }
     
-    wizardState.data.lenderAnalysis.customCounties = selectedCounties.map(c => c.fips);
+    wizardState.data.lenderAnalysis.customCounties = selectedCounties.map(c => c.geoid);
     
     showStepSuccess(document.querySelector('.step-card.active'));
     setTimeout(() => {
@@ -3464,7 +3468,7 @@ async function generateReport() {
         
         // Redirect to report view (which will show progress page if not ready)
         if (result.report_id) {
-            window.location.href = `/report/${result.report_id}`;
+            window.location.href = `/dataexplorer/report/${result.report_id}`;
         } else {
             hideLoading();
             showError('Report generated but no redirect URL provided');
@@ -3913,6 +3917,8 @@ async function loadCustomCountiesByMetro() {
                 checkbox.value = fullFips;
                 checkbox.checked = true; // Pre-check all counties
                 checkbox.style.display = 'none';
+                checkbox.setAttribute('data-geoid', fullFips);
+                checkbox.setAttribute('data-fips', county.fips || '');
                 checkbox.setAttribute('data-name', countyName);
                 checkbox.setAttribute('data-state', stateName);
                 checkbox.setAttribute('data-cbsa', cbsa);
@@ -3953,6 +3959,7 @@ async function loadCustomCountiesByMetro() {
 function getSelectedCustomCounties() {
     const checkboxes = document.querySelectorAll('#customCountyCheckboxes input[type="checkbox"]:checked');
     return Array.from(checkboxes).map(cb => ({
+        geoid: cb.value,
         fips: cb.value,
         name: cb.getAttribute('data-name'),
         state: cb.getAttribute('data-state'),

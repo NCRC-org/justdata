@@ -3,7 +3,7 @@ Main Flask application for JustData.
 Serves as the central entry point with all sub-apps as blueprints.
 """
 
-from flask import Flask, render_template, session, request, jsonify
+from flask import Flask, render_template, session, request, jsonify, send_from_directory
 from justdata.main.auth import get_user_type, set_user_type, get_app_access, get_user_permissions
 from justdata.main.config import MainConfig
 import os
@@ -25,6 +25,16 @@ def create_app():
     app.config['DEBUG'] = MainConfig.DEBUG
     app.config['SESSION_PERMANENT'] = True
     
+    # Favicon route
+    @app.route('/favicon.ico')
+    def favicon():
+        """Serve favicon from static folder."""
+        return send_from_directory(
+            MainConfig.STATIC_DIR,
+            'favicon.png',
+            mimetype='image/png'
+        )
+
     # Main landing page route
     @app.route('/')
     def landing():

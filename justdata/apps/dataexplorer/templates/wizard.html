@@ -4,10 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DataExplorer - JustData</title>
+    <link rel="icon" type="image/png" href="{{ url_for('.static', filename='img/justdata-logo.png') }}">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/wizard-enhancements.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='css/dashboard.css') }}?v={{ version }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='css/wizard-enhancements.css') }}?v={{ version }}">
     <style>
         /* Header Styles (from LendSight) */
         .header {
@@ -1643,7 +1644,7 @@
             <div class="header-layout">
                 <div class="logo">
                     <a href="https://ncrc.org" target="_blank" rel="noopener noreferrer" aria-label="Visit NCRC.org (opens in new window)">
-                        <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
+                        <img src="{{ url_for('.static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
                     </a>
                 </div>
                 <div class="header-title-section">
@@ -1662,7 +1663,7 @@
     <!-- Loading Overlay -->
     <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite" aria-busy="false">
         <div class="loading-content">
-            <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" 
+            <img src="{{ url_for('.static', filename='img/ncrc-logo.png') }}" 
                  alt="NCRC Logo" 
                  class="pulsating-logo">
             <div class="loading-text" id="loadingText">Loading...</div>
@@ -1708,7 +1709,7 @@
                 </p>
             </div>
             <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+                <img src="{{ url_for('.static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
             </div>
         </div>
         <div class="footer-bottom">
@@ -1718,9 +1719,9 @@
     </footer>
     
     <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/api-client.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/wizard.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/wizard-steps.js') }}"></script>
+    <script src="{{ url_for('.static', filename='js/api-client.js') }}"></script>
+    <script src="{{ url_for('.static', filename='js/wizard.js') }}"></script>
+    <script src="{{ url_for('.static', filename='js/wizard-steps.js') }}"></script>
     <script>
         // Initialize wizard on page load
         document.addEventListener('DOMContentLoaded', function() {

@@ -6,9 +6,9 @@
     <title>DataExplorer 2.0 - Interactive Financial Data Dashboard</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}?v={{ version }}">
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='css/dashboard.css') }}?v={{ version }}">
+    <link rel="icon" type="image/png" href="{{ url_for('.static', filename='img/justdata-logo.png') }}">
 </head>
 <body>
     <div class="container">
@@ -112,7 +112,7 @@
         </footer>
     </div>
 
-    <script src="{{ url_for('static', filename='js/dashboard.js') }}?v={{ version }}"></script>
+    <script src="{{ url_for('.static', filename='js/dashboard.js') }}?v={{ version }}"></script>
 
     <script>
         // Toggle hamburger navigation menu

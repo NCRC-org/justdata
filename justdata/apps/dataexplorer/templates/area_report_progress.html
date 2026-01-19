@@ -131,7 +131,7 @@
 <body>
     <div class="progress-container">
         <div class="logo-container">
-            <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" 
+            <img src="{{ url_for('.static', filename='img/ncrc-logo.png') }}" 
                  alt="NCRC Logo" 
                  class="pulsing-logo"
                  onerror="this.style.display='none';">
@@ -187,7 +187,7 @@
                 eventSource.close();
             }
             
-            eventSource = new EventSource(`/progress/${jobId}`);
+            eventSource = new EventSource(`/dataexplorer/progress/${jobId}`);
             
             eventSource.onmessage = function(event) {
                 try {
@@ -208,7 +208,7 @@
                             // Success - redirect to report
                             progressText.textContent = 'Report ready! Redirecting...';
                             setTimeout(() => {
-                                window.location.href = `/report/${jobId}`;
+                                window.location.href = `/dataexplorer/report/${jobId}`;
                             }, 1000);
                         }
                     }
@@ -238,11 +238,11 @@
                     } else {
                         // Max reconnection attempts reached, check if report is ready
                         console.warn('Max reconnection attempts reached, checking if report is ready...');
-                        fetch(`/report/${jobId}`)
+                        fetch(`/dataexplorer/report/${jobId}`)
                             .then(response => {
                                 if (response.ok) {
                                     // Report is ready, redirect
-                                    window.location.href = `/report/${jobId}`;
+                                    window.location.href = `/dataexplorer/report/${jobId}`;
                                 } else {
                                     // Report not ready, show error
                                     showError('Connection lost. The report may still be generating. Please check back in a moment.');

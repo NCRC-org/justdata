@@ -1214,3 +1214,185 @@ def execute_mortgage_query_with_filters(
         
     except Exception as e:
         raise Exception(f"Error executing BigQuery query for {county} {year}: {e}")
+
+
+def get_states() -> List[Dict[str, Any]]:
+    """
+    Get list of all US states from BigQuery.
+
+    Returns:
+        List of dictionaries with 'code' (state FIPS) and 'name' (state name)
+    """
+    try:
+        client = get_bigquery_client(PROJECT_ID)
+
+        query = f"""
+        SELECT DISTINCT
+            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as code,
+            State as name
+        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        WHERE geoid5 IS NOT NULL
+          AND State IS NOT NULL
+        ORDER BY State
+        """
+
+        results = execute_query(client, query)
+        return results
+
+    except Exception as e:
+        logger.error(f"Error fetching states: {e}", exc_info=True)
+        raise
+
+
+def get_metros() -> List[Dict[str, Any]]:
+    """
+    Get list of all metro areas (CBSAs) from BigQuery.
+
+    Handles duplicate CBSAs by preferring:
+    1. CBSAs with more counties (more comprehensive)
+    2. For Connecticut: CBSAs that include planning regions (09110-09190)
+    3. Longer names (typically more complete)
+
+    Returns:
+        List of dictionaries with 'code' (CBSA code) and 'name' (CBSA name)
+    """
+    try:
+        client = get_bigquery_client(PROJECT_ID)
+
+        query = f"""
+        WITH cbsa_counts AS (
+            SELECT
+                CAST(cbsa_code AS STRING) as code,
+                CBSA as name,
+                COUNT(DISTINCT geoid5) as county_count,
+                -- Check if this CBSA includes CT planning regions (09110-09190)
+                COUNTIF(CAST(geoid5 AS STRING) LIKE '091%'
+                       AND CAST(geoid5 AS STRING) >= '09110'
+                       AND CAST(geoid5 AS STRING) <= '09190') as ct_planning_region_count
+            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            WHERE cbsa_code IS NOT NULL
+              AND CBSA IS NOT NULL
+              AND TRIM(CBSA) != ''
+            GROUP BY code, name
+        ),
+        ranked_cbsas AS (
+            SELECT
+                code,
+                name,
+                county_count,
+                ct_planning_region_count,
+                ROW_NUMBER() OVER (
+                    PARTITION BY code
+                    ORDER BY
+                        ct_planning_region_count DESC,
+                        county_count DESC,
+                        LENGTH(name) DESC
+                ) as rn
+            FROM cbsa_counts
+        )
+        SELECT
+            code,
+            name
+        FROM ranked_cbsas
+        WHERE rn = 1
+        ORDER BY name
+        """
+
+        results = execute_query(client, query)
+        return results
+
+    except Exception as e:
+        logger.error(f"Error fetching metros: {e}", exc_info=True)
+        raise
+
+
+def get_counties_for_state(state_fips: str) -> List[Dict[str, Any]]:
+    """
+    Get counties for a specific state with CBSA information.
+
+    Args:
+        state_fips: 2-digit state FIPS code
+
+    Returns:
+        List of dictionaries with county information
+    """
+    try:
+        if not state_fips:
+            raise ValueError("State FIPS code is required")
+
+        client = get_bigquery_client(PROJECT_ID)
+        escaped_state = escape_sql_string(state_fips)
+
+        query = f"""
+        SELECT DISTINCT
+            County as name,
+            LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid,
+            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as fips,
+            CAST(cbsa_code AS STRING) as cbsa,
+            CBSA as cbsa_name
+        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        WHERE SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{escaped_state}'
+          AND geoid5 IS NOT NULL
+          AND County IS NOT NULL
+          -- For Connecticut (state code 09): exclude old county codes (09001-09015), only include planning regions (09110-09190)
+          AND NOT (
+            '{escaped_state}' = '09'
+            AND CAST(geoid5 AS INT64) >= 9001
+            AND CAST(geoid5 AS INT64) <= 9015
+          )
+        ORDER BY County
+        """
+
+        results = execute_query(client, query)
+        return results
+
+    except Exception as e:
+        logger.error(f"Error fetching counties for state {state_fips}: {e}", exc_info=True)
+        raise
+
+
+def get_counties_for_metro(cbsa_code: str) -> List[Dict[str, Any]]:
+    """
+    Get counties for a specific metro area (CBSA).
+
+    Args:
+        cbsa_code: CBSA code
+
+    Returns:
+        List of dictionaries with county information
+    """
+    try:
+        if not cbsa_code:
+            raise ValueError("CBSA code is required")
+
+        client = get_bigquery_client(PROJECT_ID)
+        escaped_cbsa = escape_sql_string(cbsa_code)
+
+        query = f"""
+        SELECT DISTINCT
+            County as name,
+            LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid,
+            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as fips,
+            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+            State as state_name,
+            CAST(cbsa_code AS STRING) as cbsa,
+            CBSA as cbsa_name
+        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        WHERE CAST(cbsa_code AS STRING) = '{escaped_cbsa}'
+          AND geoid5 IS NOT NULL
+          AND County IS NOT NULL
+          -- For Connecticut (state code 09): exclude old county codes (09001-09015), only include planning regions (09110-09190)
+          AND NOT (
+            SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '09'
+            AND CAST(geoid5 AS INT64) >= 9001
+            AND CAST(geoid5 AS INT64) <= 9015
+          )
+        ORDER BY State, County
+        """
+
+        results = execute_query(client, query)
+        return results
+
+    except Exception as e:
+        logger.error(f"Error fetching counties for metro {cbsa_code}: {e}", exc_info=True)
+        raise
