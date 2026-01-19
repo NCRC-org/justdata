@@ -227,7 +227,6 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Try individual state file first
         if state_file.exists():
             try:
-                import json
                 print(f"DEBUG: Loading state benchmarks from {state_file}")
                 with open(state_file, 'r') as f:
                     state_data = json.load(f)
@@ -245,7 +244,6 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Try national file
         if national_file.exists():
             try:
-                import json
                 print(f"DEBUG: Loading national benchmarks from {national_file}")
                 with open(national_file, 'r') as f:
                     national_data = json.load(f)
@@ -263,7 +261,6 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         # Fallback: Try consolidated benchmarks.json file
         if (not state_benchmarks or not national_benchmarks) and consolidated_file.exists():
             try:
-                import json
                 print(f"DEBUG: Loading benchmarks from consolidated file {consolidated_file}")
                 with open(consolidated_file, 'r') as f:
                     benchmarks_data = json.load(f)
