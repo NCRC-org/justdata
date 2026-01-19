@@ -4,24 +4,20 @@ on:
   push:
     branches:
       - Jason_TestApps
-      - main
   workflow_dispatch:  # Allow manual trigger
 
 env:
   PROJECT_ID: hdma1-242116
   REGION: us-east1
   REPOSITORY: justdata-repo
-  SERVICE_NAME: justdata
-  # For test branch, use a different service name
-  TEST_SERVICE_NAME: justdata-test
+  SERVICE_NAME: justdata-test
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    # Set the branch-specific service name
     env:
-      DEPLOY_SERVICE_NAME: ${{ github.ref == 'refs/heads/main' && 'justdata' || 'justdata-test' }}
+      DEPLOY_SERVICE_NAME: justdata-test
 
     steps:
       - name: Checkout code
