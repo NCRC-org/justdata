@@ -180,8 +180,11 @@ def register_blueprints(app: Flask):
     try:
         from justdata.apps.lendsight.blueprint import lendsight_bp
         app.register_blueprint(lendsight_bp, url_prefix='/lendsight')
-    except ImportError:
-        print("[WARN] LendSight blueprint not yet created")
+        print("[INFO] LendSight blueprint registered successfully")
+    except Exception as e:
+        import traceback
+        print(f"[ERROR] Failed to load LendSight blueprint: {e}")
+        traceback.print_exc()
     
     try:
         from justdata.apps.mergermeter.blueprint import mergermeter_bp
