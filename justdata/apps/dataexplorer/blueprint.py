@@ -227,8 +227,8 @@ def lookup_lender_by_lei():
         if not lei:
             return jsonify({'error': 'LEI is required'}), 400
 
-        from .data_utils import get_lender_by_lei
-        lender_info = get_lender_by_lei(lei)
+        from .data_utils import get_lender_details_by_lei
+        lender_info = get_lender_details_by_lei(lei)
 
         if lender_info:
             return jsonify({
@@ -277,6 +277,44 @@ def get_lender_gleif_data():
             })
     except Exception as e:
         logger.error(f"Error fetching GLEIF data: {e}", exc_info=True)
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
+@dataexplorer_bp.route('/api/lender/verify-gleif', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def verify_lender_gleif():
+    """Verify lender with GLEIF API and return enriched data."""
+    try:
+        data = request.get_json()
+        lei = data.get('lei', '').strip()
+
+        if not lei:
+            return jsonify({'error': 'LEI is required'}), 400
+
+        from .data_utils import get_gleif_data_by_lei, verify_lender_with_external_sources
+
+        # Get GLEIF data from our table
+        gleif_data = get_gleif_data_by_lei(lei)
+
+        # Also try external verification
+        name = data.get('name', '')
+        city = data.get('city', '')
+        state = data.get('state', '')
+
+        verification = None
+        if name:
+            try:
+                verification = verify_lender_with_external_sources(lei, name, city, state)
+            except Exception as e:
+                logger.warning(f"External verification failed: {e}")
+
+        return jsonify({
+            'success': True,
+            'gleif_data': gleif_data,
+            'verification': verification
+        })
+    except Exception as e:
+        logger.error(f"Error verifying GLEIF: {e}", exc_info=True)
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 

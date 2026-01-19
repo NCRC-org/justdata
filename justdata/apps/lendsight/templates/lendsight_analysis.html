@@ -792,7 +792,10 @@
                 
                 // State selection is required
                 const selectedState = $('#state-filter-select').val();
-                
+                const selectedStateOption = $('#state-filter-select').find('option:selected');
+                // Get the state FIPS code from the data-code attribute (e.g., "24" for Maryland)
+                const stateFipsCode = selectedStateOption.attr('data-code');
+
                 // Validate state selection (required)
                 if (!selectedState || selectedState.trim() === '') {
                     showValidationMessage(document.getElementById('state-filter-select'), 'Please select a state.', 'error');
@@ -818,10 +821,12 @@
                 // Build request data
                 let requestData = {
                     selection_type: 'county',
-                    state_code: selectedState,  // Always include state_code
+                    state_code: stateFipsCode || selectedState,  // Use FIPS code (e.g., "24") for Census API, fallback to state name
                     years: '2018,2019,2020,2021,2022,2023,2024',  // Fixed years
                     loan_purpose: loanPurposeCheckboxes.length > 0 ? loanPurposeCheckboxes : ['purchase']  // Default to purchase only
                 };
+
+                console.log(`[LendSight] Form submission - State: ${selectedState}, State FIPS code: ${stateFipsCode}`);
                 
                 // Single county selection
                 requestData.counties = selectedCounty;  // Single county, not array

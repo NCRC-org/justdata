@@ -864,13 +864,20 @@
                 
                 // State selection is required
                 const selectedState = $('#state-filter-select').val();
-                
+                const selectedStateOption = $('#state-filter-select').find('option:selected');
+                // Get the state FIPS code from the data-code attribute (e.g., "24" for Maryland)
+                // Try multiple methods for reliability
+                let stateFipsCode = selectedStateOption.attr('data-code');
+                if (!stateFipsCode && window.stateCodeMap && window.stateCodeMap[selectedState]) {
+                    stateFipsCode = window.stateCodeMap[selectedState];
+                }
+
                 // Validate state selection (required)
                 if (!selectedState || selectedState.trim() === '') {
                     showValidationMessage(document.getElementById('state-filter-select'), 'Please select a state.', 'error');
                     hasErrors = true;
                 }
-                
+
                 // Validate county selection (required, single county)
                 const countySelect = document.getElementById('county-select');
                 const selectedCounty = countySelect ? countySelect.value : '';
@@ -878,7 +885,7 @@
                     showValidationMessage(countySelect, 'Please select a county to analyze.', 'error');
                     hasErrors = true;
                 }
-                
+
                 if (hasErrors) {
                     const firstError = document.querySelector('.validation-message.error');
                     if (firstError) {
@@ -886,16 +893,18 @@
                     }
                     return false;
                 }
-                
+
                 // Build request data
                 const forceRefresh = document.getElementById('forceRefreshCheckbox')?.checked || false;
                 let requestData = {
                     selection_type: 'county',
-                    state_code: selectedState,  // Always include state_code
+                    state_code: stateFipsCode || selectedState,  // Use FIPS code (e.g., "24") for Census API, fallback to state name
                     years: '2020,2021,2022,2023,2024',  // Fixed years 2020-2024
                     loan_purpose: loanPurposeCheckboxes.length > 0 ? loanPurposeCheckboxes : ['purchase'],  // Default to purchase only
                     force_refresh: forceRefresh
                 };
+
+                console.log(`[LendSight] Form submission - State: ${selectedState}, State FIPS code: ${stateFipsCode}`);
                 
                 // Single county selection
                 requestData.counties = selectedCounty;  // Single county, not array

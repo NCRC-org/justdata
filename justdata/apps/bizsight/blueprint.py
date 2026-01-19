@@ -281,6 +281,7 @@ def analyze():
                 # Store in BigQuery cache BEFORE marking as complete
                 # This ensures report-data can retrieve the data
                 print(f"[DEBUG] Starting storage for job_id: {job_id}")
+                storage_success = False
                 try:
                     metadata = {
                         'counties': [county_data] if not isinstance(county_data, list) else county_data,
@@ -297,10 +298,31 @@ def analyze():
                         metadata=metadata
                     )
                     print(f"[DEBUG] Storage completed successfully for job_id: {job_id}")
+                    storage_success = True
                 except Exception as cache_error:
-                    print(f"Warning: Failed to store in cache: {cache_error}")
+                    print(f"[ERROR] Failed to store in cache: {cache_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Mark as failed if storage fails - this is critical!
+                    progress_tracker.complete(success=False, error=f"Failed to store analysis results: {str(cache_error)}")
 
-                # Mark as complete AFTER storage is done
+                    # Log failed storage
+                    response_time_ms = int((time_module.time() - start_time) * 1000)
+                    cache_key = generate_cache_key('bizsight', cache_params)
+                    log_usage(
+                        user_type=user_type,
+                        app_name='bizsight',
+                        params=cache_params,
+                        cache_key=cache_key,
+                        cache_hit=False,
+                        job_id=job_id,
+                        response_time_ms=response_time_ms,
+                        error_message=f"Storage failed: {str(cache_error)}",
+                        request_id=request_id
+                    )
+                    return
+
+                # Mark as complete ONLY if storage succeeded
                 print(f"[DEBUG] Marking progress complete for job_id: {job_id}")
                 progress_tracker.complete(success=True)
                 print(f"[DEBUG] Progress marked complete for job_id: {job_id}")
@@ -559,20 +581,80 @@ def report():
 @bizsight_bp.route('/report-data', methods=['GET'])
 @require_access('bizsight', 'partial')
 def report_data():
-    """Get report data for a job."""
+    """Return the analysis report data for web display."""
     try:
-        job_id = request.args.get('job_id')
+        # Check for job_id in URL parameters first, then session
+        job_id = request.args.get('job_id') or session.get('job_id')
+
         if not job_id:
-            return jsonify({'error': 'Job ID required'}), 400
-        
+            return jsonify({
+                'success': False,
+                'error': 'No analysis session found. Please run an analysis first.'
+            }), 400
+
         # Retrieve from BigQuery only (no in-memory storage)
-        result = get_analysis_result_by_job_id(job_id)
-        if not result:
-            return jsonify({'error': 'Report not found'}), 404
-        
-        return jsonify(result)
+        analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result:
+            # Check progress to see if analysis is still running
+            progress = get_progress(job_id)
+            if not progress.get('done', False):
+                return jsonify({
+                    'success': False,
+                    'error': 'Analysis still in progress',
+                    'progress': progress
+                }), 202  # 202 Accepted - still processing
+
+            return jsonify({
+                'success': False,
+                'error': 'No analysis data found. The analysis may have expired or failed.',
+                'progress': progress
+            }), 404
+
+        # BizSight result structure is already flattened by get_analysis_result_by_job_id
+        # Extract the relevant data fields
+        import pandas as pd
+        import numpy as np
+        import math
+
+        def clean_for_json(obj):
+            """Recursively clean data structure for JSON serialization."""
+            if isinstance(obj, dict):
+                return {k: clean_for_json(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [clean_for_json(item) for item in obj]
+            elif isinstance(obj, (np.integer, np.int64)):
+                return int(obj)
+            elif isinstance(obj, (np.floating, np.float64)):
+                if math.isnan(obj) or math.isinf(obj):
+                    return None
+                return float(obj)
+            elif isinstance(obj, float):
+                if math.isnan(obj) or math.isinf(obj):
+                    return None
+                return obj
+            elif pd.isna(obj):
+                return None
+            elif hasattr(obj, 'to_dict'):
+                # Handle pandas DataFrames
+                return obj.replace({np.nan: None}).to_dict('records')
+            else:
+                return obj
+
+        # Clean all data for JSON serialization
+        cleaned_result = clean_for_json(analysis_result)
+
+        # Ensure success flag is present
+        cleaned_result['success'] = True
+
+        return jsonify(cleaned_result)
+
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            'success': False,
+            'error': f'An error occurred while loading report data: {str(e)}'
+        }), 500
 
 
 @bizsight_bp.route('/download', methods=['GET'])
@@ -580,11 +662,12 @@ def report_data():
 def download():
     """Download analysis results."""
     try:
-        job_id = request.args.get('job_id')
+        # Check for job_id in URL parameters first, then session
+        job_id = request.args.get('job_id') or session.get('job_id')
         format_type = request.args.get('format', 'excel')  # excel, pdf, powerpoint
-        
+
         if not job_id:
-            return jsonify({'error': 'Job ID required'}), 400
+            return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400
         
         # Check user permissions for export
         user_permissions = get_user_permissions()
