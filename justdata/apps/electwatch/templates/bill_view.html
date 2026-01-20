@@ -87,7 +87,61 @@
             border-radius: 20px;
             font-weight: 600;
             font-size: 0.9rem;
+        }
+
+        .bill-header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .key-bill-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-key-bill {
+            background: linear-gradient(135deg, var(--ncrc-gold) 0%, #e5a300 100%);
+            color: var(--ncrc-gray-dark);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .btn-key-bill:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-key-bill:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .key-bill-status {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray);
+        }
+
+        .key-bill-status .fa-check {
+            color: var(--success);
+        }
+
+        .key-bill-status .fa-exclamation-triangle {
+            color: var(--warning);
         }
 
         .bill-title {
@@ -397,7 +451,17 @@
         <div id="bill-content" style="display: none;">
             <!-- Bill Header -->
             <div class="bill-header">
-                <span id="bill-id-badge" class="bill-id">H.R. 4763</span>
+                <div class="bill-header-top">
+                    <span id="bill-id-badge" class="bill-id">H.R. 4763</span>
+                    {% if is_staff %}
+                    <div id="key-bill-controls" class="key-bill-controls">
+                        <button id="saveKeyBillBtn" class="btn btn-key-bill" onclick="saveToKeyBills()">
+                            <i class="fas fa-star"></i> Save to Key Bills
+                        </button>
+                        <span id="keyBillStatus" class="key-bill-status"></span>
+                    </div>
+                    {% endif %}
+                </div>
                 <h1 id="bill-title" class="bill-title">Loading...</h1>
                 <p id="bill-summary" class="bill-summary"></p>
                 <div id="industry-tags" class="industry-tags"></div>
@@ -731,6 +795,47 @@
             };
             return names[code] || code;
         }
+
+        {% if is_staff %}
+        // Save bill to Key Finance Bills list (staff only)
+        async function saveToKeyBills() {
+            const btn = document.getElementById('saveKeyBillBtn');
+            const statusEl = document.getElementById('keyBillStatus');
+
+            if (!billData) {
+                statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Bill data not loaded';
+                return;
+            }
+
+            btn.disabled = true;
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+            try {
+                const response = await fetch('/electwatch/api/bill/save-key-bill', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        bill_id: billId,
+                        title: billData.title || billData.bill_id,
+                        summary: billData.summary || ''
+                    })
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    statusEl.innerHTML = '<i class="fas fa-check"></i> Added to Key Bills';
+                    btn.innerHTML = '<i class="fas fa-star"></i> Saved';
+                } else {
+                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${data.error || 'Error saving'}`;
+                    btn.disabled = false;
+                }
+            } catch (error) {
+                console.error('Error saving key bill:', error);
+                statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Error saving';
+                btn.disabled = false;
+            }
+        }
+        {% endif %}
 
         // Load on page ready
         loadBill();

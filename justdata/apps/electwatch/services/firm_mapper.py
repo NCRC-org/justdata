@@ -196,6 +196,68 @@ def parse_stock_amount(trade: Dict) -> AmountRange:
 
 
 # =============================================================================
+# TICKER-TO-SECTOR QUICK LOOKUP
+# Direct mapping for common financial sector tickers
+# =============================================================================
+
+TICKER_TO_SECTOR = {
+    # Banking
+    'JPM': 'banking', 'BAC': 'banking', 'WFC': 'banking', 'C': 'banking',
+    'GS': 'banking', 'MS': 'banking', 'USB': 'banking', 'PNC': 'banking',
+    'TFC': 'banking', 'SCHW': 'banking', 'RF': 'banking', 'FITB': 'banking',
+    'HBAN': 'banking', 'KEY': 'banking', 'CFG': 'banking', 'MTB': 'banking',
+    'CMA': 'banking', 'ZION': 'banking', 'TD': 'banking',
+
+    # Investment
+    'BLK': 'investment', 'BX': 'investment', 'KKR': 'investment',
+    'APO': 'investment', 'ARES': 'investment', 'STT': 'investment',
+    'RJF': 'investment', 'LPLA': 'investment', 'IBKR': 'investment',
+
+    # Insurance
+    'BRK.A': 'insurance', 'BRK.B': 'insurance', 'PRU': 'insurance',
+    'MET': 'insurance', 'AIG': 'insurance', 'ALL': 'insurance',
+    'PGR': 'insurance', 'TRV': 'insurance', 'CB': 'insurance', 'AFL': 'insurance',
+
+    # Fintech/Payments
+    'V': 'fintech', 'MA': 'fintech', 'PYPL': 'fintech', 'SQ': 'fintech',
+    'FIS': 'fintech', 'FI': 'fintech', 'GPN': 'fintech', 'INTU': 'fintech',
+    'EFX': 'fintech', 'TRU': 'fintech',
+
+    # Crypto
+    'COIN': 'crypto', 'HOOD': 'crypto', 'MSTR': 'crypto', 'MARA': 'crypto',
+    'RIOT': 'crypto', 'IBIT': 'crypto', 'BITO': 'crypto', 'GBTC': 'crypto',
+    'FBTC': 'crypto', 'ARKB': 'crypto',
+
+    # Mortgage/Real Estate
+    'RKT': 'mortgage', 'UWMC': 'mortgage', 'PFSI': 'mortgage', 'COOP': 'mortgage',
+    'FNMA': 'mortgage', 'FMCC': 'mortgage', 'FAF': 'mortgage', 'FNF': 'mortgage',
+
+    # Consumer Lending
+    'COF': 'consumer_lending', 'DFS': 'consumer_lending', 'SYF': 'consumer_lending',
+    'ALLY': 'consumer_lending', 'AXP': 'consumer_lending', 'SOFI': 'consumer_lending',
+    'AFRM': 'consumer_lending',
+
+    # Payments (alias for fintech)
+    'PYPL': 'payments', 'SQ': 'payments', 'V': 'payments', 'MA': 'payments',
+}
+
+
+def get_sector_for_ticker(ticker: str) -> str:
+    """
+    Quick lookup for ticker sector. Returns empty string if not found.
+
+    Args:
+        ticker: Stock ticker symbol
+
+    Returns:
+        Sector code (e.g., 'banking', 'crypto') or empty string
+    """
+    if not ticker:
+        return ''
+    return TICKER_TO_SECTOR.get(ticker.upper().strip(), '')
+
+
+# =============================================================================
 # INDUSTRY TAXONOMY
 # =============================================================================
 

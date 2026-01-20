@@ -42,49 +42,49 @@ class DataAggregator:
     def _init_clients(self):
         """Initialize all API clients."""
         try:
-            from apps.electwatch.services.fec_client import FECClient
+            from justdata.apps.electwatch.services.fec_client import FECClient
             self.fec = FECClient()
         except Exception as e:
             logger.warning(f"FEC client not available: {e}")
             self.fec = None
 
         try:
-            from apps.electwatch.services.quiver_client import QuiverClient
+            from justdata.apps.electwatch.services.quiver_client import QuiverClient
             self.quiver = QuiverClient()
         except Exception as e:
             logger.warning(f"Quiver client not available: {e}")
             self.quiver = None
 
         try:
-            from apps.electwatch.services.congress_api_client import CongressAPIClient
+            from justdata.apps.electwatch.services.congress_api_client import CongressAPIClient
             self.congress = CongressAPIClient()
         except Exception as e:
             logger.warning(f"Congress API client not available: {e}")
             self.congress = None
 
         try:
-            from apps.electwatch.services.finnhub_client import FinnhubClient
+            from justdata.apps.electwatch.services.finnhub_client import FinnhubClient
             self.finnhub = FinnhubClient()
         except Exception as e:
             logger.warning(f"Finnhub client not available: {e}")
             self.finnhub = None
 
         try:
-            from apps.electwatch.services.sec_client import SECClient
+            from justdata.apps.electwatch.services.sec_client import SECClient
             self.sec = SECClient()
         except Exception as e:
             logger.warning(f"SEC client not available: {e}")
             self.sec = None
 
         try:
-            from apps.electwatch.services.news_client import NewsClient
+            from justdata.apps.electwatch.services.news_client import NewsClient
             self.news = NewsClient()
         except Exception as e:
             logger.warning(f"News client not available: {e}")
             self.news = None
 
         try:
-            from apps.electwatch.services.firm_mapper import get_mapper
+            from justdata.apps.electwatch.services.firm_mapper import get_mapper
             self.firm_mapper = get_mapper()
         except Exception as e:
             logger.warning(f"Firm mapper not available: {e}")

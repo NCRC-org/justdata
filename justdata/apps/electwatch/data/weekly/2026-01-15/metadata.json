@@ -1,0 +1,56 @@
+{
+  "status": "valid",
+  "last_updated": "2026-01-15T16:29:28.448898",
+  "last_updated_display": "January 15, 2026 at 04:29 PM",
+  "data_window": {
+    "start": "January 15, 2025",
+    "end": "January 15, 2026"
+  },
+  "next_update": "2026-01-18T00:00:00",
+  "next_update_display": "January 18, 2026 at midnight",
+  "data_sources": {
+    "congress_members": {
+      "status": "success",
+      "house_members": 437,
+      "senate_members": 100,
+      "total": 537,
+      "timestamp": "2026-01-15T16:29:39.430379"
+    },
+    "fmp": {
+      "status": "success",
+      "house_trades": 612,
+      "senate_trades": 50,
+      "total_trades": 662,
+      "officials": 593,
+      "timestamp": "2026-01-15T16:31:34.342773"
+    },
+    "fec": {
+      "status": "success",
+      "officials_enriched": 278,
+      "total_contributions": 278,
+      "api_calls": 700,
+      "timestamp": "2026-01-15T16:57:31.272772"
+    },
+    "financial_pacs": {
+      "status": "success",
+      "matched_officials": 30,
+      "total_financial_contributions": 1544000.0,
+      "timestamp": "2026-01-15T17:27:16.187542"
+    },
+    "individual_financial": {
+      "status": "success",
+      "matched_officials": 37,
+      "total_contributions": 11222236.07,
+      "timestamp": "2026-01-15T17:57:02.851446"
+    }
+  },
+  "counts": {
+    "officials": 304,
+    "firms": 0,
+    "industries": 9,
+    "committees": 4,
+    "news_articles": 0
+  },
+  "errors": [],
+  "warnings": []
+}

@@ -236,15 +236,61 @@ def bill_view(bill_id):
 
 @electwatch_bp.route('/api/officials')
 def api_officials():
-    """Officials API endpoint."""
+    """
+    Officials API endpoint with filtering support.
+
+    Query params:
+        - chamber: 'house' or 'senate'
+        - party: 'R', 'D', or 'I'
+        - state: Two-letter state code
+        - industry: Industry sector code
+        - sort: 'score', 'total', 'contributions', 'trades'
+        - limit: Number of results (default 100)
+    """
     try:
         from justdata.apps.electwatch.services.data_store import get_officials
+
+        # Get filter parameters
+        chamber = request.args.get('chamber')
+        party = request.args.get('party')
+        state = request.args.get('state')
+        industry = request.args.get('industry')
+        sort_by = request.args.get('sort', 'score')
         limit = request.args.get('limit', 100, type=int)
+
         officials = get_officials()
-        # Apply limit after fetching (get_officials does not accept limit param)
+
+        # Apply filters
+        filtered = officials
+
+        if chamber:
+            filtered = [o for o in filtered if o.get('chamber', '').lower() == chamber.lower()]
+        if party:
+            filtered = [o for o in filtered if o.get('party', '').upper() == party.upper()]
+        if state:
+            filtered = [o for o in filtered if o.get('state', '').upper() == state.upper()]
+        if industry:
+            # top_industries can be list of objects [{code, name}] or list of strings
+            filtered = [o for o in filtered if any(
+                (ind.get('code') == industry if isinstance(ind, dict) else ind == industry)
+                for ind in o.get('top_industries', [])
+            )]
+
+        # Sort
+        if sort_by == 'score':
+            filtered.sort(key=lambda x: x.get('involvement_score', 0), reverse=True)
+        elif sort_by == 'contributions':
+            filtered.sort(key=lambda x: x.get('contributions', 0), reverse=True)
+        elif sort_by == 'trades':
+            filtered.sort(key=lambda x: x.get('stock_trades_max', 0), reverse=True)
+        else:
+            filtered.sort(key=lambda x: x.get('total_amount', 0), reverse=True)
+
+        # Apply limit
         if limit:
-            officials = officials[:limit]
-        return jsonify({'success': True, 'officials': officials})
+            filtered = filtered[:limit]
+
+        return jsonify({'success': True, 'officials': filtered})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
@@ -541,6 +587,67 @@ def api_firm(firm_name):
 
         except Exception as e:
             logger.warning(f'Could not load firm data from store: {e}')
+
+        # Try to get firm data directly from firms.json (built from trades)
+        try:
+            from justdata.apps.electwatch.services.data_store import get_firms
+            all_firms = get_firms()
+
+            # Search for firm by name or ticker
+            matched_firm = None
+            for f in all_firms:
+                f_name = f.get('name', '').lower()
+                f_ticker = f.get('ticker', '').upper()
+
+                # Match by ticker (exact) or name (partial)
+                if f_ticker == normalized.upper():
+                    matched_firm = f
+                    break
+                elif normalized in f_name or f_name in normalized:
+                    matched_firm = f
+                    break
+
+            if matched_firm:
+                # Return data from firms.json (built from weekly update)
+                officials = matched_firm.get('officials', [])
+                return jsonify({
+                    'success': True,
+                    'firm': {
+                        'name': matched_firm.get('name', firm_name),
+                        'ticker': matched_firm.get('ticker'),
+                        'industries': [matched_firm.get('sector', '')] if matched_firm.get('sector') else [],
+                        'total': matched_firm.get('total', 0),
+                        'contributions': 0,
+                        'stock_trades': matched_firm.get('stock_trades', matched_firm.get('total', 0)),
+                        'officials_count': len(officials),
+                        'party_split': {'r': 50, 'd': 50},
+                        'r_amount': 0,
+                        'd_amount': 0,
+                        'officials': [{
+                            'id': o.get('id', ''),
+                            'name': o.get('name', ''),
+                            'party': o.get('party', ''),
+                            'state': o.get('state', ''),
+                            'chamber': o.get('chamber', 'house'),
+                            'committee': '',
+                            'total': 0,
+                            'has_pac': False,
+                            'has_stock': True,
+                            'photo_url': o.get('photo_url')
+                        } for o in officials[:20]],
+                        'pac_contributions': [],
+                        'activity': matched_firm.get('trades', [])[:10],
+                        'sec_filings': matched_firm.get('sec_filings', []),
+                        'insider_transactions': matched_firm.get('insider_transactions', []),
+                        'regulatory_mentions': [],
+                        'litigation': [],
+                        'news': matched_firm.get('news', []),
+                        'data_source': 'firms_json'
+                    },
+                    'data_source': 'firms_json'
+                })
+        except Exception as e:
+            logger.warning(f'Could not load from firms.json: {e}')
 
         # Return default empty data for unknown firm
         return jsonify({
@@ -1245,3 +1352,217 @@ def health():
         'app': 'electwatch',
         'version': __version__
     })
+
+
+# =============================================================================
+# BILL SEARCH AND KEY BILLS API
+# =============================================================================
+
+def normalize_bill_number(query: str) -> str:
+    """
+    Normalize various bill number formats to Congress.gov format.
+
+    Examples:
+        'HR 1234' -> 'hr1234'
+        'S. 567' -> 's567'
+        'H.R.1234' -> 'hr1234'
+    """
+    import re
+    query = query.upper().replace(' ', '').replace('.', '')
+
+    # Match patterns like HR1234, S123, HRES45, SRES67
+    match = re.match(r'^(HR|S|HRES|SRES|HJRES|SJRES|HCONRES|SCONRES)(\d+)$', query)
+    if match:
+        prefix, number = match.groups()
+        prefix_map = {
+            'HR': 'hr', 'S': 's',
+            'HRES': 'hres', 'SRES': 'sres',
+            'HJRES': 'hjres', 'SJRES': 'sjres',
+            'HCONRES': 'hconres', 'SCONRES': 'sconres'
+        }
+        return f"{prefix_map.get(prefix, prefix.lower())}{number}"
+
+    return query.lower()
+
+
+def fetch_bill_from_congress_api(bill_id: str):
+    """
+    Fetch bill data from Congress.gov API.
+
+    Args:
+        bill_id: Normalized bill ID (e.g., 'hr1234', 's567')
+
+    Returns:
+        Bill data dict or None if not found
+    """
+    import os
+    import re
+    import requests
+
+    api_key = os.getenv('CONGRESS_API_KEY')
+    if not api_key:
+        logger.warning("CONGRESS_API_KEY not set - cannot fetch bill data")
+        return None
+
+    # Parse bill type and number
+    match = re.match(r'^([a-z]+)(\d+)$', bill_id.lower())
+    if not match:
+        return None
+
+    bill_type, bill_number = match.groups()
+
+    # Current Congress (119th as of 2025)
+    congress = 119
+
+    # Congress.gov API endpoint
+    url = f"https://api.congress.gov/v3/bill/{congress}/{bill_type}/{bill_number}"
+
+    try:
+        response = requests.get(
+            url,
+            params={'api_key': api_key},
+            headers={'Accept': 'application/json'},
+            timeout=30
+        )
+
+        if response.ok:
+            data = response.json()
+            bill = data.get('bill', {})
+            return {
+                'id': bill_id,
+                'number': f"{bill_type.upper()} {bill_number}",
+                'title': bill.get('title', ''),
+                'short_title': bill.get('titles', [{}])[0].get('title', '') if bill.get('titles') else '',
+                'sponsor': bill.get('sponsors', [{}])[0].get('fullName', '') if bill.get('sponsors') else '',
+                'introduced': bill.get('introducedDate', ''),
+                'latest_action': bill.get('latestAction', {}).get('text', ''),
+                'latest_action_date': bill.get('latestAction', {}).get('actionDate', ''),
+                'summary': bill.get('summaries', [{}])[0].get('text', '') if bill.get('summaries') else '',
+                'congress': congress,
+                'url': f"https://www.congress.gov/bill/{congress}th-congress/{bill_type}/{bill_number}"
+            }
+        else:
+            logger.debug(f"Bill not found: {bill_id} (status {response.status_code})")
+            return None
+
+    except Exception as e:
+        logger.error(f"Error fetching bill {bill_id}: {e}")
+        return None
+
+
+@electwatch_bp.route('/api/bill/search')
+def api_bill_search():
+    """Search for a bill by number."""
+    query = request.args.get('q', '').strip()
+
+    if not query:
+        return jsonify({'success': False, 'error': 'No search query provided'}), 400
+
+    # Normalize bill number
+    bill_id = normalize_bill_number(query)
+
+    # Fetch from Congress.gov API
+    bill_data = fetch_bill_from_congress_api(bill_id)
+
+    if bill_data:
+        return jsonify({'success': True, 'bill': bill_data})
+    else:
+        return jsonify({'success': False, 'error': f'Bill {query} not found'})
+
+
+@electwatch_bp.route('/api/key-bills')
+def api_key_bills():
+    """Get the list of key finance bills."""
+    key_bills_file = APP_DIR / 'data' / 'current' / 'key_bills.json'
+    if key_bills_file.exists():
+        try:
+            with open(key_bills_file, 'r', encoding='utf-8') as f:
+                return jsonify(json.load(f))
+        except Exception as e:
+            logger.error(f"Error loading key_bills.json: {e}")
+    return jsonify({'bills': []})
+
+
+@electwatch_bp.route('/api/bill/save-key-bill', methods=['POST'])
+def api_save_key_bill():
+    """Save a bill to the Key Finance Bills list (staff/admin only)."""
+    from datetime import datetime
+
+    user_type = get_user_type()
+    if user_type not in ('staff', 'admin'):
+        return jsonify({'success': False, 'error': 'Only staff/admin can save key bills'}), 403
+
+    data = request.get_json()
+    bill_id = data.get('bill_id')
+    bill_title = data.get('title')
+    bill_summary = data.get('summary', '')
+
+    if not bill_id:
+        return jsonify({'success': False, 'error': 'Bill ID required'}), 400
+
+    # Ensure data directory exists
+    data_dir = APP_DIR / 'data' / 'current'
+    data_dir.mkdir(parents=True, exist_ok=True)
+
+    # Load existing key bills
+    key_bills_file = data_dir / 'key_bills.json'
+    key_bills = []
+    if key_bills_file.exists():
+        try:
+            with open(key_bills_file, 'r', encoding='utf-8') as f:
+                key_bills = json.load(f).get('bills', [])
+        except Exception as e:
+            logger.warning(f"Could not load existing key_bills.json: {e}")
+
+    # Check if already saved
+    if any(b['id'] == bill_id for b in key_bills):
+        return jsonify({'success': False, 'error': 'Bill already in key bills list'})
+
+    # Add to list
+    key_bills.append({
+        'id': bill_id,
+        'title': bill_title,
+        'summary': bill_summary[:500] if bill_summary else '',  # Truncate summary
+        'added_by': user_type,
+        'added_at': datetime.now().isoformat()
+    })
+
+    # Save
+    try:
+        with open(key_bills_file, 'w', encoding='utf-8') as f:
+            json.dump({'bills': key_bills, 'updated_at': datetime.now().isoformat()}, f, indent=2)
+        return jsonify({'success': True, 'message': f'Bill {bill_id} added to Key Finance Bills'})
+    except Exception as e:
+        logger.error(f"Error saving key_bills.json: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@electwatch_bp.route('/api/bill/remove-key-bill', methods=['POST'])
+def api_remove_key_bill():
+    """Remove a bill from the Key Finance Bills list (staff/admin only)."""
+    from datetime import datetime
+
+    user_type = get_user_type()
+    if user_type not in ('staff', 'admin'):
+        return jsonify({'success': False, 'error': 'Only staff/admin can remove key bills'}), 403
+
+    data = request.get_json()
+    bill_id = data.get('bill_id')
+
+    key_bills_file = APP_DIR / 'data' / 'current' / 'key_bills.json'
+    if not key_bills_file.exists():
+        return jsonify({'success': False, 'error': 'No key bills file'})
+
+    try:
+        with open(key_bills_file, 'r', encoding='utf-8') as f:
+            key_bills = json.load(f).get('bills', [])
+
+        key_bills = [b for b in key_bills if b['id'] != bill_id]
+
+        with open(key_bills_file, 'w', encoding='utf-8') as f:
+            json.dump({'bills': key_bills, 'updated_at': datetime.now().isoformat()}, f, indent=2)
+
+        return jsonify({'success': True, 'message': f'Bill {bill_id} removed from Key Finance Bills'})
+    except Exception as e:
+        logger.error(f"Error removing key bill: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500

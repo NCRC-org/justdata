@@ -260,13 +260,19 @@ def fetch_bioguide_photo(name: str, bioguide_id: str = None, chamber: str = 'hou
 class WeeklyDataUpdate:
     """Comprehensive weekly data update process."""
 
-    def __init__(self):
+    def __init__(self, use_cache: bool = True, cache_max_age_hours: int = 24):
         from justdata.apps.electwatch.services.data_store import get_weekly_data_path
 
         self.start_time = datetime.now()
         self.weekly_dir = get_weekly_data_path(self.start_time)
         self.errors = []
         self.warnings = []
+
+        # Cache settings
+        self.use_cache = use_cache
+        self.cache_max_age = timedelta(hours=cache_max_age_hours)
+        self.cache_dir = Path(__file__).parent / 'data' / 'cache'
+        self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         # Data containers
         self.officials_data = []
@@ -278,6 +284,75 @@ class WeeklyDataUpdate:
 
         # Source status
         self.source_status = {}
+
+    # =========================================================================
+    # CACHE MANAGEMENT
+    # =========================================================================
+
+    def _get_cache_path(self, phase_name: str) -> Path:
+        """Get the cache file path for a given phase."""
+        return self.cache_dir / f"{phase_name}_cache.json"
+
+    def _is_cache_valid(self, phase_name: str) -> bool:
+        """Check if cache for a phase exists and is not expired."""
+        cache_path = self._get_cache_path(phase_name)
+        if not cache_path.exists():
+            return False
+
+        try:
+            with open(cache_path, 'r') as f:
+                cache_data = json.load(f)
+            cached_time = datetime.fromisoformat(cache_data.get('cached_at', '2000-01-01'))
+            return (datetime.now() - cached_time) < self.cache_max_age
+        except Exception:
+            return False
+
+    def save_cache(self, phase_name: str, data: Any, metadata: Dict = None):
+        """Save data to cache after a successful fetch."""
+        cache_path = self._get_cache_path(phase_name)
+        cache_data = {
+            'cached_at': datetime.now().isoformat(),
+            'phase': phase_name,
+            'metadata': metadata or {},
+            'data': data
+        }
+        try:
+            with open(cache_path, 'w') as f:
+                json.dump(cache_data, f, indent=2, default=str)
+            logger.info(f"  [CACHE] Saved {phase_name} to cache ({cache_path.name})")
+        except Exception as e:
+            logger.warning(f"  [CACHE] Failed to save {phase_name}: {e}")
+
+    def load_cache(self, phase_name: str) -> Optional[Dict]:
+        """Load data from cache if valid."""
+        if not self.use_cache:
+            return None
+
+        cache_path = self._get_cache_path(phase_name)
+        if not self._is_cache_valid(phase_name):
+            return None
+
+        try:
+            with open(cache_path, 'r') as f:
+                cache_data = json.load(f)
+            cached_time = cache_data.get('cached_at', 'unknown')
+            logger.info(f"  [CACHE] Loading {phase_name} from cache (saved: {cached_time})")
+            return cache_data
+        except Exception as e:
+            logger.warning(f"  [CACHE] Failed to load {phase_name}: {e}")
+            return None
+
+    def clear_cache(self, phase_name: str = None):
+        """Clear cache for a specific phase or all phases."""
+        if phase_name:
+            cache_path = self._get_cache_path(phase_name)
+            if cache_path.exists():
+                cache_path.unlink()
+                logger.info(f"  [CACHE] Cleared {phase_name}")
+        else:
+            for cache_file in self.cache_dir.glob("*_cache.json"):
+                cache_file.unlink()
+            logger.info("  [CACHE] Cleared all cache files")
 
     def run(self) -> bool:
         """Run the complete weekly update process."""
@@ -349,6 +424,28 @@ class WeeklyDataUpdate:
     def fetch_all_congress_members(self):
         """Fetch complete list of all Congress members from Congress.gov API."""
         logger.info("--- Fetching ALL Congress Members from Congress.gov ---")
+
+        # Try to load from cache first
+        cached = self.load_cache('congress_members')
+        if cached:
+            members = cached.get('data', [])
+            if members:
+                self.officials_data = members
+                self._officials_by_name = {}
+                for m in self.officials_data:
+                    name_key = m['name'].lower().strip()
+                    self._officials_by_name[name_key] = m
+                    parts = m['name'].split()
+                    if len(parts) > 1:
+                        last_name = parts[-1].lower()
+                        if last_name not in self._officials_by_name:
+                            self._officials_by_name[last_name] = m
+
+                self.source_status['congress_members'] = cached.get('metadata', {})
+                self.source_status['congress_members']['from_cache'] = True
+                logger.info(f"  [CACHE] Loaded {len(members)} Congress members from cache")
+                return
+
         try:
             from justdata.apps.electwatch.services.congress_api_client import CongressAPIClient
             client = CongressAPIClient()
@@ -378,6 +475,9 @@ class WeeklyDataUpdate:
                     'timestamp': datetime.now().isoformat()
                 }
                 logger.info(f"Fetched {len(members)} Congress members ({house} House, {senate} Senate)")
+
+                # Save to cache
+                self.save_cache('congress_members', members, self.source_status['congress_members'])
             else:
                 logger.warning("No Congress members fetched - check API key")
                 self.warnings.append("Congress.gov: No members fetched")
@@ -396,6 +496,19 @@ class WeeklyDataUpdate:
         focused on financial sector stocks only.
         """
         logger.info("\n--- Fetching FMP Congressional Trading (Financial Sector) ---")
+
+        # Try to load from cache first
+        cached = self.load_cache('fmp_trades')
+        if cached:
+            trades_data = cached.get('data', {})
+            house_trades = trades_data.get('house', [])
+            senate_trades = trades_data.get('senate', [])
+            all_trades = house_trades + senate_trades
+            if all_trades:
+                logger.info(f"  [CACHE] Loaded {len(all_trades)} trades from cache")
+                self._process_fmp_trades(all_trades, len(house_trades), len(senate_trades), from_cache=True)
+                return
+
         try:
             from justdata.apps.electwatch.services.fmp_client import FMPClient, ALL_FINANCIAL_SYMBOLS
             client = FMPClient()
@@ -417,140 +530,15 @@ class WeeklyDataUpdate:
             logger.info(f"Fetched {len(house_trades)} House trades, {len(senate_trades)} Senate trades")
             logger.info(f"Total: {len(all_trades)} financial sector trades")
 
-            # Aggregate by politician
-            politicians = {}
-            for trade in all_trades:
-                raw_name = trade.get('politician_name', 'Unknown')
-                if not raw_name or raw_name == 'Unknown' or raw_name.strip() == '':
-                    continue
-
-                # Normalize to public name (e.g., 'Rafael Cruz' -> 'Ted Cruz')
-                name = normalize_to_public_name(raw_name)
-
-                if name not in politicians:
-                    # Determine chamber from trade or infer from data
-                    chamber = trade.get('chamber', '')
-
-                    politicians[name] = {
-                        'name': name,
-                        'party': '',  # FMP doesn't provide party, will be enriched later
-                        'state': trade.get('district', '')[:2] if trade.get('district') else '',
-                        'chamber': chamber,
-                        'bioguide_id': '',
-                        'trades': [],
-                        'total_trades': 0,
-                        'purchase_count': 0,
-                        'sale_count': 0,
-                        'total_min': 0,
-                        'total_max': 0,
-                        'purchases_min': 0,
-                        'purchases_max': 0,
-                        'sales_min': 0,
-                        'sales_max': 0,
-                        'symbols_traded': set(),
-                        'trade_score': 0,  # New scoring: bucket_low / 1000 per trade
-                    }
-
-                politicians[name]['trades'].append(trade)
-                politicians[name]['total_trades'] += 1
-                politicians[name]['symbols_traded'].add(trade.get('ticker', ''))
-
-                amt = trade.get('amount', {})
-                trade_min = amt.get('min', 0)
-                trade_max = amt.get('max', 0)
-
-                if trade.get('type') == 'purchase':
-                    politicians[name]['purchase_count'] += 1
-                    politicians[name]['purchases_min'] += trade_min
-                    politicians[name]['purchases_max'] += trade_max
-                elif trade.get('type') == 'sale':
-                    politicians[name]['sale_count'] += 1
-                    politicians[name]['sales_min'] += trade_min
-                    politicians[name]['sales_max'] += trade_max
-
-                politicians[name]['total_min'] += trade_min
-                politicians[name]['total_max'] += trade_max
-
-                # New scoring: bucket_low_end / 1000 per trade
-                # So $1K-$15K = 1pt, $15K-$50K = 15pt, $50K-$100K = 50pt, etc.
-                politicians[name]['trade_score'] += trade_min / 1000
-
-            # Convert to list and finalize
-            for name, data in politicians.items():
-                data['id'] = data['bioguide_id'] or name.lower().replace(' ', '_').replace('.', '')
-                data['stock_trades_min'] = data['total_min']
-                data['stock_trades_max'] = data['total_max']
-                data['stock_trades_display'] = f"${data['total_min']:,.0f} - ${data['total_max']:,.0f}"
-
-                # Separate display strings for buys and sells
-                data['purchases_display'] = f"${data['purchases_min']:,.0f} - ${data['purchases_max']:,.0f}"
-                data['sales_display'] = f"${data['sales_min']:,.0f} - ${data['sales_max']:,.0f}"
-
-                # Convert set to list for JSON serialization
-                data['symbols_traded'] = list(data['symbols_traded'])
-
-                # Initial score placeholder
-                data['involvement_score'] = 0
-
-                # Keep only last 50 trades for each official
-                data['trades'] = sorted(data['trades'],
-                                       key=lambda x: x.get('transaction_date', ''),
-                                       reverse=True)[:50]
-
-            # Merge trade data into existing officials (from fetch_all_congress_members)
-            if hasattr(self, '_officials_by_name') and self._officials_by_name:
-                # We have the full Congress roster - merge trades into existing entries
-                enriched_count = 0
-                new_count = 0
-                for name, trade_data in politicians.items():
-                    # Try to find matching official
-                    name_lower = name.lower().strip()
-                    parts = name.split()
-                    last_name = parts[-1].lower() if parts else name_lower
-                    
-                    matching_official = None
-                    # Try full name first
-                    if name_lower in self._officials_by_name:
-                        matching_official = self._officials_by_name[name_lower]
-                    # Try last name
-                    elif last_name in self._officials_by_name:
-                        matching_official = self._officials_by_name[last_name]
-                    
-                    if matching_official:
-                        # Enrich existing official with trade data
-                        matching_official['trades'] = trade_data['trades']
-                        matching_official['total_trades'] = trade_data['total_trades']
-                        matching_official['purchase_count'] = trade_data['purchase_count']
-                        matching_official['sale_count'] = trade_data['sale_count']
-                        matching_official['stock_trades_min'] = trade_data['total_min']
-                        matching_official['stock_trades_max'] = trade_data['total_max']
-                        matching_official['stock_trades_display'] = trade_data['stock_trades_display']
-                        matching_official['purchases_display'] = trade_data['purchases_display']
-                        matching_official['sales_display'] = trade_data['sales_display']
-                        matching_official['symbols_traded'] = trade_data['symbols_traded']
-                        matching_official['trade_score'] = trade_data.get('trade_score', 0)
-                        matching_official['has_financial_activity'] = True
-                        enriched_count += 1
-                    else:
-                        # Official not in Congress roster - add as new (rare case)
-                        trade_data['has_financial_activity'] = True
-                        self.officials_data.append(trade_data)
-                        new_count += 1
-                
-                logger.info(f"Enriched {enriched_count} existing officials, added {new_count} new")
-            else:
-                # No Congress roster - use trade data as officials (fallback)
-                self.officials_data = list(politicians.values())
-
-            self.source_status['fmp'] = {
-                'status': 'success',
+            # Save to cache immediately after successful fetch
+            self.save_cache('fmp_trades', trades_data, {
                 'house_trades': len(house_trades),
                 'senate_trades': len(senate_trades),
-                'total_trades': len(all_trades),
-                'officials': len(self.officials_data),
-                'timestamp': datetime.now().isoformat()
-            }
-            logger.info(f"Processed {len(self.officials_data)} officials from FMP trade data")
+                'total_trades': len(all_trades)
+            })
+
+            # Process the trades
+            self._process_fmp_trades(all_trades, len(house_trades), len(senate_trades), from_cache=False)
 
         except Exception as e:
             logger.error(f"FMP fetch failed: {e}")
@@ -558,7 +546,144 @@ class WeeklyDataUpdate:
             traceback.print_exc()
             self.errors.append(f"FMP: {e}")
             self.source_status['fmp'] = {'status': 'failed', 'error': str(e)}
-            # Don't fall back to Quiver - FMP is our primary source
+
+    def _process_fmp_trades(self, all_trades: List[Dict], house_count: int, senate_count: int, from_cache: bool = False):
+        """Process FMP trade data and merge into officials."""
+        # Aggregate by politician
+        politicians = {}
+        for trade in all_trades:
+            raw_name = trade.get('politician_name', 'Unknown')
+            if not raw_name or raw_name == 'Unknown' or raw_name.strip() == '':
+                continue
+
+            # Normalize to public name (e.g., 'Rafael Cruz' -> 'Ted Cruz')
+            name = normalize_to_public_name(raw_name)
+
+            if name not in politicians:
+                # Determine chamber from trade or infer from data
+                chamber = trade.get('chamber', '')
+
+                politicians[name] = {
+                    'name': name,
+                    'party': '',  # FMP doesn't provide party, will be enriched later
+                    'state': trade.get('district', '')[:2] if trade.get('district') else '',
+                    'chamber': chamber,
+                    'bioguide_id': '',
+                    'trades': [],
+                    'total_trades': 0,
+                    'purchase_count': 0,
+                    'sale_count': 0,
+                    'total_min': 0,
+                    'total_max': 0,
+                    'purchases_min': 0,
+                    'purchases_max': 0,
+                    'sales_min': 0,
+                    'sales_max': 0,
+                    'symbols_traded': set(),
+                    'trade_score': 0,  # New scoring: bucket_low / 1000 per trade
+                }
+
+            politicians[name]['trades'].append(trade)
+            politicians[name]['total_trades'] += 1
+            politicians[name]['symbols_traded'].add(trade.get('ticker', ''))
+
+            amt = trade.get('amount', {})
+            trade_min = amt.get('min', 0)
+            trade_max = amt.get('max', 0)
+
+            if trade.get('type') == 'purchase':
+                politicians[name]['purchase_count'] += 1
+                politicians[name]['purchases_min'] += trade_min
+                politicians[name]['purchases_max'] += trade_max
+            elif trade.get('type') == 'sale':
+                politicians[name]['sale_count'] += 1
+                politicians[name]['sales_min'] += trade_min
+                politicians[name]['sales_max'] += trade_max
+
+            politicians[name]['total_min'] += trade_min
+            politicians[name]['total_max'] += trade_max
+
+            # New scoring: bucket_low_end / 1000 per trade
+            # So $1K-$15K = 1pt, $15K-$50K = 15pt, $50K-$100K = 50pt, etc.
+            politicians[name]['trade_score'] += trade_min / 1000
+
+        # Convert to list and finalize
+        for name, data in politicians.items():
+            data['id'] = data['bioguide_id'] or name.lower().replace(' ', '_').replace('.', '')
+            data['stock_trades_min'] = data['total_min']
+            data['stock_trades_max'] = data['total_max']
+            data['stock_trades_display'] = f"${data['total_min']:,.0f} - ${data['total_max']:,.0f}"
+
+            # Separate display strings for buys and sells
+            data['purchases_display'] = f"${data['purchases_min']:,.0f} - ${data['purchases_max']:,.0f}"
+            data['sales_display'] = f"${data['sales_min']:,.0f} - ${data['sales_max']:,.0f}"
+
+            # Convert set to list for JSON serialization
+            data['symbols_traded'] = list(data['symbols_traded'])
+
+            # Initial score placeholder
+            data['involvement_score'] = 0
+
+            # Keep only last 50 trades for each official
+            data['trades'] = sorted(data['trades'],
+                                   key=lambda x: x.get('transaction_date', ''),
+                                   reverse=True)[:50]
+
+        # Merge trade data into existing officials (from fetch_all_congress_members)
+        if hasattr(self, '_officials_by_name') and self._officials_by_name:
+            # We have the full Congress roster - merge trades into existing entries
+            enriched_count = 0
+            new_count = 0
+            for name, trade_data in politicians.items():
+                # Try to find matching official
+                name_lower = name.lower().strip()
+                parts = name.split()
+                last_name = parts[-1].lower() if parts else name_lower
+
+                matching_official = None
+                # Try full name first
+                if name_lower in self._officials_by_name:
+                    matching_official = self._officials_by_name[name_lower]
+                # Try last name
+                elif last_name in self._officials_by_name:
+                    matching_official = self._officials_by_name[last_name]
+
+                if matching_official:
+                    # Enrich existing official with trade data
+                    matching_official['trades'] = trade_data['trades']
+                    matching_official['total_trades'] = trade_data['total_trades']
+                    matching_official['purchase_count'] = trade_data['purchase_count']
+                    matching_official['sale_count'] = trade_data['sale_count']
+                    matching_official['stock_trades_min'] = trade_data['total_min']
+                    matching_official['stock_trades_max'] = trade_data['total_max']
+                    matching_official['stock_trades_display'] = trade_data['stock_trades_display']
+                    matching_official['purchases_display'] = trade_data['purchases_display']
+                    matching_official['sales_display'] = trade_data['sales_display']
+                    matching_official['symbols_traded'] = trade_data['symbols_traded']
+                    matching_official['trade_score'] = trade_data.get('trade_score', 0)
+                    matching_official['has_financial_activity'] = True
+                    enriched_count += 1
+                else:
+                    # Official not in Congress roster - add as new (rare case)
+                    trade_data['has_financial_activity'] = True
+                    self.officials_data.append(trade_data)
+                    new_count += 1
+
+            logger.info(f"Enriched {enriched_count} existing officials, added {new_count} new")
+        else:
+            # No Congress roster - use trade data as officials (fallback)
+            self.officials_data = list(politicians.values())
+
+        self.source_status['fmp'] = {
+            'status': 'success',
+            'house_trades': house_count,
+            'senate_trades': senate_count,
+            'total_trades': len(all_trades),
+            'officials': len(self.officials_data),
+            'from_cache': from_cache,
+            'timestamp': datetime.now().isoformat()
+        }
+        logger.info(f"Processed {len(self.officials_data)} officials from FMP trade data")
 
     def fetch_quiver_data(self):
         """Fetch congressional trading data from Quiver (LEGACY - replaced by FMP)."""
@@ -694,6 +819,14 @@ class WeeklyDataUpdate:
     def fetch_fec_data(self):
         """Fetch campaign finance data from FEC for each official."""
         logger.info("\n--- Fetching FEC Campaign Finance ---")
+
+        # Load cached progress to see which officials already have FEC data
+        cached = self.load_cache('fec_enrichment')
+        cached_officials = set()
+        if cached:
+            cached_officials = set(cached.get('data', {}).get('processed_names', []))
+            logger.info(f"  [CACHE] Found {len(cached_officials)} already-enriched officials")
+
         try:
             import time
             from justdata.apps.electwatch.services.fec_client import FECClient
@@ -707,8 +840,17 @@ class WeeklyDataUpdate:
             total_contributions = 0
             api_calls = 0
             max_api_calls = 700  # Increased limit - FEC allows 1000/hour
+            processed_names = list(cached_officials)  # Track all processed
+            save_interval = 50  # Save progress every 50 officials
 
-            for official in self.officials_data:
+            for idx, official in enumerate(self.officials_data):
+                name = official.get('name', '')
+
+                # Skip if already processed (from cache)
+                if name in cached_officials:
+                    if official.get('fec_candidate_id'):
+                        officials_enriched += 1
+                    continue
                 if api_calls >= max_api_calls:
                     logger.info(f"FEC: Reached API call limit ({max_api_calls}), stopping")
                     break
@@ -812,13 +954,32 @@ class WeeklyDataUpdate:
 
                 except Exception as e:
                     logger.debug(f"FEC lookup failed for {official.get('name', 'unknown')}: {e}")
-                    continue
+
+                # Mark as processed regardless of success (avoid re-trying failed lookups)
+                if name and name not in processed_names:
+                    processed_names.append(name)
+
+                # Save progress every 50 officials
+                if len(processed_names) % save_interval == 0:
+                    self.save_cache('fec_enrichment', {
+                        'processed_names': processed_names,
+                        'officials_enriched': officials_enriched,
+                        'api_calls': api_calls
+                    }, {'partial': True, 'count': len(processed_names)})
+
+            # Final cache save
+            self.save_cache('fec_enrichment', {
+                'processed_names': processed_names,
+                'officials_enriched': officials_enriched,
+                'api_calls': api_calls
+            }, {'partial': False, 'count': len(processed_names)})
 
             self.source_status['fec'] = {
                 'status': 'success',
                 'officials_enriched': officials_enriched,
                 'total_contributions': total_contributions,
                 'api_calls': api_calls,
+                'from_cache_count': len(cached_officials),
                 'timestamp': datetime.now().isoformat()
             }
             logger.info(f"FEC: Enriched {officials_enriched} officials with contribution data ({total_contributions} total contributions, {api_calls} API calls)")
@@ -827,6 +988,13 @@ class WeeklyDataUpdate:
             logger.error(f"FEC fetch failed: {e}")
             self.warnings.append(f"FEC: {e}")
             self.source_status['fec'] = {'status': 'failed', 'error': str(e)}
+            # Save whatever progress we made before the error
+            if 'processed_names' in dir():
+                self.save_cache('fec_enrichment', {
+                    'processed_names': processed_names,
+                    'officials_enriched': officials_enriched if 'officials_enriched' in dir() else 0,
+                    'api_calls': api_calls if 'api_calls' in dir() else 0
+                }, {'partial': True, 'error': str(e)})
 
     def fetch_financial_pac_data(self):
         """Fetch financial sector PAC contributions by looking at candidate receipts (Schedule A)."""
@@ -1017,12 +1185,29 @@ class WeeklyDataUpdate:
 
             return None
 
+        # Load cached progress
+        cached = self.load_cache('financial_pacs')
+        cached_officials = set()
+        if cached:
+            cached_officials = set(cached.get('data', {}).get('processed_names', []))
+            logger.info(f"  [CACHE] Found {len(cached_officials)} already-processed officials")
+
         try:
             matched_count = 0
             total_financial = 0
+            processed_names = list(cached_officials)
+            save_interval = 25  # Save every 25 officials (more frequent due to slower API)
 
             for i, official in enumerate(self.officials_data):
                 name = official.get('name', '')
+
+                # Skip if already processed
+                if name in cached_officials:
+                    if official.get('financial_sector_pac', 0) > 0:
+                        matched_count += 1
+                        total_financial += official.get('financial_sector_pac', 0)
+                    continue
+
                 state = official.get('state', '')
                 chamber = official.get('chamber', 'house')
 
@@ -1066,14 +1251,34 @@ class WeeklyDataUpdate:
                     # Couldn't find committee - set to None (unknown)
                     logger.debug(f"  {name}: Could not find FEC committee")
 
+                # Mark as processed
+                if name and name not in processed_names:
+                    processed_names.append(name)
+
+                # Save progress periodically
+                if len(processed_names) % save_interval == 0:
+                    self.save_cache('financial_pacs', {
+                        'processed_names': processed_names,
+                        'matched_count': matched_count,
+                        'total_financial': total_financial
+                    }, {'partial': True, 'count': len(processed_names)})
+
                 # Progress update
                 if (i + 1) % 10 == 0:
                     logger.info(f"  Progress: {i + 1}/{len(self.officials_data)} officials processed")
+
+            # Final cache save
+            self.save_cache('financial_pacs', {
+                'processed_names': processed_names,
+                'matched_count': matched_count,
+                'total_financial': total_financial
+            }, {'partial': False, 'count': len(processed_names)})
 
             self.source_status['financial_pacs'] = {
                 'status': 'success',
                 'matched_officials': matched_count,
                 'total_financial_contributions': total_financial,
+                'from_cache_count': len(cached_officials),
                 'timestamp': datetime.now().isoformat()
             }
             logger.info(f"Financial PACs: {matched_count}/{len(self.officials_data)} officials have financial sector contributions (${total_financial:,.0f} total)")
@@ -1082,13 +1287,39 @@ class WeeklyDataUpdate:
             logger.error(f"Financial PAC fetch failed: {e}")
             self.warnings.append(f"Financial PACs: {e}")
             self.source_status['financial_pacs'] = {'status': 'failed', 'error': str(e)}
+            # Save progress before error
+            if 'processed_names' in dir():
+                self.save_cache('financial_pacs', {
+                    'processed_names': processed_names,
+                    'matched_count': matched_count if 'matched_count' in dir() else 0,
+                    'total_financial': total_financial if 'total_financial' in dir() else 0
+                }, {'partial': True, 'error': str(e)})
 
     
     def fetch_individual_financial_contributions(self):
         """Fetch individual contributions from financial sector executives."""
+        # Load cached progress
+        cached = self.load_cache('individual_contributions')
+        cached_names = set()
+        if cached:
+            cached_names = set(cached.get('data', {}).get('processed_names', []))
+            logger.info(f"  [CACHE] Found {len(cached_names)} already-processed officials")
+
+        def save_progress(processed_names, matched_count, total_amount):
+            self.save_cache('individual_contributions', {
+                'processed_names': processed_names,
+                'matched_count': matched_count,
+                'total_amount': total_amount
+            }, {'partial': True, 'count': len(processed_names)})
+
         try:
             from justdata.apps.electwatch.services.individual_contributions import enrich_officials_with_individual_contributions
-            status = enrich_officials_with_individual_contributions(self.officials_data)
+            status = enrich_officials_with_individual_contributions(
+                self.officials_data,
+                cached_names=cached_names,
+                save_callback=save_progress
+            )
+            status['from_cache_count'] = len(cached_names)
             self.source_status['individual_financial'] = status
         except Exception as e:
             logger.error(f"Individual financial contributions fetch failed: {e}")
@@ -1632,7 +1863,10 @@ class WeeklyDataUpdate:
                     industry_counts[industry] = industry_counts.get(industry, 0) + 1
                     amt = trade.get('amount', {})
                     if isinstance(amt, dict):
-                        trade_amt = amt.get('min', 0) or 0
+                        # Use midpoint of range for more accurate estimates
+                        min_amt = amt.get('min', 0) or 0
+                        max_amt = amt.get('max', 0) or 0
+                        trade_amt = (min_amt + max_amt) / 2 if max_amt > 0 else min_amt
                     else:
                         trade_amt = float(amt) if amt else 0
                     industry_amounts[industry] = industry_amounts.get(industry, 0) + trade_amt
@@ -1853,44 +2087,199 @@ class WeeklyDataUpdate:
                 official['score_breakdown']['percentile'] = percentile
 
     def process_firms(self):
-        """Process and enrich firms data."""
-        for firm in self.firms_data:
-            # Find officials who traded this stock
-            ticker = firm.get('ticker', '').upper()
-            officials_trading = []
+        """
+        Build comprehensive firm records from actual trade data.
 
-            for official in self.officials_data:
-                for trade in official.get('trades', []):
-                    if trade.get('ticker', '').upper() == ticker:
-                        if official['name'] not in [o['name'] for o in officials_trading]:
-                            officials_trading.append({
-                                'name': official['name'],
-                                'party': official['party'],
-                                'state': official['state'],
-                                'chamber': official['chamber'],
-                                'trade_count': sum(1 for t in official['trades'] if t.get('ticker', '').upper() == ticker)
-                            })
-                        break
+        This replaces the Finnhub-dependent approach by building firms
+        from officials' trading activity.
+        """
+        from justdata.apps.electwatch.services.firm_mapper import (
+            get_mapper, get_sector_for_ticker, TICKER_TO_SECTOR
+        )
 
-            firm['officials'] = officials_trading
-            firm['officials_count'] = len(officials_trading)
+        mapper = get_mapper()
+        firms_by_ticker = {}
 
-        logger.info(f"Processed {len(self.firms_data)} firms with official connections")
+        # Build firms from all officials' trade data
+        for official in self.officials_data:
+            for trade in official.get('trades', []):
+                ticker = trade.get('ticker', '').upper()
+                if not ticker:
+                    continue
+
+                if ticker not in firms_by_ticker:
+                    # Get sector using both quick lookup and FirmMapper
+                    sector = get_sector_for_ticker(ticker)
+                    if not sector:
+                        # Fall back to FirmMapper for more comprehensive lookup
+                        industries = mapper.get_industry_from_ticker(ticker)
+                        sector = industries[0] if industries else ''
+
+                    # Get firm name from FirmMapper or use company name from trade
+                    firm_record = mapper.get_firm_from_ticker(ticker)
+                    firm_name = firm_record.name if firm_record else trade.get('company', ticker)
+
+                    firms_by_ticker[ticker] = {
+                        'ticker': ticker,
+                        'name': firm_name,
+                        'sector': sector,
+                        'industry': sector,  # Alias for compatibility
+                        'officials': [],
+                        'trades': [],
+                        'total_value': {'min': 0, 'max': 0},
+                        'purchase_count': 0,
+                        'sale_count': 0,
+                        'officials_count': 0
+                    }
+
+                firm = firms_by_ticker[ticker]
+
+                # Add official connection if not already present
+                if official['name'] not in [o['name'] for o in firm['officials']]:
+                    firm['officials'].append({
+                        'id': official.get('id', ''),
+                        'name': official['name'],
+                        'party': official.get('party', ''),
+                        'state': official.get('state', ''),
+                        'chamber': official.get('chamber', 'house'),
+                        'photo_url': official.get('photo_url')
+                    })
+                    firm['officials_count'] = len(firm['officials'])
+
+                # Add trade record
+                firm['trades'].append({
+                    'official': official['name'],
+                    'type': trade.get('type'),
+                    'amount': trade.get('amount'),
+                    'date': trade.get('transaction_date')
+                })
+
+                # Track transaction type
+                if trade.get('type') == 'purchase':
+                    firm['purchase_count'] += 1
+                elif trade.get('type') == 'sale':
+                    firm['sale_count'] += 1
+
+                # Accumulate value
+                amt = trade.get('amount', {})
+                if isinstance(amt, dict):
+                    firm['total_value']['min'] += amt.get('min', 0)
+                    firm['total_value']['max'] += amt.get('max', 0)
+                elif isinstance(amt, (int, float)):
+                    firm['total_value']['min'] += amt
+                    firm['total_value']['max'] += amt
+
+        # Convert to list and add computed fields
+        firms_list = []
+        for ticker, firm in firms_by_ticker.items():
+            # Calculate total for sorting
+            firm['total'] = (firm['total_value']['min'] + firm['total_value']['max']) / 2
+            firm['stock_trades'] = firm['total']
+
+            # Limit trades to most recent 50
+            firm['trades'] = sorted(
+                firm['trades'],
+                key=lambda x: x.get('date', ''),
+                reverse=True
+            )[:50]
+
+            firms_list.append(firm)
+
+        # Sort by total value (descending)
+        firms_list.sort(key=lambda x: x['total'], reverse=True)
+
+        # Keep existing Finnhub firms data if available (for quotes/news)
+        # Merge trade-based data into Finnhub data
+        finnhub_firms = {f.get('ticker', '').upper(): f for f in self.firms_data if f.get('ticker')}
+        for firm in firms_list:
+            ticker = firm['ticker']
+            if ticker in finnhub_firms:
+                # Merge Finnhub data (quotes, news, insider transactions)
+                finnhub_data = finnhub_firms[ticker]
+                firm['quote'] = finnhub_data.get('quote')
+                firm['news'] = finnhub_data.get('news', [])
+                firm['insider_transactions'] = finnhub_data.get('insider_transactions', [])
+                firm['sec_filings'] = finnhub_data.get('sec_filings', [])
+                firm['market_cap'] = finnhub_data.get('market_cap', 0)
+
+        self.firms_data = firms_list
+        logger.info(f"Built {len(self.firms_data)} firms from trade data")
 
     def process_industries(self):
-        """Build industry aggregations."""
+        """
+        Build industry aggregations from firms and officials data.
+
+        Populates each industry with:
+        - firms: List of firms in this sector (from firms_data)
+        - officials: List of officials who traded in this sector
+        - total_trades: Total trade count
+        - total_value: Aggregated trade value
+        - news: Relevant news articles
+        """
         from justdata.apps.electwatch.services.firm_mapper import FINANCIAL_SECTORS
 
         industries = []
         for sector_id, sector_info in FINANCIAL_SECTORS.items():
+            # Find firms in this sector
+            sector_firms = [
+                {
+                    'ticker': f.get('ticker'),
+                    'name': f.get('name'),
+                    'total': f.get('total', 0),
+                    'officials_count': f.get('officials_count', 0),
+                    'trade_count': len(f.get('trades', []))
+                }
+                for f in self.firms_data
+                if f.get('sector') == sector_id or f.get('industry') == sector_id
+            ]
+
+            # Sort firms by total value and take top 20
+            sector_firms = sorted(sector_firms, key=lambda x: x['total'], reverse=True)[:20]
+
+            # Find unique officials who traded in this sector
+            officials_set = {}
+            total_trades = 0
+            total_value_min = 0
+            total_value_max = 0
+
+            for firm in self.firms_data:
+                if firm.get('sector') != sector_id and firm.get('industry') != sector_id:
+                    continue
+
+                total_trades += len(firm.get('trades', []))
+                total_value_min += firm.get('total_value', {}).get('min', 0)
+                total_value_max += firm.get('total_value', {}).get('max', 0)
+
+                for official in firm.get('officials', []):
+                    if official['name'] not in officials_set:
+                        officials_set[official['name']] = {
+                            'id': official.get('id', ''),
+                            'name': official['name'],
+                            'party': official.get('party', ''),
+                            'state': official.get('state', ''),
+                            'chamber': official.get('chamber', 'house'),
+                            'photo_url': official.get('photo_url')
+                        }
+
+            # Convert officials dict to list and limit to top 30
+            sector_officials = list(officials_set.values())[:30]
+
             industry = {
                 'sector': sector_id,
                 'name': sector_info.get('name', sector_id.title()),
                 'description': sector_info.get('description', ''),
-                'firms': [],
-                'officials': [],
-                'news': [],
-                'total_trades': 0
+                'color': sector_info.get('color', '#6b7280'),
+                'firms': sector_firms,
+                'officials': sector_officials,
+                'firms_count': len(sector_firms),
+                'officials_count': len(officials_set),
+                'total_trades': total_trades,
+                'total_value': {
+                    'min': total_value_min,
+                    'max': total_value_max,
+                    'display': f"${total_value_min:,.0f} - ${total_value_max:,.0f}"
+                },
+                'news': []
             }
 
             # Find relevant news
@@ -1904,8 +2293,11 @@ class WeeklyDataUpdate:
 
             industries.append(industry)
 
+        # Sort industries by total_trades (descending)
+        industries.sort(key=lambda x: x['total_trades'], reverse=True)
+
         self.industries_data = industries
-        logger.info(f"Processed {len(self.industries_data)} industries")
+        logger.info(f"Processed {len(self.industries_data)} industries with {sum(i['firms_count'] for i in industries)} total firm entries and {sum(i['officials_count'] for i in industries)} unique officials")
 
     def process_committees(self):
         """Build committee data (mostly static but enriched with live stats)."""

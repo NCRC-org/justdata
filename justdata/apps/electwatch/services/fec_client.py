@@ -24,7 +24,7 @@ from dataclasses import dataclass
 REPO_ROOT = Path(__file__).parent.parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
-from apps.electwatch.config import ElectWatchConfig
+from justdata.apps.electwatch.config import ElectWatchConfig
 
 logger = logging.getLogger(__name__)
 

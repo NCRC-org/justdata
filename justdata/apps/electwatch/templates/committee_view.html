@@ -516,9 +516,69 @@
 
         .footer a { color: var(--ncrc-gold); text-decoration: none; }
 
+        /* Mobile Responsiveness */
         @media (max-width: 768px) {
-            .two-columns { grid-template-columns: 1fr; }
+            .container, .main-content {
+                padding: 10px;
+            }
+
+            .stats-grid, .stats-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .two-column, .three-column, .two-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                margin-bottom: 15px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .filter-controls, .filters {
+                flex-direction: column;
+            }
+
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
             .leadership-row { flex-direction: column; }
+        }
+
+        @media (max-width: 480px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .badge {
+                font-size: 0.7rem;
+                padding: 2px 6px;
+            }
         }
     </style>
 </head>
@@ -830,16 +890,22 @@
             tbody.innerHTML = votes.map(vote => {
                 // Build Congress.gov URL from bill_id (e.g., "H.R. 4763" -> "hr4763")
                 const congressUrl = buildCongressGovUrl(vote.bill_id, vote.congress || 119);
+                const billId = vote.bill_id || 'Unknown';
+                const title = vote.title || '';
+                const date = vote.date || '';
+                const result = vote.result || 'Unknown';
+                const yeas = vote.yeas || 0;
+                const nays = vote.nays || 0;
                 return `
                     <tr onclick="window.open('${congressUrl}', '_blank')">
                         <td>
-                            <div style="font-weight: 600; color: var(--ncrc-primary-blue);">${vote.bill_id}</div>
-                            <div style="font-size: 0.8rem; color: var(--ncrc-gray);">${vote.title.substring(0, 50)}${vote.title.length > 50 ? '...' : ''}</div>
-                            <div style="font-size: 0.75rem; color: var(--ncrc-gray);">${vote.date}</div>
+                            <div style="font-weight: 600; color: var(--ncrc-primary-blue);">${billId}</div>
+                            <div style="font-size: 0.8rem; color: var(--ncrc-gray);">${title.substring(0, 50)}${title.length > 50 ? '...' : ''}</div>
+                            <div style="font-size: 0.75rem; color: var(--ncrc-gray);">${date}</div>
                         </td>
-                        <td><span class="vote-result ${vote.result.toLowerCase()}">${vote.result}</span></td>
+                        <td><span class="vote-result ${result.toLowerCase()}">${result}</span></td>
                         <td class="vote-count">
-                            <span class="yea">${vote.yeas} Yea</span> - <span class="nay">${vote.nays} Nay</span>
+                            <span class="yea">${yeas} Yea</span> - <span class="nay">${nays} Nay</span>
                         </td>
                     </tr>
                 `;
@@ -849,6 +915,9 @@
         function buildCongressGovUrl(billId, congress = 119) {
             // Convert "H.R. 4763" to "hr4763" for Congress.gov URL
             // Format: https://www.congress.gov/bill/119th-congress/house-bill/4763
+            if (!billId) {
+                return `https://www.congress.gov/search`;
+            }
             const cleaned = billId.toLowerCase().replace(/\s+/g, '').replace('.', '');
 
             let billType = '';

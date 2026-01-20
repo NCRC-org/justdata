@@ -21,8 +21,8 @@ from datetime import datetime, timedelta
 import json
 
 # Local imports
-from apps.electwatch.config import ElectWatchConfig
-from apps.electwatch.services.firm_mapper import AmountRange, parse_stock_amount
+from justdata.apps.electwatch.config import ElectWatchConfig
+from justdata.apps.electwatch.services.firm_mapper import AmountRange, parse_stock_amount
 
 logger = logging.getLogger(__name__)
 
