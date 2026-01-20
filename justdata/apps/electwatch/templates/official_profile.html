@@ -1148,16 +1148,16 @@
             // Combine sources - prefer top_financial_pacs, fall back to contributions_list
             let pacs = topPacs || contributionsList || [];
 
-            // Use dummy data if no real data available
+            // Show message if no real data available
             if (!pacs || pacs.length === 0) {
-                pacs = [
-                    {name: 'GOLDMAN SACHS GROUP INC PAC', amount: 10000},
-                    {name: 'JPMORGAN CHASE & CO. PAC', amount: 10000},
-                    {name: 'AMERICAN BANKERS ASSOCIATION PAC', amount: 7500},
-                    {name: 'CREDIT UNION NATIONAL ASSOCIATION PAC', amount: 5000},
-                    {name: 'BLACKROCK PAC', amount: 5000},
-                ];
-                financialSectorTotal = 37500;
+                section.style.display = 'block';
+                container.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--ncrc-gray);">
+                        <i class="fas fa-info-circle" style="font-size: 1.5rem; margin-bottom: 8px;"></i>
+                        <p>No PAC contributions from financial sector firms on record.</p>
+                    </div>
+                `;
+                return;
             }
 
             section.style.display = 'block';
@@ -1399,21 +1399,16 @@
             const employerDiv = document.getElementById('individual-by-employer');
             const listDiv = document.getElementById('individual-contributors-list');
 
-            // Use dummy data if no real data available
+            // Show message if no real data available
             if (!contributors || contributors.length === 0) {
-                contributors = [
-                    {name: 'FRATTO, SALVATORE', employer: 'GOLDMAN SACHS', occupation: 'PARTNER', amount: 6600, date: '2024-10-15'},
-                    {name: 'KARZNER, ALEXANDER', employer: 'MANIFEST ENERGY', occupation: 'EXECUTIVE CHAIRMAN', amount: 10000, date: '2024-09-22'},
-                    {name: 'JOHNSON, MICHAEL', employer: 'BLACKSTONE', occupation: 'MANAGING DIRECTOR', amount: 5000, date: '2024-08-30'},
-                    {name: 'CHEN, LISA', employer: 'CITADEL', occupation: 'PORTFOLIO MANAGER', amount: 3300, date: '2024-11-05'},
-                    {name: 'WILLIAMS, JAMES', employer: 'JPMORGAN CHASE', occupation: 'VICE PRESIDENT', amount: 2500, date: '2024-07-18'},
-                ];
-                byEmployer = [
-                    {name: 'Goldman Sachs', total: 12500, count: 3},
-                    {name: 'Blackstone', total: 8500, count: 2},
-                    {name: 'Citadel', total: 6600, count: 2},
-                ];
-                totalAmount = 27400;
+                section.style.display = 'block';
+                listDiv.innerHTML = `
+                    <div style="padding: 20px; text-align: center; color: var(--ncrc-gray);">
+                        <i class="fas fa-info-circle" style="font-size: 1.5rem; margin-bottom: 8px;"></i>
+                        <p>No individual contributions from financial sector employees on record.</p>
+                    </div>
+                `;
+                return;
             }
 
             section.style.display = 'block';
