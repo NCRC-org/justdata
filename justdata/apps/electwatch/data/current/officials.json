@@ -5471,70 +5471,6 @@
       "percentile_rank": 92
     },
     {
-      "name": "Hill, J. French",
-      "bioguide_id": "H001072",
-      "party": "REP",
-      "state": "Arkansas",
-      "district": 2,
-      "chamber": "house",
-      "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001072.jpg",
-      "years_in_congress": null,
-      "has_financial_activity": false,
-      "trades": [],
-      "top_financial_pacs": [],
-      "financial_sector_score": 0,
-      "fec_candidate_id": "H4AR02141",
-      "fec_party": "REP",
-      "contributions": 1690250.0,
-      "total_receipts": 3802050.59,
-      "individual_contributions": 1757301.56,
-      "pac_contributions": 1690250.0,
-      "fec_cycle": 2024,
-      "committees": [],
-      "contributions_list": [],
-      "trades_list": [],
-      "trades_count": 0,
-      "first_elected": null,
-      "legislation": [],
-      "recent_news": [],
-      "top_industries": [],
-      "industry_breakdown": {},
-      "involvement_by_industry": {},
-      "firms": [],
-      "net_worth": {
-        "min": 10000000,
-        "max": 25000000,
-        "midpoint": 17500000,
-        "display": "$10M-$25M",
-        "year": 2024,
-        "is_estimate": false
-      },
-      "wealth_tier": "wealthy",
-      "wealth_tier_display": "$5M-$25M",
-      "involvement_score": 92,
-      "score_breakdown": {
-        "trade_score": 0,
-        "contributions_score": 1690.2,
-        "total_trades": 0,
-        "raw_score": 1690,
-        "percentile": 92
-      },
-      "financial_sector_pct": 0.0,
-      "contributions_display": {
-        "total": 1690250.0,
-        "financial": 0,
-        "financial_pct": 0.0,
-        "pac_total": 1690250.0,
-        "pac_financial": 0,
-        "pac_pct": 0.0,
-        "individual_total": 0,
-        "individual_financial": 0,
-        "individual_pct": 0
-      },
-      "raw_score": 1690,
-      "percentile_rank": 92
-    },
-    {
       "name": "Gonzales, Tony",
       "bioguide_id": "G000594",
       "party": "REP",
@@ -89469,6 +89405,6 @@
       "percentile_rank": 1
     }
   },
-  "count": 203,
+  "count": 202,
   "generated_at": "2026-01-19T08:38:25.152342"
 }
