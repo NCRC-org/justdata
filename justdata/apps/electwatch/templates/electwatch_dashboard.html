@@ -3942,24 +3942,20 @@
                         return currentSort.order === 'desc' ? -nameCompare : nameCompare;
                     case 'contributions':
                     case 'total_contributions':
-                        // Sort by total contributions (all sources)
-                        aVal = a.contributions;
-                        bVal = b.contributions;
+                        // Sort by total contributions (PAC + Individual)
+                        aVal = (a.contributions_display?.total) || (a.contributions || 0) + (a.individual_contributions_total || 0);
+                        bVal = (b.contributions_display?.total) || (b.contributions || 0) + (b.individual_contributions_total || 0);
                         break;
                     case 'financial_pac':
                     case 'finance_contributions':
-                        // Sort by financial sector contributions specifically
-                        aVal = a.financial_sector_pac;
-                        bVal = b.financial_sector_pac;
+                        // Sort by financial sector contributions (PAC + Individual)
+                        aVal = (a.financial_sector_pac || 0) + (a.individual_financial_total || 0);
+                        bVal = (b.financial_sector_pac || 0) + (b.individual_financial_total || 0);
                         break;
                     case 'financial_pct':
                         // Sort by percentage of contributions from financial sector
-                        const aTotalPac = a.contributions || 0;
-                        const aFinPac = a.financial_sector_pac || 0;
-                        aVal = aTotalPac > 0 ? (aFinPac / aTotalPac) * 100 : null;
-                        const bTotalPac = b.contributions || 0;
-                        const bFinPac = b.financial_sector_pac || 0;
-                        bVal = bTotalPac > 0 ? (bFinPac / bTotalPac) * 100 : null;
+                        aVal = a.financial_sector_pct || 0;
+                        bVal = b.financial_sector_pct || 0;
                         break;
                     case 'score':
                         aVal = a.involvement_score;
