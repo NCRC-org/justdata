@@ -758,6 +758,19 @@
     <script>
         const sector = '{{ sector }}';
 
+        /**
+         * Format official name consistently as "Last, First" format.
+         */
+        function formatDisplayName(name) {
+            if (!name) return '';
+            if (name.includes(',')) return name.trim();
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const lastName = parts[parts.length - 1];
+            const firstNames = parts.slice(0, -1).join(' ');
+            return `${lastName}, ${firstNames}`;
+        }
+
         async function loadIndustryData() {
             try {
                 const response = await fetch(`/electwatch/api/industry/${sector}`);
@@ -818,7 +831,7 @@
                         <div class="official-cell">
                             <div class="party-badge ${official.party}">${official.party}</div>
                             <div>
-                                <a href="/electwatch/official/${official.id}" class="official-name">${official.name}</a>
+                                <a href="/electwatch/official/${official.id}" class="official-name">${formatDisplayName(official.name)}</a>
                                 <div class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}</div>
                             </div>
                         </div>

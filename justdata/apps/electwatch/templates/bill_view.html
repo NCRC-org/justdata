@@ -654,6 +654,19 @@
         let billData = null;
         let currentFilter = 'all';
 
+        /**
+         * Format official name consistently as "Last, First" format.
+         */
+        function formatDisplayName(name) {
+            if (!name) return '';
+            if (name.includes(',')) return name.trim();
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const lastName = parts[parts.length - 1];
+            const firstNames = parts.slice(0, -1).join(' ');
+            return `${lastName}, ${firstNames}`;
+        }
+
         async function loadBill() {
             try {
                 const response = await fetch(`/electwatch/api/bills/${encodeURIComponent(billId)}`);
@@ -829,7 +842,7 @@
                     <div class="official-info">
                         <div class="party-badge ${official.party}">${official.party}</div>
                         <div>
-                            <div class="official-name">${official.name}</div>
+                            <div class="official-name">${formatDisplayName(official.name)}</div>
                             <div class="official-role">${official.state || ''} &bull; ${role}</div>
                         </div>
                     </div>

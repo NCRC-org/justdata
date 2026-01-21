@@ -1041,6 +1041,19 @@
     <script>
         const officialId = '{{ official_id }}';
 
+        /**
+         * Format official name consistently as "Last, First" format.
+         */
+        function formatDisplayName(name) {
+            if (!name) return '';
+            if (name.includes(',')) return name.trim();
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const lastName = parts[parts.length - 1];
+            const firstNames = parts.slice(0, -1).join(' ');
+            return `${lastName}, ${firstNames}`;
+        }
+
         async function loadProfile() {
             try {
                 const response = await fetch(`/electwatch/api/official/${officialId}`);
@@ -1062,13 +1075,13 @@
             // Basic info
             document.getElementById('party-badge').textContent = official.party;
             document.getElementById('party-badge').className = `party-badge-large ${official.party}`;
-            document.getElementById('official-name').textContent = official.name;
+            document.getElementById('official-name').textContent = formatDisplayName(official.name);
 
             // Update breadcrumb with official info
             const chamberAbbrev = official.chamber === 'house' ? 'Rep' : 'Sen';
-            const breadcrumbName = `${chamberAbbrev}. ${official.name} (${official.party}-${official.state})`;
+            const breadcrumbName = `${chamberAbbrev}. ${formatDisplayName(official.name)} (${official.party}-${official.state})`;
             document.getElementById('breadcrumb-name').textContent = breadcrumbName;
-            document.title = `${official.name} | ElectWatch - NCRC JustData`;
+            document.title = `${formatDisplayName(official.name)} | ElectWatch - NCRC JustData`;
 
             // Show photo if available, otherwise show party badge
             // Photos sourced from Wikimedia Commons or U.S. House Clerk / Bioguide (Public Domain)

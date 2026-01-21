@@ -186,6 +186,77 @@ def get_years_in_congress(name: str, stored_years: int = None) -> int:
     return stored_years if stored_years else 1
 
 
+def build_top_donors_from_trades(trades: List[Dict]) -> List[Dict]:
+    """
+    Build top_donors list from stock trade data.
+
+    Since PAC contribution data may not be available, this function generates
+    a "top traded firms" list from the official's stock trades, showing which
+    financial firms they have the most trading activity with.
+
+    Args:
+        trades: List of stock trade dicts with 'company', 'ticker', 'amount' fields
+
+    Returns:
+        List of top donor/firm dicts with 'name', 'total', 'trade_count' fields
+    """
+    if not trades:
+        return []
+
+    # Aggregate trades by company
+    company_totals = {}
+
+    for trade in trades:
+        company = trade.get('company', '')
+        ticker = trade.get('ticker', '')
+
+        if not company and not ticker:
+            continue
+
+        # Use company name if available, otherwise use ticker
+        firm_name = company if company else ticker
+
+        # Clean up company name (remove common suffixes for display)
+        display_name = firm_name
+        for suffix in [' Inc', ' Inc.', ' Corp', ' Corp.', ' Co', ' Co.', ' Ltd', ' Ltd.',
+                       ' LLC', ' LP', ' PLC', ' SA', ' AG', ' NV']:
+            if display_name.endswith(suffix):
+                display_name = display_name[:-len(suffix)]
+                break
+
+        if display_name not in company_totals:
+            company_totals[display_name] = {
+                'name': display_name,
+                'total': 0,
+                'trade_count': 0,
+                'ticker': ticker,
+                'stock_overlap': True,  # These are stock trades, so always "overlap"
+            }
+
+        # Calculate trade value using midpoint of range
+        amount = trade.get('amount', {})
+        if isinstance(amount, dict):
+            min_val = amount.get('min', 0) or 0
+            max_val = amount.get('max', 0) or 0
+            trade_value = (min_val + max_val) / 2
+        elif isinstance(amount, (int, float)):
+            trade_value = amount
+        else:
+            trade_value = 0
+
+        company_totals[display_name]['total'] += trade_value
+        company_totals[display_name]['trade_count'] += 1
+
+    # Sort by total trade value and return top 5
+    sorted_firms = sorted(
+        company_totals.values(),
+        key=lambda x: x['total'],
+        reverse=True
+    )[:5]
+
+    return sorted_firms
+
+
 def normalize_to_public_name(formal_name: str) -> str:
     """Convert a formal/legal name to the publicly-used name."""
     return FORMAL_TO_PUBLIC_NAME.get(formal_name, formal_name)
@@ -366,6 +437,13 @@ def get_officials() -> List[Dict]:
             official.get('name', ''),
             official.get('years_in_congress')
         )
+
+        # Build top_donors from stock trades if not already present
+        # This ensures we show specific firm names instead of falling back to industries
+        if not official.get('top_donors'):
+            trades = official.get('trades', [])
+            if trades:
+                official['top_donors'] = build_top_donors_from_trades(trades)
 
     return officials
 
@@ -570,6 +648,8 @@ def get_freshness() -> Dict[str, Any]:
         'last_updated': metadata.get('last_updated'),
         'last_updated_display': metadata.get('last_updated_display'),
         'data_window': metadata.get('data_window'),
+        'stock_data_window': metadata.get('stock_data_window'),
+        'fec_data_window': metadata.get('fec_data_window'),
         'sources': metadata.get('data_sources', {}),
         'next_update': metadata.get('next_update')
     }
@@ -895,6 +975,175 @@ def enrich_officials_with_trends(officials: List[Dict], periods: int = 8):
             official['net_stock_label'] = 'Neutral'
 
         official['net_stock_value'] = net
+
+
+# =============================================================================
+# TIME-SERIES AGGREGATION FOR TREND CHARTS
+# =============================================================================
+
+def aggregate_trades_by_quarter(trades: List[Dict]) -> List[Dict]:
+    """
+    Aggregate trades by calendar quarter for trend charts.
+
+    Args:
+        trades: List of trade dicts with 'transaction_date' and 'amount' fields
+
+    Returns:
+        List of quarterly aggregates sorted chronologically:
+        [{'quarter': 'Q1 2024', 'purchases': 50000, 'sales': 25000, 'net': 25000, 'count': 5}, ...]
+    """
+    from collections import defaultdict
+
+    quarterly = defaultdict(lambda: {'purchases': 0, 'sales': 0, 'count': 0})
+
+    for trade in trades:
+        date_str = trade.get('transaction_date', '')
+        if not date_str or len(date_str) < 7:
+            continue
+
+        try:
+            # Parse date to get year and quarter
+            year = int(date_str[:4])
+            month = int(date_str[5:7])
+            quarter = (month - 1) // 3 + 1
+            quarter_key = f"Q{quarter} {year}"
+
+            # Get trade amount (use midpoint of range)
+            amount = trade.get('amount', {})
+            if isinstance(amount, dict):
+                min_amt = amount.get('min', 0) or 0
+                max_amt = amount.get('max', 0) or 0
+                trade_value = (min_amt + max_amt) / 2
+            else:
+                trade_value = float(amount) if amount else 0
+
+            trade_type = (trade.get('type', '') or '').lower()
+
+            if trade_type in ('purchase', 'buy'):
+                quarterly[quarter_key]['purchases'] += trade_value
+            elif trade_type in ('sale', 'sell'):
+                quarterly[quarter_key]['sales'] += trade_value
+
+            quarterly[quarter_key]['count'] += 1
+
+        except (ValueError, TypeError):
+            continue
+
+    # Convert to sorted list
+    result = []
+    for quarter_key, data in sorted(quarterly.items(), key=lambda x: (
+        int(x[0].split()[1]),  # Year
+        int(x[0][1])           # Quarter number
+    )):
+        result.append({
+            'quarter': quarter_key,
+            'purchases': round(data['purchases']),
+            'sales': round(data['sales']),
+            'net': round(data['purchases'] - data['sales']),
+            'count': data['count']
+        })
+
+    return result
+
+
+def aggregate_contributions_by_quarter(contributions: List[Dict]) -> List[Dict]:
+    """
+    Aggregate contributions by calendar quarter for trend charts.
+
+    Args:
+        contributions: List of contribution dicts with 'date' and 'amount' fields
+
+    Returns:
+        List of quarterly aggregates sorted chronologically:
+        [{'quarter': 'Q1 2024', 'amount': 50000, 'count': 5}, ...]
+    """
+    from collections import defaultdict
+
+    quarterly = defaultdict(lambda: {'amount': 0, 'count': 0})
+
+    for contrib in contributions:
+        date_str = contrib.get('date', '')
+        if not date_str or len(date_str) < 7:
+            continue
+
+        try:
+            year = int(date_str[:4])
+            month = int(date_str[5:7])
+            quarter = (month - 1) // 3 + 1
+            quarter_key = f"Q{quarter} {year}"
+
+            amount = contrib.get('amount', 0) or 0
+            quarterly[quarter_key]['amount'] += amount
+            quarterly[quarter_key]['count'] += 1
+
+        except (ValueError, TypeError):
+            continue
+
+    # Convert to sorted list
+    result = []
+    for quarter_key, data in sorted(quarterly.items(), key=lambda x: (
+        int(x[0].split()[1]),
+        int(x[0][1])
+    )):
+        result.append({
+            'quarter': quarter_key,
+            'amount': round(data['amount']),
+            'count': data['count']
+        })
+
+    return result
+
+
+def compute_official_trends(official: Dict) -> Dict:
+    """
+    Compute all trend data for an official.
+
+    Returns a dict with:
+    - trades_by_quarter: Quarterly trade aggregates
+    - contributions_by_quarter: Quarterly contribution aggregates (if available)
+    - trade_trend: Summary of trade activity trend
+    """
+    trades = official.get('trades', [])
+    contributions = official.get('contributions_list', [])
+
+    trades_by_quarter = aggregate_trades_by_quarter(trades)
+    contributions_by_quarter = aggregate_contributions_by_quarter(contributions)
+
+    # Compute trend direction based on recent vs older activity
+    trade_trend = 'stable'
+    if len(trades_by_quarter) >= 2:
+        # Compare last half to first half
+        midpoint = len(trades_by_quarter) // 2
+        recent = sum(q['net'] for q in trades_by_quarter[midpoint:])
+        older = sum(q['net'] for q in trades_by_quarter[:midpoint])
+
+        if recent > older * 1.2:
+            trade_trend = 'increasing'
+        elif recent < older * 0.8:
+            trade_trend = 'decreasing'
+
+    return {
+        'trades_by_quarter': trades_by_quarter,
+        'contributions_by_quarter': contributions_by_quarter,
+        'trade_trend': trade_trend,
+        'has_trend_data': len(trades_by_quarter) > 1 or len(contributions_by_quarter) > 1
+    }
+
+
+def enrich_officials_with_time_series(officials: List[Dict]):
+    """
+    Add time-series trend data to each official for chart display.
+
+    This should be called during the weekly update after officials are processed.
+    """
+    for official in officials:
+        trend_data = compute_official_trends(official)
+        official['trades_by_quarter'] = trend_data['trades_by_quarter']
+        official['contributions_by_quarter'] = trend_data['contributions_by_quarter']
+        official['trade_trend'] = trend_data['trade_trend']
+        official['has_trend_data'] = trend_data['has_trend_data']
+
+    logger.info(f"Enriched {len(officials)} officials with time-series trend data")
 
 
 # =============================================================================

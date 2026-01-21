@@ -426,7 +426,7 @@ def get_bioguide_citation(name: str, bioguide_id: str) -> Dict:
         'license': 'Public Domain',
         'source': 'U.S. House Clerk / Bioguide',
         'source_url': f'https://bioguide.congress.gov/search/bio/{bioguide_id}',
-        'image_url': f'https://clerk.house.gov/content/assets/img/members/{bioguide_id}.jpg',
+        'image_url': f'https://clerk.house.gov/images/members/{bioguide_id}.jpg',
     }
 
 

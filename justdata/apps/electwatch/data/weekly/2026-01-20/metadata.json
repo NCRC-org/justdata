@@ -6,20 +6,6 @@
     "start": "January 20, 2025",
     "end": "January 20, 2026"
   },
-  "stock_data_window": {
-    "start": "January 20, 2024",
-    "end": "January 20, 2026",
-    "start_iso": "2024-01-20",
-    "end_iso": "2026-01-20",
-    "description": "24-month rolling window of STOCK Act disclosures"
-  },
-  "fec_data_window": {
-    "start": "January 20, 2024",
-    "end": "January 20, 2026",
-    "start_iso": "2024-01-20",
-    "end_iso": "2026-01-20",
-    "description": "24-month rolling window of FEC contributions"
-  },
   "next_update": "2026-01-25T00:00:00",
   "next_update_display": "January 25, 2026 at midnight",
   "data_sources": {

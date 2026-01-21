@@ -171,6 +171,99 @@ def get_canonical_name(name: str) -> str:
 
 
 # =============================================================================
+# DISTINCT OFFICIALS (CONFIRMED DIFFERENT PEOPLE)
+# =============================================================================
+
+def get_distinct_officials() -> List[Dict]:
+    """
+    Get all pairs of officials confirmed to be different people.
+
+    This is used to prevent false positive duplicate detection when two
+    officials share the same last name but are actually different people
+    (e.g., two Congress members named Smith who are not related).
+
+    Returns:
+        List of distinct pairs: [
+            {
+                "official1": "Rick Allen",
+                "official2": "Allen, Rick",
+                "created_at": "2024-01-15T10:30:00"
+            }
+        ]
+    """
+    data = _load_json('distinct_officials.json')
+    return data.get('pairs', [])
+
+
+def add_distinct_officials(official1: str, official2: str) -> Dict:
+    """
+    Mark two officials as distinct (confirmed different people).
+
+    Args:
+        official1: First official name
+        official2: Second official name
+
+    Returns:
+        {'success': True} or {'success': False, 'error': '...'}
+    """
+    data = _load_json('distinct_officials.json')
+    pairs = data.get('pairs', [])
+
+    # Check if already marked as distinct (in either order)
+    for pair in pairs:
+        existing = {pair.get('official1', '').lower(), pair.get('official2', '').lower()}
+        new = {official1.lower(), official2.lower()}
+        if existing == new:
+            return {'success': True, 'message': 'Already marked as distinct'}
+
+    # Add new pair
+    pairs.append({
+        'official1': official1,
+        'official2': official2,
+        'created_at': datetime.now().isoformat()
+    })
+
+    data['pairs'] = pairs
+    data['updated_at'] = datetime.now().isoformat()
+    _save_json('distinct_officials.json', data)
+
+    return {'success': True}
+
+
+def remove_distinct_officials(official1: str, official2: str) -> Dict:
+    """
+    Remove a distinct marking between two officials.
+
+    Args:
+        official1: First official name
+        official2: Second official name
+
+    Returns:
+        {'success': True} or {'success': False, 'error': '...'}
+    """
+    data = _load_json('distinct_officials.json')
+    pairs = data.get('pairs', [])
+
+    # Find and remove the pair (in either order)
+    original_len = len(pairs)
+    new_pairs = []
+    for pair in pairs:
+        existing = {pair.get('official1', '').lower(), pair.get('official2', '').lower()}
+        target = {official1.lower(), official2.lower()}
+        if existing != target:
+            new_pairs.append(pair)
+
+    if len(new_pairs) == original_len:
+        return {'success': False, 'error': 'Pair not found'}
+
+    data['pairs'] = new_pairs
+    data['updated_at'] = datetime.now().isoformat()
+    _save_json('distinct_officials.json', data)
+
+    return {'success': True}
+
+
+# =============================================================================
 # FIRM DEFINITIONS
 # =============================================================================
 

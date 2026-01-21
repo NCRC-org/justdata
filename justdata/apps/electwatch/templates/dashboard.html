@@ -1143,8 +1143,9 @@
         }
 
         .source-date {
-            opacity: 0.8;
+            opacity: 0.9;
             font-size: 0.75rem;
+            white-space: nowrap;
         }
 
         .source-status {
@@ -2426,6 +2427,19 @@
     </footer>
 
     <script>
+        /**
+         * Format official name consistently as "Last, First" format.
+         */
+        function formatDisplayName(name) {
+            if (!name) return '';
+            if (name.includes(',')) return name.trim();
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const lastName = parts[parts.length - 1];
+            const firstNames = parts.slice(0, -1).join(' ');
+            return `${lastName}, ${firstNames}`;
+        }
+
         // Tab Navigation
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -2569,7 +2583,7 @@
                                 <div class="party-indicator ${official.party}">${official.party}</div>
                             </div>
                             <div class="official-info">
-                                <a href="/official/${official.id}" class="official-name">${official.name}</a>
+                                <a href="/official/${official.id}" class="official-name">${formatDisplayName(official.name)}</a>
                                 <span class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}${official.district ? '-' + official.district : ''}</span>
                             </div>
                         </div>
@@ -2835,7 +2849,7 @@
                     <div class="entity-info">
                         <div class="entity-badge official">${official.party}</div>
                         <div>
-                            <div class="entity-name">${official.name}</div>
+                            <div class="entity-name">${formatDisplayName(official.name)}</div>
                             <div class="entity-meta">${official.state} - ${official.detail || ''}</div>
                         </div>
                     </div>
@@ -2967,20 +2981,37 @@
             const statusEl = document.getElementById(`${prefix}-status`);
 
             if (source) {
-                dateEl.textContent = source.date;
+                // Show date with record count if available
+                let displayText = source.date;
+                if (source.records && source.records > 0) {
+                    displayText = `${source.date} (${source.records.toLocaleString()} records)`;
+                }
+                dateEl.textContent = displayText;
 
                 // Calculate staleness
                 const daysSince = source.days_old || 0;
                 statusEl.classList.remove('stale', 'old');
+
+                // Build detailed tooltip
+                let tooltipParts = [];
+                if (source.date_full) {
+                    tooltipParts.push(`Updated: ${source.date_full}`);
+                }
+                if (source.records && source.records > 0) {
+                    tooltipParts.push(`Records: ${source.records.toLocaleString()}`);
+                }
+
                 if (daysSince > 14) {
                     statusEl.classList.add('old');
-                    statusEl.title = `Data is ${daysSince} days old - may need refresh`;
+                    tooltipParts.push(`Data is ${daysSince} days old - may need refresh`);
                 } else if (daysSince > 7) {
                     statusEl.classList.add('stale');
-                    statusEl.title = `Data is ${daysSince} days old`;
-                } else {
-                    statusEl.title = 'Data is current';
+                    tooltipParts.push(`Data is ${daysSince} days old`);
+                } else if (daysSince >= 0) {
+                    tooltipParts.push('Data is current');
                 }
+
+                statusEl.title = tooltipParts.join('\n');
             }
         }
 

@@ -93,6 +93,21 @@ NAME_ALIASES = {
     'Tommy Tuberville': 'Thomas Tuberville',
     'Ted Cruz': 'Rafael Cruz',
     'Angus King': 'Angus S. King',
+    # Additional name mappings for photo coverage
+    'Joshua Gottheimer': 'Josh Gottheimer',
+    'Daniel Newhouse': 'Dan Newhouse',
+    'Deborah Dingell': 'Debbie Dingell',
+    'Jacob Auchincloss': 'Jake Auchincloss',
+    'Rohit Khanna': 'Ro Khanna',
+    'Gregory Landsman': 'Greg Landsman',
+    'Peter Sessions': 'Pete Sessions',
+    'Anthony Wied': 'Tony Wied',
+    'Stephen Cohen': 'Steve Cohen',
+    'Shrikant Thanedar': 'Shri Thanedar',
+    'Christine Smith': 'Tina Smith',
+    'Addison McConnell': 'Mitch McConnell',
+    'Thomas R. Carper': 'Tom Carper',
+    'Susan M. Collins': 'Susan Collins',
 }
 # Merge in nickname mappings from JSON
 NAME_ALIASES.update(NICKNAME_TO_LEGAL)
@@ -228,15 +243,18 @@ def fetch_bioguide_photo(name: str, bioguide_id: str = None, chamber: str = 'hou
     """
     Get photo URL for a Congress member.
 
-    Uses House Clerk images (works for both House and many Senate members).
-    The House Clerk service is the most reliable source.
+    Uses bioguide.congress.gov photos as the primary source (works for both chambers).
+    Falls back to House Clerk images if needed.
 
-    URL pattern: https://clerk.house.gov/images/members/{bioguide_id}.jpg
+    URL patterns:
+    - Primary: https://bioguide.congress.gov/bioguide/photo/{first_letter}/{bioguide_id}.jpg
+    - Fallback: https://clerk.house.gov/images/members/{bioguide_id}.jpg
     """
-    # Use the House Clerk's image service - works for most members
-    # Note: URL was updated from /content/assets/img/members/ to /images/members/
     if bioguide_id:
-        return f"https://clerk.house.gov/images/members/{bioguide_id}.jpg"
+        # Use Bioguide official photos - works for both House and Senate
+        # URL pattern: https://bioguide.congress.gov/bioguide/photo/X/X000000.jpg
+        first_letter = bioguide_id[0].upper()
+        return f"https://bioguide.congress.gov/bioguide/photo/{first_letter}/{bioguide_id}.jpg"
 
     return None
 
@@ -1591,6 +1609,39 @@ class WeeklyDataUpdate:
             'Dave Taylor': 'T000490',
             # New Senators (2025)
             'Ashley Moody': 'M001244',        # https://www.congress.gov/member/ashley-moody/M001244
+            # Additional members for photo coverage (verified from Congress.gov)
+            'Susan Collins': 'C001035',       # https://www.congress.gov/member/susan-collins/C001035
+            'Susan M. Collins': 'C001035',
+            'Joshua Gottheimer': 'G000583',   # Alias for Josh Gottheimer
+            'Daniel Newhouse': 'N000189',     # Alias for Dan Newhouse
+            'Deborah Dingell': 'D000624',     # Alias for Debbie Dingell
+            'Jacob Auchincloss': 'A000148',   # Alias for Jake Auchincloss - https://www.congress.gov/member/jake-auchincloss/A000148
+            'Laurel Lee': 'L000597',          # https://www.congress.gov/member/laurel-lee/L000597
+            'Rohit Khanna': 'K000389',        # Alias for Ro Khanna
+            'Gregory Landsman': 'L000601',    # Alias for Greg Landsman
+            'Peter Sessions': 'S000250',      # Alias for Pete Sessions - https://www.congress.gov/member/pete-sessions/S000250
+            'Pete Sessions': 'S000250',
+            'Morgan McGarvey': 'M001220',     # https://www.congress.gov/member/morgan-mcgarvey/M001220
+            'Anthony Wied': 'W000829',        # Alias for Tony Wied
+            'Roger Williams': 'W000816',      # https://www.congress.gov/member/roger-williams/W000816
+            'Lance Gooden': 'G000589',        # https://www.congress.gov/member/lance-gooden/G000589
+            'Stephen Cohen': 'C001068',       # Alias for Steve Cohen - https://www.congress.gov/member/steve-cohen/C001068
+            'Steve Cohen': 'C001068',
+            'Shrikant Thanedar': 'T000488',   # Alias for Shri Thanedar - https://www.congress.gov/member/shri-thanedar/T000488
+            'Shri Thanedar': 'T000488',
+            'Christine Smith': 'S001203',     # Legal name for Tina Smith
+            'Earl Blumenauer': 'B000574',     # https://www.congress.gov/member/earl-blumenauer/B000574 (former)
+            'Kathy Manning': 'M001135',       # https://www.congress.gov/member/kathy-manning/M001135 (former)
+            'Addison McConnell': 'M000355',   # Legal name for Mitch McConnell
+            'Julia Letlow': 'L000595',        # https://www.congress.gov/member/julia-letlow/L000595
+            'John Delaney': 'D000620',        # https://www.congress.gov/member/john-delaney/D000620 (former)
+            'Paul Mitchell': 'M001201',       # https://www.congress.gov/member/paul-mitchell/M001201 (former)
+            'Emily Randall': 'R000621',       # https://www.congress.gov/member/emily-randall/R000621
+            'Thomas R. Carper': 'C000174',    # https://www.congress.gov/member/thomas-carper/C000174 (former)
+            'Tom Carper': 'C000174',
+            'Gary Peters': 'P000595',         # https://www.congress.gov/member/gary-peters/P000595
+            # Potential data quality issues - these may be incorrectly named in the source data
+            'David Smith': 'S000510',         # Likely Adam Smith (legal name: David Adam Smith) - WA-9
         }
 
         # Wikipedia photo URLs for Senate members (no House Clerk photos available)
@@ -1616,6 +1667,14 @@ class WeeklyDataUpdate:
             'Mitch McConnell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Mitch_McConnell_2016_official_photo_%281%29.jpg/330px-Mitch_McConnell_2016_official_photo_%281%29.jpg',
             'John Fetterman': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg',
             'Ashley Moody': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg/330px-Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg',
+            # Additional senators for photo coverage
+            'Susan Collins': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg/330px-Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg',
+            'Susan M. Collins': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg/330px-Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg',  # Alias
+            'Christine Smith': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Tina_Smith%2C_official_portrait%2C_116th_congress.jpg/330px-Tina_Smith%2C_official_portrait%2C_116th_congress.jpg',  # Legal name for Tina Smith
+            'Addison McConnell': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Mitch_McConnell_2016_official_photo_%281%29.jpg/330px-Mitch_McConnell_2016_official_photo_%281%29.jpg',  # Legal name for Mitch McConnell
+            'Gary Peters': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Gary_Peters%2C_official_portrait%2C_115th_congress.jpg/330px-Gary_Peters%2C_official_portrait%2C_115th_congress.jpg',
+            'Thomas R. Carper': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg/330px-Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg',
+            'Tom Carper': 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg/330px-Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg',
         }
 
         # Known member data: name -> (first_elected_year, chamber, party)
@@ -2737,16 +2796,21 @@ Be factual and avoid speculation."""
         from justdata.apps.electwatch.services.data_store import (
             save_officials, save_firms, save_industries,
             save_committees, save_news, save_summaries, save_insights, save_metadata,
-            save_trend_snapshot, enrich_officials_with_trends
+            save_trend_snapshot, enrich_officials_with_trends,
+            enrich_officials_with_time_series
         )
 
         # Save trend snapshot BEFORE enriching (captures raw current state)
         logger.info("Saving trend snapshot...")
         save_trend_snapshot(self.officials_data)
 
-        # Enrich officials with trend data for display
+        # Enrich officials with trend data for display (finance_pct trends)
         logger.info("Enriching officials with trend data...")
         enrich_officials_with_trends(self.officials_data)
+
+        # NEW: Enrich with time-series data for charts (trades/contributions by quarter)
+        logger.info("Enriching officials with time-series data for trend charts...")
+        enrich_officials_with_time_series(self.officials_data)
 
         logger.info("Saving officials data...")
         save_officials(self.officials_data, self.weekly_dir)
@@ -2784,6 +2848,12 @@ Be factual and avoid speculation."""
         next_sunday = (now + timedelta(days=days_until_sunday)).replace(hour=0, minute=0, second=0, microsecond=0)
 
         # Save metadata
+        # Calculate date ranges for different data sources
+        # Stock trades use 24-month (730 day) rolling window
+        stock_start = self.start_time - timedelta(days=730)
+        # FEC data uses 24-month rolling window for contributions
+        fec_start = self.start_time - timedelta(days=730)
+
         metadata = {
             'status': 'valid',
             'last_updated': self.start_time.isoformat(),
@@ -2791,6 +2861,20 @@ Be factual and avoid speculation."""
             'data_window': {
                 'start': (self.start_time - timedelta(days=365)).strftime('%B %d, %Y'),
                 'end': self.start_time.strftime('%B %d, %Y')
+            },
+            'stock_data_window': {
+                'start': stock_start.strftime('%B %d, %Y'),
+                'end': self.start_time.strftime('%B %d, %Y'),
+                'start_iso': stock_start.strftime('%Y-%m-%d'),
+                'end_iso': self.start_time.strftime('%Y-%m-%d'),
+                'description': '24-month rolling window of STOCK Act disclosures'
+            },
+            'fec_data_window': {
+                'start': fec_start.strftime('%B %d, %Y'),
+                'end': self.start_time.strftime('%B %d, %Y'),
+                'start_iso': fec_start.strftime('%Y-%m-%d'),
+                'end_iso': self.start_time.strftime('%Y-%m-%d'),
+                'description': '24-month rolling window of FEC contributions'
             },
             'next_update': next_sunday.isoformat(),
             'next_update_display': next_sunday.strftime('%B %d, %Y at midnight'),

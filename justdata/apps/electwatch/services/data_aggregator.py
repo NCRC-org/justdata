@@ -136,7 +136,7 @@ class DataAggregator:
         # Get stock trades from Quiver
         if self.quiver:
             try:
-                trades = self.quiver.get_recent_trades(days=365, chamber=chamber, party=party)
+                trades = self.quiver.get_recent_trades(days=730, chamber=chamber, party=party)  # 24 months
 
                 # Aggregate by politician
                 by_politician = {}

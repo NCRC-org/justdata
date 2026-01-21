@@ -243,7 +243,7 @@ def is_financial_employer(employer: str) -> bool:
 def fetch_individual_contributions(
     committee_id: str,
     api_key: str,
-    days_back: int = 365,
+    days_back: int = 730,
     max_pages: int = 10
 ) -> Dict:
     """
@@ -252,7 +252,7 @@ def fetch_individual_contributions(
     Args:
         committee_id: FEC committee ID for the candidate
         api_key: FEC API key
-        days_back: How many days back to look (default 365)
+        days_back: How many days back to look (default 730 = 24 months)
         max_pages: Maximum API pages to fetch (default 10)
 
     Returns:

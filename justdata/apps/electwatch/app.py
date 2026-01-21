@@ -1896,16 +1896,17 @@ def api_get_freshness():
                 'sources': {
                     'fec': {
                         'name': 'FEC Campaign Finance',
-                        'date': last_updated_dt.strftime('%b %d'),
+                        'date': last_updated_dt.strftime('%b %d, %Y'),
                         'date_full': last_updated_dt.strftime('%B %d, %Y'),
                         'days_old': (datetime.now() - last_updated_dt).days,
                         'status': sources.get('fec', {}).get('status', 'unknown'),
+                        'records': sources.get('fec', {}).get('records', 0),
                         'refresh_schedule': 'Weekly (Sundays at midnight)',
                         'note': 'Campaign contributions and PAC data'
                     },
                     'stock_act': {
                         'name': 'STOCK Act Disclosures',
-                        'date': last_updated_dt.strftime('%b %d'),
+                        'date': last_updated_dt.strftime('%b %d, %Y'),
                         'date_full': last_updated_dt.strftime('%B %d, %Y'),
                         'days_old': (datetime.now() - last_updated_dt).days,
                         'status': sources.get('quiver', {}).get('status', 'unknown'),
@@ -1915,10 +1916,11 @@ def api_get_freshness():
                     },
                     'committees': {
                         'name': 'Committee Assignments',
-                        'date': last_updated_dt.strftime('%b %d'),
+                        'date': last_updated_dt.strftime('%b %d, %Y'),
                         'date_full': last_updated_dt.strftime('%B %d, %Y'),
                         'days_old': (datetime.now() - last_updated_dt).days,
                         'status': 'success',
+                        'records': metadata.get('counts', {}).get('officials', 0),
                         'refresh_schedule': 'Weekly (Sundays at midnight)',
                         'note': 'House and Senate committee membership'
                     }
@@ -1943,9 +1945,9 @@ def api_get_freshness():
         'status': 'no_weekly_data',
         'message': 'Run weekly_update.py to populate data',
         'sources': {
-            'fec': {'name': 'FEC', 'date': '--', 'status': 'pending'},
-            'stock_act': {'name': 'STOCK Act', 'date': '--', 'status': 'pending'},
-            'committees': {'name': 'Committees', 'date': '--', 'status': 'pending'}
+            'fec': {'name': 'FEC', 'date': 'Not loaded', 'status': 'pending', 'records': 0},
+            'stock_act': {'name': 'STOCK Act', 'date': 'Not loaded', 'status': 'pending', 'records': 0},
+            'committees': {'name': 'Committees', 'date': 'Not loaded', 'status': 'pending', 'records': 0}
         },
         'data_window': {
             'start': (now - timedelta(days=365)).strftime('%B %d, %Y'),

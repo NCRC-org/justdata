@@ -311,6 +311,65 @@ def api_official(official_id):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@electwatch_bp.route('/api/official/<official_id>/trends')
+def api_official_trends(official_id):
+    """
+    Get time-series trend data for a specific official.
+
+    Returns quarterly aggregated data for trades and contributions,
+    suitable for rendering trend charts.
+
+    Response:
+    {
+        "success": true,
+        "official_id": "ted_cruz",
+        "name": "Ted Cruz",
+        "trades_by_quarter": [
+            {"quarter": "Q1 2024", "purchases": 50000, "sales": 25000, "net": 25000, "count": 5},
+            ...
+        ],
+        "contributions_by_quarter": [
+            {"quarter": "Q1 2024", "amount": 100000, "count": 10},
+            ...
+        ],
+        "trade_trend": "increasing|decreasing|stable",
+        "has_trend_data": true
+    }
+    """
+    try:
+        from justdata.apps.electwatch.services.data_store import (
+            get_official, compute_official_trends
+        )
+
+        official = get_official(official_id)
+        if not official:
+            return jsonify({'success': False, 'error': 'Official not found'}), 404
+
+        # Check if trend data was pre-computed during weekly update
+        if official.get('trades_by_quarter'):
+            return jsonify({
+                'success': True,
+                'official_id': official_id,
+                'name': official.get('name', ''),
+                'trades_by_quarter': official.get('trades_by_quarter', []),
+                'contributions_by_quarter': official.get('contributions_by_quarter', []),
+                'trade_trend': official.get('trade_trend', 'stable'),
+                'has_trend_data': official.get('has_trend_data', False)
+            })
+
+        # Compute trends on-demand if not pre-computed
+        trend_data = compute_official_trends(official)
+
+        return jsonify({
+            'success': True,
+            'official_id': official_id,
+            'name': official.get('name', ''),
+            **trend_data
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting trends for {official_id}: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @electwatch_bp.route('/api/firm/<firm_name>')
@@ -1294,6 +1353,103 @@ def api_freshness():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@electwatch_bp.route('/api/trends/aggregate')
+def api_aggregate_trends():
+    """
+    Get aggregate trend data across all officials for dashboard charts.
+
+    Returns quarterly aggregated totals for all trading and contribution activity,
+    plus breakdowns by party and chamber.
+
+    Response:
+    {
+        "success": true,
+        "total_trades_by_quarter": [...],
+        "total_contributions_by_quarter": [...],
+        "by_party": {"R": [...], "D": [...]},
+        "by_chamber": {"house": [...], "senate": [...]}
+    }
+    """
+    try:
+        from collections import defaultdict
+        from justdata.apps.electwatch.services.data_store import get_officials
+
+        officials = get_officials()
+
+        # Aggregate across all officials
+        total_trades = defaultdict(lambda: {'purchases': 0, 'sales': 0, 'count': 0})
+        total_contribs = defaultdict(lambda: {'amount': 0, 'count': 0})
+
+        # By party and chamber breakdowns
+        by_party_trades = {
+            'R': defaultdict(lambda: {'purchases': 0, 'sales': 0, 'count': 0}),
+            'D': defaultdict(lambda: {'purchases': 0, 'sales': 0, 'count': 0})
+        }
+        by_chamber_trades = {
+            'house': defaultdict(lambda: {'purchases': 0, 'sales': 0, 'count': 0}),
+            'senate': defaultdict(lambda: {'purchases': 0, 'sales': 0, 'count': 0})
+        }
+
+        for official in officials:
+            party = official.get('party', '').upper()
+            if party not in ('R', 'D'):
+                party = 'R' if 'REP' in party else 'D' if 'DEM' in party else None
+
+            chamber = official.get('chamber', '').lower()
+
+            # Aggregate trades by quarter
+            for q in official.get('trades_by_quarter', []):
+                quarter = q.get('quarter', '')
+                total_trades[quarter]['purchases'] += q.get('purchases', 0)
+                total_trades[quarter]['sales'] += q.get('sales', 0)
+                total_trades[quarter]['count'] += q.get('count', 0)
+
+                if party and party in by_party_trades:
+                    by_party_trades[party][quarter]['purchases'] += q.get('purchases', 0)
+                    by_party_trades[party][quarter]['sales'] += q.get('sales', 0)
+                    by_party_trades[party][quarter]['count'] += q.get('count', 0)
+
+                if chamber in by_chamber_trades:
+                    by_chamber_trades[chamber][quarter]['purchases'] += q.get('purchases', 0)
+                    by_chamber_trades[chamber][quarter]['sales'] += q.get('sales', 0)
+                    by_chamber_trades[chamber][quarter]['count'] += q.get('count', 0)
+
+            # Aggregate contributions by quarter
+            for q in official.get('contributions_by_quarter', []):
+                quarter = q.get('quarter', '')
+                total_contribs[quarter]['amount'] += q.get('amount', 0)
+                total_contribs[quarter]['count'] += q.get('count', 0)
+
+        # Convert to sorted lists
+        def to_sorted_list(data_dict):
+            result = []
+            for quarter, data in sorted(data_dict.items(), key=lambda x: (
+                int(x[0].split()[1]) if x[0] and len(x[0].split()) > 1 else 0,
+                int(x[0][1]) if x[0] and len(x[0]) > 1 else 0
+            )):
+                result.append({'quarter': quarter, **data})
+            return result
+
+        return jsonify({
+            'success': True,
+            'total_trades_by_quarter': to_sorted_list(total_trades),
+            'total_contributions_by_quarter': to_sorted_list(total_contribs),
+            'by_party': {
+                'R': to_sorted_list(by_party_trades['R']),
+                'D': to_sorted_list(by_party_trades['D'])
+            },
+            'by_chamber': {
+                'house': to_sorted_list(by_chamber_trades['house']),
+                'senate': to_sorted_list(by_chamber_trades['senate'])
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting aggregate trends: {e}")
+        import traceback
+        return jsonify({'success': False, 'error': str(e), 'traceback': traceback.format_exc()}), 500
+
+
 @electwatch_bp.route('/api/insights')
 def api_insights():
     """Insights API endpoint."""
@@ -1633,6 +1789,161 @@ def api_admin_delete_official_merge():
 
     from justdata.apps.electwatch.services.mapping_store import delete_official_merge
     result = delete_official_merge(canonical)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/mappings/officials/potential-duplicates')
+def api_admin_potential_duplicate_officials():
+    """
+    Find potential duplicate officials - officials with the same last name but different first names.
+    This helps identify cases like "Rick Allen" vs "Allen, Rick" that may need to be confirmed as
+    the same or different people.
+    """
+    user_type = get_user_type()
+    if user_type not in ('admin', 'staff'):
+        return jsonify({'error': 'Admin/staff access required'}), 403
+
+    from justdata.apps.electwatch.services.data_store import get_officials
+    from justdata.apps.electwatch.services.mapping_store import get_official_merges, get_distinct_officials
+    from collections import defaultdict
+
+    officials = get_officials()
+    existing_merges = get_official_merges()
+    distinct_pairs = get_distinct_officials()  # Pairs confirmed as different people
+
+    # Create lookup for existing merge aliases
+    merged_aliases = set()
+    for merge in existing_merges:
+        for alias in merge.get('aliases', []):
+            merged_aliases.add(alias.lower())
+
+    # Create lookup for distinct pairs
+    distinct_set = set()
+    for pair in distinct_pairs:
+        # Store both directions
+        key1 = (pair['official1'].lower(), pair['official2'].lower())
+        key2 = (pair['official2'].lower(), pair['official1'].lower())
+        distinct_set.add(key1)
+        distinct_set.add(key2)
+
+    # Group officials by last name
+    by_last_name = defaultdict(list)
+    for official in officials:
+        name = official.get('name', '')
+        if not name:
+            continue
+
+        # Parse name - handle both "First Last" and "Last, First" formats
+        name_clean = name.strip()
+        if ',' in name_clean:
+            # "Last, First" format
+            parts = [p.strip() for p in name_clean.split(',', 1)]
+            if len(parts) == 2:
+                last_name = parts[0].upper()
+                first_name = parts[1].split()[0].upper() if parts[1] else ''
+            else:
+                last_name = name_clean.split()[-1].upper() if name_clean.split() else ''
+                first_name = name_clean.split()[0].upper() if len(name_clean.split()) > 1 else ''
+        else:
+            # "First Last" format
+            parts = name_clean.split()
+            if len(parts) >= 2:
+                last_name = parts[-1].upper()
+                first_name = parts[0].upper()
+            else:
+                last_name = name_clean.upper()
+                first_name = ''
+
+        if last_name:
+            by_last_name[last_name].append({
+                'name': name,
+                'first_name': first_name,
+                'last_name': last_name,
+                'id': official.get('id', ''),
+                'bioguide_id': official.get('bioguide_id', ''),
+                'state': official.get('state', ''),
+                'party': official.get('party', ''),
+                'chamber': official.get('chamber', '')
+            })
+
+    # Find groups with multiple officials (potential duplicates)
+    potential_duplicates = []
+    for last_name, group in by_last_name.items():
+        if len(group) < 2:
+            continue
+
+        # Check if any pair in this group hasn't been handled yet
+        unresolved_pairs = []
+        for i, o1 in enumerate(group):
+            for o2 in group[i + 1:]:
+                # Skip if already merged
+                if o1['name'].lower() in merged_aliases or o2['name'].lower() in merged_aliases:
+                    continue
+
+                # Skip if confirmed as distinct
+                pair_key = (o1['name'].lower(), o2['name'].lower())
+                if pair_key in distinct_set:
+                    continue
+
+                # Use BioGuide IDs to definitively determine if same/different person
+                bio1 = o1.get('bioguide_id', '').strip()
+                bio2 = o2.get('bioguide_id', '').strip()
+
+                # If both have BioGuide IDs and they're different, these are definitely different people
+                if bio1 and bio2 and bio1 != bio2:
+                    continue  # Skip - confirmed different people by BioGuide
+
+                # If different chambers (Senator vs Representative) with different states, different people
+                chamber1 = o1.get('chamber', '').lower()
+                chamber2 = o2.get('chamber', '').lower()
+                state1 = o1.get('state', '').upper()
+                state2 = o2.get('state', '').upper()
+
+                # Different states = different people (unless same BioGuide which means they moved)
+                if state1 and state2 and state1 != state2 and not (bio1 and bio2 and bio1 == bio2):
+                    continue  # Skip - different states, clearly different people
+
+                # Determine match confidence
+                same_bioguide = bio1 == bio2 if bio1 and bio2 else None
+                confidence = 'high' if same_bioguide else ('medium' if chamber1 == chamber2 and state1 == state2 else 'low')
+
+                # This is an unresolved potential duplicate
+                unresolved_pairs.append({
+                    'official1': o1,
+                    'official2': o2,
+                    'same_bioguide': same_bioguide,
+                    'confidence': confidence,
+                    'reason': 'Same BioGuide ID' if same_bioguide else f'Same last name, {state1 or "unknown state"}'
+                })
+
+        if unresolved_pairs:
+            potential_duplicates.extend(unresolved_pairs)
+
+    return jsonify({
+        'potential_duplicates': potential_duplicates,
+        'count': len(potential_duplicates)
+    })
+
+
+@electwatch_bp.route('/api/admin/mappings/officials/mark-distinct', methods=['POST'])
+def api_admin_mark_officials_distinct():
+    """
+    Mark two officials as distinct (confirmed different people, not duplicates).
+    This prevents them from being shown as potential duplicates in the future.
+    """
+    user_type = get_user_type()
+    if user_type not in ('admin', 'staff'):
+        return jsonify({'error': 'Admin/staff access required'}), 403
+
+    data = request.get_json()
+    official1 = data.get('official1')
+    official2 = data.get('official2')
+
+    if not official1 or not official2:
+        return jsonify({'success': False, 'error': 'Both official1 and official2 required'})
+
+    from justdata.apps.electwatch.services.mapping_store import add_distinct_officials
+    result = add_distinct_officials(official1, official2)
     return jsonify(result)
 
 

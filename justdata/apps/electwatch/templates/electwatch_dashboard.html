@@ -431,11 +431,23 @@
             opacity: 1;
         }
 
+        /* Admin-only nav tabs */
+        .nav-tab.admin-nav-tab {
+            border-left: 1px solid rgba(255,255,255,0.2);
+            margin-left: 8px;
+        }
+        .nav-tab.admin-nav-tab i {
+            color: var(--ew-accent);
+        }
+        .nav-tab.admin-nav-tab.active i {
+            color: var(--ew-accent);
+        }
+
         /* Main Content */
         .main-content {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 24px 32px;
         }
 
         /* Panels */
@@ -481,7 +493,7 @@
         }
 
         .card-body {
-            padding: 20px;
+            padding: 20px 24px;
         }
 
         /* Filters */
@@ -527,15 +539,86 @@
             color: #9ca3af;
         }
 
+        /* Reset Sort Button */
+        .reset-sort-btn {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            background: white;
+            color: var(--ew-neutral-700);
+            font-size: var(--font-size-sm);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .reset-sort-btn:hover {
+            border-color: var(--ew-primary);
+            color: var(--ew-primary);
+            background: rgba(45, 134, 89, 0.05);
+        }
+
+        .reset-sort-btn.visible {
+            display: inline-flex;
+        }
+
+        .reset-sort-btn i {
+            font-size: 0.85em;
+        }
+
+        /* Table Container - Responsive wrapper */
+        .table-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 var(--space-lg);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .card-body .table-container {
+            padding: 0;
+            margin: 0;
+        }
+
+        /* Table wrapper for horizontal scroll on mobile */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin: 0 calc(-1 * var(--space-md));
+            padding: 0 var(--space-md);
+        }
+
+        .table-responsive::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .table-responsive::-webkit-scrollbar-track {
+            background: var(--ew-neutral-200);
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb {
+            background: var(--ew-neutral-500);
+            border-radius: 4px;
+        }
+
+        .table-responsive::-webkit-scrollbar-thumb:hover {
+            background: var(--ew-neutral-700);
+        }
+
         /* Leaderboard Table */
         .leaderboard-table {
             width: 100%;
+            min-width: 800px;
             border-collapse: collapse;
+            table-layout: auto;
         }
 
         .leaderboard-table th,
         .leaderboard-table td {
-            padding: 12px 16px;
+            padding: 10px 12px;
             text-align: left;
             border-bottom: 1px solid #e5e7eb;
         }
@@ -888,9 +971,11 @@
             line-height: 1;
         }
 
-        .trend-arrow.up { color: var(--ncrc-red); }
-        .trend-arrow.down { color: var(--ncrc-green); }
-        .trend-arrow.stable { color: var(--ncrc-gray); }
+        /* Trend arrow colors based on score change in last 6 months */
+        .trend-arrow.up { color: var(--ew-success); }      /* Green - score increased */
+        .trend-arrow.down { color: var(--ew-error); }      /* Red - score decreased */
+        .trend-arrow.stable { color: var(--ncrc-gray); }   /* Gray - no change */
+        .trend-arrow.no-data { color: var(--ncrc-gray); }  /* Gray - no trend data available */
 
         .stock-indicator {
             font-size: 0.8rem;
@@ -1185,42 +1270,6 @@
             text-decoration: underline;
         }
 
-        .support-links {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-left: auto;
-            padding-left: 20px;
-        }
-
-        .support-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            background: rgba(255, 255, 255, 0.15);
-            border-radius: 6px;
-            color: white !important;
-            text-decoration: none !important;
-            transition: all 0.2s ease;
-            font-size: 0.8rem;
-            white-space: nowrap;
-        }
-
-        .support-link:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
-            text-decoration: none !important;
-        }
-
-        .support-link i {
-            font-size: 1rem;
-        }
-
-        .slack-link i {
-            color: #E01E5A;
-        }
-
         /* Admin Navigation Buttons */
         .nav-admin-buttons {
             display: flex;
@@ -1462,8 +1511,54 @@
             margin-top: 4px;
         }
 
+        /* Responsive Column Visibility Classes */
+        .col-hide-xl { } /* visible on all screens */
+        .col-hide-lg { } /* visible on large and up */
+        .col-hide-md { } /* visible on medium and up */
+        .col-hide-sm { } /* visible on small and up */
+
+        /* Large screens (1200px and below) - hide least important columns */
+        @media (max-width: 1200px) {
+            .col-hide-xl {
+                display: none !important;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 8px 10px;
+            }
+        }
+
+        /* Medium screens (992px and below) */
+        @media (max-width: 992px) {
+            .col-hide-lg {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 16px;
+            }
+
+            .card-body {
+                padding: 16px;
+            }
+
+            .leaderboard-table {
+                min-width: 700px;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 8px;
+            }
+        }
+
         /* Mobile Responsiveness */
         @media (max-width: 768px) {
+            .col-hide-md {
+                display: none !important;
+            }
+
             .header-content {
                 flex-direction: column;
                 align-items: stretch;
@@ -1492,13 +1587,40 @@
                 display: none;
             }
 
-            .leaderboard-table {
-                font-size: 0.85rem;
+            .main-content {
+                padding: 12px;
             }
 
-            .leaderboard-table th:nth-child(n+4),
-            .leaderboard-table td:nth-child(n+4) {
-                display: none;
+            .card-body {
+                padding: 12px;
+            }
+
+            /* Table responsive wrapper shows scroll indicator */
+            .table-responsive {
+                margin: 0 -12px;
+                padding: 0 12px;
+                position: relative;
+            }
+
+            .table-responsive::after {
+                content: '';
+                position: absolute;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                width: 24px;
+                background: linear-gradient(to right, transparent, rgba(0,0,0,0.05));
+                pointer-events: none;
+            }
+
+            .leaderboard-table {
+                font-size: 0.8rem;
+                min-width: 600px;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 6px 8px;
             }
 
             .card-header {
@@ -1512,6 +1634,58 @@
 
             .sector-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .official-cell {
+                gap: 8px;
+            }
+
+            .official-photo {
+                width: 32px;
+                height: 32px;
+            }
+
+            .amount-cell {
+                min-width: 70px;
+            }
+        }
+
+        /* Extra small screens (480px and below) */
+        @media (max-width: 480px) {
+            .col-hide-sm {
+                display: none !important;
+            }
+
+            .main-content {
+                padding: 8px;
+            }
+
+            .card-body {
+                padding: 8px;
+            }
+
+            .leaderboard-table {
+                font-size: 0.75rem;
+                min-width: 450px;
+            }
+
+            .leaderboard-table th,
+            .leaderboard-table td {
+                padding: 4px 6px;
+            }
+
+            .official-photo {
+                width: 28px;
+                height: 28px;
+            }
+
+            .filters {
+                flex-direction: column;
+            }
+
+            .filter-select,
+            .search-input {
+                width: 100%;
             }
         }
 
@@ -2531,29 +2705,47 @@
                         <i class="fas fa-scroll"></i>
                         <span>Bill Lookup</span>
                     </button>
+                    <!-- Admin-only tabs (hidden by default, shown via JS for admin users) -->
+                    <button class="nav-tab admin-nav-tab" data-panel="matching" style="display: none;">
+                        <i class="fas fa-link"></i>
+                        <span>Matching</span>
+                    </button>
+                    <button class="nav-tab admin-nav-tab" data-panel="deduplicate" style="display: none;">
+                        <i class="fas fa-clone"></i>
+                        <span>Deduplicate</span>
+                    </button>
                 </nav>
             </div>
 
             <!-- RIGHT ZONE: User Menu -->
             <div class="header-right">
+                <!-- User Info (shown when logged in) -->
+                <div id="userInfo" style="display: none; align-items: center; gap: 8px;">
+                    <img id="userAvatar" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; display: none;">
+                    <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                        <span id="userEmail" style="color: white; font-size: 13px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                        <span id="userTypeBadge" style="color: #90EE90; font-size: 10px; text-transform: uppercase; font-weight: 600;"></span>
+                    </div>
+                </div>
+
                 <!-- Login Button (shown when NOT logged in) -->
-                <button id="loginBtn" onclick="JustDataAuth.signInWithGoogle()" class="user-avatar-btn">
-                    <i class="fab fa-google"></i>
-                    <span class="user-name">Sign In</span>
+                <button id="loginBtn" onclick="JustDataAuth.signInWithGoogle()" style="display: inline-flex; align-items: center; gap: 6px; background: white; color: var(--ew-secondary, #3B5998); border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
+                    <i class="fab fa-google" style="font-size: 14px;"></i>
+                    <span>Sign In</span>
                 </button>
 
-                <!-- User Avatar Dropdown (shown when logged in) -->
+                <!-- Logout Button (shown when logged in) -->
+                <button id="logoutBtn" onclick="JustDataAuth.signOut()" style="display: none; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
+                    <i class="fas fa-sign-out-alt" style="font-size: 14px;"></i>
+                    <span>Sign Out</span>
+                </button>
+
+                <!-- User Options Dropdown (additional options when logged in) -->
                 <div id="userMenu" class="user-menu" style="display: none;">
-                    <button class="user-avatar-btn" onclick="toggleUserDropdown()">
-                        <img id="userAvatar" src="" alt="" onerror="this.style.display='none'">
-                        <span id="userDisplayName" class="user-name"></span>
-                        <i class="fas fa-chevron-down" style="font-size: 10px; opacity: 0.7;"></i>
+                    <button class="user-avatar-btn" onclick="toggleUserDropdown()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);">
+                        <i class="fas fa-ellipsis-v" style="color: white;"></i>
                     </button>
                     <div id="userDropdown" class="user-dropdown">
-                        <div class="user-dropdown-header">
-                            <div id="userDropdownEmail" class="user-dropdown-email"></div>
-                            <span id="userDropdownBadge" class="user-dropdown-badge"></span>
-                        </div>
                         {% if is_staff %}
                         <button class="user-dropdown-item" onclick="refreshElectWatchData(); toggleUserDropdown();">
                             <i class="fas fa-sync-alt"></i>
@@ -2566,22 +2758,18 @@
                             Data Mapper
                         </button>
                         {% endif %}
-                        <div class="user-dropdown-divider"></div>
                         <a href="/" class="user-dropdown-item">
                             <i class="fas fa-th-large"></i>
                             All JustData Apps
                         </a>
-                        <div class="user-dropdown-divider"></div>
-                        <button id="logoutBtn" class="user-dropdown-item" onclick="JustDataAuth.signOut()">
-                            <i class="fas fa-sign-out-alt"></i>
-                            Sign Out
-                        </button>
                     </div>
                 </div>
 
-                <!-- Hamburger Menu for Mobile -->
-                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="display: none; background: none; border: none; cursor: pointer; padding: 8px;">
-                    <i class="fas fa-bars" style="font-size: 20px; color: white;"></i>
+                <!-- Hamburger Menu -->
+                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 5px;">
+                    <span style="display: block; width: 24px; height: 3px; background: white; border-radius: 2px;"></span>
+                    <span style="display: block; width: 24px; height: 3px; background: white; border-radius: 2px;"></span>
+                    <span style="display: block; width: 24px; height: 3px; background: white; border-radius: 2px;"></span>
                 </button>
             </div>
         </div>
@@ -2630,14 +2818,6 @@
                     <span id="committee-status" class="source-status"></span>
                     <i class="fas fa-info-circle source-info-icon"></i>
                 </div>
-            </div>
-            <div class="support-links">
-                <a href="mailto:research@ncrc.org" class="support-link" title="Email Support">
-                    <i class="fas fa-envelope"></i> Email
-                </a>
-                <a href="https://ncrcgroup.slack.com/archives/C0A0BBWRT36" class="support-link slack-link" target="_blank" title="JustData Staff Slack Channel">
-                    <i class="fab fa-slack"></i> Slack
-                </a>
             </div>
         </div>
     </div>
@@ -2707,9 +2887,13 @@
                             <option value="{{ code }}">{{ info.name }}</option>
                             {% endfor %}
                         </select>
+                        <button type="button" class="reset-sort-btn" id="reset-sort-btn" title="Reset to default sort (by score)">
+                            <i class="fas fa-undo"></i> Reset Sort
+                        </button>
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="leaderboard-table">
                         <thead>
                             <!-- Group header row -->
@@ -2750,12 +2934,12 @@
                                 </th>
                                 <th style="width: 180px;">
                                     <span class="header-tooltip">
-                                        Top Donors
+                                        Top Firms
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Top contributing companies (PAC + employee contributions combined).<br>
-                                            Hover for details including stock overlap.
-                                            <span class="tooltip-source">Method: Aggregated by company</span>
+                                            Top financial firms by stock trading activity.<br>
+                                            Shows companies this official trades most actively.
+                                            <span class="tooltip-source">Source: STOCK Act disclosures</span>
                                         </span>
                                     </span>
                                 </th>
@@ -2827,6 +3011,7 @@
                             <!-- Populated by JavaScript -->
                         </tbody>
                     </table>
+                    </div>
                     <div id="leaderboard-loading" class="loading">Loading officials...</div>
                 </div>
             </div>
@@ -3140,6 +3325,7 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="leaderboard-table" id="firms-table">
                         <thead>
                             <tr>
@@ -3155,6 +3341,7 @@
                             <!-- Populated by JavaScript -->
                         </tbody>
                     </table>
+                    </div>
                     <div id="firms-loading" class="loading">Loading firms...</div>
                 </div>
             </div>
@@ -3336,6 +3523,8 @@
         </div>
 
         {% if is_admin %}
+        <!-- Admin Matching Panel --><div id="matching" class="panel"><div class="card"><div class="card-header"><h2><i class="fas fa-link"></i> Match Firms & Officials</h2><span style="font-size:0.85rem;color:var(--ncrc-gray);">Link entities across data sources</span></div><div class="card-body"><div class="admin-tabs"><button class="admin-tab active" data-matching-panel="firm-matching"><i class="fas fa-building"></i> Firm Matching</button><button class="admin-tab" data-matching-panel="official-matching"><i class="fas fa-user-tie"></i> Official Matching</button><button class="admin-tab" data-matching-panel="pac-matching"><i class="fas fa-hand-holding-usd"></i> PAC Matching</button></div><div id="matching-firm-matching" class="admin-panel active"><div class="admin-section"><h3><i class="fas fa-building"></i> Match Firm Names</h3><p class="admin-description">Link firm name variations to canonical firm records.</p><div class="mapping-form" style="margin-top:15px;"><div class="form-group"><label>Search:</label><input type="text" id="firm-match-search" class="admin-input" placeholder="e.g., Goldman..." oninput="searchUnmatchedFirmsMatching()"></div><div id="unmatched-firms-results" class="existing-mappings" style="max-height:300px;overflow-y:auto;"><p style="color:var(--ncrc-gray);font-style:italic;">Enter search term</p></div></div><div class="mapping-form" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--ew-neutral-200);"><h4><i class="fas fa-link"></i> Create Match</h4><div class="form-group"><label>Canonical Firm:</label><select id="match-target-firm" class="admin-select"><option value="">-- Select --</option></select></div><div class="form-group"><label>Name Variation:</label><input type="text" id="match-source-name" class="admin-input" placeholder="e.g., GOLDMAN SACHS & CO"></div><div class="form-group"><label>Source:</label><select id="match-source-type" class="admin-select"><option value="fec_employer">FEC Employer</option><option value="fec_pac">FEC PAC</option><option value="sec_filing">SEC Filing</option><option value="other">Other</option></select></div><button onclick="createFirmMatch()" class="admin-btn primary"><i class="fas fa-save"></i> Save</button></div></div></div><div id="matching-official-matching" class="admin-panel"><div class="admin-section"><h3><i class="fas fa-user-tie"></i> Match Official Names</h3><p class="admin-description">Link official name variations to canonical records.</p><div class="mapping-form" style="margin-top:15px;"><div class="form-group"><label>Search:</label><input type="text" id="official-match-search" class="admin-input" placeholder="e.g., Cruz..." oninput="searchUnmatchedOfficialsMatching()"></div><div id="unmatched-officials-results" class="existing-mappings" style="max-height:300px;overflow-y:auto;"><p style="color:var(--ncrc-gray);font-style:italic;">Enter search term</p></div></div><div class="mapping-form" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--ew-neutral-200);"><h4><i class="fas fa-link"></i> Create Match</h4><div class="form-group"><label>Canonical Official:</label><select id="match-target-official" class="admin-select"><option value="">-- Select --</option></select></div><div class="form-group"><label>Name Variation:</label><input type="text" id="match-source-official" class="admin-input" placeholder="e.g., CRUZ, RAFAEL E"></div><button onclick="createOfficialMatch()" class="admin-btn primary"><i class="fas fa-save"></i> Save</button></div></div></div><div id="matching-pac-matching" class="admin-panel"><div class="admin-section"><h3><i class="fas fa-hand-holding-usd"></i> Match PACs to Firms</h3><p class="admin-description">Link PACs to parent companies.</p><div class="mapping-form" style="margin-top:15px;"><div class="form-group"><label>Search PACs:</label><input type="text" id="pac-match-search" class="admin-input" placeholder="e.g., GOLDMAN..." oninput="searchUnmatchedPACsMatching()"></div><div id="unmatched-pacs-results" class="existing-mappings" style="max-height:300px;overflow-y:auto;"><p style="color:var(--ncrc-gray);font-style:italic;">Enter search term</p></div></div><div class="mapping-form" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--ew-neutral-200);"><h4><i class="fas fa-link"></i> Link PAC</h4><div class="form-group"><label>PAC Name:</label><input type="text" id="pac-name-input" class="admin-input"></div><div class="form-group"><label>Parent Firm:</label><select id="pac-parent-firm" class="admin-select"><option value="">-- Select --</option></select></div><div class="form-group"><label>Industry:</label><select id="pac-industry" class="admin-select"><option value="">-- Select --</option><option value="commercial_banking">Commercial Banking</option><option value="investment_banking">Investment Banking</option><option value="insurance">Insurance</option><option value="other_financial">Other Financial</option></select></div><button onclick="createPACMatch()" class="admin-btn primary"><i class="fas fa-save"></i> Save</button></div></div></div></div></div></div>
+        <!-- Admin Deduplication Panel --><div id="deduplicate" class="panel"><div class="card"><div class="card-header"><h2><i class="fas fa-clone"></i> Deduplication Tools</h2><span style="font-size:0.85rem;color:var(--ncrc-gray);">Find and merge duplicates</span></div><div class="card-body"><div class="admin-tabs"><button class="admin-tab active" data-dedup-panel="official-dedup"><i class="fas fa-user-friends"></i> Officials</button><button class="admin-tab" data-dedup-panel="firm-dedup"><i class="fas fa-building"></i> Firms</button><button class="admin-tab" data-dedup-panel="transaction-dedup"><i class="fas fa-exchange-alt"></i> Transactions</button></div><div id="dedup-official-dedup" class="admin-panel active"><div class="admin-section"><h3><i class="fas fa-user-friends"></i> Duplicate Officials</h3><p class="admin-description">Detect duplicates by name similarity.</p><div style="margin:15px 0;"><button onclick="scanForDuplicateOfficials()" class="admin-btn primary"><i class="fas fa-search"></i> Scan</button><span id="dedup-official-scan-status" style="margin-left:10px;"></span></div><div id="duplicate-officials-container" class="existing-mappings" style="max-height:400px;overflow-y:auto;"><p style="color:var(--ncrc-gray);font-style:italic;">Click Scan</p></div></div><div class="admin-section" style="margin-top:20px;border-top:1px solid var(--ew-neutral-200);padding-top:20px;"><h3><i class="fas fa-history"></i> Merge History</h3><div id="official-merge-history" class="existing-mappings"><p style="color:var(--ncrc-gray);font-style:italic;">Loading...</p></div></div></div><div id="dedup-firm-dedup" class="admin-panel"><div class="admin-section"><h3><i class="fas fa-building"></i> Duplicate Firms</h3><p class="admin-description">Find duplicates by name/ticker.</p><div style="margin:15px 0;"><button onclick="scanForDuplicateFirms()" class="admin-btn primary"><i class="fas fa-search"></i> Scan</button><span id="dedup-firm-scan-status" style="margin-left:10px;"></span></div><div id="duplicate-firms-container" class="existing-mappings" style="max-height:400px;overflow-y:auto;"><p style="color:var(--ncrc-gray);font-style:italic;">Click Scan</p></div></div><div class="admin-section" style="margin-top:20px;border-top:1px solid var(--ew-neutral-200);padding-top:20px;"><h3><i class="fas fa-history"></i> Merge History</h3><div id="firm-merge-history" class="existing-mappings"><p style="color:var(--ncrc-gray);font-style:italic;">Loading...</p></div></div></div><div id="dedup-transaction-dedup" class="admin-panel"><div class="admin-section"><h3><i class="fas fa-exchange-alt"></i> Duplicate Transactions</h3><p class="admin-description">Find duplicate trades/contributions.</p><div class="mapping-form" style="margin:15px 0;"><div class="form-group"><label>Type:</label><select id="dedup-transaction-type" class="admin-select"><option value="stock_trades">Stock Trades</option><option value="pac_contributions">PAC Contributions</option></select></div><div class="form-group"><label>Range:</label><select id="dedup-date-range" class="admin-select"><option value="90">90 days</option><option value="365" selected>1 year</option><option value="all">All</option></select></div><button onclick="scanForDuplicateTransactions()" class="admin-btn primary"><i class="fas fa-search"></i> Scan</button></div><div id="duplicate-transactions-container" class="existing-mappings" style="max-height:400px;overflow-y:auto;"><p style="color:var(--ncrc-gray);font-style:italic;">Select and scan</p></div></div></div></div></div></div>
         <!-- Admin Data Mapper Panel -->
         <div id="admin" class="panel">
             <div class="card">
@@ -3642,6 +3831,39 @@
     </footer>
 
     <script>
+        /**
+         * Format official name consistently as "Last, First" format.
+         * Handles various input formats:
+         * - "First Last" -> "Last, First"
+         * - "Last, First" -> "Last, First" (unchanged)
+         * - "First Middle Last" -> "Last, First Middle"
+         * - "First M. Last" -> "Last, First M."
+         */
+        function formatDisplayName(name) {
+            if (!name) return '';
+
+            // Check if already in "Last, First" format
+            if (name.includes(',')) {
+                // Already has comma - return as-is (already formatted correctly)
+                return name.trim();
+            }
+
+            // Split into parts
+            const parts = name.trim().split(/\s+/);
+
+            if (parts.length === 1) {
+                // Single name, return as-is
+                return parts[0];
+            }
+
+            // Last name is the final part
+            const lastName = parts[parts.length - 1];
+            // First/middle names are everything else
+            const firstNames = parts.slice(0, -1).join(' ');
+
+            return `${lastName}, ${firstNames}`;
+        }
+
         // Tab Navigation
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -3654,8 +3876,9 @@
             });
         });
 
-        // Sorting state
-        let currentSort = { field: 'financial_pac', order: 'desc' };
+        // Sorting state - default to score (involvement_score) descending for highest scores first
+        const DEFAULT_SORT = { field: 'score', order: 'desc' };
+        let currentSort = { field: DEFAULT_SORT.field, order: DEFAULT_SORT.order };
         let allOfficials = [];
 
         // Load Leaderboard Data
@@ -3701,51 +3924,65 @@
 
                 switch (currentSort.field) {
                     case 'name':
-                        // Sort by last name (extract last word of name)
-                        const aLastName = (a.name || '').split(' ').pop().toLowerCase();
-                        const bLastName = (b.name || '').split(' ').pop().toLowerCase();
+                        // Sort by last name, handling "Last, First" format and empty names
+                        const aName = (a.name || '').trim();
+                        const bName = (b.name || '').trim();
+                        const aLastName = aName.includes(',') ? aName.split(',')[0].trim().toLowerCase() : aName.split(' ').filter(p => p).pop()?.toLowerCase() || '';
+                        const bLastName = bName.includes(',') ? bName.split(',')[0].trim().toLowerCase() : bName.split(' ').filter(p => p).pop()?.toLowerCase() || '';
+                        if (!aLastName && bLastName) return 1;
+                        if (aLastName && !bLastName) return -1;
+                        if (!aLastName && !bLastName) return 0;
                         const nameCompare = aLastName.localeCompare(bLastName);
                         return currentSort.order === 'desc' ? -nameCompare : nameCompare;
+                    case 'total_contributions':
                     case 'contributions':
-                        // Sort by total PAC contributions
-                        aVal = a.contributions || 0;
-                        bVal = b.contributions || 0;
+                        // Sort by total contributions (all sources)
+                        aVal = a.contributions;
+                        bVal = b.contributions;
                         break;
+                    case 'finance_contributions':
                     case 'financial_pac':
-                        // Sort by financial sector PAC specifically
-                        aVal = a.financial_sector_pac || 0;
-                        bVal = b.financial_sector_pac || 0;
+                        // Sort by financial sector contributions specifically
+                        aVal = a.financial_sector_pac;
+                        bVal = b.financial_sector_pac;
                         break;
                     case 'financial_pct':
-                        // Sort by percentage of PAC from financial sector
+                        // Sort by percentage of contributions from financial sector
                         const aTotalPac = a.contributions || 0;
                         const aFinPac = a.financial_sector_pac || 0;
-                        aVal = aTotalPac > 0 ? (aFinPac / aTotalPac) * 100 : 0;
+                        aVal = aTotalPac > 0 ? (aFinPac / aTotalPac) * 100 : null;
                         const bTotalPac = b.contributions || 0;
                         const bFinPac = b.financial_sector_pac || 0;
-                        bVal = bTotalPac > 0 ? (bFinPac / bTotalPac) * 100 : 0;
+                        bVal = bTotalPac > 0 ? (bFinPac / bTotalPac) * 100 : null;
                         break;
                     case 'score':
-                        aVal = a.involvement_score || 0;
-                        bVal = b.involvement_score || 0;
+                        aVal = a.involvement_score;
+                        bVal = b.involvement_score;
                         break;
                     case 'trades':
-                        aVal = a.total_trades || 0;
-                        bVal = b.total_trades || 0;
+                        aVal = a.total_trades;
+                        bVal = b.total_trades;
                         break;
                     case 'buys':
-                        aVal = a.purchases_max || 0;
-                        bVal = b.purchases_max || 0;
+                        aVal = a.purchases_max;
+                        bVal = b.purchases_max;
                         break;
                     case 'sells':
-                        aVal = a.sales_max || 0;
-                        bVal = b.sales_max || 0;
+                        aVal = a.sales_max;
+                        bVal = b.sales_max;
                         break;
                     default:
                         // Default sort by score
-                        aVal = a.involvement_score || 0;
-                        bVal = b.involvement_score || 0;
+                        aVal = a.involvement_score;
+                        bVal = b.involvement_score;
                 }
+
+                // Handle null/undefined/NaN values - always sort them to the end
+                const aIsNull = aVal === null || aVal === undefined || (typeof aVal === 'number' && isNaN(aVal));
+                const bIsNull = bVal === null || bVal === undefined || (typeof bVal === 'number' && isNaN(bVal));
+                if (aIsNull && bIsNull) return 0;
+                if (aIsNull) return 1;
+                if (bIsNull) return -1;
 
                 return currentSort.order === 'desc' ? bVal - aVal : aVal - bVal;
             });
@@ -3763,6 +4000,20 @@
                     th.classList.add(currentSort.order === 'asc' ? 'sort-asc' : 'sort-desc');
                 }
             });
+
+            // Show/hide reset sort button based on whether sort differs from default
+            const resetBtn = document.getElementById('reset-sort-btn');
+            if (resetBtn) {
+                const isDefault = currentSort.field === DEFAULT_SORT.field && currentSort.order === DEFAULT_SORT.order;
+                resetBtn.classList.toggle('visible', !isDefault);
+            }
+        }
+
+        // Reset sort to default
+        function resetSort() {
+            currentSort.field = DEFAULT_SORT.field;
+            currentSort.order = DEFAULT_SORT.order;
+            sortAndRenderLeaderboard();
         }
 
         // Column sort click handler
@@ -3781,6 +4032,12 @@
                     sortAndRenderLeaderboard();
                 });
             });
+
+            // Reset sort button click handler
+            const resetSortBtn = document.getElementById('reset-sort-btn');
+            if (resetSortBtn) {
+                resetSortBtn.addEventListener('click', resetSort);
+            }
         });
 
         function renderLeaderboard(officials) {
@@ -3806,7 +4063,7 @@
                                 <div class="party-indicator ${official.party}">${official.party}</div>
                             </div>
                             <div class="official-info">
-                                <a href="official/${official.id}" class="official-name">${official.name}</a>
+                                <a href="official/${official.id}" class="official-name">${formatDisplayName(official.name)}</a>
                                 <span class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}${official.district ? '-' + official.district : ''}</span>
                             </div>
                         </div>
@@ -3960,7 +4217,7 @@
 
             // Determine which trend to display (prioritize actual trade data)
             let trendDirection = hasTrendData ? tradeTrend : financeTrend;
-            let trendArrow = '►';  // stable default
+            let trendArrow = '\u2192';  // Unicode RIGHT arrow - stable/no change default
 
             // For time-series trade data, use arrow based on recent activity
             if (hasTrendData) {
@@ -3970,24 +4227,43 @@
                     const recentNet = recent.reduce((sum, q) => sum + (q.net || 0), 0);
                     if (recentNet > 10000) {
                         trendDirection = 'increasing';
-                        trendArrow = '▲';
+                        trendArrow = '\u2191';  // Unicode UP arrow
                     } else if (recentNet < -10000) {
                         trendDirection = 'decreasing';
-                        trendArrow = '▼';
+                        trendArrow = '\u2193';  // Unicode DOWN arrow
                     }
                 }
             } else {
-                // Use snapshot-based arrows
-                trendArrow = official.finance_trend_arrow || '►';
+                // Use snapshot-based arrows - convert to Unicode arrows
+                const snapshotArrow = official.finance_trend_arrow;
+                if (snapshotArrow === '\u25B2' || snapshotArrow === '▲') {
+                    trendArrow = '\u2191';  // UP arrow
+                    trendDirection = 'increasing';
+                } else if (snapshotArrow === '\u25BC' || snapshotArrow === '▼') {
+                    trendArrow = '\u2193';  // DOWN arrow
+                    trendDirection = 'decreasing';
+                } else {
+                    trendArrow = '\u2192';  // RIGHT arrow for stable
+                }
             }
 
             const stockDirection = official.stock_trend_direction || 'neutral';
             const stockIcon = official.stock_trend_icon || '';
 
-            // Map trend direction to CSS class
-            let trendClass = 'stable';
-            if (trendDirection === 'increasing') trendClass = 'up';
-            else if (trendDirection === 'decreasing') trendClass = 'down';
+            // Check if no trend data is available
+            const noTrendData = !hasTrendData && !official.finance_trend_direction && !official.finance_pct_change && !official.finance_trend_arrow;
+
+            // Map trend direction to CSS class and set appropriate title
+            let trendClass = noTrendData ? 'no-data' : 'stable';
+            let trendTitle = noTrendData ? 'No trend data available' : 'No significant change in last 6 months';
+            if (noTrendData) { trendArrow = '-'; }
+            else if (trendDirection === 'increasing') {
+                trendClass = 'up';
+                trendTitle = 'Score increased in last 6 months';
+            } else if (trendDirection === 'decreasing') {
+                trendClass = 'down';
+                trendTitle = 'Score decreased in last 6 months';
+            }
 
             // Map stock direction to CSS class
             let stockClass = '';
@@ -3999,7 +4275,7 @@
 
             return `
                 <div class="trend-indicators" data-tippy-content="${tooltipContent.replace(/"/g, '&quot;')}">
-                    <span class="trend-arrow ${trendClass}" title="${hasTrendData ? 'Trading trend' : 'Finance % trend'}">${trendArrow}</span>
+                    <span class="trend-arrow ${trendClass}" title="${trendTitle}">${trendArrow}</span>
                     ${stockIcon && stockDirection !== 'neutral' ? `<span class="stock-indicator ${stockClass}" title="${official.net_stock_label || 'Stock activity'}">${stockIcon}</span>` : ''}
                 </div>
             `;
@@ -4099,33 +4375,30 @@
         }
 
         function formatTopDonors(official) {
-            // Format top donors as chips with Tippy tooltips
+            // Format top firms as chips with Tippy tooltips
+            // Shows firms the official trades stock in (from STOCK Act disclosures)
             const donors = official.top_donors || [];
 
             if (!donors.length) {
-                // Fallback to top_industries if no donors
-                const industries = official.top_industries || [];
-                if (!industries.length) return '<span style="color: var(--ncrc-gray);">-</span>';
-
-                return industries.map(ind => {
-                    const code = typeof ind === 'object' ? ind.code : ind;
-                    const name = typeof ind === 'object' ? ind.name : ind.replace('_', ' ');
-                    return `<span class="donor-chip">${name}</span>`;
-                }).join('');
+                // No trade data available
+                return '<span style="color: var(--ncrc-gray);">-</span>';
             }
 
             return donors.slice(0, 3).map(donor => {
                 const name = donor.name || donor.company || 'Unknown';
                 const amount = donor.total || donor.amount || 0;
+                const tradeCount = donor.trade_count || 0;
+                const ticker = donor.ticker || '';
                 const hasOverlap = donor.stock_overlap || false;
                 const overlapClass = hasOverlap ? 'has-overlap' : '';
 
-                // Build tooltip with donor details
-                let tooltip = `<strong>${name}</strong><br>`;
-                tooltip += `Total: ${formatDollars(amount)}`;
-                if (donor.pac_amount) tooltip += `<br>PAC: ${formatDollars(donor.pac_amount)}`;
-                if (donor.individual_amount) tooltip += `<br>Individual: ${formatDollars(donor.individual_amount)}`;
-                if (hasOverlap) tooltip += `<br><span style="color: var(--ew-accent);">⚠ Also trades their stock</span>`;
+                // Build tooltip with firm/trade details
+                let tooltip = `<strong>${name}</strong>`;
+                if (ticker) tooltip += ` (${ticker})`;
+                tooltip += `<br>Trade Value: ${formatDollars(amount)}`;
+                if (tradeCount > 0) tooltip += `<br>Trades: ${tradeCount}`;
+                if (donor.pac_amount) tooltip += `<br>PAC Contributions: ${formatDollars(donor.pac_amount)}`;
+                if (donor.individual_amount) tooltip += `<br>Individual Contributions: ${formatDollars(donor.individual_amount)}`;
                 tooltip += `<br><em>Click to view firm details</em>`;
 
                 return `<a href="firm/${encodeURIComponent(name)}" class="donor-chip ${overlapClass}" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();">${truncateName(name)}</a>`;
@@ -4293,7 +4566,7 @@
                     <div class="entity-info">
                         <div class="entity-badge official">${official.party}</div>
                         <div>
-                            <div class="entity-name">${official.name}</div>
+                            <div class="entity-name">${formatDisplayName(official.name)}</div>
                             <div class="entity-meta">${official.state} - ${official.detail || ''}</div>
                         </div>
                     </div>
@@ -4417,10 +4690,11 @@
 
                 // Individual sources - map API field names to display
                 // API returns: fec, fmp (stock trades), congress (committees)
+                // Also pass the specific data windows for date range display
                 if (data.sources) {
-                    updateSourceStatus('fec', data.sources.fec);
-                    updateSourceStatus('stock', data.sources.fmp);  // fmp = STOCK Act trades
-                    updateSourceStatus('committee', data.sources.congress);  // congress = committees
+                    updateSourceStatus('fec', data.sources.fec, data.fec_data_window);
+                    updateSourceStatus('stock', data.sources.fmp, data.stock_data_window);  // fmp = STOCK Act trades
+                    updateSourceStatus('committee', data.sources.congress);  // congress = committees (no date window)
                 }
             } catch (error) {
                 console.error('Error loading freshness data:', error);
@@ -4428,10 +4702,60 @@
             }
         }
 
-        function updateSourceStatus(prefix, source) {
+        function updateSourceStatus(prefix, source, dataWindow) {
             const dateEl = document.getElementById(`${prefix}-date`);
             const statusEl = document.getElementById(`${prefix}-status`);
 
+            // If we have a data window with start and end dates, display the range
+            if (dataWindow && dataWindow.start && dataWindow.end) {
+                // Format: "Jan 2024 - Jan 2026" (shortened for display)
+                const formatShortDate = (dateStr) => {
+                    const date = new Date(dateStr);
+                    if (!isNaN(date.getTime())) {
+                        const options = { month: 'short', year: 'numeric' };
+                        return date.toLocaleDateString('en-US', options);
+                    }
+                    // Fallback: extract month and year from string like "January 20, 2025"
+                    const match = dateStr.match(/(\w+)\s+\d+,\s+(\d{4})/);
+                    if (match) {
+                        return `${match[1].substring(0, 3)} ${match[2]}`;
+                    }
+                    return dateStr;
+                };
+
+                const startShort = formatShortDate(dataWindow.start);
+                const endShort = formatShortDate(dataWindow.end);
+                dateEl.textContent = `${startShort} - ${endShort}`;
+
+                // Build detailed tooltip with full dates
+                let tooltipParts = [];
+                tooltipParts.push(`Data Range: ${dataWindow.start} - ${dataWindow.end}`);
+                if (dataWindow.description) {
+                    tooltipParts.push(dataWindow.description);
+                }
+                if (source && source.timestamp) {
+                    const timestamp = new Date(source.timestamp);
+                    const fullDateOptions = { month: 'long', day: 'numeric', year: 'numeric' };
+                    tooltipParts.push(`Last Updated: ${timestamp.toLocaleDateString('en-US', fullDateOptions)}`);
+                }
+                statusEl.title = tooltipParts.join('\n');
+
+                // Set status indicator based on data freshness
+                if (source && source.timestamp) {
+                    const now = new Date();
+                    const timestamp = new Date(source.timestamp);
+                    const daysSince = Math.floor((now - timestamp) / (1000 * 60 * 60 * 24));
+                    statusEl.classList.remove('stale', 'old');
+                    if (daysSince > 14) {
+                        statusEl.classList.add('old');
+                    } else if (daysSince > 7) {
+                        statusEl.classList.add('stale');
+                    }
+                }
+                return;  // Exit after handling dataWindow
+            }
+
+            // Fallback: show single date (last updated)
             if (source && source.timestamp) {
                 // Parse timestamp and format as readable date with year
                 const timestamp = new Date(source.timestamp);
@@ -4890,7 +5214,8 @@
                 allOfficialsForAdmin.sort((a, b) => a.name.localeCompare(b.name));
 
                 allOfficialsForAdmin.forEach(official => {
-                    const displayName = `${official.name} (${official.state}-${official.chamber === 'senate' ? 'S' : official.district || 'H'})`;
+                    const formattedName = formatDisplayName(official.name);
+                    const displayName = `${formattedName} (${official.state}-${official.chamber === 'senate' ? 'S' : official.district || 'H'})`;
                     canonicalSelect.innerHTML += `<option value="${official.name}">${displayName}</option>`;
                     aliasSelect.innerHTML += `<option value="${official.name}">${displayName}</option>`;
                 });
@@ -5676,6 +6001,36 @@
                 userDropdown.classList.remove('active');
             }
         });
+
+        // Show/hide userMenu (options dropdown) based on auth state
+        // This supplements auth.js which handles userInfo, loginBtn, logoutBtn
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if we have staff/admin options to show
+            const userMenu = document.getElementById('userMenu');
+            const hasStaffOptions = userMenu && userMenu.querySelector('.user-dropdown-item');
+
+            if (hasStaffOptions) {
+                // Monitor userInfo visibility to sync userMenu
+                const userInfo = document.getElementById('userInfo');
+                if (userInfo) {
+                    const observer = new MutationObserver(function(mutations) {
+                        mutations.forEach(function(mutation) {
+                            if (mutation.attributeName === 'style') {
+                                const isLoggedIn = userInfo.style.display === 'flex';
+                                userMenu.style.display = isLoggedIn ? 'block' : 'none';
+                            }
+                        });
+                    });
+                    observer.observe(userInfo, { attributes: true });
+
+                    // Initial state check
+                    if (userInfo.style.display === 'flex') {
+                        userMenu.style.display = 'block';
+                    }
+                }
+            }
+        });
     </script>
+    <script>document.addEventListener('DOMContentLoaded',function(){function showAdminTabs(){if(window.justDataUserType==='admin')document.querySelectorAll('.nav-tab.admin-nav-tab').forEach(t=>t.style.display='flex');}function checkAdmin(){if(window.justDataUserType)showAdminTabs();else setTimeout(checkAdmin,500);}checkAdmin();const badge=document.getElementById('userTypeBadge');if(badge)new MutationObserver(showAdminTabs).observe(badge,{childList:true,characterData:true,subtree:true});document.querySelectorAll('[data-matching-panel]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-matching-panel]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelectorAll('#matching .admin-panel').forEach(p=>p.classList.remove('active'));const panel=document.getElementById('matching-'+t.dataset.matchingPanel);if(panel)panel.classList.add('active');}));document.querySelectorAll('[data-dedup-panel]').forEach(t=>t.addEventListener('click',()=>{document.querySelectorAll('[data-dedup-panel]').forEach(x=>x.classList.remove('active'));t.classList.add('active');document.querySelectorAll('#deduplicate .admin-panel').forEach(p=>p.classList.remove('active'));const panel=document.getElementById('dedup-'+t.dataset.dedupPanel);if(panel)panel.classList.add('active');}));window.searchUnmatchedFirmsMatching=function(){const el=document.getElementById('unmatched-firms-results');if(el)el.innerHTML='<p>Searching...</p>';};window.searchUnmatchedOfficialsMatching=function(){const el=document.getElementById('unmatched-officials-results');if(el)el.innerHTML='<p>Searching...</p>';};window.searchUnmatchedPACsMatching=function(){const el=document.getElementById('unmatched-pacs-results');if(el)el.innerHTML='<p>Searching...</p>';};window.createFirmMatch=function(){alert('API not yet implemented');};window.createOfficialMatch=function(){alert('API not yet implemented');};window.createPACMatch=function(){alert('API not yet implemented');};window.scanForDuplicateOfficials=function(){const el=document.getElementById('duplicate-officials-container');if(el)el.innerHTML='<p>Scanning...</p>';};window.scanForDuplicateFirms=function(){const el=document.getElementById('duplicate-firms-container');if(el)el.innerHTML='<p>Scanning...</p>';};window.scanForDuplicateTransactions=function(){const el=document.getElementById('duplicate-transactions-container');if(el)el.innerHTML='<p>Scanning...</p>';};});</script>
 </body>
 </html>
