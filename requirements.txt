@@ -39,3 +39,10 @@ playwright>=1.40.0
 # uwsgi>=2.0.20     # Alternative production server
 census>=0.8.0
 us>=3.0.0
+
+# LenderProfile dependencies
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Firebase Authentication
+firebase-admin>=6.0.0

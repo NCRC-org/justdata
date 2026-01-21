@@ -1,10 +1,10 @@
 {
   "insights": [
     {
-      "title": "Financial Committee Leaders Receive Highest PAC Contributions",
-      "summary": "French Hill (Financial Services Chair) received $218,000 in financial PAC contributions while trading up to $450,000 in financial securities. Dave McCormick (Banking Vice Chair) received $115,000 in PAC funds alongside $5 million in stock trades.",
-      "detailed_summary": "**Committee leadership positions correlate strongly with financial sector PAC contributions.** [[official:french_hill|French Hill]] serves as Chair of the [[committee:house-financial-services|House Financial Services Committee]] and received the highest financial PAC contributions at **$218,000**, while also conducting up to $450,000 in financial sector trades.\n\n[[official:dave_mccormick|Dave McCormick]], serving as Vice Chair of the [[committee:senate-banking|Senate Banking Committee]], received **$115,000** in financial PAC contributions and conducted the second-highest volume of financial trades at $5 million, primarily in [[industry:banking|investment securities]].\n\nAdditional Financial Services Committee members show similar patterns: [[official:greg_landsman|Greg Landsman]] received **$95,000** in PAC funds with $145,000 in trades, [[official:jake_auchincloss|Jake Auchincloss]] received **$85,500** with $200,000 in trades, and [[official:daniel_meuser|Daniel Meuser]] received **$70,500** with $50,000 in trades.\n\nThis concentration suggests financial sector donors strategically target officials with direct regulatory oversight, creating potential conflicts between campaign funding sources and legislative responsibilities in [[industry:banking|banking]], [[industry:fintech|financial technology]], and [[industry:insurance|insurance]] sectors.",
-      "evidence": "FEC campaign finance filings and STOCK Act disclosure reports",
+      "title": "Financial Committee Leaders Receive Substantial PAC Funding",
+      "summary": "Three top financial PAC recipients hold key committee positions overseeing the financial sector. French Hill chairs Financial Services with $436,000 in PAC contributions, while Dave McCormick serves as Banking Vice Chair with $345,000.",
+      "detailed_summary": "**Key financial sector oversight positions are concentrated among top PAC recipients**, with [[official:french_hill|French Hill]] receiving the highest financial PAC contributions at **$436,000** while serving as [[committee:house-financial-services|Financial Services Committee]] Chair. [[official:dave_mccormick|Dave McCormick]] ranks second with **$345,000** in financial PAC funding as [[committee:senate-banking|Banking Committee]] Vice Chair.\n\nThe pattern extends to other committee members, with [[official:daniel_meuser|Daniel Meuser]] receiving **$164,500** while serving on [[committee:house-financial-services|Financial Services]], and [[official:ritchie_torres|Ritchie Torres]] collecting **$210,000** as another Financial Services member.\n\n• **$436,000**: French Hill (Financial Services Chair)\n• **$345,000**: Dave McCormick (Banking Vice Chair) \n• **$210,000**: Ritchie Torres (Financial Services member)\n• **$164,500**: Daniel Meuser (Financial Services member)\n\nThis concentration of PAC funding among officials with direct regulatory oversight responsibilities over [[industry:banking|banking]] and [[industry:fintech|financial technology]] sectors represents a significant pattern in congressional financial relationships.",
+      "evidence": "FEC PAC contribution filings and House/Senate committee membership records",
       "category": "cross_correlation",
       "severity": "high",
       "firms": [],
@@ -14,52 +14,46 @@
           "name": "French Hill",
           "party": "R",
           "state": "AR",
-          "amount": 218000,
-          "detail": "Financial Services Chair, $218K PAC + $450K trades"
+          "amount": 436000,
+          "detail": "Financial Services Chair with highest PAC contributions"
         },
         {
           "id": "dave_mccormick",
           "name": "Dave McCormick",
           "party": "R",
           "state": "PA",
-          "amount": 115000,
-          "detail": "Banking Vice Chair, $115K PAC + $5M trades"
+          "amount": 345000,
+          "detail": "Banking Vice Chair with second-highest PAC contributions"
         },
         {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
           "party": "D",
-          "state": "OH",
-          "amount": 95000,
-          "detail": "Financial Services member, $95K PAC + $145K trades"
+          "state": "NY",
+          "amount": 210000,
+          "detail": "Financial Services Committee member"
         },
         {
-          "id": "jake_auchincloss",
-          "name": "Jake Auchincloss",
-          "party": "D",
-          "state": "MA",
-          "amount": 85500,
-          "detail": "Financial Services member, $85.5K PAC + $200K trades"
+          "id": "daniel_meuser",
+          "name": "Daniel Meuser",
+          "party": "R",
+          "state": "PA",
+          "amount": 164500,
+          "detail": "Financial Services Committee member"
         }
       ],
       "industries": [
         {
           "code": "banking",
           "name": "Banking & Depository",
-          "amount": 668000,
-          "detail": "Primary trading focus for committee leaders"
+          "amount": 1355500,
+          "detail": "Combined PAC contributions to committee leaders"
         },
         {
           "code": "fintech",
           "name": "Financial Technology",
           "amount": 0,
-          "detail": "Secondary sector for trades"
-        },
-        {
-          "code": "insurance",
-          "name": "Investment & Securities",
-          "amount": 0,
-          "detail": "Major trading category"
+          "detail": "Sector under committee oversight"
         }
       ],
       "committees": [
@@ -67,127 +61,43 @@
           "id": "house-financial-services",
           "name": "House Financial Services Committee",
           "chamber": "house",
-          "members": 4,
-          "detail": "Chair and members receive significant PAC funding"
+          "members": 3,
+          "detail": "Primary oversight of financial sector"
         },
         {
           "id": "senate-banking",
           "name": "Senate Banking Committee",
           "chamber": "senate",
           "members": 1,
-          "detail": "Vice Chair shows highest trade volume"
+          "detail": "Senate financial sector oversight"
         }
       ],
-      "sources": [
-        {
-          "title": "Campaign Finance Reports",
-          "url": "https://www.fec.gov/data/receipts/",
-          "source": "FEC.gov",
-          "date": "2026-01-15"
-        },
-        {
-          "title": "STOCK Act Disclosures",
-          "url": "https://disclosures-clerk.house.gov/PublicDisclosure/FinancialDisclosure",
-          "source": "House.gov",
-          "date": "2026-01-15"
-        },
-        {
-          "title": "Senate Financial Disclosures",
-          "url": "https://efdsearch.senate.gov/search/",
-          "source": "Senate.gov",
-          "date": "2026-01-15"
-        }
-      ]
-    },
-    {
-      "title": "Republicans Dominate Financial Sector PAC Contributions",
-      "summary": "Republican officials received $1,089,000 in financial PAC contributions compared to $370,500 for Democrats. The top 10 PAC recipients include 7 Republicans and only 3 Democrats.",
-      "detailed_summary": "**Financial sector PACs demonstrate a strong preference for Republican candidates**, with GOP officials receiving nearly three times more contributions than Democrats. Republicans collected **$1,089,000** in total financial PAC contributions versus **$370,500** for Democrats among the 203 tracked officials.\n\nAmong the top 10 financial PAC recipients, **7 are Republicans** including [[official:french_hill|French Hill]] ($218,000), [[official:dave_mccormick|Dave McCormick]] ($115,000), [[official:roger_williams|Roger Williams]] ($112,000), and [[official:lisa_mccain|Lisa McClain]] ($100,000). Only 3 Democrats appear in the top tier: [[official:greg_landsman|Greg Landsman]] ($95,000), [[official:jake_auchincloss|Jake Auchincloss]] ($85,500), and [[official:jared_moskowitz|Jared Moskowitz]] ($60,000).\n\nThis **2.9:1 ratio** in favor of Republicans suggests financial sector donors view GOP policies as more favorable to [[industry:banking|banking]], [[industry:fintech|fintech]], and [[industry:insurance|insurance]] interests. The disparity is particularly pronounced among officials serving on key financial oversight committees.\n\nThe pattern indicates potential policy influence concerns, as financial sector contributions may correlate with regulatory positions that benefit donor industries at the expense of consumer protections.",
-      "evidence": "FEC PAC contribution reports and party affiliation data",
-      "category": "party_balance",
-      "severity": "high",
-      "firms": [],
-      "officials": [
-        {
-          "id": "french_hill",
-          "name": "French Hill",
-          "party": "R",
-          "state": "AR",
-          "amount": 218000,
-          "detail": "Highest Republican PAC recipient"
-        },
-        {
-          "id": "dave_mccormick",
-          "name": "Dave McCormick",
-          "party": "R",
-          "state": "PA",
-          "amount": 115000,
-          "detail": "Second highest Republican recipient"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
-          "amount": 95000,
-          "detail": "Highest Democratic PAC recipient"
-        },
-        {
-          "id": "jake_auchincloss",
-          "name": "Jake Auchincloss",
-          "party": "D",
-          "state": "MA",
-          "amount": 85500,
-          "detail": "Second highest Democratic recipient"
-        }
-      ],
-      "industries": [
-        {
-          "code": "banking",
-          "name": "Banking & Financial Services",
-          "amount": 1459500,
-          "detail": "Total PAC contributions across both parties"
-        },
-        {
-          "code": "fintech",
-          "name": "Financial Technology",
-          "amount": 0,
-          "detail": "Subset of overall financial contributions"
-        },
-        {
-          "code": "insurance",
-          "name": "Insurance",
-          "amount": 0,
-          "detail": "Component of financial sector giving"
-        }
-      ],
-      "committees": [],
       "sources": [
         {
           "title": "PAC Contribution Database",
-          "url": "https://www.fec.gov/data/committees/",
-          "source": "FEC.gov",
-          "date": "2026-01-15"
-        },
-        {
-          "title": "Campaign Finance Summary Reports",
           "url": "https://www.fec.gov/data/receipts/",
           "source": "FEC.gov",
-          "date": "2026-01-15"
+          "date": "2026-01-19"
         },
         {
-          "title": "Congressional Member Directory",
-          "url": "https://www.house.gov/representatives",
+          "title": "House Committee Membership",
+          "url": "https://www.house.gov/committees",
           "source": "House.gov",
-          "date": "2026-01-15"
+          "date": "2026-01-19"
+        },
+        {
+          "title": "Senate Committee Assignments",
+          "url": "https://www.senate.gov/committees",
+          "source": "Senate.gov",
+          "date": "2026-01-19"
         }
       ]
     },
     {
-      "title": "Massive Trading Volume Concentrated Among Few Officials",
-      "summary": "Jefferson Shreve conducted $52.55 million in financial trades, representing 74% of top-15 trading volume. The top 5 traders account for $60.1 million of the $71 million total.",
-      "detailed_summary": "**Financial sector trading shows extreme concentration** among a small number of congressional officials. [[official:jefferson_shreve|Jefferson Shreve]] dominates with **$52.55 million** in total trades ($50.85M buys, $1.7M sells), representing nearly three-quarters of trading volume among the top 15 most active traders.\n\nThe top 5 traders control **$60.1 million** of the approximately $71 million in total trading volume: [[official:jefferson_shreve|Shreve]] ($52.55M), [[official:dave_mccormick|Dave McCormick]] ($5M in sells), [[official:ro_khanna|Ro Khanna]] ($2.4M total), [[official:julie_johnson|Julie Johnson]] ($1.1M), and [[official:michael_mccaul|Michael McCaul]] ($970K).\n\nShreve's trading focuses heavily on [[industry:banking|Investment & Securities]] and [[industry:banking|Banking & Depository]] sectors, while other high-volume traders like McCormick concentrate on [[industry:banking|Investment & Securities]]. Several officials including [[official:josh_gottheimer|Josh Gottheimer]], [[official:lisa_mccain|Lisa McClain]], and [[official:markwayne_mullin|Markwayne Mullin]] combine significant trading activity with substantial PAC receipts.\n\nThis concentration raises concerns about potential market manipulation or insider trading, particularly given that many high-volume traders serve on committees with direct oversight of the financial sectors they're actively trading.",
-      "evidence": "STOCK Act periodic transaction reports and financial disclosure forms",
+      "title": "Extreme Trading Volumes Among Financial PAC Recipients",
+      "summary": "Jefferson Shreve executed over $52 million in financial sector trades despite receiving minimal PAC contributions. Dave McCormick combines $345,000 in PAC funding with $5.5 million maximum trade value.",
+      "detailed_summary": "**Massive trading volumes in financial securities** are concentrated among a small group of officials, with [[official:jefferson_shreve|Jefferson Shreve]] executing **$50.85 million in purchases** and **$1.7 million in sales** across [[industry:banking|Investment & Securities]] and [[industry:banking|Banking & Depository]] sectors, despite receiving only **$50,850** in financial PAC contributions.\n\n[[official:dave_mccormick|Dave McCormick]] demonstrates the highest cross-correlation pattern, combining **$345,000 in financial PAC contributions** with **$5.5 million maximum trade value** in [[industry:banking|Investment & Securities]]. [[official:michael_mccaul|Michael McCaul]] shows extreme activity with **$16.41 million in purchases** and **$20.19 million in sales** focused on [[industry:fintech|Financial Technology]] and Consumer Lending.\n\n• **$52.55 million**: Jefferson Shreve total trading volume\n• **$36.60 million**: Michael McCaul total trading volume  \n• **$5.50 million**: Dave McCormick maximum trade value\n• **$3.89 million**: Rohit Khanna total trading volume\n\nThe concentration of such large trading volumes among officials with access to financial sector information and policy decisions represents significant activity requiring transparency oversight.",
+      "evidence": "STOCK Act disclosure filings and congressional trading reports",
       "category": "concentration",
       "severity": "high",
       "firms": [],
@@ -198,135 +108,219 @@
           "party": "R",
           "state": "IN",
           "amount": 52550000,
-          "detail": "$50.85M buys, $1.7M sells in investment securities"
+          "detail": "Highest trading volume at $52.55M total"
+        },
+        {
+          "id": "michael_mccaul",
+          "name": "Michael McCaul",
+          "party": "R",
+          "state": "TX",
+          "amount": 36595000,
+          "detail": "Second highest at $36.6M total trading"
         },
         {
           "id": "dave_mccormick",
           "name": "Dave McCormick",
           "party": "R",
           "state": "PA",
-          "amount": 5000000,
-          "detail": "$5M in sells, investment securities focus"
+          "amount": 5500000,
+          "detail": "High PAC recipient with $5.5M trades"
         },
         {
-          "id": "ro_khanna",
-          "name": "Ro Khanna",
+          "id": "rohit_khanna",
+          "name": "Rohit Khanna",
           "party": "D",
           "state": "CA",
-          "amount": 2405000,
-          "detail": "$1.875M buys, $530K sells in banking"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "amount": 1125000,
-          "detail": "$270K buys, $855K sells in banking"
+          "amount": 3890000,
+          "detail": "$3.89M in banking and securities trades"
         }
       ],
       "industries": [
         {
           "code": "banking",
           "name": "Investment & Securities",
-          "amount": 45000000,
-          "detail": "Primary focus for largest traders"
-        },
-        {
-          "code": "banking",
-          "name": "Banking & Depository",
-          "amount": 15000000,
-          "detail": "Secondary concentration area"
+          "amount": 98935000,
+          "detail": "Primary trading sector across top traders"
         },
         {
           "code": "fintech",
           "name": "Financial Technology",
-          "amount": 5000000,
-          "detail": "Emerging sector for several traders"
+          "amount": 36595000,
+          "detail": "Major trading focus for McCaul"
+        },
+        {
+          "code": "banking",
+          "name": "Banking & Depository",
+          "amount": 52550000,
+          "detail": "Shreve's primary trading sector"
         }
       ],
       "committees": [],
       "sources": [
         {
-          "title": "Periodic Transaction Reports",
-          "url": "https://disclosures-clerk.house.gov/PublicDisclosure/FinancialDisclosure",
-          "source": "House.gov",
-          "date": "2026-01-15"
-        },
-        {
-          "title": "STOCK Act Database",
+          "title": "Congressional Stock Trading Database",
           "url": "https://efdsearch.senate.gov/search/",
-          "source": "Senate.gov",
-          "date": "2026-01-15"
+          "source": "efdsearch.senate.gov",
+          "date": "2026-01-19"
         },
         {
-          "title": "Financial Disclosure Reports",
-          "url": "https://disclosures-clerk.house.gov/FinancialDisclosure",
+          "title": "STOCK Act Periodic Transaction Reports",
+          "url": "https://www.house.gov/doing-business-with-the-house/lobbying-disclosure/financial-disclosure",
           "source": "House.gov",
-          "date": "2026-01-15"
+          "date": "2026-01-19"
+        },
+        {
+          "title": "Senate Financial Disclosures",
+          "url": "https://www.senate.gov/legislative/common/generic/report_secureforms.htm",
+          "source": "Senate.gov",
+          "date": "2026-01-19"
         }
       ]
     },
     {
-      "title": "Cross-Correlation Between PAC Funds and Trading Activity",
-      "summary": "Multiple officials receive substantial PAC contributions while actively trading in the same financial sectors. Josh Gottheimer, Lisa McClain, and Markwayne Mullin show clear cross-correlation patterns.",
-      "detailed_summary": "**Several congressional officials demonstrate concerning cross-correlation** between financial sector PAC receipts and active trading in the same industries. [[official:josh_gottheimer|Josh Gottheimer]] received **$54,000** in financial PAC contributions while conducting $755,000 in trades focused on [[industry:fintech|Financial Technology]] and consumer lending sectors.\n\n[[official:lisa_mccain|Lisa McClain]] shows similar patterns with **$100,000** in PAC receipts and $735,000 in trades concentrated in [[industry:banking|Banking & Depository]] and [[industry:banking|Investment & Securities]]. [[official:markwayne_mullin|Markwayne Mullin]] received **$45,000** in PAC funds while trading $730,000 in consumer lending and banking sectors.\n\nAdditional cross-correlation cases include [[official:kevin_hern|Kevin Hern]] ($30,000 PAC, $500,000 trades in investment securities) and [[official:french_hill|French Hill]] ($218,000 PAC, $450,000 trades in banking). These officials serve on key oversight committees including [[committee:house-financial-services|Financial Services]], [[committee:senate-banking|Banking]], and Ways and Means.\n\nThis pattern suggests potential conflicts of interest where officials may benefit financially from policy decisions affecting their investment portfolios, while simultaneously receiving campaign contributions from the same sectors they regulate and trade.",
-      "evidence": "Combined analysis of FEC PAC reports and STOCK Act trading disclosures",
-      "category": "cross_correlation",
+      "title": "Republican Financial PAC Advantage Exceeds Two-to-One",
+      "summary": "Republicans received $2.1 million in financial sector PAC contributions compared to $1.0 million for Democrats. The top 8 financial PAC recipients include 6 Republicans and only 2 Democrats.",
+      "detailed_summary": "**Financial sector PAC contributions show strong Republican preference**, with the party receiving **$2,102,500** compared to **$1,003,500** for Democrats, representing a **2.1-to-1 funding advantage**. This disparity is evident in the top recipient rankings where Republicans dominate the highest contribution levels.\n\nAmong the top 8 financial PAC recipients, **6 are Republicans** including [[official:french_hill|French Hill]] (**$436,000**), [[official:dave_mccormick|Dave McCormick]] (**$345,000**), [[official:roger_williams|Roger Williams]] (**$224,000**), and [[official:lisa_mclain|Lisa McClain]] (**$200,000**). Only 2 Democrats appear in this tier: [[official:joshua_gottheimer|Joshua Gottheimer]] (**$256,500**) and [[official:ritchie_torres|Ritchie Torres]] (**$210,000**).\n\n• **67% Republican dominance** in top financial PAC recipients\n• **$2.1 million** total Republican financial PAC funding\n• **$1.0 million** total Democratic financial PAC funding\n• **$436,000** highest individual recipient (Republican)\n\nThis funding pattern suggests [[industry:banking|banking]], [[industry:insurance|insurance]], and [[industry:fintech|financial technology]] sectors strategically favor Republican candidates, potentially influencing regulatory and policy outcomes.",
+      "evidence": "FEC PAC contribution records and party affiliation data",
+      "category": "party_balance",
       "severity": "medium",
       "firms": [],
       "officials": [
         {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
+          "id": "french_hill",
+          "name": "French Hill",
+          "party": "R",
+          "state": "AR",
+          "amount": 436000,
+          "detail": "Highest Republican PAC recipient"
+        },
+        {
+          "id": "dave_mccormick",
+          "name": "Dave McCormick",
+          "party": "R",
+          "state": "PA",
+          "amount": 345000,
+          "detail": "Second highest Republican recipient"
+        },
+        {
+          "id": "joshua_gottheimer",
+          "name": "Joshua Gottheimer",
           "party": "D",
           "state": "NJ",
-          "amount": 54000,
-          "detail": "$54K PAC + $755K trades in fintech"
+          "amount": 256500,
+          "detail": "Highest Democratic PAC recipient"
         },
         {
-          "id": "lisa_mccain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "amount": 100000,
-          "detail": "$100K PAC + $735K trades in banking"
-        },
-        {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
-          "party": "R",
-          "state": "OK",
-          "amount": 45000,
-          "detail": "$45K PAC + $730K trades in lending"
-        },
-        {
-          "id": "kevin_hern",
-          "name": "Kevin Hern",
-          "party": "R",
-          "state": "OK",
-          "amount": 30000,
-          "detail": "$30K PAC + $500K trades in securities"
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "NY",
+          "amount": 210000,
+          "detail": "Second highest Democratic recipient"
         }
       ],
       "industries": [
         {
+          "code": "banking",
+          "name": "Banking & Financial Services",
+          "amount": 3106000,
+          "detail": "Total PAC contributions across both parties"
+        },
+        {
+          "code": "insurance",
+          "name": "Insurance",
+          "amount": 0,
+          "detail": "Part of financial sector PAC definition"
+        },
+        {
           "code": "fintech",
           "name": "Financial Technology",
-          "amount": 755000,
-          "detail": "Gottheimer's primary trading focus"
+          "amount": 0,
+          "detail": "Included in financial sector PACs"
+        }
+      ],
+      "committees": [],
+      "sources": [
+        {
+          "title": "PAC Contributions by Party",
+          "url": "https://www.fec.gov/data/receipts/",
+          "source": "FEC.gov",
+          "date": "2026-01-19"
+        },
+        {
+          "title": "Congressional Member Party Affiliations",
+          "url": "https://www.house.gov/representatives",
+          "source": "House.gov",
+          "date": "2026-01-19"
+        },
+        {
+          "title": "Senate Member Directory",
+          "url": "https://www.senate.gov/senators/",
+          "source": "Senate.gov",
+          "date": "2026-01-19"
+        }
+      ]
+    },
+    {
+      "title": "Cross-Correlation Pattern Among Top PAC Recipients",
+      "summary": "Seven of the top 10 financial PAC recipients also engage in significant stock trading. Dave McCormick, Joshua Gottheimer, and Lisa McClain appear on both high PAC and high trading lists.",
+      "detailed_summary": "**Strong cross-correlation exists between PAC contributions and stock trading activity** among congressional members, with **7 of the top 10 financial PAC recipients** also conducting substantial securities transactions. This pattern suggests concentrated financial sector engagement among specific officials.\n\n[[official:dave_mccormick|Dave McCormick]] exemplifies this correlation with **$345,000 in PAC contributions** and **$5.5 million in trade value**, both ranking in top positions. [[official:joshua_gottheimer|Joshua Gottheimer]] combines **$256,500 in PAC funding** with **$1.43 million maximum trades** in [[industry:fintech|Financial Technology]] and Consumer Lending. [[official:lisa_mclain|Lisa McClain]] shows **$200,000 in PAC contributions** alongside **$780,000 in trading activity**.\n\nAdditional cross-correlation examples include:\n• [[official:ritchie_torres|Ritchie Torres]]: **$210,000 PAC** + **$270,000 trades**\n• [[official:daniel_meuser|Daniel Meuser]]: **$164,500 PAC** + **$50,000 trades**  \n• [[official:jared_moskowitz|Jared Moskowitz]]: **$120,000 PAC** + **$360,000 trades**\n• [[official:bruce_westerman|Bruce Westerman]]: **$117,000 PAC** + **$240,000 trades**\n\nThis pattern indicates that officials receiving significant [[industry:banking|financial sector]] PAC support are also actively trading in the same sectors they may influence through policy decisions.",
+      "evidence": "Combined analysis of FEC PAC filings and STOCK Act trading disclosures",
+      "category": "cross_correlation",
+      "severity": "high",
+      "firms": [],
+      "officials": [
+        {
+          "id": "dave_mccormick",
+          "name": "Dave McCormick",
+          "party": "R",
+          "state": "PA",
+          "amount": 5845000,
+          "detail": "$345K PAC + $5.5M trades"
+        },
+        {
+          "id": "joshua_gottheimer",
+          "name": "Joshua Gottheimer",
+          "party": "D",
+          "state": "NJ",
+          "amount": 1686500,
+          "detail": "$256.5K PAC + $1.43M trades"
+        },
+        {
+          "id": "lisa_mclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "amount": 980000,
+          "detail": "$200K PAC + $780K trades"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "NY",
+          "amount": 480000,
+          "detail": "$210K PAC + $270K trades"
+        }
+      ],
+      "industries": [
+        {
+          "code": "banking",
+          "name": "Investment & Securities",
+          "amount": 8991500,
+          "detail": "Primary sector for cross-correlation pattern"
+        },
+        {
+          "code": "fintech",
+          "name": "Financial Technology",
+          "amount": 1686500,
+          "detail": "Gottheimer's trading focus area"
         },
         {
           "code": "banking",
           "name": "Banking & Depository",
-          "amount": 1465000,
-          "detail": "Combined trading volume for cross-correlated officials"
-        },
-        {
-          "code": "banking",
-          "name": "Investment & Securities",
-          "amount": 1235000,
-          "detail": "Major category for PAC recipients who trade"
+          "amount": 980000,
+          "detail": "McClain's trading sector"
         }
       ],
       "committees": [
@@ -335,44 +329,31 @@
           "name": "House Financial Services Committee",
           "chamber": "house",
           "members": 2,
-          "detail": "Gottheimer and Hill show cross-correlation"
-        },
-        {
-          "id": "house-ways-means",
-          "name": "House Ways and Means Committee",
-          "chamber": "house",
-          "members": 1,
-          "detail": "Hern serves while trading securities"
+          "detail": "Torres and Meuser serve with cross-correlation pattern"
         }
       ],
       "sources": [
         {
-          "title": "PAC Contribution Reports",
+          "title": "Cross-Referenced PAC and Trading Data",
           "url": "https://www.fec.gov/data/receipts/",
           "source": "FEC.gov",
-          "date": "2026-01-15"
+          "date": "2026-01-19"
         },
         {
-          "title": "Stock Trading Disclosures",
-          "url": "https://disclosures-clerk.house.gov/PublicDisclosure/FinancialDisclosure",
-          "source": "House.gov",
-          "date": "2026-01-15"
-        },
-        {
-          "title": "Committee Membership Records",
-          "url": "https://www.house.gov/committees",
-          "source": "House.gov",
-          "date": "2026-01-15"
-        },
-        {
-          "title": "Senate Trading Reports",
+          "title": "Congressional Trading Disclosures",
           "url": "https://efdsearch.senate.gov/search/",
-          "source": "Senate.gov",
-          "date": "2026-01-15"
+          "source": "efdsearch.senate.gov",
+          "date": "2026-01-19"
+        },
+        {
+          "title": "STOCK Act Compliance Reports",
+          "url": "https://www.house.gov/doing-business-with-the-house/lobbying-disclosure/financial-disclosure",
+          "source": "House.gov",
+          "date": "2026-01-19"
         }
       ]
     }
   ],
-  "generated_at": "2026-01-19T08:39:22.626340",
+  "generated_at": "2026-01-20T20:15:56.320425",
   "version": "1.0"
 }

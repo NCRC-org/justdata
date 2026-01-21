@@ -1,0 +1,347 @@
+/**
+ * Firebase Authentication for JustData
+ * Handles Google sign-in, sign-out, and token management
+ */
+
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyChXMJz1n9LTdKDxivPbVQpMqA7_3Xtfc0",
+    authDomain: "justdata-f7da7.firebaseapp.com",
+    projectId: "justdata-f7da7",
+    storageBucket: "justdata-f7da7.firebasestorage.app",
+    messagingSenderId: "32461486158",
+    appId: "1:32461486158:web:03fdf89e78dbd69e3e6b1f",
+    measurementId: "G-ZEJ2B1BG7B"
+};
+
+// Initialize Firebase
+let firebaseApp = null;
+let firebaseAuth = null;
+let signInInProgress = false;  // Prevent multiple sign-in attempts
+
+function initFirebase() {
+    if (firebaseApp) return;
+
+    try {
+        firebaseApp = firebase.initializeApp(firebaseConfig);
+        firebaseAuth = firebase.auth();
+
+        // Listen for auth state changes
+        firebaseAuth.onAuthStateChanged(handleAuthStateChange);
+
+        console.log('Firebase initialized successfully');
+    } catch (error) {
+        console.error('Firebase initialization error:', error);
+    }
+}
+
+/**
+ * Handle authentication state changes
+ */
+async function handleAuthStateChange(user) {
+    if (user) {
+        // User is signed in
+        console.log('User signed in:', user.email);
+
+        // Get ID token and notify backend
+        const idToken = await user.getIdToken();
+        await notifyBackendLogin(idToken, user);
+
+        // Update UI
+        updateAuthUI(user);
+    } else {
+        // User is signed out
+        console.log('User signed out');
+        updateAuthUI(null);
+    }
+}
+
+/**
+ * Sign in with Google
+ */
+async function signInWithGoogle() {
+    // Prevent multiple simultaneous sign-in attempts
+    if (signInInProgress) {
+        console.log('Sign-in already in progress, ignoring click');
+        return;
+    }
+
+    console.log('signInWithGoogle called');
+    console.log('Current origin:', window.location.origin);
+
+    if (!firebaseAuth) {
+        console.error('Firebase not initialized - attempting to initialize now');
+        initFirebase();
+        if (!firebaseAuth) {
+            alert('Firebase failed to initialize. Check console for errors.');
+            return;
+        }
+    }
+
+    signInInProgress = true;
+
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.addScope('email');
+    provider.addScope('profile');
+
+    console.log('Attempting signInWithPopup...');
+
+    try {
+        const result = await firebaseAuth.signInWithPopup(provider);
+        console.log('Google sign-in successful:', result.user.email);
+        signInInProgress = false;
+        return result.user;
+    } catch (error) {
+        signInInProgress = false;
+        console.error('Google sign-in error code:', error.code);
+        console.error('Google sign-in error message:', error.message);
+
+        // Handle specific errors
+        if (error.code === 'auth/popup-closed-by-user') {
+            console.log('Sign-in popup was closed by user');
+        } else if (error.code === 'auth/popup-blocked') {
+            alert('Popup was blocked by your browser.\n\nPlease allow popups for this site and try again.');
+        } else if (error.code === 'auth/cancelled-popup-request') {
+            console.log('Previous popup request cancelled');
+        } else if (error.code === 'auth/unauthorized-domain') {
+            alert('Domain not authorized: ' + window.location.origin);
+        } else {
+            alert('Sign-in failed: ' + error.message);
+        }
+        throw error;
+    }
+}
+
+/**
+ * Sign in with email and password
+ */
+async function signInWithEmail(email, password) {
+    if (!firebaseAuth) {
+        console.error('Firebase not initialized');
+        return;
+    }
+
+    try {
+        const result = await firebaseAuth.signInWithEmailAndPassword(email, password);
+        console.log('Email sign-in successful:', result.user.email);
+        return result.user;
+    } catch (error) {
+        console.error('Email sign-in error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Sign up with email and password
+ */
+async function signUpWithEmail(email, password) {
+    if (!firebaseAuth) {
+        console.error('Firebase not initialized');
+        return;
+    }
+
+    try {
+        const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
+        console.log('Email sign-up successful:', result.user.email);
+        return result.user;
+    } catch (error) {
+        console.error('Email sign-up error:', error);
+        throw error;
+    }
+}
+
+/**
+ * Sign out
+ */
+async function signOut() {
+    if (!firebaseAuth) {
+        console.error('Firebase not initialized');
+        return;
+    }
+
+    try {
+        // Notify backend first
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        // Then sign out of Firebase
+        await firebaseAuth.signOut();
+        console.log('Sign-out successful');
+
+        // Reload page to reset state
+        window.location.reload();
+    } catch (error) {
+        console.error('Sign-out error:', error);
+    }
+}
+
+/**
+ * Get current user's ID token for API calls
+ */
+async function getToken() {
+    if (!firebaseAuth || !firebaseAuth.currentUser) {
+        return null;
+    }
+
+    try {
+        return await firebaseAuth.currentUser.getIdToken();
+    } catch (error) {
+        console.error('Error getting token:', error);
+        return null;
+    }
+}
+
+/**
+ * Get current user
+ */
+function getCurrentUser() {
+    return firebaseAuth ? firebaseAuth.currentUser : null;
+}
+
+/**
+ * Check if user is authenticated
+ */
+function isAuthenticated() {
+    return getCurrentUser() !== null;
+}
+
+/**
+ * Notify backend of login
+ */
+async function notifyBackendLogin(idToken, user) {
+    try {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                idToken: idToken,
+                user: {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL
+                }
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            console.log('Backend login successful, user type:', data.user_type);
+            // Store user type for UI updates
+            window.justDataUserType = data.user_type;
+            window.justDataPermissions = data.permissions;
+        }
+        return data;
+    } catch (error) {
+        console.error('Backend login notification failed:', error);
+    }
+}
+
+/**
+ * Get auth status from backend
+ */
+async function getAuthStatus() {
+    try {
+        const token = await getToken();
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch('/api/auth/status', {
+            method: 'GET',
+            headers: headers
+        });
+
+        return await response.json();
+    } catch (error) {
+        console.error('Error getting auth status:', error);
+        return { authenticated: false };
+    }
+}
+
+/**
+ * Make authenticated API request
+ */
+async function authFetch(url, options = {}) {
+    const token = await getToken();
+
+    const headers = {
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    return fetch(url, {
+        ...options,
+        headers: headers
+    });
+}
+
+/**
+ * Update UI based on auth state
+ */
+function updateAuthUI(user) {
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const userInfo = document.getElementById('userInfo');
+    const userEmail = document.getElementById('userEmail');
+    const userAvatar = document.getElementById('userAvatar');
+
+    if (user) {
+        // User is signed in
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'inline-flex';
+        if (userInfo) userInfo.style.display = 'flex';
+        if (userEmail) userEmail.textContent = user.email;
+        if (userAvatar) {
+            if (user.photoURL) {
+                userAvatar.src = user.photoURL;
+                userAvatar.style.display = 'block';
+            } else {
+                userAvatar.style.display = 'none';
+            }
+        }
+    } else {
+        // User is signed out
+        if (loginBtn) loginBtn.style.display = 'inline-flex';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (userInfo) userInfo.style.display = 'none';
+        if (userEmail) userEmail.textContent = '';
+        if (userAvatar) userAvatar.style.display = 'none';
+    }
+}
+
+// Initialize Firebase when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if Firebase SDK is loaded
+    if (typeof firebase !== 'undefined') {
+        initFirebase();
+    } else {
+        console.warn('Firebase SDK not loaded');
+    }
+});
+
+// Export functions for global access
+window.JustDataAuth = {
+    signInWithGoogle,
+    signInWithEmail,
+    signUpWithEmail,
+    signOut,
+    getToken,
+    getCurrentUser,
+    isAuthenticated,
+    getAuthStatus,
+    authFetch
+};

@@ -6,6 +6,10 @@
     <title>ElectWatch - Financial Influence Monitor | NCRC JustData</title>
     <link rel="icon" type="image/png" href="{{ url_for('electwatch.static', filename='img/favicon.png') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tippy.js for hover popups -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/shift-away.css">
     <style>
         /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
         :root {
@@ -542,6 +546,67 @@
         .industry-chip.fintech { background: #cffafe; color: #0891b2; }
         .industry-chip.consumer_lending { background: #ffedd5; color: #c2410c; }
 
+        /* Trend Cell */
+        .trend-cell {
+            text-align: center;
+            padding: 8px;
+        }
+
+        .trend-indicators {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            cursor: help;
+        }
+
+        .trend-arrow {
+            font-size: 1.2rem;
+            font-weight: bold;
+            line-height: 1;
+        }
+
+        .trend-arrow.up { color: var(--ncrc-red); }
+        .trend-arrow.down { color: var(--ncrc-green); }
+        .trend-arrow.stable { color: var(--ncrc-gray); }
+
+        .stock-indicator {
+            font-size: 0.8rem;
+            line-height: 1;
+        }
+
+        .stock-indicator.buyer { color: var(--ncrc-justdata-blue); }
+        .stock-indicator.seller { color: var(--ncrc-gray); }
+
+        /* Donor Chips */
+        .donor-chips {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .donor-chip {
+            padding: 3px 8px;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            cursor: help;
+            white-space: nowrap;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .donor-chip:hover {
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .donor-chip.has-overlap {
+            background: linear-gradient(135deg, var(--ncrc-primary-blue), var(--ncrc-orange));
+            border: 1px solid var(--ncrc-orange);
+        }
+
         /* AI Insights Panel */
         .insights-container {
             display: grid;
@@ -832,24 +897,34 @@
             color: #E01E5A;
         }
 
-        /* Refresh Data Button - Staff Only */
-        .refresh-data-btn {
-            background: #ff9800 !important;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
+        /* Admin Navigation Buttons */
+        .nav-admin-buttons {
+            display: flex;
+            gap: 4px;
+            margin-left: auto;
         }
 
-        .refresh-data-btn:hover {
+        .nav-admin-btn {
+            background: #ff9800 !important;
+            color: white !important;
+            opacity: 1 !important;
+        }
+
+        .nav-admin-btn:hover {
             background: #f57c00 !important;
         }
 
-        .refresh-data-btn.refreshing {
-            opacity: 0.7;
+        .nav-admin-btn.active {
+            background: #e65100 !important;
+            color: white !important;
+        }
+
+        .nav-admin-btn.refreshing {
+            opacity: 0.7 !important;
             cursor: wait;
         }
 
-        .refresh-data-btn.refreshing i {
+        .nav-admin-btn.refreshing i {
             animation: spin 1s linear infinite;
         }
 
@@ -1708,6 +1783,382 @@
         .source-date {
             opacity: 0.8;
         }
+
+        /* Admin Panel Styles */
+        .admin-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--ncrc-gray-light);
+            padding-bottom: 12px;
+        }
+
+        .admin-tab {
+            padding: 10px 16px;
+            border: none;
+            background: var(--ncrc-gray-light);
+            border-radius: 6px 6px 0 0;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--ncrc-gray);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-tab:hover {
+            background: #e0e0e0;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .admin-tab.active {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+        }
+
+        .admin-panel {
+            display: none;
+        }
+
+        .admin-panel.active {
+            display: block;
+        }
+
+        .admin-section {
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .admin-section h3 {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+            color: var(--ncrc-gray-dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-description {
+            font-size: 0.9rem;
+            color: var(--ncrc-gray);
+            margin-bottom: 16px;
+        }
+
+        .mapping-form {
+            background: white;
+            padding: 16px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 6px;
+        }
+
+        .admin-select, .admin-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+
+        .admin-select:focus, .admin-input:focus {
+            outline: none;
+            border-color: var(--ncrc-justdata-blue);
+            box-shadow: 0 0 0 3px rgba(26, 143, 201, 0.1);
+        }
+
+        .admin-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .admin-btn.primary {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+        }
+
+        .admin-btn.primary:hover {
+            background: #1578a8;
+        }
+
+        .admin-btn.danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .admin-btn.danger:hover {
+            background: #dc2626;
+        }
+
+        .aliases-list {
+            margin: 16px 0;
+            padding: 12px;
+            background: #f0f9ff;
+            border-radius: 6px;
+            border: 1px solid #bae6fd;
+        }
+
+        .aliases-list label {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            margin-bottom: 8px;
+        }
+
+        .alias-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            padding: 6px 12px;
+            border-radius: 16px;
+            margin: 4px;
+            font-size: 0.85rem;
+            border: 1px solid #ddd;
+        }
+
+        .alias-tag .remove-alias {
+            cursor: pointer;
+            color: var(--ncrc-gray);
+            font-size: 0.75rem;
+        }
+
+        .alias-tag .remove-alias:hover {
+            color: var(--danger);
+        }
+
+        .status-message {
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 16px;
+            font-size: 0.9rem;
+        }
+
+        .status-message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #6ee7b7;
+        }
+
+        .status-message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+
+        .existing-mappings {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .mapping-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .mapping-item:hover {
+            border-color: var(--ncrc-justdata-blue);
+        }
+
+        .mapping-item .mapping-info {
+            flex: 1;
+        }
+
+        .mapping-item .mapping-canonical {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .mapping-item .mapping-aliases {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray);
+            margin-top: 4px;
+        }
+
+        .mapping-item .mapping-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .mapping-item .edit-btn, .mapping-item .delete-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .mapping-item .edit-btn {
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+        }
+
+        .mapping-item .delete-btn {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .search-results {
+            margin: 16px 0;
+            padding: 12px;
+            background: #fffbeb;
+            border-radius: 6px;
+            border: 1px solid #fde68a;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .search-result-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 4px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .search-result-item:hover {
+            border-color: var(--ncrc-justdata-blue);
+            background: #f0f9ff;
+        }
+
+        .search-result-item.selected {
+            border-color: var(--ncrc-justdata-blue);
+            background: #e0f2fe;
+        }
+
+        .search-result-item .employer-name {
+            font-weight: 500;
+        }
+
+        .search-result-item .contribution-count {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .search-filter {
+            margin-bottom: 16px;
+        }
+
+        /* Unmatched Entities Styles */
+        .unmatched-filters {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            background: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover {
+            border-color: var(--ncrc-justdata-blue);
+            background: #f0f9ff;
+        }
+
+        .filter-btn.active {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            border-color: var(--ncrc-justdata-blue);
+        }
+
+        .filter-btn .badge {
+            background: rgba(0,0,0,0.1);
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+        }
+
+        .filter-btn.active .badge {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .unmatched-list {
+            max-height: 350px;
+            overflow-y: auto;
+        }
+
+        .unmatched-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .unmatched-item:hover {
+            border-color: var(--ncrc-orange);
+            background: #fff7ed;
+        }
+
+        .unmatched-item .entity-name {
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .unmatched-item .entity-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            margin-top: 2px;
+        }
+
+        .unmatched-item .action-btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            background: var(--ncrc-orange);
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .unmatched-item .action-btn:hover {
+            background: #c2410c;
+        }
     </style>
 </head>
 <body>
@@ -1746,6 +2197,20 @@
                     <i class="fas fa-scroll"></i>
                     <span>Bill Lookup</span>
                 </button>
+                {% if is_staff %}
+                <div class="nav-admin-buttons">
+                    <button id="refreshDataBtn" class="nav-tab nav-admin-btn" title="Refresh data from all sources" onclick="refreshElectWatchData()">
+                        <i class="fas fa-sync-alt"></i>
+                        <span>Refresh Data</span>
+                    </button>
+                    {% if is_admin %}
+                    <button class="nav-tab nav-admin-btn" data-panel="admin">
+                        <i class="fas fa-cog"></i>
+                        <span>Data Mapper</span>
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
             </nav>
         </div>
     </header>
@@ -1786,11 +2251,6 @@
                 </div>
             </div>
             <div class="support-links">
-                {% if is_staff %}
-                <button id="refreshDataBtn" class="support-link refresh-data-btn" title="Refresh data from all sources (staff only)" onclick="refreshElectWatchData()">
-                    <i class="fas fa-sync-alt"></i> Refresh Data
-                </button>
-                {% endif %}
                 <a href="mailto:research@ncrc.org" class="support-link" title="Email Support">
                     <i class="fas fa-envelope"></i> Email
                 </a>
@@ -1872,25 +2332,23 @@
                         <thead>
                             <!-- Group header row -->
                             <tr class="header-group-row">
-                                <th colspan="2"></th>
-                                <th colspan="4" class="financial-sector-group">
+                                <th colspan="3"></th>
+                                <th colspan="5" class="financial-sector-group">
                                     <span class="header-tooltip">
                                         <i class="fas fa-landmark"></i> Financial Sector Involvement
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
                                             <strong>What We Track:</strong><br>
-                                            PAC contributions and stock trades involving financial sector firms over the last 2 election cycles (4 years).<br><br>
-                                            <strong>PAC Contributions Include:</strong><br>
-                                            • Direct PAC-to-candidate contributions from financial firm PACs (e.g., "Wells Fargo PAC")<br>
-                                            • Industry association PACs (e.g., "American Bankers Association PAC")<br><br>
+                                            PAC + individual contributions and stock trades involving finance/housing sector firms (24 months).<br><br>
+                                            <strong>Contributions Include:</strong><br>
+                                            • PAC contributions from financial firm PACs<br>
+                                            • Individual contributions from finance/housing employees<br><br>
                                             <strong>Industries Covered:</strong><br>
-                                            • Banking (WFC, JPM, BAC, C, GS, MS, USB, PNC...)<br>
-                                            • Investment (BLK, SCHW, BX, KKR, APO...)<br>
-                                            • Payments (V, MA, AXP, PYPL, SQ...)<br>
-                                            • Insurance (MET, PRU, AIG, ALL, TRV...)<br>
+                                            • Banking, Investment, Insurance<br>
                                             • Mortgage & Consumer Finance<br>
-                                            • Crypto & Fintech
-                                            <span class="tooltip-source">Source: FEC Schedule A (receipts), STOCK Act disclosures</span>
+                                            • Real Estate, REITs, Homebuilders<br>
+                                            • Fintech & Crypto
+                                            <span class="tooltip-source">Source: FEC Schedule A, STOCK Act disclosures</span>
                                         </span>
                                     </span>
                                 </th>
@@ -1898,73 +2356,87 @@
                             </tr>
                             <!-- Column headers -->
                             <tr>
-                                <th class="rank">#</th>
-                                <th class="sortable" data-sort="name" data-order="asc">
+                                <th class="rank" style="width: 40px;">#</th>
+                                <th class="sortable" data-sort="name" data-order="asc" style="width: 200px;">
                                     <span class="header-tooltip">
                                         Official
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Federal elected officials including U.S. Representatives and Senators. Filtered to members on finance-related committees. Click to sort by last name.
-                                            <span class="tooltip-source">Source: Congress.gov, House Clerk, Senate.gov</span>
+                                            Members of Congress ranked by financial sector involvement score.
+                                            <span class="tooltip-source">Source: Congress.gov</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable active financial-sector-col" data-sort="financial_pac" data-order="desc">
+                                <th style="width: 100px;">
                                     <span class="header-tooltip">
-                                        PAC $
+                                        Trend
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            <strong>Financial Sector PAC $:</strong> Total contributions from financial sector PACs to this candidate's principal campaign committee over the last 2 election cycles.<br><br>
-                                            <strong>Includes:</strong><br>
-                                            • Company PACs (e.g., "JPMorgan Chase PAC")<br>
-                                            • Industry PACs (e.g., "American Bankers Assoc PAC")<br><br>
-                                            <strong>Does NOT include:</strong><br>
-                                            • Individual employee contributions<br>
-                                            • SuperPAC independent expenditures<br>
-                                            • Leadership PAC transfers<br><br>
-                                            <em>Note: FEC data has a 1-3 month reporting lag.</em>
-                                            <span class="tooltip-source">Source: FEC Schedule A Receipts (2 election cycles)</span>
+                                            <strong>Top:</strong> Finance contribution % trend (↑ increasing, ↓ decreasing)<br>
+                                            <strong>Bottom:</strong> Stock activity (◆ net buyer, ◇ net seller)
+                                            <span class="tooltip-source">Hover for detailed history</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable financial-sector-col" data-sort="financial_pct" data-order="desc">
+                                <th class="sortable financial-sector-col" data-sort="total_contributions" data-order="desc" style="width: 90px;">
                                     <span class="header-tooltip">
-                                        PAC %
+                                        Total $
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            <strong>Financial Sector %:</strong> What percentage of this official's total PAC contributions come from financial sector PACs.<br><br>
-                                            Higher % = more reliant on financial industry money relative to other PAC sources.
-                                            <span class="tooltip-source">Calculation: Financial Sector PAC $ ÷ Total PAC $ (2 election cycles)</span>
+                                            Total contributions (PAC + Individual) from all sources over the last 24 months.
+                                            <span class="tooltip-source">Source: FEC Schedule A</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable financial-sector-col" data-sort="buys" data-order="desc">
+                                <th class="sortable active financial-sector-col" data-sort="finance_contributions" data-order="desc" style="width: 90px;">
+                                    <span class="header-tooltip">
+                                        Finance $
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Contributions from finance/housing sector (PAC + individual employee donations).
+                                            <span class="tooltip-source">Source: FEC Schedule A</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="financial_pct" data-order="desc" style="width: 70px;">
+                                    <span class="header-tooltip">
+                                        Finance %
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Finance/housing $ as percentage of total contributions.<br>
+                                            Higher % = more reliant on financial industry money.
+                                            <span class="tooltip-source">Calculation: Finance $ ÷ Total $</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="buys" data-order="desc" style="width: 80px;">
                                     <span class="header-tooltip">
                                         Buys
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Value range of stock PURCHASES in financial sector companies. Shown as STOCK Act disclosure buckets (e.g., $15K-$50K).
-                                            <span class="tooltip-source">Source: STOCK Act disclosures via House/Senate</span>
+                                            Stock PURCHASES in finance/housing companies (24 months).
+                                            <span class="tooltip-source">Source: STOCK Act disclosures</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable financial-sector-col" data-sort="sells" data-order="desc">
+                                <th class="sortable financial-sector-col" data-sort="sells" data-order="desc" style="width: 80px;">
                                     <span class="header-tooltip">
                                         Sells
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Value range of stock SALES in financial sector companies. Shown as STOCK Act disclosure buckets (e.g., $15K-$50K).
-                                            <span class="tooltip-source">Source: STOCK Act disclosures via House/Senate</span>
+                                            Stock SALES in finance/housing companies (24 months).
+                                            <span class="tooltip-source">Source: STOCK Act disclosures</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th>
+                                <th style="width: 180px;">
                                     <span class="header-tooltip">
-                                        Top Industries
+                                        Top Donors
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Financial sectors with highest involvement for this official. Based on firm-to-industry mapping of contributions and stock trades.
-                                            <span class="tooltip-source">Method: Aggregated by industry classification</span>
+                                            Top contributing companies (PAC + employee contributions combined).<br>
+                                            Hover for details including stock overlap.
+                                            <span class="tooltip-source">Method: Aggregated by company</span>
                                         </span>
                                     </span>
                                 </th>
@@ -2481,6 +2953,231 @@
                 </div>
             </div>
         </div>
+
+        {% if is_admin %}
+        <!-- Admin Data Mapper Panel -->
+        <div id="admin" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-cog"></i> Data Mapper</h2>
+                    <span style="font-size: 0.85rem; color: var(--ncrc-gray);">Admin tools for managing entity mappings and data quality</span>
+                </div>
+                <div class="card-body">
+                    <!-- Admin Sub-tabs -->
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" data-admin-panel="merge-officials">
+                            <i class="fas fa-user-friends"></i> Merge Officials
+                        </button>
+                        <button class="admin-tab" data-admin-panel="firm-industry">
+                            <i class="fas fa-building"></i> Firm → Industry
+                        </button>
+                        <button class="admin-tab" data-admin-panel="employer-firm">
+                            <i class="fas fa-briefcase"></i> Employer → Firm
+                        </button>
+                        <button class="admin-tab" data-admin-panel="unmatched-entities">
+                            <i class="fas fa-question-circle"></i> Unmatched
+                        </button>
+                    </div>
+
+                    <!-- Merge Officials Panel -->
+                    <div id="admin-merge-officials" class="admin-panel active">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-user-check"></i> Merge Duplicate Officials</h3>
+                            <p class="admin-description">When the same official appears under different names (e.g., "Ted Cruz" and "Rafael Cruz"), merge them into one canonical record.</p>
+
+                            <div class="mapping-form">
+                                <div class="form-group">
+                                    <label>Canonical Official (keep this name):</label>
+                                    <select id="canonical-official" class="admin-select">
+                                        <option value="">-- Select official --</option>
+                                    </select>
+                                </div>
+
+                                <div id="canonical-aliases" class="aliases-list" style="display: none;">
+                                    <label>Currently linked aliases:</label>
+                                    <div id="aliases-container">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Add alias (merge this record into canonical):</label>
+                                    <select id="alias-official" class="admin-select">
+                                        <option value="">-- Select official to merge --</option>
+                                    </select>
+                                </div>
+
+                                <button onclick="saveOfficialMerge()" class="admin-btn primary">
+                                    <i class="fas fa-save"></i> Save Mapping
+                                </button>
+                            </div>
+
+                            <div id="merge-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-list"></i> Existing Official Merges</h3>
+                            <div id="existing-merges" class="existing-mappings">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Firm to Industry Panel -->
+                    <div id="admin-firm-industry" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-industry"></i> Map Firm to Industry</h3>
+                            <p class="admin-description">Link firms to their industry classification. This determines how contributions and trades are categorized.</p>
+
+                            <div class="mapping-form">
+                                <div class="form-group">
+                                    <label>Firm Name:</label>
+                                    <input type="text" id="firm-name" class="admin-input" placeholder="e.g., Goldman Sachs">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Ticker (optional):</label>
+                                    <input type="text" id="firm-ticker" class="admin-input" placeholder="e.g., GS">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Industry:</label>
+                                    <select id="firm-industry" class="admin-select">
+                                        <option value="">-- Select industry --</option>
+                                        <option value="banking">Banking & Depository</option>
+                                        <option value="investment">Investment & Securities</option>
+                                        <option value="insurance">Insurance</option>
+                                        <option value="mortgage">Mortgage & Real Estate Finance</option>
+                                        <option value="consumer_lending">Consumer Lending</option>
+                                        <option value="crypto">Digital Assets & Crypto</option>
+                                        <option value="fintech">Financial Technology</option>
+                                        <option value="payments">Payments & Processing</option>
+                                    </select>
+                                </div>
+
+                                <button onclick="saveFirmIndustry()" class="admin-btn primary">
+                                    <i class="fas fa-save"></i> Save Firm
+                                </button>
+                            </div>
+
+                            <div id="firm-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-list"></i> Existing Firms</h3>
+                            <div class="search-filter">
+                                <input type="text" id="firm-search" class="admin-input" placeholder="Search firms..." oninput="filterFirms()">
+                            </div>
+                            <div id="existing-firms" class="existing-mappings">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employer to Firm Panel -->
+                    <div id="admin-employer-firm" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-briefcase"></i> Map Employer Variation to Firm</h3>
+                            <p class="admin-description">Link employer name variations from FEC data to canonical firms. Search for variations of a firm name to map them.</p>
+
+                            <div class="mapping-form">
+                                <div class="form-group">
+                                    <label>Select Canonical Firm:</label>
+                                    <select id="employer-canonical-firm" class="admin-select" onchange="loadFirmAliases()">
+                                        <option value="">-- Select firm --</option>
+                                    </select>
+                                </div>
+
+                                <div id="firm-aliases" class="aliases-list" style="display: none;">
+                                    <label>Currently linked employer names:</label>
+                                    <div id="employer-aliases-container">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Search unmatched employers:</label>
+                                    <input type="text" id="employer-search" class="admin-input" placeholder="e.g., goldman" oninput="searchEmployers()">
+                                </div>
+
+                                <div id="employer-search-results" class="search-results" style="display: none;">
+                                    <label>Matching unmatched employers:</label>
+                                    <div id="employer-results-container">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Or enter employer name manually:</label>
+                                    <input type="text" id="employer-manual" class="admin-input" placeholder="e.g., GOLDMAN SACHS NYC">
+                                </div>
+
+                                <button onclick="saveEmployerMapping()" class="admin-btn primary">
+                                    <i class="fas fa-save"></i> Save Mapping
+                                </button>
+                            </div>
+
+                            <div id="employer-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-question-circle"></i> Unmatched Employers (Top 50 by frequency)</h3>
+                            <div id="unmatched-employers" class="existing-mappings">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Unmatched Entities Panel -->
+                    <div id="admin-unmatched-entities" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Entities Needing Manual Review</h3>
+                            <p class="admin-description">These items couldn't be automatically matched to known companies. Review and create mappings as needed.</p>
+
+                            <div class="unmatched-filters">
+                                <button class="filter-btn active" data-filter="all" onclick="filterUnmatched('all')">
+                                    All <span id="unmatched-count-all" class="badge">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="pacs" onclick="filterUnmatched('pacs')">
+                                    PACs <span id="unmatched-count-pacs" class="badge">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="employers" onclick="filterUnmatched('employers')">
+                                    Employers <span id="unmatched-count-employers" class="badge">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="tickers" onclick="filterUnmatched('tickers')">
+                                    Tickers <span id="unmatched-count-tickers" class="badge">0</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-building"></i> Unmatched PAC Names</h3>
+                            <p class="admin-description">Financial PACs that couldn't be matched to a canonical company name.</p>
+                            <div id="unmatched-pacs" class="unmatched-list" data-category="pacs">
+                                <div class="loading">Loading unmatched PACs...</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-briefcase"></i> Unmatched Employer Names</h3>
+                            <p class="admin-description">Employer names from individual contributions that couldn't be matched to a known firm.</p>
+                            <div id="unmatched-employer-names" class="unmatched-list" data-category="employers">
+                                <div class="loading">Loading unmatched employers...</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-chart-line"></i> Uncategorized Stock Tickers</h3>
+                            <p class="admin-description">Stock tickers that haven't been assigned to an industry category.</p>
+                            <div id="unmatched-tickers" class="unmatched-list" data-category="tickers">
+                                <div class="loading">Loading uncategorized tickers...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </main>
 
     <!-- Insight Detail Modal -->
@@ -2698,7 +3395,7 @@
             const loading = document.getElementById('leaderboard-loading');
 
             if (!officials || officials.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">No officials found matching filters</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">No officials found matching filters</td></tr>';
                 loading.style.display = 'none';
                 return;
             }
@@ -2709,8 +3406,8 @@
                     <td>
                         <div class="official-cell">
                             <div class="official-photo-container">
-                                ${(official.photo_url || (official.bioguide_id ? 'https://clerk.house.gov/content/assets/img/members/' + official.bioguide_id + '.jpg' : null))
-                                    ? `<img class="official-photo" src="${official.photo_url || 'https://clerk.house.gov/content/assets/img/members/' + official.bioguide_id + '.jpg'}" alt="${official.name}" title="${(official.photo_attribution || 'Official portrait').replace(/"/g, '&quot;')}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
+                                ${(official.photo_url || (official.bioguide_id ? 'https://clerk.house.gov/images/members/' + official.bioguide_id + '.jpg' : null))
+                                    ? `<img class="official-photo" src="${official.photo_url || 'https://clerk.house.gov/images/members/' + official.bioguide_id + '.jpg'}" alt="${official.name}" title="${(official.photo_attribution || 'Official portrait').replace(/"/g, '&quot;')}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
                                     : `<div class="official-photo placeholder"><i class="fas fa-user"></i></div>`
                                 }
                                 <div class="party-indicator ${official.party}">${official.party}</div>
@@ -2721,8 +3418,14 @@
                             </div>
                         </div>
                     </td>
+                    <td class="trend-cell">
+                        ${formatTrendCell(official)}
+                    </td>
                     <td class="amount-cell">
-                        <div class="sub">${formatPacAmount(official)}</div>
+                        <div class="sub">${formatTotalContributions(official)}</div>
+                    </td>
+                    <td class="amount-cell">
+                        <div class="sub">${formatFinanceContributions(official)}</div>
                     </td>
                     <td class="amount-cell" style="text-align: center;">
                         <div class="sub">${formatFinancialPct(official)}</div>
@@ -2734,19 +3437,23 @@
                         <div class="sub sell-amount">${official.sales_display || formatTradeAmount(official.sales_min, official.sales_max)}</div>
                     </td>
                     <td>
-                        <div class="industry-chips">
-                            ${(official.top_industries || []).map(ind => {
-                                // Handle both object format {code, name} and string format
-                                const code = typeof ind === 'object' ? ind.code : ind;
-                                const name = typeof ind === 'object' ? ind.name : ind.replace('_', ' ');
-                                return `<span class="industry-chip ${code}">${name}</span>`;
-                            }).join('')}
+                        <div class="donor-chips">
+                            ${formatTopDonors(official)}
                         </div>
                     </td>
                 </tr>
             `).join('');
 
             loading.style.display = 'none';
+
+            // Initialize Tippy tooltips for donor chips
+            if (typeof tippy !== 'undefined') {
+                tippy('[data-tippy-content]', {
+                    animation: 'shift-away',
+                    placement: 'top',
+                    allowHTML: true
+                });
+            }
         }
 
         function formatAmount(amount) {
@@ -2806,23 +3513,31 @@
         }
 
         function formatFinancialPct(official) {
-            // Calculate and display the percentage of total PAC from financial sector
-            const totalPac = official.contributions || 0;
-            const financialPac = official.financial_sector_pac;
-            const hasFinancialPacData = financialPac !== undefined && financialPac !== null;
+            // Calculate and display the percentage of total contributions from financial sector
+            // Uses new contributions_display structure (PAC + Individual combined)
+            const display = official.contributions_display || {};
+            const total = display.total || 0;
+            const financial = display.financial || 0;
 
             // No data at all - show dash
-            if (!hasFinancialPacData || totalPac === 0) {
+            if (total === 0) {
                 return '<span style="color: var(--ncrc-gray);">-</span>';
             }
 
-            // If financial_sector_pac is explicitly 0, show 0%
-            if (financialPac === 0) {
+            // If financial is explicitly 0, show 0%
+            if (financial === 0) {
                 return '<span style="font-weight: 600;">0%</span>';
             }
 
-            const pct = Math.round((financialPac / totalPac) * 100);
-            return `<span style="font-weight: 600;">${pct}%</span>`;
+            const pct = Math.round((financial / total) * 100);
+
+            // Color code based on percentage
+            let colorClass = '';
+            if (pct >= 50) colorClass = 'style="font-weight: 600; color: var(--ncrc-red);"';
+            else if (pct >= 25) colorClass = 'style="font-weight: 600; color: var(--ncrc-orange);"';
+            else colorClass = 'style="font-weight: 600;"';
+
+            return `<span ${colorClass}>${pct}%</span>`;
         }
 
         function formatTradeAmount(min, max) {
@@ -2837,6 +3552,158 @@
             };
 
             return `${formatK(min)} - ${formatK(max)}`;
+        }
+
+        function formatTrendCell(official) {
+            // Format trend cell with contribution % trend and stock activity indicator
+            // Uses fields from enrich_officials_with_trends:
+            // - finance_trend_direction: 'increasing', 'decreasing', 'stable'
+            // - finance_trend_arrow: '▲', '▼', '►'
+            // - finance_pct_change: numeric change
+            // - stock_trend_direction: 'buyer', 'seller', 'neutral'
+            // - stock_trend_icon: '◆', '◇', '○'
+
+            const trendDirection = official.finance_trend_direction || 'stable';
+            const trendArrow = official.finance_trend_arrow || '►';
+            const stockDirection = official.stock_trend_direction || 'neutral';
+            const stockIcon = official.stock_trend_icon || '';
+
+            // Map trend direction to CSS class
+            let trendClass = 'stable';
+            if (trendDirection === 'increasing') trendClass = 'up';
+            else if (trendDirection === 'decreasing') trendClass = 'down';
+
+            // Map stock direction to CSS class
+            let stockClass = '';
+            if (stockDirection === 'buyer') stockClass = 'buyer';
+            else if (stockDirection === 'seller') stockClass = 'seller';
+
+            // Build tooltip content for hover
+            const tooltipContent = buildTrendTooltip(official);
+
+            return `
+                <div class="trend-indicators" data-tippy-content="${tooltipContent.replace(/"/g, '&quot;')}">
+                    <span class="trend-arrow ${trendClass}" title="Finance % trend">${trendArrow}</span>
+                    ${stockIcon && stockDirection !== 'neutral' ? `<span class="stock-indicator ${stockClass}" title="${official.net_stock_label || 'Stock activity'}">${stockIcon}</span>` : ''}
+                </div>
+            `;
+        }
+
+        function buildTrendTooltip(official) {
+            const parts = [];
+
+            // Finance % trend info
+            const pctChange = official.finance_pct_change;
+            if (pctChange !== undefined && pctChange !== 0) {
+                const changeDir = pctChange > 0 ? '+' : '';
+                parts.push(`<strong>Finance % Change:</strong> ${changeDir}${pctChange.toFixed(1)}%`);
+            }
+
+            // Trend history
+            const history = official.finance_pct_trend || [];
+            if (history.length > 1) {
+                parts.push(`<strong>History:</strong> ${history.length} periods of data`);
+            } else {
+                parts.push('<em>Trend data will accumulate over time</em>');
+            }
+
+            // Stock activity summary
+            const netLabel = official.net_stock_label;
+            if (netLabel && netLabel !== 'Neutral') {
+                parts.push(`<strong>Stock Position:</strong> ${netLabel}`);
+            }
+
+            return parts.join('<br>');
+        }
+
+        function formatTotalContributions(official) {
+            // Format total contributions (PAC + Individual)
+            const display = official.contributions_display || {};
+            const total = display.total || 0;
+
+            if (total === 0) {
+                return '<span style="color: var(--ncrc-gray);">-</span>';
+            }
+
+            return `<span style="font-weight: 600;">${formatDollars(total)}</span>`;
+        }
+
+        function formatFinanceContributions(official) {
+            // Format finance sector contributions (PAC + Individual)
+            const display = official.contributions_display || {};
+            const financial = display.financial || 0;
+            const total = display.total || 0;
+
+            if (total === 0) {
+                return '<span style="color: var(--ncrc-gray);">-</span>';
+            }
+
+            if (financial === 0) {
+                return '<span style="font-weight: 600;">$0</span>';
+            }
+
+            return `<span style="font-weight: 600;">${formatDollars(financial)}</span>`;
+        }
+
+        function formatDollars(amount) {
+            // Format as full dollar amount with commas
+            if (amount >= 1000000) {
+                return `$${(amount / 1000000).toFixed(1)}M`;
+            } else if (amount >= 100000) {
+                return `$${Math.round(amount / 1000)}K`;
+            }
+            return `$${Math.round(amount).toLocaleString()}`;
+        }
+
+        function formatTopDonors(official) {
+            // Format top donors as chips with Tippy tooltips
+            const donors = official.top_donors || [];
+
+            if (!donors.length) {
+                // Fallback to top_industries if no donors
+                const industries = official.top_industries || [];
+                if (!industries.length) return '<span style="color: var(--ncrc-gray);">-</span>';
+
+                return industries.map(ind => {
+                    const code = typeof ind === 'object' ? ind.code : ind;
+                    const name = typeof ind === 'object' ? ind.name : ind.replace('_', ' ');
+                    return `<span class="donor-chip">${name}</span>`;
+                }).join('');
+            }
+
+            return donors.slice(0, 3).map(donor => {
+                const name = donor.name || donor.company || 'Unknown';
+                const amount = donor.total || donor.amount || 0;
+                const hasOverlap = donor.stock_overlap || false;
+                const overlapClass = hasOverlap ? 'has-overlap' : '';
+
+                // Build tooltip with donor details
+                let tooltip = `<strong>${name}</strong><br>`;
+                tooltip += `Total: ${formatDollars(amount)}`;
+                if (donor.pac_amount) tooltip += `<br>PAC: ${formatDollars(donor.pac_amount)}`;
+                if (donor.individual_amount) tooltip += `<br>Individual: ${formatDollars(donor.individual_amount)}`;
+                if (hasOverlap) tooltip += `<br><span style="color: var(--ncrc-orange);">⚠ Also trades their stock</span>`;
+
+                return `<span class="donor-chip ${overlapClass}" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}">${truncateName(name)}</span>`;
+            }).join('');
+        }
+
+        function truncateName(name) {
+            // Truncate company names for display in chips
+            if (name.length <= 12) return name;
+            // Common abbreviations
+            const abbrevs = {
+                'Bank of America': 'BofA',
+                'JPMorgan Chase': 'JPMorgan',
+                'Goldman Sachs': 'Goldman',
+                'Morgan Stanley': 'Morgan S.',
+                'Wells Fargo': 'Wells F.',
+                'Citigroup': 'Citi',
+                'American Express': 'AmEx',
+                'Capital One': 'Cap One'
+            };
+            if (abbrevs[name]) return abbrevs[name];
+            return name.slice(0, 10) + '...';
         }
 
         function getScoreClass(score) {
@@ -3157,7 +4024,7 @@
             }
 
             btn.classList.add('refreshing');
-            btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refreshing...';
+            btn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Refreshing...</span>';
 
             try {
                 const response = await fetch('api/refresh-data', {
@@ -3174,18 +4041,18 @@
                     setTimeout(() => {
                         loadDataFreshness();
                         btn.classList.remove('refreshing');
-                        btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+                        btn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Refresh Data</span>';
                     }, 5000);
                 } else {
                     alert('Error: ' + (data.error || 'Failed to start data refresh'));
                     btn.classList.remove('refreshing');
-                    btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+                    btn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Refresh Data</span>';
                 }
             } catch (error) {
                 console.error('Error refreshing data:', error);
                 alert('Error starting data refresh. Please try again.');
                 btn.classList.remove('refreshing');
-                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i><span>Refresh Data</span>';
             }
         }
 
@@ -3515,6 +4382,675 @@
         loadFirms();
         refreshInsights();
         loadKeyBills();
+
+        // =============================================
+        // ADMIN PANEL FUNCTIONS
+        // =============================================
+        {% if is_admin %}
+
+        // Admin sub-tab switching
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                const panelId = 'admin-' + tab.dataset.adminPanel;
+                document.getElementById(panelId).classList.add('active');
+            });
+        });
+
+        // Store for officials list
+        let allOfficialsForAdmin = [];
+
+        // Load officials into admin dropdowns
+        async function loadOfficialsForAdmin() {
+            try {
+                const response = await fetch('/electwatch/api/officials?limit=600');
+                const data = await response.json();
+                allOfficialsForAdmin = data.officials || [];
+
+                const canonicalSelect = document.getElementById('canonical-official');
+                const aliasSelect = document.getElementById('alias-official');
+
+                // Clear and populate
+                canonicalSelect.innerHTML = '<option value="">-- Select official --</option>';
+                aliasSelect.innerHTML = '<option value="">-- Select official to merge --</option>';
+
+                allOfficialsForAdmin.sort((a, b) => a.name.localeCompare(b.name));
+
+                allOfficialsForAdmin.forEach(official => {
+                    const displayName = `${official.name} (${official.state}-${official.chamber === 'senate' ? 'S' : official.district || 'H'})`;
+                    canonicalSelect.innerHTML += `<option value="${official.name}">${displayName}</option>`;
+                    aliasSelect.innerHTML += `<option value="${official.name}">${displayName}</option>`;
+                });
+
+                // Load existing merges
+                loadExistingMerges();
+
+            } catch (error) {
+                console.error('Error loading officials for admin:', error);
+            }
+        }
+
+        // When canonical official is selected, show their existing aliases
+        document.getElementById('canonical-official')?.addEventListener('change', async function() {
+            const canonicalName = this.value;
+            const aliasesContainer = document.getElementById('canonical-aliases');
+            const aliasesDiv = document.getElementById('aliases-container');
+
+            if (!canonicalName) {
+                aliasesContainer.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials');
+                const data = await response.json();
+                const merges = data.merges || [];
+
+                const existing = merges.find(m => m.canonical === canonicalName);
+                if (existing && existing.aliases && existing.aliases.length > 0) {
+                    aliasesDiv.innerHTML = existing.aliases.map(alias =>
+                        `<span class="alias-tag">
+                            ${alias}
+                            <span class="remove-alias" onclick="removeOfficialAlias('${canonicalName}', '${alias}')">&times;</span>
+                        </span>`
+                    ).join('');
+                    aliasesContainer.style.display = 'block';
+                } else {
+                    aliasesDiv.innerHTML = '<em style="color: var(--ncrc-gray); font-size: 0.85rem;">No aliases linked yet</em>';
+                    aliasesContainer.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading aliases:', error);
+            }
+        });
+
+        // Save official merge
+        async function saveOfficialMerge() {
+            const canonical = document.getElementById('canonical-official').value;
+            const alias = document.getElementById('alias-official').value;
+
+            if (!canonical || !alias) {
+                showStatus('merge-status', 'Please select both the canonical official and the alias to merge.', 'error');
+                return;
+            }
+
+            if (canonical === alias) {
+                showStatus('merge-status', 'Cannot merge an official with themselves.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials/merge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ canonical, alias })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showStatus('merge-status', `Successfully mapped "${alias}" → "${canonical}"`, 'success');
+                    // Reset alias dropdown
+                    document.getElementById('alias-official').value = '';
+                    // Refresh the aliases display
+                    document.getElementById('canonical-official').dispatchEvent(new Event('change'));
+                    // Refresh existing merges list
+                    loadExistingMerges();
+                } else {
+                    showStatus('merge-status', data.error || 'Failed to save mapping', 'error');
+                }
+            } catch (error) {
+                showStatus('merge-status', 'Error saving mapping: ' + error.message, 'error');
+            }
+        }
+
+        // Remove an alias from a canonical official
+        async function removeOfficialAlias(canonical, alias) {
+            if (!confirm(`Remove "${alias}" from "${canonical}"?`)) return;
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials/unmerge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ canonical, alias })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    document.getElementById('canonical-official').dispatchEvent(new Event('change'));
+                    loadExistingMerges();
+                }
+            } catch (error) {
+                console.error('Error removing alias:', error);
+            }
+        }
+
+        // Load existing official merges
+        async function loadExistingMerges() {
+            const container = document.getElementById('existing-merges');
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials');
+                const data = await response.json();
+                const merges = data.merges || [];
+
+                if (merges.length === 0) {
+                    container.innerHTML = '<p style="color: var(--ncrc-gray); font-style: italic;">No official merges defined yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = merges.map(merge =>
+                    `<div class="mapping-item">
+                        <div class="mapping-info">
+                            <div class="mapping-canonical"><i class="fas fa-user"></i> ${merge.canonical}</div>
+                            <div class="mapping-aliases">Aliases: ${merge.aliases.join(', ') || 'None'}</div>
+                        </div>
+                        <div class="mapping-actions">
+                            <button class="delete-btn" onclick="deleteOfficialMerge('${merge.canonical}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>`
+                ).join('');
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);">Error loading merges.</p>';
+            }
+        }
+
+        // Delete entire official merge
+        async function deleteOfficialMerge(canonical) {
+            if (!confirm(`Delete all alias mappings for "${canonical}"?`)) return;
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ canonical })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    loadExistingMerges();
+                    document.getElementById('canonical-official').dispatchEvent(new Event('change'));
+                }
+            } catch (error) {
+                console.error('Error deleting merge:', error);
+            }
+        }
+
+        // Show status message
+        function showStatus(elementId, message, type) {
+            const statusEl = document.getElementById(elementId);
+            statusEl.textContent = message;
+            statusEl.className = 'status-message ' + type;
+            statusEl.style.display = 'block';
+            setTimeout(() => { statusEl.style.display = 'none'; }, 5000);
+        }
+
+        // Save firm to industry mapping
+        async function saveFirmIndustry() {
+            const name = document.getElementById('firm-name').value.trim();
+            const ticker = document.getElementById('firm-ticker').value.trim();
+            const industry = document.getElementById('firm-industry').value;
+
+            if (!name || !industry) {
+                showStatus('firm-status', 'Please enter firm name and select an industry.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/firms', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, ticker, industry })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showStatus('firm-status', `Saved: "${name}" → ${industry}`, 'success');
+                    document.getElementById('firm-name').value = '';
+                    document.getElementById('firm-ticker').value = '';
+                    loadExistingFirms();
+                    loadFirmsForEmployerDropdown();
+                } else {
+                    showStatus('firm-status', data.error || 'Failed to save', 'error');
+                }
+            } catch (error) {
+                showStatus('firm-status', 'Error: ' + error.message, 'error');
+            }
+        }
+
+        // Load existing firms
+        async function loadExistingFirms() {
+            const container = document.getElementById('existing-firms');
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/firms');
+                const data = await response.json();
+                const firms = data.firms || [];
+
+                if (firms.length === 0) {
+                    container.innerHTML = '<p style="color: var(--ncrc-gray); font-style: italic;">No custom firms defined. Using built-in firm database.</p>';
+                    return;
+                }
+
+                container.innerHTML = firms.map(firm =>
+                    `<div class="mapping-item">
+                        <div class="mapping-info">
+                            <div class="mapping-canonical">
+                                <i class="fas fa-building"></i> ${firm.name}
+                                ${firm.ticker ? `<span style="color: var(--ncrc-gray);">(${firm.ticker})</span>` : ''}
+                            </div>
+                            <div class="mapping-aliases">Industry: ${firm.industry}</div>
+                        </div>
+                        <div class="mapping-actions">
+                            <button class="delete-btn" onclick="deleteFirm('${firm.name}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>`
+                ).join('');
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);">Error loading firms.</p>';
+            }
+        }
+
+        // Filter firms display
+        function filterFirms() {
+            const search = document.getElementById('firm-search').value.toLowerCase();
+            const items = document.querySelectorAll('#existing-firms .mapping-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(search) ? 'flex' : 'none';
+            });
+        }
+
+        // Delete firm
+        async function deleteFirm(name) {
+            if (!confirm(`Delete firm "${name}"?`)) return;
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/firms/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name })
+                });
+
+                if (response.ok) {
+                    loadExistingFirms();
+                }
+            } catch (error) {
+                console.error('Error deleting firm:', error);
+            }
+        }
+
+        // Load firms for employer mapping dropdown
+        async function loadFirmsForEmployerDropdown() {
+            const select = document.getElementById('employer-canonical-firm');
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/firms/all');
+                const data = await response.json();
+                const firms = data.firms || [];
+
+                select.innerHTML = '<option value="">-- Select firm --</option>';
+                firms.sort((a, b) => a.name.localeCompare(b.name));
+                firms.forEach(firm => {
+                    select.innerHTML += `<option value="${firm.id}">${firm.name}</option>`;
+                });
+            } catch (error) {
+                console.error('Error loading firms for dropdown:', error);
+            }
+        }
+
+        // Load firm aliases when firm is selected
+        async function loadFirmAliases() {
+            const firmId = document.getElementById('employer-canonical-firm').value;
+            const aliasesContainer = document.getElementById('firm-aliases');
+            const aliasesDiv = document.getElementById('employer-aliases-container');
+
+            if (!firmId) {
+                aliasesContainer.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/electwatch/api/admin/mappings/firms/${firmId}/aliases`);
+                const data = await response.json();
+                const aliases = data.aliases || [];
+
+                if (aliases.length > 0) {
+                    aliasesDiv.innerHTML = aliases.map(alias =>
+                        `<span class="alias-tag">
+                            ${alias}
+                            <span class="remove-alias" onclick="removeEmployerAlias('${firmId}', '${alias}')">&times;</span>
+                        </span>`
+                    ).join('');
+                } else {
+                    aliasesDiv.innerHTML = '<em style="color: var(--ncrc-gray); font-size: 0.85rem;">No employer aliases linked yet</em>';
+                }
+                aliasesContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error loading firm aliases:', error);
+            }
+        }
+
+        // Search employers
+        let employerSearchTimeout;
+        function searchEmployers() {
+            clearTimeout(employerSearchTimeout);
+            const search = document.getElementById('employer-search').value.trim();
+            const resultsContainer = document.getElementById('employer-search-results');
+            const resultsDiv = document.getElementById('employer-results-container');
+
+            if (search.length < 2) {
+                resultsContainer.style.display = 'none';
+                return;
+            }
+
+            employerSearchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`/electwatch/api/admin/employers/search?q=${encodeURIComponent(search)}`);
+                    const data = await response.json();
+                    const employers = data.employers || [];
+
+                    if (employers.length > 0) {
+                        resultsDiv.innerHTML = employers.map(emp =>
+                            `<div class="search-result-item" onclick="selectEmployer('${emp.name.replace(/'/g, "\\'")}')">
+                                <span class="employer-name">${emp.name}</span>
+                                <span class="contribution-count">${emp.count} contributions</span>
+                            </div>`
+                        ).join('');
+                        resultsContainer.style.display = 'block';
+                    } else {
+                        resultsDiv.innerHTML = '<p style="color: var(--ncrc-gray); font-style: italic;">No unmatched employers found matching that search.</p>';
+                        resultsContainer.style.display = 'block';
+                    }
+                } catch (error) {
+                    console.error('Error searching employers:', error);
+                }
+            }, 300);
+        }
+
+        // Select employer from search results
+        function selectEmployer(name) {
+            document.getElementById('employer-manual').value = name;
+            document.querySelectorAll('.search-result-item').forEach(item => item.classList.remove('selected'));
+            event.target.closest('.search-result-item').classList.add('selected');
+        }
+
+        // Save employer mapping
+        async function saveEmployerMapping() {
+            const firmId = document.getElementById('employer-canonical-firm').value;
+            const employerName = document.getElementById('employer-manual').value.trim();
+
+            if (!firmId || !employerName) {
+                showStatus('employer-status', 'Please select a firm and enter/select an employer name.', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/employers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firm_id: firmId, employer_name: employerName })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showStatus('employer-status', `Mapped "${employerName}" → ${data.firm_name}`, 'success');
+                    document.getElementById('employer-manual').value = '';
+                    document.getElementById('employer-search').value = '';
+                    document.getElementById('employer-search-results').style.display = 'none';
+                    loadFirmAliases();
+                    loadUnmatchedEmployers();
+                } else {
+                    showStatus('employer-status', data.error || 'Failed to save', 'error');
+                }
+            } catch (error) {
+                showStatus('employer-status', 'Error: ' + error.message, 'error');
+            }
+        }
+
+        // Remove employer alias
+        async function removeEmployerAlias(firmId, alias) {
+            if (!confirm(`Remove "${alias}" from this firm?`)) return;
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/employers/delete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ firm_id: firmId, employer_name: alias })
+                });
+
+                if (response.ok) {
+                    loadFirmAliases();
+                }
+            } catch (error) {
+                console.error('Error removing employer alias:', error);
+            }
+        }
+
+        // Load unmatched employers
+        async function loadUnmatchedEmployers() {
+            const container = document.getElementById('unmatched-employers');
+            try {
+                const response = await fetch('/electwatch/api/admin/employers/unmatched?limit=50');
+                const data = await response.json();
+                const employers = data.employers || [];
+
+                if (employers.length === 0) {
+                    container.innerHTML = '<p style="color: var(--success); font-style: italic;">All employers are matched!</p>';
+                    return;
+                }
+
+                container.innerHTML = employers.map(emp =>
+                    `<div class="mapping-item">
+                        <div class="mapping-info">
+                            <div class="mapping-canonical">${emp.name}</div>
+                            <div class="mapping-aliases">${emp.count} contributions</div>
+                        </div>
+                        <div class="mapping-actions">
+                            <button class="edit-btn" onclick="quickMapEmployer('${emp.name.replace(/'/g, "\\'")}')">
+                                <i class="fas fa-link"></i> Map
+                            </button>
+                        </div>
+                    </div>`
+                ).join('');
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);">Error loading unmatched employers.</p>';
+            }
+        }
+
+        // Quick map employer - fills in the employer name
+        function quickMapEmployer(name) {
+            document.getElementById('employer-manual').value = name;
+            document.getElementById('employer-canonical-firm').focus();
+        }
+
+        // =============================================
+        // UNMATCHED ENTITIES PANEL
+        // =============================================
+
+        // Load all unmatched entities for the Unmatched tab
+        async function loadUnmatchedEntities() {
+            loadUnmatchedPACs();
+            loadUnmatchedEmployerNames();
+            loadUncategorizedTickers();
+        }
+
+        // Load unmatched PAC names
+        async function loadUnmatchedPACs() {
+            const container = document.getElementById('unmatched-pacs');
+            try {
+                const response = await fetch('/electwatch/api/admin/unmatched/pacs');
+                const data = await response.json();
+                const pacs = data.pacs || [];
+
+                document.getElementById('unmatched-count-pacs').textContent = pacs.length;
+                updateTotalUnmatchedCount();
+
+                if (pacs.length === 0) {
+                    container.innerHTML = '<p style="color: var(--success); font-style: italic;"><i class="fas fa-check-circle"></i> All PACs are mapped!</p>';
+                    return;
+                }
+
+                container.innerHTML = pacs.map(pac =>
+                    `<div class="unmatched-item" data-category="pacs">
+                        <div class="entity-info">
+                            <div class="entity-name">${pac.name}</div>
+                            <div class="entity-meta">$${(pac.total_amount || 0).toLocaleString()} from ${pac.count || 0} contributions</div>
+                        </div>
+                        <button class="action-btn" onclick="mapPACToFirm('${pac.name.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-link"></i> Map
+                        </button>
+                    </div>`
+                ).join('');
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);"><i class="fas fa-exclamation-circle"></i> Error loading PACs.</p>';
+                console.error('Error loading unmatched PACs:', error);
+            }
+        }
+
+        // Load unmatched employer names
+        async function loadUnmatchedEmployerNames() {
+            const container = document.getElementById('unmatched-employer-names');
+            try {
+                const response = await fetch('/electwatch/api/admin/employers/unmatched?limit=50');
+                const data = await response.json();
+                const employers = data.employers || [];
+
+                document.getElementById('unmatched-count-employers').textContent = employers.length;
+                updateTotalUnmatchedCount();
+
+                if (employers.length === 0) {
+                    container.innerHTML = '<p style="color: var(--success); font-style: italic;"><i class="fas fa-check-circle"></i> All employers are matched!</p>';
+                    return;
+                }
+
+                container.innerHTML = employers.map(emp =>
+                    `<div class="unmatched-item" data-category="employers">
+                        <div class="entity-info">
+                            <div class="entity-name">${emp.name}</div>
+                            <div class="entity-meta">${emp.count} contributions</div>
+                        </div>
+                        <button class="action-btn" onclick="quickMapEmployer('${emp.name.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-link"></i> Map
+                        </button>
+                    </div>`
+                ).join('');
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);"><i class="fas fa-exclamation-circle"></i> Error loading employers.</p>';
+            }
+        }
+
+        // Load uncategorized stock tickers
+        async function loadUncategorizedTickers() {
+            const container = document.getElementById('unmatched-tickers');
+            try {
+                const response = await fetch('/electwatch/api/admin/unmatched/tickers');
+                const data = await response.json();
+                const tickers = data.tickers || [];
+
+                document.getElementById('unmatched-count-tickers').textContent = tickers.length;
+                updateTotalUnmatchedCount();
+
+                if (tickers.length === 0) {
+                    container.innerHTML = '<p style="color: var(--success); font-style: italic;"><i class="fas fa-check-circle"></i> All tickers are categorized!</p>';
+                    return;
+                }
+
+                container.innerHTML = tickers.map(ticker =>
+                    `<div class="unmatched-item" data-category="tickers">
+                        <div class="entity-info">
+                            <div class="entity-name">${ticker.ticker} - ${ticker.company || 'Unknown'}</div>
+                            <div class="entity-meta">${ticker.trade_count} trades by ${ticker.official_count} officials</div>
+                        </div>
+                        <button class="action-btn" onclick="mapTickerToIndustry('${ticker.ticker}')">
+                            <i class="fas fa-industry"></i> Categorize
+                        </button>
+                    </div>`
+                ).join('');
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);"><i class="fas fa-exclamation-circle"></i> Error loading tickers.</p>';
+            }
+        }
+
+        // Update total unmatched count
+        function updateTotalUnmatchedCount() {
+            const pacs = parseInt(document.getElementById('unmatched-count-pacs').textContent) || 0;
+            const employers = parseInt(document.getElementById('unmatched-count-employers').textContent) || 0;
+            const tickers = parseInt(document.getElementById('unmatched-count-tickers').textContent) || 0;
+            document.getElementById('unmatched-count-all').textContent = pacs + employers + tickers;
+        }
+
+        // Filter unmatched items by category
+        function filterUnmatched(category) {
+            // Update button states
+            document.querySelectorAll('.unmatched-filters .filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === category);
+            });
+
+            // Show/hide items
+            document.querySelectorAll('.unmatched-item').forEach(item => {
+                if (category === 'all' || item.dataset.category === category) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+
+            // Show/hide section containers
+            document.querySelectorAll('.unmatched-list').forEach(list => {
+                if (category === 'all' || list.dataset.category === category) {
+                    list.closest('.admin-section').style.display = '';
+                } else {
+                    list.closest('.admin-section').style.display = 'none';
+                }
+            });
+        }
+
+        // Map PAC to firm - switch to employer-firm tab and fill in
+        function mapPACToFirm(pacName) {
+            // Switch to employer-firm tab
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.admin-tab[data-admin-panel="employer-firm"]').classList.add('active');
+            document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('admin-employer-firm').classList.add('active');
+
+            // Fill in the manual field
+            document.getElementById('employer-manual').value = pacName;
+            document.getElementById('employer-canonical-firm').focus();
+        }
+
+        // Map ticker to industry - switch to firm-industry tab
+        function mapTickerToIndustry(ticker) {
+            // Switch to firm-industry tab
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.admin-tab[data-admin-panel="firm-industry"]').classList.add('active');
+            document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('admin-firm-industry').classList.add('active');
+
+            // Fill in the ticker field
+            document.getElementById('firm-ticker').value = ticker;
+            document.getElementById('firm-name').focus();
+        }
+
+        // Initialize admin panel when admin tab is shown
+        document.querySelector('.nav-tab[data-panel="admin"]')?.addEventListener('click', () => {
+            if (allOfficialsForAdmin.length === 0) {
+                loadOfficialsForAdmin();
+                loadExistingFirms();
+                loadFirmsForEmployerDropdown();
+                loadUnmatchedEmployers();
+                loadUnmatchedEntities();
+            }
+        });
+
+        // Load unmatched entities when Unmatched tab is clicked
+        document.querySelector('.admin-tab[data-admin-panel="unmatched-entities"]')?.addEventListener('click', () => {
+            loadUnmatchedEntities();
+        });
+
+        {% endif %}
     </script>
 </body>
 </html>

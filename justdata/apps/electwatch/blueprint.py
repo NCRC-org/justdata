@@ -10,7 +10,7 @@ import json
 import logging
 import threading
 
-from justdata.main.auth import get_user_type
+from justdata.main.auth import get_user_type, login_required
 
 logger = logging.getLogger(__name__)
 
@@ -159,15 +159,18 @@ def _get_sectors():
 
 
 @electwatch_bp.route('/')
+@login_required
 def index():
     """Main dashboard page - leaderboard of officials by involvement."""
     user_type = get_user_type()
     is_staff = (user_type in ('staff', 'admin'))
+    is_admin = (user_type == 'admin')
     return render_template(
         'electwatch_dashboard.html',
         version=__version__,
         sectors=_get_sectors(),
-        is_staff=is_staff
+        is_staff=is_staff,
+        is_admin=is_admin
     )
 
 
@@ -1566,3 +1569,220 @@ def api_remove_key_bill():
     except Exception as e:
         logger.error(f"Error removing key bill: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# =============================================================================
+# ADMIN MAPPING API ROUTES
+# =============================================================================
+
+@electwatch_bp.route('/api/admin/mappings/officials')
+def api_admin_get_official_merges():
+    """Get all official merge mappings (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    from justdata.apps.electwatch.services.mapping_store import get_official_merges
+    return jsonify({'merges': get_official_merges()})
+
+
+@electwatch_bp.route('/api/admin/mappings/officials/merge', methods=['POST'])
+def api_admin_merge_official():
+    """Add an alias to a canonical official (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json()
+    canonical = data.get('canonical')
+    alias = data.get('alias')
+
+    if not canonical or not alias:
+        return jsonify({'success': False, 'error': 'Both canonical and alias required'})
+
+    from justdata.apps.electwatch.services.mapping_store import add_official_merge
+    result = add_official_merge(canonical, alias)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/mappings/officials/unmerge', methods=['POST'])
+def api_admin_unmerge_official():
+    """Remove an alias from a canonical official (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json()
+    canonical = data.get('canonical')
+    alias = data.get('alias')
+
+    from justdata.apps.electwatch.services.mapping_store import remove_official_alias
+    result = remove_official_alias(canonical, alias)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/mappings/officials/delete', methods=['POST'])
+def api_admin_delete_official_merge():
+    """Delete all aliases for a canonical official (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json()
+    canonical = data.get('canonical')
+
+    from justdata.apps.electwatch.services.mapping_store import delete_official_merge
+    result = delete_official_merge(canonical)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/mappings/firms')
+def api_admin_get_firms():
+    """Get custom firm definitions (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    from justdata.apps.electwatch.services.mapping_store import get_custom_firms
+    return jsonify({'firms': get_custom_firms()})
+
+
+@electwatch_bp.route('/api/admin/mappings/firms/all')
+def api_admin_get_all_firms():
+    """Get all firms (built-in + custom) for dropdown (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    from justdata.apps.electwatch.services.mapping_store import get_all_firms
+    return jsonify({'firms': get_all_firms()})
+
+
+@electwatch_bp.route('/api/admin/mappings/firms', methods=['POST'])
+def api_admin_add_firm():
+    """Add a custom firm definition (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json()
+    name = data.get('name')
+    ticker = data.get('ticker')
+    industry = data.get('industry')
+
+    if not name or not industry:
+        return jsonify({'success': False, 'error': 'Name and industry required'})
+
+    from justdata.apps.electwatch.services.mapping_store import add_custom_firm
+    result = add_custom_firm(name, ticker, industry)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/mappings/firms/delete', methods=['POST'])
+def api_admin_delete_firm():
+    """Delete a custom firm (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json()
+    name = data.get('name')
+
+    from justdata.apps.electwatch.services.mapping_store import delete_custom_firm
+    result = delete_custom_firm(name)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/mappings/firms/<firm_id>/aliases')
+def api_admin_get_firm_aliases(firm_id):
+    """Get employer aliases for a firm (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    from justdata.apps.electwatch.services.mapping_store import get_firm_employer_aliases
+    return jsonify({'aliases': get_firm_employer_aliases(firm_id)})
+
+
+@electwatch_bp.route('/api/admin/mappings/employers', methods=['POST'])
+def api_admin_add_employer_alias():
+    """Add an employer alias to a firm (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json()
+    firm_id = data.get('firm_id')
+    employer_name = data.get('employer_name')
+
+    if not firm_id or not employer_name:
+        return jsonify({'success': False, 'error': 'firm_id and employer_name required'})
+
+    from justdata.apps.electwatch.services.mapping_store import add_employer_alias
+    result = add_employer_alias(firm_id, employer_name)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/mappings/employers/delete', methods=['POST'])
+def api_admin_remove_employer_alias():
+    """Remove an employer alias from a firm (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    data = request.get_json()
+    firm_id = data.get('firm_id')
+    employer_name = data.get('employer_name')
+
+    from justdata.apps.electwatch.services.mapping_store import remove_employer_alias
+    result = remove_employer_alias(firm_id, employer_name)
+    return jsonify(result)
+
+
+@electwatch_bp.route('/api/admin/employers/unmatched')
+def api_admin_get_unmatched_employers():
+    """Get unmatched employers from FEC data (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    limit = request.args.get('limit', 50, type=int)
+
+    from justdata.apps.electwatch.services.mapping_store import get_unmatched_employers
+    return jsonify({'employers': get_unmatched_employers(limit)})
+
+
+@electwatch_bp.route('/api/admin/employers/search')
+def api_admin_search_employers():
+    """Search for employer names in FEC data (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    query = request.args.get('q', '')
+    limit = request.args.get('limit', 20, type=int)
+
+    from justdata.apps.electwatch.services.mapping_store import search_employers
+    return jsonify({'employers': search_employers(query, limit)})
+
+
+@electwatch_bp.route('/api/admin/unmatched/pacs')
+def api_admin_get_unmatched_pacs():
+    """Get unmatched PAC names that couldn't be mapped to companies (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    from justdata.apps.electwatch.services.mapping_store import get_unmatched_pacs
+    return jsonify({'pacs': get_unmatched_pacs()})
+
+
+@electwatch_bp.route('/api/admin/unmatched/tickers')
+def api_admin_get_unmatched_tickers():
+    """Get stock tickers that haven't been categorized into an industry (admin only)."""
+    user_type = get_user_type()
+    if user_type != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+
+    from justdata.apps.electwatch.services.mapping_store import get_uncategorized_tickers
+    return jsonify({'tickers': get_uncategorized_tickers()})

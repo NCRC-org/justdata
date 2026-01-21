@@ -201,9 +201,10 @@ def get_photo_url(name: str, bioguide_id: str = None, chamber: str = 'house') ->
     if not bioguide_id and name in MISSING_BIOGUIDE_IDS:
         bioguide_id = MISSING_BIOGUIDE_IDS[name]
 
-    # For House members, use clerk.house.gov with bioguide_id
-    if bioguide_id and chamber == 'house':
-        return f"https://clerk.house.gov/content/assets/img/members/{bioguide_id}.jpg"
+    # Use clerk.house.gov for photos (works for both House and many Senate members)
+    # URL pattern updated from /content/assets/img/members/ to /images/members/
+    if bioguide_id:
+        return f"https://clerk.house.gov/images/members/{bioguide_id}.jpg"
 
     return None
 
@@ -713,6 +714,187 @@ def get_insights_metadata() -> Dict[str, Any]:
 def save_metadata(metadata: Dict[str, Any], weekly_dir: Optional[Path] = None):
     """Save metadata about the update."""
     save_json('metadata.json', metadata, weekly_dir)
+
+
+# =============================================================================
+# TREND SNAPSHOTS - For historical trend tracking
+# =============================================================================
+
+TREND_SNAPSHOTS_FILE = DATA_DIR / 'trend_snapshots.json'
+
+
+def save_trend_snapshot(officials: List[Dict]):
+    """
+    Save a snapshot of current finance metrics for trend tracking.
+
+    Each snapshot contains the date and finance_pct for each official.
+    Snapshots accumulate over time to build trend history.
+    """
+    snapshot_date = datetime.now().strftime('%Y-%m-%d')
+
+    # Build snapshot data - just the essentials for trends
+    snapshot = {
+        'date': snapshot_date,
+        'officials': {}
+    }
+
+    for official in officials:
+        bioguide_id = official.get('bioguide_id')
+        if not bioguide_id:
+            continue
+
+        # Get contribution breakdown if available
+        contrib_display = official.get('contributions_display', {})
+
+        snapshot['officials'][bioguide_id] = {
+            'name': official.get('name'),
+            'finance_pct': official.get('financial_sector_pct', 0),
+            'total_contributions': contrib_display.get('total', 0),
+            'finance_contributions': contrib_display.get('financial', 0),
+            'stock_buys': official.get('purchases_min', 0),
+            'stock_sells': official.get('sales_min', 0),
+        }
+
+    # Load existing snapshots
+    snapshots = []
+    if TREND_SNAPSHOTS_FILE.exists():
+        try:
+            with open(TREND_SNAPSHOTS_FILE, 'r') as f:
+                data = json.load(f)
+                snapshots = data.get('snapshots', [])
+        except Exception as e:
+            logger.warning(f"Could not load existing trend snapshots: {e}")
+
+    # Check if we already have a snapshot for today (avoid duplicates)
+    existing_dates = {s.get('date') for s in snapshots}
+    if snapshot_date not in existing_dates:
+        snapshots.append(snapshot)
+        logger.info(f"Added trend snapshot for {snapshot_date}")
+    else:
+        # Update today's snapshot
+        for i, s in enumerate(snapshots):
+            if s.get('date') == snapshot_date:
+                snapshots[i] = snapshot
+                logger.info(f"Updated trend snapshot for {snapshot_date}")
+                break
+
+    # Keep only last 104 weeks (2 years of weekly data)
+    snapshots = snapshots[-104:]
+
+    # Save
+    try:
+        with open(TREND_SNAPSHOTS_FILE, 'w') as f:
+            json.dump({
+                'snapshots': snapshots,
+                'last_updated': datetime.now().isoformat(),
+                'count': len(snapshots)
+            }, f, indent=2)
+        logger.info(f"Saved {len(snapshots)} trend snapshots")
+    except Exception as e:
+        logger.error(f"Failed to save trend snapshots: {e}")
+
+
+def get_trend_history(bioguide_id: str, periods: int = 8) -> List[Dict]:
+    """
+    Get trend history for an official.
+
+    Args:
+        bioguide_id: Official's bioguide ID
+        periods: Number of periods to return (default 8 for 8 quarters)
+
+    Returns:
+        List of {date, finance_pct} dicts, oldest first
+    """
+    if not TREND_SNAPSHOTS_FILE.exists():
+        return []
+
+    try:
+        with open(TREND_SNAPSHOTS_FILE, 'r') as f:
+            data = json.load(f)
+            snapshots = data.get('snapshots', [])
+    except Exception as e:
+        logger.warning(f"Could not load trend snapshots: {e}")
+        return []
+
+    # Extract this official's history
+    history = []
+    for snapshot in snapshots:
+        official_data = snapshot.get('officials', {}).get(bioguide_id)
+        if official_data:
+            history.append({
+                'date': snapshot.get('date'),
+                'finance_pct': official_data.get('finance_pct', 0),
+                'total_contributions': official_data.get('total_contributions', 0),
+                'finance_contributions': official_data.get('finance_contributions', 0),
+            })
+
+    # Return last N periods
+    return history[-periods:]
+
+
+def enrich_officials_with_trends(officials: List[Dict], periods: int = 8):
+    """
+    Add trend data to each official for display.
+
+    Adds:
+        - finance_pct_trend: List of historical finance_pct values
+        - finance_trend_direction: 'increasing', 'decreasing', or 'stable'
+        - finance_pct_change: Change from first to last period
+        - finance_trend_arrow: Visual indicator
+    """
+    for official in officials:
+        bioguide_id = official.get('bioguide_id')
+        if not bioguide_id:
+            continue
+
+        history = get_trend_history(bioguide_id, periods)
+
+        if len(history) < 2:
+            # Not enough history - show stable
+            official['finance_pct_trend'] = [official.get('financial_sector_pct', 0)]
+            official['finance_trend_direction'] = 'stable'
+            official['finance_pct_change'] = 0
+            official['finance_trend_arrow'] = '►'
+        else:
+            # Calculate trend
+            pct_values = [h['finance_pct'] for h in history]
+            official['finance_pct_trend'] = pct_values
+
+            first_pct = pct_values[0]
+            last_pct = pct_values[-1]
+            change = last_pct - first_pct
+
+            official['finance_pct_change'] = round(change, 1)
+
+            if change > 2:
+                official['finance_trend_direction'] = 'increasing'
+                official['finance_trend_arrow'] = '▲'
+            elif change < -2:
+                official['finance_trend_direction'] = 'decreasing'
+                official['finance_trend_arrow'] = '▼'
+            else:
+                official['finance_trend_direction'] = 'stable'
+                official['finance_trend_arrow'] = '►'
+
+        # Stock activity trend
+        buys = official.get('purchases_min', 0) or 0
+        sells = official.get('sales_min', 0) or 0
+        net = buys - sells
+
+        if net > 10000:
+            official['stock_trend_direction'] = 'buyer'
+            official['stock_trend_icon'] = '◆'
+            official['net_stock_label'] = 'Net Buyer'
+        elif net < -10000:
+            official['stock_trend_direction'] = 'seller'
+            official['stock_trend_icon'] = '◇'
+            official['net_stock_label'] = 'Net Seller'
+        else:
+            official['stock_trend_direction'] = 'neutral'
+            official['stock_trend_icon'] = '○'
+            official['net_stock_label'] = 'Neutral'
+
+        official['net_stock_value'] = net
 
 
 # =============================================================================

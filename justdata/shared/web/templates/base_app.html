@@ -62,8 +62,15 @@
         </div>
     </footer>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+    <!-- JustData Auth -->
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
     {% block extra_js %}{% endblock %}
-    
+
     {% include 'shared_header_js.html' %}
 </body>
 </html>

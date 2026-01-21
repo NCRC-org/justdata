@@ -9,37 +9,51 @@
         {
           "ticker": "JPM",
           "name": "JPMorgan Chase",
-          "total": 18125520.5,
-          "officials_count": 26,
-          "trade_count": 41
+          "total": 18433532.5,
+          "officials_count": 32,
+          "trade_count": 50
         },
         {
           "ticker": "GS",
           "name": "Goldman Sachs",
-          "total": 4010516.5,
-          "officials_count": 18,
-          "trade_count": 33
+          "total": 4595524.0,
+          "officials_count": 21,
+          "trade_count": 48
+        },
+        {
+          "ticker": "C",
+          "name": "Citigroup",
+          "total": 1337007.0,
+          "officials_count": 9,
+          "trade_count": 14
         },
         {
           "ticker": "SCHW",
           "name": "Charles Schwab",
-          "total": 392509.5,
-          "officials_count": 13,
-          "trade_count": 19
+          "total": 556512.5,
+          "officials_count": 15,
+          "trade_count": 25
         },
         {
           "ticker": "BAC",
           "name": "Bank of America",
-          "total": 373013.0,
-          "officials_count": 14,
-          "trade_count": 26
+          "total": 445516.0,
+          "officials_count": 16,
+          "trade_count": 32
+        },
+        {
+          "ticker": "WFC",
+          "name": "Wells Fargo",
+          "total": 419515.5,
+          "officials_count": 13,
+          "trade_count": 31
         },
         {
           "ticker": "MS",
           "name": "Morgan Stanley",
-          "total": 252008.5,
-          "officials_count": 8,
-          "trade_count": 17
+          "total": 260009.0,
+          "officials_count": 9,
+          "trade_count": 18
         },
         {
           "ticker": "HBAN",
@@ -49,81 +63,67 @@
           "trade_count": 6
         },
         {
-          "ticker": "WFC",
-          "name": "Wells Fargo",
-          "total": 193009.0,
-          "officials_count": 10,
-          "trade_count": 18
-        },
-        {
-          "ticker": "C",
-          "name": "Citigroup",
-          "total": 171505.0,
-          "officials_count": 7,
-          "trade_count": 10
+          "ticker": "KEY",
+          "name": "KeyCorp",
+          "total": 115003.0,
+          "officials_count": 4,
+          "trade_count": 6
         },
         {
           "ticker": "CFG",
           "name": "Citizens Financial",
-          "total": 48501.5,
-          "officials_count": 2,
-          "trade_count": 3
+          "total": 89002.5,
+          "officials_count": 3,
+          "trade_count": 5
         },
         {
           "ticker": "RF",
           "name": "Regions Financial",
-          "total": 40501.0,
-          "officials_count": 2,
-          "trade_count": 2
-        },
-        {
-          "ticker": "ZION",
-          "name": "Zions Bancorporation",
-          "total": 32500.5,
-          "officials_count": 1,
-          "trade_count": 1
-        },
-        {
-          "ticker": "TFC",
-          "name": "Truist Financial",
-          "total": 24001.5,
-          "officials_count": 2,
-          "trade_count": 3
-        },
-        {
-          "ticker": "MTB",
-          "name": "M&T Bank",
-          "total": 24001.5,
-          "officials_count": 2,
-          "trade_count": 3
-        },
-        {
-          "ticker": "USB",
-          "name": "U.S. Bancorp",
-          "total": 24001.5,
+          "total": 56502.0,
           "officials_count": 3,
-          "trade_count": 3
+          "trade_count": 4
         },
         {
           "ticker": "FITB",
           "name": "Fifth Third Bank",
-          "total": 16001.0,
-          "officials_count": 2,
-          "trade_count": 2
+          "total": 56502.0,
+          "officials_count": 3,
+          "trade_count": 4
+        },
+        {
+          "ticker": "USB",
+          "name": "U.S. Bancorp",
+          "total": 56003.5,
+          "officials_count": 6,
+          "trade_count": 7
         },
         {
           "ticker": "PNC",
           "name": "PNC Financial Services",
-          "total": 16001.0,
+          "total": 48003.0,
+          "officials_count": 4,
+          "trade_count": 6
+        },
+        {
+          "ticker": "ZION",
+          "name": "Zions Bancorporation",
+          "total": 40501.0,
           "officials_count": 1,
           "trade_count": 2
         },
         {
-          "ticker": "KEY",
-          "name": "KeyCorp",
-          "total": 16001.0,
+          "ticker": "TFC",
+          "name": "Truist Financial",
+          "total": 32002.0,
+          "officials_count": 3,
+          "trade_count": 4
+        },
+        {
+          "ticker": "MTB",
+          "name": "M&T Bank",
+          "total": 32002.0,
           "officials_count": 2,
-          "trade_count": 2
+          "trade_count": 4
         },
         {
           "ticker": "CMA",
@@ -135,124 +135,20 @@
       ],
       "officials": [
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "IND",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000821.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000601.jpg"
-        },
-        {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
+          "id": "kevin_hern",
+          "name": "Kevin Hern",
           "party": "R",
           "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000830.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000481.jpg"
-        },
-        {
-          "id": "neal_dunn",
-          "name": "Neal P. Dunn",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000628.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
-        },
-        {
-          "id": "roger_williams",
-          "name": "Roger Williams",
-          "party": "REP",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -263,12 +159,100 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "gilbert_cisneros",
-          "name": "Gilbert Cisneros",
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
+          "party": "R",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "dan_newhouse",
+          "name": "Daniel Newhouse",
+          "party": "REP",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "laurel_lee",
+          "name": "Laurel Lee",
+          "party": "",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "NY",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
+        },
+        {
+          "id": "greg_landsman",
+          "name": "Gregory Landsman",
+          "party": "",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
         },
         {
           "id": "scott_mr_franklin",
@@ -276,15 +260,47 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000472.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
         },
         {
-          "id": "john_boozman",
-          "name": "John Boozman",
-          "party": "R",
-          "state": "AR",
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "roger_williams",
+          "name": "Roger Williams",
+          "party": "",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "",
+          "state": "ME",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
         },
         {
           "id": "david_taylor",
@@ -292,31 +308,15 @@
           "party": "R",
           "state": "OH",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000490.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
         },
         {
-          "id": "cleo_fields",
-          "name": "Cleo Fields",
-          "party": "D",
-          "state": "LA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000477.jpg"
-        },
-        {
-          "id": "bill_keating",
-          "name": "William R. Keating",
-          "party": "D",
-          "state": "MA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000375.jpg"
-        },
-        {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
-          "party": "R",
-          "state": "GA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -327,240 +327,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "john_fetterman",
-          "name": "John Fetterman",
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
           "party": "D",
-          "state": "PA",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg"
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
         },
         {
-          "id": "ashley_moody",
-          "name": "Ashley Moody",
-          "party": "",
-          "state": "",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg/330px-Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg"
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
+          "id": "william_r_keating",
+          "name": "William R. Keating",
           "party": "D",
-          "state": "NJ",
+          "state": "MA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "kevin_hern",
-          "name": "Kevin Hern",
-          "party": "R",
-          "state": "OK",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001082.jpg"
-        },
-        {
-          "id": "david_mccormick",
-          "name": "Dave McCormick",
-          "party": "R",
-          "state": "PA",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/McCormick_Portrait_%28HR%29.jpg/330px-McCormick_Portrait_%28HR%29.jpg"
-        },
-        {
-          "id": "ted_cruz",
-          "name": "Rafael Cruz",
-          "party": "REP",
-          "state": "TX",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg/330px-Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg"
-        }
-      ],
-      "firms_count": 18,
-      "officials_count": 45,
-      "total_trades": 192,
-      "total_value": {
-        "min": 12415192,
-        "max": 35550000,
-        "display": "$12,415,192 - $35,550,000"
-      },
-      "news": []
-    },
-    {
-      "sector": "investment",
-      "name": "Investment & Securities",
-      "description": "Investment banks, asset managers, hedge funds, broker-dealers",
-      "color": "#7c3aed",
-      "firms": [
-        {
-          "ticker": "BLK",
-          "name": "BlackRock",
-          "total": 552010.5,
-          "officials_count": 12,
-          "trade_count": 21
-        },
-        {
-          "ticker": "BX",
-          "name": "Blackstone Group Inc",
-          "total": 311009.0,
-          "officials_count": 9,
-          "trade_count": 18
-        },
-        {
-          "ticker": "ARES",
-          "name": "Ares Management Corp",
-          "total": 198502.5,
-          "officials_count": 3,
-          "trade_count": 5
-        },
-        {
-          "ticker": "LPLA",
-          "name": "LPL Financial",
-          "total": 198502.5,
-          "officials_count": 4,
-          "trade_count": 5
-        },
-        {
-          "ticker": "STT",
-          "name": "State Street",
-          "total": 138002.5,
-          "officials_count": 2,
-          "trade_count": 5
-        },
-        {
-          "ticker": "KKR",
-          "name": "KKR & Co Inc",
-          "total": 120007.5,
-          "officials_count": 6,
-          "trade_count": 15
-        },
-        {
-          "ticker": "APO",
-          "name": "Apollo Global Management Inc",
-          "total": 48003.0,
-          "officials_count": 5,
-          "trade_count": 6
-        }
-      ],
-      "officials": [
-        {
-          "id": "jefferson_shreve",
-          "name": "Jefferson Shreve",
-          "party": "R",
-          "state": "IN",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000601.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000481.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
-        },
-        {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
-          "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "rich_mccormick",
-          "name": "Richard McCormick",
-          "party": "REP",
-          "state": "GA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001218.jpg"
-        },
-        {
-          "id": "sheri_biggs",
-          "name": "Sheri Biggs",
-          "party": "R",
-          "state": "SC",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001325.jpg"
-        },
-        {
-          "id": "",
-          "name": "Capito, Shelley Moore",
-          "party": "R",
-          "state": "West Virginia",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
-        },
-        {
-          "id": "james_french_hill",
-          "name": "French Hill",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001072.jpg"
-        },
-        {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "IND",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
         },
         {
           "id": "marjorie_greene",
@@ -568,72 +348,40 @@
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
         },
         {
-          "id": "michael_mccaul",
-          "name": "Michael McCaul",
-          "party": "R",
-          "state": "TX",
+          "id": "cleo_fields",
+          "name": "Cleo Fields",
+          "party": "D",
+          "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
         },
         {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "john_boozman",
+          "name": "John Boozman",
           "party": "R",
-          "state": "OK",
+          "state": "AR",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "gilbert_cisneros",
-          "name": "Gilbert Cisneros",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
-        },
-        {
-          "id": "jake_auchincloss",
-          "name": "Jake Auchincloss",
-          "party": "D",
-          "state": "MA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/A000376.jpg"
-        },
-        {
-          "id": "jonathan_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000309.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "dwight_evans",
-          "name": "Dwight Evans",
-          "party": "D",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/E000296.jpg"
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         }
       ],
-      "firms_count": 7,
-      "officials_count": 23,
-      "total_trades": 75,
+      "firms_count": 18,
+      "officials_count": 54,
+      "total_trades": 267,
       "total_value": {
-        "min": 727075,
-        "max": 2405000,
-        "display": "$727,075 - $2,405,000"
+        "min": 13887282,
+        "max": 39705000,
+        "display": "$13,887,282 - $39,705,000"
       },
       "news": []
     },
@@ -646,176 +394,56 @@
         {
           "ticker": "V",
           "name": "Visa",
-          "total": 500517.5,
-          "officials_count": 14,
-          "trade_count": 35
-        },
-        {
-          "ticker": "SQ",
-          "name": "Block",
-          "total": 379504.5,
-          "officials_count": 4,
-          "trade_count": 9
+          "total": 1576026.5,
+          "officials_count": 21,
+          "trade_count": 50
         },
         {
           "ticker": "MA",
           "name": "Mastercard",
-          "total": 276508.5,
-          "officials_count": 11,
-          "trade_count": 17
+          "total": 413514.0,
+          "officials_count": 14,
+          "trade_count": 28
+        },
+        {
+          "ticker": "SQ",
+          "name": "Block",
+          "total": 387505.0,
+          "officials_count": 4,
+          "trade_count": 10
         },
         {
           "ticker": "PYPL",
           "name": "PayPal",
-          "total": 161007.0,
+          "total": 344008.0,
           "officials_count": 11,
-          "trade_count": 14
+          "trade_count": 16
         }
       ],
       "officials": [
         {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
-        },
-        {
-          "id": "michael_mccaul",
+          "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
+          "id": "josh_gottheimer",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
+          "state": "NJ",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000601.jpg"
+          "photo_url": null
         },
         {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000830.jpg"
-        },
-        {
-          "id": "daniel_meuser",
-          "name": "Daniel Meuser",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001204.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001217.jpg"
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000472.jpg"
-        },
-        {
-          "id": "rich_mccormick",
-          "name": "Richard McCormick",
+          "id": "dan_newhouse",
+          "name": "Daniel Newhouse",
           "party": "REP",
-          "state": "GA",
+          "state": "WA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001218.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000490.jpg"
-        },
-        {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
-          "party": "R",
-          "state": "GA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
-        },
-        {
-          "id": "",
-          "name": "Capito, Shelley Moore",
-          "party": "R",
-          "state": "West Virginia",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
-        },
-        {
-          "id": "jefferson_shreve",
-          "name": "Jefferson Shreve",
-          "party": "R",
-          "state": "IN",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
-        },
-        {
-          "id": "tony_wied",
-          "name": "Tony Wied",
-          "party": "R",
-          "state": "WI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000829.jpg"
-        },
-        {
-          "id": "gilbert_cisneros",
-          "name": "Gilbert Cisneros",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000821.jpg"
+          "photo_url": null
         },
         {
           "id": "valerie_hoyle",
@@ -823,31 +451,103 @@
           "party": "D",
           "state": "OR",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
         },
         {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
         },
         {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
+          "id": "dan_meuser",
+          "name": "Daniel Meuser",
           "party": "R",
-          "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001204.jpg"
         },
         {
-          "id": "john_boozman",
-          "name": "John Boozman",
+          "id": "greg_landsman",
+          "name": "Gregory Landsman",
+          "party": "",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
           "party": "R",
-          "state": "AR",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+        },
+        {
+          "id": "pete_sessions",
+          "name": "Peter Sessions",
+          "party": "",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+        },
+        {
+          "id": "",
+          "name": "Capito, Shelley Moore",
+          "party": "REP",
+          "state": "West Virginia",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "nancy_pelosi",
+          "name": "Nancy Pelosi",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/P000197.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -858,12 +558,240 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "IND",
-          "state": "ME",
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+        },
+        {
+          "id": "earl_blumenauer",
+          "name": "Earl Blumenauer",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "rich_mccormick",
+          "name": "Richard McCormick",
+          "party": "",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+        },
+        {
+          "id": "jeff_shreve",
+          "name": "Jefferson Shreve",
+          "party": "R",
+          "state": "IN",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+        },
+        {
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
+          "party": "R",
+          "state": "OK",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+        },
+        {
+          "id": "sheldon_whitehouse",
+          "name": "Sheldon Whitehouse",
+          "party": "D",
+          "state": "RI",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
+        },
+        {
+          "id": "john_boozman",
+          "name": "John Boozman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+        },
+        {
+          "id": "tony_wied",
+          "name": "Anthony Wied",
+          "party": "REP",
+          "state": "WI",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "ro_khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": null
+        }
+      ],
+      "firms_count": 4,
+      "officials_count": 32,
+      "total_trades": 104,
+      "total_value": {
+        "min": 1287107,
+        "max": 4155000,
+        "display": "$1,287,107 - $4,155,000"
+      },
+      "news": []
+    },
+    {
+      "sector": "investment",
+      "name": "Investment & Securities",
+      "description": "Investment banks, asset managers, hedge funds, broker-dealers",
+      "color": "#7c3aed",
+      "firms": [
+        {
+          "ticker": "BLK",
+          "name": "BlackRock",
+          "total": 600013.5,
+          "officials_count": 14,
+          "trade_count": 27
+        },
+        {
+          "ticker": "BX",
+          "name": "Blackstone Inc. Common Stock",
+          "total": 359997.0,
+          "officials_count": 12,
+          "trade_count": 25
+        },
+        {
+          "ticker": "ARES",
+          "name": "Ares Management Corp",
+          "total": 214503.5,
+          "officials_count": 3,
+          "trade_count": 7
+        },
+        {
+          "ticker": "LPLA",
+          "name": "LPL Financial",
+          "total": 206503.0,
+          "officials_count": 5,
+          "trade_count": 6
+        },
+        {
+          "ticker": "STT",
+          "name": "State Street",
+          "total": 203003.5,
+          "officials_count": 2,
+          "trade_count": 7
+        },
+        {
+          "ticker": "KKR",
+          "name": "KKR & Co Inc",
+          "total": 128008.0,
+          "officials_count": 6,
+          "trade_count": 16
+        },
+        {
+          "ticker": "APO",
+          "name": "Apollo Global Management Inc",
+          "total": 64004.0,
+          "officials_count": 5,
+          "trade_count": 8
+        }
+      ],
+      "officials": [
+        {
+          "id": "jeff_shreve",
+          "name": "Jefferson Shreve",
+          "party": "R",
+          "state": "IN",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "josh_gottheimer",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
+          "state": "NJ",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "dan_newhouse",
+          "name": "Daniel Newhouse",
+          "party": "REP",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "NY",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
+        },
+        {
+          "id": "greg_landsman",
+          "name": "Gregory Landsman",
+          "party": "",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": null
         },
         {
           "id": "james_comer",
@@ -871,24 +799,160 @@
           "party": "R",
           "state": "KY",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001108.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+        },
+        {
+          "id": "",
+          "name": "Capito, Shelley Moore",
+          "party": "REP",
+          "state": "West Virginia",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "sheri_biggs",
+          "name": "Sheri Biggs",
+          "party": "R",
+          "state": "SC",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+        },
+        {
+          "id": "rich_mccormick",
+          "name": "Richard McCormick",
+          "party": "",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+        },
+        {
+          "id": "james_french_hill",
+          "name": "French Hill",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001072.jpg"
         },
         {
           "id": "ro_khanna",
-          "name": "Ro Khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+        },
+        {
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+        },
+        {
+          "id": "earl_blumenauer",
+          "name": "Earl Blumenauer",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "john_fetterman",
+          "name": "John Fetterman",
+          "party": "D",
+          "state": "PA",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg"
+        },
+        {
+          "id": "mike_mccaul",
+          "name": "Michael McCaul",
+          "party": "R",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+        },
+        {
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
+          "party": "R",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+        },
+        {
+          "id": "jake_auchincloss",
+          "name": "Jacob Auchincloss",
+          "party": "",
+          "state": "MA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+        },
+        {
+          "id": "dwight_evans",
+          "name": "Dwight Evans",
+          "party": "D",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/E000296.jpg"
         }
       ],
-      "firms_count": 4,
-      "officials_count": 26,
-      "total_trades": 75,
+      "firms_count": 7,
+      "officials_count": 27,
+      "total_trades": 96,
       "total_value": {
-        "min": 510075,
-        "max": 2125000,
-        "display": "$510,075 - $2,125,000"
+        "min": 776080,
+        "max": 2775985,
+        "display": "$776,080 - $2,775,985"
       },
       "news": []
     },
@@ -901,16 +965,23 @@
         {
           "ticker": "AXP",
           "name": "American Express",
-          "total": 380011.5,
-          "officials_count": 11,
-          "trade_count": 23
+          "total": 428513.0,
+          "officials_count": 13,
+          "trade_count": 26
         },
         {
           "ticker": "COF",
           "name": "Capital One",
-          "total": 286508.0,
-          "officials_count": 6,
-          "trade_count": 16
+          "total": 343010.0,
+          "officials_count": 7,
+          "trade_count": 20
+        },
+        {
+          "ticker": "DFS",
+          "name": "Discover Financial",
+          "total": 204504.0,
+          "officials_count": 4,
+          "trade_count": 8
         },
         {
           "ticker": "ALLY",
@@ -920,69 +991,28 @@
           "trade_count": 2
         },
         {
-          "ticker": "DFS",
-          "name": "Discover Financial",
-          "total": 32500.5,
+          "ticker": "SOFI",
+          "name": "SoFi",
+          "total": 16001.0,
+          "officials_count": 2,
+          "trade_count": 2
+        },
+        {
+          "ticker": "AFRM",
+          "name": "Affirm",
+          "total": 8000.5,
           "officials_count": 1,
           "trade_count": 1
         }
       ],
       "officials": [
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
-        },
-        {
-          "id": "rick_larsen",
-          "name": "Rick Larsen",
-          "party": "D",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000560.jpg"
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000821.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
-        },
-        {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
-          "party": "R",
-          "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001217.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -993,12 +1023,84 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "tony_wied",
-          "name": "Tony Wied",
+          "id": "rick_larsen",
+          "name": "Rick Larsen",
+          "party": "D",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/L000560.jpg"
+        },
+        {
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
           "party": "R",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "ro_khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "tony_wied",
+          "name": "Anthony Wied",
+          "party": "REP",
           "state": "WI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000829.jpg"
+          "photo_url": null
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
         },
         {
           "id": "john_boozman",
@@ -1009,12 +1111,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         },
         {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
+          "id": "mike_mccaul",
+          "name": "Michael McCaul",
           "party": "R",
-          "state": "GA",
+          "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
           "id": "valerie_hoyle",
@@ -1022,15 +1124,7 @@
           "party": "D",
           "state": "OR",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
-        },
-        {
-          "id": "michael_mccaul",
-          "name": "Michael McCaul",
-          "party": "R",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
         },
         {
           "id": "neal_dunn",
@@ -1038,24 +1132,56 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000628.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Ro Khanna",
+          "id": "william_r_keating",
+          "name": "William R. Keating",
           "party": "D",
-          "state": "CA",
+          "state": "MA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+        },
+        {
+          "id": "james_comer",
+          "name": "James Comer",
+          "party": "R",
+          "state": "KY",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+        },
+        {
+          "id": "thomas_r_carper",
+          "name": "Thomas R. Carper",
+          "party": "",
+          "state": "DE",
+          "chamber": "senate",
+          "photo_url": null
+        },
+        {
+          "id": "james_calhoun",
+          "name": "James Calhoun",
+          "party": "",
+          "state": "CT",
+          "chamber": "house",
+          "photo_url": null
         }
       ],
-      "firms_count": 4,
-      "officials_count": 15,
-      "total_trades": 42,
+      "firms_count": 6,
+      "officials_count": 21,
+      "total_trades": 59,
       "total_value": {
-        "min": 329042,
-        "max": 1235000,
-        "display": "$329,042 - $1,235,000"
+        "min": 451059,
+        "max": 1715000,
+        "display": "$451,059 - $1,715,000"
       },
       "news": []
     },
@@ -1075,34 +1201,48 @@
         {
           "ticker": "CB",
           "name": "Chubb",
-          "total": 247503.5,
-          "officials_count": 7,
-          "trade_count": 7
-        },
-        {
-          "ticker": "PGR",
-          "name": "Progressive",
-          "total": 169007.5,
-          "officials_count": 8,
-          "trade_count": 15
+          "total": 386508.0,
+          "officials_count": 12,
+          "trade_count": 16
         },
         {
           "ticker": "AIG",
           "name": "AIG",
-          "total": 97003.0,
-          "officials_count": 3,
-          "trade_count": 6
+          "total": 304504.0,
+          "officials_count": 4,
+          "trade_count": 8
+        },
+        {
+          "ticker": "PGR",
+          "name": "Progressive",
+          "total": 185008.5,
+          "officials_count": 9,
+          "trade_count": 17
+        },
+        {
+          "ticker": "TRV",
+          "name": "Travelers",
+          "total": 40501.0,
+          "officials_count": 2,
+          "trade_count": 2
         },
         {
           "ticker": "MET",
           "name": "MetLife",
-          "total": 24001.5,
-          "officials_count": 3,
-          "trade_count": 3
+          "total": 32002.0,
+          "officials_count": 4,
+          "trade_count": 4
         },
         {
           "ticker": "AFL",
           "name": "Aflac",
+          "total": 24001.5,
+          "officials_count": 2,
+          "trade_count": 3
+        },
+        {
+          "ticker": "ALL",
+          "name": "Allstate",
           "total": 16001.0,
           "officials_count": 2,
           "trade_count": 2
@@ -1110,60 +1250,36 @@
       ],
       "officials": [
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
           "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
+          "name": "Daniel Newhouse",
+          "party": "REP",
           "state": "WA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
+          "photo_url": null
         },
         {
           "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
+          "name": "Rohit Khanna",
+          "party": "DEM",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": null
         },
         {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000830.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
+          "id": "kevin_hern",
+          "name": "Kevin Hern",
           "party": "R",
-          "state": "PA",
+          "state": "OK",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -1174,12 +1290,76 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
+          "id": "josh_gottheimer",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
+          "state": "NJ",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
+          "photo_url": null
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "mike_mccaul",
+          "name": "Michael McCaul",
+          "party": "R",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
           "id": "lisa_mcclain",
@@ -1187,7 +1367,47 @@
           "party": "R",
           "state": "MI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "julia_letlow",
+          "name": "Julia Letlow",
+          "party": "",
+          "state": "",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
+        },
+        {
+          "id": "sheri_biggs",
+          "name": "Sheri Biggs",
+          "party": "R",
+          "state": "SC",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
         },
         {
           "id": "sheldon_whitehouse",
@@ -1198,36 +1418,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
         },
         {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
-        },
-        {
-          "id": "sheri_biggs",
-          "name": "Sheri Biggs",
-          "party": "R",
-          "state": "SC",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001325.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000490.jpg"
-        },
-        {
-          "id": "julia_letlow",
-          "name": "Julia Letlow",
-          "party": "REP",
-          "state": "LA",
-          "chamber": "house",
-          "photo_url": null
+          "id": "tommy_tuberville",
+          "name": "Thomas Tuberville",
+          "party": "",
+          "state": "AL",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
           "id": "ritchie_torres",
@@ -1235,15 +1431,15 @@
           "party": "D",
           "state": "NY",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000481.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
         },
         {
-          "id": "gilbert_cisneros",
+          "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
         },
         {
           "id": "carol_miller",
@@ -1251,16 +1447,16 @@
           "party": "R",
           "state": "WV",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001205.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001205.jpg"
         }
       ],
-      "firms_count": 6,
-      "officials_count": 18,
-      "total_trades": 37,
+      "firms_count": 8,
+      "officials_count": 25,
+      "total_trades": 56,
       "total_value": {
-        "min": 10233037,
-        "max": 26020000,
-        "display": "$10,233,037 - $26,020,000"
+        "min": 10428056,
+        "max": 26695000,
+        "display": "$10,428,056 - $26,695,000"
       },
       "news": []
     },
@@ -1287,19 +1483,19 @@
         {
           "ticker": "MSTR",
           "name": "MicroStrategy",
-          "total": 32500.5,
-          "officials_count": 1,
-          "trade_count": 1
+          "total": 97501.5,
+          "officials_count": 3,
+          "trade_count": 3
         }
       ],
       "officials": [
         {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
+          "id": "ro_khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
+          "photo_url": null
         },
         {
           "id": "byron_donalds",
@@ -1307,31 +1503,31 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
-          "state": "CA",
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
         },
         {
-          "id": "jonathan_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000309.jpg"
-        },
-        {
-          "id": "gilbert_cisneros",
+          "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
         },
         {
           "id": "cleo_fields",
@@ -1339,32 +1535,48 @@
           "party": "D",
           "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000477.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
         },
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
           "id": "",
           "name": "Capito, Shelley Moore",
-          "party": "R",
+          "party": "REP",
           "state": "West Virginia",
           "chamber": "senate",
           "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
+        },
+        {
+          "id": "shri_thanedar",
+          "name": "Shrikant Thanedar",
+          "party": "",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": null
         }
       ],
       "firms_count": 3,
-      "officials_count": 8,
-      "total_trades": 28,
+      "officials_count": 10,
+      "total_trades": 30,
       "total_value": {
-        "min": 168028,
-        "max": 770000,
-        "display": "$168,028 - $770,000"
+        "min": 198030,
+        "max": 870000,
+        "display": "$198,030 - $870,000"
       },
       "news": []
     },
@@ -1377,58 +1589,66 @@
         {
           "ticker": "GPN",
           "name": "Global Payments",
-          "total": 231502.5,
+          "total": 439003.5,
           "officials_count": 3,
-          "trade_count": 5
+          "trade_count": 7
         },
         {
           "ticker": "FIS",
           "name": "FIS",
-          "total": 210007.0,
-          "officials_count": 5,
-          "trade_count": 14
+          "total": 242507.5,
+          "officials_count": 6,
+          "trade_count": 15
         }
       ],
       "officials": [
         {
-          "id": "michael_mccaul",
+          "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
           "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
+          "name": "Rohit Khanna",
+          "party": "DEM",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": null
         },
         {
-          "id": "gilbert_cisneros",
+          "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
         },
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+        },
+        {
+          "id": "susan_m_collins",
+          "name": "Susan M. Collins",
+          "party": "",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": null
         },
         {
           "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
           "state": "NJ",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
+          "photo_url": null
         },
         {
           "id": "julie_johnson",
@@ -1436,7 +1656,7 @@
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -1444,16 +1664,16 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001325.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
         }
       ],
       "firms_count": 2,
-      "officials_count": 7,
-      "total_trades": 19,
+      "officials_count": 8,
+      "total_trades": 22,
       "total_value": {
-        "min": 188019,
-        "max": 695000,
-        "display": "$188,019 - $695,000"
+        "min": 318022,
+        "max": 1045000,
+        "display": "$318,022 - $1,045,000"
       },
       "news": []
     },
@@ -1462,15 +1682,47 @@
       "name": "Mortgage & Real Estate Finance",
       "description": "Mortgage lenders, servicers, GSEs, title companies",
       "color": "#059669",
-      "firms": [],
-      "officials": [],
-      "firms_count": 0,
-      "officials_count": 0,
-      "total_trades": 0,
+      "firms": [
+        {
+          "ticker": "FNMA",
+          "name": "Fannie Mae",
+          "total": 175000.5,
+          "officials_count": 1,
+          "trade_count": 1
+        },
+        {
+          "ticker": "FMCC",
+          "name": "Freddie Mac",
+          "total": 175000.5,
+          "officials_count": 1,
+          "trade_count": 1
+        }
+      ],
+      "officials": [
+        {
+          "id": "debbie_dingell",
+          "name": "Deborah Dingell",
+          "party": "",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "tommy_tuberville",
+          "name": "Thomas Tuberville",
+          "party": "",
+          "state": "AL",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
+        }
+      ],
+      "firms_count": 2,
+      "officials_count": 2,
+      "total_trades": 2,
       "total_value": {
-        "min": 0,
-        "max": 0,
-        "display": "$0 - $0"
+        "min": 200002,
+        "max": 500000,
+        "display": "$200,002 - $500,000"
       },
       "news": []
     },
@@ -1502,37 +1754,51 @@
         {
           "ticker": "JPM",
           "name": "JPMorgan Chase",
-          "total": 18125520.5,
-          "officials_count": 26,
-          "trade_count": 41
+          "total": 18433532.5,
+          "officials_count": 32,
+          "trade_count": 50
         },
         {
           "ticker": "GS",
           "name": "Goldman Sachs",
-          "total": 4010516.5,
-          "officials_count": 18,
-          "trade_count": 33
+          "total": 4595524.0,
+          "officials_count": 21,
+          "trade_count": 48
+        },
+        {
+          "ticker": "C",
+          "name": "Citigroup",
+          "total": 1337007.0,
+          "officials_count": 9,
+          "trade_count": 14
         },
         {
           "ticker": "SCHW",
           "name": "Charles Schwab",
-          "total": 392509.5,
-          "officials_count": 13,
-          "trade_count": 19
+          "total": 556512.5,
+          "officials_count": 15,
+          "trade_count": 25
         },
         {
           "ticker": "BAC",
           "name": "Bank of America",
-          "total": 373013.0,
-          "officials_count": 14,
-          "trade_count": 26
+          "total": 445516.0,
+          "officials_count": 16,
+          "trade_count": 32
+        },
+        {
+          "ticker": "WFC",
+          "name": "Wells Fargo",
+          "total": 419515.5,
+          "officials_count": 13,
+          "trade_count": 31
         },
         {
           "ticker": "MS",
           "name": "Morgan Stanley",
-          "total": 252008.5,
-          "officials_count": 8,
-          "trade_count": 17
+          "total": 260009.0,
+          "officials_count": 9,
+          "trade_count": 18
         },
         {
           "ticker": "HBAN",
@@ -1542,81 +1808,67 @@
           "trade_count": 6
         },
         {
-          "ticker": "WFC",
-          "name": "Wells Fargo",
-          "total": 193009.0,
-          "officials_count": 10,
-          "trade_count": 18
-        },
-        {
-          "ticker": "C",
-          "name": "Citigroup",
-          "total": 171505.0,
-          "officials_count": 7,
-          "trade_count": 10
+          "ticker": "KEY",
+          "name": "KeyCorp",
+          "total": 115003.0,
+          "officials_count": 4,
+          "trade_count": 6
         },
         {
           "ticker": "CFG",
           "name": "Citizens Financial",
-          "total": 48501.5,
-          "officials_count": 2,
-          "trade_count": 3
+          "total": 89002.5,
+          "officials_count": 3,
+          "trade_count": 5
         },
         {
           "ticker": "RF",
           "name": "Regions Financial",
-          "total": 40501.0,
-          "officials_count": 2,
-          "trade_count": 2
-        },
-        {
-          "ticker": "ZION",
-          "name": "Zions Bancorporation",
-          "total": 32500.5,
-          "officials_count": 1,
-          "trade_count": 1
-        },
-        {
-          "ticker": "TFC",
-          "name": "Truist Financial",
-          "total": 24001.5,
-          "officials_count": 2,
-          "trade_count": 3
-        },
-        {
-          "ticker": "MTB",
-          "name": "M&T Bank",
-          "total": 24001.5,
-          "officials_count": 2,
-          "trade_count": 3
-        },
-        {
-          "ticker": "USB",
-          "name": "U.S. Bancorp",
-          "total": 24001.5,
+          "total": 56502.0,
           "officials_count": 3,
-          "trade_count": 3
+          "trade_count": 4
         },
         {
           "ticker": "FITB",
           "name": "Fifth Third Bank",
-          "total": 16001.0,
-          "officials_count": 2,
-          "trade_count": 2
+          "total": 56502.0,
+          "officials_count": 3,
+          "trade_count": 4
+        },
+        {
+          "ticker": "USB",
+          "name": "U.S. Bancorp",
+          "total": 56003.5,
+          "officials_count": 6,
+          "trade_count": 7
         },
         {
           "ticker": "PNC",
           "name": "PNC Financial Services",
-          "total": 16001.0,
+          "total": 48003.0,
+          "officials_count": 4,
+          "trade_count": 6
+        },
+        {
+          "ticker": "ZION",
+          "name": "Zions Bancorporation",
+          "total": 40501.0,
           "officials_count": 1,
           "trade_count": 2
         },
         {
-          "ticker": "KEY",
-          "name": "KeyCorp",
-          "total": 16001.0,
+          "ticker": "TFC",
+          "name": "Truist Financial",
+          "total": 32002.0,
+          "officials_count": 3,
+          "trade_count": 4
+        },
+        {
+          "ticker": "MTB",
+          "name": "M&T Bank",
+          "total": 32002.0,
           "officials_count": 2,
-          "trade_count": 2
+          "trade_count": 4
         },
         {
           "ticker": "CMA",
@@ -1628,124 +1880,20 @@
       ],
       "officials": [
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "IND",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000821.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000601.jpg"
-        },
-        {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
+          "id": "kevin_hern",
+          "name": "Kevin Hern",
           "party": "R",
           "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000830.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000481.jpg"
-        },
-        {
-          "id": "neal_dunn",
-          "name": "Neal P. Dunn",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000628.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
-        },
-        {
-          "id": "roger_williams",
-          "name": "Roger Williams",
-          "party": "REP",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -1756,12 +1904,100 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "gilbert_cisneros",
-          "name": "Gilbert Cisneros",
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
+          "party": "R",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "dan_newhouse",
+          "name": "Daniel Newhouse",
+          "party": "REP",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "laurel_lee",
+          "name": "Laurel Lee",
+          "party": "",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "NY",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
+        },
+        {
+          "id": "greg_landsman",
+          "name": "Gregory Landsman",
+          "party": "",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
         },
         {
           "id": "scott_mr_franklin",
@@ -1769,15 +2005,47 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000472.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
         },
         {
-          "id": "john_boozman",
-          "name": "John Boozman",
-          "party": "R",
-          "state": "AR",
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "roger_williams",
+          "name": "Roger Williams",
+          "party": "",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "",
+          "state": "ME",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
         },
         {
           "id": "david_taylor",
@@ -1785,31 +2053,15 @@
           "party": "R",
           "state": "OH",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000490.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
         },
         {
-          "id": "cleo_fields",
-          "name": "Cleo Fields",
-          "party": "D",
-          "state": "LA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000477.jpg"
-        },
-        {
-          "id": "bill_keating",
-          "name": "William R. Keating",
-          "party": "D",
-          "state": "MA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000375.jpg"
-        },
-        {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
-          "party": "R",
-          "state": "GA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -1820,240 +2072,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "john_fetterman",
-          "name": "John Fetterman",
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
           "party": "D",
-          "state": "PA",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg"
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
         },
         {
-          "id": "ashley_moody",
-          "name": "Ashley Moody",
-          "party": "",
-          "state": "",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg/330px-Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg"
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
+          "id": "william_r_keating",
+          "name": "William R. Keating",
           "party": "D",
-          "state": "NJ",
+          "state": "MA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "kevin_hern",
-          "name": "Kevin Hern",
-          "party": "R",
-          "state": "OK",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001082.jpg"
-        },
-        {
-          "id": "david_mccormick",
-          "name": "Dave McCormick",
-          "party": "R",
-          "state": "PA",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/McCormick_Portrait_%28HR%29.jpg/330px-McCormick_Portrait_%28HR%29.jpg"
-        },
-        {
-          "id": "ted_cruz",
-          "name": "Rafael Cruz",
-          "party": "REP",
-          "state": "TX",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg/330px-Ted_Cruz_official_116th_portrait_%283x4_cropped_b%29.jpg"
-        }
-      ],
-      "firms_count": 18,
-      "officials_count": 45,
-      "total_trades": 192,
-      "total_value": {
-        "min": 12415192,
-        "max": 35550000,
-        "display": "$12,415,192 - $35,550,000"
-      },
-      "news": []
-    },
-    "investment": {
-      "sector": "investment",
-      "name": "Investment & Securities",
-      "description": "Investment banks, asset managers, hedge funds, broker-dealers",
-      "color": "#7c3aed",
-      "firms": [
-        {
-          "ticker": "BLK",
-          "name": "BlackRock",
-          "total": 552010.5,
-          "officials_count": 12,
-          "trade_count": 21
-        },
-        {
-          "ticker": "BX",
-          "name": "Blackstone Group Inc",
-          "total": 311009.0,
-          "officials_count": 9,
-          "trade_count": 18
-        },
-        {
-          "ticker": "ARES",
-          "name": "Ares Management Corp",
-          "total": 198502.5,
-          "officials_count": 3,
-          "trade_count": 5
-        },
-        {
-          "ticker": "LPLA",
-          "name": "LPL Financial",
-          "total": 198502.5,
-          "officials_count": 4,
-          "trade_count": 5
-        },
-        {
-          "ticker": "STT",
-          "name": "State Street",
-          "total": 138002.5,
-          "officials_count": 2,
-          "trade_count": 5
-        },
-        {
-          "ticker": "KKR",
-          "name": "KKR & Co Inc",
-          "total": 120007.5,
-          "officials_count": 6,
-          "trade_count": 15
-        },
-        {
-          "ticker": "APO",
-          "name": "Apollo Global Management Inc",
-          "total": 48003.0,
-          "officials_count": 5,
-          "trade_count": 6
-        }
-      ],
-      "officials": [
-        {
-          "id": "jefferson_shreve",
-          "name": "Jefferson Shreve",
-          "party": "R",
-          "state": "IN",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000601.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000481.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
-        },
-        {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
-          "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "rich_mccormick",
-          "name": "Richard McCormick",
-          "party": "REP",
-          "state": "GA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001218.jpg"
-        },
-        {
-          "id": "sheri_biggs",
-          "name": "Sheri Biggs",
-          "party": "R",
-          "state": "SC",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001325.jpg"
-        },
-        {
-          "id": "",
-          "name": "Capito, Shelley Moore",
-          "party": "R",
-          "state": "West Virginia",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
-        },
-        {
-          "id": "james_french_hill",
-          "name": "French Hill",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001072.jpg"
-        },
-        {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "IND",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
         },
         {
           "id": "marjorie_greene",
@@ -2061,72 +2093,40 @@
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
         },
         {
-          "id": "michael_mccaul",
-          "name": "Michael McCaul",
-          "party": "R",
-          "state": "TX",
+          "id": "cleo_fields",
+          "name": "Cleo Fields",
+          "party": "D",
+          "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
         },
         {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "john_boozman",
+          "name": "John Boozman",
           "party": "R",
-          "state": "OK",
+          "state": "AR",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "gilbert_cisneros",
-          "name": "Gilbert Cisneros",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
-        },
-        {
-          "id": "jake_auchincloss",
-          "name": "Jake Auchincloss",
-          "party": "D",
-          "state": "MA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/A000376.jpg"
-        },
-        {
-          "id": "jonathan_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000309.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "dwight_evans",
-          "name": "Dwight Evans",
-          "party": "D",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/E000296.jpg"
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         }
       ],
-      "firms_count": 7,
-      "officials_count": 23,
-      "total_trades": 75,
+      "firms_count": 18,
+      "officials_count": 54,
+      "total_trades": 267,
       "total_value": {
-        "min": 727075,
-        "max": 2405000,
-        "display": "$727,075 - $2,405,000"
+        "min": 13887282,
+        "max": 39705000,
+        "display": "$13,887,282 - $39,705,000"
       },
       "news": []
     },
@@ -2139,176 +2139,56 @@
         {
           "ticker": "V",
           "name": "Visa",
-          "total": 500517.5,
-          "officials_count": 14,
-          "trade_count": 35
-        },
-        {
-          "ticker": "SQ",
-          "name": "Block",
-          "total": 379504.5,
-          "officials_count": 4,
-          "trade_count": 9
+          "total": 1576026.5,
+          "officials_count": 21,
+          "trade_count": 50
         },
         {
           "ticker": "MA",
           "name": "Mastercard",
-          "total": 276508.5,
-          "officials_count": 11,
-          "trade_count": 17
+          "total": 413514.0,
+          "officials_count": 14,
+          "trade_count": 28
+        },
+        {
+          "ticker": "SQ",
+          "name": "Block",
+          "total": 387505.0,
+          "officials_count": 4,
+          "trade_count": 10
         },
         {
           "ticker": "PYPL",
           "name": "PayPal",
-          "total": 161007.0,
+          "total": 344008.0,
           "officials_count": 11,
-          "trade_count": 14
+          "trade_count": 16
         }
       ],
       "officials": [
         {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
-        },
-        {
-          "id": "michael_mccaul",
+          "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
+          "id": "josh_gottheimer",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
+          "state": "NJ",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000601.jpg"
+          "photo_url": null
         },
         {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000830.jpg"
-        },
-        {
-          "id": "daniel_meuser",
-          "name": "Daniel Meuser",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001204.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001217.jpg"
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000472.jpg"
-        },
-        {
-          "id": "rich_mccormick",
-          "name": "Richard McCormick",
+          "id": "dan_newhouse",
+          "name": "Daniel Newhouse",
           "party": "REP",
-          "state": "GA",
+          "state": "WA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001218.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000490.jpg"
-        },
-        {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
-          "party": "R",
-          "state": "GA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
-        },
-        {
-          "id": "",
-          "name": "Capito, Shelley Moore",
-          "party": "R",
-          "state": "West Virginia",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
-        },
-        {
-          "id": "jefferson_shreve",
-          "name": "Jefferson Shreve",
-          "party": "R",
-          "state": "IN",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
-        },
-        {
-          "id": "tony_wied",
-          "name": "Tony Wied",
-          "party": "R",
-          "state": "WI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000829.jpg"
-        },
-        {
-          "id": "gilbert_cisneros",
-          "name": "Gilbert Cisneros",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000821.jpg"
+          "photo_url": null
         },
         {
           "id": "valerie_hoyle",
@@ -2316,31 +2196,103 @@
           "party": "D",
           "state": "OR",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
         },
         {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
         },
         {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
+          "id": "dan_meuser",
+          "name": "Daniel Meuser",
           "party": "R",
-          "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001204.jpg"
         },
         {
-          "id": "john_boozman",
-          "name": "John Boozman",
+          "id": "greg_landsman",
+          "name": "Gregory Landsman",
+          "party": "",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
           "party": "R",
-          "state": "AR",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+        },
+        {
+          "id": "pete_sessions",
+          "name": "Peter Sessions",
+          "party": "",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+        },
+        {
+          "id": "",
+          "name": "Capito, Shelley Moore",
+          "party": "REP",
+          "state": "West Virginia",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "nancy_pelosi",
+          "name": "Nancy Pelosi",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/P000197.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -2351,12 +2303,240 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "IND",
-          "state": "ME",
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+        },
+        {
+          "id": "earl_blumenauer",
+          "name": "Earl Blumenauer",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "rich_mccormick",
+          "name": "Richard McCormick",
+          "party": "",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+        },
+        {
+          "id": "jeff_shreve",
+          "name": "Jefferson Shreve",
+          "party": "R",
+          "state": "IN",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+        },
+        {
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
+          "party": "R",
+          "state": "OK",
           "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+        },
+        {
+          "id": "sheldon_whitehouse",
+          "name": "Sheldon Whitehouse",
+          "party": "D",
+          "state": "RI",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
+        },
+        {
+          "id": "john_boozman",
+          "name": "John Boozman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+        },
+        {
+          "id": "tony_wied",
+          "name": "Anthony Wied",
+          "party": "REP",
+          "state": "WI",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "ro_khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": null
+        }
+      ],
+      "firms_count": 4,
+      "officials_count": 32,
+      "total_trades": 104,
+      "total_value": {
+        "min": 1287107,
+        "max": 4155000,
+        "display": "$1,287,107 - $4,155,000"
+      },
+      "news": []
+    },
+    "investment": {
+      "sector": "investment",
+      "name": "Investment & Securities",
+      "description": "Investment banks, asset managers, hedge funds, broker-dealers",
+      "color": "#7c3aed",
+      "firms": [
+        {
+          "ticker": "BLK",
+          "name": "BlackRock",
+          "total": 600013.5,
+          "officials_count": 14,
+          "trade_count": 27
+        },
+        {
+          "ticker": "BX",
+          "name": "Blackstone Inc. Common Stock",
+          "total": 359997.0,
+          "officials_count": 12,
+          "trade_count": 25
+        },
+        {
+          "ticker": "ARES",
+          "name": "Ares Management Corp",
+          "total": 214503.5,
+          "officials_count": 3,
+          "trade_count": 7
+        },
+        {
+          "ticker": "LPLA",
+          "name": "LPL Financial",
+          "total": 206503.0,
+          "officials_count": 5,
+          "trade_count": 6
+        },
+        {
+          "ticker": "STT",
+          "name": "State Street",
+          "total": 203003.5,
+          "officials_count": 2,
+          "trade_count": 7
+        },
+        {
+          "ticker": "KKR",
+          "name": "KKR & Co Inc",
+          "total": 128008.0,
+          "officials_count": 6,
+          "trade_count": 16
+        },
+        {
+          "ticker": "APO",
+          "name": "Apollo Global Management Inc",
+          "total": 64004.0,
+          "officials_count": 5,
+          "trade_count": 8
+        }
+      ],
+      "officials": [
+        {
+          "id": "jeff_shreve",
+          "name": "Jefferson Shreve",
+          "party": "R",
+          "state": "IN",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "josh_gottheimer",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
+          "state": "NJ",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "dan_newhouse",
+          "name": "Daniel Newhouse",
+          "party": "REP",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "NY",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
+        },
+        {
+          "id": "greg_landsman",
+          "name": "Gregory Landsman",
+          "party": "",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": null
         },
         {
           "id": "james_comer",
@@ -2364,24 +2544,160 @@
           "party": "R",
           "state": "KY",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001108.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+        },
+        {
+          "id": "",
+          "name": "Capito, Shelley Moore",
+          "party": "REP",
+          "state": "West Virginia",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "sheri_biggs",
+          "name": "Sheri Biggs",
+          "party": "R",
+          "state": "SC",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+        },
+        {
+          "id": "rich_mccormick",
+          "name": "Richard McCormick",
+          "party": "",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+        },
+        {
+          "id": "james_french_hill",
+          "name": "French Hill",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001072.jpg"
         },
         {
           "id": "ro_khanna",
-          "name": "Ro Khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+        },
+        {
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+        },
+        {
+          "id": "earl_blumenauer",
+          "name": "Earl Blumenauer",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "john_fetterman",
+          "name": "John Fetterman",
+          "party": "D",
+          "state": "PA",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/John_Fetterman_official_portrait.jpg/330px-John_Fetterman_official_portrait.jpg"
+        },
+        {
+          "id": "mike_mccaul",
+          "name": "Michael McCaul",
+          "party": "R",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+        },
+        {
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
+          "party": "R",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+        },
+        {
+          "id": "jake_auchincloss",
+          "name": "Jacob Auchincloss",
+          "party": "",
+          "state": "MA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+        },
+        {
+          "id": "dwight_evans",
+          "name": "Dwight Evans",
+          "party": "D",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/E000296.jpg"
         }
       ],
-      "firms_count": 4,
-      "officials_count": 26,
-      "total_trades": 75,
+      "firms_count": 7,
+      "officials_count": 27,
+      "total_trades": 96,
       "total_value": {
-        "min": 510075,
-        "max": 2125000,
-        "display": "$510,075 - $2,125,000"
+        "min": 776080,
+        "max": 2775985,
+        "display": "$776,080 - $2,775,985"
       },
       "news": []
     },
@@ -2394,16 +2710,23 @@
         {
           "ticker": "AXP",
           "name": "American Express",
-          "total": 380011.5,
-          "officials_count": 11,
-          "trade_count": 23
+          "total": 428513.0,
+          "officials_count": 13,
+          "trade_count": 26
         },
         {
           "ticker": "COF",
           "name": "Capital One",
-          "total": 286508.0,
-          "officials_count": 6,
-          "trade_count": 16
+          "total": 343010.0,
+          "officials_count": 7,
+          "trade_count": 20
+        },
+        {
+          "ticker": "DFS",
+          "name": "Discover Financial",
+          "total": 204504.0,
+          "officials_count": 4,
+          "trade_count": 8
         },
         {
           "ticker": "ALLY",
@@ -2413,69 +2736,28 @@
           "trade_count": 2
         },
         {
-          "ticker": "DFS",
-          "name": "Discover Financial",
-          "total": 32500.5,
+          "ticker": "SOFI",
+          "name": "SoFi",
+          "total": 16001.0,
+          "officials_count": 2,
+          "trade_count": 2
+        },
+        {
+          "ticker": "AFRM",
+          "name": "Affirm",
+          "total": 8000.5,
           "officials_count": 1,
           "trade_count": 1
         }
       ],
       "officials": [
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
-        },
-        {
-          "id": "rick_larsen",
-          "name": "Rick Larsen",
-          "party": "D",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/L000560.jpg"
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000821.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
-        },
-        {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
-          "party": "R",
-          "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001217.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -2486,12 +2768,84 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "tony_wied",
-          "name": "Tony Wied",
+          "id": "rick_larsen",
+          "name": "Rick Larsen",
+          "party": "D",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/L000560.jpg"
+        },
+        {
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
           "party": "R",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "ro_khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "tony_wied",
+          "name": "Anthony Wied",
+          "party": "REP",
           "state": "WI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000829.jpg"
+          "photo_url": null
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
         },
         {
           "id": "john_boozman",
@@ -2502,12 +2856,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         },
         {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
+          "id": "mike_mccaul",
+          "name": "Michael McCaul",
           "party": "R",
-          "state": "GA",
+          "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000596.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
           "id": "valerie_hoyle",
@@ -2515,15 +2869,7 @@
           "party": "D",
           "state": "OR",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
-        },
-        {
-          "id": "michael_mccaul",
-          "name": "Michael McCaul",
-          "party": "R",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
         },
         {
           "id": "neal_dunn",
@@ -2531,24 +2877,56 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000628.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Ro Khanna",
+          "id": "william_r_keating",
+          "name": "William R. Keating",
           "party": "D",
-          "state": "CA",
+          "state": "MA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+        },
+        {
+          "id": "james_comer",
+          "name": "James Comer",
+          "party": "R",
+          "state": "KY",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+        },
+        {
+          "id": "thomas_r_carper",
+          "name": "Thomas R. Carper",
+          "party": "",
+          "state": "DE",
+          "chamber": "senate",
+          "photo_url": null
+        },
+        {
+          "id": "james_calhoun",
+          "name": "James Calhoun",
+          "party": "",
+          "state": "CT",
+          "chamber": "house",
+          "photo_url": null
         }
       ],
-      "firms_count": 4,
-      "officials_count": 15,
-      "total_trades": 42,
+      "firms_count": 6,
+      "officials_count": 21,
+      "total_trades": 59,
       "total_value": {
-        "min": 329042,
-        "max": 1235000,
-        "display": "$329,042 - $1,235,000"
+        "min": 451059,
+        "max": 1715000,
+        "display": "$451,059 - $1,715,000"
       },
       "news": []
     },
@@ -2568,34 +2946,48 @@
         {
           "ticker": "CB",
           "name": "Chubb",
-          "total": 247503.5,
-          "officials_count": 7,
-          "trade_count": 7
-        },
-        {
-          "ticker": "PGR",
-          "name": "Progressive",
-          "total": 169007.5,
-          "officials_count": 8,
-          "trade_count": 15
+          "total": 386508.0,
+          "officials_count": 12,
+          "trade_count": 16
         },
         {
           "ticker": "AIG",
           "name": "AIG",
-          "total": 97003.0,
-          "officials_count": 3,
-          "trade_count": 6
+          "total": 304504.0,
+          "officials_count": 4,
+          "trade_count": 8
+        },
+        {
+          "ticker": "PGR",
+          "name": "Progressive",
+          "total": 185008.5,
+          "officials_count": 9,
+          "trade_count": 17
+        },
+        {
+          "ticker": "TRV",
+          "name": "Travelers",
+          "total": 40501.0,
+          "officials_count": 2,
+          "trade_count": 2
         },
         {
           "ticker": "MET",
           "name": "MetLife",
-          "total": 24001.5,
-          "officials_count": 3,
-          "trade_count": 3
+          "total": 32002.0,
+          "officials_count": 4,
+          "trade_count": 4
         },
         {
           "ticker": "AFL",
           "name": "Aflac",
+          "total": 24001.5,
+          "officials_count": 2,
+          "trade_count": 3
+        },
+        {
+          "ticker": "ALL",
+          "name": "Allstate",
           "total": 16001.0,
           "officials_count": 2,
           "trade_count": 2
@@ -2603,60 +2995,36 @@
       ],
       "officials": [
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
           "id": "dan_newhouse",
-          "name": "Dan Newhouse",
-          "party": "R",
+          "name": "Daniel Newhouse",
+          "party": "REP",
           "state": "WA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/N000189.jpg"
+          "photo_url": null
         },
         {
           "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
+          "name": "Rohit Khanna",
+          "party": "DEM",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": null
         },
         {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/W000830.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
+          "id": "kevin_hern",
+          "name": "Kevin Hern",
           "party": "R",
-          "state": "PA",
+          "state": "OK",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -2667,12 +3035,76 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
+          "id": "josh_gottheimer",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
+          "state": "NJ",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/H001092.jpg"
+          "photo_url": null
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "REP",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "mike_mccaul",
+          "name": "Michael McCaul",
+          "party": "R",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
           "id": "lisa_mcclain",
@@ -2680,7 +3112,47 @@
           "party": "R",
           "state": "MI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001136.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+        },
+        {
+          "id": "julia_letlow",
+          "name": "Julia Letlow",
+          "party": "",
+          "state": "",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
+        },
+        {
+          "id": "sheri_biggs",
+          "name": "Sheri Biggs",
+          "party": "R",
+          "state": "SC",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
         },
         {
           "id": "sheldon_whitehouse",
@@ -2691,36 +3163,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
         },
         {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
-        },
-        {
-          "id": "sheri_biggs",
-          "name": "Sheri Biggs",
-          "party": "R",
-          "state": "SC",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001325.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000490.jpg"
-        },
-        {
-          "id": "julia_letlow",
-          "name": "Julia Letlow",
-          "party": "REP",
-          "state": "LA",
-          "chamber": "house",
-          "photo_url": null
+          "id": "tommy_tuberville",
+          "name": "Thomas Tuberville",
+          "party": "",
+          "state": "AL",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
           "id": "ritchie_torres",
@@ -2728,15 +3176,15 @@
           "party": "D",
           "state": "NY",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/T000481.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
         },
         {
-          "id": "gilbert_cisneros",
+          "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
         },
         {
           "id": "carol_miller",
@@ -2744,16 +3192,16 @@
           "party": "R",
           "state": "WV",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001205.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001205.jpg"
         }
       ],
-      "firms_count": 6,
-      "officials_count": 18,
-      "total_trades": 37,
+      "firms_count": 8,
+      "officials_count": 25,
+      "total_trades": 56,
       "total_value": {
-        "min": 10233037,
-        "max": 26020000,
-        "display": "$10,233,037 - $26,020,000"
+        "min": 10428056,
+        "max": 26695000,
+        "display": "$10,428,056 - $26,695,000"
       },
       "news": []
     },
@@ -2780,19 +3228,19 @@
         {
           "ticker": "MSTR",
           "name": "MicroStrategy",
-          "total": 32500.5,
-          "officials_count": 1,
-          "trade_count": 1
+          "total": 97501.5,
+          "officials_count": 3,
+          "trade_count": 3
         }
       ],
       "officials": [
         {
-          "id": "rob_bresnahan",
-          "name": "Rob Bresnahan",
-          "party": "R",
-          "state": "PA",
+          "id": "ro_khanna",
+          "name": "Rohit Khanna",
+          "party": "DEM",
+          "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001327.jpg"
+          "photo_url": null
         },
         {
           "id": "byron_donalds",
@@ -2800,31 +3248,31 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/D000632.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
-          "state": "CA",
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "REP",
+          "state": "PA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
         },
         {
-          "id": "jonathan_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000309.jpg"
-        },
-        {
-          "id": "gilbert_cisneros",
+          "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
         },
         {
           "id": "cleo_fields",
@@ -2832,32 +3280,48 @@
           "party": "D",
           "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/F000477.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
         },
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
         },
         {
           "id": "",
           "name": "Capito, Shelley Moore",
-          "party": "R",
+          "party": "REP",
           "state": "West Virginia",
           "chamber": "senate",
           "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
+        },
+        {
+          "id": "shri_thanedar",
+          "name": "Shrikant Thanedar",
+          "party": "",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": null
         }
       ],
       "firms_count": 3,
-      "officials_count": 8,
-      "total_trades": 28,
+      "officials_count": 10,
+      "total_trades": 30,
       "total_value": {
-        "min": 168028,
-        "max": 770000,
-        "display": "$168,028 - $770,000"
+        "min": 198030,
+        "max": 870000,
+        "display": "$198,030 - $870,000"
       },
       "news": []
     },
@@ -2870,58 +3334,66 @@
         {
           "ticker": "GPN",
           "name": "Global Payments",
-          "total": 231502.5,
+          "total": 439003.5,
           "officials_count": 3,
-          "trade_count": 5
+          "trade_count": 7
         },
         {
           "ticker": "FIS",
           "name": "FIS",
-          "total": 210007.0,
-          "officials_count": 5,
-          "trade_count": 14
+          "total": 242507.5,
+          "officials_count": 6,
+          "trade_count": 15
         }
       ],
       "officials": [
         {
-          "id": "michael_mccaul",
+          "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/M001157.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
         },
         {
           "id": "ro_khanna",
-          "name": "Ro Khanna",
-          "party": "D",
+          "name": "Rohit Khanna",
+          "party": "DEM",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/K000389.jpg"
+          "photo_url": null
         },
         {
-          "id": "gilbert_cisneros",
+          "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/C001123.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
         },
         {
-          "id": "jefferson_shreve",
+          "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/S001229.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+        },
+        {
+          "id": "susan_m_collins",
+          "name": "Susan M. Collins",
+          "party": "",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": null
         },
         {
           "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
+          "name": "Joshua Gottheimer",
+          "party": "DEM",
           "state": "NJ",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/G000583.jpg"
+          "photo_url": null
         },
         {
           "id": "julie_johnson",
@@ -2929,7 +3401,7 @@
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/J000310.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -2937,16 +3409,16 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/content/assets/img/members/B001325.jpg"
+          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
         }
       ],
       "firms_count": 2,
-      "officials_count": 7,
-      "total_trades": 19,
+      "officials_count": 8,
+      "total_trades": 22,
       "total_value": {
-        "min": 188019,
-        "max": 695000,
-        "display": "$188,019 - $695,000"
+        "min": 318022,
+        "max": 1045000,
+        "display": "$318,022 - $1,045,000"
       },
       "news": []
     },
@@ -2955,15 +3427,47 @@
       "name": "Mortgage & Real Estate Finance",
       "description": "Mortgage lenders, servicers, GSEs, title companies",
       "color": "#059669",
-      "firms": [],
-      "officials": [],
-      "firms_count": 0,
-      "officials_count": 0,
-      "total_trades": 0,
+      "firms": [
+        {
+          "ticker": "FNMA",
+          "name": "Fannie Mae",
+          "total": 175000.5,
+          "officials_count": 1,
+          "trade_count": 1
+        },
+        {
+          "ticker": "FMCC",
+          "name": "Freddie Mac",
+          "total": 175000.5,
+          "officials_count": 1,
+          "trade_count": 1
+        }
+      ],
+      "officials": [
+        {
+          "id": "debbie_dingell",
+          "name": "Deborah Dingell",
+          "party": "",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": null
+        },
+        {
+          "id": "tommy_tuberville",
+          "name": "Thomas Tuberville",
+          "party": "",
+          "state": "AL",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
+        }
+      ],
+      "firms_count": 2,
+      "officials_count": 2,
+      "total_trades": 2,
       "total_value": {
-        "min": 0,
-        "max": 0,
-        "display": "$0 - $0"
+        "min": 200002,
+        "max": 500000,
+        "display": "$200,002 - $500,000"
       },
       "news": []
     },
@@ -2986,5 +3490,5 @@
     }
   },
   "count": 9,
-  "generated_at": "2026-01-19T08:38:25.333559"
+  "generated_at": "2026-01-20T20:15:00.751634"
 }

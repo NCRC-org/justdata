@@ -54,7 +54,30 @@ logger = logging.getLogger(__name__)
 # NAME MATCHING CONSTANTS
 # =============================================================================
 
+# Load comprehensive name mapping from JSON file
+NAME_MAPPING_FILE = Path(__file__).parent / 'data' / 'congress_name_mapping.json'
+CONGRESS_NAME_MAPPING = {}
+FEC_SEARCH_NAMES = {}
+NICKNAME_TO_LEGAL = {}
+
+def load_name_mapping():
+    """Load congressional name mapping from JSON file."""
+    global CONGRESS_NAME_MAPPING, FEC_SEARCH_NAMES, NICKNAME_TO_LEGAL
+    try:
+        if NAME_MAPPING_FILE.exists():
+            with open(NAME_MAPPING_FILE, 'r') as f:
+                CONGRESS_NAME_MAPPING = json.load(f)
+                FEC_SEARCH_NAMES = CONGRESS_NAME_MAPPING.get('fec_search_names', {})
+                NICKNAME_TO_LEGAL = CONGRESS_NAME_MAPPING.get('nickname_to_legal', {})
+                logger.info(f"Loaded name mapping: {len(FEC_SEARCH_NAMES)} FEC entries, {len(NICKNAME_TO_LEGAL)} nickname mappings")
+    except Exception as e:
+        logger.warning(f"Could not load name mapping: {e}")
+
+# Load on module import
+load_name_mapping()
+
 # Map alternate names to canonical names (used for deduplication and matching)
+# Now populated from JSON file plus static fallbacks
 NAME_ALIASES = {
     'Valerie Hoyle': 'Val Hoyle',
     'David McCormick': 'Dave McCormick',
@@ -71,6 +94,8 @@ NAME_ALIASES = {
     'Ted Cruz': 'Rafael Cruz',
     'Angus King': 'Angus S. King',
 }
+# Merge in nickname mappings from JSON
+NAME_ALIASES.update(NICKNAME_TO_LEGAL)
 
 # Reverse mapping: canonical -> list of alternates (for FEC matching)
 NAME_VARIANTS = {}
@@ -203,56 +228,15 @@ def fetch_bioguide_photo(name: str, bioguide_id: str = None, chamber: str = 'hou
     """
     Get photo URL for a Congress member.
 
-    Uses House Clerk images for House members (reliable) and
-    bioguide.congress.gov API for Senate members.
+    Uses House Clerk images (works for both House and many Senate members).
+    The House Clerk service is the most reliable source.
+
+    URL pattern: https://clerk.house.gov/images/members/{bioguide_id}.jpg
     """
-    import requests
-
-    # For House members, use the House Clerk's image service (most reliable)
-    if bioguide_id and chamber == 'house':
-        return f"https://clerk.house.gov/content/assets/img/members/{bioguide_id}.jpg"
-
-    # For Senate members or if no bioguide_id, try bioguide.congress.gov API
-    try:
-        search_url = "https://bioguide.congress.gov/search/bio"
-
-        # Parse name for search
-        name_parts = name.split()
-        if len(name_parts) >= 2:
-            first_name = name_parts[0]
-            last_name = name_parts[-1]
-        else:
-            first_name = name
-            last_name = name
-
-        params = {
-            'firstName': first_name,
-            'lastName': last_name,
-            'currentMember': 'true'
-        }
-
-        response = requests.get(search_url, params=params, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            members = data.get('members', [])
-
-            for member in members:
-                member_bio_id = member.get('bioguideId', '')
-                if bioguide_id and member_bio_id == bioguide_id:
-                    photo_id = member.get('profileImage', '')
-                    if photo_id:
-                        return f"https://bioguide.congress.gov/photo/{photo_id}.jpg"
-                elif not bioguide_id:
-                    photo_id = member.get('profileImage', '')
-                    if photo_id:
-                        return f"https://bioguide.congress.gov/photo/{photo_id}.jpg"
-
-        # Fallback to House Clerk for any bioguide_id
-        if bioguide_id:
-            return f"https://clerk.house.gov/content/assets/img/members/{bioguide_id}.jpg"
-
-    except Exception as e:
-        logger.debug(f"Could not fetch bioguide photo for {name}: {e}")
+    # Use the House Clerk's image service - works for most members
+    # Note: URL was updated from /content/assets/img/members/ to /images/members/
+    if bioguide_id:
+        return f"https://clerk.house.gov/images/members/{bioguide_id}.jpg"
 
     return None
 
@@ -516,8 +500,8 @@ class WeeklyDataUpdate:
             if not client.test_connection():
                 raise Exception("FMP API connection failed")
 
-            # Calculate date range (last 365 days)
-            from_date = (datetime.now() - timedelta(days=365)).strftime('%Y-%m-%d')
+            # Calculate date range (last 24 months / 730 days)
+            from_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
 
             # Fetch financial sector trades only
             logger.info(f"Fetching trades for {len(ALL_FINANCIAL_SYMBOLS)} financial sector symbols...")
@@ -1024,16 +1008,16 @@ class WeeklyDataUpdate:
             'INDEPENDENT BANKER', 'AMERICAN BANKER', 'CREDIT UNION'
         ]
 
-        # Calculate rolling 12-month date window
+        # Calculate rolling 24-month date window
         rolling_end_date = datetime.now()
-        rolling_start_date = rolling_end_date - timedelta(days=365)
+        rolling_start_date = rolling_end_date - timedelta(days=730)  # 24 months
         min_date_str = rolling_start_date.strftime('%Y-%m-%d')
         max_date_str = rolling_end_date.strftime('%Y-%m-%d')
-        logger.info(f"  Using rolling 12-month window: {min_date_str} to {max_date_str}")
+        logger.info(f"  Using rolling 24-month window: {min_date_str} to {max_date_str}")
 
         def get_financial_pac_total(committee_id: str) -> dict:
             """
-            Get PAC contributions to a candidate's committee (rolling 12 months).
+            Get PAC contributions to a candidate's committee (rolling 24 months).
 
             Returns dict with:
                 - financial_total: $ from financial sector PACs (numerator)
@@ -1116,74 +1100,110 @@ class WeeklyDataUpdate:
             }
 
         def find_candidate_committee(name: str, state: str, chamber: str) -> Optional[str]:
-            """Find a candidate's principal campaign committee ID."""
+            """Find a candidate's principal campaign committee ID.
+
+            Uses comprehensive name mapping to handle nickname/legal name differences.
+            E.g., 'Ted Cruz' -> searches for both 'Ted Cruz' and 'Rafael Cruz'
+            """
             url = 'https://api.open.fec.gov/v1/candidates/search/'
 
-            # Build search query from name parts
-            parts = name.split()
-            if not parts:
-                return None
+            # Build list of names to search
+            search_names = [name]
 
-            first_name = parts[0].upper()
-            last_name = parts[-1].upper()
+            # Add FEC-specific search names from mapping
+            if name in FEC_SEARCH_NAMES:
+                search_names.extend(FEC_SEARCH_NAMES[name])
 
-            # Handle names like "James French Hill" - use last significant name part
-            # FEC format is typically "LASTNAME, FIRSTNAME MIDDLENAME"
-            params = {
-                'api_key': api_key,
-                'q': last_name,
-                'state': state,
-                'office': 'H' if chamber == 'house' else 'S',
-                'is_active_candidate': True,
-                'per_page': 20
-            }
+            # Add legal name variant if nickname is used
+            if name in NICKNAME_TO_LEGAL:
+                legal_name = NICKNAME_TO_LEGAL[name]
+                search_names.append(legal_name)
+                # Also try just last name + legal first name
+                parts = name.split()
+                if len(parts) >= 2:
+                    legal_first = legal_name.split()[0] if legal_name else parts[0]
+                    search_names.append(f"{legal_first} {parts[-1]}")
 
-            try:
-                time.sleep(0.3)
-                r = requests.get(url, params=params, timeout=30)
-                if r.ok:
-                    best_match = None
-                    best_score = 0
+            # Remove duplicates while preserving order
+            seen = set()
+            unique_names = []
+            for n in search_names:
+                n_upper = n.upper()
+                if n_upper not in seen:
+                    seen.add(n_upper)
+                    unique_names.append(n)
 
-                    for candidate in r.json().get('results', []):
-                        cand_name = candidate.get('name', '').upper()
+            best_match = None
+            best_score = 0
 
-                        # FEC names are "LASTNAME, FIRSTNAME" format
-                        # Score based on how well it matches
-                        score = 0
+            for search_name in unique_names:
+                parts = search_name.split()
+                if not parts:
+                    continue
 
-                        # Must have last name
-                        if last_name not in cand_name:
-                            continue
+                # Handle FEC format names (LASTNAME, FIRSTNAME)
+                if ',' in search_name:
+                    name_parts = search_name.split(',')
+                    last_name = name_parts[0].strip().upper()
+                    first_name = name_parts[1].strip().split()[0].upper() if len(name_parts) > 1 else ''
+                else:
+                    first_name = parts[0].upper()
+                    last_name = parts[-1].upper()
 
-                        score += 1
+                params = {
+                    'api_key': api_key,
+                    'q': last_name,
+                    'state': state,
+                    'office': 'H' if chamber == 'house' else 'S',
+                    'is_active_candidate': True,
+                    'per_page': 20
+                }
 
-                        # Check if first name also matches
-                        if first_name in cand_name:
-                            score += 2
+                try:
+                    time.sleep(0.3)
+                    r = requests.get(url, params=params, timeout=30)
+                    if r.ok:
+                        for candidate in r.json().get('results', []):
+                            cand_name = candidate.get('name', '').upper()
 
-                        # Check for middle names if present
-                        for part in parts[1:-1]:
-                            if part.upper() in cand_name:
-                                score += 1
+                            # FEC names are "LASTNAME, FIRSTNAME" format
+                            score = 0
 
-                        # Prefer exact format match: "LASTNAME, FIRSTNAME"
-                        expected_format = f"{last_name}, {first_name}"
-                        if expected_format in cand_name:
-                            score += 3
+                            # Must have last name
+                            if last_name not in cand_name:
+                                continue
 
-                        if score > best_score:
-                            committees = candidate.get('principal_committees', [])
-                            if committees:
-                                best_score = score
-                                best_match = committees[0].get('committee_id')
+                            score += 1
 
-                    return best_match
+                            # Check if first name also matches
+                            if first_name and first_name in cand_name:
+                                score += 2
 
-            except Exception as e:
-                logger.debug(f"  Error finding committee for {name}: {e}")
+                            # Check for middle names if present
+                            for part in parts[1:-1]:
+                                if part.upper() in cand_name:
+                                    score += 1
 
-            return None
+                            # Prefer exact format match: "LASTNAME, FIRSTNAME"
+                            expected_format = f"{last_name}, {first_name}"
+                            if expected_format in cand_name:
+                                score += 3
+
+                            if score > best_score:
+                                committees = candidate.get('principal_committees', [])
+                                if committees:
+                                    best_score = score
+                                    best_match = committees[0].get('committee_id')
+                                    logger.debug(f"  Found match for {name} via '{search_name}': {cand_name} (score={score})")
+
+                except Exception as e:
+                    logger.debug(f"  Error finding committee for {name} via {search_name}: {e}")
+
+                # If we found a high-confidence match, stop searching
+                if best_score >= 4:
+                    break
+
+            return best_match
 
         # Load cached progress
         cached = self.load_cache('financial_pacs')
@@ -1499,7 +1519,7 @@ class WeeklyDataUpdate:
         # Use module-level NAME_ALIASES for deduplication (defined at top of file)
 
         # Bioguide IDs for photos - source: https://bioguide.congress.gov
-        # House photos: https://clerk.house.gov/content/assets/img/members/{bioguide_id}.jpg
+        # Photos: https://clerk.house.gov/images/members/{bioguide_id}.jpg
         BIOGUIDE_IDS = {
             # Top traders (119th Congress freshmen - verified from Congress.gov)
             'Jefferson Shreve': 'S001229',  # https://www.congress.gov/member/jefferson-shreve/S001229
@@ -1960,47 +1980,44 @@ class WeeklyDataUpdate:
             official['wealth_tier'] = tier_code
             official['wealth_tier_display'] = tier_display
 
-            # Scoring system: trade activity + PAC contributions
-            # Trade score: bucket_low_end / 1000 per trade
+            # Scoring system: trade activity + contributions weighted by finance %
+            # Trade score: bucket_low_end / 1000 per trade (unchanged)
             trade_score = official.get('trade_score', 0)
 
-            # PAC contributions (scaled to same units)
-            contributions = official.get('contributions', 0)
-            contrib_score = contributions / 1000  # $1K contrib = 1 pt
+            # Contribution score: total contributions weighted by finance sector %
+            # Higher finance % = higher score (surfaces people heavily reliant on finance money)
+            total_pac = official.get('contributions', 0) or 0
+            total_individual = official.get('individual_contributions_total', 0) or 0
+            contribution_total = total_pac + total_individual
 
-            # Combined score: trade activity + contributions
+            financial_pac = official.get('financial_sector_pac', 0) or 0
+            financial_individual = official.get('individual_financial_total', 0) or 0
+            financial_total = financial_pac + financial_individual
+
+            # Finance percentage (0-1 scale for scoring)
+            finance_pct = (financial_total / contribution_total) if contribution_total > 0 else 0
+
+            # New formula: (total_contributions / 1000) * finance_pct
+            # So $500K total with 40% finance = 500 * 0.40 = 200 pts
+            # And $500K total with 5% finance = 500 * 0.05 = 25 pts
+            contrib_score = (contribution_total / 1000) * finance_pct
+
+            # Combined score: trade activity + weighted contributions
             official['involvement_score'] = round(trade_score + contrib_score)
 
             # Store component scores for transparency
             official['score_breakdown'] = {
                 'trade_score': round(trade_score, 1),
                 'contributions_score': round(contrib_score, 1),
+                'total_contributions': contribution_total,
+                'finance_contributions': financial_total,
+                'finance_pct': round(finance_pct * 100, 1),
                 'total_trades': official.get('total_trades', 0)
             }
 
-            # Calculate combined Financial Sector Influence %
-            # Formula: (Financial PAC $ + Financial Individual $) / (Total PAC $ + Total Individual $)
-            # This captures both organized PAC money AND personal relationships
-
-            # PAC contributions
-            total_pac = official.get('contributions', 0) or 0
-            financial_pac = official.get('financial_sector_pac', 0) or 0
-
-            # Individual contributions (from individual_contributions.py)
-            total_individual = official.get('individual_contributions_total', 0) or 0
-            financial_individual = official.get('individual_financial_total', 0) or 0
-
-            # Combined numerator and denominator
-            financial_total = financial_pac + financial_individual
-            contribution_total = total_pac + total_individual
-
-            # Calculate combined percentage
-            if contribution_total > 0:
-                combined_financial_pct = round((financial_total / contribution_total) * 100, 1)
-            else:
-                combined_financial_pct = 0
-
-            # Also calculate component percentages for transparency
+            # Calculate component percentages for transparency
+            # (total_pac, total_individual, financial_pac, financial_individual already computed above)
+            combined_financial_pct = round(finance_pct * 100, 1)
             pac_pct = round((financial_pac / total_pac) * 100, 1) if total_pac > 0 else 0
             individual_pct = round((financial_individual / total_individual) * 100, 1) if total_individual > 0 else 0
 
@@ -2021,28 +2038,237 @@ class WeeklyDataUpdate:
                 'individual_pct': individual_pct
             }
 
-        # Filter out officials with no financial industry affiliation
-        officials_with_industries = [
-            o for o in self.officials_data
-            if o.get('top_industries') and len(o['top_industries']) > 0
-        ]
+        # Keep ALL officials - no filtering based on financial activity
+        # Previously filtered to only those with industries or contributions > $10k
+        # Now we keep everyone so users can see all Congress members
 
-        # Also include officials with significant contributions even without mapped industries
-        officials_with_contributions = [
-            o for o in self.officials_data
-            if o.get('contributions', 0) > 10000 and o not in officials_with_industries
-        ]
-
-        filtered_count = len(self.officials_data) - len(officials_with_industries) - len(officials_with_contributions)
-        self.officials_data = officials_with_industries + officials_with_contributions
+        # Build top_donors by merging PAC and individual contributions
+        self._build_top_donors()
 
         # Convert raw scores to Z-scores normalized to 1-100
         self._normalize_scores_to_zscore()
 
-        # Re-sort by involvement score
+        # Re-sort by involvement score (officials with no activity will have score of 0)
         self.officials_data.sort(key=lambda x: x.get('involvement_score', 0), reverse=True)
 
-        logger.info(f"Processed {len(self.officials_data)} officials with industry data (filtered {filtered_count} without financial industry affiliation)")
+        # Count officials with and without financial activity for logging
+        with_activity = len([o for o in self.officials_data if o.get('top_industries') or o.get('contributions', 0) > 0])
+        without_activity = len(self.officials_data) - with_activity
+        logger.info(f"Processed {len(self.officials_data)} total officials ({with_activity} with financial activity, {without_activity} without)")
+
+    def _build_top_donors(self):
+        """
+        Build top_donors list for each official by merging PAC and individual contributions.
+
+        Combines:
+        - top_financial_pacs: PAC contributions (e.g., "JPMORGAN CHASE & CO PAC")
+        - individual_financial_by_employer: Individual contributions by employer
+
+        Normalizes company names and detects stock trading overlap.
+        """
+        # Company name normalization mapping (PAC name -> canonical name)
+        PAC_TO_COMPANY = {
+            'JPMORGAN CHASE': 'JPMorgan Chase',
+            'JPMORGAN': 'JPMorgan Chase',
+            'JP MORGAN': 'JPMorgan Chase',
+            'BANK OF AMERICA': 'Bank of America',
+            'BOFA': 'Bank of America',
+            'GOLDMAN SACHS': 'Goldman Sachs',
+            'MORGAN STANLEY': 'Morgan Stanley',
+            'WELLS FARGO': 'Wells Fargo',
+            'CITIGROUP': 'Citigroup',
+            'CITI': 'Citigroup',
+            'AMERICAN EXPRESS': 'American Express',
+            'AMEX': 'American Express',
+            'CAPITAL ONE': 'Capital One',
+            'BLACKROCK': 'BlackRock',
+            'CHARLES SCHWAB': 'Charles Schwab',
+            'SCHWAB': 'Charles Schwab',
+            'FIDELITY': 'Fidelity',
+            'VANGUARD': 'Vanguard',
+            'STATE STREET': 'State Street',
+            'BANK OF NEW YORK': 'BNY Mellon',
+            'BNY MELLON': 'BNY Mellon',
+            'NORTHERN TRUST': 'Northern Trust',
+            'PNC': 'PNC Bank',
+            'US BANK': 'U.S. Bank',
+            'U.S. BANK': 'U.S. Bank',
+            'TRUIST': 'Truist',
+            'TD BANK': 'TD Bank',
+            'CITIZENS': 'Citizens Bank',
+            'FIFTH THIRD': 'Fifth Third Bank',
+            'REGIONS': 'Regions Bank',
+            'HUNTINGTON': 'Huntington Bank',
+            'M&T BANK': 'M&T Bank',
+            'SYNCHRONY': 'Synchrony Financial',
+            'DISCOVER': 'Discover Financial',
+            'NAVIENT': 'Navient',
+            'SALLIE MAE': 'Sallie Mae',
+            'ROCKET': 'Rocket Companies',
+            'QUICKEN': 'Rocket Companies',
+            'UNITED WHOLESALE': 'UWM Holdings',
+            'PENNYMAC': 'PennyMac',
+            'MR. COOPER': 'Mr. Cooper',
+            'NATIONSTAR': 'Mr. Cooper',
+            'LOANCARE': 'LoanCare',
+            'ALLY': 'Ally Financial',
+            'COINBASE': 'Coinbase',
+            'ROBINHOOD': 'Robinhood',
+            'PAYPAL': 'PayPal',
+            'SQUARE': 'Block Inc',
+            'BLOCK INC': 'Block Inc',
+            'VISA': 'Visa',
+            'MASTERCARD': 'Mastercard',
+            'AFLAC': 'Aflac',
+            'METLIFE': 'MetLife',
+            'PRUDENTIAL': 'Prudential',
+            'AIG': 'AIG',
+            'ALLSTATE': 'Allstate',
+            'PROGRESSIVE': 'Progressive',
+            'BERKSHIRE': 'Berkshire Hathaway',
+        }
+
+        # Ticker to company name mapping for stock overlap detection
+        TICKER_TO_COMPANY = {
+            'JPM': 'JPMorgan Chase',
+            'BAC': 'Bank of America',
+            'GS': 'Goldman Sachs',
+            'MS': 'Morgan Stanley',
+            'WFC': 'Wells Fargo',
+            'C': 'Citigroup',
+            'AXP': 'American Express',
+            'COF': 'Capital One',
+            'BLK': 'BlackRock',
+            'SCHW': 'Charles Schwab',
+            'BK': 'BNY Mellon',
+            'STT': 'State Street',
+            'NTRS': 'Northern Trust',
+            'PNC': 'PNC Bank',
+            'USB': 'U.S. Bank',
+            'TFC': 'Truist',
+            'TD': 'TD Bank',
+            'CFG': 'Citizens Bank',
+            'FITB': 'Fifth Third Bank',
+            'RF': 'Regions Bank',
+            'HBAN': 'Huntington Bank',
+            'MTB': 'M&T Bank',
+            'SYF': 'Synchrony Financial',
+            'DFS': 'Discover Financial',
+            'NAVI': 'Navient',
+            'RKT': 'Rocket Companies',
+            'UWMC': 'UWM Holdings',
+            'PFSI': 'PennyMac',
+            'COOP': 'Mr. Cooper',
+            'ALLY': 'Ally Financial',
+            'COIN': 'Coinbase',
+            'HOOD': 'Robinhood',
+            'PYPL': 'PayPal',
+            'SQ': 'Block Inc',
+            'V': 'Visa',
+            'MA': 'Mastercard',
+            'AFL': 'Aflac',
+            'MET': 'MetLife',
+            'PRU': 'Prudential',
+            'AIG': 'AIG',
+            'ALL': 'Allstate',
+            'PGR': 'Progressive',
+            'BRK.A': 'Berkshire Hathaway',
+            'BRK.B': 'Berkshire Hathaway',
+        }
+
+        def normalize_company_name(name: str) -> str:
+            """Normalize a PAC or employer name to canonical company name."""
+            name_upper = name.upper().strip()
+
+            # Remove common suffixes
+            for suffix in [' PAC', ' POLITICAL ACTION', ' POLITICAL FUND', ' COMMITTEE',
+                           ' INC', ' LLC', ' CORP', ' CORPORATION', ' CO', ' LTD',
+                           ' & CO', ' AND CO', ' GROUP', ' HOLDINGS']:
+                name_upper = name_upper.replace(suffix, '')
+
+            name_upper = name_upper.strip()
+
+            # Check direct mapping
+            for key, canonical in PAC_TO_COMPANY.items():
+                if key in name_upper:
+                    return canonical
+
+            # Return cleaned name if no mapping found
+            return name.strip()
+
+        def get_traded_companies(official: dict) -> set:
+            """Get set of canonical company names from stock trades."""
+            traded = set()
+            for trade in official.get('trades', []):
+                ticker = trade.get('ticker', '').upper()
+                if ticker in TICKER_TO_COMPANY:
+                    traded.add(TICKER_TO_COMPANY[ticker])
+                # Also try company name from trade
+                company = trade.get('company', '')
+                if company:
+                    canonical = normalize_company_name(company)
+                    traded.add(canonical)
+            return traded
+
+        for official in self.officials_data:
+            # Get traded companies for overlap detection
+            traded_companies = get_traded_companies(official)
+
+            # Aggregate contributions by company
+            company_totals = {}
+
+            # Add PAC contributions
+            for pac in official.get('top_financial_pacs', []):
+                pac_name = pac.get('name', '')
+                amount = pac.get('amount', 0)
+                canonical = normalize_company_name(pac_name)
+
+                if canonical not in company_totals:
+                    company_totals[canonical] = {
+                        'name': canonical,
+                        'pac_amount': 0,
+                        'individual_amount': 0,
+                        'total': 0,
+                        'stock_overlap': False
+                    }
+                company_totals[canonical]['pac_amount'] += amount
+                company_totals[canonical]['total'] += amount
+
+            # Add individual contributions by employer
+            for employer in official.get('individual_financial_by_employer', []):
+                employer_name = employer.get('employer', '')
+                amount = employer.get('total', 0)
+                canonical = normalize_company_name(employer_name)
+
+                if canonical not in company_totals:
+                    company_totals[canonical] = {
+                        'name': canonical,
+                        'pac_amount': 0,
+                        'individual_amount': 0,
+                        'total': 0,
+                        'stock_overlap': False
+                    }
+                company_totals[canonical]['individual_amount'] += amount
+                company_totals[canonical]['total'] += amount
+
+            # Check for stock trading overlap
+            for company, data in company_totals.items():
+                if company in traded_companies:
+                    data['stock_overlap'] = True
+
+            # Sort by total and get top 5
+            sorted_donors = sorted(
+                company_totals.values(),
+                key=lambda x: x['total'],
+                reverse=True
+            )[:5]
+
+            official['top_donors'] = sorted_donors
+
+            # Count overlaps for logging
+            overlap_count = sum(1 for d in sorted_donors if d.get('stock_overlap'))
+            if overlap_count > 0:
+                logger.debug(f"  {official.get('name')}: {overlap_count} contribution/stock overlaps")
 
     def _normalize_scores_to_zscore(self):
         """
@@ -2510,8 +2736,17 @@ Be factual and avoid speculation."""
         """Save all processed data to storage."""
         from justdata.apps.electwatch.services.data_store import (
             save_officials, save_firms, save_industries,
-            save_committees, save_news, save_summaries, save_insights, save_metadata
+            save_committees, save_news, save_summaries, save_insights, save_metadata,
+            save_trend_snapshot, enrich_officials_with_trends
         )
+
+        # Save trend snapshot BEFORE enriching (captures raw current state)
+        logger.info("Saving trend snapshot...")
+        save_trend_snapshot(self.officials_data)
+
+        # Enrich officials with trend data for display
+        logger.info("Enriching officials with trend data...")
+        enrich_officials_with_trends(self.officials_data)
 
         logger.info("Saving officials data...")
         save_officials(self.officials_data, self.weekly_dir)
