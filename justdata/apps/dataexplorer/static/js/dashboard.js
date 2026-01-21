@@ -1,15 +1,61 @@
 // DataExplorer 2.0 Dashboard JavaScript
+// FIXED: Wrapped in DOMContentLoaded to ensure DOM is ready before attaching event listeners
 
 let selectedLenderId = null;
 let selectedLenderName = null;
 
-// Mode switching
-document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const mode = btn.dataset.mode;
-        switchMode(mode);
-    });
+// Initialize when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
 });
+
+function initializeDashboard() {
+    // Mode switching
+    const modeButtons = document.querySelectorAll('.mode-btn');
+    if (modeButtons.length === 0) {
+        console.warn('No mode buttons found - dashboard may not be fully loaded');
+        return;
+    }
+
+    modeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const mode = btn.dataset.mode;
+            if (mode) {
+                switchMode(mode);
+            }
+        });
+    });
+
+    // Initialize run analysis button
+    const runAreaBtn = document.getElementById('run-area-analysis');
+    if (runAreaBtn) {
+        runAreaBtn.addEventListener('click', runAreaAnalysis);
+    }
+
+    // Initialize lender search
+    const searchLenderBtn = document.getElementById('search-lender');
+    if (searchLenderBtn) {
+        searchLenderBtn.addEventListener('click', searchLender);
+    }
+
+    // Initialize lender analysis
+    const runLenderBtn = document.getElementById('run-lender-analysis');
+    if (runLenderBtn) {
+        runLenderBtn.addEventListener('click', runLenderAnalysis);
+    }
+
+    // Allow pressing Enter in search fields
+    const lenderSearchInput = document.getElementById('lender-search');
+    if (lenderSearchInput) {
+        lenderSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                searchLender();
+            }
+        });
+    }
+
+    console.log('Dashboard initialized successfully');
+}
 
 function switchMode(mode) {
     // Update buttons
@@ -25,40 +71,56 @@ function switchMode(mode) {
 }
 
 function clearResults() {
-    document.getElementById('area-results').style.display = 'none';
-    document.getElementById('lender-results-panel').style.display = 'none';
+    const areaResults = document.getElementById('area-results');
+    const lenderResults = document.getElementById('lender-results-panel');
+    if (areaResults) areaResults.style.display = 'none';
+    if (lenderResults) lenderResults.style.display = 'none';
 }
 
 // Area Analysis
-document.getElementById('run-area-analysis').addEventListener('click', async () => {
-    const dataType = document.getElementById('data-type').value;
-    const yearsInput = document.getElementById('years').value.trim();
-    const geoidsInput = document.getElementById('geoids').value.trim();
-    
+async function runAreaAnalysis() {
+    const dataTypeEl = document.getElementById('data-type');
+    const yearsEl = document.getElementById('years');
+    const geoidsEl = document.getElementById('geoids');
+
+    if (!dataTypeEl || !yearsEl || !geoidsEl) {
+        showError('Form elements not found');
+        return;
+    }
+
+    const dataType = dataTypeEl.value;
+    const yearsInput = yearsEl.value.trim();
+    const geoidsInput = geoidsEl.value.trim();
+
     // Validate inputs
     if (!yearsInput || !geoidsInput) {
         showError('Please provide both years and GEOIDs');
         return;
     }
-    
+
     const years = yearsInput.split(',').map(y => parseInt(y.trim())).filter(y => !isNaN(y));
     const geoids = geoidsInput.split(',').map(g => g.trim()).filter(g => g);
-    
+
     if (years.length === 0) {
         showError('Please provide valid years');
         return;
     }
-    
+
     if (geoids.length === 0) {
         showError('Please provide valid GEOIDs');
         return;
     }
-    
+
     // Show loading
     const resultsPanel = document.getElementById('area-results');
-    resultsPanel.style.display = 'block';
-    document.getElementById('area-results-content').innerHTML = '<div class="loading">Running analysis...</div>';
-    
+    if (resultsPanel) {
+        resultsPanel.style.display = 'block';
+    }
+    const resultsContent = document.getElementById('area-results-content');
+    if (resultsContent) {
+        resultsContent.innerHTML = '<div class="loading">Running analysis...</div>';
+    }
+
     try {
         const endpoint = `/api/area/${dataType}/analysis`;
         const response = await fetch(endpoint, {
@@ -72,19 +134,19 @@ document.getElementById('run-area-analysis').addEventListener('click', async () 
                 filters: {}
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(result.error || 'Analysis failed');
         }
-        
+
         displayAreaResults(result.data);
-        
+
     } catch (error) {
         showError(`Error: ${error.message}`);
     }
-});
+}
 
 function displayAreaResults(data) {
     const content = document.getElementById('area-results-content');
@@ -140,18 +202,30 @@ function displayAreaResults(data) {
 }
 
 // Lender Search
-document.getElementById('search-lender').addEventListener('click', async () => {
-    const lenderName = document.getElementById('lender-search').value.trim();
-    
+async function searchLender() {
+    const lenderSearchEl = document.getElementById('lender-search');
+    if (!lenderSearchEl) {
+        showError('Search field not found');
+        return;
+    }
+
+    const lenderName = lenderSearchEl.value.trim();
+
     if (!lenderName || lenderName.length < 2) {
         showError('Please enter at least 2 characters');
         return;
     }
-    
+
     const lenderResults = document.getElementById('lender-results');
-    lenderResults.style.display = 'block';
-    document.getElementById('lender-options').innerHTML = '<div class="loading">Searching...</div>';
-    
+    const lenderOptions = document.getElementById('lender-options');
+
+    if (lenderResults) {
+        lenderResults.style.display = 'block';
+    }
+    if (lenderOptions) {
+        lenderOptions.innerHTML = '<div class="loading">Searching...</div>';
+    }
+
     try {
         const response = await fetch('/api/lender/lookup', {
             method: 'POST',
@@ -163,19 +237,19 @@ document.getElementById('search-lender').addEventListener('click', async () => {
                 exact_match: false
             })
         });
-        
+
         const result = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(result.error || 'Search failed');
         }
-        
+
         displayLenderOptions(result.data);
-        
+
     } catch (error) {
         showError(`Error: ${error.message}`);
     }
-});
+}
 
 function displayLenderOptions(lenders) {
     const optionsDiv = document.getElementById('lender-options');
@@ -216,22 +290,35 @@ function displayLenderOptions(lenders) {
 }
 
 // Lender Analysis
-document.getElementById('run-lender-analysis').addEventListener('click', async () => {
+async function runLenderAnalysis() {
     if (!selectedLenderId) {
         showError('Please select a lender first');
         return;
     }
-    
-    const yearsInput = document.getElementById('lender-years').value.trim();
-    const enablePeerComparison = document.getElementById('enable-peer-comparison').checked;
-    
+
+    const lenderYearsEl = document.getElementById('lender-years');
+    const enablePeerComparisonEl = document.getElementById('enable-peer-comparison');
+
+    const yearsInput = lenderYearsEl ? lenderYearsEl.value.trim() : '';
+    const enablePeerComparison = enablePeerComparisonEl ? enablePeerComparisonEl.checked : true;
+
     const years = yearsInput ? yearsInput.split(',').map(y => parseInt(y.trim())).filter(y => !isNaN(y)) : [];
-    
+
     const resultsPanel = document.getElementById('lender-results-panel');
-    resultsPanel.style.display = 'block';
-    document.getElementById('lender-results-content').innerHTML = '<div class="loading">Running analysis...</div>';
-    
+    const resultsContent = document.getElementById('lender-results-content');
+
+    if (resultsPanel) {
+        resultsPanel.style.display = 'block';
+    }
+    if (resultsContent) {
+        resultsContent.innerHTML = '<div class="loading">Running analysis... This may take up to 60 seconds.</div>';
+    }
+
     try {
+        // Use AbortController for timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute timeout
+
         const response = await fetch('/api/lender/analysis', {
             method: 'POST',
             headers: {
@@ -243,21 +330,28 @@ document.getElementById('run-lender-analysis').addEventListener('click', async (
                 years: years,
                 geoids: [],
                 enable_peer_comparison: enablePeerComparison
-            })
+            }),
+            signal: controller.signal
         });
-        
+
+        clearTimeout(timeoutId);
+
         const result = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(result.error || 'Analysis failed');
         }
-        
+
         displayLenderResults(result.data);
-        
+
     } catch (error) {
-        showError(`Error: ${error.message}`);
+        if (error.name === 'AbortError') {
+            showError('Analysis timed out. Please try again with fewer years or disable peer comparison.');
+        } else {
+            showError(`Error: ${error.message}`);
+        }
     }
-});
+}
 
 function displayLenderResults(data) {
     const content = document.getElementById('lender-results-content');

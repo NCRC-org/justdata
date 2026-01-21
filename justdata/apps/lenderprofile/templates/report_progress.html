@@ -151,43 +151,50 @@
         
         <div class="error-message" id="errorMessage"></div>
         
-        <a href="/" class="back-link" id="backLink" style="display: none;">
+        <a href="#" class="back-link" id="backLink" style="display: none;">
             <i class="fas fa-arrow-left"></i> Return to Search
         </a>
     </div>
 
     <script>
         const jobId = '{{ job_id }}';
+        // Get the base path from the current URL to handle both standalone and blueprint modes
+        const currentPath = window.location.pathname;
+        const basePath = currentPath.substring(0, currentPath.lastIndexOf('/report/')) || '';
+
+        // Update back link to use correct base path
+        document.getElementById('backLink').href = basePath + '/' || '/';
+
         const progressBar = document.getElementById('progressBar');
         const progressText = document.getElementById('progressText');
         const progressPercent = document.getElementById('progressPercent');
         const errorMessage = document.getElementById('errorMessage');
         const backLink = document.getElementById('backLink');
-        
+
         let eventSource = null;
-        
+
         function connectProgress() {
-            eventSource = new EventSource(`/progress/${jobId}`);
-            
+            eventSource = new EventSource(`${basePath}/progress/${jobId}`);
+
             eventSource.onmessage = function(event) {
                 try {
                     const data = JSON.parse(event.data);
-                    
+
                     if (data.error) {
                         showError(data.error);
                         return;
                     }
-                    
+
                     if (data.done) {
                         // Report is ready - redirect to report page
-                        window.location.href = `/report/${jobId}`;
+                        window.location.href = `${basePath}/report/${jobId}`;
                         return;
                     }
-                    
+
                     // Update progress
                     const percent = data.percent || 0;
                     const step = data.step || 'Processing...';
-                    
+
                     progressBar.style.width = percent + '%';
                     progressText.textContent = step;
                     progressPercent.textContent = percent + '%';
@@ -195,7 +202,7 @@
                     console.error('Error parsing progress data:', e);
                 }
             };
-            
+
             eventSource.onerror = function(event) {
                 console.error('EventSource error:', event);
                 // Try to reconnect after a delay

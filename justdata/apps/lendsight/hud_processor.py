@@ -45,11 +45,14 @@ def load_hud_data() -> Dict[str, Dict[str, float]]:
         return _hud_cache
     
     if not HUD_FILE.exists():
+        print(f"[WARNING] HUD file not found at {HUD_FILE}")
         logger.warning(f"HUD file not found at {HUD_FILE}")
         return {}
-    
+
+    print(f"[INFO] Loading HUD file: {HUD_FILE}")
     logger.info(f"Loading HUD file: {HUD_FILE}")
     df = pd.read_excel(HUD_FILE)
+    print(f"[INFO] HUD file loaded, {len(df)} rows")
     
     # Create GEOID5 from STATE and COUNTY FIPS codes
     df['geoid5'] = df['STATE'].astype(str).str.zfill(2) + df['COUNTY'].astype(str).str.zfill(3)
@@ -83,6 +86,8 @@ def load_hud_data() -> Dict[str, Dict[str, float]]:
                 'total_persons': 0
             }
     
+    print(f"[INFO] Loaded HUD data for {len(_hud_cache)} counties")
+    print(f"[DEBUG] Sample HUD geoids: {list(_hud_cache.keys())[:10]}")
     logger.info(f"Loaded HUD data for {len(_hud_cache)} counties")
     return _hud_cache
 
@@ -90,20 +95,25 @@ def load_hud_data() -> Dict[str, Dict[str, float]]:
 def get_hud_data_for_counties(geoids: List[str]) -> Dict[str, Dict[str, float]]:
     """
     Get HUD income distribution data for a list of counties.
-    
+
     Args:
         geoids: List of 5-digit GEOID5 codes
-        
+
     Returns:
         Dictionary mapping GEOID5 to income distribution data
     """
+    print(f"[DEBUG] get_hud_data_for_counties called with {len(geoids)} geoids: {geoids}")
     hud_data = load_hud_data()
     result = {}
-    
+    found_count = 0
+    not_found_count = 0
+
     for geoid in geoids:
         geoid5 = str(geoid).zfill(5)
         if geoid5 in hud_data:
             result[geoid5] = hud_data[geoid5]
+            found_count += 1
+            print(f"  [OK] Found HUD data for {geoid5}: total_persons={hud_data[geoid5].get('total_persons', 0):,}")
         else:
             # Return zeros if county not found
             result[geoid5] = {
@@ -114,7 +124,10 @@ def get_hud_data_for_counties(geoids: List[str]) -> Dict[str, Dict[str, float]]:
                 'low_mod_income_pct': 0.0,
                 'total_persons': 0
             }
-    
+            not_found_count += 1
+            print(f"  [WARNING] No HUD data for {geoid5}, using zeros")
+
+    print(f"[DEBUG] HUD lookup complete: {found_count} found, {not_found_count} not found")
     return result
 
 

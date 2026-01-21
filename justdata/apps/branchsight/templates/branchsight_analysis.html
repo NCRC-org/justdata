@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BranchSight - AI-Powered Banking Insights</title>
+    <meta name="description" content="AI-powered bank branch data analyzer with BigQuery integration. Generate comprehensive banking market analysis reports.">
+    <meta name="keywords" content="BranchSight, banking, branch analysis, AI, BigQuery, market intelligence">
+    <meta name="author" content="JustData - National Community Reinvestment Coalition">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://justdata.app/branchsight/">
+    <meta property="og:title" content="BranchSight - AI-Powered Banking Insights">
+    <meta property="og:description" content="Generate comprehensive banking market analysis reports with AI-powered insights.">
+    <meta property="og:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://justdata.app/branchsight/">
+    <meta property="twitter:title" content="BranchSight - AI-Powered Banking Insights">
+    <meta property="twitter:description" content="Generate comprehensive banking market analysis reports with AI-powered insights.">
+    <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* Constrain the analysis card width with side buffers */
+        .analysis-card {
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Make Select2 dropdowns match consistent styling */
+        .select2-container {
+            width: 100% !important;
+        }
+        .select2-container .select2-selection--single {
+            height: auto;
+            min-height: 46px;
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .select2-container .select2-selection--single .select2-selection__rendered {
+            padding: 0;
+            line-height: 1.5;
+        }
+        .select2-container .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+            top: 0;
+            right: 8px;
+        }
+    </style>
+</head>
+<body style="background: var(--ncrc-gray-light); min-height: 100vh;">
+    {% set app_name = "BranchSight" %}{% include "shared_header.html" %}
+
+    <div class="container">
+        <!-- Main Content -->
+        <div class="content-wrapper">
+        <main class="main-content">
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-search"></i> Select a County for Analysis</h2>
+                    <p>Select a state and county from the dropdowns below to begin your bank branch analysis</p>
+                </div>
+
+                <form id="analysisForm" class="analysis-form">
+                    <!-- State Selection (Required) -->
+                    <div class="form-group">
+                        <label for="state-filter-select" data-tooltip="Select a state to filter counties. Counties from the selected state will appear below.">
+                            <i class="fas fa-map"></i>
+                            State <span style="color: red;">*</span>
+                        </label>
+                        <select id="state-filter-select" name="state_code" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1rem; margin-bottom: 15px;" placeholder="Select a state...">
+                            <option value="">Select a state...</option>
+                        </select>
+                        <small class="help-text" style="margin-bottom: 15px; display: block;">
+                            <i class="fas fa-info-circle"></i>
+                            Select a state to filter counties. Counties from the selected state will appear below.
+                        </small>
+                    </div>
+
+                    <!-- County Selection (Single county from selected state) -->
+                    <div class="form-group" id="county-selection-group">
+                        <label for="county-select" data-tooltip="Select a single county from the selected state. You can search by typing county names.">
+                            <i class="fas fa-map-marker-alt"></i>
+                            County <span style="color: red;">*</span>
+                        </label>
+                        <select id="county-select" name="counties" required disabled style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 8px; font-size: 1rem;">
+                            <option value="">Select a state first...</option>
+                        </select>
+                        <small class="help-text">
+                            <i class="fas fa-info-circle"></i>
+                            Select a single county from the selected state. You must select a state first.
+                        </small>
+                    </div>
+
+                    <!-- Year Range (Fixed to 2021-2025) -->
+                    <div class="form-group">
+                        <div style="padding: 15px; background: var(--ncrc-light-blue); border-radius: 8px; margin-bottom: 20px;">
+                            <p style="margin: 0; color: #333;">
+                                <i class="fas fa-calendar-alt"></i>
+                                <strong>Year Range:</strong> This report will analyze data from <strong>2021 to 2025</strong> (the most recent five years of data).
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Force Refresh Option (Staff/Admin Only) -->
+                    {% if is_staff %}
+                    <div class="form-group" style="margin-bottom: 20px; margin-top: 15px;">
+                        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95em; color: #333; padding: 12px 15px; background: #fff8e1; border: 2px solid #ffc107; border-radius: 6px;">
+                            <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer; width: 18px; height: 18px; accent-color: #ff9800;">
+                            <span><i class="fas fa-sync-alt" style="margin-right: 6px; color: #ff9800;"></i><strong>Clear cache and regenerate report</strong></span>
+                        </label>
+                        <small style="display: block; margin-top: 6px; color: #666; font-size: 0.85em; padding-left: 15px;">Check this box to bypass cached data and generate a fresh report with new AI analysis</small>
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your analysis. Make sure you've selected counties and a year range first.">
+                        <i class="fas fa-magic"></i>
+                        <span>Generate Analysis</span>
+                    </button>
+                    <small class="submit-info">
+                        <i class="fas fa-clock"></i>
+                        Analysis typically takes a few minutes
+                    </small>
+                </form>
+
+                <!-- Progress Section -->
+                <div id="progressSection" class="progress-section" style="display: none;">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <h3>Analyzing Data...</h3>
+                        </div>
+                        <div class="progress-steps" id="progressSteps" style="margin-bottom: 15px; text-align: left;">
+                            <!-- Progress steps will be populated by JavaScript -->
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                        <p class="progress-text" id="progressText">Initializing analysis...</p>
+                        <div class="progress-info">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section -->
+                <div id="resultsSection" class="results-section" style="display: none;">
+                    <div class="results-card">
+                        <div class="results-header">
+                            <i class="fas fa-check-circle"></i>
+                            <h3>Analysis Complete!</h3>
+                        </div>
+                        <div class="results-content">
+                            <p>Your FDIC branch analysis has been generated successfully.</p>
+                            <div class="download-options">
+                                <button class="download-btn" id="viewReportBtn">
+                                    <i class="fas fa-chart-bar"></i>
+                                    View Web Report
+                                </button>
+                                <button class="download-btn secondary" id="downloadBtn">
+                                    <i class="fas fa-download"></i>
+                                    Export Data
+                                </button>
+                                <small class="download-info">
+                                    <i class="fas fa-globe"></i>
+                                    Interactive web report with export options
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="errorSection" class="error-section" style="display: none;">
+                    <div class="error-card">
+                        <div class="error-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Analysis Failed</h3>
+                        </div>
+                        <div class="error-content">
+                            <p id="errorMessage"></p>
+                            <button class="retry-btn" onclick="resetForm()">
+                                <i class="fas fa-redo"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+        </main>
+        </div> <!-- End content-wrapper -->
+    </div> <!-- End container -->
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>BranchSight</h4>
+                <p>AI-powered banking market intelligence platform</p>
+            </div>
+            <div class="footer-col">
+                <h4>Developed by</h4>
+                <p>NCRC - National Community Reinvestment Coalition<br>
+                Jad Edlebi &amp; Jason Richardson</p>
+            </div>
+            <div class="footer-col">
+                <h4>Links</h4>
+                <p>
+                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
+                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
+                </p>
+            </div>
+            <div class="footer-col footer-logo">
+                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - BranchSight. Powered by AI and BigQuery.<br>
+            <span class="version-text">Version {{ version }}</span>
+        </div>
+    </footer>
+
+    <!-- jQuery (must be first) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Select2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- Set base URL for API calls -->
+    <script>
+        window.APP_BASE_URL = '{{ app_base_url|default("/branchsight") }}';
+    </script>
+    <!-- Override progress steps for BranchSight -->
+    <script>
+        // Define progress steps for BranchSight (branch analysis) - 10 steps matching LendSight format
+        window.PROGRESS_STEPS = [
+            { id: 'initializing', label: 'Initializing', icon: 'fa-cog' },
+            { id: 'preparing_data', label: 'Preparing Data', icon: 'fa-database' },
+            { id: 'connecting_db', label: 'Connecting to Database', icon: 'fa-plug' },
+            { id: 'fetching_data', label: 'Fetching Data', icon: 'fa-download' },
+            { id: 'building_report', label: 'Building Report', icon: 'fa-file-alt' },
+            { id: 'yearly_breakdown', label: 'Section 1: Yearly Breakdown', icon: 'fa-chart-line' },
+            { id: 'bank_networks', label: 'Section 2: Bank Networks', icon: 'fa-building' },
+            { id: 'county_analysis', label: 'Section 3: County Analysis', icon: 'fa-map' },
+            { id: 'generating_ai', label: 'Generating AI Insights', icon: 'fa-brain' },
+            { id: 'completed', label: 'Complete', icon: 'fa-check' }
+        ];
+    </script>
+    <!-- BranchSight-specific state and county loading -->
+    <script>
+        // Store state name to code mapping for reliable lookup (global scope so form handler can access)
+        window.stateCodeMap = {};
+        // Also store reverse mapping (code to name) for when Select2 returns code as value
+        window.stateNameMap = {};
+        
+        // BranchSight-specific state and county loading
+        $(document).ready(function() {
+            // Guard to prevent multiple simultaneous calls to loadStates
+            let isLoadingStates = false;
+            let statesLoaded = false;
+            
+            // Load states on page load
+            function loadStates() {
+                // Prevent multiple simultaneous calls
+                if (isLoadingStates) {
+                    console.log('[DEBUG] loadStates: Already loading, skipping...');
+                    return;
+                }
+                
+                const stateSelect = $('#state-filter-select');
+                if (!stateSelect.length) {
+                    console.warn('State select element not found');
+                    return;
+                }
+                
+                isLoadingStates = true;
+
+                const baseUrl = window.APP_BASE_URL || '/branchsight';
+                fetch(`${baseUrl}/states`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to load states');
+                        }
+                        return response.json();
+                    })
+                    .then(states => {
+                        // Destroy Select2 if it exists to prevent conflicts
+                        if (stateSelect.hasClass('select2-hidden-accessible')) {
+                            stateSelect.select2('destroy');
+                        }
+                        
+                        stateSelect.empty();
+                        stateSelect.append('<option value="">Select a state...</option>');
+                        
+                        states.forEach(state => {
+                            const stateName = state.name || state;
+                            const stateCode = state.code || state;
+                            // Store in mapping object for reliable lookup (name -> code)
+                            window.stateCodeMap[stateName] = stateCode;
+                            // Store reverse mapping (code -> name) for when Select2 returns code
+                            window.stateNameMap[stateCode] = stateName;
+                            // Store both name and code as data attributes, but use name as value
+                            const option = new Option(stateName, stateName);
+                            // Set data attribute directly on DOM element so it persists with Select2
+                            option.setAttribute('data-code', stateCode);
+                            $(option).data('code', stateCode); // Also set jQuery data for compatibility
+                            stateSelect.append(option);
+                        });
+                        
+                        // Reinitialize Select2 for state dropdown
+                        stateSelect.select2({
+                            placeholder: 'Select a state...',
+                            allowClear: true,
+                            width: '100%'
+                        });
+                        
+                        statesLoaded = true;
+                        isLoadingStates = false;
+                    })
+                    .catch(error => {
+                        console.error('Error loading states:', error);
+                        isLoadingStates = false;
+                    });
+            }
+            
+            // Load counties for selected state
+            function loadCountiesForState(stateCode) {
+                const countySelect = document.getElementById('county-select');
+                if (!countySelect) {
+                    console.warn('[DEBUG] County select element not found');
+                    return;
+                }
+                
+                if (!stateCode) {
+                    countySelect.innerHTML = '<option value="">Select a state first...</option>';
+                    countySelect.disabled = true;
+                    return;
+                }
+                
+                console.log(`[DEBUG] loadCountiesForState called with state code: ${stateCode}`);
+                
+                // Show loading state
+                countySelect.disabled = true;
+                countySelect.innerHTML = '<option value="">Loading counties...</option>';
+
+                const baseUrl = window.APP_BASE_URL || '/branchsight';
+                fetch(`${baseUrl}/counties-by-state/${encodeURIComponent(stateCode)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error(`Failed to load counties: ${response.status} ${response.statusText}`);
+                        }
+                        return response.json();
+                    })
+                    .then(counties => {
+                        // Clear and enable the select
+                        countySelect.disabled = false;
+                        countySelect.innerHTML = '<option value="">Select a county...</option>';
+                        
+                        // Handle both old format (strings) and new format (objects with FIPS codes)
+                        counties.forEach(county => {
+                            const option = document.createElement('option');
+                            if (typeof county === 'string') {
+                                // Old format: just county name string
+                                option.value = county;
+                                option.textContent = county;
+                            } else if (county && county.name) {
+                                // New format: county object with name, geoid5, state_fips, county_fips
+                                option.value = county.name;
+                                option.textContent = county.name;
+                                option.dataset.county = JSON.stringify(county); // Store full county object
+                            }
+                            countySelect.appendChild(option);
+                        });
+                        
+                        console.log(`[DEBUG] Loaded ${counties.length} counties for state code ${stateCode}`);
+                    })
+                    .catch(error => {
+                        console.error('Error loading counties:', error);
+                        countySelect.innerHTML = '<option value="">Error loading counties. Please try again.</option>';
+                        countySelect.disabled = false;
+                    });
+            }
+            
+            // Handle state selection change - use event delegation to prevent duplicate handlers
+            $(document).off('change', '#state-filter-select').on('change', '#state-filter-select', function(e) {
+                // Note: We no longer block "programmatic" events because Select2's change events
+                // can be flagged as programmatic even when triggered by user interaction.
+                // The isTrusted check was causing issues where county dropdown wouldn't populate.
+                console.log('[DEBUG] State change event received');
+                
+                const stateSelect = $(this);
+                let selectedState = stateSelect.val();
+                
+                // Handle case where Select2 might return state code instead of state name
+                // If selectedState is numeric (state code), convert to state name first
+                if (selectedState && /^\d+$/.test(selectedState)) {
+                    // It's a state code, convert to state name
+                    const stateName = window.stateNameMap[selectedState];
+                    if (stateName) {
+                        selectedState = stateName;
+                        console.log(`[DEBUG] Converted state code ${stateSelect.val()} to state name: ${selectedState}`);
+                    }
+                }
+                
+                // Get the state code - try multiple methods for reliability
+                let stateCode = null;
+                if (selectedState) {
+                    // Method 1: Try to get from the mapping object (most reliable)
+                    if (window.stateCodeMap[selectedState]) {
+                        stateCode = window.stateCodeMap[selectedState];
+                        console.log(`[DEBUG] Got state code from mapping: ${stateCode}`);
+                    } else {
+                        // Method 2: Try to get from Select2's selected option data
+                        const selectedOption = stateSelect.select2('data');
+                        if (selectedOption && selectedOption.length > 0 && selectedOption[0].element) {
+                            stateCode = $(selectedOption[0].element).attr('data-code') || $(selectedOption[0].element).data('code');
+                            console.log(`[DEBUG] Got state code from Select2 data: ${stateCode}`);
+                        }
+                        // Method 3: Try to get from the option element's data attribute
+                        if (!stateCode) {
+                            const actualOption = stateSelect.find('option').filter(function() {
+                                return $(this).val() === selectedState;
+                            });
+                            if (actualOption.length > 0) {
+                                // Try both data attribute and jQuery data - prioritize DOM attribute
+                                stateCode = actualOption.attr('data-code') || actualOption.data('code');
+                                console.log(`[DEBUG] Got state code from option element: ${stateCode}`);
+                            }
+                        }
+                    }
+                }
+                
+                console.log(`[DEBUG] State filter changed to: ${selectedState}`);
+                console.log(`[DEBUG] State code: ${stateCode}`);
+                
+                if (!stateCode) {
+                    console.error(`[DEBUG] ERROR: No state code found for selected state: ${selectedState}`);
+                    alert('Error: Could not determine state code. Please try selecting the state again.');
+                    return;
+                }
+                
+                // Only load counties if a state is actually selected AND we have a valid state code
+                if (selectedState && selectedState.trim() !== '' && stateCode) {
+                    console.log(`[DEBUG] Loading counties for state: ${selectedState} (code: ${stateCode})`);
+                    loadCountiesForState(stateCode);
+                } else {
+                    // Clear counties if state is cleared
+                    const countySelect = document.getElementById('county-select');
+                    if (countySelect) {
+                        countySelect.disabled = true;
+                        countySelect.innerHTML = '<option value="">Select a state first...</option>';
+                    }
+                }
+            });
+            
+            // Load states on page load - only once
+            if (!statesLoaded) {
+                loadStates();
+            }
+        });
+    </script>
+    <!-- Your app.js (after dependencies and progress steps override) -->
+    <script>
+        // Set flag to tell shared app.js to skip state management for BranchSight
+        window.BRANCHSIGHT_MODE = true;
+        
+        // Override loadCounties BEFORE app.js loads to prevent Select2 initialization
+        // This prevents the shared app.js from initializing Select2 on county select
+        window.loadCounties = function(stateCode = null) {
+            // For BranchSight, we use our own loadCountiesForState function
+            // This override prevents the shared app.js from initializing Select2
+            console.log('[BranchSight] loadCounties called but overridden - using loadCountiesForState instead');
+            // Do nothing - our custom loadCountiesForState will handle it
+        };
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        // Override shared app.js functions for BranchSight (single county, fixed years 2021-2025)
+        $(document).ready(function() {
+            // CRITICAL: Remove the shared app.js form submission handler
+            // The shared app.js attaches handlers that don't work for BranchSight's single-county setup
+            // NOTE: We do NOT remove the state-filter-select change handler - it was already
+            // attached in the earlier script block and loads counties correctly
+            $('#analysisForm').off('submit'); // Remove shared app.js form handler
+            // DO NOT remove state change handler - we need it for county loading
+            // $('#state-filter-select').off('change'); // REMOVED - this was breaking county loading
+            console.log('[BranchSight] Removed shared app.js form handler (kept state handler)');
+            
+            // Re-attach our BranchSight-specific form handler
+            // Use setTimeout to ensure this runs after shared app.js has finished
+            let retryCount = 0;
+            const maxRetries = 50; // Wait up to 5 seconds (50 * 100ms)
+            
+            function attachFormHandler() {
+                // Verify required functions are available
+                if ((typeof showProgress !== 'function' || typeof disableForm !== 'function' || typeof listenForProgress !== 'function') && retryCount < maxRetries) {
+                    retryCount++;
+                    setTimeout(attachFormHandler, 100);
+                    return;
+                }
+                
+                if (retryCount >= maxRetries) {
+                    console.error('[BranchSight] Functions not available after waiting, attaching handler anyway');
+                }
+                
+                // Functions are available (or we've given up waiting), attach the handler
+                $('#analysisForm').off('submit').on('submit', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                // Clear all previous validation messages first
+                document.querySelectorAll('.validation-message').forEach(msg => msg.remove());
+                
+                const formData = new FormData(this);
+                const selectionType = formData.get('selection_type') || 'county';
+                
+                // Enhanced validation with helpful messages
+                let hasErrors = false;
+                
+                // State selection is required
+                const selectedState = $('#state-filter-select').val();
+                
+                // Validate state selection (required)
+                if (!selectedState || selectedState.trim() === '') {
+                    showValidationMessage(document.getElementById('state-filter-select'), 'Please select a state.', 'error');
+                    hasErrors = true;
+                }
+                
+                // Validate county selection (required, single county)
+                const countySelect = document.getElementById('county-select');
+                const selectedCounty = countySelect ? countySelect.value : '';
+                if (!selectedCounty || selectedCounty === '') {
+                    showValidationMessage(countySelect, 'Please select a county to analyze.', 'error');
+                    hasErrors = true;
+                }
+                
+                if (hasErrors) {
+                    const firstError = document.querySelector('.validation-message.error');
+                    if (firstError) {
+                        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    return false;
+                }
+                
+                // Get state code from mapping
+                const stateSelect = $('#state-filter-select');
+                let stateCode = null;
+                let selectedStateName = selectedState;
+                
+                // Handle case where Select2 might return state code instead of state name
+                if (selectedStateName && /^\d+$/.test(selectedStateName)) {
+                    // It's a state code, convert to state name first
+                    const stateName = window.stateNameMap[selectedStateName];
+                    if (stateName) {
+                        selectedStateName = stateName;
+                    }
+                }
+                
+                // Try multiple methods to get state code
+                // Method 1: From mapping object
+                if (window.stateCodeMap[selectedStateName]) {
+                    stateCode = window.stateCodeMap[selectedStateName];
+                } else {
+                    // Method 2: From Select2's selected option data
+                    const selectedOption = stateSelect.select2('data');
+                    if (selectedOption && selectedOption.length > 0 && selectedOption[0].element) {
+                        stateCode = $(selectedOption[0].element).attr('data-code') || $(selectedOption[0].element).data('code');
+                    }
+                    // Method 3: From option element
+                    if (!stateCode) {
+                        const actualOption = stateSelect.find('option').filter(function() {
+                            return $(this).val() === selectedStateName;
+                        });
+                        if (actualOption.length > 0) {
+                            stateCode = actualOption.attr('data-code') || actualOption.data('code');
+                        }
+                    }
+                }
+                
+                // Build request data
+                const forceRefresh = document.getElementById('forceRefreshCheckbox')?.checked || false;
+                let requestData = {
+                    selection_type: 'county',
+                    state_code: stateCode || selectedState,  // Always include state_code
+                    years: '2021,2022,2023,2024,2025',  // Fixed years 2021-2025 (most recent 5 years)
+                    counties: selectedCounty,  // Single county, not array
+                    force_refresh: forceRefresh
+                };
+                
+                // Also include counties_data with GEOID5 information for BigQuery queries
+                const countiesData = [];
+                const selectedOption = countySelect.options[countySelect.selectedIndex];
+                if (selectedOption && selectedOption.dataset.county) {
+                    try {
+                        const countyData = JSON.parse(selectedOption.dataset.county);
+                        // Include GEOID5, state_fips, and county_fips for BigQuery
+                        countiesData.push({
+                            name: countyData.name || selectedCounty,
+                            geoid5: countyData.geoid5,
+                            state_fips: countyData.state_fips,
+                            county_fips: countyData.county_fips
+                        });
+                    } catch (e) {
+                        // Fallback: if parsing fails, just use the name
+                        countiesData.push({
+                            name: selectedCounty
+                        });
+                    }
+                } else {
+                    // Fallback: if no county data, just use the name
+                    countiesData.push({
+                        name: selectedCounty
+                    });
+                }
+                requestData.counties_data = countiesData;
+                
+                // Show progress and disable form
+                // Use fallback implementations if shared functions aren't available
+                if (typeof showProgress === 'function') {
+                    showProgress();
+                } else {
+                    // Fallback: Show progress manually
+                    const progressSection = document.getElementById('progressSection');
+                    const submitBtn = document.getElementById('submitBtn');
+                    if (progressSection) progressSection.style.display = 'block';
+                    if (submitBtn) submitBtn.disabled = true;
+                    console.log('[BranchSight] Using fallback showProgress');
+                }
+                if (typeof disableForm === 'function') {
+                    disableForm();
+                } else {
+                    // Fallback: Disable form manually
+                    const form = document.getElementById('analysisForm');
+                    if (form) {
+                        const inputs = form.querySelectorAll('input, select, button');
+                        inputs.forEach(input => {
+                            if (input.id !== 'submitBtn') input.disabled = true;
+                        });
+                    }
+                    console.log('[BranchSight] Using fallback disableForm');
+                }
+                
+                try {
+                    const baseUrl = window.APP_BASE_URL || '/branchsight';
+                    const response = await fetch(`${baseUrl}/analyze`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(requestData)
+                    });
+
+                    const result = await response.json();
+                    if (!result.success) {
+                        throw new Error(result.error || 'Analysis failed');
+                    }
+                    const jobId = result.job_id;
+                    if (typeof listenForProgress === 'function') {
+                        listenForProgress(jobId);
+                    } else {
+                        // Fallback: Redirect to report page
+                        console.log('[BranchSight] Using fallback - redirecting to report page');
+                        window.location.href = `${baseUrl}/report?job_id=${jobId}`;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    if (typeof showError === 'function') {
+                        showError(error.message || 'Network error. Please check your connection and try again.');
+                    } else {
+                        alert('Error: ' + (error.message || 'Network error. Please check your connection and try again.'));
+                    }
+                    // Fallback: Hide progress and enable form manually
+                    if (typeof hideProgress === 'function') {
+                        hideProgress();
+                    } else {
+                        const progressSection = document.getElementById('progressSection');
+                        if (progressSection) progressSection.style.display = 'none';
+                    }
+                    if (typeof enableForm === 'function') {
+                        enableForm();
+                    } else {
+                        const form = document.getElementById('analysisForm');
+                        if (form) {
+                            const inputs = form.querySelectorAll('input, select, button');
+                            inputs.forEach(input => input.disabled = false);
+                        }
+                    }
+                }
+                
+                return false;
+                });
+                console.log('[BranchSight] Attached BranchSight-specific form handler');
+            }
+            
+            // Start trying to attach the handler
+            setTimeout(attachFormHandler, 100);
+            
+            // Also attach a click handler to the submit button as a fallback
+            $('#submitBtn').off('click').on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('[BranchSight] Submit button clicked - triggering form submit');
+                $('#analysisForm').trigger('submit');
+                return false;
+            });
+            
+            // Make sure Select2 is NOT initialized on county select
+            // Destroy any existing Select2 instance immediately
+            const countySelectElForBranchSight = document.getElementById('county-select');
+            if (countySelectElForBranchSight) {
+                const $countySelect = $('#county-select');
+                // Destroy Select2 if it exists
+                if ($countySelect.hasClass('select2-hidden-accessible')) {
+                    console.log('[BranchSight] Destroying Select2 on county select');
+                    $countySelect.select2('destroy');
+                }
+                // Remove multiple attribute if it exists
+                countySelectElForBranchSight.removeAttribute('multiple');
+                // Ensure it's a plain select
+                if (countySelectElForBranchSight.hasAttribute('multiple')) {
+                    countySelectElForBranchSight.removeAttribute('multiple');
+                }
+            }
+        });
+    </script>
+    {% include "shared_header_js.html" %}
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <!-- JustData Auth -->
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+</body>
+</html>
+

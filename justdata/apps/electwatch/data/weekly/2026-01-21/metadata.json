@@ -1,0 +1,81 @@
+{
+  "status": "valid",
+  "last_updated": "2026-01-21T12:58:10.595680",
+  "last_updated_display": "January 21, 2026 at 12:58 PM",
+  "data_window": {
+    "start": "January 21, 2025",
+    "end": "January 21, 2026"
+  },
+  "stock_data_window": {
+    "start": "January 22, 2024",
+    "end": "January 21, 2026",
+    "start_iso": "2024-01-22",
+    "end_iso": "2026-01-21",
+    "description": "24-month rolling window of STOCK Act disclosures"
+  },
+  "fec_data_window": {
+    "start": "January 22, 2024",
+    "end": "January 21, 2026",
+    "start_iso": "2024-01-22",
+    "end_iso": "2026-01-21",
+    "description": "24-month rolling window of FEC contributions"
+  },
+  "next_update": "2026-01-25T00:00:00",
+  "next_update_display": "January 25, 2026 at midnight",
+  "data_sources": {
+    "congress_members": {
+      "status": "success",
+      "house_members": 437,
+      "senate_members": 100,
+      "total": 537,
+      "timestamp": "2026-01-20T18:28:07.403554",
+      "from_cache": true
+    },
+    "fmp": {
+      "status": "success",
+      "house_trades": 964,
+      "senate_trades": 90,
+      "total_trades": 1054,
+      "officials": 545,
+      "matched_via_crosswalk": 65,
+      "unmatched_count": 8,
+      "from_cache": true,
+      "timestamp": "2026-01-21T12:58:10.719978"
+    },
+    "fec": {
+      "status": "success",
+      "officials_enriched": 537,
+      "total_contributions": 0,
+      "api_calls": 0,
+      "from_cache_count": 537,
+      "crosswalk_matches": 537,
+      "crosswalk_misses": 0,
+      "match_rate_pct": 100.0,
+      "timestamp": "2026-01-21T12:58:11.503509"
+    },
+    "financial_pacs": {
+      "status": "success",
+      "matched_officials": 0,
+      "total_financial_contributions": 0,
+      "from_cache_count": 0,
+      "timestamp": "2026-01-21T13:07:26.408821"
+    },
+    "individual_financial": {
+      "status": "success",
+      "matched_officials": 0,
+      "total_contributions": 0,
+      "processed_names": [],
+      "timestamp": "2026-01-21T13:07:26.411706",
+      "from_cache_count": 0
+    }
+  },
+  "counts": {
+    "officials": 545,
+    "firms": 85,
+    "industries": 9,
+    "committees": 4,
+    "news_articles": 0
+  },
+  "errors": [],
+  "warnings": []
+}

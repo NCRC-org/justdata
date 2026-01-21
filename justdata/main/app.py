@@ -4,7 +4,10 @@ Serves as the central entry point with all sub-apps as blueprints.
 """
 
 from flask import Flask, render_template, session, request, jsonify, send_from_directory
-from justdata.main.auth import get_user_type, set_user_type, get_app_access, get_user_permissions
+from justdata.main.auth import (
+    get_user_type, set_user_type, get_app_access, get_user_permissions,
+    auth_bp, init_firebase, get_current_user, is_authenticated
+)
 from justdata.main.config import MainConfig
 import os
 
@@ -24,7 +27,39 @@ def create_app():
     app.secret_key = MainConfig.SECRET_KEY
     app.config['DEBUG'] = MainConfig.DEBUG
     app.config['SESSION_PERMANENT'] = True
-    
+
+    # Session cookie settings for cross-path persistence
+    app.config['SESSION_COOKIE_PATH'] = '/'  # Ensure cookie is sent for all paths
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  # Allow cross-site GET requests
+    app.config['SESSION_COOKIE_HTTPONLY'] = True  # Security: prevent JS access
+    # Use secure cookies only in production (HTTPS)
+    app.config['SESSION_COOKIE_SECURE'] = not MainConfig.DEBUG
+
+    # Session lifetime - 30 days
+    from datetime import timedelta
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(days=30)
+
+    # Initialize Firebase Authentication
+    try:
+        init_firebase()
+        print("[INFO] Firebase initialized successfully")
+    except Exception as e:
+        print(f"[WARN] Firebase initialization failed: {e}")
+
+    # Register authentication blueprint
+    app.register_blueprint(auth_bp)
+    print("[INFO] Auth blueprint registered at /api/auth")
+
+    # Context processor to make auth info available in all templates
+    @app.context_processor
+    def inject_auth():
+        """Make authentication info available to all templates."""
+        return {
+            'current_user': get_current_user(),
+            'is_authenticated': is_authenticated(),
+            'user_type': get_user_type()
+        }
+
     # Favicon route
     @app.route('/favicon.ico')
     def favicon():

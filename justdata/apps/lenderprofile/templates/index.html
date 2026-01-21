@@ -381,21 +381,27 @@
     </div>
 
     <script>
+        // Determine base path dynamically to support both standalone and blueprint modes
+        // In standalone mode: path is "/" so basePath is ""
+        // In blueprint mode: path is "/lenderprofile/" so basePath is "/lenderprofile"
+        const currentPath = window.location.pathname;
+        const basePath = currentPath.replace(/\/$/, ''); // Remove trailing slash
+
         const searchForm = document.getElementById('search-form');
         const companyInput = document.getElementById('company-name');
         const searchBtn = document.getElementById('search-btn');
         const errorMessage = document.getElementById('error-message');
         const candidatesList = document.getElementById('candidates-list');
         const candidatesContainer = document.getElementById('candidates-container');
-        
+
         let selectedCandidate = null;
-        
+
         searchForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const companyName = companyInput.value.trim();
             if (!companyName) return;
-            
+
             // Reset UI
             errorMessage.classList.remove('show');
             candidatesList.classList.remove('show');
@@ -403,9 +409,9 @@
             selectedCandidate = null;
             searchBtn.disabled = true;
             searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Searching...';
-            
+
             try {
-                const response = await fetch('/lenderprofile/api/search-lender', {
+                const response = await fetch(`${basePath}/api/search-lender`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -480,8 +486,8 @@
         function generateReport(lenderData) {
             // Redirect to report generation with progress tracking
             const reportFocus = ''; // Can add optional focus field later
-            
-            fetch('/lenderprofile/api/generate-report', {
+
+            fetch(`${basePath}/api/generate-report`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -496,7 +502,7 @@
             .then(data => {
                 if (data.success && data.report_id) {
                     // Redirect to progress page
-                    window.location.href = `/lenderprofile/report/${data.report_id}`;
+                    window.location.href = `${basePath}/report/${data.report_id}`;
                 } else {
                     throw new Error(data.error || 'Failed to generate report');
                 }
@@ -536,5 +542,14 @@
             <span class="version-text">Version {{ version if version else '1.0.0' }}</span>
         </div>
     </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+    <!-- JustData Auth -->
+    <script src="/static/js/auth.js"></script>
+
+    {% include 'shared_header_js.html' %}
 </body>
 </html>

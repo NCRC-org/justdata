@@ -25,6 +25,53 @@
 // DO NOT MODIFY WITHOUT USER APPROVAL
 // ============================================================================
 
+// Institution Type Helper - Classify lenders by branch availability in FDIC SOD data
+// Note: Credit unions have branches but they're in NCUA data, not FDIC - will add in v2
+function getInstitutionCategory(typeName) {
+    if (!typeName) {
+        return { category: 'unknown', badge: '', hasBranches: null };
+    }
+
+    const lower = typeName.toLowerCase();
+
+    // Credit unions - have branches but in NCUA data (not yet integrated)
+    if (lower.includes('credit union')) {
+        return {
+            category: 'credit_union',
+            hasBranches: false,  // Not in FDIC SOD - will add NCUA in v2
+            badge: '<span style="font-size: 0.7rem; padding: 2px 6px; background: #e3f2fd; color: #1565c0; border-radius: 4px; white-space: nowrap;" title="Credit Union - branch data coming in v2"><i class="fas fa-users" style="margin-right: 3px;"></i>Credit Union</span>'
+        };
+    }
+
+    // Banks/Thrifts - have branches in FDIC SOD data
+    const bankKeywords = ['bank', 'savings', 'thrift', 'affiliate'];
+    const isBank = bankKeywords.some(k => lower.includes(k));
+
+    // Non-depository institutions - no physical branches
+    const nonDepositoryKeywords = ['mortgage', 'finance company', 'non-bank', 'independent'];
+    const isNonDepository = nonDepositoryKeywords.some(k => lower.includes(k));
+
+    if (isBank && !isNonDepository) {
+        return {
+            category: 'bank',
+            hasBranches: true,
+            badge: '<span style="font-size: 0.7rem; padding: 2px 6px; background: #e8f5e9; color: #2e7d32; border-radius: 4px; white-space: nowrap;" title="Bank - has physical branch locations in FDIC data"><i class="fas fa-building" style="margin-right: 3px;"></i>Bank</span>'
+        };
+    } else if (isNonDepository || lower.includes('mortgage')) {
+        return {
+            category: 'non-depository',
+            hasBranches: false,
+            badge: '<span style="font-size: 0.7rem; padding: 2px 6px; background: #fff3e0; color: #e65100; border-radius: 4px; white-space: nowrap;" title="Non-bank lender - no physical branch locations"><i class="fas fa-briefcase" style="margin-right: 3px;"></i>Non-Bank</span>'
+        };
+    } else {
+        return {
+            category: 'unknown',
+            hasBranches: null,
+            badge: ''
+        };
+    }
+}
+
 const cards = {
     step1: {
         number: 1,
@@ -1878,23 +1925,34 @@ function renderLenderDropdown(lenders) {
     lenders.forEach((lender, index) => {
         const item = document.createElement('div');
         item.className = 'lender-dropdown-item';
-        
+
         // Format: LENDER NAME (City, State if available)
         const lenderName = (lender.name || lender.lender_name || 'Unknown').toUpperCase();
         const city = lender.city || lender.respondent_city || '';
         const state = lender.state || lender.respondent_state || '';
-        
+        const lenderType = lender.type || lender.type_name || '';
+
+        // Determine institution category (depository = has branches, non-depository = no branches)
+        const institutionInfo = getInstitutionCategory(lenderType);
+
         // Display just the name if city/state not available (they'll be looked up after selection)
-        let displayText = lenderName;
+        let locationText = '';
         if (city && state) {
-            displayText = `${lenderName} (${city}, ${state})`;
+            locationText = `(${city}, ${state})`;
         } else if (city) {
-            displayText = `${lenderName} (${city})`;
+            locationText = `(${city})`;
         } else if (state) {
-            displayText = `${lenderName} (${state})`;
+            locationText = `(${state})`;
         }
-        
-        item.textContent = displayText;
+
+        // Build HTML with institution type badge
+        item.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
+                <span style="flex: 1; font-weight: 500;">${lenderName}</span>
+                ${institutionInfo.badge}
+            </div>
+            ${locationText ? `<div style="font-size: 0.8rem; color: #666; margin-top: 2px;">${locationText}</div>` : ''}
+        `;
         item.setAttribute('role', 'option');
         item.setAttribute('data-index', index);
         item.setAttribute('tabindex', '-1');
@@ -2255,7 +2313,24 @@ async function displayLenderInfo(lei, name, lenderData) {
         
         // Build info display
         infoContent.innerHTML = '';
-        
+
+        // Institution Type (Bank vs Non-Bank) - with branch availability indicator
+        const institutionInfo = getInstitutionCategory(lenderType);
+        if (institutionInfo.category !== 'unknown') {
+            const typeItem = document.createElement('div');
+            typeItem.className = 'lender-info-item';
+            typeItem.innerHTML = `
+                <div class="lender-info-label">Institution Type</div>
+                <div class="lender-info-value" style="display: flex; align-items: center; gap: 8px;">
+                    ${institutionInfo.badge}
+                    <span style="font-size: 0.8rem; color: #666;">
+                        ${institutionInfo.hasBranches ? '(Has physical branches)' : '(No branch network)'}
+                    </span>
+                </div>
+            `;
+            infoContent.appendChild(typeItem);
+        }
+
         // LEI (used for HMDA data queries) - with GLEIF lookup link
         if (lei) {
             // Direct link to the lender's LEI record on GLEIF

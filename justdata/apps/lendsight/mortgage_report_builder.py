@@ -1033,7 +1033,14 @@ def create_income_borrowers_table(df: pd.DataFrame, years: List[int], hud_data: 
     if hud_data:
         # Aggregate HUD data across all counties in the report
         geoids = df['geoid5'].unique()
-        print(f"  [DEBUG] Table 1 - HUD data available with {len(hud_data)} counties, checking geoids: {list(geoids)[:5]}...")
+        print(f"  [DEBUG] Table 1 - HUD data available with {len(hud_data)} counties")
+        print(f"  [DEBUG] Table 1 - HUD data keys (sample): {list(hud_data.keys())[:5]}")
+        print(f"  [DEBUG] Table 1 - DataFrame geoids (sample): {[str(g).zfill(5) for g in list(geoids)[:5]]}")
+
+        # Check for matches between DataFrame geoids and HUD data
+        matched_geoids = [str(geoid).zfill(5) for geoid in geoids if str(geoid).zfill(5) in hud_data]
+        print(f"  [DEBUG] Table 1 - Matched geoids: {len(matched_geoids)} out of {len(geoids)}: {matched_geoids}")
+
         total_persons = sum(hud_data.get(str(geoid).zfill(5), {}).get('total_persons', 0) for geoid in geoids)
         print(f"  [DEBUG] Table 1 - Total persons from HUD data: {total_persons:,}")
         if total_persons > 0:

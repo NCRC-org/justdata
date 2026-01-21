@@ -1190,8 +1190,20 @@
     <!-- Leaflet JS disabled - map will be added in future version -->
     <!-- <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script> -->
     <script>
-        // Base URL for API calls (detect from current URL path)
-        const baseUrl = window.location.pathname.includes('/bizsight') ? '/bizsight' : '';
+        // Base URL for API calls
+        // First try to get from server-side template variable, then detect from URL path
+        const baseUrl = (() => {
+            // Try server-side template variable (set by Flask blueprint)
+            {% if app_base_url is defined and app_base_url %}
+            return '{{ app_base_url }}';
+            {% endif %}
+            // Fallback: detect from current URL path
+            if (window.location.pathname.includes('/bizsight')) {
+                return '/bizsight';
+            }
+            // Default to empty string (standalone mode)
+            return '';
+        })();
 
         // Map variables disabled - map will be added in future version
         // let map;
@@ -2914,31 +2926,41 @@
             const changeUnder1m = calculateChange(amtUnder1m2024, amtUnder1m2020);
             const changeLMI = calculateChange(amtLMI2024, amtLMI2020Calculated || amtLMI2020);
             
+            // Helper function to safely format change percentage
+            const safeFormatChange = (change) => {
+                if (change === null || change === undefined || isNaN(change)) {
+                    return '<span style="font-size: 0.85rem; color: #999;">N/A</span>';
+                }
+                const color = change >= 0 ? '#28a745' : '#dc3545';
+                const sign = change >= 0 ? '+' : '';
+                return `<span style="font-size: 0.85rem; color: ${color};">${sign}${change.toFixed(1)}% since 2020</span>`;
+            };
+
             // Update individual summary box elements by ID
             const summaryBoxLoans = document.getElementById('summaryBoxLoans');
             if (summaryBoxLoans) {
-                summaryBoxLoans.innerHTML = `${formatNumber(totalLoans2024)}<br><span style="font-size: 0.85rem; color: ${changeLoans >= 0 ? '#28a745' : '#dc3545'};">${changeLoans >= 0 ? '+' : ''}${changeLoans.toFixed(1)}% since 2020</span>`;
+                summaryBoxLoans.innerHTML = `${formatNumber(totalLoans2024)}<br>${safeFormatChange(changeLoans)}`;
             }
 
             const summaryBoxAmount = document.getElementById('summaryBoxAmount');
             if (summaryBoxAmount) {
-                summaryBoxAmount.innerHTML = `${formatCurrency(totalAmount2024)}<br><span style="font-size: 0.85rem; color: ${changeAmount >= 0 ? '#28a745' : '#dc3545'};">${changeAmount >= 0 ? '+' : ''}${changeAmount.toFixed(1)}% since 2020</span>`;
+                summaryBoxAmount.innerHTML = `${formatCurrency(totalAmount2024)}<br>${safeFormatChange(changeAmount)}`;
             }
 
             const summaryBoxAvgLoan = document.getElementById('summaryBoxAvgLoan');
             if (summaryBoxAvgLoan) {
-                summaryBoxAvgLoan.innerHTML = `${formatCurrency(avgLoanAmount2024, true)}<br><span style="font-size: 0.85rem; color: ${changeAvgLoan >= 0 ? '#28a745' : '#dc3545'};">${changeAvgLoan >= 0 ? '+' : ''}${changeAvgLoan.toFixed(1)}% since 2020</span>`;
+                summaryBoxAvgLoan.innerHTML = `${formatCurrency(avgLoanAmount2024, true)}<br>${safeFormatChange(changeAvgLoan)}`;
             }
 
             const summaryBoxUnder1M = document.getElementById('summaryBoxUnder1M');
             if (summaryBoxUnder1M) {
-                summaryBoxUnder1M.innerHTML = `${formatCurrency(amtUnder1m2024)}<br><span style="font-size: 0.85rem; color: ${changeUnder1m >= 0 ? '#28a745' : '#dc3545'};">${changeUnder1m >= 0 ? '+' : ''}${changeUnder1m.toFixed(1)}% since 2020</span>`;
+                summaryBoxUnder1M.innerHTML = `${formatCurrency(amtUnder1m2024)}<br>${safeFormatChange(changeUnder1m)}`;
             }
 
             const summaryBoxLMI = document.getElementById('summaryBoxLMI');
             if (summaryBoxLMI) {
                 if (amtLMI2024 > 0) {
-                    summaryBoxLMI.innerHTML = `${formatCurrency(amtLMI2024)}<br><span style="font-size: 0.85rem; color: ${changeLMI >= 0 ? '#28a745' : '#dc3545'};">${changeLMI >= 0 ? '+' : ''}${changeLMI.toFixed(1)}% since 2020</span>`;
+                    summaryBoxLMI.innerHTML = `${formatCurrency(amtLMI2024)}<br>${safeFormatChange(changeLMI)}`;
                 } else {
                     summaryBoxLMI.innerHTML = '<span style="color: #666;">$0</span><br><span style="font-size: 0.85rem; color: #999;">No LMI tracts in county</span>';
                 }

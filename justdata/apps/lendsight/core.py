@@ -349,22 +349,33 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         # Load HUD data for income distribution
         if progress_tracker:
             progress_tracker.update_progress('building_report', 62, 'Loading HUD income distribution data... Setting the bar for comparison! 📈')
+
+        # Extract unique GEOIDs from either counties_with_fips or BigQuery results
         geoids = []
-        for county in clarified_counties:
-            # Extract GEOID5 from county data if available
-            if counties_with_fips:
-                for county_data in counties_with_fips:
-                    if isinstance(county_data, dict) and 'geoid5' in county_data:
-                        geoids.append(str(county_data['geoid5']).zfill(5))
-            else:
-                # Try to extract from BigQuery results
-                county_df = pd.DataFrame(all_results)
-                if 'geoid5' in county_df.columns:
-                    geoids.extend(county_df['geoid5'].unique().tolist())
-        
-        # Get unique GEOIDs
+
+        # First, try to get GEOIDs from counties_with_fips (frontend-provided FIPS data)
+        if counties_with_fips:
+            for county_data in counties_with_fips:
+                if isinstance(county_data, dict) and county_data.get('geoid5'):
+                    geoids.append(str(county_data['geoid5']).zfill(5))
+            print(f"[DEBUG] Extracted {len(geoids)} GEOIDs from counties_with_fips: {geoids}")
+
+        # If no GEOIDs from counties_with_fips, fall back to BigQuery results
+        if not geoids and all_results:
+            county_df = pd.DataFrame(all_results)
+            if 'geoid5' in county_df.columns:
+                raw_geoids = county_df['geoid5'].unique().tolist()
+                # Convert to strings with zero-padding
+                geoids = [str(g).zfill(5) for g in raw_geoids if g is not None]
+                print(f"[DEBUG] Extracted {len(geoids)} GEOIDs from BigQuery results: {geoids[:5]}...")
+
+        # Remove duplicates
         geoids = list(set(geoids))
+        print(f"[DEBUG] Final unique GEOIDs for HUD lookup: {geoids}")
+
+        # Load HUD data for these GEOIDs
         hud_data = get_hud_data_for_counties(geoids) if geoids else {}
+        print(f"[DEBUG] HUD data loaded for {len(hud_data)} counties")
         
         print(f"\n[DEBUG] Building report with {len(all_results)} records...", flush=True)
         if progress_tracker:

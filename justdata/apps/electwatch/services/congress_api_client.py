@@ -113,7 +113,7 @@ class CongressAPIClient:
                     'district': m.get('district'),
                     'chamber': chamber,
                     'photo_url': f'https://bioguide.congress.gov/bioguide/photo/{bioguide_id[0]}/{bioguide_id}.jpg' if bioguide_id else None,
-                    'years_in_congress': self._calculate_years_served(m.get('terms', {})),
+                    'years_in_congress': self._calculate_years_served(m.get('terms', {}), bioguide_id),
                     'has_financial_activity': False,
                     'trades': [],
                     'top_financial_pacs': [],
@@ -128,29 +128,90 @@ class CongressAPIClient:
         logger.info(f'Fetched {len(all_members)} members from Congress.gov')
         return all_members
     
+    # Hardcoded Congress start years for accuracy when API data is incomplete
+    # This ensures key Financial Services Committee members have correct tenure
+    CONGRESS_START_YEARS = {
+        # House Financial Services Committee leaders/key members
+        "B001282": 2013,  # Andy Barr (R-KY)
+        "W000187": 1991,  # Maxine Waters (D-CA)
+        "H001072": 2015,  # French Hill (R-AR)
+        "G000583": 2017,  # Josh Gottheimer (D-NJ)
+        "D000626": 2015,  # Warren Davidson (R-OH)
+        "T000480": 2019,  # Ritchie Torres (D-NY)
+        "H001058": 2011,  # Bill Huizenga (R-MI)
+        "S001157": 2003,  # David Scott (D-GA)
+        "S000344": 1997,  # Brad Sherman (D-CA)
+        "G000553": 2005,  # Al Green (D-TX)
+        "F000454": 2013,  # Bill Foster (D-IL)
+        "L000569": 2009,  # Blaine Luetkemeyer (R-MO)
+        "E000294": 2015,  # Tom Emmer (R-MN)
+        "S001187": 2011,  # Steve Stivers (R-OH)
+        "P000599": 2009,  # Bill Posey (R-FL)
+
+        # Senate Banking Committee leaders/key members
+        "C001098": 2013,  # Ted Cruz (R-TX)
+        "K000389": 2017,  # Ro Khanna (D-CA)
+        "S001217": 2019,  # Tim Scott (R-SC) - Senator since 2013
+        "W000805": 2009,  # Mark Warner (D-VA)
+        "T000464": 2007,  # Jon Tester (D-MT)
+        "M000639": 2013,  # Bob Menendez (D-NJ)
+        "T000476": 2015,  # Thom Tillis (R-NC)
+        "H001089": 2019,  # Josh Hawley (R-MO)
+        "L000577": 2023,  # Cynthia Lummis (R-WY)
+        "V000137": 2023,  # J.D. Vance (R-OH)
+
+        # Other notable members
+        "P000197": 1987,  # Nancy Pelosi (D-CA)
+        "M000355": 1985,  # Mitch McConnell (R-KY)
+        "S000148": 1999,  # Chuck Schumer (D-NY)
+        "G000386": 1981,  # Chuck Grassley (R-IA)
+        "D000563": 1997,  # Dick Durbin (D-IL)
+        "C001035": 1997,  # Susan Collins (R-ME)
+        "C000141": 1987,  # Ben Cardin (D-MD)
+        "W000779": 1996,  # Ron Wyden (D-OR)
+        "M001153": 2003,  # Lisa Murkowski (R-AK)
+    }
+
     def _normalize_party(self, party_name: str) -> str:
         party_map = {'Republican': 'R', 'Democratic': 'D', 'Democrat': 'D', 'Independent': 'I'}
         return party_map.get(party_name, party_name[0] if party_name else 'U')
-    
-    def _calculate_years_served(self, terms: Dict) -> int:
-        """Calculate years in Congress from earliest term start to now."""
-        from datetime import datetime as dt
-        term_items = terms.get('item', [])
-        if not term_items:
-            return 0
 
+    def _calculate_years_served(self, terms: Dict, bioguide_id: str = None) -> int:
+        """
+        Calculate years in Congress using multiple strategies for accuracy.
+
+        Strategies (in order of preference):
+        1. Use terms data from API response
+        2. Look up in hardcoded CONGRESS_START_YEARS for key members
+        3. Default to 1 year (conservative estimate for new members)
+        """
+        from datetime import datetime as dt
         current_year = dt.now().year
 
-        # Find the earliest start year across all terms
-        earliest_start = current_year
-        for term in term_items:
-            start_year = term.get('startYear')
-            if start_year and start_year < earliest_start:
-                earliest_start = start_year
+        # Strategy 1: Use terms data from API response
+        term_items = terms.get('item', [])
+        if term_items:
+            earliest_start = current_year
+            for term in term_items:
+                start_year = term.get('startYear')
+                if start_year and isinstance(start_year, int) and start_year < earliest_start:
+                    earliest_start = start_year
 
-        # Calculate years from earliest start to now
-        years_served = current_year - earliest_start
-        return max(years_served, 1)  # At least 1 year if they have any terms
+            if earliest_start < current_year:
+                years_served = current_year - earliest_start
+                return max(years_served, 1)
+
+        # Strategy 2: Look up in hardcoded data for key members
+        if bioguide_id and bioguide_id in self.CONGRESS_START_YEARS:
+            start_year = self.CONGRESS_START_YEARS[bioguide_id]
+            years_served = current_year - start_year
+            logger.debug(f"Using hardcoded start year for {bioguide_id}: {start_year} ({years_served} years)")
+            return max(years_served, 1)
+
+        # Strategy 3: Default to 1 year (new members or incomplete data)
+        if bioguide_id:
+            logger.debug(f"Could not determine years for {bioguide_id}, defaulting to 1")
+        return 1
 
     def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Optional[Dict]:
         """Make a request to the Congress.gov API."""

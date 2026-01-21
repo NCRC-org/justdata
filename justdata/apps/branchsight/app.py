@@ -384,7 +384,20 @@ def report_data():
         # Convert pandas DataFrames to JSON-serializable format
         report_data = analysis_result.get('report_data', {})
         serialized_data = {}
-        
+
+        # Debug: Log what we're serializing
+        print(f"[DEBUG] report_data keys: {list(report_data.keys())}")
+        for key in report_data.keys():
+            val = report_data[key]
+            if hasattr(val, 'to_dict'):
+                print(f"[DEBUG] report_data['{key}'] is DataFrame with {len(val)} rows")
+            elif isinstance(val, list):
+                print(f"[DEBUG] report_data['{key}'] is list with {len(val)} items")
+            elif isinstance(val, dict):
+                print(f"[DEBUG] report_data['{key}'] is dict with keys: {list(val.keys())}")
+            else:
+                print(f"[DEBUG] report_data['{key}'] is {type(val)}")
+
         for key, df in report_data.items():
             if key == 'hhi_by_year':
                 # hhi_by_year is already a list, just include it directly
@@ -397,7 +410,20 @@ def report_data():
                 serialized_data[key] = df_clean.to_dict('records')
             else:
                 serialized_data[key] = df
-        
+
+        # Debug: Log serialized data
+        print(f"[DEBUG] serialized_data keys: {list(serialized_data.keys())}")
+        for key in serialized_data.keys():
+            val = serialized_data[key]
+            if isinstance(val, list):
+                print(f"[DEBUG] serialized_data['{key}'] is list with {len(val)} items")
+                if len(val) > 0:
+                    print(f"[DEBUG]   First item keys: {list(val[0].keys()) if isinstance(val[0], dict) else 'not a dict'}")
+            elif isinstance(val, dict):
+                print(f"[DEBUG] serialized_data['{key}'] is dict with keys: {list(val.keys())}")
+            else:
+                print(f"[DEBUG] serialized_data['{key}'] is {type(val)}")
+
         # Debug: Check what we're returning
         ai_insights = analysis_result.get('ai_insights', {})
         print(f"[DEBUG] report_data endpoint - ai_insights keys: {list(ai_insights.keys())}")

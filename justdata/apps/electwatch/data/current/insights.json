@@ -1,223 +1,149 @@
 {
   "insights": [
     {
-      "title": "Financial Services Committee Members Dominate PAC Receipts",
-      "summary": "Four of the top five financial PAC recipients serve on the House Financial Services Committee, with Josh Gottheimer receiving $256,500 and combining it with $1.43 million in stock trades. This concentration raises oversight concerns given their regulatory authority over donor industries.",
-      "detailed_summary": "**Financial Services Committee members demonstrate significant concentration** in both PAC contributions and stock trading activity within the financial sector. [[official:josh_gottheimer|Josh Gottheimer]] leads all recipients with **$256,500 in financial PAC contributions** while simultaneously conducting up to **$1.43 million in stock trades**, serving on the [[committee:house-financial-services|House Financial Services Committee]] that directly oversees these industries.\n\n[[official:greg_landsman|Greg Landsman]] and [[official:jake_auchincloss|Jake Auchincloss]] also serve on the same committee while receiving **$190,000** and **$171,000** respectively in financial PAC contributions. This pattern creates potential conflicts where committee members responsible for financial sector oversight are simultaneously major beneficiaries of industry political contributions.\n\nThe data reveals a **systematic concentration of financial industry influence** among key regulatory decision-makers. Committee members are not only receiving substantial PAC contributions but also actively trading in the sectors they regulate, with Gottheimer appearing on both the top PAC recipient and top trader lists.\n\n• [[official:josh_gottheimer|Josh Gottheimer]]: $256,500 PAC + $1.43M trades\n• [[official:greg_landsman|Greg Landsman]]: $190,000 PAC + $160,000 trades\n• [[official:jake_auchincloss|Jake Auchincloss]]: $171,000 PAC + $300,000 trades",
-      "evidence": "FEC PAC contribution filings and STOCK Act disclosure reports",
+      "title": "Greene Records Significant Financial Sector Trading Activity",
+      "summary": "Marjorie Greene (R-GA) stands out with $705,000 in financial sector stock purchases while other tracked officials show zero trading activity. This represents the only substantial financial sector trading volume among the 545 officials monitored.",
+      "detailed_summary": "Analysis of congressional trading data reveals **[[official:marjorie_greene|Marjorie Greene]] (R-GA)** as the sole member with significant financial sector activity, recording **$705,000 in stock purchases** with zero sells. Her trading focuses on **[[industry:investment|Investment & Securities]]** and **[[industry:fintech|Financial Technology]]** sectors.\n\nThis trading pattern contrasts sharply with the remaining 544 tracked officials who show $0 in both purchases and sales, despite many having disclosed interests in similar financial subsectors. The concentration of trading activity in a single member while others remain inactive suggests either different disclosure timing or varying investment strategies.\n\n**Key observations:**\n• Greene's $705,000 represents 100% of tracked financial sector purchases\n• Trading concentrated in two high-growth financial subsectors\n• No corresponding sell activity indicates potential portfolio expansion\n• Pattern occurs amid broader congressional focus on financial regulation",
+      "evidence": "STOCK Act disclosure filings and congressional trading records",
       "category": "concentration",
-      "severity": "high",
+      "severity": "medium",
       "firms": [],
       "officials": [
         {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "amount": 256500,
-          "detail": "$256,500 financial PAC contributions, $1.43M max trades"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Greg Landsman",
-          "party": "D",
-          "state": "OH",
-          "amount": 190000,
-          "detail": "$190,000 financial PAC contributions, Financial Services Committee"
-        },
-        {
-          "id": "jake_auchincloss",
-          "name": "Jake Auchincloss",
-          "party": "D",
-          "state": "MA",
-          "amount": 171000,
-          "detail": "$171,000 financial PAC contributions, Financial Services Committee"
-        }
-      ],
-      "industries": [
-        {
-          "code": "banking",
-          "name": "Banking & Financial Services",
-          "amount": 617500,
-          "detail": "Combined PAC contributions to Financial Services Committee members"
-        }
-      ],
-      "committees": [
-        {
-          "id": "house-financial-services",
-          "name": "House Financial Services Committee",
-          "chamber": "house",
-          "members": 3,
-          "detail": "Three of top five PAC recipients serve on this committee"
-        }
-      ],
-      "sources": [
-        {
-          "title": "PAC Contribution Reports",
-          "url": "https://www.fec.gov/data/receipts/",
-          "source": "FEC.gov",
-          "date": "2026-01-20"
-        },
-        {
-          "title": "STOCK Act Disclosures",
-          "url": "https://disclosures-clerk.house.gov/",
-          "source": "House.gov",
-          "date": "2026-01-20"
-        },
-        {
-          "title": "Committee Assignments",
-          "url": "https://www.house.gov/committees",
-          "source": "House.gov",
-          "date": "2026-01-20"
-        }
-      ]
-    },
-    {
-      "title": "Democrats Receive 80% of Financial Industry PACs",
-      "summary": "Democratic officials received $827,500 in financial PAC contributions compared to $203,600 for Republicans, representing a 4:1 ratio. This stark partisan imbalance suggests concentrated industry influence within one party.",
-      "detailed_summary": "**Democratic Party dominance in financial sector PAC contributions** creates a significant partisan imbalance in industry political influence. The data shows Democrats received **$827,500 in total financial PAC contributions** while Republicans received only **$203,600**, representing approximately **80% of all financial industry political contributions** flowing to Democratic officials.\n\nThis concentration is exemplified by the top recipients list, where [[official:josh_gottheimer|Josh Gottheimer]], [[official:debbie_dingell|Debbie Dingell]], [[official:greg_landsman|Greg Landsman]], and [[official:jake_auchincloss|Jake Auchincloss]] - all Democrats - received the four largest contribution amounts. The highest Republican recipient, [[official:pete_sessions|Pete Sessions]], received **$143,600**, significantly less than the top Democratic recipients.\n\nThe **4:1 Democratic advantage** in financial PAC receipts suggests the financial industry has strategically concentrated its political influence within one party. This pattern could indicate either Democratic policy positions align more closely with industry interests, or the industry is focusing resources on the party currently holding more regulatory influence.\n\n• Democratic total: **$827,500** (80.2%)\n• Republican total: **$203,600** (19.8%)\n• Ratio: **4.06:1** Democratic advantage",
-      "evidence": "FEC PAC contribution aggregation data by party affiliation",
-      "category": "party_balance",
-      "severity": "high",
-      "firms": [],
-      "officials": [
-        {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
-          "party": "D",
-          "state": "NJ",
-          "amount": 256500,
-          "detail": "Highest Democratic PAC recipient"
-        },
-        {
-          "id": "pete_sessions",
-          "name": "Pete Sessions",
+          "id": "marjorie_greene",
+          "name": "Marjorie Greene",
           "party": "R",
-          "state": "TX",
-          "amount": 143600,
-          "detail": "Highest Republican PAC recipient"
+          "state": "GA",
+          "amount": 705000,
+          "detail": "$705,000 in financial sector stock purchases, focusing on Investment & Securities and Financial Technology"
         }
       ],
       "industries": [
         {
-          "code": "banking",
-          "name": "Financial Services",
-          "amount": 1031100,
-          "detail": "Total PAC contributions across both parties"
+          "code": "investment",
+          "name": "Investment & Securities",
+          "amount": 705000,
+          "detail": "Primary trading focus for Greene's financial sector activity"
+        },
+        {
+          "code": "fintech",
+          "name": "Financial Technology",
+          "amount": 705000,
+          "detail": "Secondary sector for Greene's stock purchases"
         }
       ],
       "committees": [],
       "sources": [
         {
-          "title": "PAC Contribution Summary Reports",
-          "url": "https://www.fec.gov/data/receipts/",
-          "source": "FEC.gov",
-          "date": "2026-01-20"
+          "title": "STOCK Act Periodic Transaction Reports",
+          "url": "https://disclosures-clerk.house.gov/PublicDisclosure/FinancialDisclosure",
+          "source": "House.gov",
+          "date": "2026-01-21"
         },
         {
-          "title": "Party Affiliation Data",
-          "url": "https://www.house.gov/representatives",
-          "source": "House.gov",
-          "date": "2026-01-20"
+          "title": "Congressional Trading Database",
+          "url": "https://efdsearch.senate.gov/search/",
+          "source": "efdsearch.senate.gov",
+          "date": "2026-01-21"
         }
       ]
     },
     {
-      "title": "Gottheimer Shows Strongest PAC-Trading Cross-Correlation Pattern",
-      "summary": "Josh Gottheimer appears as both the top financial PAC recipient ($256,500) and among the top 10 financial stock traders ($1.43 million). His trading focuses on Financial Technology and Consumer Lending, the same sectors providing his PAC contributions.",
-      "detailed_summary": "[[official:josh_gottheimer|Josh Gottheimer]] demonstrates the **strongest cross-correlation pattern** between PAC contributions and stock trading activity in the dataset. He ranks as the **#1 financial PAC recipient** with **$256,500** while simultaneously appearing among the top financial sector traders with **$510,000 in buys and $920,000 in sells**, totaling up to **$1.43 million in trading activity**.\n\nThe cross-correlation becomes more significant when examining sector alignment. Gottheimer's stock trading activity concentrates in **[[industry:fintech|Financial Technology]]** and **[[industry:banking|Consumer Lending]]** - the same industry sectors that contribute to financial PACs. This creates a direct overlap between his investment portfolio and the industries providing his campaign contributions.\n\nAs a member of the [[committee:house-financial-services|House Financial Services Committee]], Gottheimer's position creates a **triple intersection of regulatory authority, political contributions, and personal investments**. This pattern represents the most complete example of potential conflicts of interest in the dataset, where regulatory oversight, campaign finance, and personal financial interests converge.\n\n• **PAC rank**: #1 ($256,500)\n• **Trading volume**: $1.43M maximum\n• **Committee**: Financial Services (regulatory authority)\n• **Sectors**: FinTech & Consumer Lending (both PAC and trading)",
-      "evidence": "Combined FEC PAC filings and STOCK Act trading disclosures",
-      "category": "cross_correlation",
-      "severity": "high",
+      "title": "Zero PAC Contributions Despite Financial Sector Focus",
+      "summary": "All tracked officials show $0 in financial sector PAC contributions, with both Republican and Democratic totals at zero. This occurs despite widespread congressional interest in financial subsectors including banking, investment securities, and fintech.",
+      "detailed_summary": "Congressional financial transparency data reveals a complete absence of **financial sector PAC contributions** across all 545 tracked officials, with both **Republican and Democratic totals at $0**. This pattern occurs despite clear congressional engagement with financial sector issues through stock trading and committee work.\n\nThe data shows **15 officials** actively trading in financial subsectors including **[[industry:banking|Banking & Depository]]**, **[[industry:investment|Investment & Securities]]**, and **[[industry:fintech|Financial Technology]]**, yet none report corresponding PAC receipts from these industries. Notable officials with financial sector trading interests include **[[official:nancy_pelosi|Nancy Pelosi]] (D-CA)**, **[[official:ted_cruz|Ted Cruz]] (R-TX)**, and **[[official:tommy_tuberville|Tommy Tuberville]] (R-AL)**.\n\n**Analysis points:**\n• Zero PAC contributions despite active financial sector engagement\n• Bipartisan pattern affects both Republican and Democratic members\n• Disconnect between trading activity and campaign finance patterns\n• May indicate timing differences in disclosure cycles or contribution patterns",
+      "evidence": "FEC campaign finance filings and PAC contribution records",
+      "category": "party_balance",
+      "severity": "low",
       "firms": [],
       "officials": [
         {
-          "id": "josh_gottheimer",
-          "name": "Josh Gottheimer",
+          "id": "nancy_pelosi",
+          "name": "Nancy Pelosi",
           "party": "D",
-          "state": "NJ",
-          "amount": 256500,
-          "detail": "Top PAC recipient with $1.43M in financial sector trades"
+          "state": "CA",
+          "amount": 0,
+          "detail": "Active in Consumer Lending and Financial Technology sectors with zero PAC contributions"
+        },
+        {
+          "id": "ted_cruz",
+          "name": "Ted Cruz",
+          "party": "R",
+          "state": "TX",
+          "amount": 0,
+          "detail": "Investment & Securities focus with zero PAC contributions"
         }
       ],
       "industries": [
         {
-          "code": "fintech",
-          "name": "Financial Technology",
-          "amount": 510000,
-          "detail": "Gottheimer's primary trading sector, also PAC contributor sector"
+          "code": "banking",
+          "name": "Banking & Depository",
+          "amount": 0,
+          "detail": "Multiple congressional interests but zero PAC contributions"
         },
         {
-          "code": "banking",
-          "name": "Consumer Lending",
-          "amount": 920000,
-          "detail": "Secondary trading focus aligning with PAC sources"
+          "code": "investment",
+          "name": "Investment & Securities",
+          "amount": 0,
+          "detail": "Highest congressional engagement with zero PAC activity"
         }
       ],
-      "committees": [
-        {
-          "id": "house-financial-services",
-          "name": "House Financial Services Committee",
-          "chamber": "house",
-          "members": 1,
-          "detail": "Gottheimer's regulatory oversight position"
-        }
-      ],
+      "committees": [],
       "sources": [
         {
-          "title": "PAC Contribution Records",
-          "url": "https://www.fec.gov/data/receipts/",
+          "title": "FEC Campaign Finance Database",
+          "url": "https://www.fec.gov/data/",
           "source": "FEC.gov",
-          "date": "2026-01-20"
+          "date": "2026-01-21"
         },
         {
-          "title": "STOCK Act Trading Disclosures",
-          "url": "https://disclosures-clerk.house.gov/",
-          "source": "House.gov",
-          "date": "2026-01-20"
-        },
-        {
-          "title": "Financial Services Committee Roster",
-          "url": "https://financialservices.house.gov/",
-          "source": "House.gov",
-          "date": "2026-01-20"
+          "title": "PAC Contribution Reports",
+          "url": "https://www.fec.gov/data/committees/",
+          "source": "FEC.gov",
+          "date": "2026-01-21"
         }
       ]
     },
     {
       "title": "Major Financial Firms Show Zero Congressional Connections",
-      "summary": "All top 10 financial firms including JPMorgan Chase, Goldman Sachs, and BlackRock show $0 in PAC contributions and zero connected officials. This suggests either incomplete data reporting or industry contributions flowing through intermediary PACs rather than direct corporate giving.",
-      "detailed_summary": "**Complete absence of direct connections** between major financial institutions and congressional officials presents an anomalous pattern in the transparency data. All ten largest financial firms - including **JPMorgan Chase (JPM)**, **Goldman Sachs (GS)**, **BlackRock (BLK)**, **Visa (V)**, and **Citigroup (C)** - show **$0 in PAC contributions** and **zero connected officials** despite the dataset showing over **$1 million in total financial PAC activity**.\n\nThis disconnect suggests financial industry political influence operates through **intermediary mechanisms** rather than direct corporate PACs. While congressional officials received substantial financial sector contributions totaling over $1 million, none of these contributions trace back to the major firms that dominate the financial services industry.\n\nThe pattern indicates either **significant gaps in disclosure tracking** or a sophisticated influence structure where major financial institutions channel political contributions through industry associations, subsidiary PACs, or other intermediary organizations. This creates a transparency challenge where the ultimate sources of financial industry political influence remain obscured.\n\n• **Major firms tracked**: 10 (JPM, GS, BLK, V, C, PRU, SCHW, BAC, GPN, AXP)\n• **Direct PAC contributions**: **$0** from all major firms\n• **Total financial PACs received**: **$1,031,100**\n• **Source gap**: 100% of contributions from unidentified intermediaries",
-      "evidence": "Corporate PAC filing analysis and congressional disclosure cross-reference",
+      "summary": "Top 10 financial firms including JPMorgan Chase, Goldman Sachs, and BlackRock report zero connected officials and $0 PAC contributions. This pattern spans major banks, investment firms, and payment processors despite their significant regulatory interests.",
+      "detailed_summary": "Analysis reveals **zero congressional connections** across major financial institutions, with firms like **[[firm:JPMorgan Chase|JPMorgan Chase (JPM)]]**, **[[firm:Goldman Sachs|Goldman Sachs (GS)]]**, and **[[firm:BlackRock|BlackRock (BLK)]]** showing no tracked PAC contributions or official connections. This pattern extends across diverse financial subsectors including traditional banking, investment management, and payment processing.\n\nThe disconnect is particularly notable given these firms' substantial regulatory interests and typical engagement with congressional oversight. **[[firm:Visa|Visa (V)]]**, **[[firm:Citigroup|Citigroup (C)]]**, and **[[firm:Bank of America|Bank of America (BAC)]]** similarly report zero connections despite their significant presence in financial markets and regulatory discussions.\n\n**Key findings:**\n• All 10 major financial firms show zero PAC contributions\n• No tracked connections between firms and congressional officials\n• Pattern spans banking, investment, and fintech sectors\n• Suggests potential timing gaps in disclosure cycles or data collection periods",
+      "evidence": "Corporate PAC filings and congressional connection tracking data",
       "category": "concentration",
-      "severity": "medium",
+      "severity": "low",
       "firms": [
         {
           "name": "JPMorgan Chase",
           "ticker": "JPM",
           "amount": 0,
-          "detail": "Largest US bank with zero tracked PAC contributions"
+          "detail": "Zero connected officials and PAC contributions despite major banking presence"
         },
         {
           "name": "Goldman Sachs",
           "ticker": "GS",
           "amount": 0,
-          "detail": "Major investment bank with zero tracked connections"
+          "detail": "No congressional connections tracked for major investment bank"
         },
         {
           "name": "BlackRock",
           "ticker": "BLK",
           "amount": 0,
-          "detail": "Largest asset manager with zero tracked contributions"
+          "detail": "World's largest asset manager shows zero congressional connections"
         }
       ],
       "officials": [],
       "industries": [
         {
           "code": "banking",
-          "name": "Banking & Financial Services",
-          "amount": 1031100,
-          "detail": "Total PAC contributions with unidentified corporate sources"
+          "name": "Banking & Depository",
+          "amount": 0,
+          "detail": "Major banks show zero PAC contributions"
+        },
+        {
+          "code": "investment",
+          "name": "Investment & Securities",
+          "amount": 0,
+          "detail": "Investment firms report no congressional connections"
         }
       ],
       "committees": [],
@@ -226,17 +152,87 @@
           "title": "Corporate PAC Database",
           "url": "https://www.fec.gov/data/committee-disbursements/",
           "source": "FEC.gov",
-          "date": "2026-01-20"
+          "date": "2026-01-21"
         },
         {
-          "title": "Congressional Disclosure Reports",
-          "url": "https://disclosures-clerk.house.gov/",
+          "title": "Congressional Connection Tracking",
+          "url": "https://www.house.gov/representatives",
           "source": "House.gov",
-          "date": "2026-01-20"
+          "date": "2026-01-21"
+        }
+      ]
+    },
+    {
+      "title": "Bipartisan Financial Sector Trading Interest Patterns",
+      "summary": "Both Republican and Democratic members show active engagement in financial sector trading across Investment & Securities, Banking, and Financial Technology. The 15 tracked officials represent balanced bipartisan interest despite zero corresponding PAC activity.",
+      "detailed_summary": "Congressional financial sector engagement shows **bipartisan distribution** across key financial subsectors, with both Republican and Democratic members actively trading in **[[industry:investment|Investment & Securities]]**, **[[industry:banking|Banking & Depository]]**, and **[[industry:fintech|Financial Technology]]** sectors. Notable Republican participants include **[[official:kevin_hern|Kevin Hern]] (R-OK)**, **[[official:michael_mccaul|Michael McCaul]] (R-TX)**, and **[[official:david_mccormick|David McCormick]] (R-PA)**.\n\nDemocratic engagement includes **[[official:ro_khanna|Ro Khanna]] (D-CA)**, **[[official:josh_gottheimer|Josh Gottheimer]] (D-NJ)**, and **[[official:julie_johnson|Julie Johnson]] (D-TX)**, indicating cross-party interest in financial sector developments. The pattern suggests **regulatory and investment interest** spans traditional party lines in financial markets.\n\n**Distribution analysis:**\n• Republicans: 9 officials with financial sector trading interests\n• Democrats: 6 officials with documented financial sector engagement\n• **Investment & Securities** emerges as most common sector (8 officials)\n• **Financial Technology** shows growing bipartisan attention (5 officials)\n• Geographic distribution spans multiple states and regions",
+      "evidence": "STOCK Act filings and congressional trading disclosure records",
+      "category": "party_balance",
+      "severity": "medium",
+      "firms": [],
+      "officials": [
+        {
+          "id": "ro_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "amount": 0,
+          "detail": "Banking & Depository and Investment & Securities focus"
+        },
+        {
+          "id": "kevin_hern",
+          "name": "Kevin Hern",
+          "party": "R",
+          "state": "OK",
+          "amount": 0,
+          "detail": "Investment & Securities and Banking & Depository interests"
+        },
+        {
+          "id": "josh_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
+          "state": "NJ",
+          "amount": 0,
+          "detail": "Financial Technology and Consumer Lending sector engagement"
+        }
+      ],
+      "industries": [
+        {
+          "code": "investment",
+          "name": "Investment & Securities",
+          "amount": 0,
+          "detail": "Most common sector with 8 congressional officials engaged"
+        },
+        {
+          "code": "fintech",
+          "name": "Financial Technology",
+          "amount": 0,
+          "detail": "Growing bipartisan interest with 5 officials tracking sector"
+        },
+        {
+          "code": "banking",
+          "name": "Banking & Depository",
+          "amount": 0,
+          "detail": "Traditional banking sector maintains congressional attention"
+        }
+      ],
+      "committees": [],
+      "sources": [
+        {
+          "title": "House Financial Disclosure Reports",
+          "url": "https://disclosures-clerk.house.gov/PublicDisclosure/FinancialDisclosure",
+          "source": "House.gov",
+          "date": "2026-01-21"
+        },
+        {
+          "title": "Senate Financial Disclosure Database",
+          "url": "https://efdsearch.senate.gov/search/",
+          "source": "efdsearch.senate.gov",
+          "date": "2026-01-21"
         }
       ]
     }
   ],
-  "generated_at": "2026-01-21T10:16:52.590603",
+  "generated_at": "2026-01-21T13:08:33.575497",
   "version": "1.0"
 }

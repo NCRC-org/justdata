@@ -26,6 +26,15 @@ function initFirebase() {
         firebaseApp = firebase.initializeApp(firebaseConfig);
         firebaseAuth = firebase.auth();
 
+        // Set persistence to LOCAL - auth state persists across browser sessions
+        firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+            .then(() => {
+                console.log('Firebase persistence set to LOCAL');
+            })
+            .catch((error) => {
+                console.warn('Could not set Firebase persistence:', error);
+            });
+
         // Listen for auth state changes
         firebaseAuth.onAuthStateChanged(handleAuthStateChange);
 
@@ -236,6 +245,12 @@ async function notifyBackendLogin(idToken, user) {
             // Store user type for UI updates
             window.justDataUserType = data.user_type;
             window.justDataPermissions = data.permissions;
+
+            // Update app visibility if switchUserType function exists (on landing page)
+            if (typeof switchUserType === 'function') {
+                switchUserType(data.user_type);
+                console.log('Applied visibility for user type:', data.user_type);
+            }
         }
         return data;
     } catch (error) {
@@ -298,6 +313,7 @@ function updateAuthUI(user) {
     const userInfo = document.getElementById('userInfo');
     const userEmail = document.getElementById('userEmail');
     const userAvatar = document.getElementById('userAvatar');
+    const userTypeBadge = document.getElementById('userTypeBadge');
 
     if (user) {
         // User is signed in
@@ -313,6 +329,20 @@ function updateAuthUI(user) {
                 userAvatar.style.display = 'none';
             }
         }
+        // Show user type badge
+        if (userTypeBadge && window.justDataUserType) {
+            const typeLabels = {
+                'admin': 'Administrator',
+                'staff': 'Staff',
+                'member': 'Member',
+                'member_premium': 'Premium Member',
+                'non_member_org': 'Institutional',
+                'just_economy_club': 'Economy Club',
+                'public_registered': 'Registered',
+                'public_anonymous': 'Guest'
+            };
+            userTypeBadge.textContent = typeLabels[window.justDataUserType] || window.justDataUserType;
+        }
     } else {
         // User is signed out
         if (loginBtn) loginBtn.style.display = 'inline-flex';
@@ -320,12 +350,34 @@ function updateAuthUI(user) {
         if (userInfo) userInfo.style.display = 'none';
         if (userEmail) userEmail.textContent = '';
         if (userAvatar) userAvatar.style.display = 'none';
+        if (userTypeBadge) userTypeBadge.textContent = '';
     }
 }
 
 // Initialize Firebase when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    // Check if Firebase SDK is loaded
+document.addEventListener('DOMContentLoaded', async function() {
+    // First, check backend session state to restore UI immediately
+    // This prevents flash of unauthenticated state when navigating between apps
+    try {
+        const response = await fetch('/api/auth/status');
+        const data = await response.json();
+        if (data.authenticated && data.user) {
+            console.log('Backend session found:', data.user.email, '| User type:', data.user_type);
+            // Update UI immediately from backend session
+            updateAuthUI({
+                email: data.user.email,
+                displayName: data.user.name,
+                photoURL: data.user.picture
+            });
+            // Store user type for UI updates
+            window.justDataUserType = data.user_type;
+            window.justDataPermissions = data.permissions;
+        }
+    } catch (error) {
+        console.log('Backend session check skipped:', error.message);
+    }
+
+    // Then initialize Firebase (will sync with backend if needed)
     if (typeof firebase !== 'undefined') {
         initFirebase();
     } else {

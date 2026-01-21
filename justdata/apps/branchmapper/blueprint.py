@@ -10,7 +10,7 @@ import numpy as np
 import re
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions
+from justdata.main.auth import require_access, get_user_permissions, login_required
 from .config import TEMPLATES_DIR, STATIC_DIR
 from .version import __version__
 
@@ -51,6 +51,7 @@ def configure_template_loader(state):
 
 
 @branchmapper_bp.route('/')
+@login_required
 @require_access('branchmapper', 'partial')
 def index():
     """Main page with the interactive map"""

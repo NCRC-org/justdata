@@ -1150,8 +1150,8 @@
     <header class="header">
         <div class="header-content">
             <div class="header-layout" style="display: flex; justify-content: space-between; align-items: center;">
-                <!-- Left side: Buttons + User Type Selector (stacked vertically, center-aligned text) -->
-                <div style="display: flex; flex-direction: column; align-items: stretch; gap: 6px; min-width: 160px;">
+                <!-- Left side: Admin Buttons (only visible to staff/admin) -->
+                <div id="adminButtonsContainer" style="display: none; flex-direction: column; align-items: stretch; gap: 6px; min-width: 160px;">
                     <button class="header-btn" onclick="openUserTypesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; width: 100%; text-align: center;">
                         <i class="fas fa-users-cog"></i>
                         <span>User Types</span>
@@ -1160,12 +1160,14 @@
                         <i class="fas fa-dollar-sign"></i>
                         <span>Income Sources</span>
                     </button>
-                    <select id="userTypeSelect" onchange="switchUserType(this.value)" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; width: 100%; text-align: center; text-align-last: center;">
-                        <option value="public" style="color: #333;">Public (Free)</option>
-                        <option value="economy" style="color: #333;">Just Economy Club</option>
+                    <!-- User type selector hidden - now determined by authentication -->
+                    <select id="userTypeSelect" onchange="switchUserType(this.value)" style="display: none;">
+                        <option value="public_anonymous" style="color: #333;">Guest</option>
+                        <option value="public_registered" style="color: #333;">Registered</option>
+                        <option value="just_economy_club" style="color: #333;">Just Economy Club</option>
                         <option value="member" style="color: #333;">Member</option>
-                        <option value="memberplus" style="color: #333;">Member Plus</option>
-                        <option value="institutional" style="color: #333;">Institutional</option>
+                        <option value="member_premium" style="color: #333;">Member Premium</option>
+                        <option value="non_member_org" style="color: #333;">Institutional</option>
                         <option value="staff" style="color: #333;">Staff</option>
                         <option value="admin" style="color: #333;">Admin</option>
                     </select>
@@ -1177,8 +1179,30 @@
                     </a>
                     <h1 style="display: none;">JustData</h1>
                 </div>
-                <!-- Right side: Hamburger Menu -->
-                <div style="display: flex; align-items: center; min-width: 160px; justify-content: flex-end;">
+                <!-- Right side: Auth & Hamburger Menu -->
+                <div style="display: flex; align-items: center; min-width: 280px; justify-content: flex-end; gap: 12px;">
+                    <!-- User Info (shown when logged in) -->
+                    <div id="userInfo" style="display: none; align-items: center; gap: 8px;">
+                        <img id="userAvatar" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; display: none;">
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                            <span id="userEmail" style="color: white; font-size: 13px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                            <span id="userTypeBadge" style="color: #90EE90; font-size: 10px; text-transform: uppercase; font-weight: 600;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button id="loginBtn" onclick="JustDataAuth.signInWithGoogle()" style="display: inline-flex; align-items: center; gap: 6px; background: white; color: var(--ncrc-dark-blue); border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
+                        <i class="fab fa-google" style="font-size: 14px;"></i>
+                        <span>Sign In</span>
+                    </button>
+
+                    <!-- Logout Button -->
+                    <button id="logoutBtn" onclick="JustDataAuth.signOut()" style="display: none; align-items: center; gap: 6px; background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
+                        <i class="fas fa-sign-out-alt" style="font-size: 14px;"></i>
+                        <span>Sign Out</span>
+                    </button>
+
+                    <!-- Hamburger Menu -->
                     <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
                         <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
                         <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
@@ -1821,113 +1845,125 @@
             }
         });
 
-        // User Access Configuration
+        // User Access Configuration (8 user types)
         const appAccessConfig = {
             'lendsight': {
-                public: 'limited',
-                economy: 'limited',
+                public_anonymous: 'locked',
+                public_registered: 'limited',
+                just_economy_club: 'limited',
                 member: 'full',
-                memberplus: 'full',
-                institutional: 'full',
+                member_premium: 'full',
+                non_member_org: 'full',
                 staff: 'full',
                 admin: 'full'
             },
             'branchseeker': {
-                public: 'locked',
-                economy: 'locked',
+                public_anonymous: 'locked',
+                public_registered: 'locked',
+                just_economy_club: 'limited',
                 member: 'full',
-                memberplus: 'full',
-                institutional: 'full',
+                member_premium: 'full',
+                non_member_org: 'full',
                 staff: 'full',
                 admin: 'full'
             },
             'branchmapper': {
-                public: 'locked',
-                economy: 'locked',
+                public_anonymous: 'locked',
+                public_registered: 'locked',
+                just_economy_club: 'locked',
                 member: 'full',
-                memberplus: 'full',
-                institutional: 'full',
+                member_premium: 'full',
+                non_member_org: 'full',
                 staff: 'full',
                 admin: 'full'
             },
             'bizsight': {
-                public: 'locked',
-                economy: 'locked',
+                public_anonymous: 'locked',
+                public_registered: 'locked',
+                just_economy_club: 'limited',
                 member: 'full',
-                memberplus: 'full',
-                institutional: 'full',
+                member_premium: 'full',
+                non_member_org: 'full',
                 staff: 'full',
                 admin: 'full'
             },
             'commentmaker': {
-                public: 'full',
-                economy: 'full',
+                public_anonymous: 'full',
+                public_registered: 'full',
+                just_economy_club: 'full',
                 member: 'full',
-                memberplus: 'full',
-                institutional: 'full',
+                member_premium: 'full',
+                non_member_org: 'full',
                 staff: 'full',
                 admin: 'full'
             },
             'justpolicy': {
-                public: 'full',
-                economy: 'full',
+                public_anonymous: 'full',
+                public_registered: 'full',
+                just_economy_club: 'full',
                 member: 'full',
-                memberplus: 'full',
-                institutional: 'full',
+                member_premium: 'full',
+                non_member_org: 'full',
                 staff: 'full',
                 admin: 'full'
             },
             'dataexplorer': {
-                public: 'locked',
-                economy: 'locked',
+                public_anonymous: 'locked',
+                public_registered: 'locked',
+                just_economy_club: 'locked',
                 member: 'locked',
-                memberplus: 'full',
-                institutional: 'full',
+                member_premium: 'full',
+                non_member_org: 'full',
                 staff: 'full',
                 admin: 'full'
             },
             'mergermeter': {
-                public: 'hidden',
-                economy: 'hidden',
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                just_economy_club: 'hidden',
                 member: 'hidden',
-                memberplus: 'hidden',
-                institutional: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
                 staff: 'full',
                 admin: 'full'
             },
             'lenderprofile': {
-                public: 'hidden',
-                economy: 'hidden',
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                just_economy_club: 'hidden',
                 member: 'hidden',
-                memberplus: 'hidden',
-                institutional: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
                 staff: 'full',
                 admin: 'full'
             },
             'analytics': {
-                public: 'hidden',
-                economy: 'hidden',
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                just_economy_club: 'hidden',
                 member: 'hidden',
-                memberplus: 'hidden',
-                institutional: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
                 staff: 'full',
                 admin: 'full'
             },
             'admin': {
-                public: 'hidden',
-                economy: 'hidden',
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                just_economy_club: 'hidden',
                 member: 'hidden',
-                memberplus: 'hidden',
-                institutional: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
                 staff: 'hidden',
                 admin: 'full'
             },
             'electwatch': {
-                public: 'hidden',
-                economy: 'hidden',
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                just_economy_club: 'hidden',
                 member: 'hidden',
-                memberplus: 'hidden',
-                institutional: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
                 staff: 'full',
                 admin: 'full'
             }
@@ -1945,15 +1981,21 @@
             'lenderprofile': '/lenderprofile'
         };
 
-        // Feature Permissions by User Type
+        // Feature Permissions by User Type (8 types)
         const featurePermissions = {
-            'public': {
+            'public_anonymous': {
+                geographicLimit: 'none',
+                canExport: false,
+                exportFormats: [],
+                price: 'Free (Guest)'
+            },
+            'public_registered': {
                 geographicLimit: 'own_county_only',
                 canExport: false,
                 exportFormats: [],
-                price: 'Free'
+                price: 'Free (Registered)'
             },
-            'economy': {
+            'just_economy_club': {
                 geographicLimit: 'own_county_only',
                 canExport: false,
                 exportFormats: [],
@@ -1965,13 +2007,13 @@
                 exportFormats: ['excel', 'powerpoint', 'pdf'],
                 price: 'Included with $900/yr NCRC membership'
             },
-            'memberplus': {
+            'member_premium': {
                 geographicLimit: '5_plus_counties',
                 canExport: true,
-                exportFormats: ['excel', 'powerpoint', 'pdf'],
+                exportFormats: ['excel', 'powerpoint', 'pdf', 'csv'],
                 price: '$500-750/year (add-on)'
             },
-            'institutional': {
+            'non_member_org': {
                 geographicLimit: 'unlimited',
                 canExport: true,
                 exportFormats: ['excel', 'powerpoint', 'pdf', 'csv'],
@@ -2106,6 +2148,16 @@
                     if (lockIcon) lockIcon.remove();
                 }
             });
+
+            // Show/hide admin buttons based on user type (only staff and admin can see)
+            const adminButtonsContainer = document.getElementById('adminButtonsContainer');
+            if (adminButtonsContainer) {
+                if (userType === 'admin' || userType === 'staff') {
+                    adminButtonsContainer.style.display = 'flex';
+                } else {
+                    adminButtonsContainer.style.display = 'none';
+                }
+            }
         }
 
         // Handle card clicks
@@ -2791,11 +2843,23 @@
         }
 
         // Add focus management for better keyboard navigation
-        document.addEventListener('DOMContentLoaded', function() {
-            // Initialize with staff user view (default)
-            const defaultUserType = 'staff';
-            document.getElementById('userTypeSelect').value = defaultUserType;
-            switchUserType(defaultUserType);
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Check auth status and set user type accordingly
+            let userType = 'public_anonymous';  // Default for non-authenticated users
+
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+                if (data.user_type) {
+                    userType = data.user_type;
+                }
+                console.log('User type:', userType, '| Authenticated:', data.authenticated);
+            } catch (error) {
+                console.log('Auth check failed, using public_anonymous:', error);
+            }
+
+            document.getElementById('userTypeSelect').value = userType;
+            switchUserType(userType);
             
             const cards = document.querySelectorAll('.app-card');
             
@@ -2873,6 +2937,7 @@
                 const userTypesModal = document.getElementById('userTypesModal');
                 const launchModal = document.getElementById('launchModal');
                 const incomeSourcesModal = document.getElementById('incomeSourcesModal');
+                const appInfoModal = document.getElementById('appInfoModal');
                 if (userTypesModal.classList.contains('active')) {
                     closeUserTypesModal();
                 }
@@ -2881,6 +2946,9 @@
                 }
                 if (incomeSourcesModal.classList.contains('active')) {
                     closeIncomeSourcesModal();
+                }
+                if (appInfoModal.classList.contains('active')) {
+                    closeAppInfoModal();
                 }
             }
         });
@@ -2902,6 +2970,70 @@
             if (event.target === this) {
                 closeIncomeSourcesModal();
             }
+        });
+
+        document.getElementById('appInfoModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeAppInfoModal();
+            }
+        });
+    </script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+    <!-- JustData Auth -->
+    <script src="/static/js/auth.js"></script>
+
+    <!-- Auth-gated app launching -->
+    <script>
+        // Intercept app launch buttons to require authentication
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for Firebase to initialize
+            setTimeout(function() {
+                // Add click handlers to all launch buttons
+                document.querySelectorAll('.app-card-launch-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function(e) {
+                        // Check if user is authenticated
+                        if (typeof JustDataAuth !== 'undefined' && !JustDataAuth.isAuthenticated()) {
+                            e.preventDefault();
+                            e.stopPropagation();
+
+                            // Show sign-in prompt
+                            if (confirm('Please sign in to access JustData applications.\n\nClick OK to sign in with Google.')) {
+                                JustDataAuth.signInWithGoogle().then(function() {
+                                    // After successful sign-in, navigate to the app
+                                    window.location.href = btn.getAttribute('href');
+                                }).catch(function(err) {
+                                    console.log('Sign-in cancelled or failed');
+                                });
+                            }
+                        }
+                        // If authenticated, allow normal navigation
+                    });
+                });
+
+                // Also intercept nav menu links
+                document.querySelectorAll('#navMenu .nav-item').forEach(function(link) {
+                    const href = link.getAttribute('href');
+                    if (href && href !== '/' && !href.startsWith('#')) {
+                        link.addEventListener('click', function(e) {
+                            if (typeof JustDataAuth !== 'undefined' && !JustDataAuth.isAuthenticated()) {
+                                e.preventDefault();
+
+                                if (confirm('Please sign in to access JustData applications.\n\nClick OK to sign in with Google.')) {
+                                    JustDataAuth.signInWithGoogle().then(function() {
+                                        window.location.href = href;
+                                    }).catch(function(err) {
+                                        console.log('Sign-in cancelled or failed');
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+            }, 500); // Give Firebase time to initialize
         });
     </script>
 </body>

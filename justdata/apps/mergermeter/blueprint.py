@@ -16,7 +16,7 @@ import json
 from typing import List, Dict
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
@@ -55,6 +55,7 @@ mergermeter_bp.config = {'MAX_CONTENT_LENGTH': 10 * 1024 * 1024}
 
 
 @mergermeter_bp.route('/')
+@login_required
 @require_access('mergermeter', 'full')
 def index():
     """Main page with the analysis form"""

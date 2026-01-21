@@ -15,7 +15,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID
@@ -54,6 +54,7 @@ def configure_template_loader(state):
 
 
 @branchsight_bp.route('/')
+@login_required
 @require_access('branchsight', 'partial')
 def index():
     """Main page with the analysis form"""

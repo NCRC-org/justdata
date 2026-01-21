@@ -459,7 +459,30 @@ def report_data():
         from justdata.shared.utils.json_utils import ensure_json_serializable, serialize_dataframes
 
         report_data_raw = analysis_result.get('report_data', {})
+
+        # Debug: Log what we're serializing
+        print(f"[DEBUG] report_data_raw keys: {list(report_data_raw.keys())}")
+        for key in report_data_raw.keys():
+            val = report_data_raw[key]
+            if hasattr(val, 'to_dict'):
+                print(f"[DEBUG] report_data_raw['{key}'] is DataFrame with {len(val)} rows")
+            elif isinstance(val, list):
+                print(f"[DEBUG] report_data_raw['{key}'] is list with {len(val)} items")
+            elif isinstance(val, dict):
+                print(f"[DEBUG] report_data_raw['{key}'] is dict")
+            else:
+                print(f"[DEBUG] report_data_raw['{key}'] is {type(val)}")
+
         serialized_data = serialize_dataframes(report_data_raw)
+
+        # Debug: Log serialized data
+        print(f"[DEBUG] serialized_data keys: {list(serialized_data.keys())}")
+        for key in serialized_data.keys():
+            val = serialized_data[key]
+            if isinstance(val, list):
+                print(f"[DEBUG] serialized_data['{key}'] is list with {len(val)} items")
+            else:
+                print(f"[DEBUG] serialized_data['{key}'] is {type(val)}")
 
         metadata = analysis_result.get('metadata', {})
         ai_insights = analysis_result.get('ai_insights', {})

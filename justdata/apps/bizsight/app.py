@@ -542,7 +542,7 @@ def report():
             pass
         print(f"DEBUG: Rendering report_template.html for job_id={job_id}, bytecode_cache={app.jinja_env.bytecode_cache}", flush=True)
     
-    response = make_response(render_template('report_template.html', job_id=job_id, version=__version__))
+    response = make_response(render_template('report_template.html', job_id=job_id, version=__version__, app_base_url=''))
     # Add aggressive cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'

@@ -273,10 +273,63 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 # Don't raise - allow report to continue without key findings
                 print("  [WARNING] Continuing without Key Findings due to error")
             
-            # Generate table-specific narratives
+            # Generate table introductions (hardcoded templates)
+            print("Generating table introductions...")
+            table_introductions = {}
+
+            # Generate table1 introduction
+            if not report_data.get('summary', pd.DataFrame()).empty:
+                try:
+                    print("  Generating table1 introduction (Yearly Breakdown)...")
+                    intro1 = analyzer.generate_table_introduction('table1', ai_data)
+                    if intro1 and intro1.strip():
+                        table_introductions['table1'] = intro1
+                        print(f"  [OK] table1 introduction generated ({len(intro1)} chars)")
+                    else:
+                        print("  [WARNING] table1 introduction is empty or None")
+                except Exception as e:
+                    print(f"  [ERROR] Failed to generate table1 introduction: {e}")
+
+            # Generate table2 introduction
+            if not report_data.get('by_bank', pd.DataFrame()).empty:
+                try:
+                    print("  Generating table2 introduction (Analysis by Bank)...")
+                    intro2 = analyzer.generate_table_introduction('table2', ai_data)
+                    if intro2 and intro2.strip():
+                        table_introductions['table2'] = intro2
+                        print(f"  [OK] table2 introduction generated ({len(intro2)} chars)")
+                    else:
+                        print("  [WARNING] table2 introduction is empty or None")
+                except Exception as e:
+                    print(f"  [ERROR] Failed to generate table2 introduction: {e}")
+
+            # Generate table3 introduction
+            if not report_data.get('by_county', pd.DataFrame()).empty and len(clarified_counties) > 1:
+                try:
+                    print("  Generating table3 introduction (County by County Analysis)...")
+                    intro3 = analyzer.generate_table_introduction('table3', ai_data)
+                    if intro3 and intro3.strip():
+                        table_introductions['table3'] = intro3
+                        print(f"  [OK] table3 introduction generated ({len(intro3)} chars)")
+                    else:
+                        print("  [WARNING] table3 introduction is empty or None")
+                except Exception as e:
+                    print(f"  [ERROR] Failed to generate table3 introduction: {e}")
+
+            ai_insights['table_introductions'] = table_introductions
+
+            # Debug: Print what we're storing for table_introductions
+            print(f"Stored table_introductions keys: {list(table_introductions.keys())}")
+            for key, value in table_introductions.items():
+                if value:
+                    print(f"  {key}: {len(value)} characters")
+                else:
+                    print(f"  {key}: EMPTY or None")
+
+            # Generate table-specific narratives (AI-generated analysis)
             print("Generating table narratives...")
             table_narratives = {}
-            
+
             # Generate table1 narrative
             if not report_data.get('summary', pd.DataFrame()).empty:
                 try:
@@ -364,6 +417,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             
             ai_insights = {
                 'key_findings': None,
+                'table_introductions': {},
                 'table_narratives': {}
             }
         

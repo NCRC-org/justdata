@@ -14,7 +14,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.bigquery_client import escape_sql_string
@@ -119,6 +119,7 @@ def configure_template_loader(state):
 
 
 @lendsight_bp.route('/')
+@login_required
 @require_access('lendsight', 'partial')
 def index():
     """Main page with the analysis form"""
@@ -170,6 +171,7 @@ def progress_handler(job_id):
 
 
 @lendsight_bp.route('/analyze', methods=['POST'])
+@login_required
 @require_access('lendsight', 'partial')
 def analyze():
     """Handle analysis request with caching"""
@@ -465,6 +467,7 @@ def analyze():
 
 
 @lendsight_bp.route('/report')
+@login_required
 @require_access('lendsight', 'partial')
 def report():
     """Report display page"""
@@ -482,6 +485,7 @@ def report():
 
 
 @lendsight_bp.route('/report-data', methods=['GET'])
+@login_required
 @require_access('lendsight', 'partial')
 def report_data():
     """Return the analysis report data for web display"""
@@ -572,6 +576,7 @@ def report_data():
 
 
 @lendsight_bp.route('/download')
+@login_required
 @require_access('lendsight', 'partial')
 def download():
     """Download the generated reports"""

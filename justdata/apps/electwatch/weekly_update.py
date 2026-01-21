@@ -437,11 +437,19 @@ class WeeklyDataUpdate:
                 for m in self.officials_data:
                     name_key = m['name'].lower().strip()
                     self._officials_by_name[name_key] = m
-                    parts = m['name'].split()
-                    if len(parts) > 1:
-                        last_name = parts[-1].lower()
-                        if last_name not in self._officials_by_name:
-                            self._officials_by_name[last_name] = m
+
+                    # Handle "Last, First" format (Congress.gov) vs "First Last" (FMP)
+                    name = m['name']
+                    if ',' in name:
+                        # "Pelosi, Nancy" -> last_name = "pelosi"
+                        last_name = name.split(',')[0].strip().lower()
+                    else:
+                        # "Nancy Pelosi" -> last_name = "pelosi"
+                        parts = name.split()
+                        last_name = parts[-1].lower() if parts else name_key
+
+                    if last_name and last_name not in self._officials_by_name:
+                        self._officials_by_name[last_name] = m
 
                 self.source_status['congress_members'] = cached.get('metadata', {})
                 self.source_status['congress_members']['from_cache'] = True
@@ -460,11 +468,19 @@ class WeeklyDataUpdate:
                 for m in self.officials_data:
                     name_key = m['name'].lower().strip()
                     self._officials_by_name[name_key] = m
-                    parts = m['name'].split()
-                    if len(parts) > 1:
-                        last_name = parts[-1].lower()
-                        if last_name not in self._officials_by_name:
-                            self._officials_by_name[last_name] = m
+
+                    # Handle "Last, First" format (Congress.gov) vs "First Last" (FMP)
+                    name = m['name']
+                    if ',' in name:
+                        # "Pelosi, Nancy" -> last_name = "pelosi"
+                        last_name = name.split(',')[0].strip().lower()
+                    else:
+                        # "Nancy Pelosi" -> last_name = "pelosi"
+                        parts = name.split()
+                        last_name = parts[-1].lower() if parts else name_key
+
+                    if last_name and last_name not in self._officials_by_name:
+                        self._officials_by_name[last_name] = m
 
                 house = len([m for m in members if m['chamber'] == 'house'])
                 senate = len([m for m in members if m['chamber'] == 'senate'])
@@ -549,8 +565,53 @@ class WeeklyDataUpdate:
             self.errors.append(f"FMP: {e}")
             self.source_status['fmp'] = {'status': 'failed', 'error': str(e)}
 
+    def _build_crosswalk_name_lookup(self) -> Dict[str, Dict]:
+        """
+        Build comprehensive name lookup using crosswalk nicknames.
+
+        This creates a mapping from all possible name variations (legal names,
+        nicknames, etc.) to officials, enabling much better matching for
+        FMP trade disclosures.
+
+        Returns:
+            Dict mapping lowercase name variations to official records
+        """
+        try:
+            from justdata.apps.electwatch.services.crosswalk import get_crosswalk
+            crosswalk = get_crosswalk()
+        except Exception as e:
+            logger.warning(f"Could not load crosswalk for name lookup: {e}")
+            return self._officials_by_name if hasattr(self, '_officials_by_name') else {}
+
+        lookup = {}
+        for official in self.officials_data:
+            bioguide_id = official.get('bioguide_id')
+            name = official.get('name', '')
+
+            # Add canonical name
+            if name:
+                lookup[name.lower()] = official
+
+            # Add last name
+            parts = name.split()
+            if len(parts) > 1:
+                last_name = parts[-1].lower()
+                if last_name not in lookup:
+                    lookup[last_name] = official
+
+            # Add crosswalk variations (nicknames, legal names)
+            if bioguide_id:
+                variations = crosswalk.get_name_variations(bioguide_id)
+                for variation in variations:
+                    key = variation.lower()
+                    if key not in lookup:
+                        lookup[key] = official
+
+        logger.info(f"Built crosswalk name lookup with {len(lookup)} entries for {len(self.officials_data)} officials")
+        return lookup
+
     def _process_fmp_trades(self, all_trades: List[Dict], house_count: int, senate_count: int, from_cache: bool = False):
-        """Process FMP trade data and merge into officials."""
+        """Process FMP trade data and merge into officials using crosswalk for name matching."""
         # Aggregate by politician
         politicians = {}
         for trade in all_trades:
@@ -631,22 +692,33 @@ class WeeklyDataUpdate:
                                    key=lambda x: x.get('transaction_date', ''),
                                    reverse=True)[:50]
 
-        # Merge trade data into existing officials (from fetch_all_congress_members)
+        # Merge trade data into existing officials using crosswalk-enhanced name lookup
         if hasattr(self, '_officials_by_name') and self._officials_by_name:
-            # We have the full Congress roster - merge trades into existing entries
+            # Build comprehensive name lookup using crosswalk (includes nicknames)
+            crosswalk_lookup = self._build_crosswalk_name_lookup()
+
+            # Track matching stats
             enriched_count = 0
             new_count = 0
+            unmatched_names = []
+
             for name, trade_data in politicians.items():
-                # Try to find matching official
+                # Try to find matching official using crosswalk-enhanced lookup
                 name_lower = name.lower().strip()
                 parts = name.split()
                 last_name = parts[-1].lower() if parts else name_lower
 
                 matching_official = None
-                # Try full name first
-                if name_lower in self._officials_by_name:
-                    matching_official = self._officials_by_name[name_lower]
+
+                # Try full name first (in crosswalk lookup)
+                if name_lower in crosswalk_lookup:
+                    matching_official = crosswalk_lookup[name_lower]
                 # Try last name
+                elif last_name in crosswalk_lookup:
+                    matching_official = crosswalk_lookup[last_name]
+                # Try original _officials_by_name as fallback
+                elif name_lower in self._officials_by_name:
+                    matching_official = self._officials_by_name[name_lower]
                 elif last_name in self._officials_by_name:
                     matching_official = self._officials_by_name[last_name]
 
@@ -666,15 +738,24 @@ class WeeklyDataUpdate:
                     matching_official['has_financial_activity'] = True
                     enriched_count += 1
                 else:
+                    # Track unmatched names for reporting
+                    unmatched_names.append(name)
                     # Official not in Congress roster - add as new (rare case)
                     trade_data['has_financial_activity'] = True
                     self.officials_data.append(trade_data)
                     new_count += 1
 
-            logger.info(f"Enriched {enriched_count} existing officials, added {new_count} new")
+            # Store unmatched names for matching report
+            self._unmatched_fmp_names = unmatched_names
+
+            logger.info(f"FMP Trade Matching: {enriched_count} matched via crosswalk, "
+                       f"{new_count} new/unmatched")
+            if unmatched_names:
+                logger.info(f"  Unmatched FMP names: {unmatched_names[:10]}{'...' if len(unmatched_names) > 10 else ''}")
         else:
             # No Congress roster - use trade data as officials (fallback)
             self.officials_data = list(politicians.values())
+            self._unmatched_fmp_names = []
 
         self.source_status['fmp'] = {
             'status': 'success',
@@ -682,6 +763,8 @@ class WeeklyDataUpdate:
             'senate_trades': senate_count,
             'total_trades': len(all_trades),
             'officials': len(self.officials_data),
+            'matched_via_crosswalk': enriched_count if 'enriched_count' in dir() else 0,
+            'unmatched_count': len(self._unmatched_fmp_names) if hasattr(self, '_unmatched_fmp_names') else 0,
             'from_cache': from_cache,
             'timestamp': datetime.now().isoformat()
         }
@@ -819,162 +902,172 @@ class WeeklyDataUpdate:
             self.source_status['quiver'] = {'status': 'failed', 'error': str(e)}
 
     def fetch_fec_data(self):
-        """Fetch campaign finance data from FEC for each official."""
-        logger.info("\n--- Fetching FEC Campaign Finance ---")
+        """
+        Fetch campaign finance data from FEC for each official.
+
+        Uses the congress-legislators crosswalk for direct bioguide_id -> fec_candidate_id
+        mapping, eliminating error-prone name matching. This improves match rate from ~6%
+        to ~95%+ for current Congress members.
+        """
+        logger.info("\n--- Fetching FEC Campaign Finance (via Crosswalk) ---")
 
         # Load cached progress to see which officials already have FEC data
         cached = self.load_cache('fec_enrichment')
         cached_officials = set()
         if cached:
-            cached_officials = set(cached.get('data', {}).get('processed_names', []))
+            cached_officials = set(cached.get('data', {}).get('processed_bioguides', []))
             logger.info(f"  [CACHE] Found {len(cached_officials)} already-enriched officials")
 
         try:
             import time
             from justdata.apps.electwatch.services.fec_client import FECClient
+            from justdata.apps.electwatch.services.crosswalk import get_crosswalk
+
             client = FECClient()
+            crosswalk = get_crosswalk()
 
             if not client.test_connection():
                 raise Exception("FEC API connection failed")
 
-            # For each official, search FEC to find their candidate record and contributions
+            # Get crosswalk statistics
+            crosswalk_stats = crosswalk.get_statistics()
+            logger.info(f"  Crosswalk loaded: {crosswalk_stats['total_members']} members, "
+                       f"{crosswalk_stats['fec_coverage_pct']}% have FEC IDs")
+
+            # Track matching results
             officials_enriched = 0
             total_contributions = 0
             api_calls = 0
-            max_api_calls = 700  # Increased limit - FEC allows 1000/hour
-            processed_names = list(cached_officials)  # Track all processed
-            save_interval = 50  # Save progress every 50 officials
+            max_api_calls = 700  # FEC allows 1000/hour
+            processed_bioguides = list(cached_officials)
+            crosswalk_matches = 0
+            crosswalk_misses = []  # Track officials not in crosswalk
+            save_interval = 50
 
             for idx, official in enumerate(self.officials_data):
+                bioguide_id = official.get('bioguide_id', '')
                 name = official.get('name', '')
 
-                # Skip if already processed (from cache)
-                if name in cached_officials:
+                if not bioguide_id:
+                    logger.debug(f"Skipping {name}: no bioguide_id")
+                    continue
+
+                # ALWAYS set fec_candidate_id from crosswalk (even for cached officials)
+                # This ensures the ID is available for downstream fetches (financial PACs, etc.)
+                if not official.get('fec_candidate_id'):
+                    fec_id = crosswalk.get_fec_id(bioguide_id)
+                    if fec_id:
+                        official['fec_candidate_id'] = fec_id
+                        # Also store additional crosswalk IDs
+                        member_info = crosswalk.get_member_info(bioguide_id)
+                        if member_info:
+                            if member_info.get('opensecrets_id'):
+                                official['opensecrets_id'] = member_info['opensecrets_id']
+                            if member_info.get('govtrack_id'):
+                                official['govtrack_id'] = member_info['govtrack_id']
+
+                # Skip API calls if already processed (from cache)
+                if bioguide_id in cached_officials:
                     if official.get('fec_candidate_id'):
+                        crosswalk_matches += 1
                         officials_enriched += 1
                     continue
+
                 if api_calls >= max_api_calls:
                     logger.info(f"FEC: Reached API call limit ({max_api_calls}), stopping")
                     break
 
-                # Every 100 API calls, pause for 60 seconds to respect rate limits
+                # Rate limit protection
                 if api_calls > 0 and api_calls % 100 == 0:
                     logger.info(f"  FEC: Pausing 60s after {api_calls} API calls (rate limit protection)...")
                     time.sleep(60)
 
                 try:
-                    name = official.get('name', '')
-                    if not name:
-                        continue
+                    # Use crosswalk for direct FEC ID lookup (no name matching!)
+                    fec_id = crosswalk.get_fec_id(bioguide_id)
 
-                    # Parse name for FEC search (last name works best)
-                    name_parts = name.split()
-                    last_name = name_parts[-1] if name_parts else name
+                    if fec_id:
+                        crosswalk_matches += 1
+                        official['fec_candidate_id'] = fec_id
 
-                    # Skip invalid last names that cause API errors
-                    if last_name.lower() in ['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'dr', 'dr.']:
-                        # Try second-to-last name part
-                        if len(name_parts) >= 2:
-                            last_name = name_parts[-2]
-                        else:
-                            continue
+                        # Also store additional crosswalk IDs for reference
+                        member_info = crosswalk.get_member_info(bioguide_id)
+                        if member_info:
+                            if member_info.get('opensecrets_id'):
+                                official['opensecrets_id'] = member_info['opensecrets_id']
+                            if member_info.get('govtrack_id'):
+                                official['govtrack_id'] = member_info['govtrack_id']
 
-                    # Skip very short names
-                    if len(last_name) < 3:
-                        continue
+                        # Add delay before FEC API call
+                        time.sleep(0.5)
 
-                    # Add delay to avoid rate limiting (0.5s between requests)
-                    time.sleep(0.5)
+                        # Fetch candidate totals directly by FEC ID
+                        try:
+                            totals = client.get_candidate_totals(fec_id, cycle=2024)
+                            api_calls += 1
 
-                    # Determine office type from chamber
-                    chamber = official.get('chamber', '').lower()
-                    office = 'S' if chamber == 'senate' else 'H' if chamber == 'house' else None
+                            if totals:
+                                total_amount = totals.get('receipts', 0)
+                                individual_contribs = totals.get('individual_contributions', 0)
+                                pac_contribs = totals.get('pac_contributions', 0)
 
-                    # Search FEC for this official (use 2024 cycle for complete data)
-                    candidates = client.search_candidates(
-                        name=last_name,
-                        office=office,
-                        cycle=2024,
-                        limit=5
-                    )
-                    api_calls += 1
+                                # Store all contribution data
+                                official['contributions'] = pac_contribs
+                                official['total_receipts'] = total_amount
+                                official['individual_contributions'] = individual_contribs
+                                official['pac_contributions'] = pac_contribs
+                                official['fec_cycle'] = totals.get('cycle')
 
-                    if candidates:
-                        # Find best match by comparing full name
-                        best_match = None
-                        first_name = name_parts[0].lower() if name_parts else ''
+                                total_contributions += 1
+                                officials_enriched += 1
+                                logger.info(f"  FEC: {name} ({bioguide_id}) - ${pac_contribs:,.0f} PAC (${total_amount:,.0f} total)")
+                            else:
+                                # FEC ID found but no totals data
+                                officials_enriched += 1
+                                logger.debug(f"  FEC: {name} - ID found but no totals data")
 
-                        for cand in candidates:
-                            cand_name_lower = cand.name.lower()
-                            # Check if both first and last name match
-                            if last_name.lower() in cand_name_lower and first_name in cand_name_lower:
-                                best_match = cand
-                                break
+                        except Exception as ce:
+                            logger.debug(f"Could not fetch totals for {name} ({fec_id}): {ce}")
+                            officials_enriched += 1  # Still count as enriched (has FEC ID)
 
-                        if best_match:
-                            # Enrich official with FEC data
-                            official['fec_candidate_id'] = best_match.candidate_id
-                            # Only update state if we don't have it
-                            if not official.get('state'):
-                                official['state'] = best_match.state or ''
-                            official['chamber'] = 'senate' if best_match.office == 'S' else 'house' if best_match.office == 'H' else official.get('chamber', '')
-                            official['fec_party'] = best_match.party
-                            # Update main party field from FEC data
-                            if best_match.party:
-                                official['party'] = best_match.party
-
-                            # Add delay before next API call
-                            time.sleep(0.5)
-
-                            # Fetch candidate totals (faster than individual contributions)
-                            try:
-                                totals = client.get_candidate_totals(
-                                    best_match.candidate_id,
-                                    cycle=2024
-                                )
-                                api_calls += 1
-
-                                if totals:
-                                    # Use PAC contributions as primary metric (industry-specific)
-                                    total_amount = totals.get('receipts', 0)
-                                    individual_contribs = totals.get('individual_contributions', 0)
-                                    pac_contribs = totals.get('pac_contributions', 0)
-
-                                    # Use PAC contributions as the main "contributions" field
-                                    # since PACs are organized by industry/company
-                                    official['contributions'] = pac_contribs
-                                    official['total_receipts'] = total_amount
-                                    official['individual_contributions'] = individual_contribs
-                                    official['pac_contributions'] = pac_contribs
-                                    official['fec_cycle'] = totals.get('cycle')
-
-                                    total_contributions += 1
-                                    officials_enriched += 1
-                                    logger.info(f"  FEC: {name} - ${pac_contribs:,.0f} PAC (${total_amount:,.0f} total)")
-                            except Exception as ce:
-                                logger.debug(f"Could not fetch totals for {name}: {ce}")
+                    else:
+                        # Not in crosswalk - track for reporting
+                        crosswalk_misses.append({
+                            'name': name,
+                            'bioguide_id': bioguide_id,
+                            'chamber': official.get('chamber', ''),
+                            'state': official.get('state', '')
+                        })
+                        logger.debug(f"  No FEC ID in crosswalk for {name} ({bioguide_id})")
 
                 except Exception as e:
-                    logger.debug(f"FEC lookup failed for {official.get('name', 'unknown')}: {e}")
+                    logger.debug(f"FEC lookup failed for {name}: {e}")
 
-                # Mark as processed regardless of success (avoid re-trying failed lookups)
-                if name and name not in processed_names:
-                    processed_names.append(name)
+                # Mark as processed
+                if bioguide_id and bioguide_id not in processed_bioguides:
+                    processed_bioguides.append(bioguide_id)
 
-                # Save progress every 50 officials
-                if len(processed_names) % save_interval == 0:
+                # Save progress periodically
+                if len(processed_bioguides) % save_interval == 0:
                     self.save_cache('fec_enrichment', {
-                        'processed_names': processed_names,
+                        'processed_bioguides': processed_bioguides,
                         'officials_enriched': officials_enriched,
-                        'api_calls': api_calls
-                    }, {'partial': True, 'count': len(processed_names)})
+                        'api_calls': api_calls,
+                        'crosswalk_matches': crosswalk_matches
+                    }, {'partial': True, 'count': len(processed_bioguides)})
 
             # Final cache save
             self.save_cache('fec_enrichment', {
-                'processed_names': processed_names,
+                'processed_bioguides': processed_bioguides,
                 'officials_enriched': officials_enriched,
-                'api_calls': api_calls
-            }, {'partial': False, 'count': len(processed_names)})
+                'api_calls': api_calls,
+                'crosswalk_matches': crosswalk_matches,
+                'crosswalk_misses': crosswalk_misses
+            }, {'partial': False, 'count': len(processed_bioguides)})
+
+            # Calculate match rate
+            total_with_bioguide = sum(1 for o in self.officials_data if o.get('bioguide_id'))
+            match_rate = (crosswalk_matches / total_with_bioguide * 100) if total_with_bioguide else 0
 
             self.source_status['fec'] = {
                 'status': 'success',
@@ -982,18 +1075,27 @@ class WeeklyDataUpdate:
                 'total_contributions': total_contributions,
                 'api_calls': api_calls,
                 'from_cache_count': len(cached_officials),
+                'crosswalk_matches': crosswalk_matches,
+                'crosswalk_misses': len(crosswalk_misses),
+                'match_rate_pct': round(match_rate, 1),
                 'timestamp': datetime.now().isoformat()
             }
-            logger.info(f"FEC: Enriched {officials_enriched} officials with contribution data ({total_contributions} total contributions, {api_calls} API calls)")
+
+            logger.info(f"FEC: Enriched {officials_enriched} officials via crosswalk "
+                       f"({crosswalk_matches} matches, {len(crosswalk_misses)} misses, "
+                       f"{match_rate:.1f}% rate, {api_calls} API calls)")
+
+            if crosswalk_misses:
+                logger.info(f"  Officials without FEC ID in crosswalk: {[m['name'] for m in crosswalk_misses[:5]]}...")
 
         except Exception as e:
             logger.error(f"FEC fetch failed: {e}")
             self.warnings.append(f"FEC: {e}")
             self.source_status['fec'] = {'status': 'failed', 'error': str(e)}
             # Save whatever progress we made before the error
-            if 'processed_names' in dir():
+            if 'processed_bioguides' in dir():
                 self.save_cache('fec_enrichment', {
-                    'processed_names': processed_names,
+                    'processed_bioguides': processed_bioguides,
                     'officials_enriched': officials_enriched if 'officials_enriched' in dir() else 0,
                     'api_calls': api_calls if 'api_calls' in dir() else 0
                 }, {'partial': True, 'error': str(e)})
@@ -1117,111 +1219,48 @@ class WeeklyDataUpdate:
                 'financial_contributors': contributors
             }
 
-        def find_candidate_committee(name: str, state: str, chamber: str) -> Optional[str]:
-            """Find a candidate's principal campaign committee ID.
+        def get_committee_from_candidate_id(fec_candidate_id: str) -> Optional[str]:
+            """Get principal campaign committee ID directly from FEC candidate ID.
 
-            Uses comprehensive name mapping to handle nickname/legal name differences.
-            E.g., 'Ted Cruz' -> searches for both 'Ted Cruz' and 'Rafael Cruz'
+            Uses the /candidate/{candidate_id}/committees/ endpoint to get committee list.
+            Returns the first committee (principal campaign committee).
             """
-            url = 'https://api.open.fec.gov/v1/candidates/search/'
+            if not fec_candidate_id:
+                return None
 
-            # Build list of names to search
-            search_names = [name]
+            # Use the /committees/ sub-endpoint which returns actual committee data
+            url = f'https://api.open.fec.gov/v1/candidate/{fec_candidate_id}/committees/'
+            params = {
+                'api_key': api_key,
+                'designation': 'P'  # Principal campaign committee
+            }
 
-            # Add FEC-specific search names from mapping
-            if name in FEC_SEARCH_NAMES:
-                search_names.extend(FEC_SEARCH_NAMES[name])
+            try:
+                time.sleep(0.3)
+                r = requests.get(url, params=params, timeout=30)
+                if r.ok:
+                    data = r.json()
+                    results = data.get('results', [])
+                    if results:
+                        committee_id = results[0].get('committee_id')
+                        logger.debug(f"  Found committee {committee_id} for candidate {fec_candidate_id}")
+                        return committee_id
+                    else:
+                        # Try without designation filter (some candidates don't have P designation)
+                        params.pop('designation', None)
+                        time.sleep(0.3)
+                        r2 = requests.get(url, params=params, timeout=30)
+                        if r2.ok:
+                            data2 = r2.json()
+                            results2 = data2.get('results', [])
+                            if results2:
+                                committee_id = results2[0].get('committee_id')
+                                logger.debug(f"  Found committee {committee_id} for candidate {fec_candidate_id} (no P designation)")
+                                return committee_id
+            except Exception as e:
+                logger.debug(f"  Error getting committee for {fec_candidate_id}: {e}")
 
-            # Add legal name variant if nickname is used
-            if name in NICKNAME_TO_LEGAL:
-                legal_name = NICKNAME_TO_LEGAL[name]
-                search_names.append(legal_name)
-                # Also try just last name + legal first name
-                parts = name.split()
-                if len(parts) >= 2:
-                    legal_first = legal_name.split()[0] if legal_name else parts[0]
-                    search_names.append(f"{legal_first} {parts[-1]}")
-
-            # Remove duplicates while preserving order
-            seen = set()
-            unique_names = []
-            for n in search_names:
-                n_upper = n.upper()
-                if n_upper not in seen:
-                    seen.add(n_upper)
-                    unique_names.append(n)
-
-            best_match = None
-            best_score = 0
-
-            for search_name in unique_names:
-                parts = search_name.split()
-                if not parts:
-                    continue
-
-                # Handle FEC format names (LASTNAME, FIRSTNAME)
-                if ',' in search_name:
-                    name_parts = search_name.split(',')
-                    last_name = name_parts[0].strip().upper()
-                    first_name = name_parts[1].strip().split()[0].upper() if len(name_parts) > 1 else ''
-                else:
-                    first_name = parts[0].upper()
-                    last_name = parts[-1].upper()
-
-                params = {
-                    'api_key': api_key,
-                    'q': last_name,
-                    'state': state,
-                    'office': 'H' if chamber == 'house' else 'S',
-                    'is_active_candidate': True,
-                    'per_page': 20
-                }
-
-                try:
-                    time.sleep(0.3)
-                    r = requests.get(url, params=params, timeout=30)
-                    if r.ok:
-                        for candidate in r.json().get('results', []):
-                            cand_name = candidate.get('name', '').upper()
-
-                            # FEC names are "LASTNAME, FIRSTNAME" format
-                            score = 0
-
-                            # Must have last name
-                            if last_name not in cand_name:
-                                continue
-
-                            score += 1
-
-                            # Check if first name also matches
-                            if first_name and first_name in cand_name:
-                                score += 2
-
-                            # Check for middle names if present
-                            for part in parts[1:-1]:
-                                if part.upper() in cand_name:
-                                    score += 1
-
-                            # Prefer exact format match: "LASTNAME, FIRSTNAME"
-                            expected_format = f"{last_name}, {first_name}"
-                            if expected_format in cand_name:
-                                score += 3
-
-                            if score > best_score:
-                                committees = candidate.get('principal_committees', [])
-                                if committees:
-                                    best_score = score
-                                    best_match = committees[0].get('committee_id')
-                                    logger.debug(f"  Found match for {name} via '{search_name}': {cand_name} (score={score})")
-
-                except Exception as e:
-                    logger.debug(f"  Error finding committee for {name} via {search_name}: {e}")
-
-                # If we found a high-confidence match, stop searching
-                if best_score >= 4:
-                    break
-
-            return best_match
+            return None
 
         # Load cached progress
         cached = self.load_cache('financial_pacs')
@@ -1246,13 +1285,15 @@ class WeeklyDataUpdate:
                         total_financial += official.get('financial_sector_pac', 0)
                     continue
 
-                state = official.get('state', '')
-                chamber = official.get('chamber', 'house')
+                # Use crosswalk FEC candidate ID for reliable committee lookup
+                # The crosswalk provides direct bioguide_id -> fec_candidate_id mapping
+                fec_candidate_id = official.get('fec_candidate_id')
 
-                # Try to find candidate's committee ID
-                # Note: fec_candidate_id is NOT the same as committee_id
-                # We need to search for the actual principal campaign committee
-                committee_id = find_candidate_committee(name, state, chamber)
+                # Get principal campaign committee from FEC candidate ID
+                committee_id = get_committee_from_candidate_id(fec_candidate_id)
+
+                if not committee_id and fec_candidate_id:
+                    logger.debug(f"  {name}: Has FEC ID {fec_candidate_id} but no committee found")
 
                 if committee_id:
                     pac_result = get_financial_pac_total(committee_id)
@@ -2916,6 +2957,123 @@ Be factual and avoid speculation."""
         save_metadata(metadata, self.weekly_dir)
 
         logger.info(f"All data saved to {self.weekly_dir}")
+
+        # Generate and save matching report
+        logger.info("Generating matching report...")
+        matching_report = self._generate_matching_report()
+        self._save_matching_report(matching_report)
+
+        # Validate data consistency
+        logger.info("Validating data consistency...")
+        validation_errors = self._validate_data_consistency()
+        if validation_errors:
+            logger.warning(f"Data validation found {len(validation_errors)} issues")
+            for err in validation_errors[:10]:
+                logger.warning(f"  - {err}")
+
+    def _generate_matching_report(self) -> Dict:
+        """
+        Generate report of matching success/failure rates.
+
+        This report helps track how well the crosswalk is working and
+        identify officials or FMP names that aren't being matched.
+        """
+        total_officials = len(self.officials_data)
+        officials_with_fec = sum(1 for o in self.officials_data if o.get('fec_candidate_id'))
+        officials_with_trades = sum(1 for o in self.officials_data if o.get('trades'))
+        officials_with_contributions = sum(1 for o in self.officials_data if o.get('contributions', 0) > 0)
+        officials_with_financial_pac = sum(1 for o in self.officials_data if o.get('financial_sector_pac', 0) > 0)
+
+        # Get unmatched names from FMP processing
+        unmatched_fmp = getattr(self, '_unmatched_fmp_names', [])
+
+        # Get officials without FEC match from source status
+        fec_status = self.source_status.get('fec', {})
+        crosswalk_matches = fec_status.get('crosswalk_matches', 0)
+        crosswalk_misses = fec_status.get('crosswalk_misses', 0)
+
+        return {
+            'generated_at': datetime.now().isoformat(),
+            'total_officials': total_officials,
+            'fec_enriched': officials_with_fec,
+            'fec_enriched_pct': round(officials_with_fec / total_officials * 100, 1) if total_officials else 0,
+            'fmp_enriched': officials_with_trades,
+            'fmp_enriched_pct': round(officials_with_trades / total_officials * 100, 1) if total_officials else 0,
+            'with_contributions': officials_with_contributions,
+            'with_financial_pac': officials_with_financial_pac,
+            'crosswalk_stats': {
+                'matches': crosswalk_matches,
+                'misses': crosswalk_misses,
+                'match_rate_pct': round(crosswalk_matches / (crosswalk_matches + crosswalk_misses) * 100, 1) if (crosswalk_matches + crosswalk_misses) > 0 else 0
+            },
+            'unmatched_fmp_names': unmatched_fmp,
+            'unmatched_fmp_count': len(unmatched_fmp),
+            'source_status': self.source_status,
+            'summary': {
+                'fec_rate': f"{officials_with_fec}/{total_officials} ({round(officials_with_fec / total_officials * 100, 1) if total_officials else 0}%)",
+                'trade_rate': f"{officials_with_trades}/{total_officials} ({round(officials_with_trades / total_officials * 100, 1) if total_officials else 0}%)",
+                'crosswalk_rate': f"{crosswalk_matches}/{crosswalk_matches + crosswalk_misses} ({round(crosswalk_matches / (crosswalk_matches + crosswalk_misses) * 100, 1) if (crosswalk_matches + crosswalk_misses) > 0 else 0}%)"
+            }
+        }
+
+    def _save_matching_report(self, report: Dict):
+        """Save matching report to data/current/matching_report.json."""
+        report_path = Path(__file__).parent / 'data' / 'current' / 'matching_report.json'
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(report_path, 'w', encoding='utf-8') as f:
+            json.dump(report, f, indent=2)
+        logger.info(f"Matching report saved to {report_path}")
+
+    def _validate_data_consistency(self) -> List[str]:
+        """
+        Validate that all data is properly connected and consistent.
+
+        Returns:
+            List of validation error messages
+        """
+        errors = []
+
+        for official in self.officials_data:
+            name = official.get('name', 'Unknown')
+
+            # Check required fields
+            if not official.get('bioguide_id'):
+                # Only warn for officials with significant activity
+                if official.get('contributions', 0) > 10000 or official.get('total_trades', 0) > 5:
+                    errors.append(f"{name}: Missing bioguide_id (has ${official.get('contributions', 0):,} contributions)")
+
+            # Check contribution consistency
+            pac_total = official.get('contributions', 0) or 0
+            individual_total = official.get('individual_contributions_total', 0) or official.get('individual_contributions', 0) or 0
+
+            # Get display totals if they exist
+            display = official.get('contributions_display', {})
+            display_total = display.get('total', 0) if isinstance(display, dict) else 0
+            display_financial = display.get('financial', 0) if isinstance(display, dict) else 0
+
+            # Only check if we have display data
+            if display_total > 0:
+                expected_total = pac_total + individual_total
+                # Allow 1% tolerance for rounding
+                if abs(expected_total - display_total) > display_total * 0.01 and abs(expected_total - display_total) > 1000:
+                    errors.append(f"{name}: Contribution mismatch - PAC({pac_total:,}) + Individual({individual_total:,}) = {expected_total:,} != Display({display_total:,})")
+
+            # Check years in Congress vs first_elected
+            years = official.get('years_in_congress', 0)
+            first_elected = official.get('first_elected')
+            if first_elected and years:
+                current_year = datetime.now().year
+                expected_years = current_year - first_elected
+                # Allow 1 year tolerance
+                if abs(years - expected_years) > 1:
+                    errors.append(f"{name}: Years mismatch - stored({years}) vs calculated({expected_years}) from first_elected({first_elected})")
+
+            # Check for FEC ID without contributions (suspicious)
+            if official.get('fec_candidate_id') and not official.get('contributions') and not official.get('pac_contributions'):
+                # This might be normal for new members, just log as info
+                logger.debug(f"{name}: Has FEC ID but no contribution data")
+
+        return errors
 
     # =========================================================================
     # PHASE 5: VERIFY DATA

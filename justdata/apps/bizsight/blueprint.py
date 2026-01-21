@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
@@ -57,6 +57,7 @@ def configure_template_loader(state):
 
 
 @bizsight_bp.route('/')
+@login_required
 @require_access('bizsight', 'partial')
 def index():
     """Main page with the US map for county selection."""
@@ -574,8 +575,10 @@ def report():
     job_id = request.args.get('job_id')
     if not job_id:
         return jsonify({'error': 'Job ID required'}), 400
-    
-    return render_template('report_template.html', job_id=job_id)
+
+    # Pass app_base_url so template can correctly construct API URLs
+    app_base_url = url_for('bizsight.index').rstrip('/')
+    return render_template('report_template.html', job_id=job_id, app_base_url=app_base_url)
 
 
 @bizsight_bp.route('/report-data', methods=['GET'])

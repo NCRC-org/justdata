@@ -8,7 +8,7 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 import logging
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from .config import TEMPLATES_DIR, STATIC_DIR
 from .version import __version__
 
@@ -43,6 +43,7 @@ def configure_template_loader(state):
 
 
 @memberview_bp.route('/')
+@login_required
 @require_access('memberview', 'full')
 def index():
     """Main MemberView page."""

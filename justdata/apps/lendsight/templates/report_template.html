@@ -1314,7 +1314,16 @@
                 showError('Report data is incomplete. Please try generating a new report.');
                 return;
             }
-            
+
+            // Debug: Log data structure to diagnose empty tables issue
+            console.log('[DEBUG] displayReport called');
+            console.log('[DEBUG] data:', data);
+            console.log('[DEBUG] data keys:', data ? Object.keys(data) : 'data is null/undefined');
+            console.log('[DEBUG] data.income_borrowers:', data ? data.income_borrowers : 'N/A');
+            console.log('[DEBUG] data.income_tracts:', data ? data.income_tracts : 'N/A');
+            console.log('[DEBUG] data.minority_tracts:', data ? data.minority_tracts : 'N/A');
+            console.log('[DEBUG] data.demographic_overview:', data ? data.demographic_overview : 'N/A');
+
             console.log('Displaying report with metadata:', metadata);
             console.log('Census data in metadata:', metadata.census_data ? {
                 counties: Object.keys(metadata.census_data),

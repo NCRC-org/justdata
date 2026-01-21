@@ -1,12 +1,12 @@
 {
-  "cached_at": "2026-01-20T18:28:07.403554",
+  "cached_at": "2026-01-21T14:00:53.768873",
   "phase": "congress_members",
   "metadata": {
     "status": "success",
     "house_members": 437,
     "senate_members": 100,
     "total": 537,
-    "timestamp": "2026-01-20T18:28:07.403554"
+    "timestamp": "2026-01-21T14:00:53.768873"
   },
   "data": [
     {

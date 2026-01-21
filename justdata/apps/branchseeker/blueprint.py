@@ -15,7 +15,7 @@ import time
 import json
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR
@@ -51,6 +51,7 @@ def configure_template_loader(state):
 
 
 @branchseeker_bp.route('/')
+@login_required
 @require_access('branchseeker', 'partial')
 def index():
     """Main page with the analysis form"""

@@ -1,0 +1,4355 @@
+{
+  "snapshots": [
+    {
+      "date": "2026-01-21",
+      "officials": {
+        "M001243": {
+          "name": "McCormick, David",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001229": {
+          "name": "Shreve, Jefferson",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001157": {
+          "name": "McCaul, Michael T.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000197": {
+          "name": "Pelosi, Nancy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000278": {
+          "name": "Tuberville, Tommy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001190": {
+          "name": "Mullin, Markwayne",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001098": {
+          "name": "Cruz, Ted",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001082": {
+          "name": "Hern, Kevin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000389": {
+          "name": "Khanna, Ro",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000830": {
+          "name": "Whitesides, George",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000829": {
+          "name": "Wied, Tony",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000472": {
+          "name": "Franklin, Scott",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000309": {
+          "name": "Jackson, Jonathan L.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001072": {
+          "name": "Hill, J. French",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001203": {
+          "name": "Smith, Tina",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000110": {
+          "name": "Fields, Cleo",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000624": {
+          "name": "Dingell, Debbie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000148": {
+          "name": "Auchincloss, Jake",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000583": {
+          "name": "Gottheimer, Josh",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000596": {
+          "name": "Marjorie Taylor Greene",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 82040,
+          "stock_sells": 0
+        },
+        "M001236": {
+          "name": "Moore, Tim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000310": {
+          "name": "Johnson, Julie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001325": {
+          "name": "Biggs, Sheri",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001217": {
+          "name": "Moskowitz, Jared",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001068": {
+          "name": "Cohen, Steve",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001123": {
+          "name": "Cisneros, Gilbert Ray",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000597": {
+          "name": "Lee, Laurel M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001136": {
+          "name": "McClain, Lisa C.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000589": {
+          "name": "Gooden, Lance",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000189": {
+          "name": "Newhouse, Dan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000375": {
+          "name": "Keating, William R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001327": {
+          "name": "Bresnahan, Robert P.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000601": {
+          "name": "Landsman, Greg",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001094": {
+          "name": "Hoyle, Val T.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001135": {
+          "name": "Kathy Manning",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 35007,
+          "stock_sells": 3003
+        },
+        "D000628": {
+          "name": "Dunn, Neal P.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001035": {
+          "name": "Collins, Susan M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001047": {
+          "name": "Capito, Shelley Moore",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000398": {
+          "name": "Kean, Thomas H.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000307": {
+          "name": "James, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000372": {
+          "name": "Allen, Rick W.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000802": {
+          "name": "Whitehouse, Sheldon",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000486": {
+          "name": "Torres, Ritchie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000821": {
+          "name": "Westerman, Bruce",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B000574": {
+          "name": "Earl Blumenauer",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 16002,
+          "stock_sells": 1001
+        },
+        "M001244": {
+          "name": "Moody, Ashley",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000355": {
+          "name": "McConnell, Mitch",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001236": {
+          "name": "Boozman, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000490": {
+          "name": "Taylor, David J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000488": {
+          "name": "Thanedar, Shri",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000595": {
+          "name": "Letlow, Julia",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000032": {
+          "name": "Donalds, Byron",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001204": {
+          "name": "Meuser, Daniel",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000383": {
+          "name": "King, Angus S., Jr.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000479": {
+          "name": "Fetterman, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001218": {
+          "name": "McCormick, Richard",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001205": {
+          "name": "Miller, Carol D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001108": {
+          "name": "Comer, James",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000560": {
+          "name": "Larsen, Rick",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001232": {
+          "name": "McClain Delaney, April",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000620": {
+          "name": "John Delaney",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 4004,
+          "stock_sells": 0
+        },
+        "P000595": {
+          "name": "Peters, Gary C.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000393": {
+          "name": "Kennedy, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001220": {
+          "name": "McGarvey, Morgan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000250": {
+          "name": "Sessions, Pete",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000296": {
+          "name": "Evans, Dwight",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000376": {
+          "name": "Kelly, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000816": {
+          "name": "Williams, Roger",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000621": {
+          "name": "Randall, Emily",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000510": {
+          "name": "Smith, Adam",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001201": {
+          "name": "Paul Mitchell",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 1001,
+          "stock_sells": 0
+        },
+        "C000174": {
+          "name": "Tom Carper",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 1001
+        },
+        "W000812": {
+          "name": "Wagner, Ann",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000619": {
+          "name": "Rulli, Michael A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000312": {
+          "name": "Justice, James C.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000147": {
+          "name": "Norton, Eleanor Holmes",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000216": {
+          "name": "DeLauro, Rosa L.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000187": {
+          "name": "Waters, Maxine",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000139": {
+          "name": "Van Epps, Matt",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000606": {
+          "name": "Grijalva, Adelita S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001087": {
+          "name": "Crawford, Eric A. \"Rick\"",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "Y000064": {
+          "name": "Young, Todd",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000779": {
+          "name": "Wyden, Ron",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000817": {
+          "name": "Warren, Elizabeth",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000800": {
+          "name": "Welch, Peter",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000437": {
+          "name": "Wicker, Roger F.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000790": {
+          "name": "Warnock, Raphael G.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000805": {
+          "name": "Warner, Mark R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000128": {
+          "name": "Van Hollen, Chris",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000476": {
+          "name": "Tillis, Thomas",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001198": {
+          "name": "Sullivan, Dan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000250": {
+          "name": "Thune, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001232": {
+          "name": "Sheehy, Tim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001217": {
+          "name": "Scott, Rick",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001208": {
+          "name": "Slotkin, Elissa",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001184": {
+          "name": "Scott, Tim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001181": {
+          "name": "Shaheen, Jeanne",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001227": {
+          "name": "Schmitt, Eric",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000605": {
+          "name": "Rounds, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001194": {
+          "name": "Schatz, Brian",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000148": {
+          "name": "Schumer, Charles E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000033": {
+          "name": "Sanders, Bernard",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001150": {
+          "name": "Schiff, Adam B.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000618": {
+          "name": "Ricketts, Pete",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000608": {
+          "name": "Rosen, Jacky",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000603": {
+          "name": "Paul, Rand",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000584": {
+          "name": "Risch, James E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000122": {
+          "name": "Reed, Jack",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000145": {
+          "name": "Padilla, Alex",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000174": {
+          "name": "Ossoff, Jon",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001169": {
+          "name": "Murphy, Christopher",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001111": {
+          "name": "Murray, Patty",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001153": {
+          "name": "Murkowski, Lisa",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001242": {
+          "name": "Moreno, Bernie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001176": {
+          "name": "Merkley, Jeff",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000934": {
+          "name": "Moran, Jerry",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001198": {
+          "name": "Marshall, Roger",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000367": {
+          "name": "Klobuchar, Amy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000577": {
+          "name": "Lee, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000575": {
+          "name": "Lankford, James",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000571": {
+          "name": "Lummis, Cynthia M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000570": {
+          "name": "Luj\u00e1n, Ben Ray",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000133": {
+          "name": "Markey, Edward J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000377": {
+          "name": "Kelly, Mark",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000394": {
+          "name": "Kim, Andy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000384": {
+          "name": "Kaine, Tim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000293": {
+          "name": "Johnson, Ron",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001104": {
+          "name": "Husted, Jon",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H000273": {
+          "name": "Hickenlooper, John W.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001089": {
+          "name": "Hawley, Josh",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001079": {
+          "name": "Hyde-Smith, Cindy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001061": {
+          "name": "Hoeven, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001042": {
+          "name": "Hirono, Mazie K.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001046": {
+          "name": "Heinrich, Martin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H000601": {
+          "name": "Hagerty, Bill",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001076": {
+          "name": "Hassan, Margaret Wood",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000574": {
+          "name": "Gallego, Ruben",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000555": {
+          "name": "Gillibrand, Kirsten E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000386": {
+          "name": "Grassley, Chuck",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000359": {
+          "name": "Graham, Lindsey",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001114": {
+          "name": "Curtis, John R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000295": {
+          "name": "Ernst, Joni",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000463": {
+          "name": "Fischer, Deb",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000618": {
+          "name": "Daines, Steve",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000622": {
+          "name": "Duckworth, Tammy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000563": {
+          "name": "Durbin, Richard J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001113": {
+          "name": "Cortez Masto, Catherine",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001096": {
+          "name": "Cramer, Kevin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001095": {
+          "name": "Cotton, Tom",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001088": {
+          "name": "Coons, Christopher A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001056": {
+          "name": "Cornyn, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C000880": {
+          "name": "Crapo, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001319": {
+          "name": "Britt, Katie Boyd",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001305": {
+          "name": "Budd, Ted",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001288": {
+          "name": "Booker, Cory A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001075": {
+          "name": "Cassidy, Bill",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C000127": {
+          "name": "Cantwell, Maria",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001299": {
+          "name": "Banks, Jim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001303": {
+          "name": "Blunt Rochester, Lisa",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001277": {
+          "name": "Blumenthal, Richard",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001261": {
+          "name": "Barrasso, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001267": {
+          "name": "Bennet, Michael F.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001230": {
+          "name": "Baldwin, Tammy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001243": {
+          "name": "Blackburn, Marsha",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000382": {
+          "name": "Alsobrooks, Angela D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000484": {
+          "name": "Fine, Randy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000622": {
+          "name": "Patronis, Jimmy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000138": {
+          "name": "Vindman, Eugene Simon",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001230": {
+          "name": "Subramanyam, Suhas",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001228": {
+          "name": "Schmidt, Derek",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000622": {
+          "name": "Riley, Josh",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000621": {
+          "name": "Pou, Nellie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000176": {
+          "name": "Olszewski, Johnny",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001240": {
+          "name": "McDowell, Addison P.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001239": {
+          "name": "McGuire, John J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001237": {
+          "name": "McDonald Rivet, Kristen",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001235": {
+          "name": "Moore, Riley M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001233": {
+          "name": "Messmer, Mark B.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001231": {
+          "name": "Mannion, John W.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001230": {
+          "name": "Mackenzie, Ryan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000606": {
+          "name": "Latimer, George",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000405": {
+          "name": "Knott, Brad",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000403": {
+          "name": "Kennedy, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001103": {
+          "name": "Hern\u00e1ndez, Pablo Jose",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001102": {
+          "name": "Harris, Mark",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001101": {
+          "name": "Harrigan, Pat",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000604": {
+          "name": "Goodlander, Maggie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000603": {
+          "name": "Gill, Brandon",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000602": {
+          "name": "Gillen, Laura",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000601": {
+          "name": "Goldman, Craig A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000483": {
+          "name": "Friedman, Laura",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000482": {
+          "name": "Fedorchak, Julie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000301": {
+          "name": "Elfreth, Sarah",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000635": {
+          "name": "Dexter, Maxine",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000634": {
+          "name": "Downing, Troy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001136": {
+          "name": "Conaway, Herbert C.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001326": {
+          "name": "Bynum, Janelle S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001322": {
+          "name": "Baumgartner, Michael",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001321": {
+          "name": "Barrett, Tom",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001188": {
+          "name": "Stutzman, Marlin A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000177": {
+          "name": "Onder, Robert F.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001238": {
+          "name": "McBride, Sarah",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001234": {
+          "name": "Morrison, Kelly",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000404": {
+          "name": "King-Hinds, Kimberlyn",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000311": {
+          "name": "Jack, Brian",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001099": {
+          "name": "Haridopolos, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000481": {
+          "name": "Figures, Shomari",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000300": {
+          "name": "Evans, Gabe",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001137": {
+          "name": "Crank, Jeff",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001324": {
+          "name": "Bell, Wesley",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001229": {
+          "name": "McIver, LaMonica",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000480": {
+          "name": "Fong, Vince",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000402": {
+          "name": "Kennedy, Timothy M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001228": {
+          "name": "Maloy, Celeste",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000380": {
+          "name": "Amo, Gabe",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001227": {
+          "name": "McClellan, Jennifer L.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000135": {
+          "name": "Van Orden, Derrick",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001224": {
+          "name": "Self, Keith",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000600": {
+          "name": "Perez, Marie Gluesenkamp",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000175": {
+          "name": "Ogles, Andrew",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001224": {
+          "name": "Moran, Nathaniel",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001223": {
+          "name": "Magaziner, Seth",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000603": {
+          "name": "Luttrell, Morgan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000602": {
+          "name": "Lee, Summer L.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000399": {
+          "name": "Kiggans, Jennifer A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001095": {
+          "name": "Hunt, Wesley",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001096": {
+          "name": "Hageman, Harriet M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000478": {
+          "name": "Fry, Russell",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000530": {
+          "name": "Deluzio, Christopher R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000594": {
+          "name": "De La Cruz, Monica",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001130": {
+          "name": "Crockett, Jasmine",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001131": {
+          "name": "Casar, Greg",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001318": {
+          "name": "Balint, Becca",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001212": {
+          "name": "Moore, Barry",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B000825": {
+          "name": "Boebert, Lauren",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001208": {
+          "name": "McBath, Lucy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001205": {
+          "name": "Scanlon, Mary Gay",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000581": {
+          "name": "Gonzalez, Vicente",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001201": {
+          "name": "Suozzi, Thomas R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000553": {
+          "name": "Green, Al",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000399": {
+          "name": "Doggett, Lloyd",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000136": {
+          "name": "Vasquez, Gabe",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000487": {
+          "name": "Tokuda, Jill N.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001223": {
+          "name": "Sykes, Emilia Strong",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001225": {
+          "name": "Sorensen, Eric",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001221": {
+          "name": "Scholten, Hillary J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001226": {
+          "name": "Salinas, Andrea",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000617": {
+          "name": "Ramirez, Delia C.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000193": {
+          "name": "Nunn, Zachary",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001219": {
+          "name": "Moylan, James C.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001216": {
+          "name": "Mills, Cory",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001222": {
+          "name": "Miller, Max L.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001226": {
+          "name": "Menendez, Robert",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000596": {
+          "name": "Luna, Anna Paulina",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000599": {
+          "name": "Lawler, Michael",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000600": {
+          "name": "Langworthy, Nicholas A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000598": {
+          "name": "LaLota, Nick",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "I000058": {
+          "name": "Ivey, Glenn",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001093": {
+          "name": "Houchin, Erin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000599": {
+          "name": "Goldman, Daniel S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000476": {
+          "name": "Frost, Maxwell",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000477": {
+          "name": "Foushee, Valerie P.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000235": {
+          "name": "Ezell, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000246": {
+          "name": "Edwards, Chuck",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000230": {
+          "name": "Davis, Donald G.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001129": {
+          "name": "Collins, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001316": {
+          "name": "Burlison, Eric",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001315": {
+          "name": "Budzinski, Nikki",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001317": {
+          "name": "Brecheen, Josh",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000379": {
+          "name": "Alford, Mark",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000579": {
+          "name": "Ryan, Patrick",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001215": {
+          "name": "Miller-Meeks, Mariannette",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001091": {
+          "name": "Hinson, Ashley",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000593": {
+          "name": "Gimenez, Carlos A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000481": {
+          "name": "Tlaib, Rashida",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000478": {
+          "name": "Tenney, Claudia",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001199": {
+          "name": "Mast, Brian J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000609": {
+          "name": "Rutherford, John H.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000585": {
+          "name": "LaHood, Darin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "Z000018": {
+          "name": "Zinke, Ryan K.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001194": {
+          "name": "Moolenaar, John R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001067": {
+          "name": "Hudson, Richard",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000462": {
+          "name": "Frankel, Lois",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001058": {
+          "name": "Huizenga, Bill",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000798": {
+          "name": "Walberg, Tim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000002": {
+          "name": "Nadler, Jerrold",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000797": {
+          "name": "Wasserman Schultz, Debbie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000600": {
+          "name": "Diaz-Balart, Mario",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001220": {
+          "name": "Strong, Dale W.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000620": {
+          "name": "Pettersen, Brittany",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001225": {
+          "name": "Mullin, Kevin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000401": {
+          "name": "Kiley, Kevin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000400": {
+          "name": "Kamlager-Dove, Sydney",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000598": {
+          "name": "Garcia, Robert",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001132": {
+          "name": "Crane, Elijah",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001133": {
+          "name": "Ciscomani, Juan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001314": {
+          "name": "Bean, Aaron",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "Y000067": {
+          "name": "Yakym, Rudy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000475": {
+          "name": "Finstad, Brad",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000474": {
+          "name": "Flood, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001127": {
+          "name": "Cherfilus-McCormick, Sheila",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001126": {
+          "name": "Carey, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001313": {
+          "name": "Brown, Shontel M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000071": {
+          "name": "Ellzey, Jake",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001218": {
+          "name": "Stansbury, Melanie A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001125": {
+          "name": "Carter, Troy A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000019": {
+          "name": "Obernolte, Jay",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000397": {
+          "name": "Kim, Young",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000134": {
+          "name": "Van Duyne, Beth",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001159": {
+          "name": "Strickland, Marilyn",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000086": {
+          "name": "Owens, Burgess",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000026": {
+          "name": "Nehls, Troy E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001213": {
+          "name": "Moore, Blake D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000305": {
+          "name": "Jacobs, Sara",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000304": {
+          "name": "Jackson, Ronny",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000594": {
+          "name": "Gonzales, Tony",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000471": {
+          "name": "Fitzgerald, Scott",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001090": {
+          "name": "Harder, Josh",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001211": {
+          "name": "Stanton, Greg",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000613": {
+          "name": "Panetta, Jimmy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000582": {
+          "name": "Lieu, Ted",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000371": {
+          "name": "Aguilar, Pete",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000623": {
+          "name": "DeSaulnier, Mark",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000608": {
+          "name": "Peters, Scott H.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000130": {
+          "name": "Vargas, Juan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000472": {
+          "name": "Takano, Mark",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000599": {
+          "name": "Ruiz, Raul",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000129": {
+          "name": "Valadao, David G.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001193": {
+          "name": "Swalwell, Eric",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001287": {
+          "name": "Bera, Ami",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000559": {
+          "name": "Garamendi, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001080": {
+          "name": "Chu, Judy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001183": {
+          "name": "Schweikert, David",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000565": {
+          "name": "Gosar, Paul A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001177": {
+          "name": "McClintock, Tom",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001163": {
+          "name": "Matsui, Doris O.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000460": {
+          "name": "Thompson, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000344": {
+          "name": "Sherman, Brad",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001059": {
+          "name": "Costa, Jim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "I000056": {
+          "name": "Issa, Darrell",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C000059": {
+          "name": "Calvert, Ken",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000397": {
+          "name": "Lofgren, Zoe",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000788": {
+          "name": "Williams, Nikema",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000929": {
+          "name": "Spartz, Victoria",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000168": {
+          "name": "Salazar, Maria Elvira",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000305": {
+          "name": "Ross, Deborah K.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000048": {
+          "name": "Pfluger, August",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001214": {
+          "name": "Mrvan, Frank J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001211": {
+          "name": "Miller, Mary E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000871": {
+          "name": "Mann, Tracey",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000317": {
+          "name": "Malliotakis, Nicole",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000194": {
+          "name": "Mace, Nancy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000273": {
+          "name": "Leger Fernandez, Teresa",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001086": {
+          "name": "Harshbarger, Diana",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000597": {
+          "name": "Garbarino, Andrew R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000470": {
+          "name": "Fischbach, Michelle",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000446": {
+          "name": "Feenstra, Randy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000246": {
+          "name": "Fallon, Pat",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001116": {
+          "name": "Clyde, Andrew S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001039": {
+          "name": "Cammack, Kat",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B000740": {
+          "name": "Bice, Stephanie I.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B000668": {
+          "name": "Bentz, Cliff",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000165": {
+          "name": "Tiffany, Thomas P.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001210": {
+          "name": "Murphy, Gregory F.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000592": {
+          "name": "Golden, Jared F.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001213": {
+          "name": "Steil, Bryan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001216": {
+          "name": "Schrier, Kim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001118": {
+          "name": "Cline, Ben",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000587": {
+          "name": "Garcia, Sylvia R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000614": {
+          "name": "Roy, Chip",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000299": {
+          "name": "Escobar, Veronica",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000468": {
+          "name": "Fletcher, Lizzie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001120": {
+          "name": "Crenshaw, Dan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000612": {
+          "name": "Rose, John W.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001309": {
+          "name": "Burchett, Tim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000301": {
+          "name": "Johnson, Dusty",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000480": {
+          "name": "Timmons, William R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000610": {
+          "name": "Reschenthaler, Guy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000302": {
+          "name": "Joyce, John",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001085": {
+          "name": "Houlahan, Chrissy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000631": {
+          "name": "Dean, Madeleine",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000133": {
+          "name": "Van Drew, Jefferson",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001119": {
+          "name": "Craig, Angie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000586": {
+          "name": "Garc\u00eda, Jes\u00fas G. \"Chuy\"",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001199": {
+          "name": "Smucker, Lloyd",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001296": {
+          "name": "Boyle, Brendan F.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000605": {
+          "name": "Perry, Scott",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000467": {
+          "name": "Thompson, Glenn",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000687": {
+          "name": "Mfume, Kweisi",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000831": {
+          "name": "Walkinshaw, James R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000172": {
+          "name": "Ocasio-Cortez, Alexandria",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000590": {
+          "name": "Lee, Susie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000614": {
+          "name": "Pappas, Chris",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000591": {
+          "name": "Guest, Michael",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001212": {
+          "name": "Stauber, Pete",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "O000173": {
+          "name": "Omar, Ilhan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001215": {
+          "name": "Stevens, Haley M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000617": {
+          "name": "Pressley, Ayanna",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000482": {
+          "name": "Trahan, Lori",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000629": {
+          "name": "Davids, Sharice",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001307": {
+          "name": "Baird, James R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "U000040": {
+          "name": "Underwood, Lauren",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001117": {
+          "name": "Casten, Sean",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000469": {
+          "name": "Fulcher, Russ",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001214": {
+          "name": "Steube, W. Gregory",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001081": {
+          "name": "Hayes, Jahana",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001121": {
+          "name": "Crow, Jason",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000191": {
+          "name": "Neguse, Joe",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000593": {
+          "name": "Levin, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001206": {
+          "name": "Morelle, Joseph D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001306": {
+          "name": "Balderson, Troy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001115": {
+          "name": "Cloud, Michael",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000585": {
+          "name": "Gomez, Jimmy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000190": {
+          "name": "Norman, Ralph",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000298": {
+          "name": "Estes, Ron",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000298": {
+          "name": "Jayapal, Pramila",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000375": {
+          "name": "Arrington, Jodey C.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000392": {
+          "name": "Kustoff, David",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000466": {
+          "name": "Fitzpatrick, Brian K.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000297": {
+          "name": "Espaillat, Adriano",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001298": {
+          "name": "Bacon, Don",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001301": {
+          "name": "Bergman, Jack",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000606": {
+          "name": "Raskin, Jamie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000299": {
+          "name": "Johnson, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001077": {
+          "name": "Higgins, Clay",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000391": {
+          "name": "Krishnamoorthi, Raja",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001200": {
+          "name": "Soto, Darren",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001110": {
+          "name": "Correa, J. Luis",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001300": {
+          "name": "Barrag\u00e1n, Nanette Diaz",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001112": {
+          "name": "Carbajal, Salud O.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001066": {
+          "name": "Horsford, Steven",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001190": {
+          "name": "Schneider, Bradley Scott",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000806": {
+          "name": "Webster, Daniel",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001055": {
+          "name": "Case, Ed",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001241": {
+          "name": "Min, Dave",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001100": {
+          "name": "Hurd, Jeff",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001302": {
+          "name": "Biggs, Andy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000626": {
+          "name": "Davidson, Warren",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000388": {
+          "name": "Kelly, Trent",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000576": {
+          "name": "Grothman, Glenn",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000610": {
+          "name": "Plaskett, Stacey E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001292": {
+          "name": "Beyer, Donald S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001291": {
+          "name": "Babin, Brian",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001196": {
+          "name": "Stefanik, Elise M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000822": {
+          "name": "Watson Coleman, Bonnie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000603": {
+          "name": "Rouzer, David",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "E000294": {
+          "name": "Emmer, Tom",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001196": {
+          "name": "Moulton, Seth",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001295": {
+          "name": "Bost, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000583": {
+          "name": "Loudermilk, Barry",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001103": {
+          "name": "Carter, Earl L. \"Buddy\"",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000474": {
+          "name": "Torres, Norma J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000600": {
+          "name": "Radewagen, Aumua Amata Coleman",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000609": {
+          "name": "Palmer, Gary J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000188": {
+          "name": "Norcross, Donald",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000370": {
+          "name": "Adams, Alma S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001101": {
+          "name": "Clark, Katherine M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001195": {
+          "name": "Smith, Jason",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001282": {
+          "name": "Barr, Andy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001067": {
+          "name": "Clarke, Yvette D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000469": {
+          "name": "Tonko, Paul",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000385": {
+          "name": "Kelly, Robin L.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001137": {
+          "name": "Meeks, Gregory W.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000081": {
+          "name": "Vel\u00e1zquez, Nydia M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000463": {
+          "name": "Turner, Michael R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000491": {
+          "name": "Tran, Derek",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000607": {
+          "name": "Pocan, Mark",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "V000131": {
+          "name": "Veasey, Marc A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001091": {
+          "name": "Castro, Joaquin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000814": {
+          "name": "Weber, Randy K. Sr.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000295": {
+          "name": "Joyce, David P.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001281": {
+          "name": "Beatty, Joyce",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000294": {
+          "name": "Jeffries, Hakeem S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001188": {
+          "name": "Meng, Grace",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001285": {
+          "name": "Brownley, Julia",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001068": {
+          "name": "Huffman, Jared",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000617": {
+          "name": "DelBene, Suzan K.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001184": {
+          "name": "Massie, Thomas",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001278": {
+          "name": "Bonamici, Suzanne",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000369": {
+          "name": "Amodei, Mark E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000804": {
+          "name": "Wittman, Robert J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000566": {
+          "name": "Latta, Robert E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000568": {
+          "name": "Griffith, H. Morgan",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000616": {
+          "name": "DesJarlais, Scott",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000459": {
+          "name": "Fleischmann, Charles J. \"Chuck\"",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001052": {
+          "name": "Harris, Andy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001189": {
+          "name": "Scott, Austin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000808": {
+          "name": "Wilson, Frederica S.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000809": {
+          "name": "Womack, Steve",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001185": {
+          "name": "Sewell, Terri A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000289": {
+          "name": "Jordan, Jim",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001260": {
+          "name": "Buchanan, Vern",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001066": {
+          "name": "Castor, Kathy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001257": {
+          "name": "Bilirakis, Gus M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "Q000023": {
+          "name": "Quigley, Mike",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000468": {
+          "name": "Titus, Dina",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000597": {
+          "name": "Pingree, Chellie",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000558": {
+          "name": "Guthrie, Brett",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001047": {
+          "name": "Himes, James A.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001176": {
+          "name": "Scalise, Steve",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000454": {
+          "name": "Foster, Bill",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001072": {
+          "name": "Carson, Andr\u00e9",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M000312": {
+          "name": "McGovern, James P.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "N000015": {
+          "name": "Neal, Richard E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001160": {
+          "name": "Moore, Gwen",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001157": {
+          "name": "Scott, David",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001156": {
+          "name": "S\u00e1nchez, Linda T.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000562": {
+          "name": "Lynch, Stephen F.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001231": {
+          "name": "Simon, Lateefah",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000620": {
+          "name": "Rivas, Luz M.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000607": {
+          "name": "Liccardo, Sam T.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H001098": {
+          "name": "Hamadeh, Abraham J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000605": {
+          "name": "Gray, Adam",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B001323": {
+          "name": "Begich, Nicholas J.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000381": {
+          "name": "Ansari, Yassamin",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001172": {
+          "name": "Smith, Adrian",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "J000288": {
+          "name": "Johnson, Henry C. \"Hank\"",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001069": {
+          "name": "Courtney, Joe",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "P000034": {
+          "name": "Pallone, Frank",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001148": {
+          "name": "Simpson, Michael K.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S001145": {
+          "name": "Schakowsky, Janice D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000557": {
+          "name": "Larson, John B.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000197": {
+          "name": "DeGette, Diana",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "D000096": {
+          "name": "Davis, Danny K.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "A000055": {
+          "name": "Aderholt, Robert B.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "T000193": {
+          "name": "Thompson, Bennie G.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000522": {
+          "name": "Smith, Christopher H.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "S000185": {
+          "name": "Scott, Robert C. \"Bobby\"",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000395": {
+          "name": "Rogers, Harold",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "B000490": {
+          "name": "Bishop, Sanford D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "L000491": {
+          "name": "Lucas, Frank D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001063": {
+          "name": "Cuellar, Henry",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "F000450": {
+          "name": "Foxx, Virginia",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001061": {
+          "name": "Cleaver, Emanuel",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001051": {
+          "name": "Carter, John R.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C001053": {
+          "name": "Cole, Tom",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "R000575": {
+          "name": "Rogers, Mike D.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "W000795": {
+          "name": "Wilson, Joe",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "G000546": {
+          "name": "Graves, Sam",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "M001143": {
+          "name": "McCollum, Betty",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "C000537": {
+          "name": "Clyburn, James E.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "K000009": {
+          "name": "Kaptur, Marcy",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        },
+        "H000874": {
+          "name": "Hoyer, Steny H.",
+          "finance_pct": 0,
+          "total_contributions": 0,
+          "finance_contributions": 0,
+          "stock_buys": 0,
+          "stock_sells": 0
+        }
+      }
+    }
+  ],
+  "last_updated": "2026-01-21T13:07:44.350924",
+  "count": 1
+}

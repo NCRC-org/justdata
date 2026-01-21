@@ -887,9 +887,23 @@
         }
         
         function displayReport(data, metadata) {
+            // Debug: Log data structure to diagnose empty tables issue
+            console.log('[DEBUG] displayReport called');
+            console.log('[DEBUG] data:', data);
+            console.log('[DEBUG] data type:', typeof data);
+            console.log('[DEBUG] data keys:', data ? Object.keys(data) : 'data is null/undefined');
+            console.log('[DEBUG] data.summary:', data ? data.summary : 'N/A');
+            console.log('[DEBUG] data.summary type:', data && data.summary ? typeof data.summary : 'N/A');
+            console.log('[DEBUG] data.summary.length:', data && data.summary ? data.summary.length : 'N/A');
+            console.log('[DEBUG] data.summary[0]:', data && data.summary && data.summary.length > 0 ? JSON.stringify(data.summary[0]) : 'N/A');
+            console.log('[DEBUG] data.by_bank:', data ? data.by_bank : 'N/A');
+            console.log('[DEBUG] data.by_bank.length:', data && data.by_bank ? data.by_bank.length : 'N/A');
+            console.log('[DEBUG] data.by_county:', data ? data.by_county : 'N/A');
+            console.log('[DEBUG] data.raw_data:', data && data.raw_data ? `Array with ${data.raw_data.length} items` : 'N/A');
+
             // Hide loading state
             document.getElementById('loadingState').style.display = 'none';
-            
+
             // Show report content
             document.getElementById('reportContent').style.display = 'block';
             
@@ -1340,11 +1354,19 @@
         }
         
         function populateTable(tableId, data, metadata = null, tableKey = null) {
-            if (!data || data.length === 0) return;
-            
+            console.log('[DEBUG] populateTable called for:', tableId);
+            console.log('[DEBUG] populateTable data:', data);
+            console.log('[DEBUG] populateTable data length:', data ? data.length : 'data is null/undefined');
+
+            if (!data || data.length === 0) {
+                console.log('[DEBUG] populateTable returning early - no data for:', tableId);
+                return;
+            }
+
             const table = document.getElementById(tableId);
             const thead = table.querySelector('thead');
             const tbody = table.querySelector('tbody');
+            console.log('[DEBUG] Found table elements - table:', !!table, 'thead:', !!thead, 'tbody:', !!tbody);
             
             // Special handling for summaryTable (transposed structure)
             if (tableId === 'summaryTable') {
@@ -1389,7 +1411,9 @@
                     });
                     return `<tr>${cells}</tr>`;
                 }).join('');
-                
+                console.log('[DEBUG] summaryTable tbody.innerHTML set, length:', tbody.innerHTML.length);
+                console.log('[DEBUG] summaryTable tbody.innerHTML preview:', tbody.innerHTML.substring(0, 200));
+
                 // Populate caption with metadata
                 if (metadata) {
                     const caption = document.getElementById('summaryTableCaption');

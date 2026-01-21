@@ -69,8 +69,13 @@ cloudbuild.yaml
 *.csv
 *.json.gz
 *.parquet
-data/
+/data/
 datasets/
+justdata/data/
+
+# Exclude electwatch cache and weekly data, but keep current
+justdata/apps/electwatch/data/cache/
+justdata/apps/electwatch/data/weekly/
 
 # Jupyter notebooks
 *.ipynb
