@@ -2335,26 +2335,48 @@ class WeeklyDataUpdate:
 
         Using percentile rank instead of Z-score for better distribution.
         Top performer = 100, bottom = 1, everyone else scaled proportionally.
+
+        IMPORTANT: Officials with 0 raw score (no financial activity) get score of 1.
+        Ties are handled by giving all tied officials the same percentile.
         """
-        # Get all raw scores and sort
-        raw_scores = [(i, o.get('involvement_score', 0)) for i, o in enumerate(self.officials_data)]
+        # Get all raw scores
+        raw_scores = [(i, o.get('involvement_score', 0) or 0) for i, o in enumerate(self.officials_data)]
 
         if len(raw_scores) < 2:
             # Not enough data to normalize
             return
 
-        # Sort by score to get ranks
-        sorted_scores = sorted(raw_scores, key=lambda x: x[1])
+        # Sort by score to get ranks (secondary sort by name for stability)
+        sorted_scores = sorted(raw_scores, key=lambda x: (x[1], self.officials_data[x[0]].get('name', '')))
         n = len(sorted_scores)
 
-        # Create rank lookup (index -> percentile rank)
+        # Create rank lookup with proper tie handling
+        # All officials with the same score get the same percentile
         rank_lookup = {}
+        current_rank = 0
+        prev_score = None
+        prev_percentile = None
+
         for rank, (idx, score) in enumerate(sorted_scores):
-            # Percentile rank: 1 for lowest, 100 for highest
-            percentile = round(((rank + 1) / n) * 99 + 1)
+            if score != prev_score:
+                # New score value - calculate new percentile
+                # Officials with 0 score get percentile 1 (minimum)
+                if score == 0:
+                    percentile = 1
+                else:
+                    percentile = round(((rank + 1) / n) * 99 + 1)
+                prev_score = score
+                prev_percentile = percentile
+            else:
+                # Same score as previous - use same percentile (tie handling)
+                percentile = prev_percentile
+
             rank_lookup[idx] = percentile
 
-        logger.info(f"Score normalization: {n} officials, percentile rank 1-100")
+        # Count officials with actual activity vs none
+        with_activity = sum(1 for i, s in raw_scores if s > 0)
+        without_activity = n - with_activity
+        logger.info(f"Score normalization: {n} officials ({with_activity} with activity, {without_activity} without)")
 
         # Apply percentile normalization to each official
         for i, official in enumerate(self.officials_data):

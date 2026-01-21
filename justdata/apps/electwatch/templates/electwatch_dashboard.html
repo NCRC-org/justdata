@@ -1722,6 +1722,44 @@
             gap: 12px;
         }
 
+        /* Secondary Navigation in Data Banner */
+        .secondary-nav {
+            display: flex;
+            gap: 4px;
+            background: transparent;
+            padding: 0;
+            border: none;
+        }
+
+        .secondary-nav .nav-tab {
+            padding: 8px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            border: none;
+            background: rgba(255,255,255,0.1);
+            color: rgba(255,255,255,0.85);
+            transition: all 0.2s ease;
+        }
+
+        .secondary-nav .nav-tab:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .secondary-nav .nav-tab.active {
+            background: var(--ncrc-gold);
+            color: #1e3a5f;
+            font-weight: 600;
+        }
+
+        .secondary-nav .nav-tab.admin-nav-tab {
+            border-left: 1px solid rgba(255,255,255,0.2);
+            margin-left: 4px;
+            padding-left: 14px;
+        }
+
         .data-freshness-main {
             display: flex;
             align-items: center;
@@ -2678,43 +2716,8 @@
                 </a>
             </div>
 
-            <!-- CENTER ZONE: Navigation Tabs -->
+            <!-- CENTER ZONE: Empty (nav moved to sub-header) -->
             <div class="header-center">
-                <nav class="nav-tabs">
-                    <button class="nav-tab active" data-panel="leaderboard">
-                        <i class="fas fa-trophy"></i>
-                        <span>Leaderboard</span>
-                    </button>
-                    <button class="nav-tab" data-panel="committees">
-                        <i class="fas fa-building-columns"></i>
-                        <span>Committees</span>
-                    </button>
-                    <button class="nav-tab" data-panel="industries">
-                        <i class="fas fa-industry"></i>
-                        <span>Industries</span>
-                    </button>
-                    <button class="nav-tab" data-panel="firms">
-                        <i class="fas fa-briefcase"></i>
-                        <span>Firms</span>
-                    </button>
-                    <button class="nav-tab" data-panel="insights">
-                        <i class="fas fa-brain"></i>
-                        <span>AI Insights</span>
-                    </button>
-                    <button class="nav-tab" data-panel="bills">
-                        <i class="fas fa-scroll"></i>
-                        <span>Bill Lookup</span>
-                    </button>
-                    <!-- Admin-only tabs (hidden by default, shown via JS for admin users) -->
-                    <button class="nav-tab admin-nav-tab" data-panel="matching" style="display: none;">
-                        <i class="fas fa-link"></i>
-                        <span>Matching</span>
-                    </button>
-                    <button class="nav-tab admin-nav-tab" data-panel="deduplicate" style="display: none;">
-                        <i class="fas fa-clone"></i>
-                        <span>Deduplicate</span>
-                    </button>
-                </nav>
             </div>
 
             <!-- RIGHT ZONE: User Menu -->
@@ -2784,18 +2787,37 @@
         </nav>
     </header>
 
-    <!-- Data Freshness Banner -->
+    <!-- Data Freshness Banner with Navigation -->
     <div class="data-freshness-banner">
         <div class="data-freshness-content">
-            <div class="data-freshness-main">
-                <div class="freshness-icon">
-                    <i class="fas fa-calendar-alt"></i>
-                </div>
-                <div class="freshness-text">
-                    <span class="freshness-label">Data Coverage Period</span>
-                    <span id="freshness-date" class="freshness-date">Loading...</span>
-                </div>
-            </div>
+            <!-- Navigation Tabs (moved here from header) -->
+            <nav class="nav-tabs secondary-nav">
+                <button class="nav-tab active" data-panel="leaderboard">
+                    <span>Leaderboard</span>
+                </button>
+                <button class="nav-tab" data-panel="committees">
+                    <span>Committees</span>
+                </button>
+                <button class="nav-tab" data-panel="industries">
+                    <span>Industries</span>
+                </button>
+                <button class="nav-tab" data-panel="firms">
+                    <span>Firms</span>
+                </button>
+                <button class="nav-tab" data-panel="insights">
+                    <span>AI Insights</span>
+                </button>
+                <button class="nav-tab" data-panel="bills">
+                    <span>Bill Lookup</span>
+                </button>
+                <!-- Admin-only tabs -->
+                <button class="nav-tab admin-nav-tab" data-panel="matching" style="display: none;">
+                    <span>Matching</span>
+                </button>
+                <button class="nav-tab admin-nav-tab" data-panel="deduplicate" style="display: none;">
+                    <span>Deduplicate</span>
+                </button>
+            </nav>
             <div class="data-sources">
                 <div class="data-source" onclick="showSourceInfo('fec')" title="Click for details">
                     <i class="fas fa-hand-holding-dollar"></i>
