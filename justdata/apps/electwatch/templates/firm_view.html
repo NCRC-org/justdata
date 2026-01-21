@@ -6,16 +6,36 @@
     <title>{{ firm_name }} | ElectWatch - NCRC JustData</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* ElectWatch Design System */
         :root {
-            --ncrc-primary-blue: #552d87;
-            --ncrc-justdata-blue: #1a8fc9;
-            --ncrc-gold: #ffc23a;
-            --ncrc-gray: #818390;
-            --ncrc-gray-light: #F5F5F5;
-            --ncrc-gray-dark: #333333;
-            --party-r: #dc2626;
-            --party-d: #2563eb;
-            --party-i: #7c3aed;
+            /* Primary Palette */
+            --ew-primary: #2D8659;
+            --ew-secondary: #3B5998;
+            --ew-accent: #D4A017;
+
+            /* Neutral Palette */
+            --ew-neutral-900: #1A1A2E;
+            --ew-neutral-700: #4A4A5A;
+            --ew-neutral-500: #8A8A9A;
+            --ew-neutral-200: #E5E5EA;
+            --ew-neutral-50: #F8F8FA;
+
+            /* Status Colors */
+            --ew-success: #28A745;
+            --ew-error: #DC3545;
+
+            /* Party Colors */
+            --party-r: #DC3545;
+            --party-d: #2563EB;
+            --party-i: #6B7280;
+
+            /* Legacy mappings */
+            --ncrc-primary-blue: var(--ew-secondary);
+            --ncrc-justdata-blue: var(--ew-primary);
+            --ncrc-gold: var(--ew-accent);
+            --ncrc-gray: var(--ew-neutral-500);
+            --ncrc-gray-light: var(--ew-neutral-50);
+            --ncrc-gray-dark: var(--ew-neutral-900);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,18 +49,36 @@
         }
 
         .header {
-            background: var(--ncrc-justdata-blue);
+            background: var(--ew-secondary);
             color: white;
-            padding: 16px 20px;
+            padding: 12px 24px;
         }
 
         .header-content {
             max-width: 1200px;
             margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
+            gap: 24px;
         }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo img { height: 36px; }
+        .logo-text h1 { font-size: 1.25rem; font-weight: 600; margin: 0; }
 
         .back-link {
             color: white;
@@ -49,9 +87,38 @@
             align-items: center;
             gap: 8px;
             opacity: 0.9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.15s;
         }
 
-        .back-link:hover { opacity: 1; }
+        .back-link:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Breadcrumbs */
+        .breadcrumbs {
+            padding: 8px 24px;
+            background: var(--ew-neutral-50);
+            border-bottom: 1px solid var(--ew-neutral-200);
+        }
+
+        .breadcrumbs-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--ew-neutral-500);
+        }
+
+        .breadcrumbs a { color: var(--ew-primary); text-decoration: none; }
+        .breadcrumbs a:hover { text-decoration: underline; }
+        .breadcrumbs .separator { color: var(--ew-neutral-200); }
+        .breadcrumbs .current { color: var(--ew-neutral-700); font-weight: 500; }
 
         .main-content {
             max-width: 1200px;
@@ -85,8 +152,13 @@
         }
 
         .firm-info { flex: 1; min-width: 200px; }
-        .firm-name { font-size: 1.75rem; font-weight: 700; color: var(--ncrc-gray-dark); }
-        .firm-ticker { display: inline-block; margin-left: 10px; padding: 4px 10px; background: var(--ncrc-gray-light); border-radius: 4px; font-size: 0.9rem; color: var(--ncrc-gray); font-weight: 600; }
+        .firm-name {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+        }
+        .firm-ticker { display: inline-block; margin-left: 10px; padding: 4px 10px; background: var(--ew-neutral-50); border-radius: 4px; font-size: 0.9rem; color: var(--ew-neutral-500); font-weight: 600; }
 
         .firm-meta {
             display: flex;
@@ -112,20 +184,23 @@
             flex-wrap: wrap;
         }
 
+        /* Industry Tags - Muted pastels */
         .industry-tag {
-            padding: 4px 12px;
-            border-radius: 16px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
-        .industry-tag.banking { background: #dbeafe; color: #1e40af; }
-        .industry-tag.crypto { background: #fef3c7; color: #d97706; }
-        .industry-tag.investment { background: #ede9fe; color: #7c3aed; }
-        .industry-tag.mortgage { background: #d1fae5; color: #059669; }
-        .industry-tag.insurance { background: #fee2e2; color: #dc2626; }
-        .industry-tag.fintech { background: #cffafe; color: #0891b2; }
-        .industry-tag.consumer_lending { background: #ffedd5; color: #c2410c; }
+        .industry-tag.banking { background: #e8f4fc; color: #1565c0; }
+        .industry-tag.crypto { background: #fcf8e8; color: #f57c00; }
+        .industry-tag.investment { background: #f3e8fc; color: #7b1fa2; }
+        .industry-tag.mortgage { background: #e8f0fc; color: #1976d2; }
+        .industry-tag.insurance { background: #e8fcf8; color: #00796b; }
+        .industry-tag.fintech { background: #fcf8e8; color: #f57c00; }
+        .industry-tag.consumer_lending { background: #fce8e8; color: #c62828; }
 
         /* Stats Row */
         .stats-row {
@@ -137,16 +212,18 @@
 
         .stat-card {
             background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            padding: 24px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--ew-neutral-200);
             text-align: center;
         }
 
         .stat-value {
-            font-size: 1.75rem;
+            font-size: 32px;
             font-weight: 700;
-            color: var(--ncrc-justdata-blue);
+            color: var(--ew-neutral-900);
+            font-variant-numeric: tabular-nums;
         }
 
         .stat-label {
@@ -620,13 +697,31 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <a href="/electwatch" class="back-link">
-                <i class="fas fa-arrow-left"></i>
-                Back to Dashboard
-            </a>
-            <span style="font-weight: 600;">Firm Analysis</span>
+            <div class="header-left">
+                <a href="/" class="logo">
+                    <img src="/static/img/justdata-logo.png" alt="JustData" onerror="this.style.display='none'">
+                    <div class="logo-text"><h1>ElectWatch</h1></div>
+                </a>
+            </div>
+            <div style="flex: 1;">
+                <a href="/electwatch/" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+            <div></div>
         </div>
     </header>
+
+    <nav class="breadcrumbs">
+        <div class="breadcrumbs-content">
+            <a href="/electwatch/">ElectWatch</a>
+            <span class="separator">›</span>
+            <a href="/electwatch/#firms">Firms</a>
+            <span class="separator">›</span>
+            <span id="breadcrumb-firm" class="current">{{ firm_name }}</span>
+        </div>
+    </nav>
 
     <main class="main-content">
         <div id="loading" class="loading">Loading firm data...</div>

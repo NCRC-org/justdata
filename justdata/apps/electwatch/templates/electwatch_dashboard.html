@@ -11,30 +11,65 @@
     <script src="https://unpkg.com/tippy.js@6"></script>
     <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/shift-away.css">
     <style>
-        /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
+        /* ========================================
+           ElectWatch Design System
+           ======================================== */
         :root {
-            --ncrc-primary-blue: #552d87;
-            --ncrc-secondary-blue: #2fade3;
-            --ncrc-accent-red: #e82e2e;
-            --ncrc-pink: #eb2f89;
-            --ncrc-justdata-blue: #1a8fc9;
-            --ncrc-dark-blue: #1a8fc9;
-            --ncrc-light-blue: #E6F2FF;
-            --ncrc-gold: #ffc23a;
-            --ncrc-purple: #552d87;
-            --ncrc-gray: #818390;
-            --ncrc-white: #FFFFFF;
-            --ncrc-black: #000000;
-            --ncrc-gray-light: #F5F5F5;
-            --ncrc-gray-dark: #333333;
+            /* Primary Palette */
+            --ew-primary: #2D8659;          /* NCRC Green - primary actions, links */
+            --ew-secondary: #3B5998;        /* Slate Blue - secondary buttons, headers */
+            --ew-accent: #D4A017;           /* Gold - AI content, special callouts */
 
-            /* Additional colors for data visualization */
-            --party-r: #dc2626;
-            --party-d: #2563eb;
-            --party-i: #6b7280;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            /* Neutral Palette */
+            --ew-neutral-900: #1A1A2E;      /* Near Black - headings */
+            --ew-neutral-700: #4A4A5A;      /* Dark Gray - body text */
+            --ew-neutral-500: #8A8A9A;      /* Medium Gray - secondary text */
+            --ew-neutral-200: #E5E5EA;      /* Light Gray - borders */
+            --ew-neutral-50: #F8F8FA;       /* Off-White - backgrounds */
+
+            /* Status Colors */
+            --ew-error: #DC3545;            /* Red - errors, sell */
+            --ew-success: #28A745;          /* Green - success, buy */
+            --ew-warning: #F59E0B;          /* Amber - warnings */
+
+            /* Industry Category Colors (max 4) */
+            --ew-industry-banking: #3B82F6;     /* Blue - Banking/Depository */
+            --ew-industry-investment: #8B5CF6;  /* Purple - Investment/Securities */
+            --ew-industry-insurance: #14B8A6;   /* Teal - Insurance */
+            --ew-industry-other: #6B7280;       /* Gray - All Other Financial */
+
+            /* Party Colors */
+            --party-r: #DC3545;
+            --party-d: #2563EB;
+            --party-i: #6B7280;
+
+            /* Spacing System (8px base) */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --space-xxl: 48px;
+
+            /* Typography */
+            --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-size-xs: 12px;
+            --font-size-sm: 14px;
+            --font-size-md: 16px;
+            --font-size-lg: 18px;
+            --font-size-xl: 24px;
+
+            /* Legacy mappings for compatibility */
+            --ncrc-primary-blue: var(--ew-secondary);
+            --ncrc-justdata-blue: var(--ew-primary);
+            --ncrc-dark-blue: var(--ew-secondary);
+            --ncrc-gold: var(--ew-accent);
+            --ncrc-gray: var(--ew-neutral-500);
+            --ncrc-gray-light: var(--ew-neutral-50);
+            --ncrc-gray-dark: var(--ew-neutral-900);
+            --success: var(--ew-success);
+            --warning: var(--ew-warning);
+            --danger: var(--ew-error);
         }
 
         * {
@@ -44,39 +79,295 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--ncrc-gray-light);
-            color: var(--ncrc-gray-dark);
+            font-family: var(--font-family);
+            font-size: var(--font-size-sm);
+            background: var(--ew-neutral-50);
+            color: var(--ew-neutral-700);
             min-height: 100vh;
             line-height: 1.6;
         }
 
-        /* Header */
+        /* Typography Hierarchy - ProPublica-inspired with serif headlines */
+        .page-title {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+            margin-bottom: 8px;
+        }
+        .section-header {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+        }
+        .card-title {
+            font-size: var(--font-size-md);
+            font-weight: 600;
+            color: var(--ew-neutral-900);
+        }
+        .body-text {
+            font-size: var(--font-size-sm);
+            color: var(--ew-neutral-700);
+        }
+        .secondary-text {
+            font-size: var(--font-size-xs);
+            color: var(--ew-neutral-500);
+        }
+
+        /* Tabular numbers for data alignment */
+        .numeric, .money, .percentage {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Entity Link Styles - Clickable entities throughout the app */
+        .entity-link {
+            color: var(--ew-primary);
+            text-decoration: none;
+            cursor: pointer;
+            transition: color 0.15s ease;
+        }
+        .entity-link:hover {
+            color: var(--ew-secondary);
+            text-decoration: underline;
+        }
+        .entity-official {
+            font-weight: 500;
+        }
+        .entity-firm {
+            font-weight: 500;
+        }
+        .entity-committee {
+            font-weight: 500;
+        }
+        .entity-bill {
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+
+        /* Party Badge */
+        .party-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+        }
+        .party-badge.party-r {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--party-r);
+        }
+        .party-badge.party-d {
+            background: rgba(37, 99, 235, 0.1);
+            color: var(--party-d);
+        }
+        .party-badge.party-i {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--party-i);
+        }
+
+        /* Industry Category Tags */
+        .industry-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: var(--font-size-xs);
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+        .industry-tag:hover {
+            opacity: 0.8;
+        }
+        .industry-tag.banking {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--ew-industry-banking);
+            border-left: 3px solid var(--ew-industry-banking);
+        }
+        .industry-tag.investment {
+            background: rgba(139, 92, 246, 0.1);
+            color: var(--ew-industry-investment);
+            border-left: 3px solid var(--ew-industry-investment);
+        }
+        .industry-tag.insurance {
+            background: rgba(20, 184, 166, 0.1);
+            color: var(--ew-industry-insurance);
+            border-left: 3px solid var(--ew-industry-insurance);
+        }
+        .industry-tag.other {
+            background: rgba(107, 114, 128, 0.1);
+            color: var(--ew-industry-other);
+            border-left: 3px solid var(--ew-industry-other);
+        }
+
+        /* Header - Three Zone Layout */
         .header {
-            background: var(--ncrc-justdata-blue);
+            background: var(--ew-secondary);
             color: white;
-            padding: 20px;
+            padding: var(--space-md) var(--space-lg);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .header-content {
             max-width: 1400px;
             margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+            gap: var(--space-lg);
+        }
+
+        /* Left Zone: Logo + Title */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: var(--space-sm);
+            text-decoration: none;
+            color: inherit;
         }
 
         .logo img {
-            height: 50px;
+            height: 40px;
+        }
+
+        .logo-text h1 {
+            font-size: var(--font-size-lg);
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .logo-text .tagline {
+            font-size: var(--font-size-xs);
+            opacity: 0.85;
+        }
+
+        /* Center Zone: Navigation Tabs */
+        .header-center {
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Right Zone: User Menu */
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        /* User Avatar Dropdown */
+        .user-menu {
+            position: relative;
+        }
+
+        .user-avatar-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 24px;
+            padding: 4px 12px 4px 4px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .user-avatar-btn:hover {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .user-avatar-btn img {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+        }
+
+        .user-avatar-btn .user-name {
+            font-size: var(--font-size-xs);
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: var(--space-sm);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown.open,
+        .user-dropdown.active {
+            display: block;
+        }
+
+        .user-dropdown-header {
+            padding: var(--space-md);
+            border-bottom: 1px solid var(--ew-neutral-200);
+        }
+
+        .user-dropdown-email {
+            font-size: var(--font-size-sm);
+            color: var(--ew-neutral-900);
+            font-weight: 500;
+        }
+
+        .user-dropdown-badge {
+            display: inline-block;
+            margin-top: var(--space-xs);
+            padding: 2px 8px;
+            background: var(--ew-primary);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .user-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            color: var(--ew-neutral-700);
+            text-decoration: none;
+            font-size: var(--font-size-sm);
+            transition: background 0.15s ease;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .user-dropdown-item:hover {
+            background: var(--ew-neutral-50);
+        }
+
+        .user-dropdown-item.admin-only {
+            color: var(--ew-accent);
+        }
+
+        .user-dropdown-divider {
+            height: 1px;
+            background: var(--ew-neutral-200);
+            margin: var(--space-xs) 0;
         }
 
         .logo-text h1 {
@@ -91,47 +382,53 @@
             margin-top: 2px;
         }
 
-        /* Navigation Tabs */
+        /* Navigation Tabs - Centered in Header */
+        /* Navigation Tabs - ProPublica-inspired clean underline style */
         .nav-tabs {
             display: flex;
-            gap: 4px;
-            background: rgba(255,255,255,0.15);
-            padding: 4px;
-            border-radius: 8px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+            gap: 0;
+            background: transparent;
+            padding: 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
 
         .nav-tab {
-            padding: 10px 16px;
-            border-radius: 6px;
+            padding: 14px 20px;
+            border-radius: 0;
             cursor: pointer;
             white-space: nowrap;
-            transition: all 0.2s;
-            font-size: 0.9rem;
+            transition: all 0.15s ease;
+            font-size: 14px;
             font-weight: 500;
             border: none;
             background: transparent;
-            color: white;
-            opacity: 0.8;
+            color: rgba(255,255,255,0.75);
             display: flex;
             align-items: center;
             gap: 6px;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -1px;
         }
 
         .nav-tab:hover {
-            opacity: 1;
-            background: rgba(255,255,255,0.15);
+            color: white;
+            background: transparent;
         }
 
         .nav-tab.active {
-            background: white;
-            color: var(--ncrc-justdata-blue);
-            opacity: 1;
+            background: transparent;
+            color: white;
+            font-weight: 600;
+            border-bottom-color: white;
         }
 
         .nav-tab i {
             font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .nav-tab.active i {
+            opacity: 1;
         }
 
         /* Main Content */
@@ -432,14 +729,29 @@
 
         .official-name {
             font-weight: 600;
-            color: var(--ncrc-justdata-blue);
+            color: var(--ew-primary);
             cursor: pointer;
             text-decoration: none;
+            transition: color 0.15s ease;
         }
 
         .official-name:hover {
             text-decoration: underline;
-            color: var(--ncrc-primary-blue);
+            color: var(--ew-secondary);
+        }
+
+        /* Firm name links in tables */
+        .firm-name {
+            font-weight: 600;
+            color: var(--ew-primary);
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 0.15s ease;
+        }
+
+        .firm-name:hover {
+            text-decoration: underline;
+            color: var(--ew-secondary);
         }
 
         .official-meta {
@@ -490,36 +802,39 @@
         .score-badge.low { background: #d1fae5; color: #059669; }
 
         /* Header Group Row */
+        /* Table Header - ProPublica-inspired clean design */
         .header-group-row th {
-            background: var(--ncrc-justdata-blue);
-            color: white;
+            background: var(--ew-neutral-50);
+            color: var(--ew-neutral-700);
             padding: 10px 12px;
-            font-size: 0.85rem;
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
-            border-bottom: 3px solid var(--ncrc-gold);
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            border-bottom: 1px solid var(--ew-neutral-200);
         }
 
         .header-group-row th.financial-sector-group {
             text-align: center;
+            color: var(--ew-secondary);
         }
 
-        /* Financial sector column styling - emphasize these columns belong to the Financial Sector header */
+        /* Financial sector column styling - subtle highlight */
         .leaderboard-table th.financial-sector-col {
-            background: #e6f4f9;  /* Light blue tint matching Financial Sector header */
-            white-space: nowrap;  /* Prevent header text and sort icon from wrapping */
+            background: #fafbfc;
+            white-space: nowrap;
         }
 
         .leaderboard-table th.financial-sector-col:hover {
-            background: #d4ecf5;
+            background: #f0f4f8;
         }
 
         .header-group-row .header-tooltip {
-            color: white;
+            color: var(--ew-secondary);
         }
 
         .header-group-row .tooltip-icon {
-            background: rgba(255,255,255,0.2);
+            background: var(--ew-neutral-200);
             color: white;
         }
 
@@ -530,21 +845,28 @@
             flex-wrap: wrap;
         }
 
+        /* Industry Tags - Muted pastels (ProPublica-inspired) */
         .industry-chip {
-            padding: 2px 8px;
-            border-radius: 9999px;
-            font-size: 0.625rem;
-            font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 500;
             text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
 
-        .industry-chip.banking { background: #dbeafe; color: #1e40af; }
-        .industry-chip.crypto { background: #fef3c7; color: #d97706; }
-        .industry-chip.investment { background: #ede9fe; color: #7c3aed; }
-        .industry-chip.mortgage { background: #d1fae5; color: #059669; }
-        .industry-chip.insurance { background: #fee2e2; color: #dc2626; }
-        .industry-chip.fintech { background: #cffafe; color: #0891b2; }
-        .industry-chip.consumer_lending { background: #ffedd5; color: #c2410c; }
+        /* Muted color palette - subtle, professional */
+        .industry-chip.banking { background: #e8f4fc; color: #1565c0; }
+        .industry-chip.crypto { background: #fcf8e8; color: #f57c00; }
+        .industry-chip.investment { background: #f3e8fc; color: #7b1fa2; }
+        .industry-chip.mortgage { background: #e8f0fc; color: #1976d2; }
+        .industry-chip.insurance { background: #e8fcf8; color: #00796b; }
+        .industry-chip.fintech { background: #fcf8e8; color: #f57c00; }
+        .industry-chip.consumer_lending { background: #fce8e8; color: #c62828; }
+        .industry-chip.consumer { background: #fce8e8; color: #c62828; }
+
+        /* Default/fallback */
+        .industry-chip:not([class*=" "]) { background: #f0f0f0; color: #555; }
 
         /* Trend Cell */
         .trend-cell {
@@ -590,21 +912,23 @@
             border-radius: 9999px;
             font-size: 0.7rem;
             font-weight: 500;
-            background: var(--ncrc-primary-blue);
+            background: var(--ew-secondary);
             color: white;
-            cursor: help;
+            cursor: pointer;
             white-space: nowrap;
-            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
         }
 
         .donor-chip:hover {
             transform: scale(1.05);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            background: var(--ew-primary);
         }
 
         .donor-chip.has-overlap {
-            background: linear-gradient(135deg, var(--ncrc-primary-blue), var(--ncrc-orange));
-            border: 1px solid var(--ncrc-orange);
+            background: linear-gradient(135deg, var(--ew-secondary), var(--ew-accent));
+            border: 1px solid var(--ew-accent);
         }
 
         /* AI Insights Panel */
@@ -1143,11 +1467,15 @@
             .header-content {
                 flex-direction: column;
                 align-items: stretch;
-                text-align: center;
+            }
+
+            /* Keep auth controls right-aligned on mobile */
+            .header-content > div:first-child {
+                justify-content: space-between !important;
             }
 
             .logo {
-                justify-content: center;
+                justify-content: flex-start;
             }
 
             .nav-tabs {
@@ -1291,8 +1619,9 @@
         }
 
         .source-date {
-            opacity: 0.8;
+            opacity: 0.9;
             font-size: 0.75rem;
+            white-space: nowrap;
         }
 
         .source-status {
@@ -2162,57 +2491,109 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header - Three Zone Layout -->
     <header class="header">
         <div class="header-content">
-            <a href="/" class="logo" style="text-decoration: none; color: inherit;" aria-label="Return to JustData Home">
-                <img src="/static/img/justdata-logo.png" alt="JustData Logo" onerror="this.src='{{ url_for('electwatch.static', filename='img/ncrc-logo.png') }}'">
-                <div class="logo-text">
-                    <h1>ElectWatch</h1>
-                    <div class="tagline">Financial Influence Monitor • A JustData Tool</div>
-                </div>
-            </a>
-            <nav class="nav-tabs">
-                <button class="nav-tab active" data-panel="leaderboard">
-                    <i class="fas fa-trophy"></i>
-                    <span>Leaderboard</span>
-                </button>
-                <button class="nav-tab" data-panel="committees">
-                    <i class="fas fa-building-columns"></i>
-                    <span>Committees</span>
-                </button>
-                <button class="nav-tab" data-panel="industries">
-                    <i class="fas fa-industry"></i>
-                    <span>Industries</span>
-                </button>
-                <button class="nav-tab" data-panel="firms">
-                    <i class="fas fa-briefcase"></i>
-                    <span>Firms</span>
-                </button>
-                <button class="nav-tab" data-panel="insights">
-                    <i class="fas fa-brain"></i>
-                    <span>AI Insights</span>
-                </button>
-                <button class="nav-tab" data-panel="bills">
-                    <i class="fas fa-scroll"></i>
-                    <span>Bill Lookup</span>
-                </button>
-                {% if is_staff %}
-                <div class="nav-admin-buttons">
-                    <button id="refreshDataBtn" class="nav-tab nav-admin-btn" title="Refresh data from all sources" onclick="refreshElectWatchData()">
-                        <i class="fas fa-sync-alt"></i>
-                        <span>Refresh Data</span>
+            <!-- LEFT ZONE: Logo + Title -->
+            <div class="header-left">
+                <a href="/" class="logo" aria-label="Return to JustData Home">
+                    <img src="/static/img/justdata-logo.png" alt="JustData" onerror="this.style.display='none'">
+                    <div class="logo-text">
+                        <h1>ElectWatch</h1>
+                    </div>
+                </a>
+            </div>
+
+            <!-- CENTER ZONE: Navigation Tabs -->
+            <div class="header-center">
+                <nav class="nav-tabs">
+                    <button class="nav-tab active" data-panel="leaderboard">
+                        <i class="fas fa-trophy"></i>
+                        <span>Leaderboard</span>
                     </button>
-                    {% if is_admin %}
-                    <button class="nav-tab nav-admin-btn" data-panel="admin">
-                        <i class="fas fa-cog"></i>
-                        <span>Data Mapper</span>
+                    <button class="nav-tab" data-panel="committees">
+                        <i class="fas fa-building-columns"></i>
+                        <span>Committees</span>
                     </button>
-                    {% endif %}
+                    <button class="nav-tab" data-panel="industries">
+                        <i class="fas fa-industry"></i>
+                        <span>Industries</span>
+                    </button>
+                    <button class="nav-tab" data-panel="firms">
+                        <i class="fas fa-briefcase"></i>
+                        <span>Firms</span>
+                    </button>
+                    <button class="nav-tab" data-panel="insights">
+                        <i class="fas fa-brain"></i>
+                        <span>AI Insights</span>
+                    </button>
+                    <button class="nav-tab" data-panel="bills">
+                        <i class="fas fa-scroll"></i>
+                        <span>Bill Lookup</span>
+                    </button>
+                </nav>
+            </div>
+
+            <!-- RIGHT ZONE: User Menu -->
+            <div class="header-right">
+                <!-- Login Button (shown when NOT logged in) -->
+                <button id="loginBtn" onclick="JustDataAuth.signInWithGoogle()" class="user-avatar-btn">
+                    <i class="fab fa-google"></i>
+                    <span class="user-name">Sign In</span>
+                </button>
+
+                <!-- User Avatar Dropdown (shown when logged in) -->
+                <div id="userMenu" class="user-menu" style="display: none;">
+                    <button class="user-avatar-btn" onclick="toggleUserDropdown()">
+                        <img id="userAvatar" src="" alt="" onerror="this.style.display='none'">
+                        <span id="userDisplayName" class="user-name"></span>
+                        <i class="fas fa-chevron-down" style="font-size: 10px; opacity: 0.7;"></i>
+                    </button>
+                    <div id="userDropdown" class="user-dropdown">
+                        <div class="user-dropdown-header">
+                            <div id="userDropdownEmail" class="user-dropdown-email"></div>
+                            <span id="userDropdownBadge" class="user-dropdown-badge"></span>
+                        </div>
+                        {% if is_staff %}
+                        <button class="user-dropdown-item" onclick="refreshElectWatchData(); toggleUserDropdown();">
+                            <i class="fas fa-sync-alt"></i>
+                            Refresh Data
+                        </button>
+                        {% endif %}
+                        {% if is_admin %}
+                        <button class="user-dropdown-item admin-only" onclick="switchToPanel('admin'); toggleUserDropdown();">
+                            <i class="fas fa-cog"></i>
+                            Data Mapper
+                        </button>
+                        {% endif %}
+                        <div class="user-dropdown-divider"></div>
+                        <a href="/" class="user-dropdown-item">
+                            <i class="fas fa-th-large"></i>
+                            All JustData Apps
+                        </a>
+                        <div class="user-dropdown-divider"></div>
+                        <button id="logoutBtn" class="user-dropdown-item" onclick="JustDataAuth.signOut()">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Sign Out
+                        </button>
+                    </div>
                 </div>
-                {% endif %}
-            </nav>
+
+                <!-- Hamburger Menu for Mobile -->
+                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="display: none; background: none; border: none; cursor: pointer; padding: 8px;">
+                    <i class="fas fa-bars" style="font-size: 20px; color: white;"></i>
+                </button>
+            </div>
         </div>
+
+        <!-- Mobile Nav Menu (hidden by default) -->
+        <nav id="navMenu" class="app-nav-dropdown" style="display: none; position: absolute; top: 100%; right: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 8px; min-width: 220px; z-index: 1000;">
+            <a href="/" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px;"></i>Home</a>
+            <a href="/lendsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px;"></i>LendSight</a>
+            <a href="/bizsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px;"></i>BizSight</a>
+            <a href="/branchsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px;"></i>BranchSight</a>
+            <a href="/dataexplorer" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-search" style="margin-right: 10px;"></i>DataExplorer</a>
+        </nav>
     </header>
 
     <!-- Data Freshness Banner -->
@@ -2304,8 +2685,9 @@
         <!-- Leaderboard Panel -->
         <div id="leaderboard" class="panel active">
             <div class="card">
-                <div class="card-header">
-                    <h2><i class="fas fa-ranking-star"></i> Officials by Financial Involvement</h2>
+                <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                    <h2 class="page-title" style="margin: 0;">Officials by Financial Involvement</h2>
+                    <p class="secondary-text" style="margin: 0;">Campaign contributions and stock trades by members of Congress in financial sector companies</p>
                     <div class="filters">
                         <input type="text" class="search-input" id="search-official" placeholder="Search by name...">
                         <select class="filter-select" id="filter-chamber">
@@ -2332,7 +2714,7 @@
                         <thead>
                             <!-- Group header row -->
                             <tr class="header-group-row">
-                                <th colspan="3"></th>
+                                <th colspan="4"></th>
                                 <th colspan="5" class="financial-sector-group">
                                     <span class="header-tooltip">
                                         <i class="fas fa-landmark"></i> Financial Sector Involvement
@@ -2352,7 +2734,6 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th></th>
                             </tr>
                             <!-- Column headers -->
                             <tr>
@@ -2364,6 +2745,17 @@
                                         <span class="tooltip-content">
                                             Members of Congress ranked by financial sector involvement score.
                                             <span class="tooltip-source">Source: Congress.gov</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th style="width: 180px;">
+                                    <span class="header-tooltip">
+                                        Top Donors
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Top contributing companies (PAC + employee contributions combined).<br>
+                                            Hover for details including stock overlap.
+                                            <span class="tooltip-source">Method: Aggregated by company</span>
                                         </span>
                                     </span>
                                 </th>
@@ -2426,17 +2818,6 @@
                                         <span class="tooltip-content">
                                             Stock SALES in finance/housing companies (24 months).
                                             <span class="tooltip-source">Source: STOCK Act disclosures</span>
-                                        </span>
-                                    </span>
-                                </th>
-                                <th style="width: 180px;">
-                                    <span class="header-tooltip">
-                                        Top Donors
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            Top contributing companies (PAC + employee contributions combined).<br>
-                                            Hover for details including stock overlap.
-                                            <span class="tooltip-source">Method: Aggregated by company</span>
                                         </span>
                                     </span>
                                 </th>
@@ -2981,9 +3362,21 @@
 
                     <!-- Merge Officials Panel -->
                     <div id="admin-merge-officials" class="admin-panel active">
+                        <!-- Potential Duplicates Section -->
                         <div class="admin-section">
-                            <h3><i class="fas fa-user-check"></i> Merge Duplicate Officials</h3>
-                            <p class="admin-description">When the same official appears under different names (e.g., "Ted Cruz" and "Rafael Cruz"), merge them into one canonical record.</p>
+                            <h3><i class="fas fa-user-friends"></i> Potential Duplicate Officials</h3>
+                            <p class="admin-description">Officials with the same last name that may be the same person under different name formats (e.g., "Rick Allen" vs "Allen, Rick"). Review each pair and confirm whether they're the same or different people.</p>
+
+                            <div id="potential-duplicates-container" style="margin-top: 15px;">
+                                <div class="loading">Loading potential duplicates...</div>
+                            </div>
+
+                            <div id="duplicates-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section" style="border-top: 1px solid var(--ncrc-gray-light); padding-top: 20px; margin-top: 20px;">
+                            <h3><i class="fas fa-user-check"></i> Manual Merge (Advanced)</h3>
+                            <p class="admin-description">Manually merge officials when the same person appears under different names (e.g., "Ted Cruz" and "Rafael Cruz").</p>
 
                             <div class="mapping-form">
                                 <div class="form-group">
@@ -3418,6 +3811,11 @@
                             </div>
                         </div>
                     </td>
+                    <td>
+                        <div class="donor-chips">
+                            ${formatTopDonors(official)}
+                        </div>
+                    </td>
                     <td class="trend-cell">
                         ${formatTrendCell(official)}
                     </td>
@@ -3435,11 +3833,6 @@
                     </td>
                     <td class="amount-cell">
                         <div class="sub sell-amount">${official.sales_display || formatTradeAmount(official.sales_min, official.sales_max)}</div>
-                    </td>
-                    <td>
-                        <div class="donor-chips">
-                            ${formatTopDonors(official)}
-                        </div>
                     </td>
                 </tr>
             `).join('');
@@ -3555,16 +3948,39 @@
         }
 
         function formatTrendCell(official) {
-            // Format trend cell with contribution % trend and stock activity indicator
-            // Uses fields from enrich_officials_with_trends:
-            // - finance_trend_direction: 'increasing', 'decreasing', 'stable'
-            // - finance_trend_arrow: '▲', '▼', '►'
-            // - finance_pct_change: numeric change
-            // - stock_trend_direction: 'buyer', 'seller', 'neutral'
-            // - stock_trend_icon: '◆', '◇', '○'
+            // Format trend cell with trading trend and stock activity indicator
+            // Uses BOTH time-series data (trades_by_quarter) and snapshot data (finance_trend)
 
-            const trendDirection = official.finance_trend_direction || 'stable';
-            const trendArrow = official.finance_trend_arrow || '►';
+            // PRIMARY: Use time-series trade trend if available
+            const tradeTrend = official.trade_trend || 'stable';
+            const hasTrendData = official.has_trend_data || false;
+
+            // FALLBACK: Use finance_trend_direction from weekly snapshots
+            const financeTrend = official.finance_trend_direction || 'stable';
+
+            // Determine which trend to display (prioritize actual trade data)
+            let trendDirection = hasTrendData ? tradeTrend : financeTrend;
+            let trendArrow = '►';  // stable default
+
+            // For time-series trade data, use arrow based on recent activity
+            if (hasTrendData) {
+                const tradesByQuarter = official.trades_by_quarter || [];
+                if (tradesByQuarter.length >= 2) {
+                    const recent = tradesByQuarter.slice(-2);
+                    const recentNet = recent.reduce((sum, q) => sum + (q.net || 0), 0);
+                    if (recentNet > 10000) {
+                        trendDirection = 'increasing';
+                        trendArrow = '▲';
+                    } else if (recentNet < -10000) {
+                        trendDirection = 'decreasing';
+                        trendArrow = '▼';
+                    }
+                }
+            } else {
+                // Use snapshot-based arrows
+                trendArrow = official.finance_trend_arrow || '►';
+            }
+
             const stockDirection = official.stock_trend_direction || 'neutral';
             const stockIcon = official.stock_trend_icon || '';
 
@@ -3583,7 +3999,7 @@
 
             return `
                 <div class="trend-indicators" data-tippy-content="${tooltipContent.replace(/"/g, '&quot;')}">
-                    <span class="trend-arrow ${trendClass}" title="Finance % trend">${trendArrow}</span>
+                    <span class="trend-arrow ${trendClass}" title="${hasTrendData ? 'Trading trend' : 'Finance % trend'}">${trendArrow}</span>
                     ${stockIcon && stockDirection !== 'neutral' ? `<span class="stock-indicator ${stockClass}" title="${official.net_stock_label || 'Stock activity'}">${stockIcon}</span>` : ''}
                 </div>
             `;
@@ -3592,19 +4008,31 @@
         function buildTrendTooltip(official) {
             const parts = [];
 
-            // Finance % trend info
+            // NEW: Time-series trade data by quarter
+            const tradesByQuarter = official.trades_by_quarter || [];
+            if (tradesByQuarter.length > 0) {
+                parts.push('<strong>Recent Trading Activity:</strong>');
+                // Show last 4 quarters
+                const recentQuarters = tradesByQuarter.slice(-4);
+                recentQuarters.forEach(q => {
+                    const net = q.net >= 0 ? `+$${formatK(q.net)}` : `-$${formatK(Math.abs(q.net))}`;
+                    const direction = q.net > 0 ? '(buying)' : q.net < 0 ? '(selling)' : '';
+                    parts.push(`&nbsp;&nbsp;${q.quarter}: ${net} ${direction}`);
+                });
+            }
+
+            // Trade trend indicator
+            const tradeTrend = official.trade_trend || 'stable';
+            if (tradeTrend !== 'stable') {
+                const trendIcon = tradeTrend === 'increasing' ? '↑' : '↓';
+                parts.push(`<strong>Trading Trend:</strong> ${trendIcon} ${tradeTrend}`);
+            }
+
+            // Finance % trend info (from weekly snapshots)
             const pctChange = official.finance_pct_change;
             if (pctChange !== undefined && pctChange !== 0) {
                 const changeDir = pctChange > 0 ? '+' : '';
                 parts.push(`<strong>Finance % Change:</strong> ${changeDir}${pctChange.toFixed(1)}%`);
-            }
-
-            // Trend history
-            const history = official.finance_pct_trend || [];
-            if (history.length > 1) {
-                parts.push(`<strong>History:</strong> ${history.length} periods of data`);
-            } else {
-                parts.push('<em>Trend data will accumulate over time</em>');
             }
 
             // Stock activity summary
@@ -3613,7 +4041,22 @@
                 parts.push(`<strong>Stock Position:</strong> ${netLabel}`);
             }
 
+            // If no trend data at all
+            if (tradesByQuarter.length <= 1 && !pctChange) {
+                parts.push('<em>Trend data accumulates over time</em>');
+            }
+
             return parts.join('<br>');
+        }
+
+        // Helper for tooltip formatting
+        function formatK(amount) {
+            if (Math.abs(amount) >= 1000000) {
+                return `${(amount / 1000000).toFixed(1)}M`;
+            } else if (Math.abs(amount) >= 1000) {
+                return `${Math.round(amount / 1000)}K`;
+            }
+            return Math.round(amount).toLocaleString();
         }
 
         function formatTotalContributions(official) {
@@ -3682,9 +4125,10 @@
                 tooltip += `Total: ${formatDollars(amount)}`;
                 if (donor.pac_amount) tooltip += `<br>PAC: ${formatDollars(donor.pac_amount)}`;
                 if (donor.individual_amount) tooltip += `<br>Individual: ${formatDollars(donor.individual_amount)}`;
-                if (hasOverlap) tooltip += `<br><span style="color: var(--ncrc-orange);">⚠ Also trades their stock</span>`;
+                if (hasOverlap) tooltip += `<br><span style="color: var(--ew-accent);">⚠ Also trades their stock</span>`;
+                tooltip += `<br><em>Click to view firm details</em>`;
 
-                return `<span class="donor-chip ${overlapClass}" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}">${truncateName(name)}</span>`;
+                return `<a href="firm/${encodeURIComponent(name)}" class="donor-chip ${overlapClass}" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();">${truncateName(name)}</a>`;
             }).join('');
         }
 
@@ -3989,28 +4433,55 @@
             const statusEl = document.getElementById(`${prefix}-status`);
 
             if (source && source.timestamp) {
-                // Parse timestamp and format as readable date
+                // Parse timestamp and format as readable date with year
                 const timestamp = new Date(source.timestamp);
-                const options = { month: 'short', day: 'numeric' };
-                dateEl.textContent = timestamp.toLocaleDateString('en-US', options);
+                const options = { month: 'short', day: 'numeric', year: 'numeric' };
+                let displayText = timestamp.toLocaleDateString('en-US', options);
+
+                // Add record count if available
+                if (source.records && source.records > 0) {
+                    displayText = `${displayText} (${source.records.toLocaleString()} records)`;
+                }
+                dateEl.textContent = displayText;
 
                 // Calculate days since update
                 const now = new Date();
                 const daysSince = Math.floor((now - timestamp) / (1000 * 60 * 60 * 24));
 
+                // Build detailed tooltip
+                let tooltipParts = [];
+                const fullDateOptions = { month: 'long', day: 'numeric', year: 'numeric' };
+                tooltipParts.push(`Updated: ${timestamp.toLocaleDateString('en-US', fullDateOptions)}`);
+                if (source.records && source.records > 0) {
+                    tooltipParts.push(`Records: ${source.records.toLocaleString()}`);
+                }
+
                 statusEl.classList.remove('stale', 'old');
                 if (daysSince > 14) {
                     statusEl.classList.add('old');
-                    statusEl.title = `Data is ${daysSince} days old - may need refresh`;
+                    tooltipParts.push(`Data is ${daysSince} days old - may need refresh`);
                 } else if (daysSince > 7) {
                     statusEl.classList.add('stale');
-                    statusEl.title = `Data is ${daysSince} days old`;
+                    tooltipParts.push(`Data is ${daysSince} days old`);
                 } else {
-                    statusEl.title = 'Data is current';
+                    tooltipParts.push('Data is current');
                 }
+                statusEl.title = tooltipParts.join('\n');
             } else if (source && source.date) {
                 // Fallback if pre-formatted date is provided
-                dateEl.textContent = source.date;
+                let displayText = source.date;
+                if (source.records && source.records > 0) {
+                    displayText = `${source.date} (${source.records.toLocaleString()} records)`;
+                }
+                dateEl.textContent = displayText;
+
+                // Build tooltip for fallback case
+                if (source.date_full || source.records) {
+                    let tooltipParts = [];
+                    if (source.date_full) tooltipParts.push(`Updated: ${source.date_full}`);
+                    if (source.records) tooltipParts.push(`Records: ${source.records.toLocaleString()}`);
+                    statusEl.title = tooltipParts.join('\n');
+                }
             }
         }
 
@@ -4142,12 +4613,12 @@
             }
 
             tbody.innerHTML = firms.map((firm, index) => `
-                <tr style="cursor: pointer;" onclick="window.location='firm/${encodeURIComponent(firm.name)}'">
+                <tr>
                     <td class="rank">${index + 1}</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-weight: 600; color: var(--ncrc-justdata-blue);">${firm.name}</span>
-                            ${firm.ticker ? `<span style="font-size: 0.75rem; color: var(--ncrc-gray); background: var(--ncrc-gray-light); padding: 2px 6px; border-radius: 4px;">${firm.ticker}</span>` : ''}
+                            <a href="firm/${encodeURIComponent(firm.name)}" class="firm-name">${firm.name}</a>
+                            ${firm.ticker ? `<span style="font-size: 0.75rem; color: var(--ew-neutral-500); background: var(--ew-neutral-50); padding: 2px 6px; border-radius: 4px;">${firm.ticker}</span>` : ''}
                         </div>
                     </td>
                     <td>
@@ -4424,8 +4895,9 @@
                     aliasSelect.innerHTML += `<option value="${official.name}">${displayName}</option>`;
                 });
 
-                // Load existing merges
+                // Load existing merges and potential duplicates
                 loadExistingMerges();
+                loadPotentialDuplicates();
 
             } catch (error) {
                 console.error('Error loading officials for admin:', error);
@@ -4575,6 +5047,118 @@
                 }
             } catch (error) {
                 console.error('Error deleting merge:', error);
+            }
+        }
+
+        // Load potential duplicate officials (same last name, different first names)
+        async function loadPotentialDuplicates() {
+            const container = document.getElementById('potential-duplicates-container');
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials/potential-duplicates');
+                const data = await response.json();
+                const duplicates = data.potential_duplicates || [];
+
+                if (duplicates.length === 0) {
+                    container.innerHTML = '<p style="color: var(--ncrc-gray); font-style: italic;"><i class="fas fa-check-circle"></i> No unresolved potential duplicates found.</p>';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <p style="margin-bottom: 15px; color: var(--ew-neutral-500);">Found ${duplicates.length} potential duplicate pair(s) to review:</p>
+                    ${duplicates.map((pair, idx) => `
+                        <div class="potential-duplicate-item" style="background: var(--ew-neutral-50); border-radius: 8px; padding: 15px; margin-bottom: 12px;">
+                            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="font-weight: 600;">
+                                        <i class="fas fa-user" style="color: var(--ew-neutral-500);"></i>
+                                        <a href="official/${pair.official1.id}" class="official-name">${pair.official1.name}</a>
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: var(--ew-neutral-500);">
+                                        ${pair.official1.chamber === 'house' ? 'Rep' : 'Sen'}. ${pair.official1.party}-${pair.official1.state}
+                                        ${pair.official1.bioguide_id ? `<br>BioGuide: ${pair.official1.bioguide_id}` : ''}
+                                    </div>
+                                </div>
+                                <div style="display: flex; align-items: center; font-size: 1.5rem; color: var(--ew-neutral-500);">
+                                    <i class="fas fa-exchange-alt"></i>
+                                </div>
+                                <div style="flex: 1; min-width: 200px;">
+                                    <div style="font-weight: 600;">
+                                        <i class="fas fa-user" style="color: var(--ew-neutral-500);"></i>
+                                        <a href="official/${pair.official2.id}" class="official-name">${pair.official2.name}</a>
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: var(--ew-neutral-500);">
+                                        ${pair.official2.chamber === 'house' ? 'Rep' : 'Sen'}. ${pair.official2.party}-${pair.official2.state}
+                                        ${pair.official2.bioguide_id ? `<br>BioGuide: ${pair.official2.bioguide_id}` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px; padding: 8px; background: ${pair.confidence === 'high' ? 'rgba(16, 185, 129, 0.1)' : pair.confidence === 'medium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(107, 114, 128, 0.1)'}; border-radius: 4px; color: ${pair.confidence === 'high' ? 'var(--ew-success)' : pair.confidence === 'medium' ? '#d97706' : 'var(--ew-neutral-500)'}; font-size: 0.85rem;">
+                                <i class="fas ${pair.confidence === 'high' ? 'fa-check-circle' : pair.confidence === 'medium' ? 'fa-exclamation-circle' : 'fa-question-circle'}"></i>
+                                <strong>${pair.confidence === 'high' ? 'High' : pair.confidence === 'medium' ? 'Medium' : 'Low'} confidence:</strong> ${pair.reason || (pair.same_bioguide ? 'Same BioGuide ID' : 'Same last name')}
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 12px;">
+                                <button onclick="mergeOfficials('${pair.official1.name.replace(/'/g, "\\'")}', '${pair.official2.name.replace(/'/g, "\\'")}')" class="admin-btn primary" style="flex: 1;">
+                                    <i class="fas fa-user-check"></i> Same Person - Merge
+                                </button>
+                                <button onclick="markDistinct('${pair.official1.name.replace(/'/g, "\\'")}', '${pair.official2.name.replace(/'/g, "\\'")}')" class="admin-btn secondary" style="flex: 1;">
+                                    <i class="fas fa-user-times"></i> Different People
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+            } catch (error) {
+                container.innerHTML = '<p style="color: var(--danger);">Error loading potential duplicates.</p>';
+                console.error('Error loading potential duplicates:', error);
+            }
+        }
+
+        // Merge two officials (from potential duplicates)
+        async function mergeOfficials(official1, official2) {
+            // Use the first one as canonical (typically the cleaner format)
+            const canonical = official1.includes(',') ? official2 : official1;
+            const alias = official1.includes(',') ? official1 : official2;
+
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials/merge', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ canonical, alias })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showStatus('duplicates-status', `Merged "${alias}" into "${canonical}"`, 'success');
+                    loadPotentialDuplicates();
+                    loadExistingMerges();
+                } else {
+                    showStatus('duplicates-status', data.error || 'Failed to merge', 'error');
+                }
+            } catch (error) {
+                showStatus('duplicates-status', 'Error merging officials', 'error');
+                console.error('Error merging officials:', error);
+            }
+        }
+
+        // Mark two officials as distinct (confirmed different people)
+        async function markDistinct(official1, official2) {
+            try {
+                const response = await fetch('/electwatch/api/admin/mappings/officials/mark-distinct', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ official1, official2 })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showStatus('duplicates-status', `Marked "${official1}" and "${official2}" as different people`, 'success');
+                    loadPotentialDuplicates();
+                } else {
+                    showStatus('duplicates-status', data.error || 'Failed to mark as distinct', 'error');
+                }
+            } catch (error) {
+                showStatus('duplicates-status', 'Error marking as distinct', 'error');
+                console.error('Error marking as distinct:', error);
             }
         }
 
@@ -5051,6 +5635,47 @@
         });
 
         {% endif %}
+    </script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+    <!-- JustData Auth -->
+    <script src="/static/js/auth.js"></script>
+
+    <!-- Hamburger Menu Toggle & User Dropdown -->
+    <script>
+        function toggleNavMenu() {
+            const menu = document.getElementById('navMenu');
+            if (menu) {
+                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            }
+        }
+
+        function toggleUserDropdown() {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('active');
+            }
+        }
+
+        // Close menus when clicking outside
+        document.addEventListener('click', function(event) {
+            // Close nav menu
+            const menu = document.getElementById('navMenu');
+            const hamburger = document.querySelector('.hamburger-menu');
+            if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+
+            // Close user dropdown
+            const userDropdown = document.getElementById('userDropdown');
+            const userMenu = document.getElementById('userMenu');
+            if (userDropdown && userMenu && !userMenu.contains(event.target)) {
+                userDropdown.classList.remove('active');
+            }
+        });
     </script>
 </body>
 </html>

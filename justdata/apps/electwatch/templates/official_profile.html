@@ -5,23 +5,57 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Official Profile | ElectWatch - NCRC JustData</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* NCRC Brand Colors */
+        /* ElectWatch Design System */
         :root {
-            --ncrc-primary-blue: #552d87;
+            /* Primary Palette */
+            --ew-primary: #2D8659;          /* NCRC Green - primary actions, links */
+            --ew-secondary: #3B5998;        /* Slate Blue - secondary buttons, headers */
+            --ew-accent: #D4A017;           /* Gold - AI content, special callouts */
+
+            /* Neutral Palette */
+            --ew-neutral-900: #1A1A2E;      /* Near Black - headings */
+            --ew-neutral-700: #4A4A5A;      /* Dark Gray - body text */
+            --ew-neutral-500: #8A8A9A;      /* Medium Gray - secondary text */
+            --ew-neutral-200: #E5E5EA;      /* Light Gray - borders */
+            --ew-neutral-50: #F8F8FA;       /* Off-White - backgrounds */
+
+            /* Status Colors */
+            --ew-error: #DC3545;
+            --ew-success: #28A745;
+            --ew-warning: #F59E0B;
+
+            /* Industry Category Colors */
+            --ew-industry-banking: #3B82F6;
+            --ew-industry-investment: #8B5CF6;
+            --ew-industry-insurance: #14B8A6;
+            --ew-industry-other: #6B7280;
+
+            /* Party Colors */
+            --party-r: #DC3545;
+            --party-d: #2563EB;
+            --party-i: #6B7280;
+
+            /* Spacing System (8px base) */
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+
+            /* Legacy mappings for compatibility */
+            --ncrc-primary-blue: var(--ew-secondary);
             --ncrc-secondary-blue: #2fade3;
-            --ncrc-justdata-blue: #1a8fc9;
-            --ncrc-gold: #ffc23a;
-            --ncrc-gray: #818390;
+            --ncrc-justdata-blue: var(--ew-primary);
+            --ncrc-gold: var(--ew-accent);
+            --ncrc-gray: var(--ew-neutral-500);
             --ncrc-white: #FFFFFF;
-            --ncrc-gray-light: #F5F5F5;
-            --ncrc-gray-dark: #333333;
-            --party-r: #dc2626;
-            --party-d: #2563eb;
-            --party-i: #7c3aed;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --ncrc-gray-light: var(--ew-neutral-50);
+            --ncrc-gray-dark: var(--ew-neutral-900);
+            --success: var(--ew-success);
+            --warning: var(--ew-warning);
+            --danger: var(--ew-error);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -35,36 +69,108 @@
         }
 
         .header {
-            background: var(--ncrc-justdata-blue);
+            background: var(--ew-secondary);
             color: white;
-            padding: 16px 20px;
+            padding: var(--space-md) var(--space-lg);
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
         .header-content {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
             align-items: center;
+            gap: var(--space-lg);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .logo img {
+            height: 40px;
+        }
+
+        .logo-text h1 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .header-center {
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
         }
 
         .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-sm);
             color: white;
             text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
             font-weight: 500;
             opacity: 0.9;
-            transition: opacity 0.2s;
+            padding: 6px 12px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            transition: all 0.15s;
         }
 
-        .back-link:hover { opacity: 1; }
+        .back-link:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.2);
+        }
 
-        .header-title {
-            font-size: 1.25rem;
-            font-weight: 600;
+        /* Breadcrumbs */
+        .breadcrumbs {
+            padding: var(--space-sm) var(--space-lg);
+            background: var(--ew-neutral-50);
+            border-bottom: 1px solid var(--ew-neutral-200);
+        }
+
+        .breadcrumbs-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            font-size: 0.85rem;
+            color: var(--ew-neutral-500);
+        }
+
+        .breadcrumbs a {
+            color: var(--ew-primary);
+            text-decoration: none;
+        }
+
+        .breadcrumbs a:hover {
+            text-decoration: underline;
+        }
+
+        .breadcrumbs .separator {
+            color: var(--ew-neutral-200);
+        }
+
+        .breadcrumbs .current {
+            color: var(--ew-neutral-700);
+            font-weight: 500;
         }
 
         .main-content {
@@ -125,7 +231,13 @@
         }
 
         .profile-details { flex: 1; min-width: 250px; }
-        .profile-name { font-size: 2rem; font-weight: 700; color: var(--ncrc-gray-dark); }
+        .profile-name {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+            margin-bottom: 4px;
+        }
         .profile-title { font-size: 1.1rem; color: var(--ncrc-gray); margin-top: 4px; }
 
         .profile-meta {
@@ -203,40 +315,46 @@
             margin-bottom: 20px;
         }
 
+        /* Stat Cards - ProPublica-inspired big numbers */
         .stat-card {
             background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            padding: 24px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--ew-neutral-200);
             text-align: center;
         }
 
         .stat-card.highlight {
-            background: linear-gradient(135deg, var(--ncrc-primary-blue) 0%, var(--ncrc-justdata-blue) 100%);
+            background: var(--ew-secondary);
             color: white;
+            border-color: var(--ew-secondary);
         }
 
         .stat-card.highlight .stat-value { color: white; }
-        .stat-card.highlight .stat-label { color: rgba(255,255,255,0.8); }
+        .stat-card.highlight .stat-label { color: rgba(255,255,255,0.85); }
         .stat-card.highlight .stat-sub { color: rgba(255,255,255,0.7); }
 
         .stat-value {
-            font-size: 1.75rem;
+            font-size: 32px;
             font-weight: 700;
-            color: var(--ncrc-justdata-blue);
+            color: var(--ew-neutral-900);
+            font-variant-numeric: tabular-nums;
+            line-height: 1.2;
         }
 
         .stat-label {
-            font-size: 0.75rem;
+            font-size: 12px;
             text-transform: uppercase;
-            color: var(--ncrc-gray);
-            font-weight: 500;
-            margin-top: 4px;
+            letter-spacing: 0.5px;
+            color: var(--ew-neutral-500);
+            font-weight: 600;
+            margin-top: 8px;
         }
 
         .stat-sub {
-            font-size: 0.8rem;
-            color: var(--ncrc-gray);
+            font-size: 13px;
+            color: var(--ew-neutral-500);
             margin-top: 4px;
         }
 
@@ -667,13 +785,44 @@
 <body>
     <header class="header">
         <div class="header-content">
-            <a href="/electwatch/" class="back-link">
-                <i class="fas fa-arrow-left"></i>
-                Back to Dashboard
-            </a>
-            <span class="header-title">Official Profile</span>
+            <!-- LEFT ZONE: Logo + Title -->
+            <div class="header-left">
+                <a href="/" class="logo">
+                    <img src="/static/img/justdata-logo.png" alt="JustData" onerror="this.style.display='none'">
+                    <div class="logo-text">
+                        <h1>ElectWatch</h1>
+                    </div>
+                </a>
+            </div>
+
+            <!-- CENTER ZONE: Back navigation -->
+            <div class="header-center">
+                <a href="/electwatch/" class="back-link">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Dashboard
+                </a>
+            </div>
+
+            <!-- RIGHT ZONE: User Menu (placeholder) -->
+            <div class="header-right">
+                <button id="loginBtn" onclick="if(typeof JustDataAuth !== 'undefined') JustDataAuth.signInWithGoogle();" class="back-link" style="border: none; cursor: pointer;">
+                    <i class="fab fa-google"></i>
+                    Sign In
+                </button>
+            </div>
         </div>
     </header>
+
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+        <div class="breadcrumbs-content">
+            <a href="/electwatch/">ElectWatch</a>
+            <span class="separator">›</span>
+            <a href="/electwatch/#leaderboard">Leaderboard</a>
+            <span class="separator">›</span>
+            <span id="breadcrumb-name" class="current">Official Profile</span>
+        </div>
+    </nav>
 
     <main class="main-content">
         <div id="profile-loading" class="loading">Loading official profile...</div>
@@ -761,6 +910,28 @@
                         <div id="industry-bars" class="industry-bars">
                             <!-- Populated by JS -->
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trading Trend Chart -->
+            <div class="card" id="trend-chart-section">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-area"></i> Trading Activity Over Time</h2>
+                    <span style="font-size: 0.75rem; color: var(--ncrc-gray);">Quarterly buy/sell activity from STOCK Act filings</span>
+                </div>
+                <div class="card-body">
+                    <div id="trend-chart-container" style="position: relative; height: 250px;">
+                        <canvas id="trend-chart"></canvas>
+                    </div>
+                    <div id="trend-chart-legend" style="display: flex; gap: 20px; justify-content: center; margin-top: 12px; font-size: 0.85rem;">
+                        <span><span style="color: var(--success); font-weight: bold;">&#9632;</span> Purchases</span>
+                        <span><span style="color: var(--danger); font-weight: bold;">&#9632;</span> Sales</span>
+                        <span><span style="color: var(--ncrc-justdata-blue); font-weight: bold;">&#9632;</span> Net Position</span>
+                    </div>
+                    <div id="trend-no-data" style="display: none; text-align: center; padding: 40px; color: var(--ncrc-gray);">
+                        <i class="fas fa-chart-line" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>No trading activity data available for trend analysis.</p>
                     </div>
                 </div>
             </div>
@@ -893,6 +1064,12 @@
             document.getElementById('party-badge').className = `party-badge-large ${official.party}`;
             document.getElementById('official-name').textContent = official.name;
 
+            // Update breadcrumb with official info
+            const chamberAbbrev = official.chamber === 'house' ? 'Rep' : 'Sen';
+            const breadcrumbName = `${chamberAbbrev}. ${official.name} (${official.party}-${official.state})`;
+            document.getElementById('breadcrumb-name').textContent = breadcrumbName;
+            document.title = `${official.name} | ElectWatch - NCRC JustData`;
+
             // Show photo if available, otherwise show party badge
             // Photos sourced from Wikimedia Commons or U.S. House Clerk / Bioguide (Public Domain)
             if (official.photo_url) {
@@ -1010,6 +1187,9 @@
             // Industry breakdown
             renderIndustryBars(official.involvement_by_industry);
 
+            // Trading Trend Chart (time-series data)
+            renderTrendChart(official);
+
             // Firms
             renderFirms(official.firms);
 
@@ -1048,12 +1228,12 @@
         }
 
         function getCommitteeId(name) {
-            // Generate committee ID from name (e.g., "House Financial Services" -> "house_financial_services")
+            // Generate committee ID from name (e.g., "House Financial Services" -> "house-financial-services")
             return name.toLowerCase()
                 .replace(/^•\s*/, '')  // Remove bullet prefix for subcommittees
                 .replace(/[^a-z0-9\s]/g, '')
                 .trim()
-                .replace(/\s+/g, '_');
+                .replace(/\s+/g, '-');  // Use hyphens to match API expectation
         }
 
         function renderCommittees(committees, subcommittees) {
@@ -1173,7 +1353,7 @@
                 const pacName = pac.name || pac.source || pac.pac_name || 'Unknown PAC';
                 // Extract company name from PAC name for linking (e.g., "JPMORGAN CHASE & CO. PAC" -> "JPMorgan Chase")
                 const firmName = pacName.replace(/ PAC$| POLITICAL ACTION COMMITTEE$| POLITICAL FUND$/i, '').trim();
-                const firmUrl = `/firm/${encodeURIComponent(firmName)}`;
+                const firmUrl = `/electwatch/firm/${encodeURIComponent(firmName)}`;
 
                 return `
                 <div class="firm-item" style="cursor: pointer;" onclick="window.location='${firmUrl}'">
@@ -1319,7 +1499,7 @@
                     const sectorIcon = sector ? getIndustryIcon(sector) : '';
 
                     // Link to firm page using company name
-                    const firmUrl = `/firm/${encodeURIComponent(companyName)}`;
+                    const firmUrl = `/electwatch/firm/${encodeURIComponent(companyName)}`;
                     return `
                     <div class="timeline-item" style="cursor: pointer;" onclick="window.location='${firmUrl}'">
                         <div class="timeline-icon ${tradeClass}">
@@ -1630,6 +1810,122 @@
                 'OMF': 'consumer_finance', 'SLM': 'consumer_finance', 'NAVI': 'consumer_finance'
             };
             return sectorMap[ticker?.toUpperCase()] || null;
+        }
+
+        // Render Trading Trend Chart using Chart.js
+        let trendChart = null;
+
+        function renderTrendChart(official) {
+            const chartContainer = document.getElementById('trend-chart-container');
+            const noDataMessage = document.getElementById('trend-no-data');
+            const canvas = document.getElementById('trend-chart');
+
+            const tradesByQuarter = official.trades_by_quarter || [];
+
+            // Show/hide based on data availability
+            if (!tradesByQuarter || tradesByQuarter.length < 2) {
+                canvas.style.display = 'none';
+                document.getElementById('trend-chart-legend').style.display = 'none';
+                noDataMessage.style.display = 'block';
+                return;
+            }
+
+            canvas.style.display = 'block';
+            document.getElementById('trend-chart-legend').style.display = 'flex';
+            noDataMessage.style.display = 'none';
+
+            const labels = tradesByQuarter.map(q => q.quarter);
+            const purchases = tradesByQuarter.map(q => q.purchases || 0);
+            const sales = tradesByQuarter.map(q => Math.abs(q.sales) || 0);
+            const netPosition = tradesByQuarter.map(q => q.net || 0);
+
+            // Destroy existing chart if any
+            if (trendChart) {
+                trendChart.destroy();
+            }
+
+            const ctx = canvas.getContext('2d');
+            trendChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Purchases',
+                            data: purchases,
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: 'rgb(16, 185, 129)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Sales',
+                            data: sales,
+                            backgroundColor: 'rgba(239, 68, 68, 0.7)',
+                            borderColor: 'rgb(239, 68, 68)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Net Position',
+                            data: netPosition,
+                            type: 'line',
+                            borderColor: 'rgb(26, 143, 201)',
+                            backgroundColor: 'rgba(26, 143, 201, 0.1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: 'rgb(26, 143, 201)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (Math.abs(value) >= 1000000) {
+                                        return '$' + (value / 1000000).toFixed(1) + 'M';
+                                    } else if (Math.abs(value) >= 1000) {
+                                        return '$' + Math.round(value / 1000) + 'K';
+                                    }
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    let value = context.parsed.y;
+                                    if (Math.abs(value) >= 1000000) {
+                                        return label + ': $' + (value / 1000000).toFixed(2) + 'M';
+                                    } else if (Math.abs(value) >= 1000) {
+                                        return label + ': $' + Math.round(value / 1000) + 'K';
+                                    }
+                                    return label + ': $' + value.toLocaleString();
+                                }
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // Load on page ready
