@@ -1,4 +1,12 @@
 <!-- Shared Header JavaScript -->
+
+<!-- Firebase SDK (required for authentication) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+<!-- JustData Authentication -->
+<script src="{{ url_for('shared_web.static', filename='js/auth.js') }}"></script>
+
 <script>
     // Toggle hamburger navigation menu
     function toggleNavMenu() {

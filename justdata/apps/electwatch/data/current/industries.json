@@ -77,15 +77,15 @@
           "trade_count": 5
         },
         {
-          "ticker": "RF",
-          "name": "Regions Financial",
+          "ticker": "FITB",
+          "name": "Fifth Third Bank",
           "total": 56502.0,
           "officials_count": 3,
           "trade_count": 4
         },
         {
-          "ticker": "FITB",
-          "name": "Fifth Third Bank",
+          "ticker": "RF",
+          "name": "Regions Financial",
           "total": 56502.0,
           "officials_count": 3,
           "trade_count": 4
@@ -112,17 +112,17 @@
           "trade_count": 2
         },
         {
-          "ticker": "TFC",
-          "name": "Truist Financial",
-          "total": 32002.0,
-          "officials_count": 3,
-          "trade_count": 4
-        },
-        {
           "ticker": "MTB",
           "name": "M&T Bank",
           "total": 32002.0,
           "officials_count": 2,
+          "trade_count": 4
+        },
+        {
+          "ticker": "TFC",
+          "name": "Truist Financial",
+          "total": 32002.0,
+          "officials_count": 3,
           "trade_count": 4
         },
         {
@@ -140,7 +140,7 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
           "id": "kevin_hern",
@@ -148,175 +148,15 @@
           "party": "R",
           "state": "OK",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001082.jpg"
         },
         {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
-          "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
-          "party": "R",
-          "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
+          "id": "gregory_landsman",
+          "name": "Greg Landsman",
           "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
-        },
-        {
-          "id": "laurel_lee",
-          "name": "Laurel Lee",
-          "party": "",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "neal_dunn",
-          "name": "Neal P. Dunn",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Gregory Landsman",
-          "party": "",
           "state": "OH",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "roger_williams",
-          "name": "Roger Williams",
-          "party": "",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
-        },
-        {
-          "id": "gil_cisneros",
-          "name": "Gilbert Cisneros",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000601.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -327,28 +167,28 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "jon_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
-        },
-        {
-          "id": "william_r_keating",
-          "name": "William R. Keating",
-          "party": "D",
-          "state": "MA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
-        },
-        {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
           "party": "R",
-          "state": "GA",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000830.jpg"
         },
         {
           "id": "cleo_fields",
@@ -356,7 +196,95 @@
           "party": "D",
           "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000477.jpg"
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000309.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
+        },
+        {
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
+        },
+        {
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
+        },
+        {
+          "id": "william_r_keating",
+          "name": "William R. Keating",
+          "party": "D",
+          "state": "MA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000375.jpg"
+        },
+        {
+          "id": "laurel_lee",
+          "name": "Laurel Lee",
+          "party": "REP",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000597.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
         },
         {
           "id": "kathy_manning",
@@ -364,7 +292,63 @@
           "party": "",
           "state": "NC",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001135.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000628.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000481.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000821.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000490.jpg"
         },
         {
           "id": "john_boozman",
@@ -373,6 +357,22 @@
           "state": "AR",
           "chamber": "senate",
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+        },
+        {
+          "id": "ashley_moody",
+          "name": "Ashley Moody",
+          "party": "",
+          "state": "",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg/330px-Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg"
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "IND",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
         }
       ],
       "firms_count": 18,
@@ -422,108 +422,28 @@
       ],
       "officials": [
         {
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
+          "state": "NJ",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
+        },
+        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
+          "id": "gregory_landsman",
+          "name": "Greg Landsman",
           "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
-        },
-        {
-          "id": "dan_meuser",
-          "name": "Daniel Meuser",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001204.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Gregory Landsman",
-          "party": "",
           "state": "OH",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "pete_sessions",
-          "name": "Peter Sessions",
-          "party": "",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
-        },
-        {
-          "id": "",
-          "name": "Capito, Shelley Moore",
-          "party": "REP",
-          "state": "West Virginia",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000601.jpg"
         },
         {
           "id": "nancy_pelosi",
@@ -531,23 +451,15 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/P000197.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/P/P000197.jpg"
         },
         {
-          "id": "david_taylor",
-          "name": "David Taylor",
+          "id": "peter_sessions",
+          "name": "Pete Sessions",
           "party": "R",
-          "state": "OH",
+          "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S000250.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -558,20 +470,68 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000830.jpg"
+        },
+        {
+          "id": "",
+          "name": "Capito, Shelley Moore",
+          "party": "R",
+          "state": "West Virginia",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
           "id": "marjorie_greene",
           "name": "Marjorie Taylor Greene",
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
         },
         {
-          "id": "earl_blumenauer",
-          "name": "Earl Blumenauer",
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
           "party": "D",
-          "state": "OR",
+          "state": "FL",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
         },
         {
           "id": "kathy_manning",
@@ -579,15 +539,55 @@
           "party": "",
           "state": "NC",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001135.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "earl_blumenauer",
+          "name": "Earl Blumenauer",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B000574.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000490.jpg"
+        },
+        {
+          "id": "dan_meuser",
+          "name": "Daniel Meuser",
+          "party": "R",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001204.jpg"
         },
         {
           "id": "rich_mccormick",
           "name": "Richard McCormick",
-          "party": "",
-          "state": "",
+          "party": "REP",
+          "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001218.jpg"
         },
         {
           "id": "jeff_shreve",
@@ -595,7 +595,7 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
           "id": "markwayne_mullin",
@@ -606,20 +606,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
         },
         {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
-        },
-        {
           "id": "lisa_mcclain",
           "name": "Lisa McClain",
           "party": "R",
           "state": "MI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
         },
         {
           "id": "gil_cisneros",
@@ -627,7 +619,7 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
         },
         {
           "id": "sheldon_whitehouse",
@@ -638,6 +630,14 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
         },
         {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000821.jpg"
+        },
+        {
           "id": "john_boozman",
           "name": "John Boozman",
           "party": "R",
@@ -646,20 +646,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         },
         {
-          "id": "tony_wied",
-          "name": "Anthony Wied",
-          "party": "REP",
+          "id": "anthony_wied",
+          "name": "Tony Wied",
+          "party": "R",
           "state": "WI",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000829.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
         }
       ],
       "firms_count": 4,
@@ -687,7 +687,7 @@
         },
         {
           "ticker": "BX",
-          "name": "Blackstone Inc. Common Stock",
+          "name": "BLACKSTONE GROUP INC/THE CMN",
           "total": 359997.0,
           "officials_count": 12,
           "trade_count": 25
@@ -715,7 +715,7 @@
         },
         {
           "ticker": "KKR",
-          "name": "KKR & Co Inc",
+          "name": "KKR & CO. INC. CMN",
           "total": 128008.0,
           "officials_count": 6,
           "trade_count": 16
@@ -735,76 +735,28 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
-          "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
           "state": "NJ",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
         },
         {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
+          "id": "gregory_landsman",
+          "name": "Greg Landsman",
           "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Gregory Landsman",
-          "party": "",
           "state": "OH",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "james_comer",
-          "name": "James Comer",
-          "party": "R",
-          "state": "KY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000601.jpg"
         },
         {
           "id": "",
           "name": "Capito, Shelley Moore",
-          "party": "REP",
+          "party": "R",
           "state": "West Virginia",
           "chamber": "senate",
           "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
@@ -815,15 +767,7 @@
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -831,15 +775,79 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001325.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
+        },
+        {
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000481.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "james_comer",
+          "name": "James Comer",
+          "party": "R",
+          "state": "KY",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001108.jpg"
         },
         {
           "id": "rich_mccormick",
           "name": "Richard McCormick",
-          "party": "",
-          "state": "",
+          "party": "REP",
+          "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001218.jpg"
+        },
+        {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
         },
         {
           "id": "james_french_hill",
@@ -847,23 +855,7 @@
           "party": "R",
           "state": "AR",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001072.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001072.jpg"
         },
         {
           "id": "marjorie_greene",
@@ -871,7 +863,7 @@
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
         },
         {
           "id": "earl_blumenauer",
@@ -879,7 +871,15 @@
           "party": "D",
           "state": "OR",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B000574.jpg"
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "IND",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
         },
         {
           "id": "john_fetterman",
@@ -895,7 +895,7 @@
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "markwayne_mullin",
@@ -911,15 +911,15 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
         },
         {
-          "id": "jake_auchincloss",
-          "name": "Jacob Auchincloss",
-          "party": "",
+          "id": "jacob_auchincloss",
+          "name": "Jake Auchincloss",
+          "party": "D",
           "state": "MA",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/A/A000376.jpg"
         },
         {
           "id": "jon_jackson",
@@ -927,15 +927,15 @@
           "party": "D",
           "state": "IL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000309.jpg"
         },
         {
           "id": "rob_bresnahan",
           "name": "Robert Bresnahan",
-          "party": "REP",
+          "party": "",
           "state": "PA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
         },
         {
           "id": "dwight_evans",
@@ -943,7 +943,7 @@
           "party": "D",
           "state": "PA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/E000296.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/E/E000296.jpg"
         }
       ],
       "firms_count": 7,
@@ -1007,28 +1007,28 @@
       ],
       "officials": [
         {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
+        },
+        {
           "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
+          "id": "anthony_wied",
+          "name": "Tony Wied",
           "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "rick_larsen",
-          "name": "Rick Larsen",
-          "party": "D",
-          "state": "WA",
+          "state": "WI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/L000560.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000829.jpg"
         },
         {
           "id": "markwayne_mullin",
@@ -1039,60 +1039,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
         },
         {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
-        },
-        {
           "id": "julie_johnson",
           "name": "Julie Johnson",
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "tony_wied",
-          "name": "Anthony Wied",
-          "party": "REP",
-          "state": "WI",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
         },
         {
           "id": "marjorie_greene",
@@ -1100,7 +1052,47 @@
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000821.jpg"
         },
         {
           "id": "john_boozman",
@@ -1111,28 +1103,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         },
         {
+          "id": "rick_larsen",
+          "name": "Rick Larsen",
+          "party": "D",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000560.jpg"
+        },
+        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "neal_dunn",
-          "name": "Neal P. Dunn",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "william_r_keating",
@@ -1140,7 +1124,23 @@
           "party": "D",
           "state": "MA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000375.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000628.jpg"
         },
         {
           "id": "scott_mr_franklin",
@@ -1148,7 +1148,7 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
         },
         {
           "id": "james_comer",
@@ -1156,15 +1156,15 @@
           "party": "R",
           "state": "KY",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001108.jpg"
         },
         {
           "id": "thomas_r_carper",
-          "name": "Thomas R. Carper",
+          "name": "Tom Carper",
           "party": "",
           "state": "DE",
           "chamber": "senate",
-          "photo_url": null
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg/330px-Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg"
         },
         {
           "id": "james_calhoun",
@@ -1250,28 +1250,36 @@
       ],
       "officials": [
         {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
+        },
+        {
           "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
           "state": "WA",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
+          "state": "NJ",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
         },
         {
           "id": "kevin_hern",
@@ -1279,7 +1287,63 @@
           "party": "R",
           "state": "OK",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001082.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000830.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
+        },
+        {
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001135.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -1290,76 +1354,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
-        },
-        {
-          "id": "kathy_manning",
-          "name": "Kathy Manning",
-          "party": "",
-          "state": "NC",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "lisa_mcclain",
@@ -1367,39 +1367,15 @@
           "party": "R",
           "state": "MI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
         },
         {
           "id": "julia_letlow",
           "name": "Julia Letlow",
-          "party": "",
-          "state": "",
+          "party": "REP",
+          "state": "LA",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000595.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -1407,7 +1383,15 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001325.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
         },
         {
           "id": "sheldon_whitehouse",
@@ -1418,6 +1402,22 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
         },
         {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000490.jpg"
+        },
+        {
           "id": "tommy_tuberville",
           "name": "Thomas Tuberville",
           "party": "",
@@ -1426,20 +1426,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
-        },
-        {
           "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000481.jpg"
         },
         {
           "id": "carol_miller",
@@ -1447,7 +1447,7 @@
           "party": "R",
           "state": "WV",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001205.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001205.jpg"
         }
       ],
       "firms_count": 8,
@@ -1490,44 +1490,12 @@
       ],
       "officials": [
         {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "gil_cisneros",
-          "name": "Gilbert Cisneros",
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
-        },
-        {
-          "id": "jon_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
         },
         {
           "id": "cleo_fields",
@@ -1535,7 +1503,39 @@
           "party": "D",
           "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000477.jpg"
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000309.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
         },
         {
           "id": "jeff_shreve",
@@ -1543,15 +1543,23 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
           "id": "",
           "name": "Capito, Shelley Moore",
-          "party": "REP",
+          "party": "R",
           "state": "West Virginia",
           "chamber": "senate",
           "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "shrikant_thanedar",
+          "name": "Shri Thanedar",
+          "party": "",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000488.jpg"
         },
         {
           "id": "neal_dunn",
@@ -1559,15 +1567,7 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
-        },
-        {
-          "id": "shri_thanedar",
-          "name": "Shrikant Thanedar",
-          "party": "",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000628.jpg"
         }
       ],
       "firms_count": 3,
@@ -1603,20 +1603,20 @@
       ],
       "officials": [
         {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
+        },
+        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "gil_cisneros",
@@ -1624,7 +1624,7 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
         },
         {
           "id": "jeff_shreve",
@@ -1632,23 +1632,15 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "susan_m_collins",
-          "name": "Susan M. Collins",
-          "party": "",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": null
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
           "state": "NJ",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
         },
         {
           "id": "julie_johnson",
@@ -1656,7 +1648,7 @@
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -1664,7 +1656,15 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001325.jpg"
+        },
+        {
+          "id": "susan_m_collins",
+          "name": "Susan Collins",
+          "party": "REP",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg/330px-Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg"
         }
       ],
       "firms_count": 2,
@@ -1700,12 +1700,12 @@
       ],
       "officials": [
         {
-          "id": "debbie_dingell",
-          "name": "Deborah Dingell",
-          "party": "",
+          "id": "deborah_dingell",
+          "name": "Debbie Dingell",
+          "party": "D",
           "state": "MI",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000624.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -1822,15 +1822,15 @@
           "trade_count": 5
         },
         {
-          "ticker": "RF",
-          "name": "Regions Financial",
+          "ticker": "FITB",
+          "name": "Fifth Third Bank",
           "total": 56502.0,
           "officials_count": 3,
           "trade_count": 4
         },
         {
-          "ticker": "FITB",
-          "name": "Fifth Third Bank",
+          "ticker": "RF",
+          "name": "Regions Financial",
           "total": 56502.0,
           "officials_count": 3,
           "trade_count": 4
@@ -1857,17 +1857,17 @@
           "trade_count": 2
         },
         {
-          "ticker": "TFC",
-          "name": "Truist Financial",
-          "total": 32002.0,
-          "officials_count": 3,
-          "trade_count": 4
-        },
-        {
           "ticker": "MTB",
           "name": "M&T Bank",
           "total": 32002.0,
           "officials_count": 2,
+          "trade_count": 4
+        },
+        {
+          "ticker": "TFC",
+          "name": "Truist Financial",
+          "total": 32002.0,
+          "officials_count": 3,
           "trade_count": 4
         },
         {
@@ -1885,7 +1885,7 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
           "id": "kevin_hern",
@@ -1893,175 +1893,15 @@
           "party": "R",
           "state": "OK",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001082.jpg"
         },
         {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
-          "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "markwayne_mullin",
-          "name": "Markwayne Mullin",
-          "party": "R",
-          "state": "OK",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
+          "id": "gregory_landsman",
+          "name": "Greg Landsman",
           "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
-        },
-        {
-          "id": "laurel_lee",
-          "name": "Laurel Lee",
-          "party": "",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "neal_dunn",
-          "name": "Neal P. Dunn",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Gregory Landsman",
-          "party": "",
           "state": "OH",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "roger_williams",
-          "name": "Roger Williams",
-          "party": "",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
-        },
-        {
-          "id": "gil_cisneros",
-          "name": "Gilbert Cisneros",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000601.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -2072,28 +1912,28 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "jon_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
-        },
-        {
-          "id": "william_r_keating",
-          "name": "William R. Keating",
-          "party": "D",
-          "state": "MA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
-        },
-        {
-          "id": "marjorie_greene",
-          "name": "Marjorie Taylor Greene",
+          "id": "markwayne_mullin",
+          "name": "Markwayne Mullin",
           "party": "R",
-          "state": "GA",
+          "state": "OK",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000830.jpg"
         },
         {
           "id": "cleo_fields",
@@ -2101,7 +1941,95 @@
           "party": "D",
           "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000477.jpg"
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000309.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
+        },
+        {
+          "id": "marjorie_greene",
+          "name": "Marjorie Taylor Greene",
+          "party": "R",
+          "state": "GA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
+        },
+        {
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
+        },
+        {
+          "id": "william_r_keating",
+          "name": "William R. Keating",
+          "party": "D",
+          "state": "MA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000375.jpg"
+        },
+        {
+          "id": "laurel_lee",
+          "name": "Laurel Lee",
+          "party": "REP",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000597.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
         },
         {
           "id": "kathy_manning",
@@ -2109,7 +2037,63 @@
           "party": "",
           "state": "NC",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001135.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000628.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000481.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000821.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000490.jpg"
         },
         {
           "id": "john_boozman",
@@ -2118,6 +2102,22 @@
           "state": "AR",
           "chamber": "senate",
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
+        },
+        {
+          "id": "ashley_moody",
+          "name": "Ashley Moody",
+          "party": "",
+          "state": "",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg/330px-Official_Portrait_of_Senator_Ashley_Moody_%28cropped%29.jpg"
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "IND",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
         }
       ],
       "firms_count": 18,
@@ -2167,108 +2167,28 @@
       ],
       "officials": [
         {
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
+          "state": "NJ",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
+        },
+        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
+          "id": "gregory_landsman",
+          "name": "Greg Landsman",
           "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
-        },
-        {
-          "id": "dan_meuser",
-          "name": "Daniel Meuser",
-          "party": "R",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001204.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Gregory Landsman",
-          "party": "",
           "state": "OH",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "pete_sessions",
-          "name": "Peter Sessions",
-          "party": "",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
-        },
-        {
-          "id": "",
-          "name": "Capito, Shelley Moore",
-          "party": "REP",
-          "state": "West Virginia",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000601.jpg"
         },
         {
           "id": "nancy_pelosi",
@@ -2276,23 +2196,15 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/P000197.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/P/P000197.jpg"
         },
         {
-          "id": "david_taylor",
-          "name": "David Taylor",
+          "id": "peter_sessions",
+          "name": "Pete Sessions",
           "party": "R",
-          "state": "OH",
+          "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S000250.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -2303,20 +2215,68 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000830.jpg"
+        },
+        {
+          "id": "",
+          "name": "Capito, Shelley Moore",
+          "party": "R",
+          "state": "West Virginia",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
           "id": "marjorie_greene",
           "name": "Marjorie Taylor Greene",
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
         },
         {
-          "id": "earl_blumenauer",
-          "name": "Earl Blumenauer",
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
           "party": "D",
-          "state": "OR",
+          "state": "FL",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
         },
         {
           "id": "kathy_manning",
@@ -2324,15 +2284,55 @@
           "party": "",
           "state": "NC",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001135.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "earl_blumenauer",
+          "name": "Earl Blumenauer",
+          "party": "D",
+          "state": "OR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B000574.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000490.jpg"
+        },
+        {
+          "id": "dan_meuser",
+          "name": "Daniel Meuser",
+          "party": "R",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001204.jpg"
         },
         {
           "id": "rich_mccormick",
           "name": "Richard McCormick",
-          "party": "",
-          "state": "",
+          "party": "REP",
+          "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001218.jpg"
         },
         {
           "id": "jeff_shreve",
@@ -2340,7 +2340,7 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
           "id": "markwayne_mullin",
@@ -2351,20 +2351,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
         },
         {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
-        },
-        {
           "id": "lisa_mcclain",
           "name": "Lisa McClain",
           "party": "R",
           "state": "MI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
         },
         {
           "id": "gil_cisneros",
@@ -2372,7 +2364,7 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
         },
         {
           "id": "sheldon_whitehouse",
@@ -2383,6 +2375,14 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
         },
         {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000821.jpg"
+        },
+        {
           "id": "john_boozman",
           "name": "John Boozman",
           "party": "R",
@@ -2391,20 +2391,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         },
         {
-          "id": "tony_wied",
-          "name": "Anthony Wied",
-          "party": "REP",
+          "id": "anthony_wied",
+          "name": "Tony Wied",
+          "party": "R",
           "state": "WI",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000829.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
         }
       ],
       "firms_count": 4,
@@ -2432,7 +2432,7 @@
         },
         {
           "ticker": "BX",
-          "name": "Blackstone Inc. Common Stock",
+          "name": "BLACKSTONE GROUP INC/THE CMN",
           "total": 359997.0,
           "officials_count": 12,
           "trade_count": 25
@@ -2460,7 +2460,7 @@
         },
         {
           "ticker": "KKR",
-          "name": "KKR & Co Inc",
+          "name": "KKR & CO. INC. CMN",
           "total": 128008.0,
           "officials_count": 6,
           "trade_count": 16
@@ -2480,76 +2480,28 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
-          "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
           "state": "NJ",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
         },
         {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
-          "state": "WA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
+          "id": "gregory_landsman",
+          "name": "Greg Landsman",
           "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
-        },
-        {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
-        },
-        {
-          "id": "greg_landsman",
-          "name": "Gregory Landsman",
-          "party": "",
           "state": "OH",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "james_comer",
-          "name": "James Comer",
-          "party": "R",
-          "state": "KY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000601.jpg"
         },
         {
           "id": "",
           "name": "Capito, Shelley Moore",
-          "party": "REP",
+          "party": "R",
           "state": "West Virginia",
           "chamber": "senate",
           "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
@@ -2560,15 +2512,7 @@
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -2576,15 +2520,79 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001325.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
+        },
+        {
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000481.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "james_comer",
+          "name": "James Comer",
+          "party": "R",
+          "state": "KY",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001108.jpg"
         },
         {
           "id": "rich_mccormick",
           "name": "Richard McCormick",
-          "party": "",
-          "state": "",
+          "party": "REP",
+          "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001218.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001218.jpg"
+        },
+        {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
         },
         {
           "id": "james_french_hill",
@@ -2592,23 +2600,7 @@
           "party": "R",
           "state": "AR",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001072.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "angus_king",
-          "name": "Angus S. King",
-          "party": "",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001072.jpg"
         },
         {
           "id": "marjorie_greene",
@@ -2616,7 +2608,7 @@
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
         },
         {
           "id": "earl_blumenauer",
@@ -2624,7 +2616,15 @@
           "party": "D",
           "state": "OR",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B000574.jpg"
+        },
+        {
+          "id": "angus_king",
+          "name": "Angus S. King",
+          "party": "IND",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Angus_King%2C_official_portrait%2C_113th_Congress.jpg/330px-Angus_King%2C_official_portrait%2C_113th_Congress.jpg"
         },
         {
           "id": "john_fetterman",
@@ -2640,7 +2640,7 @@
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "markwayne_mullin",
@@ -2656,15 +2656,15 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
         },
         {
-          "id": "jake_auchincloss",
-          "name": "Jacob Auchincloss",
-          "party": "",
+          "id": "jacob_auchincloss",
+          "name": "Jake Auchincloss",
+          "party": "D",
           "state": "MA",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/A/A000376.jpg"
         },
         {
           "id": "jon_jackson",
@@ -2672,15 +2672,15 @@
           "party": "D",
           "state": "IL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000309.jpg"
         },
         {
           "id": "rob_bresnahan",
           "name": "Robert Bresnahan",
-          "party": "REP",
+          "party": "",
           "state": "PA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
         },
         {
           "id": "dwight_evans",
@@ -2688,7 +2688,7 @@
           "party": "D",
           "state": "PA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/E000296.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/E/E000296.jpg"
         }
       ],
       "firms_count": 7,
@@ -2752,28 +2752,28 @@
       ],
       "officials": [
         {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
+        },
+        {
           "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "shelley_moore_capito",
-          "name": "Shelley Moore Capito",
+          "id": "anthony_wied",
+          "name": "Tony Wied",
           "party": "R",
-          "state": "WV",
-          "chamber": "senate",
-          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
-        },
-        {
-          "id": "rick_larsen",
-          "name": "Rick Larsen",
-          "party": "D",
-          "state": "WA",
+          "state": "WI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/L000560.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000829.jpg"
         },
         {
           "id": "markwayne_mullin",
@@ -2784,60 +2784,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Markwayne_Mullin_official_Senate_photo.jpg/330px-Markwayne_Mullin_official_Senate_photo.jpg"
         },
         {
-          "id": "bruce_westerman",
-          "name": "Bruce Westerman",
-          "party": "R",
-          "state": "AR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000821.jpg"
-        },
-        {
-          "id": "lisa_mcclain",
-          "name": "Lisa McClain",
-          "party": "R",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
-        },
-        {
           "id": "julie_johnson",
           "name": "Julie Johnson",
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "tony_wied",
-          "name": "Anthony Wied",
-          "party": "REP",
-          "state": "WI",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
         },
         {
           "id": "marjorie_greene",
@@ -2845,7 +2797,47 @@
           "party": "R",
           "state": "GA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/G000596.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000596.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "lisa_mcclain",
+          "name": "Lisa McClain",
+          "party": "R",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
+        },
+        {
+          "id": "shelley_moore_capito",
+          "name": "Shelley Moore Capito",
+          "party": "R",
+          "state": "WV",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
+        },
+        {
+          "id": "bruce_westerman",
+          "name": "Bruce Westerman",
+          "party": "R",
+          "state": "AR",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000821.jpg"
         },
         {
           "id": "john_boozman",
@@ -2856,28 +2848,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg/330px-Senator_John_Boozman_Official_Portrait_%28115th_Congress%29.jpg"
         },
         {
+          "id": "rick_larsen",
+          "name": "Rick Larsen",
+          "party": "D",
+          "state": "WA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000560.jpg"
+        },
+        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "neal_dunn",
-          "name": "Neal P. Dunn",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "william_r_keating",
@@ -2885,7 +2869,23 @@
           "party": "D",
           "state": "MA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/K000375.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000375.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
+        },
+        {
+          "id": "neal_dunn",
+          "name": "Neal P. Dunn",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000628.jpg"
         },
         {
           "id": "scott_mr_franklin",
@@ -2893,7 +2893,7 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
         },
         {
           "id": "james_comer",
@@ -2901,15 +2901,15 @@
           "party": "R",
           "state": "KY",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001108.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001108.jpg"
         },
         {
           "id": "thomas_r_carper",
-          "name": "Thomas R. Carper",
+          "name": "Tom Carper",
           "party": "",
           "state": "DE",
           "chamber": "senate",
-          "photo_url": null
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg/330px-Senator_Thomas_R._Carper_official_portrait%2C_117th_Congress.jpg"
         },
         {
           "id": "james_calhoun",
@@ -2995,28 +2995,36 @@
       ],
       "officials": [
         {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
+        },
+        {
           "id": "jeff_shreve",
           "name": "Jefferson Shreve",
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "dan_newhouse",
-          "name": "Daniel Newhouse",
-          "party": "REP",
+          "id": "daniel_newhouse",
+          "name": "Dan Newhouse",
+          "party": "R",
           "state": "WA",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/N/N000189.jpg"
         },
         {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
+          "state": "NJ",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
         },
         {
           "id": "kevin_hern",
@@ -3024,7 +3032,63 @@
           "party": "R",
           "state": "OK",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001082.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001082.jpg"
+        },
+        {
+          "id": "scott_mr_franklin",
+          "name": "Scott Franklin",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000472.jpg"
+        },
+        {
+          "id": "george_whitesides",
+          "name": "George Whitesides",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/W/W000830.jpg"
+        },
+        {
+          "id": "julie_johnson",
+          "name": "Julie Johnson",
+          "party": "D",
+          "state": "TX",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
+        },
+        {
+          "id": "jared_moskowitz",
+          "name": "Jared Moskowitz",
+          "party": "D",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001217.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
+        },
+        {
+          "id": "kathy_manning",
+          "name": "Kathy Manning",
+          "party": "",
+          "state": "NC",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001135.jpg"
+        },
+        {
+          "id": "",
+          "name": "Lankford, James",
+          "party": "R",
+          "state": "Oklahoma",
+          "chamber": "senate",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
         },
         {
           "id": "shelley_moore_capito",
@@ -3035,76 +3099,12 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/75/Shelley_Moore_Capito_official_Senate_photo.jpg/330px-Shelley_Moore_Capito_official_Senate_photo.jpg"
         },
         {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
-          "state": "NJ",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "george_whitesides",
-          "name": "George Whitesides",
-          "party": "D",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/W000830.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "scott_mr_franklin",
-          "name": "Scott Franklin",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000472.jpg"
-        },
-        {
-          "id": "jared_moskowitz",
-          "name": "Jared Moskowitz",
-          "party": "D",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001217.jpg"
-        },
-        {
-          "id": "julie_johnson",
-          "name": "Julie Johnson",
-          "party": "D",
-          "state": "TX",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
-        },
-        {
-          "id": "",
-          "name": "Lankford, James",
-          "party": "REP",
-          "state": "Oklahoma",
-          "chamber": "senate",
-          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000575.jpg"
-        },
-        {
-          "id": "kathy_manning",
-          "name": "Kathy Manning",
-          "party": "",
-          "state": "NC",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "lisa_mcclain",
@@ -3112,39 +3112,15 @@
           "party": "R",
           "state": "MI",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001136.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001136.jpg"
         },
         {
           "id": "julia_letlow",
           "name": "Julia Letlow",
-          "party": "",
-          "state": "",
+          "party": "REP",
+          "state": "LA",
           "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "valerie_hoyle",
-          "name": "Val Hoyle",
-          "party": "D",
-          "state": "OR",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/H001092.jpg"
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "david_taylor",
-          "name": "David Taylor",
-          "party": "R",
-          "state": "OH",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000490.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/L/L000595.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -3152,7 +3128,15 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001325.jpg"
+        },
+        {
+          "id": "valerie_hoyle",
+          "name": "Val Hoyle",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/H/H001092.jpg"
         },
         {
           "id": "sheldon_whitehouse",
@@ -3163,6 +3147,22 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg/330px-Sheldon_Whitehouse%2C_official_portrait%2C_116th_congress.jpg"
         },
         {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
+        },
+        {
+          "id": "david_taylor",
+          "name": "David Taylor",
+          "party": "R",
+          "state": "OH",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000490.jpg"
+        },
+        {
           "id": "tommy_tuberville",
           "name": "Thomas Tuberville",
           "party": "",
@@ -3171,20 +3171,20 @@
           "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Tommy_tuberville.jpg/330px-Tommy_tuberville.jpg"
         },
         {
-          "id": "ritchie_torres",
-          "name": "Ritchie Torres",
-          "party": "D",
-          "state": "NY",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/T000481.jpg"
-        },
-        {
           "id": "gil_cisneros",
           "name": "Gilbert Cisneros",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
+        },
+        {
+          "id": "ritchie_torres",
+          "name": "Ritchie Torres",
+          "party": "D",
+          "state": "",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000481.jpg"
         },
         {
           "id": "carol_miller",
@@ -3192,7 +3192,7 @@
           "party": "R",
           "state": "WV",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001205.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001205.jpg"
         }
       ],
       "firms_count": 8,
@@ -3235,44 +3235,12 @@
       ],
       "officials": [
         {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
-        },
-        {
-          "id": "byron_donalds",
-          "name": "Byron Donalds",
-          "party": "R",
-          "state": "FL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000632.jpg"
-        },
-        {
-          "id": "rob_bresnahan",
-          "name": "Robert Bresnahan",
-          "party": "REP",
-          "state": "PA",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001327.jpg"
-        },
-        {
-          "id": "gil_cisneros",
-          "name": "Gilbert Cisneros",
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
-        },
-        {
-          "id": "jon_jackson",
-          "name": "Jonathan Jackson",
-          "party": "D",
-          "state": "IL",
-          "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000309.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
         },
         {
           "id": "cleo_fields",
@@ -3280,7 +3248,39 @@
           "party": "D",
           "state": "LA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/F000477.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/F/F000477.jpg"
+        },
+        {
+          "id": "jon_jackson",
+          "name": "Jonathan Jackson",
+          "party": "D",
+          "state": "IL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000309.jpg"
+        },
+        {
+          "id": "gil_cisneros",
+          "name": "Gilbert Cisneros",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
+        },
+        {
+          "id": "rob_bresnahan",
+          "name": "Robert Bresnahan",
+          "party": "",
+          "state": "PA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001327.jpg"
+        },
+        {
+          "id": "byron_donalds",
+          "name": "Byron Donalds",
+          "party": "R",
+          "state": "FL",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000632.jpg"
         },
         {
           "id": "jeff_shreve",
@@ -3288,15 +3288,23 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
           "id": "",
           "name": "Capito, Shelley Moore",
-          "party": "REP",
+          "party": "R",
           "state": "West Virginia",
           "chamber": "senate",
           "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001047.jpg"
+        },
+        {
+          "id": "shrikant_thanedar",
+          "name": "Shri Thanedar",
+          "party": "",
+          "state": "MI",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/T/T000488.jpg"
         },
         {
           "id": "neal_dunn",
@@ -3304,15 +3312,7 @@
           "party": "R",
           "state": "FL",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/D000628.jpg"
-        },
-        {
-          "id": "shri_thanedar",
-          "name": "Shrikant Thanedar",
-          "party": "",
-          "state": "MI",
-          "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000628.jpg"
         }
       ],
       "firms_count": 3,
@@ -3348,20 +3348,20 @@
       ],
       "officials": [
         {
+          "id": "rohit_khanna",
+          "name": "Ro Khanna",
+          "party": "D",
+          "state": "CA",
+          "chamber": "house",
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/K/K000389.jpg"
+        },
+        {
           "id": "mike_mccaul",
           "name": "Michael McCaul",
           "party": "R",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/M001157.jpg"
-        },
-        {
-          "id": "ro_khanna",
-          "name": "Rohit Khanna",
-          "party": "DEM",
-          "state": "CA",
-          "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/M/M001157.jpg"
         },
         {
           "id": "gil_cisneros",
@@ -3369,7 +3369,7 @@
           "party": "D",
           "state": "CA",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/C001123.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/C/C001123.jpg"
         },
         {
           "id": "jeff_shreve",
@@ -3377,23 +3377,15 @@
           "party": "R",
           "state": "IN",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/S001229.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/S/S001229.jpg"
         },
         {
-          "id": "susan_m_collins",
-          "name": "Susan M. Collins",
-          "party": "",
-          "state": "ME",
-          "chamber": "senate",
-          "photo_url": null
-        },
-        {
-          "id": "josh_gottheimer",
-          "name": "Joshua Gottheimer",
-          "party": "DEM",
+          "id": "joshua_gottheimer",
+          "name": "Josh Gottheimer",
+          "party": "D",
           "state": "NJ",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/G/G000583.jpg"
         },
         {
           "id": "julie_johnson",
@@ -3401,7 +3393,7 @@
           "party": "D",
           "state": "TX",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/J000310.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/J/J000310.jpg"
         },
         {
           "id": "sheri_biggs",
@@ -3409,7 +3401,15 @@
           "party": "R",
           "state": "SC",
           "chamber": "house",
-          "photo_url": "https://clerk.house.gov/images/members/B001325.jpg"
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/B/B001325.jpg"
+        },
+        {
+          "id": "susan_m_collins",
+          "name": "Susan Collins",
+          "party": "REP",
+          "state": "ME",
+          "chamber": "senate",
+          "photo_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg/330px-Senator_Susan_Collins_official_photo%2C_117th_Congress_%28cropped%29.jpeg"
         }
       ],
       "firms_count": 2,
@@ -3445,12 +3445,12 @@
       ],
       "officials": [
         {
-          "id": "debbie_dingell",
-          "name": "Deborah Dingell",
-          "party": "",
+          "id": "deborah_dingell",
+          "name": "Debbie Dingell",
+          "party": "D",
           "state": "MI",
           "chamber": "house",
-          "photo_url": null
+          "photo_url": "https://bioguide.congress.gov/bioguide/photo/D/D000624.jpg"
         },
         {
           "id": "tommy_tuberville",
@@ -3490,5 +3490,5 @@
     }
   },
   "count": 9,
-  "generated_at": "2026-01-20T20:15:00.751634"
+  "generated_at": "2026-01-21T10:15:54.446383"
 }
