@@ -76,6 +76,109 @@ def _get_cbsa_name_from_code(cbsa_code: str, cbsa_name_cache: Dict[str, str] = N
     return f"CBSA {cbsa_code_str}"
 
 
+def _transform_mortgage_goals_data(mortgage_goals_data: Optional[Dict]) -> Optional[Dict]:
+    """
+    Transform mortgage_goals_data from the query format to the expected Excel format.
+
+    Input format (from app.py):
+    {
+        'home_purchase': DataFrame([{state_name, total_loans, lmict_loans, ...}]),
+        'refinance': DataFrame([...]),
+        'home_improvement': DataFrame([...])
+    }
+
+    Output format (expected by merger_excel_generator):
+    {
+        'by_state': {
+            'Illinois': {
+                'home_purchase': {'Loans': 100, '~LMICT': 50, ...},
+                'refinance': {...},
+                'home_improvement': {...}
+            },
+            ...
+        },
+        'grand_total': {
+            'home_purchase': {'Loans': 1000, ...},
+            'refinance': {...},
+            'home_improvement': {...}
+        }
+    }
+    """
+    if not mortgage_goals_data:
+        return None
+
+    # Column mapping from DataFrame columns to expected metric names
+    column_to_metric = {
+        'total_loans': 'Loans',
+        'lmict_loans': '~LMICT',
+        'lmib_loans': '~LMIB',
+        'lmib_amount': 'LMIB$',
+        'mmct_loans': '~MMCT',
+        'minb_loans': '~MINB',
+        'asian_loans': '~Asian',
+        'black_loans': '~Black',
+        'native_american_loans': '~Native American',
+        'hopi_loans': '~HoPI',
+        'hispanic_loans': '~Hispanic'
+    }
+
+    # Loan type mapping
+    loan_type_map = {
+        'home_purchase': 'home_purchase',
+        'refinance': 'refinance',
+        'home_improvement': 'home_improvement',
+        'home_equity': 'home_improvement'  # Map home_equity to home_improvement
+    }
+
+    by_state = {}
+    grand_total = {}
+
+    for loan_type, df in mortgage_goals_data.items():
+        mapped_loan_type = loan_type_map.get(loan_type, loan_type)
+
+        if df is None or (hasattr(df, 'empty') and df.empty):
+            continue
+
+        if not isinstance(df, pd.DataFrame):
+            continue
+
+        # Calculate grand totals for this loan type
+        loan_type_totals = {}
+        for col, metric in column_to_metric.items():
+            if col in df.columns:
+                loan_type_totals[metric] = int(df[col].sum()) if pd.notna(df[col].sum()) else 0
+
+        if loan_type_totals:
+            grand_total[mapped_loan_type] = loan_type_totals
+
+        # Process each state
+        if 'state_name' in df.columns:
+            for _, row in df.iterrows():
+                state_name = row.get('state_name', '')
+                if not state_name or pd.isna(state_name):
+                    continue
+
+                if state_name not in by_state:
+                    by_state[state_name] = {}
+
+                state_metrics = {}
+                for col, metric in column_to_metric.items():
+                    if col in df.columns:
+                        val = row.get(col, 0)
+                        state_metrics[metric] = int(val) if pd.notna(val) else 0
+
+                if state_metrics:
+                    by_state[state_name][mapped_loan_type] = state_metrics
+
+    if not by_state and not grand_total:
+        return None
+
+    return {
+        'by_state': by_state,
+        'grand_total': grand_total
+    }
+
+
 def create_merger_excel(
     output_path: Path,
     bank_a_name: str,
@@ -120,6 +223,8 @@ def create_merger_excel(
     # Extract metadata
     hmda_years = metadata.get('hmda_years', []) if metadata else []
     sb_years = metadata.get('sb_years', []) if metadata else []
+    baseline_hmda_years = metadata.get('baseline_hmda_years', []) if metadata else []
+    baseline_sb_years = metadata.get('baseline_sb_years', []) if metadata else []
     bank_a_lei = metadata.get('acquirer_lei', '') if metadata else ''
     bank_b_lei = metadata.get('target_lei', '') if metadata else ''
     bank_a_rssd = metadata.get('acquirer_rssd', '') if metadata else ''
@@ -309,10 +414,26 @@ def create_merger_excel(
         cbsa_name_map=cbsa_name_map,
         required_cbsas=bank_a_required_cbsas
     )
-    
+
+    # Transform peer data separately for Excel sheet display
+    bank_a_mortgage_peer_transformed = transform_mortgage_data(
+        subject_df=bank_a_hmda_peer if bank_a_hmda_peer is not None and not bank_a_hmda_peer.empty else pd.DataFrame(),
+        peer_df=pd.DataFrame(),  # No peer-of-peer
+        cbsa_name_map=cbsa_name_map,
+        required_cbsas=bank_a_required_cbsas
+    )
+
     bank_b_mortgage_transformed = transform_mortgage_data(
         subject_df=bank_b_hmda_subject if bank_b_hmda_subject is not None and not bank_b_hmda_subject.empty else pd.DataFrame(),
         peer_df=bank_b_hmda_peer if bank_b_hmda_peer is not None and not bank_b_hmda_peer.empty else pd.DataFrame(),
+        cbsa_name_map=cbsa_name_map,
+        required_cbsas=bank_b_required_cbsas
+    )
+
+    # Transform peer data separately for Excel sheet display
+    bank_b_mortgage_peer_transformed = transform_mortgage_data(
+        subject_df=bank_b_hmda_peer if bank_b_hmda_peer is not None and not bank_b_hmda_peer.empty else pd.DataFrame(),
+        peer_df=pd.DataFrame(),  # No peer-of-peer
         cbsa_name_map=cbsa_name_map,
         required_cbsas=bank_b_required_cbsas
     )
@@ -516,19 +637,24 @@ def create_merger_excel(
     )
     
     logger.info("Data transformation complete. Calling shared Excel generator...")
-    
+
+    # Transform mortgage goals data to expected format
+    transformed_mortgage_goals = _transform_mortgage_goals_data(mortgage_goals_data)
+    if transformed_mortgage_goals:
+        logger.info(f"Transformed mortgage_goals_data: {len(transformed_mortgage_goals.get('by_state', {}))} states, grand_total has {len(transformed_mortgage_goals.get('grand_total', {}))} loan types")
+
     # Call shared generator
     shared_create_merger_excel(
         output_path=output_path,
         bank_a_name=bank_a_name,
         bank_b_name=bank_b_name,
         assessment_areas_data=assessment_areas_data,
-        mortgage_goals_data=mortgage_goals_data if mortgage_goals_data else None,
+        mortgage_goals_data=transformed_mortgage_goals,
         sb_goals_data=sb_goals_data if sb_goals_data is not None and not sb_goals_data.empty else None,
         bank_a_mortgage_data=bank_a_mortgage_transformed,
         bank_b_mortgage_data=bank_b_mortgage_transformed,
-        bank_a_mortgage_peer_data=None,  # Peer data is already merged in transformed data
-        bank_b_mortgage_peer_data=None,  # Peer data is already merged in transformed data
+        bank_a_mortgage_peer_data=bank_a_mortgage_peer_transformed,
+        bank_b_mortgage_peer_data=bank_b_mortgage_peer_transformed,
         bank_a_sb_data=bank_a_sb_transformed,
         bank_b_sb_data=bank_b_sb_transformed,
         bank_a_sb_peer_data=None,  # Peer data is already merged in transformed data
@@ -537,6 +663,8 @@ def create_merger_excel(
         bank_b_branch_data=bank_b_branch_transformed,
         years_hmda=hmda_years,
         years_sb=sb_years,
+        baseline_years_hmda=baseline_hmda_years,
+        baseline_years_sb=baseline_sb_years,
         bank_a_lei=bank_a_lei,
         bank_b_lei=bank_b_lei,
         bank_a_rssd=bank_a_rssd,
@@ -554,25 +682,74 @@ def create_merger_excel(
     logger.info(f"Excel workbook saved to: {output_path}")
     print(f"\n[OK] Excel workbook saved to: {output_path}")
     
-    # Add HHI sheet if data provided (shared generator doesn't handle HHI)
-    if hhi_data is not None and not hhi_data.empty:
-        logger.info(f"[HHI] HHI data provided - Shape: {hhi_data.shape}, Columns: {list(hhi_data.columns)}")
-        try:
-            wb = load_workbook(output_path)
+    # Add HHI sheet - always create it, with explanatory note if empty
+    try:
+        wb = load_workbook(output_path)
+        if hhi_data is not None and not hhi_data.empty:
+            logger.info(f"[HHI] HHI data provided - Shape: {hhi_data.shape}, Columns: {list(hhi_data.columns)}")
             _add_hhi_sheet(wb, hhi_data, bank_a_name, bank_b_name)
-            wb.save(output_path)
-            logger.info("Added HHI Analysis sheet")
-        except Exception as e:
-            logger.error(f"Could not add HHI sheet: {e}")
-            import traceback
-            traceback.print_exc()
-    else:
-        logger.warning(f"[HHI] No HHI data provided - hhi_data is None: {hhi_data is None}, empty: {hhi_data.empty if hhi_data is not None else 'N/A'}")
+            logger.info("Added HHI Analysis sheet with data")
+        else:
+            logger.warning(f"[HHI] No HHI data - creating sheet with explanatory note")
+            _add_empty_hhi_sheet(wb, bank_a_name, bank_b_name, bank_a_rssd, bank_b_rssd)
+            logger.info("Added HHI Analysis sheet with no-data explanation")
+        wb.save(output_path)
+    except Exception as e:
+        logger.error(f"Could not add HHI sheet: {e}")
+        import traceback
+        traceback.print_exc()
+
+
+def _add_empty_hhi_sheet(wb: Workbook, bank_a_name: str, bank_b_name: str, bank_a_rssd: str, bank_b_rssd: str):
+    """Add HHI Analysis sheet with explanatory note when no overlapping counties exist."""
+
+    ws = wb.create_sheet("HHI Analysis", len(wb.sheetnames))
+
+    # Title style
+    title_font = Font(bold=True, size=14, color="034EA0")
+    note_font = Font(size=11, italic=True)
+    info_font = Font(size=11)
+
+    # Title
+    ws.merge_cells('A1:G1')
+    cell = ws.cell(1, 1, "HHI Analysis - Deposit Market Concentration")
+    cell.font = title_font
+    cell.alignment = Alignment(horizontal="center")
+
+    # Explanatory note
+    ws.merge_cells('A3:G3')
+    note_cell = ws.cell(3, 1, "No HHI analysis available - Banks do not have any overlapping counties with branch locations.")
+    note_cell.font = Font(size=12, bold=True, color="C00000")  # Red color for emphasis
+    note_cell.alignment = Alignment(horizontal="left", wrap_text=True)
+
+    # Bank details
+    ws.cell(5, 1, "Bank Details:").font = Font(bold=True, size=11)
+    ws.cell(6, 1, f"• {bank_a_name}").font = info_font
+    ws.cell(6, 3, f"RSSD: {bank_a_rssd if bank_a_rssd else 'N/A'}").font = info_font
+    ws.cell(7, 1, f"• {bank_b_name}").font = info_font
+    ws.cell(7, 3, f"RSSD: {bank_b_rssd if bank_b_rssd else 'N/A'}").font = info_font
+
+    # Additional explanation
+    ws.merge_cells('A9:G9')
+    ws.cell(9, 1, "HHI (Herfindahl-Hirschman Index) analysis requires both banks to have branch locations in at least one common county.").font = note_font
+    ws.merge_cells('A10:G10')
+    ws.cell(10, 1, "Since these banks operate in separate geographic markets, deposit concentration analysis cannot be performed.").font = note_font
+
+    # Adjust column widths
+    ws.column_dimensions['A'].width = 30
+    ws.column_dimensions['B'].width = 15
+    ws.column_dimensions['C'].width = 20
+    ws.column_dimensions['D'].width = 15
+    ws.column_dimensions['E'].width = 15
+    ws.column_dimensions['F'].width = 15
+    ws.column_dimensions['G'].width = 15
+
+    logger.info(f"[HHI] Created empty HHI sheet with explanatory note")
 
 
 def _add_hhi_sheet(wb: Workbook, hhi_data: pd.DataFrame, bank_a_name: str, bank_b_name: str):
     """Add HHI Analysis sheet to workbook for counties where both banks have branches."""
-    
+
     logger.info(f"[HHI] Adding HHI sheet - Input data shape: {hhi_data.shape}, Columns: {list(hhi_data.columns)}")
     
     # HHI calculator already filters to only counties where both banks have branches

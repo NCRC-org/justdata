@@ -163,8 +163,17 @@ def analyze():
             'acquirer_assessment_areas': request.form.get('acquirer_assessment_areas', '[]'),
             'target_assessment_areas': request.form.get('target_assessment_areas', '[]'),
             'loan_purpose': request.form.get('loan_purpose', ''),
-            'hmda_years': request.form.get('hmda_years', '').strip(),  # Will be auto-determined if empty
-            'sb_years': request.form.get('sb_years', '').strip(),  # Will be auto-determined if empty
+            'peer_group': request.form.get('peer_group', 'volume_50_200').strip(),  # Peer group selection
+            # Analysis year ranges
+            'hmda_start_year': request.form.get('hmda_start_year', '2020').strip(),
+            'hmda_end_year': request.form.get('hmda_end_year', '2024').strip(),
+            'sb_start_year': request.form.get('sb_start_year', '2019').strip(),
+            'sb_end_year': request.form.get('sb_end_year', '2023').strip(),
+            # Goal baseline year ranges
+            'baseline_hmda_start_year': request.form.get('baseline_hmda_start_year', '2022').strip(),
+            'baseline_hmda_end_year': request.form.get('baseline_hmda_end_year', '2024').strip(),
+            'baseline_sb_start_year': request.form.get('baseline_sb_start_year', '2021').strip(),
+            'baseline_sb_end_year': request.form.get('baseline_sb_end_year', '2023').strip(),
             'action_taken': request.form.get('action_taken', '1'),
             'occupancy_type': request.form.get('occupancy_type', '1'),
             'total_units': request.form.get('total_units', '1-4'),
@@ -179,12 +188,9 @@ def analyze():
         # Get user type for logging
         user_type = get_user_type()
         
-        # For cache key, use 'auto' if years are empty (will be normalized)
+        # For cache key, normalize the year ranges
         cache_params = form_data.copy()
-        if not cache_params.get('hmda_years'):
-            cache_params['hmda_years'] = 'auto'
-        if not cache_params.get('sb_years'):
-            cache_params['sb_years'] = 'auto'
+        # Cache key includes all year parameters (analysis + baseline)
         
         # Check cache first
         cached_result = get_cached_result('mergermeter', cache_params, user_type)

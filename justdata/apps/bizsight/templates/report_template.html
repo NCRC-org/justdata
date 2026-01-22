@@ -1299,14 +1299,28 @@
                 })
                 .then(data => {
                     if (!data) return; // Retry in progress
-                    
+
                     if (!data.success) {
                         throw new Error(data.error || 'Failed to load report data');
                     }
-                    
+
+                    // Check if essential data is present - if not, data may still be propagating
+                    const hasEssentialData = data.metadata &&
+                        (data.county_summary_table?.length > 0 ||
+                         data.top_lenders_table?.length > 0 ||
+                         data.comparison_table?.length > 0);
+
+                    if (!hasEssentialData && retryCount < maxRetries) {
+                        console.log(`Data returned success but essential fields are empty, retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                        const loadingSubMessage = document.getElementById('loadingSubMessage');
+                        if (loadingSubMessage) loadingSubMessage.textContent = `Waiting for data to be ready... (attempt ${retryCount + 1}/${maxRetries})`;
+                        setTimeout(() => loadReportData(jobId, retryCount + 1), retryDelay);
+                        return;
+                    }
+
                     // Update metadata
                     const metadata = data.metadata;
-                    document.getElementById('reportMetadata').textContent = 
+                    document.getElementById('reportMetadata').textContent =
                         `${metadata.county_name} • Years: ${metadata.year_range}`;
                     
                     // Update summary cards (pass county summary data for 2020 baseline)

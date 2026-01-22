@@ -486,24 +486,32 @@ def _perform_analysis(job_id, form_data):
         
         # Get filters from form_data (not request.form - we're in a background thread)
         loan_purpose = form_data.get('loan_purpose') or ''
-        hmda_years_str = form_data.get('hmda_years') or '2020,2021,2022,2023,2024'
-        sb_years_str = form_data.get('sb_years') or '2020,2021,2022,2023,2024'
-        
+
         # Get HMDA filter values (defaults for multi-select: comma-separated values)
         action_taken = form_data.get('action_taken', '1')
         occupancy_type = form_data.get('occupancy_type', '1')
         total_units = form_data.get('total_units', '1,2,3,4')  # Default to 1-4 units
         construction_method = form_data.get('construction_method', '1,2')  # Default: both site-built and manufactured homes
         not_reverse = form_data.get('not_reverse', '1')
-        
-        # Parse years (handle None/empty strings)
-        if not isinstance(hmda_years_str, str):
-            hmda_years_str = '2020,2021,2022,2023,2024'
-        if not isinstance(sb_years_str, str):
-            sb_years_str = '2019,2020,2021,2022,2023'
-        
-        hmda_years = [y.strip() for y in hmda_years_str.split(',') if y.strip()]
-        sb_years = [y.strip() for y in sb_years_str.split(',') if y.strip()]
+        peer_group = form_data.get('peer_group', 'volume_50_200')  # Peer group selection
+
+        # Parse analysis year ranges (for analysis sheets)
+        hmda_start_year = int(form_data.get('hmda_start_year') or 2020)
+        hmda_end_year = int(form_data.get('hmda_end_year') or 2024)
+        sb_start_year = int(form_data.get('sb_start_year') or 2019)
+        sb_end_year = int(form_data.get('sb_end_year') or 2023)
+
+        # Parse baseline year ranges (for goals sheets)
+        baseline_hmda_start_year = int(form_data.get('baseline_hmda_start_year') or 2022)
+        baseline_hmda_end_year = int(form_data.get('baseline_hmda_end_year') or 2024)
+        baseline_sb_start_year = int(form_data.get('baseline_sb_start_year') or 2021)
+        baseline_sb_end_year = int(form_data.get('baseline_sb_end_year') or 2023)
+
+        # Generate year lists from ranges
+        hmda_years = [str(y) for y in range(hmda_start_year, hmda_end_year + 1)]
+        sb_years = [str(y) for y in range(sb_start_year, sb_end_year + 1)]
+        baseline_hmda_years = [str(y) for y in range(baseline_hmda_start_year, baseline_hmda_end_year + 1)]
+        baseline_sb_years = [str(y) for y in range(baseline_sb_start_year, baseline_sb_end_year + 1)]
         
         update_progress(job_id, {'percent': 10, 'step': 'Mapping counties to GEOIDs...', 'done': False, 'error': None})
         
@@ -558,7 +566,7 @@ def _perform_analysis(job_id, form_data):
         if acquirer_lei and acquirer_geoids:
             query = build_hmda_peer_query(
                 acquirer_lei, acquirer_geoids, hmda_years, loan_purpose,
-                action_taken, occupancy_type, total_units, construction_method, not_reverse
+                action_taken, occupancy_type, total_units, construction_method, not_reverse, peer_group
             )
             results = execute_query(client, query)
             if results:
@@ -584,7 +592,7 @@ def _perform_analysis(job_id, form_data):
         if target_lei and target_geoids:
             query = build_hmda_peer_query(
                 target_lei, target_geoids, hmda_years, loan_purpose,
-                action_taken, occupancy_type, total_units, construction_method, not_reverse
+                action_taken, occupancy_type, total_units, construction_method, not_reverse, peer_group
             )
             results = execute_query(client, query)
             if results:
@@ -1009,21 +1017,21 @@ def _perform_analysis(job_id, form_data):
                     """
                     return query
                 
-                # Query Bank A
+                # Query Bank A - using baseline years for goals
                 if acquirer_lei and acquirer_geoids:
                     query = build_county_level_hmda_query(
-                        acquirer_lei, acquirer_geoids, hmda_years, loan_purpose_filter,
+                        acquirer_lei, acquirer_geoids, baseline_hmda_years, loan_purpose_filter,
                         action_taken, occupancy_type, total_units, construction_method, not_reverse
                     )
                     results = execute_query(client, query)
                     if results:
                         df_a = pd.DataFrame(results)
                         combined_dfs.append(df_a)
-                
-                # Query Bank B
+
+                # Query Bank B - using baseline years for goals
                 if target_lei and target_geoids:
                     query = build_county_level_hmda_query(
-                        target_lei, target_geoids, hmda_years, loan_purpose_filter,
+                        target_lei, target_geoids, baseline_hmda_years, loan_purpose_filter,
                         action_taken, occupancy_type, total_units, construction_method, not_reverse
                     )
                     results = execute_query(client, query)
@@ -1121,12 +1129,12 @@ def _perform_analysis(job_id, form_data):
                         AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
                         AND (l.sb_resid = '{respondent_id_no_prefix}' OR l.sb_resid = '{sb_id}')
                 )
-                SELECT 
+                SELECT
                     csm.state_name,
-                    SUM(fs.sb_loans_count) as total_sb_loans,
-                    SUM(fs.lmict_loans_count) as lmict_loans,
-                    SUM(fs.lmict_loans_amount) as lmict_amount,
-                    SUM(fs.loans_rev_under_1m) as loans_rev_under_1m,
+                    SUM(fs.sb_loans_count) as sb_loans_total,
+                    SUM(fs.lmict_loans_count) as lmict_count,
+                    SUM(fs.lmict_loans_amount) as lmict_loans_amount,
+                    SUM(fs.loans_rev_under_1m) as loans_rev_under_1m_count,
                     SUM(fs.amount_rev_under_1m) as amount_rev_under_1m
                 FROM filtered_sb_data fs
                 INNER JOIN county_state_map csm
@@ -1137,18 +1145,18 @@ def _perform_analysis(job_id, form_data):
                 return query
             
             combined_sb_dfs = []
-            
-            # Query Bank A
+
+            # Query Bank A - using baseline years for goals
             if acquirer_sb_id and acquirer_geoids:
-                query = build_county_level_sb_query(acquirer_sb_id, acquirer_geoids, sb_years)
+                query = build_county_level_sb_query(acquirer_sb_id, acquirer_geoids, baseline_sb_years)
                 results = execute_query(client, query)
                 if results:
                     df_a = pd.DataFrame(results)
                     combined_sb_dfs.append(df_a)
-            
-            # Query Bank B
+
+            # Query Bank B - using baseline years for goals
             if target_sb_id and target_geoids:
-                query = build_county_level_sb_query(target_sb_id, target_geoids, sb_years)
+                query = build_county_level_sb_query(target_sb_id, target_geoids, baseline_sb_years)
                 results = execute_query(client, query)
                 if results:
                     df_b = pd.DataFrame(results)
@@ -1159,11 +1167,12 @@ def _perform_analysis(job_id, form_data):
                 df = pd.concat(combined_sb_dfs, ignore_index=True)
                 if not df.empty and 'state_name' in df.columns:
                     # Sum across both banks for each state
+                    # Column names must match what merger_excel_generator expects
                     agg_dict = {
-                        'total_sb_loans': 'sum',
-                        'lmict_loans': 'sum',
-                        'lmict_amount': 'sum',
-                        'loans_rev_under_1m': 'sum',
+                        'sb_loans_total': 'sum',
+                        'lmict_count': 'sum',
+                        'lmict_loans_amount': 'sum',
+                        'loans_rev_under_1m_count': 'sum',
                         'amount_rev_under_1m': 'sum'
                     }
                     # Only include columns that exist
@@ -1171,15 +1180,15 @@ def _perform_analysis(job_id, form_data):
                     if agg_dict:
                         sb_goals_data = df.groupby('state_name').agg(agg_dict).reset_index()
                         # Calculate averages
-                        if 'lmict_loans' in sb_goals_data.columns and 'lmict_amount' in sb_goals_data.columns:
+                        if 'lmict_count' in sb_goals_data.columns and 'lmict_loans_amount' in sb_goals_data.columns:
                             sb_goals_data['avg_sb_lmict_loan_amount'] = sb_goals_data.apply(
-                                lambda row: row['lmict_amount'] / row['lmict_loans'] 
-                                if pd.notna(row['lmict_loans']) and row['lmict_loans'] > 0 else 0, axis=1
+                                lambda row: row['lmict_loans_amount'] / row['lmict_count']
+                                if pd.notna(row['lmict_count']) and row['lmict_count'] > 0 else 0, axis=1
                             )
-                        if 'loans_rev_under_1m' in sb_goals_data.columns and 'amount_rev_under_1m' in sb_goals_data.columns:
+                        if 'loans_rev_under_1m_count' in sb_goals_data.columns and 'amount_rev_under_1m' in sb_goals_data.columns:
                             sb_goals_data['avg_loan_amt_rum_sb'] = sb_goals_data.apply(
-                                lambda row: row['amount_rev_under_1m'] / row['loans_rev_under_1m']
-                                if pd.notna(row['loans_rev_under_1m']) and row['loans_rev_under_1m'] > 0 else 0, axis=1
+                                lambda row: row['amount_rev_under_1m'] / row['loans_rev_under_1m_count']
+                                if pd.notna(row['loans_rev_under_1m_count']) and row['loans_rev_under_1m_count'] > 0 else 0, axis=1
                             )
                     else:
                         sb_goals_data = pd.DataFrame()
@@ -1215,8 +1224,12 @@ def _perform_analysis(job_id, form_data):
         }
         
         metadata = {
+            # Analysis years (for main analysis sheets)
             'hmda_years': hmda_years,
             'sb_years': sb_years,
+            # Baseline years (for goal-setting sheets)
+            'baseline_hmda_years': baseline_hmda_years,
+            'baseline_sb_years': baseline_sb_years,
             'loan_purpose': loan_purpose,
             'action_taken': action_taken,
             'occupancy_type': occupancy_type,
@@ -1261,7 +1274,25 @@ def _perform_analysis(job_id, form_data):
             metadata['branch_details'] = {}
         metadata['branch_details']['bank_a'] = bank_a_branch_details.to_dict('records') if not bank_a_branch_details.empty else []
         metadata['branch_details']['bank_b'] = bank_b_branch_details.to_dict('records') if not bank_b_branch_details.empty else []
-        
+
+        # Diagnostic logging for debugging data issues
+        print(f"[DEBUG] Data Summary before Excel generation:")
+        print(f"[DEBUG] - Bank A LEI: {acquirer_lei}, Bank B LEI: {target_lei}")
+        print(f"[DEBUG] - Bank A SB ID: {acquirer_sb_id}, Bank B SB ID: {target_sb_id}")
+        print(f"[DEBUG] - Bank A RSSD: {acquirer_rssd}, Bank B RSSD: {target_rssd}")
+        print(f"[DEBUG] - Acquirer geoids count: {len(acquirer_geoids) if acquirer_geoids else 0}")
+        print(f"[DEBUG] - Target geoids count: {len(target_geoids) if target_geoids else 0}")
+        print(f"[DEBUG] - All geoids count: {len(all_geoids) if all_geoids else 0}")
+        print(f"[DEBUG] - Bank A HMDA Subject shape: {bank_a_hmda_subject.shape if not bank_a_hmda_subject.empty else 'EMPTY'}")
+        print(f"[DEBUG] - Bank B HMDA Subject shape: {bank_b_hmda_subject.shape if not bank_b_hmda_subject.empty else 'EMPTY'}")
+        print(f"[DEBUG] - Bank A SB Subject shape: {bank_a_sb_subject.shape if not bank_a_sb_subject.empty else 'EMPTY'}")
+        print(f"[DEBUG] - Bank B SB Subject shape: {bank_b_sb_subject.shape if not bank_b_sb_subject.empty else 'EMPTY'}")
+        print(f"[DEBUG] - HHI DataFrame shape: {hhi_df.shape if not hhi_df.empty else 'EMPTY'}")
+        print(f"[DEBUG] - SB Goals Data: {sb_goals_data.shape if sb_goals_data is not None and not sb_goals_data.empty else 'NONE/EMPTY'}")
+        if sb_goals_data is not None and not sb_goals_data.empty:
+            print(f"[DEBUG] - SB Goals States: {list(sb_goals_data['state_name'].unique()) if 'state_name' in sb_goals_data.columns else 'N/A'}")
+        print(f"[DEBUG] - Mortgage Goals Data: {list(mortgage_goals_data.keys()) if mortgage_goals_data else 'NONE'}")
+
         create_merger_excel(
             output_path=excel_file,
             bank_a_name=acquirer_name,

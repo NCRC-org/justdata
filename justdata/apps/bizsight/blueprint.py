@@ -601,17 +601,21 @@ def report_data():
             # Check progress to see if analysis is still running
             progress = get_progress(job_id)
             if not progress.get('done', False):
-                return jsonify({
+                response = jsonify({
                     'success': False,
                     'error': 'Analysis still in progress',
                     'progress': progress
-                }), 202  # 202 Accepted - still processing
+                })
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                return response, 202  # 202 Accepted - still processing
 
-            return jsonify({
+            response = jsonify({
                 'success': False,
                 'error': 'No analysis data found. The analysis may have expired or failed.',
                 'progress': progress
-            }), 404
+            })
+            response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            return response, 404
 
         # BizSight result structure is already flattened by get_analysis_result_by_job_id
         # Extract the relevant data fields
@@ -649,7 +653,12 @@ def report_data():
         # Ensure success flag is present
         cleaned_result['success'] = True
 
-        return jsonify(cleaned_result)
+        # Return with cache-control headers to prevent browser caching
+        response = jsonify(cleaned_result)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
 
     except Exception as e:
         import traceback

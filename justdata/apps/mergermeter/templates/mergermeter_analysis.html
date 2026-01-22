@@ -99,11 +99,15 @@
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
                                     <div>
                                         <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">LEI</div>
-                                        <div id="acquirer_lei_display" style="font-family: monospace; font-size: 0.85rem; color: #333; word-break: break-all;"></div>
+                                        <input type="text" id="acquirer_lei" name="acquirer_lei" placeholder="20-character LEI"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="acquirer_lei_display" style="display: none;"></div>
                                     </div>
                                     <div>
                                         <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">RSSD</div>
-                                        <div id="acquirer_rssd_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                        <input type="text" id="acquirer_rssd" name="acquirer_rssd" placeholder="RSSD number"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="acquirer_rssd_display" style="display: none;"></div>
                                     </div>
                                     <div>
                                         <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID <span style="font-weight: normal; color: #999;">(optional)</span></div>
@@ -112,10 +116,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Hidden form fields for submission -->
-                            <input type="hidden" id="acquirer_lei" name="acquirer_lei">
-                            <input type="hidden" id="acquirer_rssd" name="acquirer_rssd">
                             <input type="hidden" id="acquirer_name" name="acquirer_name">
                         </div>
 
@@ -158,11 +158,15 @@
                                 <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
                                     <div>
                                         <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">LEI</div>
-                                        <div id="target_lei_display" style="font-family: monospace; font-size: 0.85rem; color: #333; word-break: break-all;"></div>
+                                        <input type="text" id="target_lei" name="target_lei" placeholder="20-character LEI"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="target_lei_display" style="display: none;"></div>
                                     </div>
                                     <div>
                                         <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">RSSD</div>
-                                        <div id="target_rssd_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                        <input type="text" id="target_rssd" name="target_rssd" placeholder="RSSD number"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="target_rssd_display" style="display: none;"></div>
                                     </div>
                                     <div>
                                         <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID <span style="font-weight: normal; color: #999;">(optional)</span></div>
@@ -171,10 +175,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Hidden form fields for submission -->
-                            <input type="hidden" id="target_lei" name="target_lei">
-                            <input type="hidden" id="target_rssd" name="target_rssd">
                             <input type="hidden" id="target_name" name="target_name">
                         </div>
                     </div>
@@ -439,56 +439,120 @@
 
                         <!-- Compact Horizontal Filter Section -->
                         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <!-- Year Ranges Row - Now Automatic (Last 5 Years) -->
-                            <div style="display: none; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
-                                <div style="flex: 0 0 auto;">
-                                    <label for="hmda_start_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
-                                        HMDA Start
-                                    </label>
-                                    <select id="hmda_start_year" name="hmda_start_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
-                                        <option value="2020" selected>2020</option>
-                                        <option value="2021">2021</option>
-                                        <option value="2022">2022</option>
-                                        <option value="2023">2023</option>
-                                        <option value="2024">2024</option>
-                                    </select>
+                            <!-- Year Ranges Section -->
+                            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+                                <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 10px;">
+                                    <i class="fas fa-calendar-alt"></i> Year Ranges
                                 </div>
-                                <div style="flex: 0 0 auto;">
-                                    <label for="hmda_end_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
-                                        HMDA End
-                                    </label>
-                                    <select id="hmda_end_year" name="hmda_end_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
-                                        <option value="2020">2020</option>
-                                        <option value="2021">2021</option>
-                                        <option value="2022">2022</option>
-                                        <option value="2023">2023</option>
-                                        <option value="2024" selected>2024</option>
-                                    </select>
+
+                                <!-- Analysis Years Row -->
+                                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 12px;">
+                                    <div style="flex: 0 0 auto; min-width: 120px;">
+                                        <span style="font-size: 0.8rem; color: #444; font-weight: 600;">Analysis Years:</span>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="hmda_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA Start</label>
+                                        <select id="hmda_start_year" name="hmda_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020" selected>2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="hmda_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA End</label>
+                                        <select id="hmda_end_year" name="hmda_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024" selected>2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="sb_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB Start</label>
+                                        <select id="sb_start_year" name="sb_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019" selected>2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="sb_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB End</label>
+                                        <select id="sb_end_year" name="sb_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023" selected>2023</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div style="flex: 0 0 auto;">
-                                    <label for="sb_start_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
-                                        SB Start
-                                    </label>
-                                    <select id="sb_start_year" name="sb_start_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
-                                        <option value="2019" selected>2019</option>
-                                        <option value="2020">2020</option>
-                                        <option value="2021">2021</option>
-                                        <option value="2022">2022</option>
-                                        <option value="2023">2023</option>
-                                    </select>
+
+                                <!-- Goal-Setting Baseline Years Row -->
+                                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                                    <div style="flex: 0 0 auto; min-width: 120px;">
+                                        <span style="font-size: 0.8rem; color: #444; font-weight: 600;">Goal Baseline:</span>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_hmda_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA Start</label>
+                                        <select id="baseline_hmda_start_year" name="baseline_hmda_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022" selected>2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_hmda_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA End</label>
+                                        <select id="baseline_hmda_end_year" name="baseline_hmda_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024" selected>2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_sb_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB Start</label>
+                                        <select id="baseline_sb_start_year" name="baseline_sb_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021" selected>2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_sb_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB End</label>
+                                        <select id="baseline_sb_end_year" name="baseline_sb_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023" selected>2023</option>
+                                        </select>
+                                    </div>
                                 </div>
-                                <div style="flex: 0 0 auto;">
-                                    <label for="sb_end_year" style="font-size: 0.85rem; margin-bottom: 4px; display: block; color: #666;">
-                                        SB End
-                                    </label>
-                                    <select id="sb_end_year" name="sb_end_year" required style="padding: 6px 10px; font-size: 0.9rem; min-width: 80px;">
-                                        <option value="2019">2019</option>
-                                        <option value="2020">2020</option>
-                                        <option value="2021">2021</option>
-                                        <option value="2022">2022</option>
-                                        <option value="2023" selected>2023</option>
-                                    </select>
-                                </div>
+                                <small style="display: block; margin-top: 8px; font-size: 0.75rem; color: #888;">
+                                    <i class="fas fa-info-circle"></i> Analysis Years are used for data sheets. Goal Baseline Years are used for establishing baseline metrics in Goals sheets.
+                                </small>
                             </div>
 
                             <!-- Loan Purpose Row -->
@@ -499,6 +563,21 @@
                                     <option value="31,32">Refinance</option>
                                     <option value="2,4,5">Home Equity</option>
                                 </select>
+                            </div>
+
+                            <!-- Peer Group Selection Row -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+                                <label for="peer_group" style="font-size: 0.85rem; color: #666; margin-right: 8px; font-weight: 600;">Peer Group:</label>
+                                <select id="peer_group" name="peer_group" style="padding: 8px 12px; font-size: 0.85rem; border: 2px solid var(--ncrc-secondary-blue); border-radius: 6px; background: #f0f7fa; min-width: 220px;">
+                                    <option value="volume_50_200" selected>50%-200% Volume (Default)</option>
+                                    <option value="all_banks">All Banks</option>
+                                    <option value="all_credit_unions">All Credit Unions</option>
+                                    <option value="all_mortgage_companies">All Mortgage Companies</option>
+                                    <option value="all_lenders">All Lenders</option>
+                                </select>
+                                <span style="font-size: 0.75rem; color: #888; margin-left: 5px;" title="Controls which lenders are included in peer comparisons">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
                             </div>
 
                             <!-- HMDA Filters Row -->
@@ -539,7 +618,7 @@
                                     <label for="construction_method" style="font-size: 0.75rem; color: #666;">Construction:</label>
                                     <select id="construction_method" name="construction_method" multiple style="min-width: 180px;">
                                         <option value="1" selected>Site-Built (1)</option>
-                                        <option value="2">Manufactured Home (2)</option>
+                                        <option value="2" selected>Manufactured Home (2)</option>
                                     </select>
                                 </div>
                                 
@@ -1656,7 +1735,11 @@
                 // Get loan purpose from dropdown
                 const loanPurpose = $('#loan_purpose').val() || '';
                 formData.set('loan_purpose', loanPurpose);
-                
+
+                // Get peer group selection
+                const peerGroup = $('#peer_group').val() || 'volume_50_200';
+                formData.set('peer_group', peerGroup);
+
                 // Get HMDA filter values from multi-select dropdowns (join arrays with commas)
                 const actionTaken = $('#action_taken').val() || [];
                 const occupancyType = $('#occupancy_type').val() || [];
@@ -1670,10 +1753,29 @@
                 formData.set('construction_method', Array.isArray(constructionMethod) ? constructionMethod.join(',') : constructionMethod);
                 formData.set('not_reverse', Array.isArray(notReverse) ? notReverse.join(',') : notReverse);
                 
-                // Years are now automatically determined (last 5 years) - don't send years
-                // Backend will automatically get last 5 years from BigQuery
-                formData.set('hmda_years', '');  // Empty = auto-determine
-                formData.set('sb_years', '');    // Empty = auto-determine
+                // Get year values from selectors
+                const hmdaStartYear = $('#hmda_start_year').val();
+                const hmdaEndYear = $('#hmda_end_year').val();
+                const sbStartYear = $('#sb_start_year').val();
+                const sbEndYear = $('#sb_end_year').val();
+
+                // Get baseline year values for goal-setting
+                const baselineHmdaStartYear = $('#baseline_hmda_start_year').val();
+                const baselineHmdaEndYear = $('#baseline_hmda_end_year').val();
+                const baselineSbStartYear = $('#baseline_sb_start_year').val();
+                const baselineSbEndYear = $('#baseline_sb_end_year').val();
+
+                // Set analysis years (as comma-separated list for HMDA, individual values for SB)
+                formData.set('hmda_start_year', hmdaStartYear);
+                formData.set('hmda_end_year', hmdaEndYear);
+                formData.set('sb_start_year', sbStartYear);
+                formData.set('sb_end_year', sbEndYear);
+
+                // Set baseline years for goal-setting
+                formData.set('baseline_hmda_start_year', baselineHmdaStartYear);
+                formData.set('baseline_hmda_end_year', baselineHmdaEndYear);
+                formData.set('baseline_sb_start_year', baselineSbStartYear);
+                formData.set('baseline_sb_end_year', baselineSbEndYear);
                 
                 // Generate job ID
                 const jobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);

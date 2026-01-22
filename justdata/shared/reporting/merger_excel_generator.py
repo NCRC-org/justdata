@@ -57,6 +57,88 @@ def _get_short_bank_name(bank_name: str) -> str:
     return short_name[:15].strip()
 
 
+def _create_empty_mortgage_sheet(wb: Workbook, bank_name: str, lei: str):
+    """Create a mortgage data sheet with explanatory note when no HMDA data exists."""
+    short_name = _get_short_bank_name(bank_name)
+    sheet_name = f"{short_name} MORTGAGE DATA"
+
+    # Truncate sheet name if too long (Excel max is 31 chars)
+    if len(sheet_name) > 31:
+        sheet_name = sheet_name[:31]
+
+    ws = wb.create_sheet(sheet_name)
+
+    # Title
+    ws.merge_cells('A1:F1')
+    title_cell = ws.cell(1, 1, f"{bank_name} - Mortgage Lending Data (HMDA)")
+    title_cell.font = Font(bold=True, size=14, color=NCRC_BLUE)
+    title_cell.alignment = Alignment(horizontal="center")
+
+    # Explanatory note
+    ws.merge_cells('A3:F3')
+    note_cell = ws.cell(3, 1, f"No HMDA mortgage data found for {bank_name}")
+    note_cell.font = Font(bold=True, size=12, color="C00000")  # Red for emphasis
+    note_cell.alignment = Alignment(horizontal="left")
+
+    # Details
+    ws.cell(5, 1, "Bank Details:").font = Font(bold=True, size=11)
+    ws.cell(6, 1, f"Bank Name: {bank_name}").font = Font(size=11)
+    ws.cell(7, 1, f"LEI: {lei if lei else 'Not provided'}").font = Font(size=11)
+
+    # Explanation
+    ws.merge_cells('A9:F9')
+    ws.cell(9, 1, "This may occur if:").font = Font(bold=True, size=11)
+    ws.cell(10, 1, "• The bank does not have HMDA-reportable mortgage lending activity").font = Font(size=11, italic=True)
+    ws.cell(11, 1, "• The LEI does not match any records in the HMDA database").font = Font(size=11, italic=True)
+    ws.cell(12, 1, "• The bank's lending is outside the specified assessment areas").font = Font(size=11, italic=True)
+
+    # Adjust column widths
+    ws.column_dimensions['A'].width = 60
+
+    logger.info(f"Created empty mortgage sheet for {bank_name} (LEI: {lei})")
+
+
+def _create_empty_sb_sheet(wb: Workbook, bank_name: str, sb_id: str):
+    """Create a small business data sheet with explanatory note when no SB data exists."""
+    short_name = _get_short_bank_name(bank_name)
+    sheet_name = f"{short_name} SB DATA"
+
+    # Truncate sheet name if too long (Excel max is 31 chars)
+    if len(sheet_name) > 31:
+        sheet_name = sheet_name[:31]
+
+    ws = wb.create_sheet(sheet_name)
+
+    # Title
+    ws.merge_cells('A1:F1')
+    title_cell = ws.cell(1, 1, f"{bank_name} - Small Business Lending Data (CRA)")
+    title_cell.font = Font(bold=True, size=14, color=NCRC_BLUE)
+    title_cell.alignment = Alignment(horizontal="center")
+
+    # Explanatory note
+    ws.merge_cells('A3:F3')
+    note_cell = ws.cell(3, 1, f"No CRA small business lending data found for {bank_name}")
+    note_cell.font = Font(bold=True, size=12, color="C00000")  # Red for emphasis
+    note_cell.alignment = Alignment(horizontal="left")
+
+    # Details
+    ws.cell(5, 1, "Bank Details:").font = Font(bold=True, size=11)
+    ws.cell(6, 1, f"Bank Name: {bank_name}").font = Font(size=11)
+    ws.cell(7, 1, f"SB Respondent ID: {sb_id if sb_id else 'Not provided'}").font = Font(size=11)
+
+    # Explanation
+    ws.merge_cells('A9:F9')
+    ws.cell(9, 1, "This may occur if:").font = Font(bold=True, size=11)
+    ws.cell(10, 1, "• The bank is not required to report CRA small business data").font = Font(size=11, italic=True)
+    ws.cell(11, 1, "• The SB Respondent ID does not match any records in the CRA database").font = Font(size=11, italic=True)
+    ws.cell(12, 1, "• The bank's lending is outside the specified assessment areas").font = Font(size=11, italic=True)
+
+    # Adjust column widths
+    ws.column_dimensions['A'].width = 60
+
+    logger.info(f"Created empty SB sheet for {bank_name} (SB ID: {sb_id})")
+
+
 def create_merger_excel(
     output_path: Path,
     bank_a_name: str,
@@ -76,6 +158,8 @@ def create_merger_excel(
     bank_b_branch_data: Optional[pd.DataFrame] = None,
     years_hmda: Optional[List[int]] = None,
     years_sb: Optional[List[int]] = None,
+    baseline_years_hmda: Optional[List[int]] = None,
+    baseline_years_sb: Optional[List[int]] = None,
     bank_a_lei: str = "",
     bank_b_lei: str = "",
     bank_a_rssd: str = "",
@@ -151,35 +235,45 @@ def create_merger_excel(
             wb, bank_a_name, bank_b_name, assessment_areas_data
         )
 
-    # Create Mortgage Goals sheet if data provided
+    # Create Mortgage Goals sheet if data provided (using baseline years)
     if mortgage_goals_data:
-        _create_mortgage_goals_sheet(wb, mortgage_goals_data, years_hmda)
+        goals_hmda_years = baseline_years_hmda if baseline_years_hmda else years_hmda
+        _create_mortgage_goals_sheet(wb, mortgage_goals_data, goals_hmda_years)
 
-    # Create SB Goals sheet if data provided
+    # Create SB Goals sheet if data provided (using baseline years)
     if sb_goals_data is not None and not sb_goals_data.empty:
-        _create_sb_goals_sheet(wb, sb_goals_data, years_sb)
+        goals_sb_years = baseline_years_sb if baseline_years_sb else years_sb
+        _create_sb_goals_sheet(wb, sb_goals_data, goals_sb_years)
 
-    # Create Mortgage DATA sheets
+    # Create Mortgage DATA sheets - always create sheets with explanatory note if empty
     if bank_a_mortgage_data is not None and not bank_a_mortgage_data.empty:
         _create_mortgage_data_sheet(
             wb, bank_a_name, bank_a_mortgage_data, bank_a_mortgage_peer_data
         )
+    else:
+        _create_empty_mortgage_sheet(wb, bank_a_name, bank_a_lei)
 
     if bank_b_mortgage_data is not None and not bank_b_mortgage_data.empty:
         _create_mortgage_data_sheet(
             wb, bank_b_name, bank_b_mortgage_data, bank_b_mortgage_peer_data
         )
+    else:
+        _create_empty_mortgage_sheet(wb, bank_b_name, bank_b_lei)
 
-    # Create SB DATA sheets
+    # Create SB DATA sheets - always create sheets with explanatory note if empty
     if bank_a_sb_data is not None and not bank_a_sb_data.empty:
         _create_sb_data_sheet(
             wb, bank_a_name, bank_a_sb_data, bank_a_sb_peer_data
         )
+    else:
+        _create_empty_sb_sheet(wb, bank_a_name, bank_a_sb_id)
 
     if bank_b_sb_data is not None and not bank_b_sb_data.empty:
         _create_sb_data_sheet(
             wb, bank_b_name, bank_b_sb_data, bank_b_sb_peer_data
         )
+    else:
+        _create_empty_sb_sheet(wb, bank_b_name, bank_b_sb_id)
 
     # Create Branch DATA sheets
     if bank_a_branch_data is not None and not bank_a_branch_data.empty:
@@ -464,6 +558,16 @@ def _create_mortgage_goals_sheet(wb: Workbook, mortgage_goals_data: Dict, years_
                 ws.cell(row, 11, f'=IFERROR((F{row}/2)*K$2,0)')
                 ws.cell(row, 12, f'=J{row}-K{row}')
 
+            # Apply number formatting based on metric
+            if metric == 'LMIB$':
+                # Dollar format for LMIB$
+                for col in [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+                    ws.cell(row, col).number_format = '$#,##0'
+            else:
+                # Thousands format for loan counts
+                for col in [3, 4, 5, 6, 7, 8, 9, 10]:
+                    ws.cell(row, col).number_format = '#,##0'
+
             row += 1
 
         # Write each state's data
@@ -489,6 +593,16 @@ def _create_mortgage_goals_sheet(wb: Workbook, mortgage_goals_data: Dict, years_
                 if metric == 'LMIB$':
                     ws.cell(row, 11, f'=IFERROR((F{row}/2)*K$2,0)')
                     ws.cell(row, 12, f'=J{row}-K{row}')
+
+                # Apply number formatting based on metric
+                if metric == 'LMIB$':
+                    # Dollar format for LMIB$
+                    for col in [3, 4, 5, 6, 7, 8, 9, 10, 11, 12]:
+                        ws.cell(row, col).number_format = '$#,##0'
+                else:
+                    # Thousands format for loan counts
+                    for col in [3, 4, 5, 6, 7, 8, 9, 10]:
+                        ws.cell(row, col).number_format = '#,##0'
 
                 row += 1
 
@@ -558,6 +672,16 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                     ws.cell(row, 5, f'=IFERROR((C{row}/2)*E$2,0)')
                     ws.cell(row, 6, f'=D{row}-E{row}')
 
+                # Apply number formatting based on metric
+                if 'Avg' in metric or '$' in metric:
+                    # Dollar format for average amounts
+                    for col in [3, 4, 5, 6]:
+                        ws.cell(row, col).number_format = '$#,##0'
+                else:
+                    # Thousands format for loan counts
+                    for col in [3, 4]:
+                        ws.cell(row, col).number_format = '#,##0'
+
                 row += 1
 
             # Write by state
@@ -587,6 +711,16 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                     if 'Avg' in metric:
                         ws.cell(row, 5, f'=IFERROR((C{row}/2)*E$2,0)')
                         ws.cell(row, 6, f'=D{row}-E{row}')
+
+                    # Apply number formatting based on metric
+                    if 'Avg' in metric or '$' in metric:
+                        # Dollar format for average amounts
+                        for col in [3, 4, 5, 6]:
+                            ws.cell(row, col).number_format = '$#,##0'
+                    else:
+                        # Thousands format for loan counts
+                        for col in [3, 4]:
+                            ws.cell(row, col).number_format = '#,##0'
 
                     row += 1
 
@@ -646,8 +780,9 @@ def _create_mortgage_data_sheet(
         if metric in ['Loans', 'LMIB$']:
             ws.cell(row, 5, '--')
         else:
-            # For percentage metrics, show the difference as a decimal
-            ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+            # For percentage metrics, show the difference as percentage
+            diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+            diff_cell.number_format = '0.00%'
         row += 1
 
     # Write CBSA-level data
@@ -675,7 +810,8 @@ def _create_mortgage_data_sheet(
                 if metric in ['Loans', 'LMIB$']:
                     ws.cell(row, 5, '--')
                 else:
-                    ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                    diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                    diff_cell.number_format = '0.00%'
                 row += 1
 
     # Adjust column widths
@@ -741,7 +877,12 @@ def _create_sb_data_sheet(
         if metric == 'SB Loans':
             ws.cell(row, 5, '--')
         else:
-            ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+            diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+            # Apply dollar format for average amount metrics
+            if 'Avg' in metric:
+                diff_cell.number_format = '$#,##0'
+            else:
+                diff_cell.number_format = '#,##0'
         row += 1
 
     # Write CBSA-level data
@@ -768,7 +909,11 @@ def _create_sb_data_sheet(
                 if metric == 'SB Loans':
                     ws.cell(row, 5, '--')
                 else:
-                    ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                    diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                    if 'Avg' in metric:
+                        diff_cell.number_format = '$#,##0'
+                    else:
+                        diff_cell.number_format = '#,##0'
                 row += 1
 
     # Adjust column widths
@@ -834,11 +979,13 @@ def _create_branch_data_sheet(wb: Workbook, bank_name: str, branch_data: pd.Data
             # Difference as percentage point difference
             branches_row = row - 1
             ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+            ws.cell(row, 5).number_format = '0.00%'
         elif metric == 'MMCT':
             ws.cell(row, 3, int(grand_mmct))
             ws.cell(row, 4, int(grand_other_mmct))
             branches_row = row - 2
             ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+            ws.cell(row, 5).number_format = '0.00%'
         row += 1
 
     # Write CBSA-level data
@@ -866,11 +1013,13 @@ def _create_branch_data_sheet(wb: Workbook, bank_name: str, branch_data: pd.Data
                     ws.cell(row, 4, int(other_lmict))
                     branches_row = row - 1
                     ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+                    ws.cell(row, 5).number_format = '0.00%'
                 elif metric == 'MMCT':
                     ws.cell(row, 3, int(subject_mmct))
                     ws.cell(row, 4, int(other_mmct))
                     branches_row = row - 2
                     ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+                    ws.cell(row, 5).number_format = '0.00%'
                 row += 1
 
     # Adjust column widths
@@ -921,43 +1070,55 @@ def _calculate_mortgage_cbsa_total(group_data: pd.DataFrame) -> Dict:
 
 
 def _write_mortgage_metric_new_format(ws, row: int, col: int, metric: str, totals: Dict):
-    """Write a mortgage metric value to cell - raw decimal format for percentages."""
+    """Write a mortgage metric value to cell with proper number formatting."""
     if not totals:
         return
 
     total_loans = totals.get('total_loans', 0)
+    cell = ws.cell(row, col)
 
     if metric == 'Loans':
-        ws.cell(row, col, int(total_loans))
+        cell.value = int(total_loans)
+        cell.number_format = '#,##0'  # Thousands with commas, no decimals
     elif metric == 'LMICT%':
         pct = (totals.get('lmict_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)  # Raw decimal, no formatting
+        cell.value = pct
+        cell.number_format = '0.00%'  # Percentage with 2 decimals
     elif metric == 'LMIB%':
         pct = (totals.get('lmib_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
     elif metric == 'LMIB$':
-        ws.cell(row, col, int(totals.get('lmib_amount', 0)))
+        cell.value = int(totals.get('lmib_amount', 0))
+        cell.number_format = '$#,##0'  # Dollar format
     elif metric == 'MMCT%':
         pct = (totals.get('mmct_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
     elif metric == 'MINB%':
         pct = (totals.get('minb_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
     elif metric == 'Asian%':
         pct = (totals.get('asian_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
     elif metric == 'Black%':
         pct = (totals.get('black_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
     elif metric == 'Native American%':
         pct = (totals.get('native_american_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
     elif metric == 'HoPI%':
         pct = (totals.get('hopi_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
     elif metric == 'Hispanic%':
         pct = (totals.get('hispanic_loans', 0) / total_loans) if total_loans > 0 else 0
-        ws.cell(row, col, pct)
+        cell.value = pct
+        cell.number_format = '0.00%'
 
 
 def _calculate_sb_grand_total(df: pd.DataFrame, sb_col: str, lmict_col: str, rev_col: str) -> Dict:
@@ -999,20 +1160,27 @@ def _calculate_sb_cbsa_total(group_data: pd.DataFrame, sb_col: str, lmict_col: s
 
 
 def _write_sb_metric_new_format(ws, row: int, col: int, metric: str, totals: Dict):
-    """Write a SB metric value to cell - raw values, no special formatting."""
+    """Write a SB metric value to cell with proper number formatting."""
     if not totals:
         return
 
+    cell = ws.cell(row, col)
+
     if metric == 'SB Loans':
-        ws.cell(row, col, int(totals.get('sb_loans_total', 0)))
+        cell.value = int(totals.get('sb_loans_total', 0))
+        cell.number_format = '#,##0'  # Thousands with commas
     elif metric == '#LMICT':
-        ws.cell(row, col, int(totals.get('lmict_count', 0)))
+        cell.value = int(totals.get('lmict_count', 0))
+        cell.number_format = '#,##0'  # Thousands with commas
     elif metric == 'Avg SB LMICT Loan Amount':
-        ws.cell(row, col, float(totals.get('avg_sb_lmict_loan_amount', 0)))
+        cell.value = float(totals.get('avg_sb_lmict_loan_amount', 0))
+        cell.number_format = '$#,##0'  # Dollar format
     elif metric == 'Loans Rev Under $1m':
-        ws.cell(row, col, int(totals.get('loans_rev_under_1m_count', 0)))
+        cell.value = int(totals.get('loans_rev_under_1m_count', 0))
+        cell.number_format = '#,##0'  # Thousands with commas
     elif metric == 'Avg Loan Amt for <$1M GAR SB':
-        ws.cell(row, col, float(totals.get('avg_loan_amt_rum_sb', 0)))
+        cell.value = float(totals.get('avg_loan_amt_rum_sb', 0))
+        cell.number_format = '$#,##0'  # Dollar format
 
 
 # Keep old function signatures for backward compatibility
