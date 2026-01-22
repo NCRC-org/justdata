@@ -106,8 +106,9 @@
                                         <div id="acquirer_rssd_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
                                     </div>
                                     <div>
-                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID</div>
-                                        <div id="acquirer_res_id_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID <span style="font-weight: normal; color: #999;">(optional)</span></div>
+                                        <input type="text" id="acquirer_sb_id" name="acquirer_sb_id" placeholder="Enter if known"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
                                     </div>
                                 </div>
                             </div>
@@ -115,7 +116,6 @@
                             <!-- Hidden form fields for submission -->
                             <input type="hidden" id="acquirer_lei" name="acquirer_lei">
                             <input type="hidden" id="acquirer_rssd" name="acquirer_rssd">
-                            <input type="hidden" id="acquirer_sb_id" name="acquirer_sb_id">
                             <input type="hidden" id="acquirer_name" name="acquirer_name">
                         </div>
 
@@ -165,8 +165,9 @@
                                         <div id="target_rssd_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
                                     </div>
                                     <div>
-                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID</div>
-                                        <div id="target_res_id_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID <span style="font-weight: normal; color: #999;">(optional)</span></div>
+                                        <input type="text" id="target_sb_id" name="target_sb_id" placeholder="Enter if known"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
                                     </div>
                                 </div>
                             </div>
@@ -174,7 +175,6 @@
                             <!-- Hidden form fields for submission -->
                             <input type="hidden" id="target_lei" name="target_lei">
                             <input type="hidden" id="target_rssd" name="target_rssd">
-                            <input type="hidden" id="target_sb_id" name="target_sb_id">
                             <input type="hidden" id="target_name" name="target_name">
                         </div>
                     </div>
@@ -1822,7 +1822,9 @@
                 document.getElementById(`${bank}_location_display`).textContent = location ? `📍 ${location}` : '';
                 document.getElementById(`${bank}_lei_display`).textContent = lei || 'N/A';
                 document.getElementById(`${bank}_rssd_display`).textContent = rssd || 'N/A';
-                document.getElementById(`${bank}_res_id_display`).textContent = resId || 'N/A';
+                // Res ID is now an input field - clear it for manual entry
+                const resIdInput = document.getElementById(`${bank}_sb_id`);
+                if (resIdInput) resIdInput.value = '';
 
                 // Hide search container, show selected display
                 document.getElementById(`${bank}_search_container`).style.display = 'none';
@@ -1832,7 +1834,29 @@
                 document.getElementById(`${bank}_search_results`).style.display = 'none';
 
                 console.log(`Selected ${bank} bank:`, { name, lei, rssd, resId, location });
+
+                // Check if both banks are selected, then show assessment area section
+                checkAndShowAssessmentAreas();
             };
+
+            // Check if both banks are selected and show assessment area section
+            function checkAndShowAssessmentAreas() {
+                const acquirerLei = document.getElementById('acquirer_lei').value;
+                const targetLei = document.getElementById('target_lei').value;
+
+                if (acquirerLei && targetLei) {
+                    // Both banks selected - show assessment area section
+                    const assessmentSection = document.getElementById('assessmentAreaSection');
+                    if (assessmentSection) {
+                        assessmentSection.style.display = 'block';
+                        // Smooth scroll to assessment section
+                        setTimeout(() => {
+                            assessmentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                    }
+                    console.log('Both banks selected - showing assessment area section');
+                }
+            }
 
             // Clear bank selection and show search again
             window.clearBankSelection = function(bank) {

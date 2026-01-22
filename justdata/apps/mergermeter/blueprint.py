@@ -600,8 +600,9 @@ def api_search_banks():
 
         client = get_bigquery_client(PROJECT_ID)
 
-        # Search query joining lender_names_gleif with lenders18 and sb.lenders
-        # Returns display name, location info, and all identifiers (LEI, RSSD, Res ID)
+        # Search query joining lender_names_gleif with lenders18
+        # Returns display name, location info, and identifiers (LEI, RSSD)
+        # Note: Res ID not included as we don't have reliable mapping data
         # Note: ORDER BY must use the alias 'assets' not 'l.assets' when using DISTINCT
         sql = """
         SELECT DISTINCT
@@ -610,11 +611,9 @@ def api_search_banks():
             g.headquarters_state AS state,
             l.lei AS lei,
             CAST(l.respondent_rssd AS STRING) AS rssd,
-            CAST(sb.sb_rssd AS STRING) AS res_id,
             SAFE_CAST(l.assets AS INT64) AS assets
         FROM `hdma1-242116.hmda.lender_names_gleif` g
         JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
-        LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = CAST(sb.sb_rssd AS STRING)
         WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
         ORDER BY assets DESC NULLS LAST
         LIMIT @limit
@@ -650,7 +649,7 @@ def api_search_banks():
                 'state': row.state or '',
                 'lei': row.lei or '',
                 'rssd': row.rssd or '',
-                'res_id': row.res_id or '',
+                'res_id': '',  # Not available in search - user can enter manually
                 'assets': row.assets
             })
 
