@@ -602,6 +602,7 @@ def api_search_banks():
 
         # Search query joining lender_names_gleif with lenders18 and sb.lenders
         # Returns display name, location info, and all identifiers (LEI, RSSD, Res ID)
+        # Note: ORDER BY must use the alias 'assets' not 'l.assets' when using DISTINCT
         sql = """
         SELECT DISTINCT
             g.display_name AS name,
@@ -615,7 +616,7 @@ def api_search_banks():
         JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
         LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = CAST(sb.sb_rssd AS STRING)
         WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
-        ORDER BY SAFE_CAST(l.assets AS INT64) DESC NULLS LAST
+        ORDER BY assets DESC NULLS LAST
         LIMIT @limit
         """
 
