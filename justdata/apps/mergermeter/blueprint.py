@@ -74,7 +74,8 @@ def report():
     job_id_from_url = request.args.get('job_id')
     if job_id_from_url and not session.get('job_id'):
         session['job_id'] = job_id_from_url
-    return render_template('report_template.html', version=__version__)
+    app_base_url = url_for('mergermeter.index').rstrip('/')
+    return render_template('report_template.html', version=__version__, app_base_url=app_base_url)
 
 
 @mergermeter_bp.route('/progress/<job_id>')
@@ -170,6 +171,10 @@ def analyze():
             'construction_method': request.form.get('construction_method', '1'),
             'not_reverse': request.form.get('not_reverse', '1')
         }
+
+        # Debug: Log the SB IDs received from form
+        print(f"[DEBUG] Form received - acquirer_sb_id: '{form_data.get('acquirer_sb_id', 'NOT SET')}'")
+        print(f"[DEBUG] Form received - target_sb_id: '{form_data.get('target_sb_id', 'NOT SET')}'")
         
         # Get user type for logging
         user_type = get_user_type()
@@ -600,9 +605,9 @@ def api_search_banks():
 
         client = get_bigquery_client(PROJECT_ID)
 
-        # Search query joining lender_names_gleif with lenders18
-        # Returns display name, location info, and identifiers (LEI, RSSD)
-        # Note: Res ID not included as we don't have reliable mapping data
+        # Search query joining lender_names_gleif with lenders18 and sb.lenders
+        # Returns display name, location info, and identifiers (LEI, RSSD, SB Res ID)
+        # Links: LEI -> lenders18 (RSSD) -> sb.lenders (sb_rssd -> sb_resid)
         # Note: ORDER BY must use the alias 'assets' not 'l.assets' when using DISTINCT
         sql = """
         SELECT DISTINCT
@@ -611,9 +616,11 @@ def api_search_banks():
             g.headquarters_state AS state,
             l.lei AS lei,
             CAST(l.respondent_rssd AS STRING) AS rssd,
+            sb.sb_resid AS res_id,
             SAFE_CAST(l.assets AS INT64) AS assets
         FROM `hdma1-242116.hmda.lender_names_gleif` g
         JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
+        LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
         WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
         ORDER BY assets DESC NULLS LAST
         LIMIT @limit
@@ -649,7 +656,7 @@ def api_search_banks():
                 'state': row.state or '',
                 'lei': row.lei or '',
                 'rssd': row.rssd or '',
-                'res_id': '',  # Not available in search - user can enter manually
+                'res_id': row.res_id or '',  # From sb.lenders via RSSD lookup
                 'assets': row.assets
             })
 

@@ -404,7 +404,12 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ url_for('static', filename='js/app.v2.js') }}"></script>
     <script>
+        // Base URL for API calls
+        window.APP_BASE_URL = '{{ app_base_url|default("/mergermeter") }}';
+
         $(document).ready(function() {
+            const baseUrl = window.APP_BASE_URL || '/mergermeter';
+
             // Set report date
             document.getElementById('reportDate').textContent = new Date().toLocaleDateString('en-US', {
                 year: 'numeric',
@@ -441,15 +446,27 @@
                 `;
                 
                 // Generate AI summary
-                fetch('/api/generate-ai-summary', {
+                console.log('[MergerMeter Report] Loading report for job:', jobId);
+                console.log('[MergerMeter Report] Base URL:', baseUrl);
+                console.log('[MergerMeter Report] Fetching:', `${baseUrl}/api/generate-ai-summary`);
+
+                fetch(`${baseUrl}/api/generate-ai-summary`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
                     },
+                    credentials: 'same-origin',
                     body: JSON.stringify({ job_id: jobId })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('[MergerMeter Report] AI summary response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('[MergerMeter Report] AI summary data:', data);
                     if (data.success && data.summary) {
                         displayAISummary(data.summary, data.statistical_analysis, jobId);
                     } else {
@@ -458,34 +475,53 @@
                                 <h2>Error Generating Summary</h2>
                                 <p>${data.error || 'Unable to generate AI summary.'}</p>
                                 <p>You can still download the full Excel report below.</p>
+                                <a href="${baseUrl}/download?format=excel&job_id=${jobId}" class="action-btn primary">
+                                    <i class="fas fa-download"></i> Download Excel Report
+                                </a>
                             </div>
                         `;
                     }
                 })
                 .catch(error => {
-                    console.error('Error generating AI summary:', error);
+                    console.error('[MergerMeter Report] Error generating AI summary:', error);
                     document.getElementById('reportContent').innerHTML = `
                         <div class="report-section">
                             <h2>Error Generating Summary</h2>
-                            <p>An error occurred while generating the AI summary. Please try again.</p>
+                            <p>An error occurred while generating the AI summary: ${error.message}</p>
                             <p>You can still download the full Excel report below.</p>
+                            <a href="${baseUrl}/download?format=excel&job_id=${jobId}" class="action-btn primary">
+                                <i class="fas fa-download"></i> Download Excel Report
+                            </a>
                         </div>
                     `;
                 });
             }
 
             function displayAISummary(summary, statisticalAnalysis, jobId) {
+                console.log('[MergerMeter Report] displayAISummary called');
+                console.log('[MergerMeter Report] Fetching report-data:', `${baseUrl}/report-data?job_id=${jobId}`);
+
                 // First, load metadata and HHI data to build introduction
-                fetch(`/report-data?job_id=${jobId}`)
-                    .then(response => response.json())
+                fetch(`${baseUrl}/report-data?job_id=${jobId}`, {
+                    credentials: 'same-origin'
+                })
+                    .then(response => {
+                        console.log('[MergerMeter Report] report-data response status:', response.status);
+                        return response.json();
+                    })
                     .then(data => {
+                        console.log('[MergerMeter Report] report-data loaded:', data.success);
                         if (!data.success) {
-                            console.error('Error loading report data:', data.error);
+                            console.error('[MergerMeter Report] Error loading report data:', data.error);
                             return;
                         }
-                        
+
                         const metadata = data.metadata || {};
                         const hhiData = data.hhi_data || {};
+
+                        console.log('[MergerMeter Report] Metadata:', metadata);
+                        console.log('[MergerMeter Report] acquirer_sb_id:', metadata.acquirer_sb_id);
+                        console.log('[MergerMeter Report] target_sb_id:', metadata.target_sb_id);
                         
                         // Build introduction section
                         const introHTML = buildIntroductionSection(metadata);
@@ -533,7 +569,7 @@
                             
                             <div class="download-section" style="margin-top: 30px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
                                 <p style="margin: 0 0 15px 0; color: #666;">For detailed data tables and analysis, download the full Excel report:</p>
-                                <a href="/download?format=excel&job_id=${jobId}" class="action-btn primary" style="display: inline-block;">
+                                <a href="${baseUrl}/download?format=excel&job_id=${jobId}" class="action-btn primary" style="display: inline-block;">
                                     <i class="fas fa-download"></i> Download Full Excel Report
                                 </a>
                             </div>
@@ -851,7 +887,7 @@
                 e.preventDefault();
                 const jobId = new URLSearchParams(window.location.search).get('job_id') || sessionStorage.getItem('merger_job_id');
                 if (jobId) {
-                    window.location.href = `/download?format=excel&job_id=${jobId}`;
+                    window.location.href = `${baseUrl}/download?format=excel&job_id=${jobId}`;
                 }
             });
             

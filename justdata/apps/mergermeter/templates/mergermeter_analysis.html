@@ -188,7 +188,22 @@
                             <i class="fas fa-info-circle"></i>
                             Assessment areas are built from combining one or more counties. Upload PDF or Text files defining which counties are in each bank's assessment areas.
                         </small>
-                        
+
+                        <!-- National Level Data Option -->
+                        <div style="background: #fff3cd; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffc107; display: flex; align-items: center; gap: 15px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; font-weight: 600; color: #856404;">
+                                <input type="checkbox" id="useNationalData" name="use_national_data" value="1" style="width: 20px; height: 20px; cursor: pointer;">
+                                <i class="fas fa-globe-americas" style="font-size: 1.2em;"></i>
+                                Use National Level Data (Skip Assessment Areas)
+                            </label>
+                            <small style="color: #856404; margin-left: auto;">
+                                Check this to analyze data at the national level instead of by assessment area
+                            </small>
+                        </div>
+
+                        <!-- Assessment Area Input Sections (hidden when national data is selected) -->
+                        <div id="assessmentAreaInputs">
+
                         <!-- Bank A Assessment Areas -->
                         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
                             <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
@@ -412,6 +427,8 @@
                                 <div id="target_aa_list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
                             </div>
                         </div>
+
+                        </div><!-- End assessmentAreaInputs -->
                     </div>
 
                     <!-- Analysis Settings Section -->
@@ -840,11 +857,54 @@
             return areas;
         }
         
+        // Helper function to update stored assessment areas based on checkbox state
+        function updateStoredAssessmentAreas(bankType) {
+            const originalAAs = $('#analysisForm').data(`${bankType}_assessment_areas_original`);
+            if (!originalAAs) return;
+
+            const filteredAAs = [];
+            originalAAs.forEach((aa, aaIndex) => {
+                const filteredCounties = [];
+                const countiesList = aa.counties || [];
+
+                countiesList.forEach((county, cIndex) => {
+                    const checkbox = $(`.county-checkbox[data-bank="${bankType}"][data-aa-index="${aaIndex}"][data-county-index="${cIndex}"]`);
+                    if (checkbox.length && checkbox.is(':checked')) {
+                        filteredCounties.push(county);
+                    }
+                });
+
+                if (filteredCounties.length > 0) {
+                    filteredAAs.push({
+                        ...aa,
+                        counties: filteredCounties
+                    });
+                }
+            });
+
+            $('#analysisForm').data(`${bankType}_assessment_areas`, filteredAAs);
+            console.log(`Updated ${bankType} assessment areas:`, filteredAAs.length, 'areas with counties');
+        }
+
         // MergerMeter-specific customizations
         $(document).ready(function() {
             // Setup feature card tooltips
             setupFeatureCardTooltips();
-            
+
+            // Handle "Use National Level Data" checkbox
+            $('#useNationalData').on('change', function() {
+                const isChecked = $(this).is(':checked');
+                const assessmentInputs = $('#assessmentAreaInputs');
+
+                if (isChecked) {
+                    assessmentInputs.slideUp(300);
+                    // Clear assessment area requirements when using national data
+                    assessmentInputs.find('.aa-toggle-btn.active').removeClass('active');
+                } else {
+                    assessmentInputs.slideDown(300);
+                }
+            });
+
             // Initialize Select2 for multi-select HMDA filters
             $('#action_taken, #occupancy_type, #total_units, #construction_method, #not_reverse').select2({
                 placeholder: 'Select options...',
@@ -1222,29 +1282,70 @@
                             'border-color': '#c3e6cb'
                         });
                         
-                        // Display generated assessment areas
+                        // Display generated assessment areas with county checkboxes
                         if (result.assessment_areas && result.assessment_areas.length > 0) {
-                            let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
-                            result.assessment_areas.forEach((aa, index) => {
+                            let html = '<div style="font-size: 0.9rem;">';
+                            result.assessment_areas.forEach((aa, aaIndex) => {
                                 const countiesList = aa.counties || [];
-                                const countiesDisplay = countiesList.map(c => {
-                                    if (typeof c === 'object' && c.state_code && c.county_code) {
-                                        return `${c.state_code}${c.county_code}`;
+                                const aaId = `${bankType}_aa_${aaIndex}`;
+
+                                html += `<div class="assessment-area-item" data-aa-index="${aaIndex}" style="padding: 12px; margin-bottom: 12px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue); border-radius: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong style="color: var(--ncrc-dark-blue);">
+                                            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+                                            ${aa.cbsa_name || 'Unnamed Area'}
+                                        </strong>
+                                        <span style="font-size: 0.8rem; color: #666;">${countiesList.length} counties</span>
+                                    </div>
+                                    <div class="county-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+
+                                countiesList.forEach((c, cIndex) => {
+                                    const countyId = `${aaId}_county_${cIndex}`;
+                                    let countyName = '';
+                                    let geoid = '';
+
+                                    if (typeof c === 'object') {
+                                        countyName = c.county_name && c.state_name
+                                            ? `${c.county_name}, ${c.state_name}`
+                                            : (c.county_name || `${c.state_code || ''}${c.county_code || ''}`);
+                                        geoid = c.geoid5 || `${c.state_code || ''}${c.county_code || ''}`;
+                                    } else {
+                                        countyName = c;
+                                        geoid = c;
                                     }
-                                    return c;
-                                }).join(', ');
-                                
-                                html += `<li style="padding: 8px; margin-bottom: 8px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue);">
-                                    <strong>Assessment Area ${index + 1}:</strong> ${aa.cbsa_name || 'Unnamed'}<br>
-                                    <small style="color: #666;">Counties: ${countiesDisplay || 'None found'}</small>
-                                </li>`;
+
+                                    html += `<label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                                                class="county-checkbox-label" data-geoid="${geoid}">
+                                        <input type="checkbox" class="county-checkbox" data-bank="${bankType}" data-aa-index="${aaIndex}" data-county-index="${cIndex}" data-geoid="${geoid}" checked
+                                               style="cursor: pointer; width: 14px; height: 14px;">
+                                        <span>${countyName}</span>
+                                    </label>`;
+                                });
+
+                                html += `</div>
+                                </div>`;
                             });
-                            html += '</ul>';
+                            html += '</div>';
                             listDiv.html(html);
                             previewDiv.show();
-                            
+
+                            // Add checkbox toggle styling
+                            listDiv.find('.county-checkbox').on('change', function() {
+                                const label = $(this).closest('label');
+                                if (this.checked) {
+                                    label.css({ 'background': 'white', 'border-color': '#ddd', 'opacity': '1' });
+                                    label.find('span').css('text-decoration', 'none');
+                                } else {
+                                    label.css({ 'background': '#f0f0f0', 'border-color': '#ccc', 'opacity': '0.7' });
+                                    label.find('span').css('text-decoration', 'line-through');
+                                }
+                                // Update stored assessment areas
+                                updateStoredAssessmentAreas(bankType);
+                            });
+
                             // Store assessment areas for form submission
                             $('#analysisForm').data(`${bankType}_assessment_areas`, result.assessment_areas);
+                            $('#analysisForm').data(`${bankType}_assessment_areas_original`, JSON.parse(JSON.stringify(result.assessment_areas)));
                         }
                     } else {
                         const errorMsg = result.error || 'Failed to generate assessment areas';
@@ -1324,21 +1425,71 @@
                             'border-color': '#c3e6cb'
                         });
                         
-                        // Display parsed assessment areas
+                        // Display parsed assessment areas with county checkboxes
                         if (result.assessment_areas && result.assessment_areas.length > 0) {
-                            let html = '<ul style="list-style: none; padding: 0; margin: 0;">';
-                            result.assessment_areas.forEach((aa, index) => {
-                                html += `<li style="padding: 8px; margin-bottom: 8px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue);">
-                                    <strong>Assessment Area ${index + 1}:</strong> ${aa.cbsa_name || 'N/A'}<br>
-                                    <small style="color: #666;">Counties: ${aa.counties?.join(', ') || 'None found'}</small>
-                                </li>`;
+                            let html = '<div style="font-size: 0.9rem;">';
+                            result.assessment_areas.forEach((aa, aaIndex) => {
+                                const countiesList = aa.counties || [];
+                                const aaId = `${bankType}_aa_${aaIndex}`;
+
+                                html += `<div class="assessment-area-item" data-aa-index="${aaIndex}" style="padding: 12px; margin-bottom: 12px; background: #f8f9fa; border-left: 3px solid var(--ncrc-secondary-blue); border-radius: 4px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                        <strong style="color: var(--ncrc-dark-blue);">
+                                            <i class="fas fa-map-marker-alt" style="margin-right: 5px;"></i>
+                                            ${aa.cbsa_name || 'Unnamed Area'}
+                                        </strong>
+                                        <span style="font-size: 0.8rem; color: #666;">${countiesList.length} counties</span>
+                                    </div>
+                                    <div class="county-checkboxes" style="display: flex; flex-wrap: wrap; gap: 8px;">`;
+
+                                countiesList.forEach((c, cIndex) => {
+                                    const countyId = `${aaId}_county_${cIndex}`;
+                                    let countyName = '';
+                                    let geoid = '';
+
+                                    if (typeof c === 'object') {
+                                        countyName = c.county_name && c.state_name
+                                            ? `${c.county_name}, ${c.state_name}`
+                                            : (c.county_name || `${c.state_code || ''}${c.county_code || ''}`);
+                                        geoid = c.geoid5 || `${c.state_code || ''}${c.county_code || ''}`;
+                                    } else {
+                                        // String format - could be "County, State" or just FIPS
+                                        countyName = c;
+                                        geoid = c;
+                                    }
+
+                                    html += `<label style="display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; background: white; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s;"
+                                                class="county-checkbox-label" data-geoid="${geoid}">
+                                        <input type="checkbox" class="county-checkbox" data-bank="${bankType}" data-aa-index="${aaIndex}" data-county-index="${cIndex}" data-geoid="${geoid}" checked
+                                               style="cursor: pointer; width: 14px; height: 14px;">
+                                        <span>${countyName}</span>
+                                    </label>`;
+                                });
+
+                                html += `</div>
+                                </div>`;
                             });
-                            html += '</ul>';
+                            html += '</div>';
                             listDiv.html(html);
                             previewDiv.show();
-                            
+
+                            // Add checkbox toggle styling
+                            listDiv.find('.county-checkbox').on('change', function() {
+                                const label = $(this).closest('label');
+                                if (this.checked) {
+                                    label.css({ 'background': 'white', 'border-color': '#ddd', 'opacity': '1' });
+                                    label.find('span').css('text-decoration', 'none');
+                                } else {
+                                    label.css({ 'background': '#f0f0f0', 'border-color': '#ccc', 'opacity': '0.7' });
+                                    label.find('span').css('text-decoration', 'line-through');
+                                }
+                                // Update stored assessment areas
+                                updateStoredAssessmentAreas(bankType);
+                            });
+
                             // Store assessment areas for form submission
                             $(`#analysisForm`).data(`${bankType}_assessment_areas`, result.assessment_areas);
+                            $(`#analysisForm`).data(`${bankType}_assessment_areas_original`, JSON.parse(JSON.stringify(result.assessment_areas)));
                         } else {
                             statusText.html(`<i class="fas fa-exclamation-triangle"></i> File uploaded but no assessment areas were found. Please check the file format.`);
                             statusDiv.css({
@@ -1455,39 +1606,50 @@
                     return;
                 }
                 
-                // Collect assessment areas
-                let acquirerAA = $('#analysisForm').data('acquirer_assessment_areas') || [];
-                let targetAA = $('#analysisForm').data('target_assessment_areas') || [];
-                
-                // Process manual assessment areas
-                const acquirerManual = processManualAssessmentAreas('acquirer');
-                const targetManual = processManualAssessmentAreas('target');
-                
-                if (acquirerManual.length > 0) {
-                    acquirerAA = acquirerAA.concat(acquirerManual);
+                // Check if using national level data
+                const useNationalData = $('#useNationalData').is(':checked');
+
+                // Collect assessment areas (only if not using national data)
+                let acquirerAA = [];
+                let targetAA = [];
+
+                if (!useNationalData) {
+                    acquirerAA = $('#analysisForm').data('acquirer_assessment_areas') || [];
+                    targetAA = $('#analysisForm').data('target_assessment_areas') || [];
+
+                    // Process manual assessment areas
+                    const acquirerManual = processManualAssessmentAreas('acquirer');
+                    const targetManual = processManualAssessmentAreas('target');
+
+                    if (acquirerManual.length > 0) {
+                        acquirerAA = acquirerAA.concat(acquirerManual);
+                    }
+                    if (targetManual.length > 0) {
+                        targetAA = targetAA.concat(targetManual);
+                    }
+
+                    if (acquirerAA.length === 0 && acquirerManual.length === 0) {
+                        alert('Please upload or manually enter assessment areas for Bank A (Acquirer), or select "Use National Level Data".');
+                        return;
+                    }
+
+                    if (targetAA.length === 0 && targetManual.length === 0) {
+                        alert('Please upload or manually enter assessment areas for Bank B (Target), or select "Use National Level Data".');
+                        return;
+                    }
                 }
-                if (targetManual.length > 0) {
-                    targetAA = targetAA.concat(targetManual);
-                }
-                
-                if (acquirerAA.length === 0 && acquirerManual.length === 0) {
-                    alert('Please upload or manually enter assessment areas for Bank A (Acquirer).');
-                    return;
-                }
-                
-                if (targetAA.length === 0 && targetManual.length === 0) {
-                    alert('Please upload or manually enter assessment areas for Bank B (Target).');
-                    return;
-                }
-                
+
                 // Get form data
                 const formData = new FormData(this);
-                
+
+                // Add national data flag
+                formData.append('use_national_data', useNationalData ? '1' : '0');
+
                 // Add bank names
                 formData.append('acquirer_name', acquirerName);
                 formData.append('target_name', targetName);
-                
-                // Add assessment areas as JSON
+
+                // Add assessment areas as JSON (empty arrays if using national data)
                 formData.append('acquirer_assessment_areas', JSON.stringify(acquirerAA));
                 formData.append('target_assessment_areas', JSON.stringify(targetAA));
                 
@@ -1814,7 +1976,6 @@
                 // Populate hidden form fields
                 document.getElementById(`${bank}_lei`).value = lei || '';
                 document.getElementById(`${bank}_rssd`).value = rssd || '';
-                document.getElementById(`${bank}_sb_id`).value = resId || '';
                 document.getElementById(`${bank}_name`).value = name || '';
 
                 // Update display fields
@@ -1822,9 +1983,13 @@
                 document.getElementById(`${bank}_location_display`).textContent = location ? `📍 ${location}` : '';
                 document.getElementById(`${bank}_lei_display`).textContent = lei || 'N/A';
                 document.getElementById(`${bank}_rssd_display`).textContent = rssd || 'N/A';
-                // Res ID is now an input field - clear it for manual entry
+
+                // Res ID input field - populate from search result if available, otherwise leave for manual entry
                 const resIdInput = document.getElementById(`${bank}_sb_id`);
-                if (resIdInput) resIdInput.value = '';
+                if (resIdInput && resId) {
+                    resIdInput.value = resId;
+                }
+                // Don't clear if empty - user may have already entered a value
 
                 // Hide search container, show selected display
                 document.getElementById(`${bank}_search_container`).style.display = 'none';

@@ -2865,6 +2865,11 @@ def report_data():
         if metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
+            print(f"[DEBUG] Loaded metadata for job {job_id}")
+            print(f"[DEBUG] acquirer_sb_id: '{metadata.get('acquirer_sb_id', 'NOT SET')}'")
+            print(f"[DEBUG] target_sb_id: '{metadata.get('target_sb_id', 'NOT SET')}'")
+        else:
+            print(f"[DEBUG] Metadata file not found: {metadata_file}")
         
         # Load HHI data if available (from Excel HHI Analysis sheet or from raw data)
         hhi_data = {}
