@@ -358,21 +358,36 @@ def init_firebase():
     except ValueError:
         pass  # Not initialized yet
 
-    # Get credentials from environment
+    # Get credentials from environment (check multiple sources)
     creds_path = os.environ.get('FIREBASE_CREDENTIALS')
     creds_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
 
+    # Fallback to BigQuery credentials (often same service account)
+    if not creds_json:
+        creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+
     if creds_path and os.path.exists(creds_path):
         cred = credentials.Certificate(creds_path)
+        print(f"Firebase initialized with credentials from file: {creds_path}")
     elif creds_json:
-        cred_dict = json.loads(creds_json)
-        cred = credentials.Certificate(cred_dict)
+        try:
+            cred_dict = json.loads(creds_json)
+            cred = credentials.Certificate(cred_dict)
+            print("Firebase initialized with credentials from environment JSON")
+        except json.JSONDecodeError as e:
+            print(f"Error parsing Firebase credentials JSON: {e}")
+            return None
     else:
         print("Warning: Firebase credentials not found. Authentication disabled.")
+        print("  Checked: FIREBASE_CREDENTIALS, FIREBASE_CREDENTIALS_JSON, GOOGLE_APPLICATION_CREDENTIALS_JSON")
         return None
 
-    _firebase_app = firebase_admin.initialize_app(cred)
-    return _firebase_app
+    try:
+        _firebase_app = firebase_admin.initialize_app(cred)
+        return _firebase_app
+    except Exception as e:
+        print(f"Error initializing Firebase: {e}")
+        return None
 
 
 def get_firebase_app():
@@ -503,13 +518,21 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
             return user_data
 
     except Exception as e:
-        print(f"Error creating/updating user doc: {e}")
+        # Log with more detail for debugging
+        import traceback
+        print(f"ERROR creating/updating user doc for {email}: {e}")
+        print(f"  Traceback: {traceback.format_exc()}")
+
+        # Return fallback with correct user type (important for @ncrc.org users)
+        fallback_type = determine_user_type(email, email_verified)
+        print(f"  Using fallback userType: {fallback_type}")
         return {
             'uid': uid,
             'email': email,
             'displayName': display_name,
-            'userType': determine_user_type(email, email_verified),
-            'emailVerified': email_verified
+            'userType': fallback_type,
+            'emailVerified': email_verified,
+            '_firestore_failed': True  # Flag to indicate Firestore write failed
         }
 
 
@@ -1077,20 +1100,111 @@ def list_users():
         users = []
         for doc in users_ref.stream():
             user_data = doc.to_dict()
+
+            # Convert Firestore timestamps to ISO strings
+            created_at = user_data.get('createdAt')
+            last_login = user_data.get('lastLoginAt')
+
+            if created_at and hasattr(created_at, 'isoformat'):
+                created_at = created_at.isoformat()
+            elif created_at and hasattr(created_at, 'timestamp'):
+                created_at = datetime.fromtimestamp(created_at.timestamp()).isoformat()
+
+            if last_login and hasattr(last_login, 'isoformat'):
+                last_login = last_login.isoformat()
+            elif last_login and hasattr(last_login, 'timestamp'):
+                last_login = datetime.fromtimestamp(last_login.timestamp()).isoformat()
+
             users.append({
-                'uid': user_data.get('uid'),
+                'uid': doc.id,  # Use document ID as UID
                 'email': user_data.get('email'),
                 'displayName': user_data.get('displayName'),
                 'userType': user_data.get('userType'),
                 'organization': user_data.get('organization'),
-                'lastLoginAt': user_data.get('lastLoginAt'),
-                'loginCount': user_data.get('loginCount', 0)
+                'jobTitle': user_data.get('jobTitle'),
+                'county': user_data.get('county'),
+                'lastLoginAt': last_login,
+                'createdAt': created_at,
+                'loginCount': user_data.get('loginCount', 0),
+                'emailVerified': user_data.get('emailVerified', False),
+                'pendingActivation': user_data.get('pendingActivation', False)
             })
 
         return jsonify({
             'users': users,
             'count': len(users)
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/users', methods=['POST'])
+@admin_required
+def create_user():
+    """Create a new user (admin only). Creates Firestore document for pre-provisioned user."""
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    email = data.get('email')
+    if not email:
+        return jsonify({'error': 'Email is required'}), 400
+
+    display_name = data.get('displayName', email.split('@')[0])
+    user_type = data.get('userType', 'public_registered')
+    organization = data.get('organization')
+
+    # Validate user type
+    if user_type not in VALID_USER_TYPES:
+        return jsonify({
+            'error': f'Invalid user type: {user_type}',
+            'valid_types': VALID_USER_TYPES
+        }), 400
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        # Check if user already exists by email
+        existing = db.collection('users').where('email', '==', email).limit(1).stream()
+        for doc in existing:
+            return jsonify({
+                'error': 'User with this email already exists',
+                'uid': doc.id
+            }), 409
+
+        # Create a pending user document (will be linked when user logs in)
+        # Use email hash as temporary UID
+        import hashlib
+        temp_uid = f"pending_{hashlib.md5(email.lower().encode()).hexdigest()[:16]}"
+
+        now = datetime.utcnow()
+        user_data = {
+            'uid': temp_uid,
+            'email': email,
+            'displayName': display_name,
+            'photoURL': None,
+            'userType': user_type,
+            'organization': organization,
+            'jobTitle': data.get('jobTitle'),
+            'county': data.get('county'),
+            'emailVerified': False,
+            'createdAt': now,
+            'lastLoginAt': None,
+            'loginCount': 0,
+            'pendingActivation': True  # Flag for pre-provisioned users
+        }
+
+        db.collection('users').document(temp_uid).set(user_data)
+
+        return jsonify({
+            'success': True,
+            'uid': temp_uid,
+            'message': f'User {email} created. They can now sign in with Google to activate.',
+            'user': user_data
+        }), 201
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -1127,5 +1241,151 @@ def update_user(uid: str):
             'success': True,
             'updated_fields': list(update_data.keys())
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/resync', methods=['POST'])
+def resync_user():
+    """
+    Resync current user's Firestore document.
+    Useful if document wasn't created during initial login.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    uid = user.get('uid')
+    email = user.get('email')
+    email_verified = user.get('email_verified', False)
+
+    if not uid or not email:
+        return jsonify({'error': 'Missing user data'}), 400
+
+    # Force recreate/update the Firestore document
+    firestore_user = create_or_update_user_doc(
+        uid=uid,
+        email=email,
+        display_name=user.get('name'),
+        photo_url=user.get('picture'),
+        email_verified=email_verified
+    )
+
+    # Check if Firestore write failed
+    if firestore_user.get('_firestore_failed'):
+        return jsonify({
+            'success': False,
+            'error': 'Firestore write failed',
+            'user_type': firestore_user.get('userType')
+        }), 500
+
+    # Update session with correct user type
+    user_type = firestore_user.get('userType', 'public_registered')
+    set_user_type(user_type)
+
+    return jsonify({
+        'success': True,
+        'user_type': user_type,
+        'permissions': get_user_permissions(user_type),
+        'message': 'User document synced successfully'
+    })
+
+
+@auth_bp.route('/sync-all', methods=['POST'])
+@admin_required
+def sync_all_users():
+    """
+    Sync all Firebase Auth users to Firestore (admin only).
+    Creates missing documents and updates user types for @ncrc.org users.
+    """
+    if not get_firebase_app():
+        return jsonify({'error': 'Firebase not initialized'}), 500
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Firestore not available'}), 500
+
+    try:
+        # Get all Firebase Auth users
+        results = {
+            'created': [],
+            'updated': [],
+            'errors': [],
+            'unchanged': []
+        }
+
+        # Iterate through Firebase Auth users (paginated)
+        page = firebase_auth.list_users()
+        while page:
+            for auth_user in page.users:
+                try:
+                    uid = auth_user.uid
+                    email = auth_user.email or ''
+
+                    # Check if Firestore document exists
+                    doc = db.collection('users').document(uid).get()
+
+                    if doc.exists:
+                        # Check if user type needs updating
+                        user_data = doc.to_dict()
+                        current_type = user_data.get('userType', 'public_registered')
+                        expected_type = determine_user_type(email, auth_user.email_verified or False)
+
+                        # Update if @ncrc.org user isn't staff/admin
+                        if email.lower().endswith('@ncrc.org') and current_type not in ('staff', 'admin'):
+                            db.collection('users').document(uid).update({
+                                'userType': expected_type,
+                                'userTypeUpdatedAt': datetime.utcnow()
+                            })
+                            results['updated'].append({
+                                'email': email,
+                                'old_type': current_type,
+                                'new_type': expected_type
+                            })
+                        else:
+                            results['unchanged'].append(email)
+                    else:
+                        # Create missing document
+                        user_type = determine_user_type(email, auth_user.email_verified or False)
+                        user_data = {
+                            'uid': uid,
+                            'email': email,
+                            'displayName': auth_user.display_name or email.split('@')[0],
+                            'photoURL': auth_user.photo_url,
+                            'userType': user_type,
+                            'organization': 'NCRC' if email.lower().endswith('@ncrc.org') else None,
+                            'jobTitle': None,
+                            'county': None,
+                            'emailVerified': auth_user.email_verified or False,
+                            'createdAt': datetime.utcnow(),
+                            'lastLoginAt': datetime.utcnow(),
+                            'loginCount': 0
+                        }
+                        db.collection('users').document(uid).set(user_data)
+                        results['created'].append({
+                            'email': email,
+                            'user_type': user_type
+                        })
+
+                except Exception as e:
+                    results['errors'].append({
+                        'email': auth_user.email,
+                        'error': str(e)
+                    })
+
+            # Get next page
+            page = page.get_next_page()
+
+        return jsonify({
+            'success': True,
+            'results': results,
+            'summary': {
+                'created': len(results['created']),
+                'updated': len(results['updated']),
+                'unchanged': len(results['unchanged']),
+                'errors': len(results['errors'])
+            }
+        })
+
     except Exception as e:
         return jsonify({'error': str(e)}), 500

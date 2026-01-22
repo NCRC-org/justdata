@@ -201,7 +201,39 @@ def create_app():
             'app': 'justdata',
             'version': MainConfig.APP_VERSION
         })
-    
+
+    # Admin Users Dashboard
+    @app.route('/admin/users')
+    def admin_users():
+        """Admin user management page - requires admin access."""
+        from justdata.main.auth import VALID_USER_TYPES
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+        from flask import url_for
+
+        user_type = get_user_type()
+
+        # Check admin access
+        if user_type != 'admin':
+            from flask import flash
+            return redirect(url_for('landing'))
+
+        permissions = get_user_permissions(user_type)
+
+        # Create Jinja2 environment with Flask's url_for function
+        env = Environment(
+            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+        env.globals['url_for'] = url_for
+
+        template = env.get_template('admin-users.html')
+        return template.render(
+            user_type=user_type,
+            permissions=permissions,
+            valid_user_types=VALID_USER_TYPES,
+            current_user=get_current_user()
+        )
+
     return app
 
 

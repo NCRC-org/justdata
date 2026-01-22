@@ -1463,7 +1463,7 @@
                         </div>
 
                         <!-- Admin Card -->
-                        <div class="app-card app-admin" data-app="admin" aria-label="Administration - User management and system administration" onclick="handleInfoClick('Administration')">
+                        <div class="app-card app-admin" data-app="admin" aria-label="Administration - User management and system administration" onclick="window.location.href='/admin/users'">
                             <div class="app-card-header">
                                 <h3 class="app-card-title">Administration</h3>
                             </div>
@@ -1475,9 +1475,9 @@
                                     <i class="fas fa-info-circle"></i>
                                     <span>Info</span>
                                 </button>
-                                <button class="app-card-launch-btn" onclick="event.stopPropagation(); alert('Administration is coming soon! This tool will be available in a future release.');" aria-label="Administration coming soon" style="opacity: 0.7; cursor: not-allowed;">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Coming Soon</span>
+                                <button class="app-card-launch-btn" onclick="event.stopPropagation(); window.location.href='/admin/users';" aria-label="Launch Administration">
+                                    <i class="fas fa-rocket"></i>
+                                    <span>Launch</span>
                                 </button>
                             </div>
                         </div>
