@@ -25,8 +25,8 @@
                 </div>
 
                 <!-- Login Button -->
-                <button id="loginBtn" onclick="JustDataAuth.signInWithGoogle()" style="display: inline-flex; align-items: center; gap: 6px; background: white; color: var(--ncrc-dark-blue, #1a365d); border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
-                    <i class="fab fa-google" style="font-size: 14px;"></i>
+                <button id="loginBtn" onclick="openLoginModal()" style="display: inline-flex; align-items: center; gap: 6px; background: white; color: var(--ncrc-dark-blue, #1a365d); border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background 0.2s;">
+                    <i class="fas fa-sign-in-alt" style="font-size: 14px;"></i>
                     <span>Sign In</span>
                 </button>
 
@@ -58,3 +58,170 @@
         </nav>
     </div>
 </header>
+
+<!-- Login Modal -->
+<div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100000; justify-content: center; align-items: center;">
+    <div style="background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative;">
+        <!-- Close button -->
+        <button onclick="closeLoginModal()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 24px;">
+            <img src="/static/img/justdata-logo.png" alt="JustData" style="max-height: 50px; margin-bottom: 12px;" onerror="this.style.display='none'">
+            <h2 style="margin: 0; color: #1a365d; font-size: 24px;">Sign In to JustData</h2>
+            <p style="margin: 8px 0 0; color: #666; font-size: 14px;">Access your account to continue</p>
+        </div>
+
+        <!-- Email/Password Form -->
+        <form id="emailLoginForm" onsubmit="handleEmailLogin(event)" style="margin-bottom: 20px;">
+            <div style="margin-bottom: 16px;">
+                <label for="loginEmail" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Email</label>
+                <input type="email" id="loginEmail" placeholder="Enter your email" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a365d'" onblur="this.style.borderColor='#ddd'">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label for="loginPassword" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Password</label>
+                <input type="password" id="loginPassword" placeholder="Enter your password" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a365d'" onblur="this.style.borderColor='#ddd'">
+            </div>
+            <!-- Error message -->
+            <div id="loginError" style="display: none; background: #fee2e2; color: #dc2626; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
+            <button type="submit" id="emailLoginBtn" style="width: 100%; padding: 12px; background: #1a365d; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                <span id="emailLoginText">Sign In</span>
+                <span id="emailLoginSpinner" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Signing in...</span>
+            </button>
+        </form>
+
+        <!-- Divider -->
+        <div style="display: flex; align-items: center; margin: 24px 0;">
+            <div style="flex: 1; height: 1px; background: #ddd;"></div>
+            <span style="padding: 0 16px; color: #999; font-size: 13px; font-weight: 500;">OR</span>
+            <div style="flex: 1; height: 1px; background: #ddd;"></div>
+        </div>
+
+        <!-- Google Sign In -->
+        <button onclick="handleGoogleLogin()" id="googleLoginBtn" style="width: 100%; padding: 12px; background: white; color: #333; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; transition: background 0.2s, border-color 0.2s;" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background='white'">
+            <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+            <span id="googleLoginText">Continue with Google</span>
+            <span id="googleLoginSpinner" style="display: none;"><i class="fas fa-spinner fa-spin"></i></span>
+        </button>
+
+        <!-- Footer note -->
+        <p style="margin: 20px 0 0; text-align: center; color: #999; font-size: 12px;">
+            By signing in, you agree to NCRC's Terms of Service
+        </p>
+    </div>
+</div>
+
+<script>
+// Login Modal Functions
+function openLoginModal() {
+    document.getElementById('loginModal').style.display = 'flex';
+    document.getElementById('loginEmail').focus();
+    // Clear any previous errors
+    document.getElementById('loginError').style.display = 'none';
+    document.getElementById('loginEmail').value = '';
+    document.getElementById('loginPassword').value = '';
+}
+
+function closeLoginModal() {
+    document.getElementById('loginModal').style.display = 'none';
+}
+
+// Close modal on background click
+document.getElementById('loginModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeLoginModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && document.getElementById('loginModal').style.display === 'flex') {
+        closeLoginModal();
+    }
+});
+
+// Handle email/password login
+async function handleEmailLogin(event) {
+    event.preventDefault();
+
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errorDiv = document.getElementById('loginError');
+    const loginText = document.getElementById('emailLoginText');
+    const loginSpinner = document.getElementById('emailLoginSpinner');
+    const loginBtn = document.getElementById('emailLoginBtn');
+
+    // Show loading state
+    loginText.style.display = 'none';
+    loginSpinner.style.display = 'inline';
+    loginBtn.disabled = true;
+    errorDiv.style.display = 'none';
+
+    try {
+        await JustDataAuth.signInWithEmail(email, password);
+        closeLoginModal();
+        // Page will update via auth state change handler
+    } catch (error) {
+        console.error('Email login error:', error);
+
+        // Show user-friendly error messages
+        let errorMessage = 'Sign in failed. Please try again.';
+        switch (error.code) {
+            case 'auth/user-not-found':
+                errorMessage = 'No account found with this email address.';
+                break;
+            case 'auth/wrong-password':
+                errorMessage = 'Incorrect password. Please try again.';
+                break;
+            case 'auth/invalid-email':
+                errorMessage = 'Please enter a valid email address.';
+                break;
+            case 'auth/user-disabled':
+                errorMessage = 'This account has been disabled. Contact support.';
+                break;
+            case 'auth/too-many-requests':
+                errorMessage = 'Too many failed attempts. Please try again later.';
+                break;
+            case 'auth/invalid-credential':
+                errorMessage = 'Invalid email or password. Please check and try again.';
+                break;
+        }
+
+        errorDiv.textContent = errorMessage;
+        errorDiv.style.display = 'block';
+    } finally {
+        // Reset loading state
+        loginText.style.display = 'inline';
+        loginSpinner.style.display = 'none';
+        loginBtn.disabled = false;
+    }
+}
+
+// Handle Google login from modal
+async function handleGoogleLogin() {
+    const loginText = document.getElementById('googleLoginText');
+    const loginSpinner = document.getElementById('googleLoginSpinner');
+    const loginBtn = document.getElementById('googleLoginBtn');
+    const errorDiv = document.getElementById('loginError');
+
+    // Show loading state
+    loginText.style.display = 'none';
+    loginSpinner.style.display = 'inline';
+    loginBtn.disabled = true;
+    errorDiv.style.display = 'none';
+
+    try {
+        await JustDataAuth.signInWithGoogle();
+        closeLoginModal();
+    } catch (error) {
+        // Only show error if it wasn't user-cancelled
+        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+            errorDiv.textContent = 'Google sign-in failed. Please try again.';
+            errorDiv.style.display = 'block';
+        }
+    } finally {
+        // Reset loading state
+        loginText.style.display = 'inline';
+        loginSpinner.style.display = 'none';
+        loginBtn.disabled = false;
+    }
+}
+</script>
