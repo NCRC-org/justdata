@@ -499,13 +499,13 @@ def _perform_analysis(job_id, form_data):
         hmda_start_year = int(form_data.get('hmda_start_year') or 2020)
         hmda_end_year = int(form_data.get('hmda_end_year') or 2024)
         sb_start_year = int(form_data.get('sb_start_year') or 2019)
-        sb_end_year = int(form_data.get('sb_end_year') or 2023)
+        sb_end_year = int(form_data.get('sb_end_year') or 2024)
 
         # Parse baseline year ranges (for goals sheets)
         baseline_hmda_start_year = int(form_data.get('baseline_hmda_start_year') or 2022)
         baseline_hmda_end_year = int(form_data.get('baseline_hmda_end_year') or 2024)
         baseline_sb_start_year = int(form_data.get('baseline_sb_start_year') or 2021)
-        baseline_sb_end_year = int(form_data.get('baseline_sb_end_year') or 2023)
+        baseline_sb_end_year = int(form_data.get('baseline_sb_end_year') or 2024)
 
         # Generate year lists from ranges
         hmda_years = [str(y) for y in range(hmda_start_year, hmda_end_year + 1)]
