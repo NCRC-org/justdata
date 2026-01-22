@@ -586,7 +586,7 @@ def report_data():
 @require_access('mergermeter', 'full')
 def api_search_banks():
     """Search for banks by name with autocomplete support.
-    Returns bank name, location info, and identifiers (LEI, RSSD).
+    Returns bank name, location info, and identifiers (LEI, RSSD, Res ID).
     Used for bank selection dropdown in the analysis form.
     """
     try:
@@ -600,8 +600,8 @@ def api_search_banks():
 
         client = get_bigquery_client(PROJECT_ID)
 
-        # Search query joining lender_names_gleif with lenders18
-        # Returns display name, location info, and identifiers
+        # Search query joining lender_names_gleif with lenders18 and sb.lenders
+        # Returns display name, location info, and all identifiers (LEI, RSSD, Res ID)
         sql = """
         SELECT DISTINCT
             g.display_name AS name,
@@ -609,19 +609,15 @@ def api_search_banks():
             g.headquarters_state AS state,
             l.lei AS lei,
             CAST(l.respondent_rssd AS STRING) AS rssd,
+            CAST(sb.sb_rssd AS STRING) AS res_id,
             SAFE_CAST(l.assets AS INT64) AS assets
         FROM `hdma1-242116.hmda.lender_names_gleif` g
         JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
+        LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = CAST(sb.sb_rssd AS STRING)
         WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
         ORDER BY SAFE_CAST(l.assets AS INT64) DESC NULLS LAST
         LIMIT @limit
         """
-
-        job_config = client.QueryJobConfig()
-        job_config.query_parameters = [
-            client.ScalarQueryParameter('search_pattern', 'STRING', f'%{query}%'),
-            client.ScalarQueryParameter('limit', 'INT64', limit)
-        ]
 
         # Execute query
         from google.cloud import bigquery
@@ -653,6 +649,7 @@ def api_search_banks():
                 'state': row.state or '',
                 'lei': row.lei or '',
                 'rssd': row.rssd or '',
+                'res_id': row.res_id or '',
                 'assets': row.assets
             })
 

@@ -56,107 +56,67 @@
                         <h3 style="margin-bottom: 20px; color: var(--ncrc-dark-blue);">
                             <i class="fas fa-building"></i> Bank Information
                         </h3>
-                        
-                        <!-- Bulk Import Section -->
-                        <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #bee5eb;">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <h4 style="margin: 0; color: var(--ncrc-dark-blue); font-size: 1rem;">
-                                    <i class="fas fa-paste"></i> Bulk Import Banks
-                                </h4>
-                                <button type="button" id="toggleBulkImport" class="btn-link" style="background: none; border: none; color: var(--ncrc-secondary-blue); cursor: pointer; text-decoration: underline; font-size: 0.9rem;">
-                                    <i class="fas fa-chevron-down"></i> Show
-                                </button>
-                            </div>
-                            <div id="bulkImportSection" style="display: none;">
-                                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
-                                    <strong>Excel Format:</strong> Copy a table from Excel with these columns (headers optional):
-                                </p>
-                                <div style="background: #f8f9fa; padding: 12px; border-radius: 4px; margin-bottom: 10px; font-family: monospace; font-size: 0.85rem; overflow-x: auto;">
-                                    <table style="border-collapse: collapse; width: 100%;">
-                                        <thead>
-                                            <tr style="background: #e9ecef; font-weight: bold;">
-                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">Bank Name</th>
-                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">LEI</th>
-                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">RSSD</th>
-                                                <th style="border: 1px solid #ddd; padding: 6px; text-align: left;">ResID</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">PNC BANK</td>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">549300BJX7P13H14EN18</td>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">451965</td>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">123456789</td>
-                                            </tr>
-                                            <tr>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">FIRSTBANK</td>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">549300ABC123DEF456</td>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">123456</td>
-                                                <td style="border: 1px solid #ddd; padding: 6px;">987654321</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
-                                    <strong>Instructions:</strong> In Excel, create a table with 4 columns (Bank Name, LEI, RSSD, ResID). Select the rows you want to import (including headers if present), copy (Ctrl+C), and paste below. The system will automatically detect tab-separated format from Excel.
-                                </p>
-                                <p style="font-size: 0.85rem; color: #666; margin-bottom: 10px;">
-                                    <strong>Alternative formats also supported:</strong> Comma-separated (CSV) or pipe-separated (|)
-                                </p>
-                                <div style="margin-bottom: 10px;">
-                                    <a href="/api/download-bank-identifiers-template" download="bank_identifiers_template.csv" style="padding: 6px 12px; background: var(--ncrc-secondary-blue); color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="fas fa-download"></i> Download Bank Identifiers Template
-                                    </a>
-                                </div>
-                                <textarea id="bulkImportText" placeholder="Paste your Excel table here (Ctrl+V)&#10;&#10;Example:&#10;PNC BANK	549300BJX7P13H14EN18	451965	123456789&#10;FIRSTBANK	549300ABC123DEF456	123456	987654321" style="width: 100%; min-height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 0.85rem; margin-bottom: 10px;"></textarea>
-                                <button type="button" id="parseBulkImportBtn" class="submit-btn" style="width: auto; padding: 8px 16px; font-size: 0.9rem;">
-                                    <i class="fas fa-upload"></i> Parse and Import Banks
-                                </button>
-                                <div id="bulkImportResults" style="margin-top: 10px; display: none;"></div>
-                            </div>
-                        </div>
-                        
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">
+                            <i class="fas fa-info-circle"></i> Search for banks by name. The system will auto-populate identifiers when you select a bank.
+                        </p>
+
                         <!-- Bank A (Acquirer) -->
                         <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
                             <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
                                 <i class="fas fa-hand-holding"></i> Bank A (Acquirer)
                             </h4>
-                            <!-- Bank Search Autocomplete -->
-                            <div style="margin-bottom: 15px; position: relative;">
-                                <label for="acquirer_search">
-                                    <i class="fas fa-search"></i>
+
+                            <!-- Bank Search Input -->
+                            <div id="acquirer_search_container" style="position: relative;">
+                                <label for="acquirer_search" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                                    <i class="fas fa-search" style="color: var(--ncrc-secondary-blue);"></i>
                                     Search Bank by Name
                                 </label>
-                                <input type="text" id="acquirer_search" class="bank-search-input" data-bank="acquirer" placeholder="Type bank name to search..." autocomplete="off" style="width: 100%;">
-                                <div id="acquirer_search_results" class="bank-search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                                <div>
-                                    <label for="acquirer_lei">
-                                        <i class="fas fa-id-card"></i>
-                                        LEI Number <span style="color: red;">*</span>
-                                    </label>
-                                    <input type="text" id="acquirer_lei" name="acquirer_lei" placeholder="Enter LEI (20 characters)" maxlength="20" required>
-                                </div>
-                                <div>
-                                    <label for="acquirer_rssd">
-                                        <i class="fas fa-database"></i>
-                                        RSSD Number
-                                    </label>
-                                    <input type="text" id="acquirer_rssd" name="acquirer_rssd" placeholder="Enter RSSD (6+ digits)" pattern="[0-9]+">
-                                </div>
-                                <div>
-                                    <label for="acquirer_sb_id">
-                                        <i class="fas fa-briefcase"></i>
-                                        Res ID
-                                    </label>
-                                    <input type="text" id="acquirer_sb_id" name="acquirer_sb_id" placeholder="Enter Res ID">
+                                <input type="text" id="acquirer_search" class="bank-search-input" data-bank="acquirer"
+                                       placeholder="Type bank name to search (e.g., Chase, PNC, Wells Fargo)..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 14px 16px; font-size: 1rem; border: 2px solid #ddd; border-radius: 8px; transition: border-color 0.2s;">
+                                <div id="acquirer_search_results" class="bank-search-results"
+                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 350px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                                 </div>
                             </div>
-                            <div id="acquirer_confirmation" style="display: none; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; margin-top: 10px;">
-                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong>
-                                <span id="acquirer_name_display"></span>
+
+                            <!-- Selected Bank Display (hidden until selection) -->
+                            <div id="acquirer_selected" style="display: none; margin-top: 15px; padding: 15px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #155724; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">
+                                            <i class="fas fa-check-circle"></i> Selected Bank
+                                        </div>
+                                        <div id="acquirer_name_display" style="font-size: 1.1rem; font-weight: 700; color: #1a365d;"></div>
+                                        <div id="acquirer_location_display" style="font-size: 0.9rem; color: #666; margin-top: 2px;"></div>
+                                    </div>
+                                    <button type="button" id="acquirer_change_btn" onclick="clearBankSelection('acquirer')"
+                                            style="padding: 6px 12px; background: #fff; color: #666; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                                        <i class="fas fa-edit"></i> Change
+                                    </button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">LEI</div>
+                                        <div id="acquirer_lei_display" style="font-family: monospace; font-size: 0.85rem; color: #333; word-break: break-all;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">RSSD</div>
+                                        <div id="acquirer_rssd_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID</div>
+                                        <div id="acquirer_res_id_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                    </div>
+                                </div>
                             </div>
+
+                            <!-- Hidden form fields for submission -->
+                            <input type="hidden" id="acquirer_lei" name="acquirer_lei">
+                            <input type="hidden" id="acquirer_rssd" name="acquirer_rssd">
+                            <input type="hidden" id="acquirer_sb_id" name="acquirer_sb_id">
+                            <input type="hidden" id="acquirer_name" name="acquirer_name">
                         </div>
 
                         <!-- Bank B (Target) -->
@@ -164,52 +124,59 @@
                             <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
                                 <i class="fas fa-bullseye"></i> Bank B (Target)
                             </h4>
-                            <!-- Bank Search Autocomplete -->
-                            <div style="margin-bottom: 15px; position: relative;">
-                                <label for="target_search">
-                                    <i class="fas fa-search"></i>
+
+                            <!-- Bank Search Input -->
+                            <div id="target_search_container" style="position: relative;">
+                                <label for="target_search" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                                    <i class="fas fa-search" style="color: var(--ncrc-secondary-blue);"></i>
                                     Search Bank by Name
                                 </label>
-                                <input type="text" id="target_search" class="bank-search-input" data-bank="target" placeholder="Type bank name to search..." autocomplete="off" style="width: 100%;">
-                                <div id="target_search_results" class="bank-search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
-                            </div>
-                            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                                <div>
-                                    <label for="target_lei">
-                                        <i class="fas fa-id-card"></i>
-                                        LEI Number <span style="color: red;">*</span>
-                                    </label>
-                                    <input type="text" id="target_lei" name="target_lei" placeholder="Enter LEI (20 characters)" maxlength="20" required>
-                                </div>
-                                <div>
-                                    <label for="target_rssd">
-                                        <i class="fas fa-database"></i>
-                                        RSSD Number
-                                    </label>
-                                    <input type="text" id="target_rssd" name="target_rssd" placeholder="Enter RSSD (6+ digits)" pattern="[0-9]+">
-                                </div>
-                                <div>
-                                    <label for="target_sb_id">
-                                        <i class="fas fa-briefcase"></i>
-                                        Res ID
-                                    </label>
-                                    <input type="text" id="target_sb_id" name="target_sb_id" placeholder="Enter Res ID">
+                                <input type="text" id="target_search" class="bank-search-input" data-bank="target"
+                                       placeholder="Type bank name to search (e.g., Chase, PNC, Wells Fargo)..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 14px 16px; font-size: 1rem; border: 2px solid #ddd; border-radius: 8px; transition: border-color 0.2s;">
+                                <div id="target_search_results" class="bank-search-results"
+                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 350px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                                 </div>
                             </div>
-                            <div id="target_confirmation" style="display: none; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; margin-top: 10px;">
-                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong>
-                                <span id="target_name_display"></span>
-                            </div>
-                        </div>
 
-                        <button type="button" id="loadBanksBtn" class="submit-btn" style="width: auto; margin-bottom: 20px;">
-                            <i class="fas fa-search"></i>
-                            Load Bank Names
-                        </button>
-                        <small class="help-text" style="display: block; margin-top: -15px; margin-bottom: 20px;">
-                            <i class="fas fa-info-circle"></i>
-                            <strong>Required:</strong> Enter the LEI number for each bank and click "Load" to fetch and confirm bank names. The system uses the LEI number to look up the bank name from the database. RSSD and SB Respondent ID are optional.
-                        </small>
+                            <!-- Selected Bank Display (hidden until selection) -->
+                            <div id="target_selected" style="display: none; margin-top: 15px; padding: 15px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #155724; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">
+                                            <i class="fas fa-check-circle"></i> Selected Bank
+                                        </div>
+                                        <div id="target_name_display" style="font-size: 1.1rem; font-weight: 700; color: #1a365d;"></div>
+                                        <div id="target_location_display" style="font-size: 0.9rem; color: #666; margin-top: 2px;"></div>
+                                    </div>
+                                    <button type="button" id="target_change_btn" onclick="clearBankSelection('target')"
+                                            style="padding: 6px 12px; background: #fff; color: #666; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                                        <i class="fas fa-edit"></i> Change
+                                    </button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">LEI</div>
+                                        <div id="target_lei_display" style="font-family: monospace; font-size: 0.85rem; color: #333; word-break: break-all;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">RSSD</div>
+                                        <div id="target_rssd_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID</div>
+                                        <div id="target_res_id_display" style="font-family: monospace; font-size: 0.85rem; color: #333;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hidden form fields for submission -->
+                            <input type="hidden" id="target_lei" name="target_lei">
+                            <input type="hidden" id="target_rssd" name="target_rssd">
+                            <input type="hidden" id="target_sb_id" name="target_sb_id">
+                            <input type="hidden" id="target_name" name="target_name">
+                        </div>
                     </div>
 
                     <!-- Assessment Area Upload Section -->
@@ -1785,20 +1752,20 @@
 
             async function searchBanks(query, bank, resultsDiv) {
                 try {
-                    resultsDiv.innerHTML = '<div style="padding: 12px; color: #666;"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+                    resultsDiv.innerHTML = '<div style="padding: 15px; color: #666; text-align: center;"><i class="fas fa-spinner fa-spin"></i> Searching banks...</div>';
                     resultsDiv.style.display = 'block';
 
                     const baseUrl = window.APP_BASE_URL || '/mergermeter';
-                    const response = await fetch(`${baseUrl}/api/search-banks?q=${encodeURIComponent(query)}&limit=20`);
+                    const response = await fetch(`${baseUrl}/api/search-banks?q=${encodeURIComponent(query)}&limit=15`);
                     const data = await response.json();
 
                     if (!data.success) {
-                        resultsDiv.innerHTML = `<div style="padding: 12px; color: #dc3545;">Error: ${data.error}</div>`;
+                        resultsDiv.innerHTML = `<div style="padding: 15px; color: #dc3545;"><i class="fas fa-exclamation-circle"></i> Error: ${data.error}</div>`;
                         return;
                     }
 
                     if (data.banks.length === 0) {
-                        resultsDiv.innerHTML = '<div style="padding: 12px; color: #666;">No banks found matching your search.</div>';
+                        resultsDiv.innerHTML = '<div style="padding: 15px; color: #666; text-align: center;"><i class="fas fa-search"></i> No banks found matching your search.</div>';
                         return;
                     }
 
@@ -1806,16 +1773,17 @@
                         <div class="bank-search-item ${i === 0 ? 'active' : ''}"
                              data-lei="${b.lei || ''}"
                              data-rssd="${b.rssd || ''}"
+                             data-res-id="${b.res_id || ''}"
                              data-name="${escapeHtml(b.name)}"
                              data-location="${escapeHtml(b.location)}"
-                             style="padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;">
-                            <div style="font-weight: 600; color: #1a365d; margin-bottom: 2px;">${escapeHtml(b.name)}</div>
-                            <div style="font-size: 0.85rem; color: #666;">
-                                <i class="fas fa-map-marker-alt" style="margin-right: 5px; color: #0891b2;"></i>${escapeHtml(b.location) || 'Location unknown'}
-                                ${b.assets ? `<span style="margin-left: 10px;"><i class="fas fa-chart-bar" style="margin-right: 3px;"></i>${formatAssets(b.assets)}</span>` : ''}
+                             style="padding: 14px 16px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.15s;">
+                            <div style="font-weight: 600; color: #1a365d; font-size: 1rem; margin-bottom: 4px;">${escapeHtml(b.name)}</div>
+                            <div style="font-size: 0.9rem; color: #666; margin-bottom: 4px;">
+                                <i class="fas fa-map-marker-alt" style="margin-right: 6px; color: #0891b2;"></i>${escapeHtml(b.location) || 'Location not available'}
+                                ${b.assets ? `<span style="margin-left: 12px; color: #059669;"><i class="fas fa-chart-bar" style="margin-right: 4px;"></i>${formatAssets(b.assets)}</span>` : ''}
                             </div>
-                            <div style="font-size: 0.75rem; color: #999; margin-top: 3px;">
-                                LEI: ${b.lei || 'N/A'} | RSSD: ${b.rssd || 'N/A'}
+                            <div style="font-size: 0.8rem; color: #888; font-family: monospace;">
+                                LEI: ${b.lei || 'N/A'} &nbsp;|&nbsp; RSSD: ${b.rssd || 'N/A'} &nbsp;|&nbsp; Res ID: ${b.res_id || 'N/A'}
                             </div>
                         </div>
                     `).join('');
@@ -1831,36 +1799,59 @@
 
                 } catch (error) {
                     console.error('Bank search error:', error);
-                    resultsDiv.innerHTML = `<div style="padding: 12px; color: #dc3545;">Search failed. Please try again.</div>`;
+                    resultsDiv.innerHTML = `<div style="padding: 15px; color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Search failed. Please try again.</div>`;
                 }
             }
 
-            function selectBank(item, bank) {
+            // Make selectBank globally accessible
+            window.selectBank = function(item, bank) {
                 const lei = item.dataset.lei;
                 const rssd = item.dataset.rssd;
+                const resId = item.dataset.resId || '';
                 const name = item.dataset.name;
                 const location = item.dataset.location;
 
-                // Populate the identifier fields
+                // Populate hidden form fields
                 document.getElementById(`${bank}_lei`).value = lei || '';
                 document.getElementById(`${bank}_rssd`).value = rssd || '';
+                document.getElementById(`${bank}_sb_id`).value = resId || '';
+                document.getElementById(`${bank}_name`).value = name || '';
 
-                // Update search input to show selected bank
-                document.getElementById(`${bank}_search`).value = `${name}${location ? ' - ' + location : ''}`;
+                // Update display fields
+                document.getElementById(`${bank}_name_display`).textContent = name || '';
+                document.getElementById(`${bank}_location_display`).textContent = location ? `📍 ${location}` : '';
+                document.getElementById(`${bank}_lei_display`).textContent = lei || 'N/A';
+                document.getElementById(`${bank}_rssd_display`).textContent = rssd || 'N/A';
+                document.getElementById(`${bank}_res_id_display`).textContent = resId || 'N/A';
 
-                // Show confirmation
-                const confirmDiv = document.getElementById(`${bank}_confirmation`);
-                const nameDisplay = document.getElementById(`${bank}_name_display`);
-                if (confirmDiv && nameDisplay) {
-                    nameDisplay.textContent = `${name}${location ? ' (' + location + ')' : ''}`;
-                    confirmDiv.style.display = 'block';
-                }
+                // Hide search container, show selected display
+                document.getElementById(`${bank}_search_container`).style.display = 'none';
+                document.getElementById(`${bank}_selected`).style.display = 'block';
 
                 // Hide results
                 document.getElementById(`${bank}_search_results`).style.display = 'none';
 
-                console.log(`Selected ${bank} bank:`, { name, lei, rssd, location });
-            }
+                console.log(`Selected ${bank} bank:`, { name, lei, rssd, resId, location });
+            };
+
+            // Clear bank selection and show search again
+            window.clearBankSelection = function(bank) {
+                // Clear hidden form fields
+                document.getElementById(`${bank}_lei`).value = '';
+                document.getElementById(`${bank}_rssd`).value = '';
+                document.getElementById(`${bank}_sb_id`).value = '';
+                document.getElementById(`${bank}_name`).value = '';
+
+                // Clear search input
+                document.getElementById(`${bank}_search`).value = '';
+
+                // Show search container, hide selected display
+                document.getElementById(`${bank}_search_container`).style.display = 'block';
+                document.getElementById(`${bank}_selected`).style.display = 'none';
+
+                // Focus on search input
+                document.getElementById(`${bank}_search`).focus();
+            };
 
             function escapeHtml(text) {
                 if (!text) return '';
