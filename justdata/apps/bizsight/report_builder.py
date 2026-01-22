@@ -672,20 +672,17 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         amt_total = amt_under_100k + amt_100k_250k + amt_250k_1m
         
         # Calculate LMI Tract percentage using income_group_total
+        # LMI = Low Income + Moderate Income (consistent with MergerMeter and SQL queries)
+        # Known values: 101=Low, 102=Moderate, 103=Middle, 104=Upper
+        # Single digits 1-8 are all LMI categories
         lmi_tract_pct = 0.0
         lmi_tract_amt_pct = 0.0
         if actual_fields['income_group_total'] in lender_df.columns:
-            # LMI codes: 001-008 and 101-102
             income_group_str = lender_df[actual_fields['income_group_total']].astype(str)
-            income_group_padded = income_group_str.str.zfill(3)
-            lmi_codes_3digit = ['001', '002', '003', '004', '005', '006', '007', '008', '101', '102']
-            lmi_codes_1digit = ['1', '2', '3', '4', '5', '6', '7', '8']
-            lmi_mask = (
-                income_group_padded.isin(lmi_codes_3digit) |
-                income_group_str.isin(lmi_codes_1digit) |
-                income_group_str.isin(['101', '102'])
-            )
-            
+            # LMI codes: 101, 102, and single digits 1-8 (consistent with MergerMeter)
+            lmi_codes = ['101', '102', '1', '2', '3', '4', '5', '6', '7', '8']
+            lmi_mask = income_group_str.isin(lmi_codes)
+
             # Calculate LMI loans and amounts
             lmi_num = 0
             lmi_amt = 0.0
@@ -695,22 +692,22 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
                 lmi_num += safe_int(lender_df[lmi_mask][actual_fields['num_100k_250k']].sum())
             if actual_fields['num_250k_1m'] in lender_df.columns:
                 lmi_num += safe_int(lender_df[lmi_mask][actual_fields['num_250k_1m']].sum())
-            
+
             if actual_fields['amt_under_100k'] in lender_df.columns:
                 lmi_amt += safe_float(lender_df[lmi_mask][actual_fields['amt_under_100k']].sum())
             if actual_fields['amt_100k_250k'] in lender_df.columns:
                 lmi_amt += safe_float(lender_df[lmi_mask][actual_fields['amt_100k_250k']].sum())
             if actual_fields['amt_250k_1m'] in lender_df.columns:
                 lmi_amt += safe_float(lender_df[lmi_mask][actual_fields['amt_250k_1m']].sum())
-            
+
             lmi_tract_pct = (lmi_num / num_total * 100) if num_total > 0 else 0.0
             lmi_tract_amt_pct = (lmi_amt / amt_total * 100) if amt_total > 0 else 0.0
-        
-        # Calculate income category breakdowns
-        # Low Income: 001-003, 005, 101
-        # Moderate Income: 006-008, 102
-        # Middle Income: 004, 009-012, 103
-        # Upper Income: 013-014, 104
+
+        # Calculate income category breakdowns (consistent with SQL queries)
+        # Low Income: 101, 1, 2, 3, 4, 5
+        # Moderate Income: 102, 6, 7, 8
+        # Middle Income: 103
+        # Upper Income: 104
         # Unknown: All others
         low_income_num = 0
         moderate_income_num = 0
@@ -720,34 +717,21 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         moderate_income_amt = 0.0
         middle_income_amt = 0.0
         upper_income_amt = 0.0
-        
+
         if actual_fields['income_group_total'] in lender_df.columns:
             income_group_str = lender_df[actual_fields['income_group_total']].astype(str)
-            income_group_padded = income_group_str.str.zfill(3)
-            
-            # Low Income: 001-003, 005, 101
-            low_mask = (
-                income_group_padded.isin(['001', '002', '003', '005', '101']) |
-                income_group_str.isin(['1', '2', '3', '5', '101'])
-            )
-            
-            # Moderate Income: 006-008, 102
-            moderate_mask = (
-                income_group_padded.isin(['006', '007', '008', '102']) |
-                income_group_str.isin(['6', '7', '8', '102'])
-            )
-            
-            # Middle Income: 004, 009-012, 103
-            middle_mask = (
-                income_group_padded.isin(['004', '009', '010', '011', '012', '103']) |
-                income_group_str.isin(['4', '9', '10', '11', '12', '103'])
-            )
-            
-            # Upper Income: 013-014, 104
-            upper_mask = (
-                income_group_padded.isin(['013', '014', '104']) |
-                income_group_str.isin(['13', '14', '104'])
-            )
+
+            # Low Income: 101 and single digits 1-5
+            low_mask = income_group_str.isin(['101', '1', '2', '3', '4', '5'])
+
+            # Moderate Income: 102 and single digits 6-8
+            moderate_mask = income_group_str.isin(['102', '6', '7', '8'])
+
+            # Middle Income: 103
+            middle_mask = income_group_str.isin(['103'])
+
+            # Upper Income: 104
+            upper_mask = income_group_str.isin(['104'])
             
             # Calculate counts and amounts for each category
             for field in ['num_under_100k', 'num_100k_250k', 'num_250k_1m']:

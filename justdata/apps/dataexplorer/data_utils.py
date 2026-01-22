@@ -1273,6 +1273,8 @@ def get_metros() -> List[Dict[str, Any]]:
             WHERE cbsa_code IS NOT NULL
               AND CBSA IS NOT NULL
               AND TRIM(CBSA) != ''
+              AND cbsa_code != '99999'
+              AND CBSA NOT LIKE 'Rural%'
             GROUP BY code, name
         ),
         ranked_cbsas AS (

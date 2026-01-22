@@ -166,9 +166,10 @@ class BigQueryClient:
         
         # Note: sb.disclosure is county-level data (geoid5), not tract-level (geoid10)
         # This function now returns county-level data instead of tract-level
-        # Note: income_group_total first digit indicates tract income level:
-        # 1=Low Income, 2=Moderate Income, 3=Middle Income, 4=Upper Income, 5=Unknown
-        # LMI tracts = Low (1) + Moderate (2)
+        # Note: income_group_total indicates tract income level with these known values:
+        #   3-digit codes: 101=Low, 102=Moderate, 103=Middle, 104=Upper
+        #   Single-digit codes: 1-8 are all considered LMI (Low/Moderate Income)
+        # LMI tracts = Low (101, 1-8) + Moderate (102)
         # Note: income_group_total may be STRING or INT64, so we cast to STRING first
         sql = f"""
         SELECT
@@ -192,26 +193,27 @@ class BigQueryClient:
             NULL as tract_asian_percent,
             NULL as tract_other_race_percent,
             NULL as tract_minority_population_percent,
-            -- Income category derived from income_group_total first digit
-            -- Cast to STRING first, then use COALESCE with STRING '0'
+            -- Income category derived from income_group_total
+            -- Use explicit IN checks for known values (consistent with MergerMeter)
             CASE
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 'Low Income'
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 'Moderate Income'
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 'Middle Income'
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 'Upper Income'
+                WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 'Low Income'
+                WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 'Moderate Income'
+                WHEN CAST(a.income_group_total AS STRING) = '103' THEN 'Middle Income'
+                WHEN CAST(a.income_group_total AS STRING) = '104' THEN 'Upper Income'
                 ELSE 'Unknown'
             END as income_category,
-            -- LMI tract = income level 1 (Low) or 2 (Moderate)
+            -- LMI tract = Low Income or Moderate Income
+            -- Includes: 101, 102, 1, 2, 3, 4, 5, 6, 7, 8 (consistent with MergerMeter)
             CASE
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) IN ('1', '2') THEN 1
+                WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
                 ELSE 0
             END as is_lmi_tract,
             -- Income level as numeric (1=Low, 2=Moderate, 3=Middle, 4=Upper)
             CASE
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
-                WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
+                WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
+                WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                 ELSE 0
             END as income_level
         FROM `{self.project_id}.sb.disclosure` a
@@ -288,14 +290,20 @@ class BigQueryClient:
                 CAST(a.geoid5 AS STRING) as tract_geoid,
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
                 COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total first digit (1=Low, 2=Moderate, 3=Middle, 4=Upper)
+                -- Derive income level from income_group_total using explicit IN checks
+                -- 1=Low, 2=Moderate, 3=Middle, 4=Upper (consistent with MergerMeter)
                 CASE
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                    WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
+                    WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                     ELSE 0
-                END as income_level
+                END as income_level,
+                -- LMI flag for direct use
+                CASE
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
+                    ELSE 0
+                END as is_lmi
             FROM `{self.project_id}.sb.disclosure` a
             JOIN `{self.project_id}.geo.cbsa_to_county` g
                 ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
@@ -306,15 +314,15 @@ class BigQueryClient:
             COUNT(DISTINCT tract_geoid) as total_tracts,
             SUM(loan_count) as total_loans,
             SUM(loan_amount) as total_loan_amount,
-            -- LMI tract loans (income_level 1=Low or 2=Moderate)
-            SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END) as lmi_tract_amount,
+            -- LMI tract loans (using is_lmi flag)
+            SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END) as lmi_tract_loans,
+            SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END) as lmi_tract_amount,
             -- LMI borrower metrics (not available - small business data doesn't have borrower income)
             0 as lmi_borrower_loans,
             0 as lmi_borrower_amount,
             -- Calculate percentages
-            SAFE_DIVIDE(SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END), SUM(loan_count)) * 100 as pct_loans_to_lmi_tracts,
-            SAFE_DIVIDE(SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END), SUM(loan_amount)) * 100 as pct_dollars_to_lmi_tracts,
+            SAFE_DIVIDE(SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END), SUM(loan_count)) * 100 as pct_loans_to_lmi_tracts,
+            SAFE_DIVIDE(SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END), SUM(loan_amount)) * 100 as pct_dollars_to_lmi_tracts,
             0 as pct_loans_to_lmi_borrowers
         FROM county_data
         """
@@ -468,14 +476,20 @@ class BigQueryClient:
                 a.*,
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
                 COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total first digit (1=Low, 2=Moderate, 3=Middle, 4=Upper)
+                -- Derive income level from income_group_total using explicit IN checks
+                -- 1=Low, 2=Moderate, 3=Middle, 4=Upper (consistent with MergerMeter)
                 CASE
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                    WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
+                    WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                     ELSE 0
-                END as income_level
+                END as income_level,
+                -- LMI flag for direct use
+                CASE
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
+                    ELSE 0
+                END as is_lmi
             FROM `{self.project_id}.sb.disclosure` a
             JOIN `{self.project_id}.geo.cbsa_to_county` g
                 ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
@@ -485,9 +499,9 @@ class BigQueryClient:
         SELECT
             SUM(loan_count) as total_loans,
             SUM(loan_amount) as total_amount,
-            -- LMI tract loans (income_level 1=Low or 2=Moderate)
-            SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END) as lmi_tract_amount,
+            -- LMI tract loans (using is_lmi flag)
+            SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END) as lmi_tract_loans,
+            SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END) as lmi_tract_amount,
             -- Income category breakdowns by number of loans
             SUM(CASE WHEN income_level = 1 THEN loan_count ELSE 0 END) as low_income_loans,
             SUM(CASE WHEN income_level = 2 THEN loan_count ELSE 0 END) as moderate_income_loans,
@@ -526,23 +540,29 @@ class BigQueryClient:
                 a.*,
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
                 COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total first digit (1=Low, 2=Moderate, 3=Middle, 4=Upper)
+                -- Derive income level from income_group_total using explicit IN checks
+                -- 1=Low, 2=Moderate, 3=Middle, 4=Upper (consistent with MergerMeter)
                 CASE
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '1' THEN 1
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '2' THEN 2
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '3' THEN 3
-                    WHEN SUBSTR(LPAD(COALESCE(CAST(a.income_group_total AS STRING), '0'), 3, '0'), 1, 1) = '4' THEN 4
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                    WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
+                    WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                     ELSE 0
-                END as income_level
+                END as income_level,
+                -- LMI flag for direct use
+                CASE
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
+                    ELSE 0
+                END as is_lmi
             FROM `{self.project_id}.sb.disclosure` a
             WHERE CAST(a.year AS INT64) = {year}
         )
         SELECT
             SUM(loan_count) as total_loans,
             SUM(loan_amount) as total_amount,
-            -- LMI tract loans (income_level 1=Low or 2=Moderate)
-            SUM(CASE WHEN income_level IN (1, 2) THEN loan_count ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN income_level IN (1, 2) THEN loan_amount ELSE 0 END) as lmi_tract_amount,
+            -- LMI tract loans (using is_lmi flag)
+            SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END) as lmi_tract_loans,
+            SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END) as lmi_tract_amount,
             -- Income category breakdowns by number of loans
             SUM(CASE WHEN income_level = 1 THEN loan_count ELSE 0 END) as low_income_loans,
             SUM(CASE WHEN income_level = 2 THEN loan_count ELSE 0 END) as moderate_income_loans,

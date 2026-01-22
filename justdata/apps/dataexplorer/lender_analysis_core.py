@@ -56,6 +56,8 @@ def _format_all_metros_for_excel(metros_df: pd.DataFrame, years: List[int], PROJ
                 WHERE CAST(c.geoid5 AS STRING) IN ('{counties_str}')
                   AND c.cbsa_code IS NOT NULL
                   AND c.CBSA IS NOT NULL
+                  AND c.cbsa_code != '99999'
+                  AND c.CBSA NOT LIKE 'Rural%'
                 """
                 
                 cbsa_results = execute_query(client, cbsa_query)
