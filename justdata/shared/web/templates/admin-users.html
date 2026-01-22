@@ -413,6 +413,175 @@
             color: var(--ncrc-accent-red);
         }
 
+        .btn-icon.reset:hover {
+            color: var(--ncrc-dark-blue);
+        }
+
+        /* Delete Button (Danger) */
+        .btn-danger {
+            background: var(--ncrc-danger);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-danger:disabled {
+            background: #e9a0a8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Checkbox styling */
+        .user-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--ncrc-primary-blue);
+        }
+
+        .user-checkbox:disabled {
+            cursor: not-allowed;
+            opacity: 0.4;
+        }
+
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+
+        /* Auth method badges */
+        .auth-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .auth-badge.google {
+            background: #fef2f2;
+            color: #dc2626;
+        }
+
+        .auth-badge.email {
+            background: #eff6ff;
+            color: #2563eb;
+        }
+
+        /* Delete confirmation modal styles */
+        .delete-user-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+        }
+
+        .delete-user-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .delete-user-item:last-child {
+            border-bottom: none;
+        }
+
+        .delete-warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .confirm-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .confirm-input:focus {
+            outline: none;
+            border-color: var(--ncrc-danger);
+        }
+
+        /* Password modal styles */
+        .password-display {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fa;
+            padding: 12px 15px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 1.1rem;
+        }
+
+        .password-display input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            font-family: monospace;
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        .copy-btn {
+            background: var(--ncrc-primary-blue);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .copy-btn:hover {
+            background: var(--ncrc-secondary-blue);
+        }
+
+        .generate-btn {
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            border: 2px solid #e0e0e0;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .generate-btn:hover {
+            background: #e0e0e0;
+        }
+
         /* Status Indicators */
         .status-dot {
             display: inline-block;
@@ -670,6 +839,9 @@
         <div class="action-bar">
             <h2><i class="fas fa-users"></i> JustData Users</h2>
             <div class="action-buttons-group">
+                <button class="btn-danger" onclick="openDeleteModal()" id="deleteSelectedBtn" disabled title="Select users to delete">
+                    <i class="fas fa-trash-alt"></i> Delete Selected (<span id="selectedCount">0</span>)
+                </button>
                 <button class="btn-secondary" onclick="syncAllUsers()" id="syncBtn">
                     <i class="fas fa-sync-alt"></i> Sync All Users
                 </button>
@@ -708,6 +880,9 @@
                 <table>
                     <thead>
                         <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" class="user-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" title="Select all non-admin users">
+                            </th>
                             <th onclick="sortTable('email')">
                                 Email <i class="fas fa-sort sort-icon"></i>
                             </th>
@@ -717,14 +892,14 @@
                             <th onclick="sortTable('userType')">
                                 User Type <i class="fas fa-sort sort-icon"></i>
                             </th>
+                            <th onclick="sortTable('authMethod')">
+                                Auth <i class="fas fa-sort sort-icon"></i>
+                            </th>
                             <th onclick="sortTable('organization')">
                                 Organization <i class="fas fa-sort sort-icon"></i>
                             </th>
                             <th onclick="sortTable('lastLoginAt')">
                                 Last Login <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th onclick="sortTable('createdAt')">
-                                Created <i class="fas fa-sort sort-icon"></i>
                             </th>
                             <th onclick="sortTable('loginCount')">
                                 Logins <i class="fas fa-sort sort-icon"></i>
@@ -734,7 +909,7 @@
                     </thead>
                     <tbody id="usersTableBody">
                         <tr>
-                            <td colspan="8" style="text-align: center; padding: 40px;">
+                            <td colspan="9" style="text-align: center; padding: 40px;">
                                 <div class="loading-spinner"></div>
                                 <p style="margin-top: 10px; color: var(--ncrc-gray);">Loading users...</p>
                             </td>
@@ -800,6 +975,89 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal-content">
+            <div class="modal-header" style="background: #fee2e2; border-bottom-color: var(--ncrc-danger);">
+                <h3 style="color: var(--ncrc-danger);"><i class="fas fa-exclamation-triangle"></i> Delete Users</h3>
+                <button class="modal-close" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p style="font-size: 1.1rem; margin-bottom: 15px;">You are about to delete <strong id="deleteCountText">0 user(s)</strong>:</p>
+
+                <div class="delete-user-list" id="deleteUserList">
+                    <!-- Populated by JS -->
+                </div>
+
+                <div class="delete-warning">
+                    <strong><i class="fas fa-exclamation-circle"></i> Warning:</strong> This action cannot be undone. Users will lose access immediately and all their data will be removed.
+                </div>
+
+                <div class="form-group">
+                    <label>Type <strong>DELETE</strong> to confirm:</label>
+                    <input type="text" class="confirm-input" id="deleteConfirmInput" placeholder="DELETE" oninput="checkDeleteConfirmation()">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                    <button type="button" class="btn-danger" id="confirmDeleteBtn" disabled onclick="executeDelete()">
+                        <i class="fas fa-trash-alt"></i> <span id="confirmDeleteText">Delete Users</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Password Modal -->
+    <div class="modal-overlay" id="resetPasswordModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-key"></i> Reset Password</h3>
+                <button class="modal-close" onclick="closeResetPasswordModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="resetPasswordUid">
+
+                <div class="form-group">
+                    <label>User</label>
+                    <p id="resetPasswordEmail" style="font-size: 1.1rem; font-weight: 600; color: var(--ncrc-primary-blue);"></p>
+                </div>
+
+                <div class="form-group">
+                    <label for="newPasswordInput">New Password</label>
+                    <div class="password-display">
+                        <input type="text" id="newPasswordInput" placeholder="Enter or generate password">
+                        <button type="button" class="copy-btn" onclick="copyPassword()" title="Copy to clipboard">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <button type="button" class="generate-btn" onclick="generateRandomPassword()">
+                        <i class="fas fa-random"></i> Generate Random Password
+                    </button>
+                </div>
+
+                <div id="passwordSuccessMessage" style="display: none; background: #d4edda; border: 1px solid #28a745; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <strong><i class="fas fa-check-circle"></i> Password Updated!</strong>
+                    <p style="margin: 10px 0 0;">The new password is shown above. Copy it now - it won't be shown again.</p>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeResetPasswordModal()">Cancel</button>
+                    <button type="button" class="btn-primary" id="resetPasswordBtn" onclick="executeResetPassword()">
+                        <span id="resetPasswordText">Reset Password</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -927,6 +1185,9 @@
             document.getElementById('tableTitle').textContent = `${filtered.length} User${filtered.length !== 1 ? 's' : ''}`;
         }
 
+        // Track selected users
+        let selectedUsers = new Set();
+
         // Render table
         function renderTable(users) {
             const tbody = document.getElementById('usersTableBody');
@@ -934,7 +1195,7 @@
             if (users.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">
+                        <td colspan="9" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">
                             <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px;"></i>
                             <p>No users found</p>
                         </td>
@@ -943,8 +1204,21 @@
                 return;
             }
 
-            tbody.innerHTML = users.map(user => `
+            tbody.innerHTML = users.map(user => {
+                const isAdmin = user.userType === 'admin';
+                const isGoogleAuth = user.authMethod === 'google' || (user.providerData && user.providerData.includes('google.com'));
+                const authMethodDisplay = isGoogleAuth
+                    ? '<span class="auth-badge google"><i class="fab fa-google"></i> Google</span>'
+                    : '<span class="auth-badge email"><i class="fas fa-envelope"></i> Email</span>';
+
+                return `
                 <tr data-uid="${user.uid}">
+                    <td class="checkbox-cell">
+                        <input type="checkbox" class="user-checkbox"
+                            ${isAdmin ? 'disabled title="Admins cannot be deleted"' : ''}
+                            onchange="toggleUserSelection('${user.uid}', this.checked)"
+                            ${selectedUsers.has(user.uid) ? 'checked' : ''}>
+                    </td>
                     <td>
                         ${user.pendingActivation ? '<span class="status-dot pending" title="Pending Activation"></span>' : '<span class="status-dot active" title="Active"></span>'}
                         ${user.email || '—'}
@@ -957,19 +1231,26 @@
                             ).join('')}
                         </select>
                     </td>
+                    <td>${authMethodDisplay}</td>
                     <td>${user.organization || '—'}</td>
                     <td>${formatDate(user.lastLoginAt) || '<span style="color: var(--ncrc-gray);">Never</span>'}</td>
-                    <td>${formatDate(user.createdAt) || '—'}</td>
                     <td style="text-align: center;">${user.loginCount || 0}</td>
                     <td>
                         <div class="action-cell">
                             <button class="btn-icon" onclick="editUser('${user.uid}')" title="Edit Details">
                                 <i class="fas fa-edit"></i>
                             </button>
+                            ${!isGoogleAuth ? `
+                            <button class="btn-icon reset" onclick="openResetPasswordModal('${user.uid}', '${user.email}')" title="Reset Password">
+                                <i class="fas fa-key"></i>
+                            </button>
+                            ` : ''}
                         </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
+
+            updateDeleteButton();
         }
 
         // Format date
@@ -1185,6 +1466,8 @@
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
                 closeModal();
+                closeDeleteModal();
+                closeResetPasswordModal();
             }
         });
 
@@ -1194,6 +1477,239 @@
                 closeModal();
             }
         });
+
+        document.getElementById('deleteModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeDeleteModal();
+            }
+        });
+
+        document.getElementById('resetPasswordModal').addEventListener('click', function(event) {
+            if (event.target === this) {
+                closeResetPasswordModal();
+            }
+        });
+
+        // ============================================
+        // USER SELECTION & DELETION
+        // ============================================
+
+        function toggleUserSelection(uid, isSelected) {
+            if (isSelected) {
+                selectedUsers.add(uid);
+            } else {
+                selectedUsers.delete(uid);
+            }
+            updateDeleteButton();
+            updateSelectAllCheckbox();
+        }
+
+        function toggleSelectAll(checkbox) {
+            const checkboxes = document.querySelectorAll('#usersTableBody .user-checkbox:not(:disabled)');
+            checkboxes.forEach(cb => {
+                cb.checked = checkbox.checked;
+                const uid = cb.closest('tr').dataset.uid;
+                if (checkbox.checked) {
+                    selectedUsers.add(uid);
+                } else {
+                    selectedUsers.delete(uid);
+                }
+            });
+            updateDeleteButton();
+        }
+
+        function updateSelectAllCheckbox() {
+            const checkboxes = document.querySelectorAll('#usersTableBody .user-checkbox:not(:disabled)');
+            const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+            document.getElementById('selectAllCheckbox').checked = allChecked;
+        }
+
+        function updateDeleteButton() {
+            const btn = document.getElementById('deleteSelectedBtn');
+            const count = selectedUsers.size;
+            document.getElementById('selectedCount').textContent = count;
+            btn.disabled = count === 0;
+        }
+
+        function openDeleteModal() {
+            if (selectedUsers.size === 0) return;
+
+            const usersToDelete = allUsers.filter(u => selectedUsers.has(u.uid));
+
+            // Double-check no admins are selected
+            const adminSelected = usersToDelete.some(u => u.userType === 'admin');
+            if (adminSelected) {
+                showToast('Admin users cannot be deleted', 'error');
+                return;
+            }
+
+            // Check if trying to delete self
+            const currentUser = window.JustDataAuth.getCurrentUser();
+            const selfSelected = usersToDelete.some(u => u.email === currentUser?.email);
+            if (selfSelected) {
+                showToast('You cannot delete your own account', 'error');
+                return;
+            }
+
+            // Populate modal
+            document.getElementById('deleteCountText').textContent = `${usersToDelete.length} user(s)`;
+            document.getElementById('deleteUserList').innerHTML = usersToDelete.map(u => `
+                <div class="delete-user-item">
+                    <span>${u.email}</span>
+                    <span style="color: var(--ncrc-gray);">${u.displayName || ''}</span>
+                </div>
+            `).join('');
+
+            document.getElementById('deleteConfirmInput').value = '';
+            document.getElementById('confirmDeleteBtn').disabled = true;
+            document.getElementById('deleteModal').classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').classList.remove('active');
+        }
+
+        function checkDeleteConfirmation() {
+            const input = document.getElementById('deleteConfirmInput').value;
+            document.getElementById('confirmDeleteBtn').disabled = input !== 'DELETE';
+        }
+
+        async function executeDelete() {
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const confirmText = document.getElementById('confirmDeleteText');
+
+            confirmBtn.disabled = true;
+            confirmText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Deleting...';
+
+            try {
+                const uids = Array.from(selectedUsers);
+
+                const response = await fetch('/api/auth/users/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                    },
+                    body: JSON.stringify({ uids: uids })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Delete failed');
+                }
+
+                // Show results
+                const successCount = result.results.filter(r => r.success).length;
+                const failCount = result.results.filter(r => !r.success).length;
+
+                if (failCount > 0) {
+                    const failures = result.results.filter(r => !r.success);
+                    showToast(`Deleted ${successCount} users. ${failCount} failed.`, 'warning');
+                    console.error('Delete failures:', failures);
+                } else {
+                    showToast(`Successfully deleted ${successCount} user(s)`, 'success');
+                }
+
+                // Clear selection and refresh
+                selectedUsers.clear();
+                closeDeleteModal();
+                fetchUsers();
+
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Delete failed: ' + error.message, 'error');
+            } finally {
+                confirmBtn.disabled = false;
+                confirmText.textContent = 'Delete Users';
+            }
+        }
+
+        // ============================================
+        // RESET PASSWORD
+        // ============================================
+
+        function openResetPasswordModal(uid, email) {
+            document.getElementById('resetPasswordUid').value = uid;
+            document.getElementById('resetPasswordEmail').textContent = email;
+            document.getElementById('newPasswordInput').value = '';
+            document.getElementById('passwordSuccessMessage').style.display = 'none';
+            document.getElementById('resetPasswordBtn').disabled = false;
+            document.getElementById('resetPasswordText').textContent = 'Reset Password';
+            document.getElementById('resetPasswordModal').classList.add('active');
+        }
+
+        function closeResetPasswordModal() {
+            document.getElementById('resetPasswordModal').classList.remove('active');
+        }
+
+        function generateRandomPassword() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+            let password = '';
+            // Ensure at least one of each type
+            password += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+            password += 'abcdefghjkmnpqrstuvwxyz'[Math.floor(Math.random() * 23)];
+            password += '23456789'[Math.floor(Math.random() * 8)];
+            password += '!@#$%'[Math.floor(Math.random() * 5)];
+            // Fill rest
+            for (let i = 0; i < 8; i++) {
+                password += chars[Math.floor(Math.random() * chars.length)];
+            }
+            // Shuffle
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+            document.getElementById('newPasswordInput').value = password;
+        }
+
+        function copyPassword() {
+            const input = document.getElementById('newPasswordInput');
+            input.select();
+            document.execCommand('copy');
+            showToast('Password copied to clipboard', 'success');
+        }
+
+        async function executeResetPassword() {
+            const uid = document.getElementById('resetPasswordUid').value;
+            const newPassword = document.getElementById('newPasswordInput').value;
+
+            if (!newPassword || newPassword.length < 6) {
+                showToast('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            const resetBtn = document.getElementById('resetPasswordBtn');
+            const resetText = document.getElementById('resetPasswordText');
+
+            resetBtn.disabled = true;
+            resetText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Resetting...';
+
+            try {
+                const response = await fetch(`/api/auth/users/${uid}/reset-password`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                    },
+                    body: JSON.stringify({ password: newPassword })
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || 'Password reset failed');
+                }
+
+                // Show success
+                document.getElementById('passwordSuccessMessage').style.display = 'block';
+                resetText.textContent = 'Done!';
+                showToast('Password reset successfully', 'success');
+
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showToast('Reset failed: ' + error.message, 'error');
+                resetBtn.disabled = false;
+                resetText.textContent = 'Reset Password';
+            }
+        }
 
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {

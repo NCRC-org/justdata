@@ -1096,10 +1096,29 @@ def list_users():
         if user_type_filter:
             users_ref = users_ref.where('userType', '==', user_type_filter)
 
+        # Build a map of Firebase Auth users for provider info
+        auth_users = {}
+        if get_firebase_app():
+            try:
+                page = firebase_auth.list_users()
+                while page:
+                    for auth_user in page.users:
+                        # Determine auth method from provider data
+                        providers = [p.provider_id for p in auth_user.provider_data] if auth_user.provider_data else []
+                        auth_method = 'google' if 'google.com' in providers else 'email'
+                        auth_users[auth_user.uid] = {
+                            'authMethod': auth_method,
+                            'providers': providers
+                        }
+                    page = page.get_next_page()
+            except Exception as e:
+                print(f"Error fetching Firebase Auth users: {e}")
+
         # Get users
         users = []
         for doc in users_ref.stream():
             user_data = doc.to_dict()
+            uid = doc.id
 
             # Convert Firestore timestamps to ISO strings
             created_at = user_data.get('createdAt')
@@ -1115,8 +1134,11 @@ def list_users():
             elif last_login and hasattr(last_login, 'timestamp'):
                 last_login = datetime.fromtimestamp(last_login.timestamp()).isoformat()
 
+            # Get auth method from Firebase Auth info
+            auth_info = auth_users.get(uid, {})
+
             users.append({
-                'uid': doc.id,  # Use document ID as UID
+                'uid': uid,
                 'email': user_data.get('email'),
                 'displayName': user_data.get('displayName'),
                 'userType': user_data.get('userType'),
@@ -1127,7 +1149,9 @@ def list_users():
                 'createdAt': created_at,
                 'loginCount': user_data.get('loginCount', 0),
                 'emailVerified': user_data.get('emailVerified', False),
-                'pendingActivation': user_data.get('pendingActivation', False)
+                'pendingActivation': user_data.get('pendingActivation', False),
+                'authMethod': auth_info.get('authMethod', 'email'),
+                'providerData': auth_info.get('providers', [])
             })
 
         return jsonify({
@@ -1387,5 +1411,155 @@ def sync_all_users():
             }
         })
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/users/delete', methods=['POST'])
+@admin_required
+def delete_users():
+    """
+    Delete multiple users (admin only).
+    Deletes from both Firebase Auth and Firestore.
+
+    Safeguards:
+    - Cannot delete admin users
+    - Cannot delete your own account
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    uids = data.get('uids', [])
+    if not uids:
+        return jsonify({'error': 'No user IDs provided'}), 400
+
+    # Get current user to prevent self-deletion
+    current_user = get_current_user()
+    current_uid = current_user.get('uid') if current_user else None
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    results = []
+
+    for uid in uids:
+        result = {'uid': uid, 'success': False, 'error': None}
+
+        try:
+            # Prevent self-deletion
+            if uid == current_uid:
+                result['error'] = 'Cannot delete your own account'
+                results.append(result)
+                continue
+
+            # Check if user is admin in Firestore
+            user_doc = db.collection('users').document(uid).get()
+            if user_doc.exists:
+                user_data = user_doc.to_dict()
+                if user_data.get('userType') == 'admin':
+                    result['error'] = 'Cannot delete admin users'
+                    results.append(result)
+                    continue
+
+                # Store email for logging
+                result['email'] = user_data.get('email')
+
+            # Delete from Firebase Auth (if exists)
+            try:
+                firebase_auth.delete_user(uid)
+            except firebase_auth.UserNotFoundError:
+                # User doesn't exist in Auth, continue with Firestore deletion
+                pass
+            except Exception as auth_error:
+                # Log but continue - Firestore deletion is also important
+                print(f"Firebase Auth deletion failed for {uid}: {auth_error}")
+
+            # Delete from Firestore
+            db.collection('users').document(uid).delete()
+
+            # Log the deletion
+            admin_user = get_current_user()
+            log_activity(
+                uid=current_uid,
+                email=admin_user.get('email') if admin_user else 'unknown',
+                action='user_deleted',
+                metadata={
+                    'deleted_uid': uid,
+                    'deleted_email': result.get('email'),
+                    'timestamp': datetime.utcnow().isoformat()
+                }
+            )
+
+            result['success'] = True
+
+        except Exception as e:
+            result['error'] = str(e)
+
+        results.append(result)
+
+    return jsonify({
+        'success': all(r['success'] for r in results),
+        'results': results,
+        'deleted_count': sum(1 for r in results if r['success']),
+        'failed_count': sum(1 for r in results if not r['success'])
+    })
+
+
+@auth_bp.route('/users/<uid>/reset-password', methods=['PUT'])
+@admin_required
+def reset_user_password(uid: str):
+    """
+    Reset a user's password (admin only).
+    Uses Firebase Admin SDK to update the password.
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    new_password = data.get('password')
+    if not new_password:
+        return jsonify({'error': 'Password is required'}), 400
+
+    if len(new_password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+
+    if not get_firebase_app():
+        return jsonify({'error': 'Firebase not initialized'}), 500
+
+    db = get_firestore_client()
+
+    try:
+        # Get user info for logging
+        user_email = None
+        if db:
+            user_doc = db.collection('users').document(uid).get()
+            if user_doc.exists:
+                user_email = user_doc.to_dict().get('email')
+
+        # Update password in Firebase Auth
+        firebase_auth.update_user(uid, password=new_password)
+
+        # Log the action
+        admin_user = get_current_user()
+        log_activity(
+            uid=admin_user.get('uid') if admin_user else 'unknown',
+            email=admin_user.get('email') if admin_user else 'unknown',
+            action='password_reset',
+            metadata={
+                'target_uid': uid,
+                'target_email': user_email,
+                'timestamp': datetime.utcnow().isoformat()
+            }
+        )
+
+        return jsonify({
+            'success': True,
+            'message': f'Password reset successfully for {user_email or uid}'
+        })
+
+    except firebase_auth.UserNotFoundError:
+        return jsonify({'error': 'User not found in Firebase Auth'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
