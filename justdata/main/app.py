@@ -3,7 +3,7 @@ Main Flask application for JustData.
 Serves as the central entry point with all sub-apps as blueprints.
 """
 
-from flask import Flask, render_template, session, request, jsonify, send_from_directory
+from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect
 from justdata.main.auth import (
     get_user_type, set_user_type, get_app_access, get_user_permissions,
     auth_bp, init_firebase, get_current_user, is_authenticated
