@@ -137,7 +137,7 @@ All apps use consistent routing:
 
 ## Environment Variables
 
-Required (set in `.env` for local dev, or Render/Cloud Run environment for production):
+Required (set in `.env` for local dev, or Cloud Run environment for production):
 - `CLAUDE_API_KEY` or `ANTHROPIC_API_KEY` - Claude AI API key
 - `GCP_PROJECT_ID` - Google Cloud project (default: hdma1-242116)
 - `GOOGLE_APPLICATION_CREDENTIALS_JSON` - BigQuery credentials as JSON string
@@ -161,16 +161,19 @@ Optional:
 ## Deployment
 
 ### Google Cloud Run
-```bash
-make deploy-all                    # Deploy all services
-make deploy-branchseeker           # Deploy single service
-bash scripts/deploy-all.sh bizsight lendsight  # Deploy specific services
-```
 
-### Render
-Apps deploy via `render.yaml`. Each app uses gunicorn with PYTHONPATH set:
+**Environments:**
+- **Production:** `justdata` service at https://justdata-892833260112.us-east1.run.app
+- **Test:** `justdata-test` service at https://justdata-test-892833260112.us-east1.run.app
+
+**Deploy commands:**
 ```bash
-PYTHONPATH=/opt/render/project/src gunicorn --bind 0.0.0.0:$PORT justdata.apps.<appname>.run:application
+# Build and deploy to test
+bash scripts/deploy-cloudrun.sh
+gcloud run deploy justdata-test --image us-east1-docker.pkg.dev/hdma1-242116/justdata-repo/justdata:latest --region us-east1
+
+# Deploy to production (after testing)
+gcloud run deploy justdata --image us-east1-docker.pkg.dev/hdma1-242116/justdata-repo/justdata:latest --region us-east1
 ```
 
 ### Docker
