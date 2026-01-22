@@ -582,6 +582,92 @@ def report_data():
         return jsonify({'error': str(e)}), 500
 
 
+@mergermeter_bp.route('/api/search-banks', methods=['GET'])
+@require_access('mergermeter', 'full')
+def api_search_banks():
+    """Search for banks by name with autocomplete support.
+    Returns bank name, location info, and identifiers (LEI, RSSD).
+    Used for bank selection dropdown in the analysis form.
+    """
+    try:
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
+
+        query = request.args.get('q', '').strip()
+        limit = min(int(request.args.get('limit', 20)), 50)  # Max 50 results
+
+        if len(query) < 2:
+            return jsonify({'success': True, 'banks': [], 'message': 'Enter at least 2 characters'})
+
+        client = get_bigquery_client(PROJECT_ID)
+
+        # Search query joining lender_names_gleif with lenders18
+        # Returns display name, location info, and identifiers
+        sql = """
+        SELECT DISTINCT
+            g.display_name AS name,
+            g.headquarters_city AS city,
+            g.headquarters_state AS state,
+            l.lei AS lei,
+            CAST(l.respondent_rssd AS STRING) AS rssd,
+            SAFE_CAST(l.assets AS INT64) AS assets
+        FROM `hdma1-242116.hmda.lender_names_gleif` g
+        JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
+        WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
+        ORDER BY SAFE_CAST(l.assets AS INT64) DESC NULLS LAST
+        LIMIT @limit
+        """
+
+        job_config = client.QueryJobConfig()
+        job_config.query_parameters = [
+            client.ScalarQueryParameter('search_pattern', 'STRING', f'%{query}%'),
+            client.ScalarQueryParameter('limit', 'INT64', limit)
+        ]
+
+        # Execute query
+        from google.cloud import bigquery
+        job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter('search_pattern', 'STRING', f'%{query}%'),
+                bigquery.ScalarQueryParameter('limit', 'INT64', limit)
+            ]
+        )
+
+        query_job = client.query(sql, job_config=job_config)
+        results = query_job.result()
+
+        banks = []
+        for row in results:
+            # Format location string
+            location = ''
+            if row.city and row.state:
+                location = f"{row.city}, {row.state}"
+            elif row.state:
+                location = row.state
+            elif row.city:
+                location = row.city
+
+            banks.append({
+                'name': row.name,
+                'location': location,
+                'city': row.city or '',
+                'state': row.state or '',
+                'lei': row.lei or '',
+                'rssd': row.rssd or '',
+                'assets': row.assets
+            })
+
+        return jsonify({
+            'success': True,
+            'banks': banks,
+            'count': len(banks)
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @mergermeter_bp.route('/health')
 def health():
     """Health check endpoint"""

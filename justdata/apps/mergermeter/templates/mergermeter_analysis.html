@@ -121,6 +121,15 @@
                             <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
                                 <i class="fas fa-hand-holding"></i> Bank A (Acquirer)
                             </h4>
+                            <!-- Bank Search Autocomplete -->
+                            <div style="margin-bottom: 15px; position: relative;">
+                                <label for="acquirer_search">
+                                    <i class="fas fa-search"></i>
+                                    Search Bank by Name
+                                </label>
+                                <input type="text" id="acquirer_search" class="bank-search-input" data-bank="acquirer" placeholder="Type bank name to search..." autocomplete="off" style="width: 100%;">
+                                <div id="acquirer_search_results" class="bank-search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                            </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                                 <div>
                                     <label for="acquirer_lei">
@@ -145,7 +154,7 @@
                                 </div>
                             </div>
                             <div id="acquirer_confirmation" style="display: none; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; margin-top: 10px;">
-                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong> 
+                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong>
                                 <span id="acquirer_name_display"></span>
                             </div>
                         </div>
@@ -155,6 +164,15 @@
                             <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
                                 <i class="fas fa-bullseye"></i> Bank B (Target)
                             </h4>
+                            <!-- Bank Search Autocomplete -->
+                            <div style="margin-bottom: 15px; position: relative;">
+                                <label for="target_search">
+                                    <i class="fas fa-search"></i>
+                                    Search Bank by Name
+                                </label>
+                                <input type="text" id="target_search" class="bank-search-input" data-bank="target" placeholder="Type bank name to search..." autocomplete="off" style="width: 100%;">
+                                <div id="target_search_results" class="bank-search-results" style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-radius: 0 0 8px 8px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);"></div>
+                            </div>
                             <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
                                 <div>
                                     <label for="target_lei">
@@ -179,7 +197,7 @@
                                 </div>
                             </div>
                             <div id="target_confirmation" style="display: none; padding: 12px; background: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; margin-top: 10px;">
-                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong> 
+                                <strong><i class="fas fa-check-circle"></i> Confirmed:</strong>
                                 <span id="target_name_display"></span>
                             </div>
                         </div>
@@ -1702,6 +1720,181 @@
                 });
             }
         });
+
+        // Bank Search Autocomplete Functionality
+        (function() {
+            let searchTimeout = null;
+            const searchDelay = 300; // ms delay before searching
+
+            // Setup search for both acquirer and target
+            document.querySelectorAll('.bank-search-input').forEach(input => {
+                const bank = input.dataset.bank;
+                const resultsDiv = document.getElementById(`${bank}_search_results`);
+
+                // Handle input changes
+                input.addEventListener('input', function() {
+                    const query = this.value.trim();
+
+                    // Clear previous timeout
+                    if (searchTimeout) clearTimeout(searchTimeout);
+
+                    if (query.length < 2) {
+                        resultsDiv.style.display = 'none';
+                        return;
+                    }
+
+                    // Debounce the search
+                    searchTimeout = setTimeout(() => searchBanks(query, bank, resultsDiv), searchDelay);
+                });
+
+                // Hide results when clicking outside
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !resultsDiv.contains(e.target)) {
+                        resultsDiv.style.display = 'none';
+                    }
+                });
+
+                // Keyboard navigation
+                input.addEventListener('keydown', function(e) {
+                    if (resultsDiv.style.display === 'none') return;
+
+                    const items = resultsDiv.querySelectorAll('.bank-search-item');
+                    const activeItem = resultsDiv.querySelector('.bank-search-item.active');
+                    let activeIndex = Array.from(items).indexOf(activeItem);
+
+                    if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = (activeIndex + 1) % items.length;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        if (activeItem) activeItem.classList.remove('active');
+                        activeIndex = activeIndex <= 0 ? items.length - 1 : activeIndex - 1;
+                        items[activeIndex].classList.add('active');
+                        items[activeIndex].scrollIntoView({ block: 'nearest' });
+                    } else if (e.key === 'Enter' && activeItem) {
+                        e.preventDefault();
+                        selectBank(activeItem, bank);
+                    } else if (e.key === 'Escape') {
+                        resultsDiv.style.display = 'none';
+                    }
+                });
+            });
+
+            async function searchBanks(query, bank, resultsDiv) {
+                try {
+                    resultsDiv.innerHTML = '<div style="padding: 12px; color: #666;"><i class="fas fa-spinner fa-spin"></i> Searching...</div>';
+                    resultsDiv.style.display = 'block';
+
+                    const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    const response = await fetch(`${baseUrl}/api/search-banks?q=${encodeURIComponent(query)}&limit=20`);
+                    const data = await response.json();
+
+                    if (!data.success) {
+                        resultsDiv.innerHTML = `<div style="padding: 12px; color: #dc3545;">Error: ${data.error}</div>`;
+                        return;
+                    }
+
+                    if (data.banks.length === 0) {
+                        resultsDiv.innerHTML = '<div style="padding: 12px; color: #666;">No banks found matching your search.</div>';
+                        return;
+                    }
+
+                    resultsDiv.innerHTML = data.banks.map((b, i) => `
+                        <div class="bank-search-item ${i === 0 ? 'active' : ''}"
+                             data-lei="${b.lei || ''}"
+                             data-rssd="${b.rssd || ''}"
+                             data-name="${escapeHtml(b.name)}"
+                             data-location="${escapeHtml(b.location)}"
+                             style="padding: 12px 15px; cursor: pointer; border-bottom: 1px solid #eee; transition: background 0.2s;">
+                            <div style="font-weight: 600; color: #1a365d; margin-bottom: 2px;">${escapeHtml(b.name)}</div>
+                            <div style="font-size: 0.85rem; color: #666;">
+                                <i class="fas fa-map-marker-alt" style="margin-right: 5px; color: #0891b2;"></i>${escapeHtml(b.location) || 'Location unknown'}
+                                ${b.assets ? `<span style="margin-left: 10px;"><i class="fas fa-chart-bar" style="margin-right: 3px;"></i>${formatAssets(b.assets)}</span>` : ''}
+                            </div>
+                            <div style="font-size: 0.75rem; color: #999; margin-top: 3px;">
+                                LEI: ${b.lei || 'N/A'} | RSSD: ${b.rssd || 'N/A'}
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Add click handlers
+                    resultsDiv.querySelectorAll('.bank-search-item').forEach(item => {
+                        item.addEventListener('click', () => selectBank(item, bank));
+                        item.addEventListener('mouseenter', function() {
+                            resultsDiv.querySelectorAll('.bank-search-item').forEach(i => i.classList.remove('active'));
+                            this.classList.add('active');
+                        });
+                    });
+
+                } catch (error) {
+                    console.error('Bank search error:', error);
+                    resultsDiv.innerHTML = `<div style="padding: 12px; color: #dc3545;">Search failed. Please try again.</div>`;
+                }
+            }
+
+            function selectBank(item, bank) {
+                const lei = item.dataset.lei;
+                const rssd = item.dataset.rssd;
+                const name = item.dataset.name;
+                const location = item.dataset.location;
+
+                // Populate the identifier fields
+                document.getElementById(`${bank}_lei`).value = lei || '';
+                document.getElementById(`${bank}_rssd`).value = rssd || '';
+
+                // Update search input to show selected bank
+                document.getElementById(`${bank}_search`).value = `${name}${location ? ' - ' + location : ''}`;
+
+                // Show confirmation
+                const confirmDiv = document.getElementById(`${bank}_confirmation`);
+                const nameDisplay = document.getElementById(`${bank}_name_display`);
+                if (confirmDiv && nameDisplay) {
+                    nameDisplay.textContent = `${name}${location ? ' (' + location + ')' : ''}`;
+                    confirmDiv.style.display = 'block';
+                }
+
+                // Hide results
+                document.getElementById(`${bank}_search_results`).style.display = 'none';
+
+                console.log(`Selected ${bank} bank:`, { name, lei, rssd, location });
+            }
+
+            function escapeHtml(text) {
+                if (!text) return '';
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            function formatAssets(assets) {
+                if (!assets) return '';
+                if (assets >= 1000000000) {
+                    return `$${(assets / 1000000000).toFixed(1)}B`;
+                } else if (assets >= 1000000) {
+                    return `$${(assets / 1000000).toFixed(0)}M`;
+                } else if (assets >= 1000) {
+                    return `$${(assets / 1000).toFixed(0)}K`;
+                }
+                return `$${assets}`;
+            }
+        })();
+
+        // Add CSS for search result hover effects
+        const searchStyles = document.createElement('style');
+        searchStyles.textContent = `
+            .bank-search-item:hover, .bank-search-item.active {
+                background: #f0f7ff !important;
+            }
+            .bank-search-input:focus {
+                border-color: var(--ncrc-secondary-blue);
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            }
+        `;
+        document.head.appendChild(searchStyles);
     </script>
     {% include "shared_header_js.html" %}
 </body>
