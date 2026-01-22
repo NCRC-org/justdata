@@ -76,11 +76,11 @@
         <form id="emailLoginForm" onsubmit="handleEmailLogin(event)" style="margin-bottom: 20px;">
             <div style="margin-bottom: 16px;">
                 <label for="loginEmail" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Email</label>
-                <input type="email" id="loginEmail" placeholder="Enter your email" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a365d'" onblur="this.style.borderColor='#ddd'">
+                <input type="email" id="loginEmail" placeholder="Enter your email" required autocomplete="email" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a365d'" onblur="this.style.borderColor='#ddd'">
             </div>
             <div style="margin-bottom: 20px;">
                 <label for="loginPassword" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Password</label>
-                <input type="password" id="loginPassword" placeholder="Enter your password" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a365d'" onblur="this.style.borderColor='#ddd'">
+                <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box; transition: border-color 0.2s;" onfocus="this.style.borderColor='#1a365d'" onblur="this.style.borderColor='#ddd'">
             </div>
             <!-- Error message -->
             <div id="loginError" style="display: none; background: #fee2e2; color: #dc2626; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
