@@ -402,7 +402,7 @@
 
     <!-- jQuery -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ url_for('static', filename='js/app.v2.js') }}"></script>
+    <!-- Note: All MergerMeter report JavaScript is inline below - no external app.js needed -->
     <script>
         // Base URL for API calls
         window.APP_BASE_URL = '{{ app_base_url|default("/mergermeter") }}';
