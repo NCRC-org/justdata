@@ -1634,9 +1634,18 @@
             document.getElementById('resetPasswordEmail').textContent = email;
             document.getElementById('newPasswordInput').value = '';
             document.getElementById('passwordSuccessMessage').style.display = 'none';
-            document.getElementById('resetPasswordBtn').disabled = false;
+
+            // Explicitly enable the button (both property and attribute)
+            const resetBtn = document.getElementById('resetPasswordBtn');
+            resetBtn.disabled = false;
+            resetBtn.removeAttribute('disabled');
+            resetBtn.style.opacity = '1';
+            resetBtn.style.pointerEvents = 'auto';
+
             document.getElementById('resetPasswordText').textContent = 'Reset Password';
             document.getElementById('resetPasswordModal').classList.add('active');
+
+            console.log('Reset password modal opened for:', email, '- Button enabled:', !resetBtn.disabled);
         }
 
         function closeResetPasswordModal() {
@@ -1679,34 +1688,48 @@
             const resetBtn = document.getElementById('resetPasswordBtn');
             const resetText = document.getElementById('resetPasswordText');
 
+            // Disable button during API call
             resetBtn.disabled = true;
+            resetBtn.style.opacity = '0.6';
+            resetBtn.style.pointerEvents = 'none';
             resetText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Resetting...';
 
             try {
+                const token = await window.JustDataAuth.getToken();
+                console.log('Calling reset password API for uid:', uid);
+
                 const response = await fetch(`/api/auth/users/${uid}/reset-password`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                        'Authorization': `Bearer ${token}`
                     },
                     body: JSON.stringify({ password: newPassword })
                 });
 
                 const result = await response.json();
+                console.log('Reset password response:', result);
 
                 if (!response.ok) {
                     throw new Error(result.error || 'Password reset failed');
                 }
 
-                // Show success
+                // Show success - keep button disabled to prevent accidental re-submission
                 document.getElementById('passwordSuccessMessage').style.display = 'block';
                 resetText.textContent = 'Done!';
+                resetBtn.style.opacity = '1';
+                resetBtn.style.background = '#28a745';
                 showToast('Password reset successfully', 'success');
 
             } catch (error) {
                 console.error('Password reset error:', error);
                 showToast('Reset failed: ' + error.message, 'error');
+                // Re-enable button on error
                 resetBtn.disabled = false;
+                resetBtn.removeAttribute('disabled');
+                resetBtn.style.opacity = '1';
+                resetBtn.style.pointerEvents = 'auto';
+                resetBtn.style.background = '';
                 resetText.textContent = 'Reset Password';
             }
         }
