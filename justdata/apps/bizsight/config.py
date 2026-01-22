@@ -24,10 +24,26 @@ STATIC_DIR = BIZSIGHT_DIR / 'static'
 TEMPLATES_DIR_STR = str(TEMPLATES_DIR)
 STATIC_DIR_STR = str(STATIC_DIR)
 
-# Ensure directories exist
-REPORTS_DIR.mkdir(parents=True, exist_ok=True)
-CREDENTIALS_DIR.mkdir(parents=True, exist_ok=True)
-STATIC_DIR.mkdir(parents=True, exist_ok=True)
+# Ensure directories exist (use try/except for read-only file systems like Cloud Run)
+try:
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    # Use /tmp for Cloud Run
+    REPORTS_DIR = Path('/tmp/bizsight/reports')
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+
+try:
+    CREDENTIALS_DIR.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    # Use /tmp for Cloud Run
+    CREDENTIALS_DIR = Path('/tmp/bizsight/credentials')
+    CREDENTIALS_DIR.mkdir(parents=True, exist_ok=True)
+
+try:
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+except PermissionError:
+    # Static dir should already exist, ignore
+    pass
 
 class BizSightConfig:
     """Configuration for BizSight application."""
