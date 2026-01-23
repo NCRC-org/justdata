@@ -503,6 +503,9 @@
     </style>
 </head>
 <body>
+    <!-- Report Interstitial Modal - shows while data loads -->
+    {% include "report_interstitial.html" %}
+
     <div class="report-container">
         <!-- Header Actions Row - Back button on left, Export/Print on right -->
         <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
@@ -873,15 +876,26 @@
                 const baseUrl = window.APP_BASE_URL || '/branchsight';
                 const response = await fetch(`${baseUrl}/report-data`);
                 const result = await response.json();
-                
+
                 if (!result.success) {
                     throw new Error(result.error || 'Failed to load report data');
                 }
-                
+
                 displayReport(result.data, result.metadata);
-                
+
+                // Signal to interstitial that report is ready
+                if (typeof ReportInterstitial !== 'undefined') {
+                    ReportInterstitial.setReady();
+                }
+
             } catch (error) {
                 console.error('Error loading report:', error);
+
+                // Signal error to interstitial
+                if (typeof ReportInterstitial !== 'undefined') {
+                    ReportInterstitial.setError('Error loading report. Click to try again.');
+                }
+
                 showError(error.message);
             }
         }

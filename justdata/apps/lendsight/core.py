@@ -419,11 +419,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             # Prepare demographic overview data
             demographic_df = report_data.get('demographic_overview', pd.DataFrame())
             demographic_data = convert_numpy_types(demographic_df.to_dict('records') if not demographic_df.empty else [])
-            
-            # Prepare income and neighborhood indicators data
-            income_neighborhood_df = report_data.get('income_neighborhood_indicators', pd.DataFrame())
-            income_neighborhood_data = convert_numpy_types(income_neighborhood_df.to_dict('records') if not income_neighborhood_df.empty else [])
-            
+
             # Prepare top lenders detailed data
             top_lenders_detailed_df = report_data.get('top_lenders_detailed', pd.DataFrame())
             top_lenders_detailed_data = convert_numpy_types(top_lenders_detailed_df.to_dict('records') if not top_lenders_detailed_df.empty else [])
@@ -470,10 +466,9 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'loan_purpose': loan_purpose if loan_purpose else ['purchase', 'refinance', 'equity'],  # Include loan purpose in AI data
                 'summary_data': convert_numpy_types(report_data.get('summary', {}).to_dict('records') if not report_data.get('summary', pd.DataFrame()).empty else []),
                 'demographic_overview': demographic_data,
-                'income_neighborhood_indicators': income_neighborhood_data,
-                'income_borrowers': income_borrowers_data,  # Section 2 Table 1
-                'income_tracts': income_tracts_data,  # Section 2 Table 2
-                'minority_tracts': minority_tracts_data,  # Section 2 Table 3
+                'income_borrowers': income_borrowers_data,  # Section 2 Table 1: Lending to Income Borrowers
+                'income_tracts': income_tracts_data,  # Section 2 Table 2: Lending to Census Tracts by Income
+                'minority_tracts': minority_tracts_data,  # Section 2 Table 3: Lending to Census Tracts by Minority Pop
                 'top_lenders_detailed': top_lenders_detailed_data,
                 'market_concentration': market_concentration_data,
                 'trends_data': convert_numpy_types(report_data.get('trends', {}).to_dict('records') if not report_data.get('trends', pd.DataFrame()).empty else []),
@@ -482,30 +477,23 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 'by_lender': by_lender_data,
                 'census_data': convert_numpy_types(census_data)  # Include Census data for context
             }
-            
+
             # Debug: Log what data is being passed to AI
             print(f"[DEBUG] AI data summary:")
             print(f"  - demographic_overview: {len(demographic_data)} records")
-            print(f"  - income_neighborhood_indicators: {len(income_neighborhood_data)} records")
+            print(f"  - income_borrowers: {len(income_borrowers_data)} records")
+            print(f"  - income_tracts: {len(income_tracts_data)} records")
+            print(f"  - minority_tracts: {len(minority_tracts_data)} records")
             print(f"  - top_lenders_detailed: {len(top_lenders_detailed_data)} records")
             print(f"  - census_data: {len(census_data) if census_data else 0} counties")
-            
+
             # Validate that we have data before calling AI
             if len(demographic_data) == 0:
                 print(f"[WARNING] demographic_overview is empty - AI may return empty discussion")
-            if len(income_neighborhood_data) == 0:
-                print(f"[WARNING] income_neighborhood_indicators is empty - AI may return empty discussion")
+            if len(income_borrowers_data) == 0:
+                print(f"[WARNING] income_borrowers is empty - AI may return empty discussion")
             if len(top_lenders_detailed_data) == 0:
                 print(f"[WARNING] top_lenders_detailed is empty - AI may return empty discussion")
-            print(f"  - income_neighborhood_indicators: {len(income_neighborhood_data)} records")
-            print(f"  - top_lenders_detailed: {len(top_lenders_detailed_data)} records")
-            print(f"  - census_data: {len(census_data)} counties")
-            if demographic_data:
-                print(f"  - demographic_overview sample (first record): {demographic_data[0] if len(demographic_data) > 0 else 'N/A'}")
-            if income_neighborhood_data:
-                print(f"  - income_neighborhood_indicators sample (first record): {income_neighborhood_data[0] if len(income_neighborhood_data) > 0 else 'N/A'}")
-            if top_lenders_detailed_data:
-                print(f"  - top_lenders_detailed sample (first record): {top_lenders_detailed_data[0] if len(top_lenders_detailed_data) > 0 else 'N/A'}")
             
             if progress_tracker:
                 progress_tracker.update_progress('generating_ai', 90, 'Generating AI narratives... Let the AI work its magic! ✨')

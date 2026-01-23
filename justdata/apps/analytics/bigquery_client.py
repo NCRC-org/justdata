@@ -100,13 +100,50 @@ def get_bigquery_client():
         # Try to get credentials from environment
         creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
         if creds_json:
-            import json
-            creds_dict = json.loads(creds_json)
-            credentials = service_account.Credentials.from_service_account_info(creds_dict)
-            _client = bigquery.Client(
-                project=ANALYTICS_PROJECT,
-                credentials=credentials
-            )
+            try:
+                # Handle JSON that may have literal newlines in the private key
+                # This can happen when the secret is stored with actual newlines
+                # instead of escaped \n sequences
+                import re
+
+                # First, try to parse as-is
+                try:
+                    creds_dict = json.loads(creds_json)
+                except json.JSONDecodeError:
+                    # If that fails, try to fix newlines in the private_key field
+                    # Replace literal newlines within the JSON string values with escaped newlines
+                    # This regex finds the private_key field and escapes any literal newlines within it
+                    def escape_newlines_in_key(match):
+                        key_content = match.group(1)
+                        # Replace literal newlines with escaped newlines
+                        key_content = key_content.replace('\r\n', '\\n').replace('\n', '\\n').replace('\r', '\\n')
+                        return f'"private_key":"{key_content}"'
+
+                    fixed_json = re.sub(
+                        r'"private_key"\s*:\s*"([^"]*(?:\\.[^"]*)*)"',
+                        escape_newlines_in_key,
+                        creds_json,
+                        flags=re.DOTALL
+                    )
+
+                    # If regex didn't help, try a simpler approach: escape all newlines
+                    try:
+                        creds_dict = json.loads(fixed_json)
+                    except json.JSONDecodeError:
+                        # Last resort: try to load using ast.literal_eval after some cleanup
+                        print(f"[WARN] Analytics: Could not parse credentials JSON, falling back to default auth")
+                        _client = bigquery.Client(project=ANALYTICS_PROJECT)
+                        return _client
+
+                credentials = service_account.Credentials.from_service_account_info(creds_dict)
+                _client = bigquery.Client(
+                    project=ANALYTICS_PROJECT,
+                    credentials=credentials
+                )
+            except Exception as e:
+                print(f"[ERROR] Analytics: Error parsing credentials: {e}")
+                # Fall back to default credentials
+                _client = bigquery.Client(project=ANALYTICS_PROJECT)
         else:
             # Fall back to default credentials
             _client = bigquery.Client(project=ANALYTICS_PROJECT)

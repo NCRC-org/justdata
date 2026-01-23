@@ -4,7 +4,7 @@ BizSight Flask Web Application
 Main application file for BizSight.
 """
 
-from flask import Flask, render_template, request, jsonify, session, Response, send_file, make_response, send_from_directory
+from flask import render_template, request, jsonify, session, Response, send_file, make_response, send_from_directory
 import os
 import sys
 import uuid
@@ -19,6 +19,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
+from justdata.shared.web.app_factory import create_app
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
 from justdata.apps.bizsight.core import run_analysis
 from justdata.apps.bizsight.data_utils import get_available_counties, get_available_years
@@ -40,23 +41,21 @@ config = get_unified_config(verbose=True)
 print(f"[ENV] Environment: {'LOCAL' if config['IS_LOCAL'] else 'PRODUCTION (Render)'}")
 print(f"[ENV] Shared config loaded from: {config.get('SHARED_ENV_FILE', 'Environment variables')}")
 
-# Create Flask app
-app = Flask(
+# Create Flask app using shared factory for consistent session handling
+app = create_app(
     'bizsight',
     template_folder=TEMPLATES_DIR_STR,
-    static_folder=STATIC_DIR_STR
+    static_folder=STATIC_DIR_STR,
+    config={
+        'DEBUG': BizSightConfig.DEBUG,
+        'TEMPLATES_AUTO_RELOAD': True,  # Force template reload on every request
+        'SEND_FILE_MAX_AGE_DEFAULT': 0,  # Disable static file caching
+        'EXPLAIN_TEMPLATE_LOADING': True,  # Debug template loading
+    }
 )
 
 # Add ProxyFix for proper request handling behind Render's proxy
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
-
-# Configure Flask - AGGRESSIVE CACHE BUSTING
-app.secret_key = BizSightConfig.SECRET_KEY
-# Force DEBUG mode for development to enable auto-reload
-app.config['DEBUG'] = True  # Always True for development
-app.config['TEMPLATES_AUTO_RELOAD'] = True  # Force template reload on every request
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0  # Disable static file caching
-app.config['EXPLAIN_TEMPLATE_LOADING'] = True  # Debug template loading
 
 # DISABLE Jinja2 bytecode cache completely - this is the key fix
 # Jinja2 compiles templates to .pyc files which persist on disk

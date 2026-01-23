@@ -722,6 +722,9 @@
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light);">
+    <!-- Report Interstitial Modal - shows while data loads -->
+    {% include "report_interstitial.html" %}
+
     {% include "shared_header.html" %}
     <div class="report-container">
         <!-- Header Actions Row - Back button on left, Export/Print on right -->
@@ -1416,12 +1419,22 @@
                     if (loadingIndicator) loadingIndicator.style.display = 'none';
                     if (reportContent) reportContent.style.display = 'block';
 
+                    // Signal to interstitial that report is ready
+                    if (typeof ReportInterstitial !== 'undefined') {
+                        ReportInterstitial.setReady();
+                    }
+
                     console.log('[SUCCESS] Report loaded successfully');
                 })
                 .catch(error => {
                     console.error('Error loading report data:', error);
                     const errorMsg = error.message || 'Unknown error';
                     document.getElementById('reportMetadata').textContent = 'Error: ' + errorMsg;
+
+                    // Signal error to interstitial
+                    if (typeof ReportInterstitial !== 'undefined') {
+                        ReportInterstitial.setError('Error loading report. Click to try again.');
+                    }
 
                     // Update loading indicator to show error
                     const loadingMessage = document.getElementById('loadingMessage');

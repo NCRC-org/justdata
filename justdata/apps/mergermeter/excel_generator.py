@@ -600,6 +600,8 @@ def create_merger_excel(
         # Return empty DataFrames if transformation fails
         bank_a_sb_transformed = pd.DataFrame(columns=['assessment_area', 'metric', 'bank_value', 'peer_value', 'difference'])
         bank_b_sb_transformed = pd.DataFrame(columns=['assessment_area', 'metric', 'bank_value', 'peer_value', 'difference'])
+        bank_a_sb_peer_renamed = pd.DataFrame()
+        bank_b_sb_peer_renamed = pd.DataFrame()
     
     # Transform branch data - need to rename columns to match transformer expectations
     # MergerMeter uses: market_total_branches, market_branches_in_lmict, market_branches_in_mmct
@@ -657,8 +659,8 @@ def create_merger_excel(
         bank_b_mortgage_peer_data=bank_b_mortgage_peer_transformed,
         bank_a_sb_data=bank_a_sb_transformed,
         bank_b_sb_data=bank_b_sb_transformed,
-        bank_a_sb_peer_data=None,  # Peer data is already merged in transformed data
-        bank_b_sb_peer_data=None,  # Peer data is already merged in transformed data
+        bank_a_sb_peer_data=bank_a_sb_peer_renamed,
+        bank_b_sb_peer_data=bank_b_sb_peer_renamed,
         bank_a_branch_data=bank_a_branch_transformed,
         bank_b_branch_data=bank_b_branch_transformed,
         years_hmda=hmda_years,

@@ -169,7 +169,30 @@ def get_bigquery_client(project_id: str = None):
                     except:
                         pass
                     
-                    cred_dict = json.loads(cred_json_str)
+                    # Try to parse JSON, with fallback for literal newlines in private_key
+                    try:
+                        cred_dict = json.loads(cred_json_str)
+                    except json.JSONDecodeError as parse_error:
+                        # If parsing fails, it might be due to literal newlines in the private_key
+                        # Try to escape them before parsing
+                        import re
+                        print(f"[DEBUG] Initial JSON parse failed: {parse_error}, attempting to fix newlines...", flush=True)
+
+                        def escape_newlines_in_key(match):
+                            key_content = match.group(1)
+                            # Replace literal newlines with escaped newlines
+                            key_content = key_content.replace('\r\n', '\\n').replace('\n', '\\n').replace('\r', '\\n')
+                            return f'"private_key":"{key_content}"'
+
+                        fixed_json = re.sub(
+                            r'"private_key"\s*:\s*"([^"]*(?:\\.[^"]*)*)"',
+                            escape_newlines_in_key,
+                            cred_json_str,
+                            flags=re.DOTALL
+                        )
+                        cred_dict = json.loads(fixed_json)
+                        print(f"[DEBUG] Successfully parsed credentials after fixing newlines", flush=True)
+
                     print(f"[DEBUG] Successfully parsed credentials JSON. Project: {cred_dict.get('project_id', 'N/A')}, Client email: {cred_dict.get('client_email', 'N/A')[:50]}...", flush=True)
                     sys.stdout.flush()
                     

@@ -53,8 +53,7 @@ def build_mortgage_report(raw_data: List[Dict[str, Any]], counties: List[str], y
         ('income_borrowers', 'Income Borrowers', lambda: create_income_borrowers_table(df, years, hud_data=hud_data)),
         ('income_tracts', 'Income Tracts', lambda: create_income_tracts_table(df, years, hud_data=hud_data, census_data=census_data)),
         ('minority_tracts', 'Minority Tracts', lambda: create_minority_tracts_table(df, years, census_data=census_data)),
-        ('income_neighborhood_tracts', 'Income & Neighborhood Tracts', lambda: create_income_neighborhood_tracts_table(df, years, hud_data=hud_data, census_data=census_data)),
-        ('income_neighborhood_indicators', 'Income & Neighborhood Indicators', lambda: create_income_neighborhood_indicators_table(df, years)),
+        # REMOVED: income_neighborhood_tracts and income_neighborhood_indicators - consolidated into the three tables above
         ('top_lenders_detailed', 'Top Lenders Detailed', lambda: create_top_lenders_detailed_table(df, years)),
         ('market_concentration', 'Market Concentration', lambda: create_market_concentration_table(df, years, metadata={'counties': counties, 'years': years})),
         ('by_lender', 'Lender Summary', lambda: create_lender_summary(df, years)),
@@ -3128,19 +3127,27 @@ def save_mortgage_excel_report(report_data: Dict[str, pd.DataFrame], output_path
             if not demographic_overview.empty:
                 demographic_overview.to_excel(writer, sheet_name=sanitize_sheet_name('Section 1 - Demographic Overview'), index=False)
 
-        # Section 2: Income and Neighborhood Indicators
-        # This matches the report table exactly
-        if raw_df is not None:
-            income_table = create_income_neighborhood_indicators_table_for_excel(raw_df, years)
-            if not income_table.empty:
-                income_table.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2 - Income and Neighborhood'), index=False)
-        else:
-            # Use pre-computed income_neighborhood_indicators table from report_data
-            income_indicators = report_data.get('income_neighborhood_indicators', pd.DataFrame())
-            if isinstance(income_indicators, list):
-                income_indicators = pd.DataFrame(income_indicators)
-            if not income_indicators.empty:
-                income_indicators.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2 - Income and Neighborhood'), index=False)
+        # Section 2: Income and Neighborhood Indicators (3 tables)
+        # Table 1: Lending to Income Borrowers
+        income_borrowers = report_data.get('income_borrowers', pd.DataFrame())
+        if isinstance(income_borrowers, list):
+            income_borrowers = pd.DataFrame(income_borrowers)
+        if not income_borrowers.empty:
+            income_borrowers.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2a - Income Borrowers'), index=False)
+
+        # Table 2: Lending to Census Tracts by Income
+        income_tracts = report_data.get('income_tracts', pd.DataFrame())
+        if isinstance(income_tracts, list):
+            income_tracts = pd.DataFrame(income_tracts)
+        if not income_tracts.empty:
+            income_tracts.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2b - Income Tracts'), index=False)
+
+        # Table 3: Lending to Census Tracts by Minority Population
+        minority_tracts = report_data.get('minority_tracts', pd.DataFrame())
+        if isinstance(minority_tracts, list):
+            minority_tracts = pd.DataFrame(minority_tracts)
+        if not minority_tracts.empty:
+            minority_tracts.to_excel(writer, sheet_name=sanitize_sheet_name('Section 2c - Minority Tracts'), index=False)
         
         # Section 3: Top Lenders (with ALL categories and No Data)
         # This matches the report table exactly but includes ALL categories

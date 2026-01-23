@@ -1,6 +1,6 @@
 """
 Flask application factory for creating consistent web apps.
-Shared across BranchSeeker, BizSight, and LendSight.
+Shared across BranchSeeker, BizSight, LendSight, MergerMeter, and other JustData apps.
 """
 
 from flask import Flask, jsonify
@@ -8,16 +8,21 @@ from datetime import datetime
 import os
 
 
+# Shared fallback secret key for all JustData apps (consistent across instances)
+# In production, SECRET_KEY should ALWAYS be set via environment variable
+_FALLBACK_SECRET_KEY = 'justdata-shared-secret-key-set-SECRET_KEY-in-production'
+
+
 def create_app(app_name: str, template_folder: str = None, static_folder: str = None, config: dict = None):
     """
     Create a Flask application with consistent configuration.
-    
+
     Args:
         app_name: Name of the application (e.g., 'branchseeker', 'bizsight', 'lendsight')
         template_folder: Path to templates folder
         static_folder: Path to static files folder
         config: Additional configuration dictionary
-    
+
     Returns:
         Flask application instance
     """
@@ -26,10 +31,22 @@ def create_app(app_name: str, template_folder: str = None, static_folder: str = 
         template_folder=template_folder,
         static_folder=static_folder
     )
-    
-    # Default configuration
-    app.secret_key = os.environ.get('SECRET_KEY', f'{app_name}-secret-key-change-this')
-    
+
+    # Get SECRET_KEY from environment - use consistent fallback across all apps
+    # This ensures sessions persist across different apps in the unified platform
+    secret_key = os.environ.get('SECRET_KEY')
+    if secret_key:
+        app.secret_key = secret_key
+    else:
+        app.secret_key = _FALLBACK_SECRET_KEY
+        print(f"[{app_name}] WARNING: SECRET_KEY not set in environment, using fallback. "
+              "Set SECRET_KEY environment variable in production for secure sessions.")
+
+    # Configure session for better persistence
+    app.config['SESSION_COOKIE_SECURE'] = os.environ.get('FLASK_ENV') == 'production'
+    app.config['SESSION_COOKIE_HTTPONLY'] = True
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
     # Apply custom configuration
     if config:
         app.config.update(config)

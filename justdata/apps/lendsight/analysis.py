@@ -641,29 +641,34 @@ The reader can see all the percentages in the table above. Your job is to EDUCAT
         return self._call_ai(prompt, max_tokens=1000, temperature=0.3)
     
     def generate_income_neighborhood_intro(self, data: Dict[str, Any]) -> str:
-        """Generate at least 2 sentences leading into the income and neighborhood indicators table."""
+        """Generate at least 2 sentences leading into the income and neighborhood indicators tables."""
         counties = data.get('counties', [])
         years = data.get('years', [])
-        income_neighborhood_data = data.get('income_neighborhood_indicators', [])
-        
+        income_borrowers_data = data.get('income_borrowers', [])
+        income_tracts_data = data.get('income_tracts', [])
+        minority_tracts_data = data.get('minority_tracts', [])
+
         if len(years) > 1:
             year_range = f"{min(years)} to {max(years)}"
         else:
             year_range = str(years[0]) if years else "the selected years"
-        
+
         prompt = f"""
-        Generate at least 2 sentences (but no more than 3) that introduce the income and neighborhood indicators table for Section 2.
-        
+        Generate at least 2 sentences (but no more than 3) that introduce Section 2: Income and Neighborhood Indicators.
+
         Counties: {counties}
         Years: {year_range}
-        Table Data: {json.dumps(income_neighborhood_data, indent=2)[:1500] if income_neighborhood_data else 'Not available'}
-        
+
+        Section 2 contains three tables:
+        - Table 1: Lending to Income Borrowers (LMIB breakdown by Low/Moderate/Middle/Upper income)
+        - Table 2: Lending to Census Tracts by Income (LMICT breakdown by tract income level)
+        - Table 3: Lending to Census Tracts by Minority Population (MMCT and minority quartiles)
+
         The introduction should:
-        1. Explain what the table shows (lending activity by income and neighborhood characteristics over time)
-        2. Mention that it shows both number of loans and percentage for each category
+        1. Explain that this section examines lending patterns by borrower income and neighborhood characteristics
+        2. Mention that it includes three detailed tables showing different aspects of community lending
         3. Note the time period covered ({year_range})
-        4. Mention the categories: Total loans, LMICT, LMIB, and MMCT
-        
+
         WRITING REQUIREMENTS:
         - At least 2 sentences, no more than 3
         - Plain English, accessible to non-technical readers
@@ -671,14 +676,17 @@ The reader can see all the percentages in the table above. Your job is to EDUCAT
         - NO first-person language (no "I", "we", "my", "our")
         - Professional, analytical tone
         """
-        
+
         return self._call_ai(prompt, max_tokens=300, temperature=0.3)
     
     def generate_income_neighborhood_discussion(self, data: Dict[str, Any]) -> str:
-        """Generate at least 2 paragraphs discussing the income and neighborhood indicators table data."""
+        """Generate at least 2 paragraphs discussing the income and neighborhood indicators tables data."""
         counties = data.get('counties', [])
         years = data.get('years', [])
-        income_neighborhood_data = data.get('income_neighborhood_indicators', [])
+        # Use consolidated tables instead of legacy income_neighborhood_indicators
+        income_borrowers_data = data.get('income_borrowers', [])
+        income_tracts_data = data.get('income_tracts', [])
+        minority_tracts_data = data.get('minority_tracts', [])
         
         if len(years) > 1:
             year_range = f"{min(years)} to {max(years)}"
@@ -686,11 +694,19 @@ The reader can see all the percentages in the table above. Your job is to EDUCAT
             year_range = str(years[0]) if years else "the selected years"
         
         prompt = f"""
-        Generate at least 2 paragraphs (minimum 2 paragraphs required) discussing the income and neighborhood indicators table data.
-        
+        Generate at least 2 paragraphs (minimum 2 paragraphs required) discussing the income and neighborhood indicators tables data.
+
         Counties: {counties}
         Years: {year_range}
-        Table Data: {json.dumps(income_neighborhood_data, indent=2)[:2000] if income_neighborhood_data else 'Not available'}
+
+        Table 1 - Lending to Income Borrowers (LMIB detailed breakdown):
+        {json.dumps(income_borrowers_data, indent=2)[:1500] if income_borrowers_data else 'Not available'}
+
+        Table 2 - Lending to Census Tracts by Income (LMICT detailed breakdown):
+        {json.dumps(income_tracts_data, indent=2)[:1500] if income_tracts_data else 'Not available'}
+
+        Table 3 - Lending to Census Tracts by Minority Population (MMCT detailed breakdown):
+        {json.dumps(minority_tracts_data, indent=2)[:1500] if minority_tracts_data else 'Not available'}
         
         {self._get_ncrc_report_sources()}
         
@@ -936,7 +952,10 @@ TABLE DATA:
         counties = data.get('counties', [])
         years = data.get('years', [])
         demographic_data = data.get('demographic_overview', [])
-        income_neighborhood_data = data.get('income_neighborhood_indicators', [])
+        # Use consolidated tables instead of legacy income_neighborhood_indicators
+        income_borrowers_data = data.get('income_borrowers', [])
+        income_tracts_data = data.get('income_tracts', [])
+        minority_tracts_data = data.get('minority_tracts', [])
         top_lenders_data = data.get('top_lenders_detailed', [])
         market_concentration_data = data.get('market_concentration', [])
         
@@ -1011,7 +1030,14 @@ TABLE DATA:
         - DO NOT mention that population data is missing or unavailable - it is provided above
         
         === DATA FOR SECTION 2: INCOME AND NEIGHBORHOOD INDICATORS ===
-        Table Data: {json.dumps(income_neighborhood_data, indent=2)[:2000] if income_neighborhood_data else 'Not available'}
+        Table 1 - Lending to Income Borrowers (LMIB detailed breakdown):
+        {json.dumps(income_borrowers_data, indent=2)[:1200] if income_borrowers_data else 'Not available'}
+
+        Table 2 - Lending to Census Tracts by Income (LMICT detailed breakdown):
+        {json.dumps(income_tracts_data, indent=2)[:1200] if income_tracts_data else 'Not available'}
+
+        Table 3 - Lending to Census Tracts by Minority Population (MMCT detailed breakdown):
+        {json.dumps(minority_tracts_data, indent=2)[:1200] if minority_tracts_data else 'Not available'}
         
         For "income_neighborhood_discussion":
         - CRITICAL: The reader can see ALL the numbers in the table. Your job is NOT to recite the data, but to EXPLAIN what it means in plain English.

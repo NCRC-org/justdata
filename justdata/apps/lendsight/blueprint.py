@@ -107,14 +107,19 @@ lendsight_bp = Blueprint(
 
 @lendsight_bp.record_once
 def configure_template_loader(state):
-    """Configure Jinja2 to search both blueprint templates and shared templates."""
+    """Configure Jinja2 to search both blueprint templates and shared templates.
+
+    IMPORTANT: Blueprint templates must come FIRST in the ChoiceLoader so that
+    app-specific templates (like report_template.html) are found before shared
+    templates or other blueprints' templates with the same name.
+    """
     app = state.app
     blueprint_loader = FileSystemLoader(str(TEMPLATES_DIR))
     shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
     app.jinja_loader = ChoiceLoader([
-        app.jinja_loader,
-        blueprint_loader,
-        shared_loader
+        blueprint_loader,  # Blueprint templates first (highest priority)
+        shared_loader,     # Shared templates second
+        app.jinja_loader   # Main app loader last (fallback)
     ])
 
 

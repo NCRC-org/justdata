@@ -256,24 +256,19 @@
         }
         
         /* Table column width styles for Section 1 and 2 */
-        #demographicOverviewTable,
-        #incomeNeighborhoodTable {
+        #demographicOverviewTable {
             table-layout: auto;
         }
-        
+
         #demographicOverviewTable th:first-child,
-        #demographicOverviewTable td:first-child,
-        #incomeNeighborhoodTable th:first-child,
-        #incomeNeighborhoodTable td:first-child {
+        #demographicOverviewTable td:first-child {
             white-space: nowrap;
             width: auto;
             min-width: 0;
         }
-        
+
         #demographicOverviewTable th:not(:first-child),
-        #demographicOverviewTable td:not(:first-child),
-        #incomeNeighborhoodTable th:not(:first-child),
-        #incomeNeighborhoodTable td:not(:first-child) {
+        #demographicOverviewTable td:not(:first-child) {
             width: 100px;
             min-width: 100px;
         }
@@ -727,6 +722,9 @@
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light);">
+    <!-- Report Interstitial Modal - shows while data loads -->
+    {% include "report_interstitial.html" %}
+
     {% include "shared_header.html" %}
 
     <div class="report-container">
@@ -1297,10 +1295,21 @@
                 
                 console.log('Displaying report with metadata:', metadata);
                 displayReport(result.data || {}, metadata);
-                
+
+                // Signal to interstitial that report is ready
+                if (typeof ReportInterstitial !== 'undefined') {
+                    ReportInterstitial.setReady();
+                }
+
             } catch (error) {
                 console.error('Error loading report:', error);
                 const errorMessage = error.message || 'Failed to load report data';
+
+                // Signal error to interstitial
+                if (typeof ReportInterstitial !== 'undefined') {
+                    ReportInterstitial.setError('Error loading report. Click to try again.');
+                }
+
                 if (errorMessage.includes('No analysis') || errorMessage.includes('No analysis session') || errorMessage.includes('No report data')) {
                     showError('No analysis data found. Please run an analysis first by selecting counties and years on the <a href="' + (window.APP_BASE_URL || '/lendsight') + '">analysis page</a>.');
                 } else {
@@ -1408,24 +1417,9 @@
                 console.error('[ERROR] Error populating minority tracts table:', e);
             }
             
-            // Populate income and neighborhood tracts table (legacy - keep for backward compatibility)
-            try {
-                if (data.income_neighborhood_tracts && data.income_neighborhood_tracts.length > 0) {
-                    populateIncomeNeighborhoodTractsTable(data.income_neighborhood_tracts, metadata);
-                }
-            } catch (e) {
-                console.error('[ERROR] Error populating income neighborhood tracts table:', e);
-            }
-            
-            // Populate income and neighborhood indicators table (legacy - keep for backward compatibility)
-            try {
-                if (data.income_neighborhood_indicators && data.income_neighborhood_indicators.length > 0) {
-                    populateIncomeNeighborhoodTable(data.income_neighborhood_indicators, metadata);
-                }
-            } catch (e) {
-                console.error('[ERROR] Error populating income neighborhood indicators table:', e);
-            }
-            
+            // REMOVED: Legacy income_neighborhood_tracts and income_neighborhood_indicators table population
+            // These tables have been consolidated into income_borrowers, income_tracts, and minority_tracts
+
             // Populate top 10 lenders detailed table
             try {
                 if (data.top_lenders_detailed && data.top_lenders_detailed.length > 0) {
@@ -2721,126 +2715,8 @@
             }
         }
         
-        function populateIncomeNeighborhoodTable(data, metadata) {
-            if (!data || data.length === 0) return;
-            
-            const table = document.getElementById('incomeNeighborhoodTable');
-            if (!table) {
-                console.warn('[DEBUG] incomeNeighborhoodTable not found, skipping population (legacy table)');
-                return;
-            }
-            
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            
-            if (!thead || !tbody) {
-                console.warn('[WARNING] incomeNeighborhoodTable missing thead or tbody, skipping population');
-                return;
-            }
-            
-            // Get all column names (Metric + years + Change column)
-            const columns = Object.keys(data[0]);
-            const metricCol = 'Metric';
-            const yearCols = columns.filter(col => col !== metricCol).sort((a, b) => {
-                // Put "Change Over Time" at the end
-                if (a.startsWith('Change Over Time')) return 1;
-                if (b.startsWith('Change Over Time')) return -1;
-                // Sort numeric years
-                return parseInt(a) - parseInt(b);
-            });
-            
-            // Build header row with column width styles
-            // Metric column: auto-width, no wrapping
-            // Other columns: fixed width (100px)
-            let headerRow = `<tr><th style="text-align: left; white-space: nowrap; width: auto; min-width: 0;">${metricCol}</th>`;
-            yearCols.forEach(year => {
-                // Shorten "Change Over Time" header to just "Change"
-                const headerText = year.startsWith('Change Over Time') ? 'Change' : year;
-                headerRow += `<th style="text-align: center; width: 100px; min-width: 100px;">${headerText}</th>`;
-            });
-            headerRow += '</tr>';
-            thead.innerHTML = headerRow;
-            
-            // Build data rows
-            // Data format: "Loans" row has integers, other rows have percentages only
-            tbody.innerHTML = data.map((row, rowIndex) => {
-                const metric = row[metricCol];
-                const isLoansRow = metric === 'Loans';
-                
-                // Metric column: auto-width, no wrapping
-                let cells = `<td style="text-align: left; font-weight: 600; white-space: nowrap; width: auto; min-width: 0;">${metric}</td>`;
-                
-                yearCols.forEach(year => {
-                    let value = row[year];
-                    if (value === null || value === undefined) {
-                        value = isLoansRow ? '0' : '0.0%';
-                    }
-                    
-                    // Apply color coding for Change Over Time column
-                    if (year.startsWith('Change Over Time')) {
-                        // For Loans row, ensure it's formatted as percentage if it's not already
-                        if (isLoansRow && value && !String(value).includes('%')) {
-                            // If it's a number, format as percentage
-                            const numValue = parseFloat(value);
-                            if (!isNaN(numValue)) {
-                                value = numValue > 0 ? `+${numValue.toFixed(1)}%` : `${numValue.toFixed(1)}%`;
-                            }
-                        }
-                        
-                        // Parse the change value
-                        const changeStr = String(value);
-                        const isPositive = changeStr.startsWith('+');
-                        const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
-                        
-                        // NCRC light blue for positive, red for negative
-                        const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
-                        cells += `<td style="text-align: center; color: ${color}; font-weight: 600; width: 100px; min-width: 100px;">${value}</td>`;
-                    } else {
-                        // Year columns: Loans row shows integer, others show percentage
-                        if (isLoansRow) {
-                            cells += `<td style="text-align: center; font-weight: 600; width: 100px; min-width: 100px;">${value}</td>`;
-                        } else {
-                            cells += `<td style="text-align: center; width: 100px; min-width: 100px;">${value}</td>`;
-                        }
-                    }
-                });
-                
-                return `<tr>${cells}</tr>`;
-            }).join('');
-            
-            // Populate caption (moved to left under intro text)
-            if (metadata) {
-                const caption = document.getElementById('incomeNeighborhoodCaption');
-                if (caption) {
-                    const counties = metadata.counties || [];
-                    const years = metadata.years || [];
-                    const yearRange = years.length > 1 
-                        ? `${Math.min(...years)}-${Math.max(...years)}`
-                        : years[0] ? years[0].toString() : '';
-                    const firstYear = years.length > 0 ? Math.min(...years) : '';
-                    const lastYear = years.length > 0 ? Math.max(...years) : '';
-                    
-                    let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases. ';
-                    captionText += '<strong>Methodology:</strong> Percentages are calculated as (category loans / total loans) × 100. ';
-                    captionText += 'LMICT = Low to Moderate Income Census Tract. ';
-                    captionText += 'LMIB = Low to Moderate Income Borrower. ';
-                    captionText += 'MMCT = Majority Minority Census Tract. ';
-                    if (firstYear && lastYear) {
-                        captionText += `<strong>Note:</strong> The Change column indicates the change over time since ${firstYear} through ${lastYear}.`;
-                    }
-                    
-                    if (counties.length > 0) {
-                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
-                    }
-                    if (yearRange) {
-                        captionText += ` | <strong>Years:</strong> ${yearRange}`;
-                    }
-                    
-                    caption.innerHTML = captionText;
-                }
-            }
-        }
-        
+        // REMOVED: populateIncomeNeighborhoodTable - consolidated into income_borrowers, income_tracts, minority_tracts tables
+
         function populateIncomeBorrowersTable(data, metadata) {
             if (!data || data.length === 0) return;
             
@@ -3181,70 +3057,8 @@
             }
         }
         
-        function populateIncomeNeighborhoodTractsTable(data, metadata) {
-            if (!data || data.length === 0) return;
-            
-            const table = document.getElementById('incomeNeighborhoodTractsTable');
-            if (!table) {
-                console.warn('[WARNING] incomeNeighborhoodTractsTable not found, skipping population');
-                return;
-            }
-            
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            
-            if (!thead || !tbody) {
-                console.warn('[WARNING] incomeNeighborhoodTractsTable missing thead or tbody, skipping population');
-                return;
-            }
-            
-            // Get all column names (Metric + years + Change column)
-            const columns = Object.keys(data[0]);
-            const metricCol = 'Metric';
-            const yearCols = columns.filter(col => col !== metricCol).sort((a, b) => {
-                // Put "Change" at the end
-                if (a === 'Change') return 1;
-                if (b === 'Change') return -1;
-                // Sort numeric years
-                return parseInt(a) - parseInt(b);
-            });
-            
-            // Build header row
-            let headerRow = `<tr><th style="text-align: left; white-space: nowrap; min-width: 350px;">${metricCol}</th>`;
-            yearCols.forEach(year => {
-                const headerText = year === 'Change' ? 'Change' : year;
-                headerRow += `<th style="text-align: center; width: 100px; min-width: 100px;">${headerText}</th>`;
-            });
-            headerRow += '</tr>';
-            thead.innerHTML = headerRow;
-            
-            // Build data rows (all rows show percentages)
-            tbody.innerHTML = data.map((row) => {
-                const metric = row[metricCol];
-                let cells = `<td style="text-align: left; font-weight: 600; white-space: nowrap; min-width: 350px;">${metric}</td>`;
-                
-                yearCols.forEach(year => {
-                    let value = row[year];
-                    if (value === null || value === undefined) {
-                        value = '0.0%';
-                    }
-                    
-                    // Apply color coding for Change column
-                    if (year === 'Change') {
-                        const changeStr = String(value);
-                        const isPositive = changeStr.startsWith('+');
-                        const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
-                        const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
-                        cells += `<td style="text-align: center; color: ${color}; font-weight: 600; width: 100px; min-width: 100px;">${value}</td>`;
-                    } else {
-                        cells += `<td style="text-align: center; width: 100px; min-width: 100px;">${value}</td>`;
-                    }
-                });
-                
-                return `<tr>${cells}</tr>`;
-            }).join('');
-        }
-        
+        // REMOVED: populateIncomeNeighborhoodTractsTable - consolidated into income_borrowers, income_tracts, minority_tracts tables
+
         function populateTopLendersDetailedTable(data, metadata) {
             if (!data || data.length === 0) {
                 console.warn('No top lenders data available.');
