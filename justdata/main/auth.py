@@ -44,8 +44,15 @@ ADMIN_EMAILS = [
 
 # Senior Executive users (above staff, below admin)
 SENIOR_EXECUTIVE_EMAILS = [
-    # Add senior executive emails here
-    # 'executive@ncrc.org',
+    'jvantol@ncrc.org',      # Jesse Van Tol
+    'eforsythe@ncrc.org',    # Eden Forsythe
+    'gdyson@ncrc.org',       # Gregory Dyson
+    'crountree@ncrc.org',    # Caitie Rountree
+    'mmathis@ncrc.org',      # Michael Mathis
+    'sterry@ncrc.org',       # Sabrina Terry
+    'tflynn@ncrc.org',       # Tara Flynn
+    'jmatthews@ncrc.org',    # Jacelyn Matthews
+    'awiltse@ncrc.org',      # Alyssa Wiltse
 ]
 
 # User types matching the 9-tier system

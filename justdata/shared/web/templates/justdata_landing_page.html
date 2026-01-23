@@ -2434,7 +2434,9 @@
                     const lockOverlay = document.createElement('div');
                     lockOverlay.className = 'lock-overlay';
                     let lockMessage = 'NCRC organizational members only';
-                    if (appKey === 'dataexplorer') {
+                    if (appKey === 'lendsight') {
+                        lockMessage = 'Free registration required';
+                    } else if (appKey === 'dataexplorer') {
                         lockMessage = 'Member Plus or Institutional tier required';
                     }
                     lockOverlay.innerHTML = `
@@ -2448,7 +2450,9 @@
                         e.preventDefault();
                         e.stopPropagation();
                         let message = 'This application is available to NCRC organizational members only. Please sign up or log in as a member to access.';
-                        if (appKey === 'dataexplorer') {
+                        if (appKey === 'lendsight') {
+                            message = 'LendSight requires a free account. Please sign up or log in to access.';
+                        } else if (appKey === 'dataexplorer') {
                             message = 'DataExplorer is a premium feature. Upgrade to Member Plus ($500-750/year) or Institutional tier ($5K-15K/year) to access.';
                         }
                         alert(message);
@@ -2458,7 +2462,9 @@
                         if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             let message = 'This application is available to NCRC organizational members only. Please sign up or log in as a member to access.';
-                            if (appKey === 'dataexplorer') {
+                            if (appKey === 'lendsight') {
+                                message = 'LendSight requires a free account. Please sign up or log in to access.';
+                            } else if (appKey === 'dataexplorer') {
                                 message = 'DataExplorer is a premium feature. Upgrade to Member Plus ($500-750/year) or Institutional tier ($5K-15K/year) to access.';
                             }
                             alert(message);
