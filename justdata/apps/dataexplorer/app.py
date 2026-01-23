@@ -125,19 +125,28 @@ def shared_population_demographics_js():
 @app.route('/')
 def index():
     """Main dashboard page - redirects to wizard."""
-    return render_template('wizard.html', version=__version__)
+    return render_template('wizard.html',
+                         version=__version__,
+                         app_name='DataExplorer',
+                         breadcrumb_items=[{'name': 'DataExplorer', 'url': '/dataexplorer'}])
 
 
 @app.route('/dashboard')
 def dashboard():
     """Legacy dashboard page."""
-    return render_template('dashboard.html', version=__version__)
+    return render_template('dashboard.html',
+                         version=__version__,
+                         app_name='DataExplorer',
+                         breadcrumb_items=[{'name': 'DataExplorer', 'url': '/dataexplorer'}])
 
 
 @app.route('/wizard')
 def wizard():
     """Wizard interface for DataExplorer."""
-    return render_template('wizard.html', version=__version__)
+    return render_template('wizard.html',
+                         version=__version__,
+                         app_name='DataExplorer',
+                         breadcrumb_items=[{'name': 'DataExplorer', 'url': '/dataexplorer'}])
 
 
 # Area Analysis Endpoints
@@ -1625,14 +1634,24 @@ def show_report(job_id):
                 metadata = progress.get('metadata', {})
                 if metadata.get('lender'):
                     # Lender analysis - use area progress template for now (we can create a lender-specific one later)
-                    return render_template('area_report_progress.html', 
-                                         job_id=job_id, 
-                                         version=__version__)
+                    return render_template('area_report_progress.html',
+                                         job_id=job_id,
+                                         version=__version__,
+                                         app_name='DataExplorer',
+                                         breadcrumb_items=[
+                                             {'name': 'DataExplorer', 'url': '/dataexplorer'},
+                                             {'name': 'Generating Report', 'url': '#'}
+                                         ])
                 else:
                     # Area analysis
-                    return render_template('area_report_progress.html', 
-                                         job_id=job_id, 
-                                         version=__version__)
+                    return render_template('area_report_progress.html',
+                                         job_id=job_id,
+                                         version=__version__,
+                                         app_name='DataExplorer',
+                                         breadcrumb_items=[
+                                             {'name': 'DataExplorer', 'url': '/dataexplorer'},
+                                             {'name': 'Generating Report', 'url': '#'}
+                                         ])
             
             # Job not found and not in progress - show error
             return f"""
@@ -1647,7 +1666,12 @@ def show_report(job_id):
         if not result.get('success'):
             return render_template('error_template.html',
                                  error=result.get('error', 'Unknown error'),
-                                 job_id=job_id), 500
+                                 job_id=job_id,
+                                 app_name='DataExplorer',
+                                 breadcrumb_items=[
+                                     {'name': 'DataExplorer', 'url': '/dataexplorer'},
+                                     {'name': 'Error', 'url': '#'}
+                                 ]), 500
         
         # Determine report type from metadata
         metadata = result.get('metadata', {})
@@ -1655,10 +1679,16 @@ def show_report(job_id):
         
         if metadata.get('lender'):
             # Lender analysis report
+            lender_name = metadata.get('lender', {}).get('name', 'Lender Report')
             return render_template('lender_report_template.html',
                                  report_data=report_data,
                                  metadata=metadata,
-                                 version=__version__)
+                                 version=__version__,
+                                 app_name='DataExplorer',
+                                 breadcrumb_items=[
+                                     {'name': 'DataExplorer', 'url': '/dataexplorer'},
+                                     {'name': lender_name, 'url': '#'}
+                                 ])
         else:
             # Area analysis report
             historical_census_data = result.get('historical_census_data', {})
@@ -1675,13 +1705,29 @@ def show_report(job_id):
                         logger.warning(f"[DEBUG] time_periods missing or county is not a dict!")
             else:
                 logger.warning(f"[DEBUG] historical_census_data is empty or missing!")
-            
+
+            # Build area report title from geography metadata
+            geography = metadata.get('geography', {})
+            area_name = 'Area Report'
+            if geography:
+                counties = geography.get('counties', [])
+                if counties:
+                    if len(counties) == 1:
+                        area_name = counties[0].get('name', 'Area Report')
+                    else:
+                        area_name = f"{len(counties)} Counties Report"
+
             return render_template('area_report_template.html',
                                      report_data=report_data,
                                      metadata=metadata,
                                      census_data=result.get('census_data', {}),
                                      historical_census_data=historical_census_data,
-                                     version=__version__)
+                                     version=__version__,
+                                     app_name='DataExplorer',
+                                     breadcrumb_items=[
+                                         {'name': 'DataExplorer', 'url': '/dataexplorer'},
+                                         {'name': area_name, 'url': '#'}
+                                     ])
         
     except Exception as e:
         logger.error(f"Error displaying report {job_id}: {e}", exc_info=True)

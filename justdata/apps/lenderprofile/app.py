@@ -95,7 +95,10 @@ def serve_shared_logo():
 def index():
     """Main search interface."""
     logger.info("Index page requested")
-    return render_template('index.html', version=__version__)
+    return render_template('index.html',
+                         version=__version__,
+                         app_name='LenderProfile',
+                         breadcrumb_items=[{'name': 'LenderProfile', 'url': '/lenderprofile'}])
 
 
 @app.route('/api/test')
@@ -124,9 +127,14 @@ def view_report(report_id: str):
             progress = get_progress(report_id)
             if progress and not progress.get('done', False):
                 # Job is still running - show progress page
-                return render_template('report_progress.html', 
-                                     job_id=report_id, 
-                                     version=__version__)
+                return render_template('report_progress.html',
+                                     job_id=report_id,
+                                     version=__version__,
+                                     app_name='LenderProfile',
+                                     breadcrumb_items=[
+                                         {'name': 'LenderProfile', 'url': '/lenderprofile'},
+                                         {'name': 'Generating Report', 'url': '#'}
+                                     ])
             
             # Job not found and not in progress - show error
             return f"""
@@ -146,12 +154,19 @@ def view_report(report_id: str):
         # Report is ready - display it using the new v2 template
         report = result.get('report', {})
         metadata = result.get('metadata', {})
+        institution_name = metadata.get('institution_name', 'Lender Report')
 
         return render_template('report_v2.html',
                              report=report,
                              metadata=metadata,
                              report_id=report_id,
-                             version=__version__)
+                             version=__version__,
+                             institution_name=institution_name,
+                             app_name='LenderProfile',
+                             breadcrumb_items=[
+                                 {'name': 'LenderProfile', 'url': '/lenderprofile'},
+                                 {'name': institution_name, 'url': '#'}
+                             ])
         
     except Exception as e:
         logger.error(f"Error viewing report {report_id}: {e}", exc_info=True)

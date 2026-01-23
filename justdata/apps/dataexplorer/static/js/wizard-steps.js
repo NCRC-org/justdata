@@ -334,7 +334,7 @@ const cards = {
                 <p>Compare subject lender to:</p>
                 <div class="checkbox-group" style="margin-top: 20px;" role="radiogroup" aria-label="Comparison group options">
                     <label class="checkbox-item">
-                        <input type="radio" name="compGroup" value="peers" aria-required="true"> 
+                        <input type="radio" name="compGroup" value="peers" aria-required="true" checked>
                         <span>
                             Peer Lenders
                             <span class="tooltip-icon">

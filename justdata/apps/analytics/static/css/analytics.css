@@ -67,6 +67,66 @@ h1, h2, h3, h4 {
 }
 
 /* ============================================
+   Breadcrumb Navigation
+   ============================================ */
+.breadcrumb-nav {
+    background: var(--analytics-bg-card);
+    border-bottom: 1px solid var(--analytics-border);
+    padding: 12px 0;
+}
+
+.breadcrumb-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-xl);
+}
+
+.breadcrumb {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+}
+
+.breadcrumb-item {
+    display: flex;
+    align-items: center;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+    content: "›";
+    color: var(--analytics-text-muted);
+    margin-right: 8px;
+    font-size: 1rem;
+}
+
+.breadcrumb-item a {
+    color: var(--analytics-accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+}
+
+.breadcrumb-item a:hover {
+    color: var(--analytics-header);
+    text-decoration: underline;
+}
+
+.breadcrumb-item a i {
+    font-size: 0.8rem;
+}
+
+.breadcrumb-item.active {
+    color: var(--analytics-text-secondary);
+    font-weight: 500;
+}
+
+/* ============================================
    Layout Container
    ============================================ */
 .analytics-container {
@@ -207,6 +267,97 @@ h1, h2, h3, h4 {
     color: white;
 }
 
+/* User Type Dropdown */
+.user-type-dropdown {
+    position: relative;
+}
+
+.user-type-btn {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 160px;
+    text-align: left;
+}
+
+.user-type-btn i {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+
+.user-type-btn.open i {
+    transform: rotate(180deg);
+}
+
+.user-type-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid var(--analytics-border);
+    border-radius: 3px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 1000;
+    margin-top: 4px;
+    min-width: 200px;
+}
+
+.user-type-options {
+    max-height: 250px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.user-type-option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.15s;
+}
+
+.user-type-option:hover {
+    background: var(--analytics-bg-alt);
+}
+
+.user-type-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.user-type-option.select-all {
+    border-bottom: 1px solid var(--analytics-border);
+    font-weight: 600;
+}
+
+.user-type-actions {
+    padding: 8px 12px;
+    border-top: 1px solid var(--analytics-border);
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-apply {
+    background: var(--analytics-accent);
+    color: white;
+    border: none;
+    padding: 6px 16px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-apply:hover {
+    background: #005a8c;
+}
+
 /* ============================================
    Summary Metric Cards
    ============================================ */
@@ -231,32 +382,19 @@ h1, h2, h3, h4 {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.summary-icon {
-    width: 36px;
-    height: 36px;
-    background: var(--analytics-bg-alt);
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    color: var(--analytics-accent);
-    margin-bottom: var(--spacing-sm);
-}
-
-.summary-content h3 {
+.summary-card h3 {
     font-family: var(--font-sans);
-    font-size: 0.7rem;
+    font-size: 0.85rem;
     color: var(--analytics-text-muted);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: var(--spacing-xs);
+    margin-bottom: var(--spacing-sm);
 }
 
 .summary-value {
     font-family: var(--font-serif);
-    font-size: 2.25rem;
+    font-size: 3rem;
     font-weight: 700;
     color: var(--analytics-header);
     line-height: 1;
@@ -276,6 +414,7 @@ h1, h2, h3, h4 {
     margin-bottom: var(--spacing-xl);
     border-bottom: 2px solid var(--analytics-border);
     overflow-x: auto;
+    overflow-y: hidden;
 }
 
 .analytics-tabs .tab {

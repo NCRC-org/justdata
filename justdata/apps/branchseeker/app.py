@@ -31,19 +31,33 @@ app = create_app(
 
 def index():
     """Main page with the analysis form"""
-    return render_template('branchseeker_template.html', 
-                         version=__version__)
+    return render_template('branchseeker_template.html',
+                         version=__version__,
+                         app_name='BranchSight',
+                         breadcrumb_items=[{'name': 'BranchSight', 'url': '/branchsight'}])
 
 
 @app.route('/branch-mapper')
 def branch_mapper():
     """BranchMapper - Interactive map of bank branch locations"""
-    return render_template('branch_mapper_template.html', version=__version__)
+    return render_template('branch_mapper_template.html',
+                         version=__version__,
+                         app_name='BranchSight',
+                         breadcrumb_items=[
+                             {'name': 'BranchSight', 'url': '/branchsight'},
+                             {'name': 'Branch Mapper', 'url': '/branchsight/branch-mapper'}
+                         ])
 
 
 def report():
     """Report display page"""
-    return render_template('report_template.html', version=__version__)
+    return render_template('report_template.html',
+                         version=__version__,
+                         app_name='BranchSight',
+                         breadcrumb_items=[
+                             {'name': 'BranchSight', 'url': '/branchsight'},
+                             {'name': 'Report', 'url': '/branchsight/report'}
+                         ])
 
 
 def progress_handler(job_id):

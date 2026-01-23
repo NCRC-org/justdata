@@ -1,19 +1,96 @@
 <!-- Shared Header Component -->
-<!-- Variables: app_name, app_subtitle (optional, defaults to 'A Just Data Tool by NCRC') -->
-<header class="header" style="position: relative; z-index: 99999;">
-    <div class="header-content" style="position: relative; z-index: 99999;">
-        <div class="header-layout" style="display: flex; justify-content: space-between; align-items: center; position: relative;">
-            <div class="logo" style="flex: 0 0 auto;">
-                <a href="/" aria-label="Return to JustData Home">
-                    <img src="/static/img/justdata-logo.png" alt="JustData Logo" style="max-height: 80px; width: auto;" onerror="this.src='{{ url_for('static', filename='img/ncrc-logo.png') }}';">
-                </a>
-            </div>
-            <!-- Title centered absolutely -->
-            <div class="header-title-section" style="position: absolute; left: 50%; transform: translateX(-50%); text-align: center;">
+<!-- Variables: app_name, breadcrumb_items (optional list of {name, url} dicts) -->
+<!-- ProPublica-Inspired Design - Clean, Professional, Minimal -->
+<style>
+    .shared-header {
+        --font-serif: Georgia, "Times New Roman", serif;
+        --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        --color-header: #1E3D5C;
+        --spacing-lg: 24px;
+    }
+    .shared-header .header-layout {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 64px;
+        width: 100%;
+    }
+    /* App title on left */
+    .shared-header .app-title-section {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .shared-header .app-title-section h1 {
+        font-family: var(--font-serif);
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: white;
+        margin: 0;
+        letter-spacing: -0.3px;
+    }
+    .shared-header .app-subtitle {
+        font-family: var(--font-sans);
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.7);
+        margin: 2px 0 0 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    /* Breadcrumb navigation */
+    .breadcrumb-bar {
+        background: #f5f5f5;
+        border-bottom: 1px solid #e0e0e0;
+        padding: 8px 24px;
+    }
+    .breadcrumb-bar .breadcrumb-container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .breadcrumb-bar .breadcrumb {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        gap: 0;
+        font-size: 13px;
+        font-family: var(--font-sans);
+    }
+    .breadcrumb-bar .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        color: #666;
+    }
+    .breadcrumb-bar .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: #999;
+        margin: 0 8px;
+        font-size: 14px;
+    }
+    .breadcrumb-bar .breadcrumb-item a {
+        color: #0077B6;
+        text-decoration: none;
+        transition: color 0.15s;
+    }
+    .breadcrumb-bar .breadcrumb-item a:hover {
+        color: #005a8c;
+        text-decoration: underline;
+    }
+    .breadcrumb-bar .breadcrumb-item.active {
+        color: #333;
+        font-weight: 500;
+    }
+</style>
+<header class="header shared-header" style="position: relative; z-index: 99999; background: var(--color-header); padding: 0 var(--spacing-lg); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+    <div class="header-content" style="max-width: 1200px; margin: 0 auto; position: relative; z-index: 99999;">
+        <div class="header-layout">
+            <!-- App Title on Left -->
+            <div class="app-title-section">
                 <h1>{{ app_name }}</h1>
-                <p class="just-data-subtitle">{{ app_subtitle|default('A Just Data Tool by NCRC') }}</p>
+                <p class="app-subtitle">A JUST DATA TOOL BY NCRC</p>
             </div>
-            <!-- Auth & Hamburger Menu -->
+            <!-- Auth & Hamburger Menu on Right -->
             <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
                 <!-- User Info (shown when logged in) -->
                 <div id="userInfo" style="display: none; align-items: center; gap: 8px;">
@@ -59,6 +136,34 @@
     </div>
 </header>
 
+<!-- Breadcrumb Navigation -->
+{% if breadcrumb_items %}
+<nav class="breadcrumb-bar" aria-label="Breadcrumb">
+    <div class="breadcrumb-container">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            {% for item in breadcrumb_items %}
+                {% if loop.last %}
+                    <li class="breadcrumb-item active" aria-current="page">{{ item.name }}</li>
+                {% else %}
+                    <li class="breadcrumb-item"><a href="{{ item.url }}">{{ item.name }}</a></li>
+                {% endif %}
+            {% endfor %}
+        </ol>
+    </div>
+</nav>
+{% else %}
+<!-- Default breadcrumb with just app name -->
+<nav class="breadcrumb-bar" aria-label="Breadcrumb">
+    <div class="breadcrumb-container">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ app_name }}</li>
+        </ol>
+    </div>
+</nav>
+{% endif %}
+
 <!-- Login Modal -->
 <div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100000; justify-content: center; align-items: center;">
     <div style="background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative;">
@@ -67,7 +172,6 @@
 
         <!-- Header -->
         <div style="text-align: center; margin-bottom: 24px;">
-            <img src="/static/img/justdata-logo.png" alt="JustData" style="max-height: 50px; margin-bottom: 12px;" onerror="this.style.display='none'">
             <h2 style="margin: 0; color: #1a365d; font-size: 24px;">Sign In to JustData</h2>
             <p style="margin: 8px 0 0; color: #666; font-size: 14px;">Access your account to continue</p>
         </div>

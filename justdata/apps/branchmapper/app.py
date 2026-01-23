@@ -56,7 +56,11 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 @app.route('/')
 def index():
     """Main page with the interactive branch map"""
-    return render_template('branch_mapper_template.html', version=__version__)
+    breadcrumb_items = [{'name': 'BranchMapper', 'url': '/branchmapper'}]
+    return render_template('branch_mapper_template.html',
+                         version=__version__,
+                         app_name='BranchMapper',
+                         breadcrumb_items=breadcrumb_items)
 
 
 @app.route('/counties')

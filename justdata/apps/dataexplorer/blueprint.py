@@ -56,21 +56,27 @@ def configure_template_loader(state):
 @require_access('dataexplorer', 'full')
 def index():
     """Main DataExplorer page - renders wizard."""
-    return render_template('wizard.html', version=__version__)
+    breadcrumb_items = [{'name': 'DataExplorer', 'url': '/dataexplorer'}]
+    return render_template('wizard.html', version=__version__, app_name='DataExplorer', breadcrumb_items=breadcrumb_items)
 
 
 @dataexplorer_bp.route('/dashboard')
 @require_access('dataexplorer', 'full')
 def dashboard():
     """Dashboard page."""
-    return render_template('dashboard.html', version=__version__)
+    breadcrumb_items = [
+        {'name': 'DataExplorer', 'url': '/dataexplorer'},
+        {'name': 'Dashboard', 'url': '/dataexplorer/dashboard'}
+    ]
+    return render_template('dashboard.html', version=__version__, app_name='DataExplorer', breadcrumb_items=breadcrumb_items)
 
 
 @dataexplorer_bp.route('/wizard')
 @require_access('dataexplorer', 'full')
 def wizard():
     """Wizard page for guided analysis."""
-    return render_template('wizard.html', version=__version__)
+    breadcrumb_items = [{'name': 'DataExplorer', 'url': '/dataexplorer'}]
+    return render_template('wizard.html', version=__version__, app_name='DataExplorer', breadcrumb_items=breadcrumb_items)
 
 
 @dataexplorer_bp.route('/api/states', methods=['GET'])
@@ -605,18 +611,30 @@ def show_report(job_id):
         report_data = result.get('report_data', {})
 
         if metadata.get('lender'):
+            breadcrumb_items = [
+                {'name': 'DataExplorer', 'url': '/dataexplorer'},
+                {'name': 'Lender Analysis', 'url': f'/dataexplorer/report/{job_id}'}
+            ]
             return render_template('lender_report_template.html',
                                  report_data=report_data,
                                  metadata=metadata,
-                                 version=__version__)
+                                 version=__version__,
+                                 app_name='DataExplorer',
+                                 breadcrumb_items=breadcrumb_items)
         else:
+            breadcrumb_items = [
+                {'name': 'DataExplorer', 'url': '/dataexplorer'},
+                {'name': 'Area Analysis', 'url': f'/dataexplorer/report/{job_id}'}
+            ]
             historical_census_data = result.get('historical_census_data', {})
             return render_template('area_report_template.html',
                                  report_data=report_data,
                                  metadata=metadata,
                                  census_data=result.get('census_data', {}),
                                  historical_census_data=historical_census_data,
-                                 version=__version__)
+                                 version=__version__,
+                                 app_name='DataExplorer',
+                                 breadcrumb_items=breadcrumb_items)
 
     except Exception as e:
         logger.error(f"Error displaying report {job_id}: {e}", exc_info=True)

@@ -185,3 +185,7 @@ credentials.json
 
 .secrets/
 .secrets/*
+
+# Data cache files
+justdata/data/cache/
+*.pkl

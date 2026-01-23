@@ -93,7 +93,10 @@ app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB
 
 def index():
     """Main page with the analysis form"""
-    return render_template('analysis_template.html', version=__version__)
+    return render_template('analysis_template.html',
+                         version=__version__,
+                         app_name='MergerMeter',
+                         breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}])
 
 
 def report():
@@ -102,7 +105,13 @@ def report():
     job_id_from_url = request.args.get('job_id')
     if job_id_from_url and not session.get('job_id'):
         session['job_id'] = job_id_from_url
-    return render_template('report_template.html', version=__version__)
+    return render_template('report_template.html',
+                         version=__version__,
+                         app_name='MergerMeter',
+                         breadcrumb_items=[
+                             {'name': 'MergerMeter', 'url': '/mergermeter'},
+                             {'name': 'Report', 'url': '/mergermeter/report'}
+                         ])
 
 
 def progress_handler(job_id):

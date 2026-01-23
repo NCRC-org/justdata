@@ -75,7 +75,14 @@ def shared_population_demographics_js():
 def index():
     """Main page with the analysis form"""
     cache_buster = int(time.time())
-    response = make_response(render_template('analysis_template.html', version=__version__, cache_buster=cache_buster))
+    breadcrumb_items = [{'name': 'LendSight', 'url': '/lendsight'}]
+    response = make_response(render_template(
+        'analysis_template.html',
+        version=__version__,
+        cache_buster=cache_buster,
+        app_name='LendSight',
+        breadcrumb_items=breadcrumb_items
+    ))
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
@@ -264,7 +271,16 @@ def analyze():
 
 def report():
     """Report display page"""
-    return render_template('report_template.html', version=__version__)
+    breadcrumb_items = [
+        {'name': 'LendSight', 'url': '/lendsight'},
+        {'name': 'Report', 'url': '/lendsight/report'}
+    ]
+    return render_template(
+        'report_template.html',
+        version=__version__,
+        app_name='LendSight',
+        breadcrumb_items=breadcrumb_items
+    )
 
 
 def download():

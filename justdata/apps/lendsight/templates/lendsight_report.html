@@ -727,6 +727,8 @@
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light);">
+    {% include "shared_header.html" %}
+
     <div class="report-container">
         <!-- Header Actions Row - Back button on left, Export/Print on right -->
         <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
@@ -3909,6 +3911,16 @@
         }
     </script>
     
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
+
+    <!-- JustData Auth -->
+    <script src="/static/js/auth.js"></script>
+
+    {% include 'shared_header_js.html' %}
+
     <!-- Footer -->
     <footer class="footer" style="margin-top: 40px;">
         <div class="footer-bottom">

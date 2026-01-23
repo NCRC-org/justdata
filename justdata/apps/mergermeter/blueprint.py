@@ -61,10 +61,12 @@ def index():
     """Main page with the analysis form"""
     user_permissions = get_user_permissions()
     app_base_url = url_for('mergermeter.index').rstrip('/')
-    return render_template('mergermeter_analysis.html', 
+    return render_template('mergermeter_analysis.html',
                          version=__version__,
                          permissions=user_permissions,
-                         app_base_url=app_base_url)
+                         app_base_url=app_base_url,
+                         app_name='MergerMeter',
+                         breadcrumb_items=[{'name': 'MergerMeter', 'url': '/mergermeter'}])
 
 
 @mergermeter_bp.route('/report')
@@ -75,7 +77,14 @@ def report():
     if job_id_from_url and not session.get('job_id'):
         session['job_id'] = job_id_from_url
     app_base_url = url_for('mergermeter.index').rstrip('/')
-    return render_template('report_template.html', version=__version__, app_base_url=app_base_url)
+    return render_template('report_template.html',
+                         version=__version__,
+                         app_base_url=app_base_url,
+                         app_name='MergerMeter',
+                         breadcrumb_items=[
+                             {'name': 'MergerMeter', 'url': '/mergermeter'},
+                             {'name': 'Report', 'url': '/mergermeter/report'}
+                         ])
 
 
 @mergermeter_bp.route('/progress/<job_id>')

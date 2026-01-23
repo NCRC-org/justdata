@@ -108,7 +108,7 @@ def shared_population_demographics_js():
 def index():
     """Main page with the US map for county selection."""
     from justdata.apps.bizsight.config import BizSightConfig
-    
+
     # Force template reload by clearing cache before rendering
     if hasattr(app, 'jinja_env'):
         app.jinja_env.bytecode_cache = None
@@ -119,8 +119,16 @@ def index():
         except:
             pass
         print(f"DEBUG: Rendering analysis_template.html, bytecode_cache={app.jinja_env.bytecode_cache}", flush=True)
-    
-    response = make_response(render_template('analysis_template.html', version=__version__))
+
+    # Breadcrumb for main page
+    breadcrumb_items = [{'name': 'BizSight', 'url': '/bizsight'}]
+
+    response = make_response(render_template(
+        'analysis_template.html',
+        version=__version__,
+        app_name='BizSight',
+        breadcrumb_items=breadcrumb_items
+    ))
     # Add aggressive cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -530,7 +538,7 @@ def report():
     job_id = request.args.get('job_id')
     if not job_id:
         return "Error: No job ID provided", 400
-    
+
     # Force template reload by clearing cache before rendering
     if hasattr(app, 'jinja_env'):
         app.jinja_env.bytecode_cache = None
@@ -541,8 +549,21 @@ def report():
         except:
             pass
         print(f"DEBUG: Rendering report_template.html for job_id={job_id}, bytecode_cache={app.jinja_env.bytecode_cache}", flush=True)
-    
-    response = make_response(render_template('report_template.html', job_id=job_id, version=__version__, app_base_url=''))
+
+    # Breadcrumb for report page
+    breadcrumb_items = [
+        {'name': 'BizSight', 'url': '/bizsight'},
+        {'name': 'Report', 'url': '/bizsight/report'}
+    ]
+
+    response = make_response(render_template(
+        'report_template.html',
+        job_id=job_id,
+        version=__version__,
+        app_base_url='',
+        app_name='BizSight',
+        breadcrumb_items=breadcrumb_items
+    ))
     # Add aggressive cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'

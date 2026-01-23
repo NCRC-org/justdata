@@ -5,11 +5,18 @@
 
 // Global state
 let currentDays = 90;
+let availableUserTypes = [];
+let selectedUserTypes = []; // Empty means all
+let excludedUserTypes = [];
 
 /**
  * Initialize dashboard on page load
  */
 $(document).ready(function() {
+    // Load user types for filter dropdown
+    loadUserTypes();
+
+    // Load dashboard data
     loadSummary();
     loadCoalitionPreview();
 
@@ -19,7 +26,120 @@ $(document).ready(function() {
         loadSummary();
         loadCoalitionPreview();
     });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.user-type-dropdown').length) {
+            $('#user-type-menu').hide();
+            $('.user-type-btn').removeClass('open');
+        }
+    });
 });
+
+/**
+ * Load available user types for filter
+ */
+function loadUserTypes() {
+    $.ajax({
+        url: '/analytics/api/user-types',
+        success: function(response) {
+            if (response.success && response.data) {
+                availableUserTypes = response.data;
+                renderUserTypeOptions();
+            }
+        },
+        error: function() {
+            console.error('Failed to load user types');
+        }
+    });
+}
+
+/**
+ * Render user type checkboxes in dropdown
+ */
+function renderUserTypeOptions() {
+    const container = $('#user-type-options');
+    container.empty();
+
+    // Select All option
+    container.append(
+        '<label class="user-type-option select-all">' +
+        '<input type="checkbox" value="all" id="select-all-types" checked onchange="handleSelectAllTypes()">' +
+        '<span>Select All</span>' +
+        '</label>'
+    );
+
+    // Individual user types
+    availableUserTypes.forEach(function(userType) {
+        container.append(
+            '<label class="user-type-option">' +
+            '<input type="checkbox" value="' + escapeHtml(userType) + '" class="user-type-checkbox" checked>' +
+            '<span>' + escapeHtml(userType) + '</span>' +
+            '</label>'
+        );
+    });
+}
+
+/**
+ * Toggle user type dropdown visibility
+ */
+function toggleUserTypeDropdown() {
+    const menu = $('#user-type-menu');
+    const btn = $('.user-type-btn');
+
+    if (menu.is(':visible')) {
+        menu.hide();
+        btn.removeClass('open');
+    } else {
+        menu.show();
+        btn.addClass('open');
+    }
+}
+
+/**
+ * Handle Select All checkbox
+ */
+function handleSelectAllTypes() {
+    const selectAll = $('#select-all-types').is(':checked');
+    $('.user-type-checkbox').prop('checked', selectAll);
+}
+
+/**
+ * Apply user type filter and reload data
+ */
+function applyUserTypeFilter() {
+    const allChecked = $('#select-all-types').is(':checked');
+    const checkedTypes = $('.user-type-checkbox:checked').map(function() {
+        return $(this).val();
+    }).get();
+
+    // Update label
+    if (allChecked || checkedTypes.length === availableUserTypes.length) {
+        $('#user-type-label').text('All Users');
+        selectedUserTypes = [];
+        excludedUserTypes = [];
+    } else if (checkedTypes.length === 0) {
+        $('#user-type-label').text('None Selected');
+        selectedUserTypes = [];
+        excludedUserTypes = availableUserTypes;
+    } else if (checkedTypes.length <= 2) {
+        $('#user-type-label').text(checkedTypes.join(', '));
+        selectedUserTypes = checkedTypes;
+        excludedUserTypes = [];
+    } else {
+        $('#user-type-label').text(checkedTypes.length + ' types');
+        selectedUserTypes = checkedTypes;
+        excludedUserTypes = [];
+    }
+
+    // Close dropdown
+    $('#user-type-menu').hide();
+    $('.user-type-btn').removeClass('open');
+
+    // Reload data with new filter
+    loadSummary();
+    loadCoalitionPreview();
+}
 
 /**
  * Load summary metrics

@@ -1,10 +1,15 @@
 {% extends "base_app.html" %}
 
-{% block title %}User Locations | Analytics | JustData{% endblock %}
+{% block title %}Report Locations | Analytics | JustData{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block extra_head %}
+<!-- jQuery for analytics -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -15,7 +20,7 @@
             <a href="{{ url_for('analytics.dashboard') }}" class="back-link">
                 <i class="fas fa-arrow-left"></i> Back to Dashboard
             </a>
-            <h1><i class="fas fa-map-marked-alt"></i> User Locations</h1>
+            <h1><i class="fas fa-map-marked-alt"></i> Report Locations</h1>
         </div>
         <div class="header-right">
             <div class="filter-group">
@@ -44,7 +49,7 @@
             <i class="fas fa-tachometer-alt"></i> Overview
         </a>
         <a href="{{ url_for('analytics.user_map') }}" class="tab active">
-            <i class="fas fa-map-marked-alt"></i> User Locations
+            <i class="fas fa-map-marked-alt"></i> Report Locations
         </a>
         <a href="{{ url_for('analytics.research_map') }}" class="tab">
             <i class="fas fa-search-location"></i> Research Activity
@@ -61,10 +66,10 @@
     <div class="map-section">
         <div id="user-map" class="analytics-map"></div>
         <div class="map-legend">
-            <h4>User Activity</h4>
+            <h4>Report Activity</h4>
             <div class="legend-item">
                 <span class="legend-dot" style="background: #1a5a96;"></span>
-                <span>Marker size = number of users</span>
+                <span>Marker size = number of reports generated for this location</span>
             </div>
         </div>
     </div>

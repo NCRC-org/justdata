@@ -783,46 +783,7 @@
     </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <!-- LEFT ZONE: Logo + Title -->
-            <div class="header-left">
-                <a href="/" class="logo">
-                    <img src="/static/img/justdata-logo.png" alt="JustData" onerror="this.style.display='none'">
-                    <div class="logo-text">
-                        <h1>ElectWatch</h1>
-                    </div>
-                </a>
-            </div>
-
-            <!-- CENTER ZONE: Back navigation -->
-            <div class="header-center">
-                <a href="/electwatch/" class="back-link">
-                    <i class="fas fa-arrow-left"></i>
-                    Back to Dashboard
-                </a>
-            </div>
-
-            <!-- RIGHT ZONE: User Menu (placeholder) -->
-            <div class="header-right">
-                <button id="loginBtn" onclick="if(typeof JustDataAuth !== 'undefined') JustDataAuth.signInWithGoogle();" class="back-link" style="border: none; cursor: pointer;">
-                    <i class="fab fa-google"></i>
-                    Sign In
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <!-- Breadcrumbs -->
-    <nav class="breadcrumbs">
-        <div class="breadcrumbs-content">
-            <a href="/electwatch/">ElectWatch</a>
-            <span class="separator">›</span>
-            <a href="/electwatch/#leaderboard">Leaderboard</a>
-            <span class="separator">›</span>
-            <span id="breadcrumb-name" class="current">Official Profile</span>
-        </div>
-    </nav>
+    {% include "shared_header.html" %}
 
     <main class="main-content">
         <div id="profile-loading" class="loading">Loading official profile...</div>
@@ -1034,8 +995,28 @@
         </div>
     </main>
 
-    <footer class="footer">
-        <p><strong>ElectWatch</strong> by <a href="https://ncrc.org">NCRC</a></p>
+    <!-- Footer (matches landing page) -->
+    <footer class="footer" style="background: #1E3D5C; color: white; padding: 0; margin-top: 40px;">
+        <div class="footer-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
+            <div style="text-align: left;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <div style="display: flex; gap: 16px; font-size: 13px;">
+                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="/privacy" style="color: #8bb8ff; text-decoration: none;">Privacy</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="/terms" style="color: #8bb8ff; text-decoration: none;">Terms</a>
+                </div>
+                <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
+                    Created by Jay Richardson &amp; Jad Edlebi
+                </p>
+            </div>
+            <div style="flex-shrink: 0;">
+                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; width: auto; opacity: 0.9;">
+            </div>
+        </div>
     </footer>
 
     <script>

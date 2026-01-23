@@ -32,16 +32,9 @@ def admin_dashboard():
     return render_template('admin-dashboard.html', landing_url=url_for('landing'))
 
 
-@dashboard_bp.route('/analytics')
-def analytics_dashboard():
-    """Serve the analytics dashboard."""
-    from justdata.main.auth import has_access
-    from flask import redirect, url_for
-    # Analytics requires staff access
-    if not has_access('analytics', 'full'):
-        return redirect(url_for('landing'))
-    # Pass landing_url to template
-    return render_template('analytics-dashboard.html', landing_url=url_for('landing'))
+# NOTE: The /analytics route is now handled by the analytics blueprint
+# in justdata/apps/analytics/blueprint.py which uses real BigQuery data.
+# The old analytics-dashboard.html template with mock data is deprecated.
 
 
 @dashboard_bp.route('/status')

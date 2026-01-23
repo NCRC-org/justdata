@@ -6,23 +6,50 @@
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
 {% endblock %}
 
+{% block extra_head %}
+<!-- jQuery for analytics dashboard -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
 {% block content %}
 <div class="analytics-container">
     <!-- Header -->
     <div class="analytics-header">
         <div class="header-left">
             <h1><i class="fas fa-chart-line"></i> Analytics Dashboard</h1>
-            <span class="staff-badge">Staff & Above Only</span>
+            <span class="staff-badge">STAFF USE ONLY</span>
         </div>
         <div class="header-right">
+            <div class="filter-group">
+                <label for="user-type-filter">User Types:</label>
+                <div class="user-type-dropdown">
+                    <button type="button" class="form-select user-type-btn" onclick="toggleUserTypeDropdown()">
+                        <span id="user-type-label">All Users</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="user-type-menu" class="user-type-menu" style="display: none;">
+                        <div class="user-type-options" id="user-type-options">
+                            <label class="user-type-option">
+                                <input type="checkbox" value="all" id="select-all-types" checked onchange="handleSelectAllTypes()">
+                                <span>Select All</span>
+                            </label>
+                            <!-- Options populated by JS -->
+                        </div>
+                        <div class="user-type-actions">
+                            <button type="button" class="btn-apply" onclick="applyUserTypeFilter()">Apply</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <div class="time-selector">
                 <label for="time-period">Time Period:</label>
                 <select id="time-period" class="form-select">
                     <option value="7">Last 7 days</option>
                     <option value="30">Last 30 days</option>
-                    <option value="90" selected>Last 90 days</option>
+                    <option value="90">Last 90 days</option>
                     <option value="180">Last 6 months</option>
                     <option value="365">Last year</option>
+                    <option value="0" selected>All Time</option>
                 </select>
             </div>
             <button id="refresh-btn" class="btn-refresh" onclick="loadSummary()">
@@ -34,39 +61,27 @@
     <!-- Summary Cards -->
     <div class="analytics-summary" id="summary-cards">
         <div class="summary-card">
-            <div class="summary-icon"><i class="fas fa-users"></i></div>
-            <div class="summary-content">
-                <h3>Active Users</h3>
-                <div class="summary-value" id="total-users">
-                    <span class="loading-placeholder">--</span>
-                </div>
+            <h3>Active Users</h3>
+            <div class="summary-value" id="total-users">
+                <span class="loading-placeholder">--</span>
             </div>
         </div>
         <div class="summary-card">
-            <div class="summary-icon"><i class="fas fa-file-alt"></i></div>
-            <div class="summary-content">
-                <h3>Reports Generated</h3>
-                <div class="summary-value" id="total-events">
-                    <span class="loading-placeholder">--</span>
-                </div>
+            <h3>Reports Generated</h3>
+            <div class="summary-value" id="total-events">
+                <span class="loading-placeholder">--</span>
             </div>
         </div>
         <div class="summary-card">
-            <div class="summary-icon"><i class="fas fa-map-marker-alt"></i></div>
-            <div class="summary-content">
-                <h3>Counties Researched</h3>
-                <div class="summary-value" id="counties-count">
-                    <span class="loading-placeholder">--</span>
-                </div>
+            <h3>Counties Researched</h3>
+            <div class="summary-value" id="counties-count">
+                <span class="loading-placeholder">--</span>
             </div>
         </div>
         <div class="summary-card">
-            <div class="summary-icon"><i class="fas fa-handshake"></i></div>
-            <div class="summary-content">
-                <h3>Coalition Opportunities</h3>
-                <div class="summary-value" id="coalition-count">
-                    <span class="loading-placeholder">--</span>
-                </div>
+            <h3>Coalition Opportunities</h3>
+            <div class="summary-value" id="coalition-count">
+                <span class="loading-placeholder">--</span>
             </div>
         </div>
     </div>
@@ -77,7 +92,7 @@
             <i class="fas fa-tachometer-alt"></i> Overview
         </a>
         <a href="{{ url_for('analytics.user_map') }}" class="tab">
-            <i class="fas fa-map-marked-alt"></i> User Locations
+            <i class="fas fa-map-marked-alt"></i> Report Locations
         </a>
         <a href="{{ url_for('analytics.research_map') }}" class="tab">
             <i class="fas fa-search-location"></i> Research Activity
@@ -153,6 +168,6 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<!-- auth.js already loaded by base_app.html -->
 <script src="{{ url_for('analytics.static', filename='js/analytics-dashboard.js') }}"></script>
 {% endblock %}

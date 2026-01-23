@@ -60,6 +60,25 @@ def create_app():
             'user_type': get_user_type()
         }
 
+    # Daily analytics aggregation trigger
+    @app.before_request
+    def check_daily_analytics():
+        """
+        Check if daily analytics aggregation needs to run.
+
+        The first visitor after midnight ET triggers a background job
+        to aggregate yesterday's analytics data. This runs at most
+        once per day and doesn't affect the user's request.
+        """
+        # Only check on HTML page requests (not API, static files, etc.)
+        if request.endpoint and not request.path.startswith(('/api/', '/static/', '/favicon')):
+            try:
+                from justdata.shared.services.analytics_aggregator import check_and_trigger_aggregation
+                check_and_trigger_aggregation()
+            except Exception as e:
+                # Don't let analytics check failures affect the request
+                pass
+
     # Favicon route
     @app.route('/favicon.ico')
     def favicon():
@@ -276,19 +295,18 @@ def create_app():
                 except Exception as e:
                     print(f"[WARN] Failed to get report count: {e}")
 
-                # Get unique researchers from analytics (last 90 days)
+                # Get unique researchers from Firestore (users who have logged in)
                 try:
-                    query = """
-                        SELECT COUNT(DISTINCT COALESCE(user_id, event_id)) as total
-                        FROM `hdma1-242116.justdata_analytics.all_events`
-                        WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
-                    """
-                    result = client.query(query).result()
-                    for row in result:
-                        stats['active_researchers'] = row.total or 0
-                        break
+                    from justdata.main.auth import get_firestore_client
+                    db = get_firestore_client()
+                    if db:
+                        users_ref = db.collection('users')
+                        # Count users with loginCount > 0
+                        users = users_ref.stream()
+                        active_count = sum(1 for u in users if u.to_dict().get('loginCount', 0) > 0)
+                        stats['active_researchers'] = active_count
                 except Exception as e:
-                    print(f"[WARN] Failed to get active users: {e}")
+                    print(f"[WARN] Failed to get active users from Firestore: {e}")
 
         except Exception as e:
             print(f"[WARN] Failed to connect to BigQuery: {e}")

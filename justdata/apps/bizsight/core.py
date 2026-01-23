@@ -955,8 +955,8 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         pct_dollars_to_lmi = (lmi_tract_amount_calculated / summary_total_amount * 100) if summary_total_amount > 0 else 0.0
 
         summary_table = {
-            'total_loans': safe_int(summary_row.get('total_loans', 0)),
-            'total_loan_amount': float(summary_row.get('total_loan_amount', 0) or summary_row.get('total_amount', 0)),
+            'total_loans': summary_total_loans,  # Use calculated total from summary_2024_df, not summary_row
+            'total_loan_amount': summary_total_amount,  # Use calculated total from summary_2024_df, not summary_row
             'pct_loans_to_lmi_tracts': pct_loans_to_lmi,
             'pct_dollars_to_lmi_tracts': pct_dollars_to_lmi,
             'lmi_tract_loans': lmi_tract_loans_calculated,

@@ -99,7 +99,9 @@ def index():
     return render_template(
         'dashboard.html',
         version=__version__,
-        sectors=_get_sectors()
+        sectors=_get_sectors(),
+        app_name='ElectWatch',
+        breadcrumb_items=[{'name': 'ElectWatch', 'url': '/electwatch'}]
     )
 
 
@@ -109,7 +111,12 @@ def official_profile(official_id: str):
     return render_template(
         'official_profile.html',
         version=__version__,
-        official_id=official_id
+        official_id=official_id,
+        app_name='ElectWatch',
+        breadcrumb_items=[
+            {'name': 'ElectWatch', 'url': '/electwatch'},
+            {'name': 'Official Profile', 'url': '#'}
+        ]
     )
 
 
@@ -125,7 +132,12 @@ def industry_view(sector: str):
         'industry_view.html',
         version=__version__,
         sector=sector,
-        sector_info=sector_info
+        sector_info=sector_info,
+        app_name='ElectWatch',
+        breadcrumb_items=[
+            {'name': 'ElectWatch', 'url': '/electwatch'},
+            {'name': sector_info.get('name', sector), 'url': '#'}
+        ]
     )
 
 
@@ -135,7 +147,12 @@ def firm_view(firm_name: str):
     return render_template(
         'firm_view.html',
         version=__version__,
-        firm_name=firm_name
+        firm_name=firm_name,
+        app_name='ElectWatch',
+        breadcrumb_items=[
+            {'name': 'ElectWatch', 'url': '/electwatch'},
+            {'name': firm_name, 'url': '#'}
+        ]
     )
 
 
@@ -145,7 +162,12 @@ def committee_view(committee_id: str):
     return render_template(
         'committee_view.html',
         version=__version__,
-        committee_id=committee_id
+        committee_id=committee_id,
+        app_name='ElectWatch',
+        breadcrumb_items=[
+            {'name': 'ElectWatch', 'url': '/electwatch'},
+            {'name': 'Committee', 'url': '#'}
+        ]
     )
 
 
@@ -2676,7 +2698,15 @@ def _enrich_bill_with_financial_data(bill: dict) -> dict:
 @app.route('/bill/<bill_id>')
 def view_bill(bill_id: str):
     """Render bill detail page."""
-    return render_template('bill_view.html', bill_id=bill_id)
+    return render_template(
+        'bill_view.html',
+        bill_id=bill_id,
+        app_name='ElectWatch',
+        breadcrumb_items=[
+            {'name': 'ElectWatch', 'url': '/electwatch'},
+            {'name': bill_id, 'url': '#'}
+        ]
+    )
 
 
 @app.route('/api/insights', methods=['GET'])

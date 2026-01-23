@@ -1,28 +1,28 @@
 {% extends "base_app.html" %}
 
-{% set app_name = "BranchSeeker" %}
+{% set app_name = app_name|default("BranchSight") %}
 {% set app_name_part1 = "BRANCH" %}
-{% set app_name_part2 = "SEEKER" %}
+{% set app_name_part2 = "SIGHT" %}
 {% set app_description = "AI-powered banking market intelligence platform" %}
 
-{% block title %}{{ app_title|default('BranchSeeker') }} - AI-Powered Banking Insights{% endblock %}
+{% block title %}{{ app_title|default('BranchSight') }} - AI-Powered Banking Insights{% endblock %}
 
 {% block extra_head %}
     <meta name="description" content="AI-powered bank branch data analyzer with BigQuery integration. Generate comprehensive banking market analysis reports.">
-    <meta name="keywords" content="{{ app_title|default('BranchSeeker') }}, banking, branch analysis, AI, BigQuery, market intelligence">
+    <meta name="keywords" content="{{ app_title|default('BranchSight') }}, banking, branch analysis, AI, BigQuery, market intelligence">
     <meta name="author" content="JustData - National Community Reinvestment Coalition">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://justdata.app/branchseeker/">
-    <meta property="og:title" content="BranchSeeker - AI-Powered Banking Insights">
+    <meta property="og:title" content="BranchSight - AI-Powered Banking Insights">
     <meta property="og:description" content="Generate comprehensive banking market analysis reports with AI-powered insights.">
     <meta property="og:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://justdata.app/branchseeker/">
-    <meta property="twitter:title" content="BranchSeeker - AI-Powered Banking Insights">
+    <meta property="twitter:title" content="BranchSight - AI-Powered Banking Insights">
     <meta property="twitter:description" content="Generate comprehensive banking market analysis reports with AI-powered insights.">
     <meta property="twitter:image" content="https://jadedlebi.github.io/fdic-branch-analyzer/assets/og-image.png">
 
@@ -255,10 +255,10 @@
     </script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     
-    <!-- BranchSeeker-specific state loading -->
+    <!-- BranchSight-specific state loading -->
     <script>
         $(document).ready(function() {
-            console.log('[DEBUG] BranchSeeker jQuery ready block executing...');
+            console.log('[DEBUG] BranchSight jQuery ready block executing...');
             
             let isLoadingStates = false;
             let statesLoaded = false;

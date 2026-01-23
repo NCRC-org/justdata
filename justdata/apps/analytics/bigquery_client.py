@@ -40,6 +40,8 @@ Queries Firebase Analytics data exported to BigQuery for:
 """
 
 import os
+import json
+import hashlib
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from google.cloud import bigquery
@@ -50,6 +52,40 @@ from .config import config
 
 # Initialize BigQuery client
 _client = None
+
+# =============================================================================
+# CACHING - Analytics data updates nightly, so cache aggressively
+# =============================================================================
+_cache = {}
+CACHE_TTL_SECONDS = 3600  # 1 hour cache (data only updates nightly)
+
+
+def _cache_key(*args, **kwargs) -> str:
+    """Generate a cache key from function arguments."""
+    key_data = json.dumps({'args': args, 'kwargs': kwargs}, sort_keys=True, default=str)
+    return hashlib.md5(key_data.encode()).hexdigest()
+
+
+def _get_cached(key: str) -> Optional[Any]:
+    """Get value from cache if not expired."""
+    if key in _cache:
+        data, timestamp = _cache[key]
+        if datetime.utcnow() - timestamp < timedelta(seconds=CACHE_TTL_SECONDS):
+            return data
+        else:
+            del _cache[key]
+    return None
+
+
+def _set_cached(key: str, value: Any) -> None:
+    """Store value in cache with current timestamp."""
+    _cache[key] = (value, datetime.utcnow())
+
+
+def clear_analytics_cache() -> None:
+    """Clear all cached analytics data. Call this after nightly data refresh."""
+    global _cache
+    _cache = {}
 
 # Use backfilled data from hdma1-242116 project
 ANALYTICS_PROJECT = os.environ.get('GCP_PROJECT_ID', 'hdma1-242116')
@@ -83,46 +119,147 @@ def _format_date_suffix(days: int) -> str:
     return date.strftime('%Y%m%d')
 
 
-def get_user_locations(days: int = 90, state: Optional[str] = None) -> List[Dict[str, Any]]:
+# County centroids cache - loaded once from BigQuery
+_county_centroids = None
+
+def get_county_centroids() -> Dict[str, Dict[str, float]]:
+    """
+    Get county FIPS -> centroid coordinates mapping.
+    Uses BigQuery public dataset for US county boundaries.
+    Returns dict like {'01001': {'lat': 32.5, 'lng': -86.5}, ...}
+    """
+    global _county_centroids
+
+    if _county_centroids is not None:
+        return _county_centroids
+
+    client = get_bigquery_client()
+
+    # Query county centroids from BigQuery public dataset
+    query = """
+        SELECT
+            geo_id AS county_fips,
+            ST_Y(ST_CENTROID(county_geom)) AS latitude,
+            ST_X(ST_CENTROID(county_geom)) AS longitude
+        FROM `bigquery-public-data.geo_us_boundaries.counties`
+    """
+
+    try:
+        results = client.query(query).result()
+        _county_centroids = {}
+        for row in results:
+            if row.county_fips and row.latitude and row.longitude:
+                _county_centroids[row.county_fips] = {
+                    'lat': float(row.latitude),
+                    'lng': float(row.longitude)
+                }
+        print(f"[INFO] Loaded {len(_county_centroids)} county centroids")
+        return _county_centroids
+    except Exception as e:
+        print(f"[WARN] Could not load county centroids: {e}")
+        _county_centroids = {}
+        return _county_centroids
+
+
+def _enrich_with_coordinates(data: List[Dict], fips_field: str = 'county_fips') -> List[Dict]:
+    """
+    Add latitude/longitude to data records based on county FIPS code.
+
+    Args:
+        data: List of data records
+        fips_field: Field name containing county FIPS code
+
+    Returns:
+        Data enriched with latitude/longitude coordinates
+    """
+    centroids = get_county_centroids()
+
+    for item in data:
+        fips = item.get(fips_field)
+        if fips and fips in centroids:
+            item['latitude'] = centroids[fips]['lat']
+            item['longitude'] = centroids[fips]['lng']
+        else:
+            # Clear any existing bogus coordinates
+            item['latitude'] = None
+            item['longitude'] = None
+
+    return data
+
+
+def get_user_locations(
+    days: int = 90,
+    state: Optional[str] = None,
+    user_types: Optional[List[str]] = None,
+    exclude_user_types: Optional[List[str]] = None
+) -> List[Dict[str, Any]]:
     """
     Get user clusters by city/state with coordinates.
 
     Args:
-        days: Number of days to look back
+        days: Number of days to look back (0 = all time)
         state: Optional state filter (2-letter code)
+        user_types: Optional list of user types to include
+        exclude_user_types: Optional list of user types to exclude
 
     Returns:
         List of location records with user counts
     """
+    # Check cache first
+    cache_key = _cache_key('get_user_locations', days=days, state=state,
+                           user_types=user_types, exclude_user_types=exclude_user_types)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     client = get_bigquery_client()
+
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # User type filter
+    user_type_filter = ""
+    if user_types:
+        types_str = "', '".join(user_types)
+        user_type_filter = f" AND user_type IN ('{types_str}')"
+    elif exclude_user_types:
+        types_str = "', '".join(exclude_user_types)
+        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
 
     query = f"""
         SELECT
+            county_fips,
             state,
             county_name AS city,
-            COUNT(DISTINCT COALESCE(user_id, event_id)) AS unique_users,
+            COUNT(DISTINCT user_id) AS unique_users,
             COUNT(*) AS total_events,
             MAX(event_timestamp) AS last_activity,
             hubspot_contact_id,
             hubspot_company_id,
             organization_name
         FROM `{EVENTS_TABLE}`
-        WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
-            AND state IS NOT NULL
+        WHERE state IS NOT NULL
+            {date_filter}
+            {user_type_filter}
     """
 
     if state:
         query += f" AND state = '{state}'"
 
     query += """
-        GROUP BY state, county_name, hubspot_contact_id, hubspot_company_id, organization_name
+        GROUP BY county_fips, state, county_name, hubspot_contact_id, hubspot_company_id, organization_name
         ORDER BY unique_users DESC
         LIMIT 500
     """
 
     try:
         results = client.query(query).result()
-        return [dict(row) for row in results]
+        data = [dict(row) for row in results]
+
+        # Enrich with county centroid coordinates
+        data = _enrich_with_coordinates(data, 'county_fips')
+
+        _set_cached(cache_key, data)
+        return data
     except Exception as e:
         print(f"BigQuery error in get_user_locations: {e}")
         return []
@@ -131,20 +268,42 @@ def get_user_locations(days: int = 90, state: Optional[str] = None) -> List[Dict
 def get_research_activity(
     days: int = 90,
     app: Optional[str] = None,
-    state: Optional[str] = None
+    state: Optional[str] = None,
+    user_types: Optional[List[str]] = None,
+    exclude_user_types: Optional[List[str]] = None
 ) -> List[Dict[str, Any]]:
     """
     Get counties being researched with report counts.
 
     Args:
-        days: Number of days to look back
+        days: Number of days to look back (0 = all time)
         app: Optional app filter (e.g., 'lendsight_report')
         state: Optional state filter
+        user_types: Optional list of user types to include
+        exclude_user_types: Optional list of user types to exclude
 
     Returns:
         List of county research records
     """
+    # Check cache first
+    cache_key = _cache_key('get_research_activity', days=days, app=app, state=state,
+                           user_types=user_types, exclude_user_types=exclude_user_types)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     client = get_bigquery_client()
+
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # User type filter
+    user_type_filter = ""
+    if user_types:
+        types_str = "', '".join(user_types)
+        user_type_filter = f" AND user_type IN ('{types_str}')"
+    elif exclude_user_types:
+        types_str = "', '".join(exclude_user_types)
+        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
 
     query = f"""
         SELECT
@@ -152,12 +311,13 @@ def get_research_activity(
             state,
             county_name,
             event_name AS app_name,
-            COUNT(DISTINCT COALESCE(user_id, event_id)) AS unique_users,
+            COUNT(DISTINCT user_id) AS unique_users,
             COUNT(*) AS report_count,
             MAX(event_timestamp) AS last_activity
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('lendsight_report', 'bizsight_report', 'branchsight_report', 'branchmapper_report')
-            AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            {date_filter}
+            {user_type_filter}
     """
 
     if app:
@@ -180,6 +340,10 @@ def get_research_activity(
         if data_needing_names:
             data = _enrich_with_county_names(client, data)
 
+        # Enrich with county centroid coordinates
+        data = _enrich_with_coordinates(data, 'county_fips')
+
+        _set_cached(cache_key, data)
         return data
     except Exception as e:
         print(f"BigQuery error in get_research_activity: {e}")
@@ -216,40 +380,69 @@ def _enrich_with_county_names(client, data: List[Dict]) -> List[Dict]:
         return data
 
 
-def get_lender_interest(days: int = 90, min_users: int = 1) -> List[Dict[str, Any]]:
+def get_lender_interest(
+    days: int = 90,
+    min_users: int = 1,
+    user_types: Optional[List[str]] = None,
+    exclude_user_types: Optional[List[str]] = None
+) -> List[Dict[str, Any]]:
     """
     Get lenders being researched with researcher locations.
 
     Args:
-        days: Number of days to look back
-        min_users: Minimum unique users to include
+        days: Number of days to look back (0 = all time)
+        min_users: Minimum unique users researching this lender (for coalition filtering)
+        user_types: Optional list of user types to include
+        exclude_user_types: Optional list of user types to exclude
 
     Returns:
         List of lender interest records
     """
+    # Check cache first
+    cache_key = _cache_key('get_lender_interest', days=days, min_users=min_users,
+                           user_types=user_types, exclude_user_types=exclude_user_types)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     client = get_bigquery_client()
 
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # User type filter
+    user_type_filter = ""
+    if user_types:
+        types_str = "', '".join(user_types)
+        user_type_filter = f" AND user_type IN ('{types_str}')"
+    elif exclude_user_types:
+        types_str = "', '".join(exclude_user_types)
+        user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
+
+    # Include all lender-related events
     query = f"""
         SELECT
             lender_id,
             lender_name,
             state AS researcher_state,
             county_name AS researcher_city,
-            COUNT(DISTINCT COALESCE(user_id, event_id)) AS unique_users,
+            COUNT(DISTINCT user_id) AS unique_users,
             COUNT(*) AS event_count,
             MAX(event_timestamp) AS last_activity
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('mergermeter_report', 'dataexplorer_lender_report', 'lenderprofile_view')
-            AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        WHERE lender_id IS NOT NULL
+            {date_filter}
+            {user_type_filter}
         GROUP BY lender_id, lender_name, researcher_state, researcher_city
-        HAVING lender_id IS NOT NULL AND COUNT(DISTINCT COALESCE(user_id, event_id)) >= {min_users}
-        ORDER BY unique_users DESC, event_count DESC
+        HAVING COUNT(DISTINCT user_id) >= {min_users}
+        ORDER BY event_count DESC, unique_users DESC
         LIMIT 500
     """
 
     try:
         results = client.query(query).result()
-        return [dict(row) for row in results]
+        data = [dict(row) for row in results]
+        _set_cached(cache_key, data)
+        return data
     except Exception as e:
         print(f"BigQuery error in get_lender_interest: {e}")
         return []
@@ -265,14 +458,22 @@ def get_coalition_opportunities(
     Useful for identifying coalition-building opportunities.
 
     Args:
-        days: Number of days to look back
+        days: Number of days to look back (0 = all time)
         min_users: Minimum unique users researching same entity
         entity_type: Filter by 'county' or 'lender'
 
     Returns:
         List of coalition opportunity records
     """
+    # Check cache first
+    cache_key = _cache_key('get_coalition_opportunities', days=days, min_users=min_users, entity_type=entity_type)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     client = get_bigquery_client()
+
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
     query = f"""
         WITH all_research AS (
@@ -287,7 +488,7 @@ def get_coalition_opportunities(
                 event_timestamp
             FROM `{EVENTS_TABLE}`
             WHERE event_name IN ('mergermeter_report', 'dataexplorer_lender_report', 'lenderprofile_view')
-                AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+                {date_filter}
                 AND lender_id IS NOT NULL
 
             UNION ALL
@@ -303,7 +504,7 @@ def get_coalition_opportunities(
                 event_timestamp
             FROM `{EVENTS_TABLE}`
             WHERE event_name IN ('lendsight_report', 'bizsight_report', 'branchsight_report', 'branchmapper_report')
-                AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+                {date_filter}
                 AND county_fips IS NOT NULL
         )
         SELECT
@@ -318,6 +519,7 @@ def get_coalition_opportunities(
         FROM all_research
         GROUP BY entity_type, entity_id
         HAVING COUNT(DISTINCT user_id) >= {min_users}
+            AND COUNT(DISTINCT user_organization) > 0
     """
 
     if entity_type:
@@ -356,6 +558,7 @@ def get_coalition_opportunities(
                 except:
                     pass
 
+        _set_cached(cache_key, data)
         return data
     except Exception as e:
         print(f"BigQuery error in get_coalition_opportunities: {e}")
@@ -367,20 +570,32 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     Get summary metrics for the dashboard.
 
     Args:
-        days: Number of days to look back
+        days: Number of days to look back (0 = all time)
 
     Returns:
         Summary dict with total_users, total_events, top_counties, top_lenders
     """
+    # Check cache first
+    cache_key = _cache_key('get_summary', days=days)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     client = get_bigquery_client()
 
+    # Build date filter (empty for all time)
+    date_filter = ""
+    if days > 0:
+        date_filter = f"WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)"
+
     # Total users and events
+    # Count only actual user_ids (not events) for accurate user count
     totals_query = f"""
         SELECT
-            COUNT(DISTINCT COALESCE(user_id, event_id)) AS total_users,
+            COUNT(DISTINCT user_id) AS total_users,
             COUNT(*) AS total_events
         FROM `{EVENTS_TABLE}`
-        WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        {date_filter}
     """
 
     try:
@@ -397,6 +612,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         total_events = 0
 
     # Top researched counties
+    counties_date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
     top_counties_query = f"""
         SELECT
             county_fips,
@@ -405,7 +621,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(*) AS total_reports
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('lendsight_report', 'bizsight_report', 'branchsight_report', 'branchmapper_report')
-            AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            {counties_date_filter}
             AND county_fips IS NOT NULL
         GROUP BY county_fips, state, county_name
         ORDER BY total_reports DESC
@@ -423,6 +639,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         top_counties = []
 
     # Top researched lenders
+    lenders_date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
     top_lenders_query = f"""
         SELECT
             lender_id,
@@ -430,7 +647,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(*) AS total_events
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('mergermeter_report', 'dataexplorer_lender_report', 'lenderprofile_view')
-            AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            {lenders_date_filter}
             AND lender_id IS NOT NULL
         GROUP BY lender_id, lender_name
         ORDER BY total_events DESC
@@ -444,18 +661,19 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         top_lenders = []
 
     # App usage breakdown
+    usage_date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
     app_usage_query = f"""
         SELECT
             event_name,
             COUNT(*) AS event_count,
-            COUNT(DISTINCT COALESCE(user_id, event_id)) AS unique_users
+            COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN (
             'lendsight_report', 'bizsight_report', 'branchsight_report',
             'branchmapper_report', 'mergermeter_report',
             'dataexplorer_area_report', 'dataexplorer_lender_report', 'lenderprofile_view'
         )
-            AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            {usage_date_filter}
         GROUP BY event_name
         ORDER BY event_count DESC
     """
@@ -466,7 +684,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         print(f"BigQuery error getting app usage: {e}")
         app_usage = []
 
-    return {
+    result = {
         'total_users': total_users,
         'total_events': total_events,
         'top_counties': top_counties,
@@ -474,6 +692,8 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         'app_usage': app_usage,
         'days': days
     }
+    _set_cached(cache_key, result)
+    return result
 
 
 def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
@@ -481,12 +701,20 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
     Get daily activity counts for timeline chart.
 
     Args:
-        days: Number of days to look back
+        days: Number of days to look back (0 = all time)
 
     Returns:
         List of daily activity records
     """
+    # Check cache first
+    cache_key = _cache_key('get_user_activity_timeline', days=days)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
     client = get_bigquery_client()
+
+    date_filter = f"WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
     query = f"""
         SELECT
@@ -494,14 +722,16 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
             COUNT(*) AS event_count,
             COUNT(DISTINCT COALESCE(user_id, event_id)) AS unique_users
         FROM `{EVENTS_TABLE}`
-        WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        {date_filter}
         GROUP BY date
         ORDER BY date ASC
     """
 
     try:
         results = client.query(query).result()
-        return [dict(row) for row in results]
+        data = [dict(row) for row in results]
+        _set_cached(cache_key, data)
+        return data
     except Exception as e:
         print(f"BigQuery error in get_user_activity_timeline: {e}")
         return []

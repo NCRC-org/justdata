@@ -165,22 +165,31 @@ def index():
     user_type = get_user_type()
     is_staff = (user_type in ('staff', 'admin'))
     is_admin = (user_type == 'admin')
+    breadcrumb_items = [{'name': 'ElectWatch', 'url': '/electwatch'}]
     return render_template(
         'electwatch_dashboard.html',
         version=__version__,
         sectors=_get_sectors(),
         is_staff=is_staff,
-        is_admin=is_admin
+        is_admin=is_admin,
+        app_name='ElectWatch',
+        breadcrumb_items=breadcrumb_items
     )
 
 
 @electwatch_bp.route('/official/<official_id>')
 def official_profile(official_id):
     """Individual official profile page."""
+    breadcrumb_items = [
+        {'name': 'ElectWatch', 'url': '/electwatch'},
+        {'name': 'Official Profile', 'url': f'/electwatch/official/{official_id}'}
+    ]
     return render_template(
         'official_profile.html',
         version=__version__,
-        official_id=official_id
+        official_id=official_id,
+        app_name='ElectWatch',
+        breadcrumb_items=breadcrumb_items
     )
 
 
@@ -189,10 +198,16 @@ def firm_view(firm_id):
     """Firm view page."""
     # URL decode the firm_id to get the firm name
     firm_name = unquote(firm_id)
+    breadcrumb_items = [
+        {'name': 'ElectWatch', 'url': '/electwatch'},
+        {'name': 'Firm', 'url': f'/electwatch/firm/{firm_id}'}
+    ]
     return render_template(
         'firm_view.html',
         version=__version__,
-        firm_name=firm_name
+        firm_name=firm_name,
+        app_name='ElectWatch',
+        breadcrumb_items=breadcrumb_items
     )
 
 
@@ -205,31 +220,49 @@ def industry_view(industry_code):
     except ImportError:
         sector_info = {'name': industry_code.replace('_', ' ').title(), 'code': industry_code}
 
+    breadcrumb_items = [
+        {'name': 'ElectWatch', 'url': '/electwatch'},
+        {'name': 'Industry', 'url': f'/electwatch/industry/{industry_code}'}
+    ]
     return render_template(
         'industry_view.html',
         version=__version__,
         sector=industry_code,
-        sector_info=sector_info
+        sector_info=sector_info,
+        app_name='ElectWatch',
+        breadcrumb_items=breadcrumb_items
     )
 
 
 @electwatch_bp.route('/committee/<committee_id>')
 def committee_view(committee_id):
     """Committee view page."""
+    breadcrumb_items = [
+        {'name': 'ElectWatch', 'url': '/electwatch'},
+        {'name': 'Committee', 'url': f'/electwatch/committee/{committee_id}'}
+    ]
     return render_template(
         'committee_view.html',
         version=__version__,
-        committee_id=committee_id
+        committee_id=committee_id,
+        app_name='ElectWatch',
+        breadcrumb_items=breadcrumb_items
     )
 
 
 @electwatch_bp.route('/bill/<bill_id>')
 def bill_view(bill_id):
     """Bill view page."""
+    breadcrumb_items = [
+        {'name': 'ElectWatch', 'url': '/electwatch'},
+        {'name': 'Bill', 'url': f'/electwatch/bill/{bill_id}'}
+    ]
     return render_template(
         'bill_view.html',
         version=__version__,
-        bill_id=bill_id
+        bill_id=bill_id,
+        app_name='ElectWatch',
+        breadcrumb_items=breadcrumb_items
     )
 
 

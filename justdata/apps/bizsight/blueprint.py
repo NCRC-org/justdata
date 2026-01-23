@@ -67,13 +67,18 @@ def index():
     is_staff = (user_type in ('staff', 'admin'))
     app_base_url = url_for('bizsight.index').rstrip('/')
 
+    # Breadcrumb for main page
+    breadcrumb_items = [{'name': 'BizSight', 'url': '/bizsight'}]
+
     # Force template reload by clearing cache before rendering
     response = make_response(render_template(
         'bizsight_analysis.html',
         version=BizSightConfig.APP_VERSION,
         permissions=user_permissions,
         is_staff=is_staff,
-        app_base_url=app_base_url
+        app_base_url=app_base_url,
+        app_name='BizSight',
+        breadcrumb_items=breadcrumb_items
     ))
     # Add aggressive cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
@@ -578,7 +583,20 @@ def report():
 
     # Pass app_base_url so template can correctly construct API URLs
     app_base_url = url_for('bizsight.index').rstrip('/')
-    return render_template('report_template.html', job_id=job_id, app_base_url=app_base_url)
+
+    # Breadcrumb for report page
+    breadcrumb_items = [
+        {'name': 'BizSight', 'url': '/bizsight'},
+        {'name': 'Report', 'url': '/bizsight/report'}
+    ]
+
+    return render_template(
+        'report_template.html',
+        job_id=job_id,
+        app_base_url=app_base_url,
+        app_name='BizSight',
+        breadcrumb_items=breadcrumb_items
+    )
 
 
 @bizsight_bp.route('/report-data', methods=['GET'])

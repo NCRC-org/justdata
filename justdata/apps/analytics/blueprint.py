@@ -27,6 +27,21 @@ analytics_bp = Blueprint(
     static_url_path='/analytics/static'
 )
 
+# Base template context
+BASE_CONTEXT = {
+    'app_name': 'Analytics',
+    'app_description': 'Internal staff analytics for JustData usage patterns and coalition opportunities',
+    'app_subtitle': 'Staff Analytics Tool'
+}
+
+
+def get_context(breadcrumb_items=None):
+    """Get template context with optional breadcrumbs."""
+    ctx = BASE_CONTEXT.copy()
+    if breadcrumb_items:
+        ctx['breadcrumb_items'] = breadcrumb_items
+    return ctx
+
 
 # ============================================
 # Page Routes
@@ -37,7 +52,8 @@ analytics_bp = Blueprint(
 @staff_required
 def dashboard():
     """Main analytics dashboard."""
-    return render_template('analytics/dashboard.html')
+    breadcrumbs = [{'name': 'Analytics', 'url': '/analytics'}]
+    return render_template('analytics/dashboard.html', **get_context(breadcrumbs))
 
 
 @analytics_bp.route('/user-map')
@@ -45,7 +61,11 @@ def dashboard():
 @staff_required
 def user_map():
     """User locations map view."""
-    return render_template('analytics/user_map.html')
+    breadcrumbs = [
+        {'name': 'Analytics', 'url': '/analytics'},
+        {'name': 'Report Locations', 'url': '/analytics/user-map'}
+    ]
+    return render_template('analytics/user_map.html', **get_context(breadcrumbs))
 
 
 @analytics_bp.route('/research-map')
@@ -53,7 +73,11 @@ def user_map():
 @staff_required
 def research_map():
     """Research activity map view."""
-    return render_template('analytics/research_map.html')
+    breadcrumbs = [
+        {'name': 'Analytics', 'url': '/analytics'},
+        {'name': 'Research Activity', 'url': '/analytics/research-map'}
+    ]
+    return render_template('analytics/research_map.html', **get_context(breadcrumbs))
 
 
 @analytics_bp.route('/lender-map')
@@ -61,7 +85,11 @@ def research_map():
 @staff_required
 def lender_map():
     """Lender interest map view."""
-    return render_template('analytics/lender_map.html')
+    breadcrumbs = [
+        {'name': 'Analytics', 'url': '/analytics'},
+        {'name': 'Lender Interest', 'url': '/analytics/lender-map'}
+    ]
+    return render_template('analytics/lender_map.html', **get_context(breadcrumbs))
 
 
 @analytics_bp.route('/coalitions')
@@ -69,7 +97,11 @@ def lender_map():
 @staff_required
 def coalitions():
     """Coalition opportunities table view."""
-    return render_template('analytics/coalitions.html')
+    breadcrumbs = [
+        {'name': 'Analytics', 'url': '/analytics'},
+        {'name': 'Coalitions', 'url': '/analytics/coalitions'}
+    ]
+    return render_template('analytics/coalitions.html', **get_context(breadcrumbs))
 
 
 # ============================================
@@ -97,7 +129,15 @@ def api_user_locations():
     try:
         days = request.args.get('days', 90, type=int)
         state = request.args.get('state', None)
-        data = get_user_locations(days=days, state=state)
+        # User type filtering
+        user_types = request.args.getlist('user_types')
+        exclude_user_types = request.args.getlist('exclude_user_types')
+        data = get_user_locations(
+            days=days,
+            state=state,
+            user_types=user_types if user_types else None,
+            exclude_user_types=exclude_user_types if exclude_user_types else None
+        )
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -112,7 +152,16 @@ def api_research_activity():
         days = request.args.get('days', 90, type=int)
         app = request.args.get('app', None)
         state = request.args.get('state', None)
-        data = get_research_activity(days=days, app=app, state=state)
+        # User type filtering
+        user_types = request.args.getlist('user_types')
+        exclude_user_types = request.args.getlist('exclude_user_types')
+        data = get_research_activity(
+            days=days,
+            app=app,
+            state=state,
+            user_types=user_types if user_types else None,
+            exclude_user_types=exclude_user_types if exclude_user_types else None
+        )
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -126,7 +175,15 @@ def api_lender_interest():
     try:
         days = request.args.get('days', 90, type=int)
         min_users = request.args.get('min_users', 1, type=int)
-        data = get_lender_interest(days=days, min_users=min_users)
+        # User type filtering
+        user_types = request.args.getlist('user_types')
+        exclude_user_types = request.args.getlist('exclude_user_types')
+        data = get_lender_interest(
+            days=days,
+            min_users=min_users,
+            user_types=user_types if user_types else None,
+            exclude_user_types=exclude_user_types if exclude_user_types else None
+        )
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -160,6 +217,27 @@ def api_timeline():
         days = request.args.get('days', 30, type=int)
         data = get_user_activity_timeline(days=days)
         return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@analytics_bp.route('/api/user-types')
+@login_required
+@staff_required
+def api_user_types():
+    """Get list of distinct user types for filtering."""
+    try:
+        from .bigquery_client import get_bigquery_client, EVENTS_TABLE
+        client = get_bigquery_client()
+        query = f"""
+            SELECT DISTINCT user_type
+            FROM `{EVENTS_TABLE}`
+            WHERE user_type IS NOT NULL
+            ORDER BY user_type
+        """
+        results = client.query(query).result()
+        user_types = [row.user_type for row in results if row.user_type]
+        return jsonify({'success': True, 'data': user_types})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 

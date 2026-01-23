@@ -341,7 +341,36 @@
     </style>
 </head>
 <body>
-    {% set app_name = "LenderProfile" %}{% include "shared_header.html" %}
+    {% include "shared_header.html" %}
+
+    <!-- Under Construction Modal -->
+    <div id="underConstructionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100001; justify-content: center; align-items: center;">
+        <div style="background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 500px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🚧</div>
+            <h2 style="margin: 0 0 16px 0; color: #1a365d; font-size: 24px;">Under Construction</h2>
+            <p style="margin: 0 0 24px 0; color: #4a5568; font-size: 15px; line-height: 1.6;">
+                <strong>LenderProfile</strong> is currently under development. You're welcome to explore the interface and features, but please note that data may be incomplete or inaccurate.
+            </p>
+            <p style="margin: 0 0 24px 0; color: #718096; font-size: 14px;">
+                We're actively working to bring you comprehensive lender intelligence reports.
+            </p>
+            <button onclick="acknowledgeUnderConstruction()" style="background: #1a365d; color: white; border: none; border-radius: 8px; padding: 12px 32px; font-size: 15px; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                I Understand, Continue
+            </button>
+        </div>
+    </div>
+    <script>
+        function acknowledgeUnderConstruction() {
+            localStorage.setItem('lenderprofile_acknowledged', 'true');
+            document.getElementById('underConstructionModal').style.display = 'none';
+        }
+        // Show modal on load if not previously acknowledged
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!localStorage.getItem('lenderprofile_acknowledged')) {
+                document.getElementById('underConstructionModal').style.display = 'flex';
+            }
+        });
+    </script>
 
     <!-- Main Content -->
     <div class="main-container">
@@ -533,7 +562,7 @@
             <div class="footer-col">
                 <h4>Developed by</h4>
                 <p>NCRC - National Community Reinvestment Coalition<br>
-                Jad Edlebi &amp; Jason Richardson</p>
+                Jad Edlebi &amp; Jay Richardson</p>
             </div>
             <div class="footer-col">
                 <h4>Links</h4>

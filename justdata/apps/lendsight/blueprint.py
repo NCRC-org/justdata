@@ -130,11 +130,14 @@ def index():
     cache_buster = int(time.time())  # Timestamp for cache-busting
     # Set base URL for JavaScript API calls
     app_base_url = url_for('lendsight.index').rstrip('/')
+    breadcrumb_items = [{'name': 'LendSight', 'url': '/lendsight'}]
     response = make_response(render_template('lendsight_analysis.html',
                                            permissions=user_permissions,
                                            is_staff=is_staff,
                                            cache_buster=cache_buster,
-                                           app_base_url=app_base_url))
+                                           app_base_url=app_base_url,
+                                           app_name='LendSight',
+                                           breadcrumb_items=breadcrumb_items))
     # Add cache-busting headers
     response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
@@ -471,17 +474,18 @@ def analyze():
 @require_access('lendsight', 'partial')
 def report():
     """Report display page"""
-    from jinja2 import Environment, FileSystemLoader, select_autoescape
     app_base_url = url_for('lendsight.index').rstrip('/')
-    # Explicitly load from LendSight templates directory to avoid template resolution conflicts
-    env = Environment(
-        loader=FileSystemLoader(TEMPLATES_DIR),
-        autoescape=select_autoescape(['html', 'xml'])
+    breadcrumb_items = [
+        {'name': 'LendSight', 'url': '/lendsight'},
+        {'name': 'Report', 'url': '/lendsight/report'}
+    ]
+    # Use Flask's render_template with unique template name to avoid conflicts
+    return render_template(
+        'lendsight_report.html',
+        app_base_url=app_base_url,
+        app_name='LendSight',
+        breadcrumb_items=breadcrumb_items
     )
-    # Add Flask's url_for to the template globals
-    env.globals['url_for'] = url_for
-    template = env.get_template('report_template.html')
-    return template.render(app_base_url=app_base_url)
 
 
 @lendsight_bp.route('/report-data', methods=['GET'])

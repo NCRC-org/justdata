@@ -1533,11 +1533,11 @@
             <!-- Platform Stats Bar -->
             <section class="stats-bar" id="platformStats">
                 <div class="stat-item">
-                    <div class="stat-number">12M+</div>
+                    <div class="stat-number" id="mortgageRecords">--</div>
                     <div class="stat-label">Mortgage Records Analyzed</div>
                 </div>
                 <div class="stat-item">
-                    <div class="stat-number">5,000+</div>
+                    <div class="stat-number" id="lendersTracked">--</div>
                     <div class="stat-label">Lenders Tracked</div>
                 </div>
                 <div class="stat-item">
@@ -1734,7 +1734,7 @@
             <div style="text-align: left;">
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
                 <div style="display: flex; gap: 16px; font-size: 13px;">
-                    <a href="mailto:support@ncrc.org" style="color: #8bb8ff; text-decoration: none;">support@ncrc.org</a>
+                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
                     <span style="color: rgba(255,255,255,0.5);">|</span>
                     <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
                     <span style="color: rgba(255,255,255,0.5);">|</span>
@@ -1743,7 +1743,7 @@
                     <a href="/terms" style="color: #8bb8ff; text-decoration: none;">Terms</a>
                 </div>
                 <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
-                    Created by Jason Richardson &amp; Jad El-Levy
+                    Created by Jay Richardson &amp; Jad Edlebi
                 </p>
             </div>
             <!-- Right side: NCRC Logo -->
@@ -3258,8 +3258,27 @@
                 const statsResponse = await fetch('/api/platform-stats');
                 if (statsResponse.ok) {
                     const stats = await statsResponse.json();
+                    // Format large numbers nicely (e.g., 12.5M+)
+                    const formatNumber = (num) => {
+                        if (num >= 1000000) {
+                            return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M+';
+                        } else if (num >= 1000) {
+                            return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K+';
+                        }
+                        return num.toLocaleString();
+                    };
+
+                    const mortgageEl = document.getElementById('mortgageRecords');
+                    const lendersEl = document.getElementById('lendersTracked');
                     const reportsEl = document.getElementById('reportsGenerated');
                     const researchersEl = document.getElementById('activeResearchers');
+
+                    if (mortgageEl && stats.mortgage_records !== undefined) {
+                        mortgageEl.textContent = formatNumber(stats.mortgage_records);
+                    }
+                    if (lendersEl && stats.lenders_tracked !== undefined) {
+                        lendersEl.textContent = formatNumber(stats.lenders_tracked);
+                    }
                     if (reportsEl && stats.reports_generated !== undefined) {
                         reportsEl.textContent = stats.reports_generated.toLocaleString();
                     }

@@ -884,16 +884,63 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-def store_cached_result(app_name: str, params: Dict[str, Any], 
+def store_cached_result(app_name: str, params: Dict[str, Any],
                        job_id: str, result_data: Dict[str, Any],
                        user_type: str = 'public',
                        metadata: Optional[Dict[str, Any]] = None) -> None:
     """
     Store analysis result in BigQuery with section-based storage.
+    If a cache entry with the same cache_key already exists (e.g., force_refresh),
+    the old entry and its associated data are deleted first.
     """
     cache_key = generate_cache_key(app_name, params)
     normalized_params = normalize_parameters(app_name, params)
     client = get_bigquery_client(PROJECT_ID)
+
+    # Delete any existing cache entry with the same cache_key (for force_refresh scenarios)
+    # This also requires deleting associated results and sections to maintain referential integrity
+    try:
+        # First, get the old job_id if it exists
+        old_job_query = f"""
+        SELECT job_id FROM `{CACHE_TABLE}` WHERE cache_key = @cache_key
+        """
+        old_job_config = bigquery.QueryJobConfig(
+            query_parameters=[
+                bigquery.ScalarQueryParameter("cache_key", "STRING", cache_key)
+            ]
+        )
+        old_job_result = list(client.query(old_job_query, job_config=old_job_config).result())
+
+        if old_job_result:
+            old_job_id = old_job_result[0].job_id
+            print(f"[INFO] Found existing cache entry for cache_key {cache_key[:16]}... with job_id {old_job_id}. Deleting old data.")
+
+            # Delete old sections
+            delete_sections_query = f"""
+            DELETE FROM `{SECTIONS_TABLE}` WHERE job_id = @old_job_id
+            """
+            sections_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("old_job_id", "STRING", old_job_id)
+                ]
+            )
+            client.query(delete_sections_query, job_config=sections_config).result()
+
+            # Delete old results
+            delete_results_query = f"""
+            DELETE FROM `{RESULTS_TABLE}` WHERE job_id = @old_job_id
+            """
+            client.query(delete_results_query, job_config=sections_config).result()
+
+            # Delete old cache entry
+            delete_cache_query = f"""
+            DELETE FROM `{CACHE_TABLE}` WHERE cache_key = @cache_key
+            """
+            client.query(delete_cache_query, job_config=old_job_config).result()
+
+            print(f"[OK] Deleted old cache entry and associated data for job_id {old_job_id}")
+    except Exception as cleanup_error:
+        print(f"[WARNING] Error during cache cleanup (non-fatal): {cleanup_error}")
     
     # Extract sections
     sections = extract_sections(app_name, result_data)

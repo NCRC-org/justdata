@@ -57,10 +57,13 @@ def index():
     """Main page with the interactive map"""
     user_permissions = get_user_permissions()
     app_base_url = url_for('branchmapper.index').rstrip('/')
-    return render_template('branch_mapper_template.html', 
+    breadcrumb_items = [{'name': 'BranchMapper', 'url': '/branchmapper'}]
+    return render_template('branch_mapper_template.html',
                          version=__version__,
                          permissions=user_permissions,
-                         app_base_url=app_base_url)
+                         app_base_url=app_base_url,
+                         app_name='BranchMapper',
+                         breadcrumb_items=breadcrumb_items)
 
 
 @branchmapper_bp.route('/counties')
