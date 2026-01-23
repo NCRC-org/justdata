@@ -237,6 +237,7 @@ def analyze():
             'target_name': request.form.get('target_name', 'Bank B').strip(),
             'acquirer_assessment_areas': request.form.get('acquirer_assessment_areas', '[]'),
             'target_assessment_areas': request.form.get('target_assessment_areas', '[]'),
+            'use_national_data': request.form.get('use_national_data', '0'),
             'loan_purpose': request.form.get('loan_purpose', ''),
             'hmda_years': request.form.get('hmda_years', '2023,2024'),
             'sb_years': request.form.get('sb_years', '2023,2024'),
@@ -312,7 +313,10 @@ def _perform_analysis(job_id, form_data):
             print(f"Error parsing assessment area JSON: {e}")
             acquirer_aa_data = []
             target_aa_data = []
-        
+
+        # Check if using national level data
+        use_national_data = form_data.get('use_national_data', '0') == '1'
+
         update_progress(job_id, {'percent': 5, 'step': 'Parsing assessment areas and counties...', 'done': False, 'error': None})
         
         # Extract counties from assessment areas
@@ -523,25 +527,68 @@ def _perform_analysis(job_id, form_data):
         baseline_sb_years = [str(y) for y in range(baseline_sb_start_year, baseline_sb_end_year + 1)]
         
         update_progress(job_id, {'percent': 10, 'step': 'Mapping counties to GEOIDs...', 'done': False, 'error': None})
-        
+
         # Map counties to GEOIDs and enrich with metadata
         map_counties_to_geoids, enrich_counties_with_metadata = _import_local_module('county_mapper', 'map_counties_to_geoids', 'enrich_counties_with_metadata')
-        
-        acquirer_geoids, acquirer_unmapped = map_counties_to_geoids(acquirer_counties)
-        target_geoids, target_unmapped = map_counties_to_geoids(target_counties)
 
-        # Enrich counties with full metadata (state_name, county_name, geoid5, cbsa_code, cbsa_name)
-        acquirer_counties_enriched = enrich_counties_with_metadata(acquirer_counties, acquirer_geoids)
-        target_counties_enriched = enrich_counties_with_metadata(target_counties, target_geoids)
+        # If using national data, get all US counties from BigQuery
+        if use_national_data:
+            update_progress(job_id, {'percent': 10, 'step': 'Loading all US counties for national analysis...', 'done': False, 'error': None})
+            from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
+            client = get_bigquery_client(PROJECT_ID)
+
+            # Query all US county GEOIDs from the cbsa_to_county table
+            all_counties_query = """
+            SELECT DISTINCT CAST(geoid5 AS STRING) as geoid5
+            FROM `hdma1-242116.geo.cbsa_to_county`
+            WHERE geoid5 IS NOT NULL
+            ORDER BY geoid5
+            """
+            try:
+                results = execute_query(client, all_counties_query)
+                national_geoids = [row['geoid5'].zfill(5) for row in results] if results else []
+                print(f"[DEBUG] Loaded {len(national_geoids)} counties for national analysis")
+
+                # Use national geoids for both banks
+                acquirer_geoids = national_geoids
+                target_geoids = national_geoids
+                acquirer_unmapped = []
+                target_unmapped = []
+
+                # Create a single "National" assessment area
+                acquirer_counties_enriched = [{'county_name': 'All US Counties', 'state_name': 'National', 'geoid5': g} for g in national_geoids[:5]] + [{'county_name': f'...and {len(national_geoids) - 5} more', 'state_name': '', 'geoid5': ''}]
+                target_counties_enriched = acquirer_counties_enriched
+                acquirer_aa_with_names = [{'cbsa_name': 'National', 'counties': national_geoids}]
+                target_aa_with_names = [{'cbsa_name': 'National', 'counties': national_geoids}]
+
+            except Exception as e:
+                print(f"[ERROR] Failed to load national counties: {e}")
+                update_progress(job_id, {
+                    'percent': 0,
+                    'step': 'Error loading national data',
+                    'done': True,
+                    'error': f'Failed to load national counties: {str(e)}'
+                })
+                return
+        else:
+            acquirer_geoids, acquirer_unmapped = map_counties_to_geoids(acquirer_counties)
+            target_geoids, target_unmapped = map_counties_to_geoids(target_counties)
+
+            # Enrich counties with full metadata (state_name, county_name, geoid5, cbsa_code, cbsa_name)
+            acquirer_counties_enriched = enrich_counties_with_metadata(acquirer_counties, acquirer_geoids)
+            target_counties_enriched = enrich_counties_with_metadata(target_counties, target_geoids)
 
         # Combine all GEOIDs for HHI calculation
         all_geoids = list(set(acquirer_geoids + target_geoids))
         
-        if not acquirer_geoids and not target_geoids:
-            return jsonify({
-                'success': False,
+        if not acquirer_geoids and not target_geoids and not use_national_data:
+            update_progress(job_id, {
+                'percent': 0,
+                'step': 'Error: No valid counties found',
+                'done': True,
                 'error': 'No valid counties found in assessment areas. Please check your county names.'
-            }), 400
+            })
+            return
         
         update_progress(job_id, {'percent': 15, 'step': 'Querying HMDA data for Bank A...', 'done': False, 'error': None})
         
