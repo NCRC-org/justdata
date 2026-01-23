@@ -692,16 +692,18 @@ def build_sb_subject_query(
     """
     if not assessment_area_geoids:
         return f"""
-SELECT 
+SELECT
     CAST(NULL AS STRING) as year,
     CAST(NULL AS STRING) as cbsa_code,
     CAST(NULL AS STRING) as cbsa_name,
-    CAST(NULL AS INT64) as sb_loans_count,
+    CAST(NULL AS INT64) as sb_loans_total,
     CAST(NULL AS FLOAT64) as sb_loans_amount,
-    CAST(NULL AS INT64) as lmict_loans_count,
+    CAST(NULL AS INT64) as lmict_count,
     CAST(NULL AS FLOAT64) as lmict_loans_amount,
-    CAST(NULL AS INT64) as loans_rev_under_1m,
-    CAST(NULL AS FLOAT64) as amount_rev_under_1m
+    CAST(NULL AS INT64) as loans_rev_under_1m_count,
+    CAST(NULL AS FLOAT64) as amount_rev_under_1m,
+    CAST(NULL AS FLOAT64) as avg_sb_lmict_loan_amount,
+    CAST(NULL AS FLOAT64) as avg_loan_amt_rum_sb
 WHERE FALSE
 """
     
@@ -736,7 +738,8 @@ filtered_sb_data AS (
             END
         ) as cbsa_name,
         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
-        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) as sb_loans_amount,
+        -- SB amounts are stored in thousands of dollars, convert to actual dollars
+        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
         -- LMICT: income_group_total codes - 101/102 = Low/Moderate, 001-008 = LMI subcategories
         -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
         CASE
@@ -746,11 +749,11 @@ filtered_sb_data AS (
         END as lmict_loans_count,
         CASE
             WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m)
+            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
             ELSE 0
         END as lmict_loans_amount,
         d.numsbrev_under_1m as loans_rev_under_1m,
-        d.amtsbrev_under_1m as amount_rev_under_1m
+        d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
     FROM `hdma1-242116.sb.disclosure` d
     INNER JOIN `hdma1-242116.sb.lenders` l
         ON d.respondent_id = l.sb_resid
@@ -762,16 +765,19 @@ filtered_sb_data AS (
         AND c.cbsa_code IS NOT NULL  -- Only include counties that have a CBSA mapping (in assessment areas)
 ),
 aggregated_sb_metrics AS (
-    SELECT 
+    SELECT
         year,
         cbsa_code,
         MAX(cbsa_name) as cbsa_name,  -- Get CBSA name (should be same for all rows with same cbsa_code)
-        SUM(sb_loans_count) as sb_loans_count,
+        SUM(sb_loans_count) as sb_loans_total,
         SUM(sb_loans_amount) as sb_loans_amount,
-        SUM(lmict_loans_count) as lmict_loans_count,
+        SUM(lmict_loans_count) as lmict_count,
         SUM(lmict_loans_amount) as lmict_loans_amount,
-        SUM(loans_rev_under_1m) as loans_rev_under_1m,
-        SUM(amount_rev_under_1m) as amount_rev_under_1m
+        SUM(loans_rev_under_1m) as loans_rev_under_1m_count,
+        SUM(amount_rev_under_1m) as amount_rev_under_1m,
+        -- Calculate averages directly in the query
+        SAFE_DIVIDE(SUM(lmict_loans_amount), SUM(lmict_loans_count)) as avg_sb_lmict_loan_amount,
+        SAFE_DIVIDE(SUM(amount_rev_under_1m), SUM(loans_rev_under_1m)) as avg_loan_amt_rum_sb
     FROM filtered_sb_data
     GROUP BY year, cbsa_code
 )
@@ -1137,16 +1143,18 @@ def build_sb_peer_query(
     """
     if not assessment_area_geoids:
         return f"""
-SELECT 
+SELECT
     CAST(NULL AS STRING) as year,
     CAST(NULL AS STRING) as cbsa_code,
     CAST(NULL AS STRING) as cbsa_name,
-    CAST(NULL AS INT64) as sb_loans_count,
+    CAST(NULL AS INT64) as sb_loans_total,
     CAST(NULL AS FLOAT64) as sb_loans_amount,
-    CAST(NULL AS INT64) as lmict_loans_count,
+    CAST(NULL AS INT64) as lmict_count,
     CAST(NULL AS FLOAT64) as lmict_loans_amount,
-    CAST(NULL AS INT64) as loans_rev_under_1m,
-    CAST(NULL AS FLOAT64) as amount_rev_under_1m
+    CAST(NULL AS INT64) as loans_rev_under_1m_count,
+    CAST(NULL AS FLOAT64) as amount_rev_under_1m,
+    CAST(NULL AS FLOAT64) as avg_sb_lmict_loan_amount,
+    CAST(NULL AS FLOAT64) as avg_loan_amt_rum_sb
 WHERE FALSE
 """
     
@@ -1182,7 +1190,8 @@ filtered_sb_data AS (
         ) as cbsa_name,
         l.sb_resid,
         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
-        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) as sb_loans_amount,
+        -- SB amounts are stored in thousands of dollars, convert to actual dollars
+        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
         -- LMICT: income_group_total codes - 101/102 = Low/Moderate, 001-008 = LMI subcategories
         -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
         CASE
@@ -1192,11 +1201,11 @@ filtered_sb_data AS (
         END as lmict_loans_count,
         CASE
             WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m)
+            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
             ELSE 0
         END as lmict_loans_amount,
         d.numsbrev_under_1m as loans_rev_under_1m,
-        d.amtsbrev_under_1m as amount_rev_under_1m
+        d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
     FROM `hdma1-242116.sb.disclosure` d
     INNER JOIN `hdma1-242116.sb.lenders` l
         ON d.respondent_id = l.sb_resid
@@ -1246,16 +1255,19 @@ peer_sb AS (
         AND f.sb_resid = p.sb_resid
 ),
 aggregated_peer_sb_metrics AS (
-    SELECT 
+    SELECT
         year,
         cbsa_code,
         MAX(cbsa_name) as cbsa_name,  -- Get CBSA name (should be same for all rows with same cbsa_code)
-        SUM(sb_loans_count) as sb_loans_count,
+        SUM(sb_loans_count) as sb_loans_total,
         SUM(sb_loans_amount) as sb_loans_amount,
-        SUM(lmict_loans_count) as lmict_loans_count,
+        SUM(lmict_loans_count) as lmict_count,
         SUM(lmict_loans_amount) as lmict_loans_amount,
-        SUM(loans_rev_under_1m) as loans_rev_under_1m,
-        SUM(amount_rev_under_1m) as amount_rev_under_1m
+        SUM(loans_rev_under_1m) as loans_rev_under_1m_count,
+        SUM(amount_rev_under_1m) as amount_rev_under_1m,
+        -- Calculate averages directly in the query
+        SAFE_DIVIDE(SUM(lmict_loans_amount), SUM(lmict_loans_count)) as avg_sb_lmict_loan_amount,
+        SAFE_DIVIDE(SUM(amount_rev_under_1m), SUM(loans_rev_under_1m)) as avg_loan_amt_rum_sb
     FROM peer_sb
     GROUP BY year, cbsa_code
 )
