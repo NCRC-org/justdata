@@ -3,7 +3,7 @@ Access control system for JustData applications.
 Implements user type-based access control based on the access matrix.
 Integrates Firebase Authentication and Firestore for user management.
 
-User Types (8 tiers):
+User Types (9 tiers):
 - public_anonymous: No account, not logged in
 - public_registered: Google sign-in, basic access
 - just_economy_club: Free tier with limited features
@@ -11,6 +11,7 @@ User Types (8 tiers):
 - member_premium: Member Plus tier
 - non_member_org: Institutional/organizational access
 - staff: NCRC Staff (@ncrc.org domain)
+- senior_executive: NCRC Senior Executives (additional tools access)
 - admin: Administrator
 
 Access Levels:
@@ -41,7 +42,13 @@ ADMIN_EMAILS = [
     'jedlebi@ncrc.org'
 ]
 
-# User types matching the 8-tier system
+# Senior Executive users (above staff, below admin)
+SENIOR_EXECUTIVE_EMAILS = [
+    # Add senior executive emails here
+    # 'executive@ncrc.org',
+]
+
+# User types matching the 9-tier system
 UserType = Literal[
     'public_anonymous',
     'public_registered',
@@ -50,6 +57,7 @@ UserType = Literal[
     'member_premium',
     'non_member_org',
     'staff',
+    'senior_executive',
     'admin'
 ]
 
@@ -65,6 +73,7 @@ VALID_USER_TYPES = [
     'member_premium',
     'non_member_org',
     'staff',
+    'senior_executive',
     'admin'
 ]
 
@@ -82,6 +91,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'branchseeker': {
@@ -92,6 +102,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'branchsight': {
@@ -102,6 +113,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'bizsight': {
@@ -112,6 +124,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'commentmaker': {
@@ -122,6 +135,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'justpolicy': {
@@ -132,6 +146,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'lenderprofile': {
@@ -142,6 +157,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'mergermeter': {
@@ -152,6 +168,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'electwatch': {
@@ -162,6 +179,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
 
@@ -176,6 +194,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'dataexplorer': {
@@ -186,6 +205,7 @@ ACCESS_MATRIX = {
         'member_premium': 'full',
         'non_member_org': 'full',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
 
@@ -200,6 +220,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'admin': {
@@ -210,6 +231,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'hidden',
+        'senior_executive': 'hidden',
         'admin': 'full'
     },
     'administration': {
@@ -220,6 +242,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'hidden',
+        'senior_executive': 'hidden',
         'admin': 'full'
     },
 
@@ -234,6 +257,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     },
     'memberview': {
@@ -244,6 +268,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'full',
+        'senior_executive': 'full',
         'admin': 'full'
     }
 }
@@ -310,6 +335,17 @@ FEATURE_PERMISSIONS = {
         'internal_tools': True,
         'description': 'NCRC Staff - full access to all features'
     },
+    'senior_executive': {
+        'geographic_limit': 'unlimited',
+        'max_counties': None,
+        'can_export': True,
+        'export_formats': ['excel', 'pdf', 'powerpoint', 'csv', 'json'],
+        'ai_reports': True,
+        'dataexplorer_enhanced': True,
+        'internal_tools': True,
+        'executive_tools': True,
+        'description': 'NCRC Senior Executive - staff access plus executive-only tools'
+    },
     'admin': {
         'geographic_limit': 'unlimited',
         'max_counties': None,
@@ -318,6 +354,7 @@ FEATURE_PERMISSIONS = {
         'ai_reports': True,
         'dataexplorer_enhanced': True,
         'internal_tools': True,
+        'executive_tools': True,
         'admin_access': True,
         'description': 'Administrator - full access including administration'
     }
@@ -332,6 +369,7 @@ TIER_PRICING = {
     'member_premium': {'price_range': (500, 750), 'billing': 'yearly', 'label': 'Member Premium', 'addon': True},
     'non_member_org': {'price_range': (5000, 15000), 'billing': 'yearly', 'label': 'Institutional'},
     'staff': {'price': 0, 'billing': 'free', 'label': 'Staff', 'internal': True},
+    'senior_executive': {'price': 0, 'billing': 'free', 'label': 'Senior Executive', 'internal': True},
     'admin': {'price': 0, 'billing': 'free', 'label': 'Admin', 'internal': True}
 }
 
@@ -558,6 +596,10 @@ def determine_user_type(email: str, email_verified: bool = False,
     if email_lower in [e.lower() for e in ADMIN_EMAILS]:
         return 'admin'
 
+    # Check senior executive list
+    if email_lower in [e.lower() for e in SENIOR_EXECUTIVE_EMAILS]:
+        return 'senior_executive'
+
     # Check NCRC domain
     if email_lower.endswith('@ncrc.org'):
         # Verified NCRC emails get staff access
@@ -568,7 +610,7 @@ def determine_user_type(email: str, email_verified: bool = False,
 
     # If current type is set by admin, don't downgrade
     if current_type and current_type in ['member', 'member_premium', 'non_member_org',
-                                          'just_economy_club', 'staff', 'admin']:
+                                          'just_economy_club', 'staff', 'senior_executive', 'admin']:
         return current_type
 
     # Default to public_registered for authenticated users
@@ -765,7 +807,7 @@ def admin_required(f):
 
 
 def staff_required(f):
-    """Decorator to require staff or admin user type."""
+    """Decorator to require staff, senior_executive, or admin user type."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not is_authenticated():
@@ -777,11 +819,37 @@ def staff_required(f):
             return redirect(url_for('landing'))
 
         user_type = get_user_type()
-        if user_type not in ('staff', 'admin'):
+        if user_type not in ('staff', 'senior_executive', 'admin'):
             if request.is_json or request.path.startswith('/api/'):
                 return jsonify({
                     'error': 'Staff access required',
                     'code': 'staff_required',
+                    'user_type': user_type
+                }), 403
+            return redirect(url_for('landing'))
+
+        return f(*args, **kwargs)
+    return decorated_function
+
+
+def executive_required(f):
+    """Decorator to require senior_executive or admin user type."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_authenticated():
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({
+                    'error': 'Authentication required',
+                    'code': 'auth_required'
+                }), 401
+            return redirect(url_for('landing'))
+
+        user_type = get_user_type()
+        if user_type not in ('senior_executive', 'admin'):
+            if request.is_json or request.path.startswith('/api/'):
+                return jsonify({
+                    'error': 'Executive access required',
+                    'code': 'executive_required',
                     'user_type': user_type
                 }), 403
             return redirect(url_for('landing'))

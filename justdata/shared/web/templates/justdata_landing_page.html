@@ -14,24 +14,50 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+
     <style>
-        /* NCRC Brand Colors - From NCRC Brand Guidelines V19b */
+        /* ProPublica-Inspired Design - Clean, Professional, Minimal */
         :root {
-            --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC blue */
-            --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
-            --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
-            --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
-            --ncrc-justdata-blue: #1a8fc9;      /* JustData Blue - primary brand color */
-            --ncrc-dark-blue: #1a8fc9;          /* Header blue (using JustData Blue) */
-            --ncrc-light-blue: #E6F2FF;         /* Light blue background */
-            --ncrc-gold: #ffc23a;               /* Golden Yellow */
-            --ncrc-purple: #552d87;             /* Deep Purple */
-            --ncrc-gray: #818390;               /* Medium Gray */
+            /* Colors - ProPublica Style */
+            --color-header: #1E3D5C;           /* Navy header bar */
+            --color-primary: #0077B6;          /* Primary accent - Launch buttons, links */
+            --color-primary-hover: #005a8c;    /* Primary hover state */
+            --color-text: #1a1a1a;             /* Main text color */
+            --color-text-secondary: #666666;  /* Secondary text */
+            --color-text-muted: #999999;       /* Muted text */
+            --color-background: #f8f8f8;       /* Page background */
+            --color-card: #ffffff;             /* Card background */
+            --color-border: #e0e0e0;           /* Card borders */
+            --color-locked-bg: #f5f5f5;        /* Locked card background */
+
+            /* Legacy variables for compatibility */
+            --ncrc-primary-blue: #0077B6;
+            --ncrc-secondary-blue: #005a8c;
+            --ncrc-dark-blue: #1E3D5C;
+            --ncrc-light-blue: #E6F2FF;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray: #666666;
             --ncrc-white: #FFFFFF;
             --ncrc-black: #000000;
-            --ncrc-gray-light: #F5F5F5;
-            --ncrc-gray-dark: #333333;
+            --ncrc-gray-light: #f8f8f8;
+            --ncrc-gray-dark: #1a1a1a;
+
+            /* Typography */
+            --font-serif: Georgia, "Times New Roman", serif;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+            /* Spacing */
+            --spacing-xs: 8px;
+            --spacing-sm: 12px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 48px;
+
+            /* Border radius */
+            --radius-sm: 4px;
+
+            /* Shadows */
+            --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
         /* Reset and Base Styles */
@@ -42,38 +68,31 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--ncrc-gray-light);
+            font-family: var(--font-sans);
+            background: var(--color-background);
             min-height: 100vh;
-            color: var(--ncrc-gray-dark);
+            color: var(--color-text);
             line-height: 1.6;
             margin: 0;
             padding-top: 0;
         }
 
         .container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            flex-direction: row;
-            flex-wrap: nowrap;
-            gap: 30px;
-            align-items: flex-start;
+            padding: 0 var(--spacing-lg);
         }
 
         .content-wrapper {
-            flex: 1;
-            min-width: 0;
+            width: 100%;
         }
 
-        /* Header */
+        /* Header - Simplified ProPublica Style */
         .header {
-            background: var(--ncrc-dark-blue);
-            text-align: left;
-            padding: 15px 20px;
+            background: var(--color-header);
+            padding: 0 var(--spacing-lg);
             color: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
 
         .header-content {
@@ -85,257 +104,379 @@
         .header-layout {
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            gap: 30px;
+            justify-content: space-between;
+            height: 64px;
             width: 100%;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            justify-content: flex-start;
-            flex-shrink: 0;
+            gap: var(--spacing-sm);
+            text-decoration: none;
+            color: white;
         }
 
-        .header-title-section {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            text-align: left;
+        .logo:hover {
+            opacity: 0.9;
         }
 
-        .header-tagline {
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            flex-shrink: 0;
-        }
-
-        .header-title-section h1 {
-            font-size: 2.5rem;
+        /* Logo text styling */
+        .logo-text {
+            font-family: var(--font-serif);
+            font-size: 1.5rem;
             font-weight: 700;
             color: white;
-            margin: 0;
+            letter-spacing: -0.5px;
         }
 
-        .just-data-subtitle {
-            font-size: 1.2rem;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.95);
-            margin: 10px 0 0 0;
-            text-align: center;
+        .logo img {
+            height: 40px;
+            width: auto;
         }
 
-        .tagline-box {
-            background: white;
-            padding: 12px 16px;
-            border-radius: 8px;
-            height: 90px;
-            width: 256px;
+        /* User Avatar Dropdown */
+        .user-avatar-dropdown {
+            position: relative;
+        }
+
+        .user-avatar-btn {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            background: transparent;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: var(--radius-sm);
+            transition: background 0.2s ease;
+        }
+
+        .user-avatar-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--color-primary);
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .header-tagline p {
-            font-size: 1rem;
-            font-weight: 500;
-            color: #000000;
-            margin: 0;
-            font-style: normal;
-            white-space: normal;
-            text-align: center;
-            line-height: 1.3;
-        }
-
-        .header-tagline p em {
-            font-style: italic;
-            color: var(--ncrc-pink);
-        }
-
-        /* User Type Selector */
-        .user-type-selector {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            z-index: 100;
-        }
-
-        .user-type-selector label {
-            color: white;
-            font-size: 0.85rem;
-            margin-right: 8px;
-            font-weight: 500;
-        }
-
-        .user-type-selector select {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 6px;
-            padding: 8px 12px;
-            font-size: 0.9rem;
             font-weight: 600;
+            font-size: 14px;
+        }
+
+        .user-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: white;
+            border-radius: var(--radius-sm);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            padding: var(--spacing-xs) 0;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-dropdown-menu.active {
+            display: block;
+        }
+
+        .user-dropdown-header {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .user-dropdown-name {
+            font-weight: 600;
+            color: var(--color-text);
+            font-size: 14px;
+        }
+
+        .user-dropdown-email {
+            font-size: 12px;
+            color: var(--color-text-muted);
+        }
+
+        .user-dropdown-role {
+            font-size: 11px;
+            color: var(--color-primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .user-dropdown-item {
+            display: block;
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: none;
+            border: none;
+            text-align: left;
+            color: var(--color-text);
+            font-size: 14px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            text-decoration: none;
+            transition: background 0.2s ease;
         }
 
-        .user-type-selector select:hover {
-            background: rgba(255, 255, 255, 0.3);
-            border-color: rgba(255, 255, 255, 0.5);
+        .user-dropdown-item:hover {
+            background: var(--color-background);
         }
 
-        .user-type-selector select:focus {
-            outline: 2px solid var(--ncrc-gold);
-            outline-offset: 2px;
+        .user-dropdown-item i {
+            width: 20px;
+            margin-right: var(--spacing-xs);
+            color: var(--color-text-secondary);
         }
 
-        .user-type-selector select option {
-            background: var(--ncrc-dark-blue);
-            color: white;
+        /* Welcome Section */
+        .welcome-section {
+            padding: var(--spacing-xl) 0 var(--spacing-lg);
+        }
+
+        .welcome-greeting {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            font-weight: 400;
+            color: var(--color-text);
+            margin: 0 0 var(--spacing-xs) 0;
+        }
+
+        .welcome-subtext {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin: 0;
         }
 
         /* Main Content */
         .main-content {
-            padding: 20px 0 60px;
+            padding: 0 0 var(--spacing-xl);
+        }
+
+        /* Category Sections */
+        .category-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .category-header {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-xs);
+            border-bottom: 2px solid var(--color-header);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .category-note {
+            font-size: 11px;
+            color: var(--color-text-muted);
+            font-weight: normal;
+            text-transform: none;
+            letter-spacing: normal;
         }
 
         .apps-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 25px;
-            margin-top: 20px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-lg);
         }
 
+        @media (max-width: 1200px) {
+            .apps-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 900px) {
+            .apps-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .apps-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* App Cards - ProPublica Style */
         .app-card {
-            background: white;
-            border-radius: 12px;
-            padding: 25px 25px 70px 25px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            border: 2px solid transparent;
+            background: var(--color-card);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-lg);
+            transition: box-shadow 0.2s ease;
             position: relative;
-            overflow: hidden;
-            cursor: pointer; /* Cards are clickable to show info */
-            min-height: 200px;
-        }
-
-        /* Buttons are always clickable */
-        .app-card-launch-btn {
-            cursor: pointer;
-        }
-
-        .app-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: var(--ncrc-primary-blue);
-            transform: scaleX(0);
-            transform-origin: left;
-            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 180px;
         }
 
         .app-card:hover {
-            transform: translateY(-6px) scale(1.02);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.2);
-            border-color: var(--ncrc-primary-blue);
+            box-shadow: var(--shadow-card-hover);
         }
 
-        .app-card:hover::before {
-            transform: scaleX(1);
-        }
-
-        .app-card-header {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 15px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--ncrc-light-blue);
-        }
-
-        .app-card-icon {
-            font-size: 2.5rem;
-            width: 60px;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            flex-shrink: 0;
-        }
-
+        /* App Card Title - Serif font */
         .app-card-title {
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--ncrc-primary-blue);
-            margin: 0;
+            font-family: var(--font-serif);
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--color-text);
+            margin: 0 0 var(--spacing-sm) 0;
         }
 
         .app-card-description {
-            color: var(--ncrc-gray);
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin: 0 0 20px 0;
-            min-height: 3em;
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            line-height: 1.6;
+            margin: 0;
+            flex-grow: 1;
+        }
+
+        .app-card-buttons {
+            margin-top: var(--spacing-lg);
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .app-card-launch-btn {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+
+        .app-card-launch-btn:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .app-card-launch-btn i {
+            font-size: 12px;
+        }
+
+        /* Locked App Cards */
+        .app-card.locked {
+            background: var(--color-locked-bg);
+        }
+
+        .app-card.locked .app-card-title {
+            color: var(--color-text-muted);
+        }
+
+        .app-card.locked .app-card-description {
+            color: #aaaaaa;
+        }
+
+        .app-card.locked .lock-icon {
+            position: absolute;
+            top: var(--spacing-md);
+            right: var(--spacing-md);
+            color: #cccccc;
+            font-size: 16px;
+        }
+
+        .app-card.locked .app-card-cta {
+            background: transparent;
+            color: var(--color-primary);
+            border: 1px solid var(--color-primary);
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            transition: all 0.2s ease;
+        }
+
+        .app-card.locked .app-card-cta:hover {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        /* Coming Soon Cards */
+        .app-card.coming-soon {
+            background: var(--color-locked-bg);
+        }
+
+        .app-card.coming-soon .app-card-title {
+            color: var(--color-text-muted);
+        }
+
+        .app-card.coming-soon .app-card-description {
+            color: #aaaaaa;
+        }
+
+        .app-card.coming-soon .app-card-launch-btn {
+            background: transparent;
+            color: var(--color-text-muted);
+            border: 1px solid var(--color-border);
+            cursor: default;
+        }
+
+        .app-card.coming-soon .app-card-launch-btn:hover {
+            background: transparent;
+        }
+
+        /* Legacy card header - simplified */
+        .app-card-header {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
         }
 
         .app-card-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: 600;
+            display: none;
             margin-top: 15px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             transition: all 0.3s ease;
         }
 
-        .app-card-buttons {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 10px;
-            z-index: 10;
+        /* Page Title */
+        .page-title {
+            margin-bottom: var(--spacing-lg);
         }
 
-        .app-card-launch-btn {
-            background: var(--ncrc-primary-blue);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
+        .page-title h2 {
+            font-family: var(--font-serif);
+            font-size: 24px;
+            font-weight: 400;
+            color: var(--color-text);
+            margin: 0 0 var(--spacing-xs) 0;
             display: flex;
             align-items: center;
-            gap: 8px;
-            border: none;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(85, 45, 135, 0.3);
-            transition: all 0.3s ease;
-            text-decoration: none;
+            gap: var(--spacing-sm);
         }
 
-        .app-card-launch-btn:hover {
-            background: var(--ncrc-secondary-blue);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(85, 45, 135, 0.4);
+        .page-title h2 i {
+            color: var(--color-primary);
         }
 
-        .app-card-launch-btn i {
-            font-size: 0.85rem;
-        }
-
-        .app-card:hover .app-card-status {
-            opacity: 0.7;
+        .page-title p {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin: 0;
         }
 
         /* Focus states for accessibility */
@@ -702,43 +843,59 @@
             margin: 4px 0 0 0;
         }
 
-        /* Footer */
+        /* Footer - ProPublica Style */
         .footer {
-            background: var(--ncrc-dark-blue);
+            background: var(--color-header);
             color: white;
-            padding: 40px 20px 20px;
-            margin-top: 60px;
+            padding: var(--spacing-lg);
+            margin-top: var(--spacing-xl);
+            text-align: center;
         }
 
         .footer-container {
             max-width: 1200px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 30px;
-            margin-bottom: 30px;
         }
 
-        .footer-col h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 15px;
+        .footer-content {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: var(--spacing-lg);
+            margin-top: var(--spacing-sm);
+        }
+
+        .footer-links a {
+            color: #8bb8ff;
+            text-decoration: none;
+            font-size: 13px;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
             color: white;
         }
 
-        .footer-col p {
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: rgba(255, 255, 255, 0.9);
-            margin: 5px 0;
+        /* Legacy footer columns - hidden in new design */
+        .footer-col {
+            display: none;
         }
 
         .footer-bottom {
-            text-align: center;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.2);
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: var(--spacing-sm);
+        }
+
+        .footer-bottom em {
+            color: #eb2f89;
+            font-style: italic;
         }
 
         /* User Types Button */
@@ -1125,44 +1282,92 @@
                 transform: none;
             }
         }
+
+        /* Slack Support Button */
+        .support-bar {
+            position: relative;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-xs) var(--spacing-lg);
+        }
+
+        .slack-support-btn {
+            position: absolute;
+            right: var(--spacing-lg);
+            top: var(--spacing-xs);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #4A154B;
+            color: white;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s ease, transform 0.2s ease;
+            z-index: 100;
+        }
+
+        .slack-support-btn:hover {
+            background: #611f69;
+            transform: translateY(-1px);
+        }
+
+        .slack-support-btn i {
+            font-size: 16px;
+        }
+
+        @media (max-width: 600px) {
+            .slack-support-btn {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+
+            .slack-support-btn span {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <!-- Skip to main content link -->
     <a href="#main-content" class="skip-link">Skip to main content</a>
     <!-- Header -->
-    <header class="header">
+    <header class="header" style="padding: 10px 20px;">
         <div class="header-content">
             <div class="header-layout" style="display: flex; justify-content: space-between; align-items: center;">
-                <!-- Left side: Admin Buttons (only visible to staff/admin) -->
-                <div id="adminButtonsContainer" style="display: none; flex-direction: column; align-items: stretch; gap: 6px; min-width: 160px;">
-                    <button class="header-btn" onclick="openUserTypesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; width: 100%; text-align: center;">
+                <!-- Logo - Left aligned -->
+                <a href="/" class="logo" style="display: flex; align-items: center; text-decoration: none;">
+                    <img src="/static/img/justdata-logo-white.png" alt="JustData" style="height: 48px; width: auto;" onerror="this.onerror=null; this.src='/static/img/justdata-logo.png';">
+                </a>
+
+                <!-- Executive/Admin Buttons (only visible to senior_executive and admin) -->
+                <div id="adminButtonsContainer" style="display: none; flex-direction: row; align-items: center; gap: 8px;">
+                    <button class="header-btn" onclick="openUserTypesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
                         <i class="fas fa-users-cog"></i>
                         <span>User Types</span>
                     </button>
-                    <button class="header-btn" onclick="openIncomeSourcesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 0.8rem; width: 100%; text-align: center;">
+                    <button class="header-btn" onclick="openIncomeSourcesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
                         <i class="fas fa-dollar-sign"></i>
                         <span>Income Sources</span>
                     </button>
-                    <!-- User type selector hidden - now determined by authentication -->
-                    <select id="userTypeSelect" onchange="switchUserType(this.value)" style="display: none;">
-                        <option value="public_anonymous" style="color: #333;">Guest</option>
-                        <option value="public_registered" style="color: #333;">Registered</option>
-                        <option value="just_economy_club" style="color: #333;">Just Economy Club</option>
-                        <option value="member" style="color: #333;">Member</option>
-                        <option value="member_premium" style="color: #333;">Member Premium</option>
-                        <option value="non_member_org" style="color: #333;">Institutional</option>
-                        <option value="staff" style="color: #333;">Staff</option>
-                        <option value="admin" style="color: #333;">Admin</option>
-                    </select>
                 </div>
-                <!-- Center: Logo (10% larger: 80px -> 88px) -->
-                <div class="header-title-section" style="display: flex; align-items: center; justify-content: center; flex: 1;">
-                    <a href="/" style="display: flex; align-items: center;">
-                        <img src="/static/img/justdata-logo.png" alt="JustData" style="max-height: 88px; width: auto;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                    </a>
-                    <h1 style="display: none;">JustData</h1>
-                </div>
+
+                <!-- Hidden user type selector -->
+                <select id="userTypeSelect" onchange="switchUserType(this.value)" style="display: none;">
+                    <option value="public_anonymous">Guest</option>
+                    <option value="public_registered">Registered</option>
+                    <option value="just_economy_club">Just Economy Club</option>
+                    <option value="member">Member</option>
+                    <option value="member_premium">Member Premium</option>
+                    <option value="non_member_org">Institutional</option>
+                    <option value="staff">Staff</option>
+                    <option value="senior_executive">Senior Executive</option>
+                    <option value="admin">Admin</option>
+                </select>
                 <!-- Right side: Auth & Hamburger Menu -->
                 <div style="display: flex; align-items: center; min-width: 280px; justify-content: flex-end; gap: 12px;">
                     <!-- User Info (shown when logged in) -->
@@ -1209,6 +1414,14 @@
 
         </div>
     </header>
+
+    <!-- Slack Support Button Bar -->
+    <div class="support-bar">
+        <a href="#" id="slackSupportBtn" class="slack-support-btn" title="Get support via Slack" onclick="openSlackSupport(event)">
+            <i class="fab fa-slack"></i>
+            <span>Get Support</span>
+        </a>
+    </div>
 
     <!-- Login Modal -->
     <div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100000; justify-content: center; align-items: center;">
@@ -1264,255 +1477,212 @@
 
     <div class="container">
         <div class="content-wrapper">
+            <!-- Welcome Section -->
+            <section class="welcome-section">
+                <h1 class="welcome-greeting" id="welcomeGreeting">Welcome back</h1>
+                <p class="welcome-subtext">Access your research and analysis tools below.</p>
+            </section>
+
             <main class="main-content" id="main-content" role="main">
-
-
-                <div class="page-title">
-                    <h2><i class="fas fa-th-large" aria-hidden="true"></i> Available Applications</h2>
-                    <p>Select an application to begin your data analysis</p>
-                </div>
-
-                <div class="apps-grid">
-                    <!-- LendSight Card -->
-                    <div class="app-card app-lendsight" data-app="lendsight" aria-label="LendSight - Mortgage lending analysis application" onclick="handleInfoClick('LendSight')">
-                        <div class="app-card-header">
+                <!-- LENDING ANALYSIS Category -->
+                <section class="category-section">
+                    <h2 class="category-header">Lending Analysis</h2>
+                    <div class="apps-grid">
+                        <!-- LendSight Card -->
+                        <div class="app-card" data-app="lendsight" onclick="handleInfoClick('LendSight')">
                             <h3 class="app-card-title">LendSight</h3>
+                            <p class="app-card-description">
+                                County-level mortgage lending analysis with disparity metrics and AI-generated narratives.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/lendsight" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
                         </div>
-                        <p class="app-card-description">
-                            Analyze mortgage lending patterns and disparities using HMDA data with demographic context.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/lendsight" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch LendSight">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
-                        </div>
-                    </div>
 
-                    <!-- BizSight Card -->
-                    <div class="app-card app-bizsight" data-app="bizsight" aria-label="BizSight - Small business lending analysis application" onclick="handleInfoClick('BizSight')">
-                        <div class="app-card-header">
+                        <!-- BizSight Card -->
+                        <div class="app-card" data-app="bizsight" onclick="handleInfoClick('BizSight')">
                             <h3 class="app-card-title">BizSight</h3>
+                            <p class="app-card-description">
+                                Small business lending patterns and CRA analysis across communities.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/bizsight" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
                         </div>
-                        <p class="app-card-description">
-                            Analyze small business lending patterns using CRA small business lending data.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/bizsight" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch BizSight">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
-                        </div>
-                    </div>
 
-                    <!-- BranchSeeker Card (BranchSight) -->
-                    <div class="app-card app-branchseeker" data-app="branchseeker" aria-label="BranchSeeker - Bank branch location analysis application" onclick="handleInfoClick('BranchSeeker')">
-                        <div class="app-card-header">
-                            <h3 class="app-card-title">BranchSight</h3>
-                        </div>
-                        <p class="app-card-description">
-                            Analyze bank branch locations and market concentration using FDIC Summary of Deposits data.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/branchsight" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch BranchSight">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- BranchMapper Card -->
-                    <div class="app-card app-branchmapper" data-app="branchmapper" aria-label="BranchMapper - Interactive branch mapping application" onclick="handleInfoClick('BranchMapper')">
-                        <div class="app-card-header">
-                            <h3 class="app-card-title">BranchMapper</h3>
-                        </div>
-                        <p class="app-card-description">
-                            Interactive map visualization of bank branch locations with demographic and lending context overlays.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/branchmapper" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch BranchMapper">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- MergerMeter Card -->
-                    <div class="app-card app-mergermeter" data-app="mergermeter" aria-label="MergerMeter - Bank merger impact analysis application" onclick="handleInfoClick('MergerMeter')">
-                        <div class="app-card-header">
-                            <h3 class="app-card-title">MergerMeter</h3>
-                        </div>
-                        <p class="app-card-description">
-                            Analyze proposed bank mergers and assess their impact on market concentration and community lending.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/mergermeter" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch MergerMeter">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- DataExplorer Card -->
-                    <div class="app-card app-dataexplorer" data-app="dataexplorer" aria-label="DataExplorer - Advanced data exploration and analysis application" onclick="handleInfoClick('DataExplorer')">
-                        <div class="app-card-header">
+                        <!-- DataExplorer Card -->
+                        <div class="app-card" data-app="dataexplorer" onclick="handleInfoClick('DataExplorer')">
                             <h3 class="app-card-title">DataExplorer</h3>
-                        </div>
-                        <p class="app-card-description">
-                            Advanced data exploration tool with custom filtering and comprehensive analysis across multiple data sources.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/dataexplorer" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch DataExplorer">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- LenderProfile Card -->
-                    <div class="app-card app-lenderprofile" data-app="lenderprofile" aria-label="LenderProfile - Comprehensive lender intelligence reporting platform" onclick="handleInfoClick('LenderProfile')">
-                        <div class="app-card-header">
-                            <h3 class="app-card-title">LenderProfile</h3>
-                        </div>
-                        <p class="app-card-description">
-                            Comprehensive lender intelligence reports combining corporate structure, financial performance, regulatory compliance, and strategic positioning.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/lenderprofile" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch LenderProfile">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
+                            <p class="app-card-description">
+                                Full HMDA dataset exploration with custom filtering and comprehensive analysis.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/dataexplorer" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
+                </section>
 
-                    <!-- ElectWatch Card -->
-                    <div class="app-card app-electwatch" data-app="electwatch" aria-label="ElectWatch - Congressional financial tracking application" onclick="handleInfoClick('ElectWatch')">
-                        <div class="app-card-header">
+                <!-- BRANCH & MERGER Category -->
+                <section class="category-section">
+                    <h2 class="category-header">Branch & Merger</h2>
+                    <div class="apps-grid">
+                        <!-- BranchSight Card -->
+                        <div class="app-card" data-app="branchseeker" onclick="handleInfoClick('BranchSeeker')">
+                            <h3 class="app-card-title">BranchSight</h3>
+                            <p class="app-card-description">
+                                Bank branch location analysis and market concentration using FDIC data.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/branchsight" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- BranchMapper Card -->
+                        <div class="app-card" data-app="branchmapper" onclick="handleInfoClick('BranchMapper')">
+                            <h3 class="app-card-title">BranchMapper</h3>
+                            <p class="app-card-description">
+                                Interactive branch network mapping with demographic overlays.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/branchmapper" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- MergerMeter Card -->
+                        <div class="app-card" data-app="mergermeter" onclick="handleInfoClick('MergerMeter')">
+                            <h3 class="app-card-title">MergerMeter</h3>
+                            <p class="app-card-description">
+                                Bank merger impact analysis on market concentration and community lending.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/mergermeter" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- POLITICAL INFLUENCE Category -->
+                <section class="category-section">
+                    <h2 class="category-header">Political Influence</h2>
+                    <div class="apps-grid">
+                        <!-- ElectWatch Card -->
+                        <div class="app-card" data-app="electwatch" onclick="handleInfoClick('ElectWatch')">
                             <h3 class="app-card-title">ElectWatch</h3>
+                            <p class="app-card-description">
+                                Congressional financial relationships and voting records on financial legislation.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/electwatch" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
                         </div>
-                        <p class="app-card-description">
-                            Track congressional representatives' financial relationships with banks and their voting records on financial legislation.
-                        </p>
-                        <div class="app-card-buttons">
-                            <a href="/electwatch" class="app-card-launch-btn" onclick="event.stopPropagation()" aria-label="Launch ElectWatch">
-                                <i class="fas fa-external-link-alt"></i>
-                                <span>Launch</span>
-                            </a>
+
+                        <!-- LenderProfile Card -->
+                        <div class="app-card" data-app="lenderprofile" onclick="handleInfoClick('LenderProfile')">
+                            <h3 class="app-card-title">LenderProfile</h3>
+                            <p class="app-card-description">
+                                Comprehensive lender intelligence combining corporate structure, compliance, and market position.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/lenderprofile" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Coming Soon Section -->
-                <div style="margin-top: 60px; padding-top: 40px; border-top: 2px solid #e0e0e0;">
-                    <h2 style="font-size: 1.5rem; color: var(--ncrc-dark-blue); margin-bottom: 30px; text-align: center;">Coming Soon</h2>
+                </section>
+
+                <!-- TOOLS Category (Coming Soon) -->
+                <section class="category-section">
+                    <h2 class="category-header">Tools</h2>
                     <div class="apps-grid">
                         <!-- CommentMaker Card -->
-                        <div class="app-card app-commentmaker" data-app="commentmaker" aria-label="CommentMaker - Public comment generation application" onclick="handleInfoClick('CommentMaker')">
-                            <div class="app-card-header">
-                                <h3 class="app-card-title">CommentMaker</h3>
-                            </div>
+                        <div class="app-card coming-soon" data-app="commentmaker" onclick="handleInfoClick('CommentMaker')">
+                            <h3 class="app-card-title">CommentMaker</h3>
                             <p class="app-card-description">
-                                A free tool to help everyone write and submit public comments for federal rulemakings.
+                                Generate public comments for federal rulemakings with AI assistance.
                             </p>
                             <div class="app-card-buttons">
-                                <button class="app-card-launch-btn" onclick="event.stopPropagation(); alert('CommentMaker is coming soon! This tool will be available in a future release.');" aria-label="CommentMaker coming soon" style="opacity: 0.7; cursor: not-allowed;">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Coming Soon</span>
+                                <button class="app-card-launch-btn" onclick="event.stopPropagation();">
+                                    <i class="fas fa-clock"></i> Coming Soon
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ADMIN Category -->
+                <section class="category-section" id="adminSection" style="display: none;">
+                    <h2 class="category-header">Admin <span class="category-note">Staff & above</span></h2>
+                    <div class="apps-grid">
+                        <!-- Analytics Card - visible to staff, senior_executive, admin -->
+                        <div class="app-card" data-app="analytics" onclick="handleInfoClick('Analytics')">
+                            <h3 class="app-card-title">Analytics</h3>
+                            <p class="app-card-description">
+                                User activity monitoring and application usage dashboards.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/analytics" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
 
-                        <!-- JustPolicy Card -->
-                        <div class="app-card app-justpolicy" data-app="justpolicy" aria-label="JustPolicy - AI-driven policy discovery tool" onclick="handleInfoClick('JustPolicy')">
-                            <div class="app-card-header">
-                                <h3 class="app-card-title">JustPolicy</h3>
-                            </div>
+                        <!-- Administration Card - visible only to admin -->
+                        <div class="app-card" data-app="admin" id="administrationCard" onclick="window.location.href='/admin/users'">
+                            <h3 class="app-card-title">Administration</h3>
                             <p class="app-card-description">
-                                An AI-driven interactive tool that provides personalized policy overviews based on your organization's mission and service area.
+                                User management, accounts, and system integrations.
                             </p>
                             <div class="app-card-buttons">
-                                <button class="app-card-launch-btn" onclick="event.stopPropagation(); alert('JustPolicy is coming soon! This tool will be available in a future release.');" aria-label="JustPolicy coming soon" style="opacity: 0.7; cursor: not-allowed;">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Coming Soon</span>
-                                </button>
+                                <a href="/admin/users" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
-
-                        <!-- Analytics Card -->
-                        <div class="app-card app-analytics" data-app="analytics" aria-label="Analytics - User analytics and activity monitoring dashboard" onclick="handleInfoClick('Analytics')">
-                            <div class="app-card-header">
-                                <h3 class="app-card-title">Analytics</h3>
-                            </div>
-                            <p class="app-card-description">
-                                Monitor user activity and application usage with interactive analytics dashboards.
-                            </p>
-                            <div class="app-card-buttons">
-                                <button class="app-card-launch-btn" onclick="event.stopPropagation(); alert('Analytics is coming soon! This tool will be available in a future release.');" aria-label="Analytics coming soon" style="opacity: 0.7; cursor: not-allowed;">
-                                    <i class="fas fa-clock"></i>
-                                    <span>Coming Soon</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Admin Card -->
-                        <div class="app-card app-admin" data-app="admin" aria-label="Administration - User management and system administration" onclick="window.location.href='/admin/users'">
-                            <div class="app-card-header">
-                                <h3 class="app-card-title">Administration</h3>
-                            </div>
-                            <p class="app-card-description">
-                                Manage JustData users, accounts, and system integrations.
-                            </p>
-                            <div class="app-card-buttons">
-                                <button class="app-card-launch-btn" onclick="event.stopPropagation(); window.location.href='/admin/users';" aria-label="Launch Administration">
-                                    <i class="fas fa-rocket"></i>
-                                    <span>Launch</span>
-                                </button>
-                            </div>
-                        </div>
-                </div>
+                    </div>
+                </section>
             </main>
         </div>
-
-
     </div>
 
     <!-- Footer -->
     <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-col">
-                <h4>JustData</h4>
-                <p>Comprehensive data analysis platform</p>
-                <p>National Community Reinvestment Coalition</p>
+        <div class="footer-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
+            <!-- Left side: Copyright and links -->
+            <div style="text-align: left;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <div style="display: flex; gap: 16px; font-size: 13px;">
+                    <a href="mailto:support@ncrc.org" style="color: #8bb8ff; text-decoration: none;">support@ncrc.org</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="/privacy" style="color: #8bb8ff; text-decoration: none;">Privacy</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="/terms" style="color: #8bb8ff; text-decoration: none;">Terms</a>
+                </div>
+                <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
+                    Created by Jason Richardson &amp; Jad El-Levy
+                </p>
             </div>
-            <div class="footer-col">
-                <h4>Applications</h4>
-                <p>BranchSeeker</p>
-                <p>LendSight</p>
-                <p>BranchMapper</p>
-                <p>DataExplorer</p>
-                <p>BizSight</p>
-                <p>CommentMaker</p>
-                <p>Analytics</p>
-                <p>Administration</p>
+            <!-- Right side: NCRC Logo -->
+            <div style="flex-shrink: 0;">
+                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; width: auto; opacity: 0.9;">
             </div>
-            <div class="footer-col">
-                <h4>Data Sources</h4>
-                <p>FDIC Summary of Deposits</p>
-                <p>HMDA Mortgage Data</p>
-                <p>HMDA Section 1071</p>
-                <p>U.S. Census Bureau</p>
-                <p>HubSpot CRM</p>
-            </div>
-            <div class="footer-col">
-                <h4>Powered By</h4>
-                <p>Google Cloud BigQuery</p>
-                <p>AI Analysis (Claude/GPT)</p>
-                <p>Flask Web Framework</p>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2025 JustData - National Community Reinvestment Coalition. All rights reserved.<br>
-            Data drives the <em>movement</em>
         </div>
     </footer>
 
@@ -1833,6 +2003,14 @@
             }
         });
 
+        // Slack Support Button
+        function openSlackSupport(event) {
+            event.preventDefault();
+            // Placeholder URL - will be replaced with actual Slack channel link
+            const slackChannelUrl = 'https://slack.com/app_redirect?channel=PLACEHOLDER';
+            window.open(slackChannelUrl, '_blank');
+        }
+
         // Login Modal Functions
         function openLoginModal() {
             document.getElementById('loginModal').style.display = 'flex';
@@ -1946,7 +2124,7 @@
             }
         }
 
-        // User Access Configuration (8 user types)
+        // User Access Configuration (9 user types)
         const appAccessConfig = {
             'lendsight': {
                 public_anonymous: 'locked',
@@ -1956,6 +2134,7 @@
                 member_premium: 'full',
                 non_member_org: 'full',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'branchseeker': {
@@ -1966,6 +2145,7 @@
                 member_premium: 'full',
                 non_member_org: 'full',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'branchmapper': {
@@ -1976,6 +2156,7 @@
                 member_premium: 'full',
                 non_member_org: 'full',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'bizsight': {
@@ -1986,6 +2167,7 @@
                 member_premium: 'full',
                 non_member_org: 'full',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'commentmaker': {
@@ -1996,6 +2178,7 @@
                 member_premium: 'full',
                 non_member_org: 'full',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'justpolicy': {
@@ -2006,6 +2189,7 @@
                 member_premium: 'full',
                 non_member_org: 'full',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'dataexplorer': {
@@ -2016,6 +2200,7 @@
                 member_premium: 'full',
                 non_member_org: 'full',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'mergermeter': {
@@ -2026,6 +2211,7 @@
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'lenderprofile': {
@@ -2036,6 +2222,7 @@
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'analytics': {
@@ -2046,6 +2233,7 @@
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             },
             'admin': {
@@ -2056,6 +2244,7 @@
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
                 staff: 'hidden',
+                senior_executive: 'hidden',
                 admin: 'full'
             },
             'electwatch': {
@@ -2066,6 +2255,7 @@
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
                 staff: 'full',
+                senior_executive: 'full',
                 admin: 'full'
             }
         };
@@ -2082,7 +2272,7 @@
             'lenderprofile': '/lenderprofile'
         };
 
-        // Feature Permissions by User Type (8 types)
+        // Feature Permissions by User Type (9 types)
         const featurePermissions = {
             'public_anonymous': {
                 geographicLimit: 'none',
@@ -2126,10 +2316,19 @@
                 exportFormats: ['excel', 'powerpoint', 'pdf', 'csv', 'json'],
                 price: 'Included with employment'
             },
+            'senior_executive': {
+                geographicLimit: 'unlimited',
+                canExport: true,
+                exportFormats: ['excel', 'powerpoint', 'pdf', 'csv', 'json'],
+                executiveTools: true,
+                price: 'N/A (internal)'
+            },
             'admin': {
                 geographicLimit: 'unlimited',
                 canExport: true,
                 exportFormats: ['excel', 'powerpoint', 'pdf', 'csv', 'json'],
+                executiveTools: true,
+                adminAccess: true,
                 price: 'N/A (internal)'
             }
         };
@@ -2250,10 +2449,10 @@
                 }
             });
 
-            // Show/hide admin buttons based on user type (only staff and admin can see)
+            // Show/hide admin buttons based on user type (only senior_executive and admin can see)
             const adminButtonsContainer = document.getElementById('adminButtonsContainer');
             if (adminButtonsContainer) {
-                if (userType === 'admin' || userType === 'staff') {
+                if (userType === 'admin' || userType === 'senior_executive') {
                     adminButtonsContainer.style.display = 'flex';
                 } else {
                     adminButtonsContainer.style.display = 'none';
@@ -2948,20 +3147,59 @@
             // Check auth status and set user type accordingly
             let userType = 'public_anonymous';  // Default for non-authenticated users
 
+            let authData = null;
             try {
                 const response = await fetch('/api/auth/status');
-                const data = await response.json();
-                if (data.user_type) {
-                    userType = data.user_type;
+                authData = await response.json();
+                if (authData.user_type) {
+                    userType = authData.user_type;
                 }
-                console.log('User type:', userType, '| Authenticated:', data.authenticated);
+                console.log('User type:', userType, '| Authenticated:', authData.authenticated);
             } catch (error) {
                 console.log('Auth check failed, using public_anonymous:', error);
             }
 
             document.getElementById('userTypeSelect').value = userType;
             switchUserType(userType);
-            
+
+            // Update welcome greeting with user's name
+            const welcomeGreeting = document.getElementById('welcomeGreeting');
+            if (welcomeGreeting && authData) {
+                if (authData.authenticated && authData.user && authData.user.name) {
+                    // Extract first name from display name
+                    const firstName = authData.user.name.split(' ')[0];
+                    welcomeGreeting.textContent = 'Welcome back, ' + firstName;
+                } else if (authData.authenticated && authData.user && authData.user.email) {
+                    // Use email username as fallback
+                    const emailName = authData.user.email.split('@')[0];
+                    welcomeGreeting.textContent = 'Welcome back, ' + emailName;
+                } else if (authData.authenticated) {
+                    welcomeGreeting.textContent = 'Welcome back';
+                } else {
+                    welcomeGreeting.textContent = 'Welcome to JustData';
+                }
+            }
+
+            // Show admin section for staff/senior_executive/admin users
+            const adminSection = document.getElementById('adminSection');
+            if (adminSection) {
+                if (userType === 'staff' || userType === 'senior_executive' || userType === 'admin') {
+                    adminSection.style.display = 'block';
+                } else {
+                    adminSection.style.display = 'none';
+                }
+            }
+
+            // Hide Administration card for non-admin users (only admin can see it)
+            const administrationCard = document.getElementById('administrationCard');
+            if (administrationCard) {
+                if (userType === 'admin') {
+                    administrationCard.style.display = 'flex';
+                } else {
+                    administrationCard.style.display = 'none';
+                }
+            }
+
             const cards = document.querySelectorAll('.app-card');
             
             // Add visual feedback for keyboard users
