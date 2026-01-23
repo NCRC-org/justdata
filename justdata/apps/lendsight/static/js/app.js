@@ -11,11 +11,12 @@ console.log('%c========================================', 'color: blue; font-siz
 window.APP_JS_VERSION = '2025-12-06-V2-FILE-VERSIONED';
 console.log('window.APP_JS_VERSION =', window.APP_JS_VERSION);
 
-// DOM Elements - will be initialized when DOM is ready
-let analysisForm, submitBtn, progressSection, resultsSection, errorSection, progressText, downloadBtn, errorMessage;
+// DOM Elements - declared in shared app.js, reused here
+// Note: analysisForm, submitBtn, progressSection, resultsSection, errorSection,
+// progressText, downloadBtn, errorMessage are declared in shared/web/static/js/app.js
 
-// Real-time progress tracking
-let currentProgress = 0;
+// Real-time progress tracking - declared in shared app.js
+// Note: currentProgress is declared in shared/web/static/js/app.js
 
 // Initialize DOM elements
 function initDOMElements() {
