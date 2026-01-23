@@ -253,6 +253,53 @@
             margin: 0;
         }
 
+        /* Platform Stats Bar */
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-lg);
+            padding: var(--spacing-lg) 0;
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--color-border);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-family: var(--font-serif);
+            font-size: 42px;
+            font-weight: 700;
+            color: var(--color-text);
+            line-height: 1.1;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-family: var(--font-sans);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        @media (max-width: 900px) {
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 500px) {
+            .stats-bar {
+                grid-template-columns: 1fr;
+            }
+            .stat-number {
+                font-size: 36px;
+            }
+        }
+
         /* Main Content */
         .main-content {
             padding: 0 0 var(--spacing-xl);
@@ -1481,6 +1528,26 @@
             <section class="welcome-section">
                 <h1 class="welcome-greeting" id="welcomeGreeting">Welcome back</h1>
                 <p class="welcome-subtext">Access your research and analysis tools below.</p>
+            </section>
+
+            <!-- Platform Stats Bar -->
+            <section class="stats-bar" id="platformStats">
+                <div class="stat-item">
+                    <div class="stat-number">12M+</div>
+                    <div class="stat-label">Mortgage Records Analyzed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">5,000+</div>
+                    <div class="stat-label">Lenders Tracked</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="reportsGenerated">--</div>
+                    <div class="stat-label">Reports Generated</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="activeResearchers">--</div>
+                    <div class="stat-label">Active Researchers</div>
+                </div>
             </section>
 
             <main class="main-content" id="main-content" role="main">
@@ -3178,6 +3245,24 @@
                 } else {
                     welcomeGreeting.textContent = 'Welcome to JustData';
                 }
+            }
+
+            // Fetch and display platform stats
+            try {
+                const statsResponse = await fetch('/api/platform-stats');
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    const reportsEl = document.getElementById('reportsGenerated');
+                    const researchersEl = document.getElementById('activeResearchers');
+                    if (reportsEl && stats.reports_generated !== undefined) {
+                        reportsEl.textContent = stats.reports_generated.toLocaleString();
+                    }
+                    if (researchersEl && stats.active_researchers !== undefined) {
+                        researchersEl.textContent = stats.active_researchers.toLocaleString();
+                    }
+                }
+            } catch (error) {
+                console.log('Stats fetch failed:', error);
             }
 
             // Show admin section for staff/senior_executive/admin users
