@@ -679,8 +679,8 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         lmi_tract_amt_pct = 0.0
         if actual_fields['income_group_total'] in lender_df.columns:
             income_group_str = lender_df[actual_fields['income_group_total']].astype(str)
-            # LMI codes: 101, 102, and single digits 1-8 (consistent with MergerMeter)
-            lmi_codes = ['101', '102', '1', '2', '3', '4', '5', '6', '7', '8']
+            # LMI codes: 101, 102, and zero-padded 001-008 (as stored in database)
+            lmi_codes = ['101', '102', '001', '002', '003', '004', '005', '006', '007', '008']
             lmi_mask = income_group_str.isin(lmi_codes)
 
             # Calculate LMI loans and amounts
@@ -721,11 +721,11 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         if actual_fields['income_group_total'] in lender_df.columns:
             income_group_str = lender_df[actual_fields['income_group_total']].astype(str)
 
-            # Low Income: 101 and single digits 1-5
-            low_mask = income_group_str.isin(['101', '1', '2', '3', '4', '5'])
+            # Low Income: 101 and zero-padded 001-005 (as stored in database)
+            low_mask = income_group_str.isin(['101', '001', '002', '003', '004', '005'])
 
-            # Moderate Income: 102 and single digits 6-8
-            moderate_mask = income_group_str.isin(['102', '6', '7', '8'])
+            # Moderate Income: 102 and zero-padded 006-008 (as stored in database)
+            moderate_mask = income_group_str.isin(['102', '006', '007', '008'])
 
             # Middle Income: 103
             middle_mask = income_group_str.isin(['103'])

@@ -194,24 +194,24 @@ class BigQueryClient:
             NULL as tract_other_race_percent,
             NULL as tract_minority_population_percent,
             -- Income category derived from income_group_total
-            -- Use explicit IN checks for known values (consistent with MergerMeter)
+            -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
             CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 'Low Income'
-                WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 'Moderate Income'
+                WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 'Low Income'
+                WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 'Moderate Income'
                 WHEN CAST(a.income_group_total AS STRING) = '103' THEN 'Middle Income'
                 WHEN CAST(a.income_group_total AS STRING) = '104' THEN 'Upper Income'
                 ELSE 'Unknown'
             END as income_category,
             -- LMI tract = Low Income or Moderate Income
-            -- Includes: 101, 102, 1, 2, 3, 4, 5, 6, 7, 8 (consistent with MergerMeter)
+            -- Includes: 101, 102, 001-008 (zero-padded in database)
             CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
+                WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
                 ELSE 0
             END as is_lmi_tract,
             -- Income level as numeric (1=Low, 2=Moderate, 3=Middle, 4=Upper)
             CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
-                WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
+                WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
                 WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
                 WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                 ELSE 0
@@ -290,18 +290,18 @@ class BigQueryClient:
                 CAST(a.geoid5 AS STRING) as tract_geoid,
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
                 COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total using explicit IN checks
-                -- 1=Low, 2=Moderate, 3=Middle, 4=Upper (consistent with MergerMeter)
+                -- Derive income level from income_group_total
+                -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
                 CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
-                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
                     WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
                     WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                     ELSE 0
                 END as income_level,
                 -- LMI flag for direct use
                 CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
                     ELSE 0
                 END as is_lmi
             FROM `{self.project_id}.sb.disclosure` a
@@ -476,18 +476,18 @@ class BigQueryClient:
                 a.*,
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
                 COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total using explicit IN checks
-                -- 1=Low, 2=Moderate, 3=Middle, 4=Upper (consistent with MergerMeter)
+                -- Derive income level from income_group_total
+                -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
                 CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
-                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
                     WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
                     WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                     ELSE 0
                 END as income_level,
                 -- LMI flag for direct use
                 CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
                     ELSE 0
                 END as is_lmi
             FROM `{self.project_id}.sb.disclosure` a
@@ -540,18 +540,18 @@ class BigQueryClient:
                 a.*,
                 COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
                 COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total using explicit IN checks
-                -- 1=Low, 2=Moderate, 3=Middle, 4=Upper (consistent with MergerMeter)
+                -- Derive income level from income_group_total
+                -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
                 CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '1', '2', '3', '4', '5') THEN 1
-                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '6', '7', '8') THEN 2
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
                     WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
                     WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                     ELSE 0
                 END as income_level,
                 -- LMI flag for direct use
                 CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8') THEN 1
+                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
                     ELSE 0
                 END as is_lmi
             FROM `{self.project_id}.sb.disclosure` a

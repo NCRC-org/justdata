@@ -315,7 +315,8 @@ def build_hmda_peer_query(
     occupancy_type: str = '1',
     total_units: str = '1-4',
     construction_method: str = '1',
-    not_reverse: str = '1'
+    not_reverse: str = '1',
+    peer_group: str = 'volume_50_200'
 ) -> str:
     """
     Build peer HMDA query.
@@ -431,7 +432,32 @@ WHERE FALSE
                 reverse_filter = "AND h.reverse_mortgage != '1'"
             elif not_reverse == '2':
                 reverse_filter = "AND h.reverse_mortgage = '1'"
-    
+
+    # Build peer group filter based on selection
+    # Note: HMDA LAR data doesn't include agency_code directly.
+    # Peer filtering by institution type would require joining with institution metadata.
+    # For now, we only support volume-based filtering and "all lenders".
+    if peer_group == 'all_banks':
+        # All lenders (cannot filter by agency type without institution metadata join)
+        peer_type_filter = ""
+        volume_filter = ""  # No volume filter
+    elif peer_group == 'all_credit_unions':
+        # All lenders (cannot filter by agency type without institution metadata join)
+        peer_type_filter = ""
+        volume_filter = ""  # No volume filter
+    elif peer_group == 'all_mortgage_companies':
+        # All lenders (cannot filter by agency type without institution metadata join)
+        peer_type_filter = ""
+        volume_filter = ""  # No volume filter
+    elif peer_group == 'all_lenders':
+        # All lenders - no agency or volume filter
+        peer_type_filter = ""
+        volume_filter = ""
+    else:
+        # Default: volume_50_200 - 50%-200% of subject volume
+        peer_type_filter = ""
+        volume_filter = "AND al.lender_vol >= sv.subject_vol * 0.5 AND al.lender_vol <= sv.subject_vol * 2.0"
+
     query = f"""
 WITH cbsa_crosswalk AS (
     SELECT
@@ -449,12 +475,12 @@ filtered_hmda AS (
         COALESCE(c.cbsa_code, '99999') as cbsa_code,
         h.lei,
         h.loan_amount,
-        CASE 
+        CASE
             WHEN h.tract_to_msa_income_percentage IS NOT NULL
-                AND CAST(h.tract_to_msa_income_percentage AS FLOAT64) <= 80 
-            THEN 1 ELSE 0 
+                AND CAST(h.tract_to_msa_income_percentage AS FLOAT64) <= 80
+            THEN 1 ELSE 0
         END as is_lmict,
-        CASE 
+        CASE
             WHEN h.income IS NOT NULL
               AND h.ffiec_msa_md_median_family_income IS NOT NULL
               AND h.ffiec_msa_md_median_family_income > 0
@@ -582,7 +608,7 @@ subject_volume AS (
     GROUP BY activity_year, cbsa_code
 ),
 all_lenders_volume AS (
-    SELECT 
+    SELECT
         activity_year,
         cbsa_code,
         lei,
@@ -600,8 +626,8 @@ peers AS (
         ON al.activity_year = sv.activity_year
         AND al.cbsa_code = sv.cbsa_code
     WHERE al.lei != '{subject_lei}'
-      AND al.lender_vol >= sv.subject_vol * 0.5
-      AND al.lender_vol <= sv.subject_vol * 2.0
+      {volume_filter}
+      {peer_type_filter}
 ),
 peer_hmda AS (
     SELECT f.*
@@ -711,13 +737,15 @@ filtered_sb_data AS (
         ) as cbsa_name,
         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) as sb_loans_amount,
-        CASE 
-            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
+        -- LMICT: income_group_total codes - 101/102 = Low/Moderate, 001-008 = LMI subcategories
+        -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
+        CASE
+            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
             THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
             ELSE 0
         END as lmict_loans_count,
-        CASE 
-            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
+        CASE
+            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
             THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m)
             ELSE 0
         END as lmict_loans_amount,
@@ -1155,13 +1183,15 @@ filtered_sb_data AS (
         l.sb_resid,
         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) as sb_loans_amount,
-        CASE 
-            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
+        -- LMICT: income_group_total codes - 101/102 = Low/Moderate, 001-008 = LMI subcategories
+        -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
+        CASE
+            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
             THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
             ELSE 0
         END as lmict_loans_count,
-        CASE 
-            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
+        CASE
+            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
             THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m)
             ELSE 0
         END as lmict_loans_amount,

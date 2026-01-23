@@ -2190,7 +2190,19 @@
                     if (!result.success) {
                         throw new Error(result.error || 'Analysis failed');
                     }
-                    
+
+                    // Log analytics event for MergerMeter report
+                    if (window.JustDataAnalytics && window.JustDataAnalytics.logMergerMeterReport) {
+                        window.JustDataAnalytics.logMergerMeterReport({
+                            acquirerName: $('#acquirerName').val() || '',
+                            targetName: $('#targetName').val() || '',
+                            acquirerCert: $('#acquirerCert').val() || '',
+                            targetCert: $('#targetCert').val() || '',
+                            mergerType: 'two_bank_merger',
+                            reportType: 'merger_analysis'
+                        });
+                    }
+
                     // Start listening for progress
                     const jobIdFromResponse = result.job_id || jobId;
                     listenForProgress(jobIdFromResponse);
@@ -2275,9 +2287,13 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
 
     <!-- JustData Auth -->
     <script src="/static/js/auth.js"></script>
+
+    <!-- JustData Analytics Event Logging -->
+    <script src="/static/js/analytics-events.js"></script>
 
     {% include 'shared_header_js.html' %}
 </body>

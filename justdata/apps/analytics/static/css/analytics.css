@@ -1,0 +1,1205 @@
+/**
+ * Analytics Dashboard Styles
+ * JustData Internal Analytics Application
+ *
+ * Design: ProPublica Nonprofit Explorer Style
+ * - Clean, data-focused journalism aesthetic
+ * - Georgia serif headlines for authority
+ * - Minimal ornamentation, maximum readability
+ */
+
+/* ============================================
+   CSS Variables - ProPublica Color Palette
+   ============================================ */
+:root {
+    /* Primary Colors */
+    --analytics-header: #1E3D5C;      /* Dark navy header */
+    --analytics-accent: #0077B6;       /* Bright blue accent */
+    --analytics-text: #1a1a1a;         /* Near-black text */
+    --analytics-text-secondary: #666666;
+    --analytics-text-muted: #888888;
+
+    /* Background Colors */
+    --analytics-bg: #ffffff;
+    --analytics-bg-alt: #f7f7f7;
+    --analytics-bg-card: #ffffff;
+
+    /* Border Colors */
+    --analytics-border: #e0e0e0;
+    --analytics-border-light: #eeeeee;
+
+    /* Status Colors */
+    --analytics-success: #2e7d32;
+    --analytics-warning: #f57c00;
+    --analytics-danger: #c62828;
+    --analytics-info: #0277bd;
+
+    /* Typography */
+    --font-serif: Georgia, "Times New Roman", Times, serif;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    /* Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-xxl: 48px;
+}
+
+/* ============================================
+   Base Typography
+   ============================================ */
+body {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--analytics-text);
+    background: var(--analytics-bg-alt);
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    color: var(--analytics-text);
+    line-height: 1.2;
+    margin: 0;
+}
+
+/* ============================================
+   Layout Container
+   ============================================ */
+.analytics-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--spacing-lg) var(--spacing-xl);
+}
+
+/* ============================================
+   Page Header
+   ============================================ */
+.analytics-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--analytics-border);
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+}
+
+.analytics-header .header-left {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.analytics-header h1 {
+    font-family: var(--font-serif);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--analytics-header);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.analytics-header h1 i {
+    color: var(--analytics-accent);
+    font-size: 1.5rem;
+}
+
+.analytics-header .subtitle {
+    font-size: 0.95rem;
+    color: var(--analytics-text-secondary);
+    margin: 0;
+}
+
+.staff-badge {
+    display: inline-block;
+    background: var(--analytics-header);
+    color: white;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.back-link {
+    color: var(--analytics-text-secondary);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: color 0.15s;
+}
+
+.back-link:hover {
+    color: var(--analytics-accent);
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   Form Controls
+   ============================================ */
+.time-selector,
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.time-selector label,
+.filter-group label {
+    font-size: 0.8rem;
+    color: var(--analytics-text-secondary);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.form-select {
+    padding: 8px 12px;
+    border: 1px solid var(--analytics-border);
+    border-radius: 3px;
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+    background: white;
+    cursor: pointer;
+    min-width: 140px;
+    color: var(--analytics-text);
+}
+
+.form-select:focus {
+    outline: none;
+    border-color: var(--analytics-accent);
+    box-shadow: 0 0 0 2px rgba(0, 119, 182, 0.1);
+}
+
+.btn-refresh {
+    background: white;
+    border: 1px solid var(--analytics-border);
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+    color: var(--analytics-text-secondary);
+    font-size: 0.9rem;
+    transition: all 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btn-refresh:hover {
+    background: var(--analytics-accent);
+    border-color: var(--analytics-accent);
+    color: white;
+}
+
+/* ============================================
+   Summary Metric Cards
+   ============================================ */
+.analytics-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-xl);
+}
+
+.summary-card {
+    background: var(--analytics-bg-card);
+    border: 1px solid var(--analytics-border);
+    border-radius: 4px;
+    padding: var(--spacing-lg);
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.15s;
+}
+
+.summary-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.summary-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--analytics-bg-alt);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--analytics-accent);
+    margin-bottom: var(--spacing-sm);
+}
+
+.summary-content h3 {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    color: var(--analytics-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--spacing-xs);
+}
+
+.summary-value {
+    font-family: var(--font-serif);
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: var(--analytics-header);
+    line-height: 1;
+}
+
+.loading-placeholder {
+    color: var(--analytics-text-muted);
+    opacity: 0.5;
+}
+
+/* ============================================
+   Navigation Tabs
+   ============================================ */
+.analytics-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: var(--spacing-xl);
+    border-bottom: 2px solid var(--analytics-border);
+    overflow-x: auto;
+}
+
+.analytics-tabs .tab {
+    padding: 12px 20px;
+    text-decoration: none;
+    color: var(--analytics-text-secondary);
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.15s;
+    white-space: nowrap;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    background: transparent;
+}
+
+.analytics-tabs .tab:hover {
+    color: var(--analytics-text);
+    background: var(--analytics-bg-alt);
+}
+
+.analytics-tabs .tab.active {
+    color: var(--analytics-accent);
+    border-bottom-color: var(--analytics-accent);
+    font-weight: 600;
+}
+
+.analytics-tabs .tab i {
+    font-size: 0.9rem;
+}
+
+/* ============================================
+   Content Grid Layout
+   ============================================ */
+.analytics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+}
+
+@media (max-width: 1100px) {
+    .analytics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ============================================
+   Cards
+   ============================================ */
+.analytics-card {
+    background: var(--analytics-bg-card);
+    border: 1px solid var(--analytics-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--analytics-bg-alt);
+    border-bottom: 1px solid var(--analytics-border);
+}
+
+.card-header h3 {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--analytics-header);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.card-header h3 i {
+    color: var(--analytics-accent);
+    font-size: 0.9rem;
+}
+
+.view-all {
+    color: var(--analytics-accent);
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+.card-content {
+    padding: var(--spacing-lg);
+}
+
+/* ============================================
+   Data Lists (Top Counties, Lenders, etc.)
+   ============================================ */
+.top-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.top-list li {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--analytics-border-light);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.top-list li:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.top-list li:first-child {
+    padding-top: 0;
+}
+
+.top-list .item-rank {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--analytics-text-muted);
+    width: 24px;
+}
+
+.top-list .item-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--analytics-text);
+    font-size: 0.95rem;
+}
+
+.top-list .item-value {
+    background: var(--analytics-bg-alt);
+    padding: 4px 10px;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    color: var(--analytics-header);
+    font-weight: 600;
+    font-family: var(--font-sans);
+}
+
+.loading-item {
+    color: var(--analytics-text-muted);
+    text-align: center;
+    padding: var(--spacing-lg);
+    font-style: italic;
+}
+
+/* ============================================
+   App Usage Chart (Bar Chart)
+   ============================================ */
+.app-usage-chart {
+    min-height: 200px;
+}
+
+.app-bar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.app-bar:last-child {
+    margin-bottom: 0;
+}
+
+.app-bar .app-name {
+    width: 140px;
+    font-size: 0.85rem;
+    color: var(--analytics-text);
+    font-weight: 500;
+}
+
+.app-bar .bar-container {
+    flex: 1;
+    height: 20px;
+    background: var(--analytics-bg-alt);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.app-bar .bar-fill {
+    height: 100%;
+    background: var(--analytics-accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.app-bar .bar-value {
+    width: 60px;
+    text-align: right;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--analytics-header);
+    padding-left: var(--spacing-sm);
+    font-family: var(--font-sans);
+}
+
+/* ============================================
+   Coalition Opportunities List
+   ============================================ */
+.coalition-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.coalition-list li {
+    padding: 14px;
+    border-left: 3px solid var(--analytics-accent);
+    margin-bottom: var(--spacing-sm);
+    background: var(--analytics-bg-alt);
+    border-radius: 0 4px 4px 0;
+}
+
+.coalition-list li:last-child {
+    margin-bottom: 0;
+}
+
+.coalition-list .entity-name {
+    font-family: var(--font-serif);
+    font-weight: 700;
+    color: var(--analytics-header);
+    margin-bottom: 4px;
+    font-size: 1rem;
+}
+
+.coalition-list .entity-meta {
+    font-size: 0.85rem;
+    color: var(--analytics-text-secondary);
+}
+
+.coalition-list .entity-meta strong {
+    color: var(--analytics-text);
+}
+
+/* ============================================
+   Map Section
+   ============================================ */
+.map-section {
+    margin-bottom: var(--spacing-lg);
+}
+
+.map-section h3 {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    margin: 0 0 var(--spacing-md) 0;
+    color: var(--analytics-header);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.map-section h3 i {
+    color: var(--analytics-accent);
+}
+
+.analytics-map {
+    height: 500px;
+    border: 1px solid var(--analytics-border);
+    border-radius: 4px;
+    background: #f8f9fa;
+}
+
+.map-legend {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: white;
+    border: 1px solid var(--analytics-border);
+    border-radius: 4px;
+}
+
+.map-legend h4 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--analytics-text-muted);
+    margin: 0 0 var(--spacing-sm) 0;
+    font-weight: 600;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 0.85rem;
+    color: var(--analytics-text-secondary);
+}
+
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.legend-box {
+    width: 20px;
+    height: 14px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.legend-scale {
+    display: flex;
+    gap: var(--spacing-md);
+    flex-wrap: wrap;
+}
+
+/* ============================================
+   Sidebar Panel (Location/County Lists)
+   ============================================ */
+.sidebar-panel {
+    background: white;
+    border: 1px solid var(--analytics-border);
+    border-radius: 4px;
+    margin-top: var(--spacing-lg);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--analytics-bg-alt);
+    border-bottom: 1px solid var(--analytics-border);
+    border-radius: 4px 4px 0 0;
+}
+
+.panel-header h3 {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--analytics-header);
+    margin: 0;
+}
+
+.location-count,
+.county-count {
+    font-size: 0.8rem;
+    color: var(--analytics-text-muted);
+}
+
+.location-list,
+.county-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: var(--spacing-sm);
+}
+
+.location-item,
+.county-item {
+    padding: 12px var(--spacing-sm);
+    border-bottom: 1px solid var(--analytics-border-light);
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 3px;
+}
+
+.location-item:hover,
+.county-item:hover {
+    background: var(--analytics-bg-alt);
+}
+
+.location-item:last-child,
+.county-item:last-child {
+    border-bottom: none;
+}
+
+/* ============================================
+   Data Tables
+   ============================================ */
+.table-section {
+    background: white;
+    border: 1px solid var(--analytics-border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background: var(--analytics-bg-alt);
+    border-bottom: 1px solid var(--analytics-border);
+}
+
+.table-header h3 {
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--analytics-header);
+    margin: 0;
+}
+
+.table-wrapper {
+    overflow-x: auto;
+}
+
+.analytics-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 700px;
+}
+
+.analytics-table th {
+    background: var(--analytics-header);
+    color: white;
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    font-family: var(--font-sans);
+}
+
+.analytics-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--analytics-border-light);
+    font-size: 0.9rem;
+    color: var(--analytics-text);
+}
+
+.analytics-table tbody tr:hover {
+    background: var(--analytics-bg-alt);
+}
+
+.analytics-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.loading-cell {
+    text-align: center;
+    color: var(--analytics-text-muted);
+    padding: var(--spacing-xl) !important;
+    font-style: italic;
+}
+
+.type-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.type-badge.county {
+    background: #e3f2fd;
+    color: #1565c0;
+}
+
+.type-badge.lender {
+    background: #fce4ec;
+    color: #c2185b;
+}
+
+.org-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.org-tag {
+    background: var(--analytics-bg-alt);
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    color: var(--analytics-text-secondary);
+    border: 1px solid var(--analytics-border-light);
+}
+
+/* ============================================
+   Info Box / Callout
+   ============================================ */
+.info-box {
+    background: #e8f4fd;
+    border: 1px solid #90caf9;
+    border-left: 3px solid var(--analytics-accent);
+    border-radius: 0 4px 4px 0;
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.info-box i {
+    color: var(--analytics-accent);
+    font-size: 1.1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+}
+
+.info-box p {
+    margin: 0;
+    font-size: 0.9rem;
+    color: var(--analytics-text);
+    line-height: 1.5;
+}
+
+/* ============================================
+   Export Section
+   ============================================ */
+.export-section {
+    margin-top: var(--spacing-lg);
+    text-align: right;
+}
+
+.btn-export {
+    background: var(--analytics-success);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 3px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s;
+    font-family: var(--font-sans);
+}
+
+.btn-export:hover {
+    background: #256029;
+}
+
+/* ============================================
+   Data Notice / Footer
+   ============================================ */
+.data-notice {
+    margin-top: var(--spacing-xl);
+    padding: 12px var(--spacing-lg);
+    background: var(--analytics-bg-alt);
+    border-radius: 4px;
+    color: var(--analytics-text-muted);
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.data-notice i {
+    color: var(--analytics-text-muted);
+}
+
+/* ============================================
+   User Profile Popup (Map & Dashboard)
+   ============================================ */
+.user-profile-popup {
+    min-width: 260px;
+    font-family: var(--font-sans);
+}
+
+.popup-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--analytics-border-light);
+}
+
+.popup-avatar {
+    width: 40px;
+    height: 40px;
+    background: var(--analytics-header);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.popup-name {
+    flex: 1;
+    min-width: 0;
+}
+
+.popup-name strong {
+    display: block;
+    font-family: var(--font-serif);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--analytics-header);
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.popup-badge {
+    display: inline-block;
+    background: var(--analytics-bg-alt);
+    color: var(--analytics-text-muted);
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.popup-details {
+    margin-bottom: 12px;
+}
+
+.popup-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 0.85rem;
+    color: var(--analytics-text-secondary);
+}
+
+.popup-row i {
+    width: 16px;
+    color: var(--analytics-text-muted);
+    text-align: center;
+    flex-shrink: 0;
+}
+
+/* HubSpot Integration Section */
+.popup-hubspot {
+    background: #fff8f5;
+    border: 1px solid #ffe0d6;
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-top: 10px;
+}
+
+.popup-hubspot-header {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ff6b35;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.popup-hubspot-header i {
+    font-size: 0.85rem;
+}
+
+.popup-hubspot-linked {
+    color: var(--analytics-success);
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.popup-hubspot-linked i {
+    font-size: 0.85rem;
+}
+
+.popup-hubspot-pending {
+    color: var(--analytics-text-muted);
+    font-size: 0.85rem;
+}
+
+.popup-hubspot-pending i {
+    margin-right: 4px;
+    color: #ffb74d;
+}
+
+/* Leaflet popup overrides */
+.leaflet-popup.user-popup .leaflet-popup-content-wrapper {
+    border-radius: 6px;
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--analytics-border);
+}
+
+.leaflet-popup.user-popup .leaflet-popup-content {
+    margin: 14px 16px;
+}
+
+.leaflet-popup.user-popup .leaflet-popup-tip {
+    border-top-color: white;
+}
+
+/* ============================================
+   User List Items (Dashboard Lists)
+   ============================================ */
+.user-list-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.user-list-item:hover {
+    background: var(--analytics-bg-alt);
+}
+
+.user-list-avatar {
+    width: 36px;
+    height: 36px;
+    background: var(--analytics-accent);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+
+.user-list-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.user-list-name {
+    font-weight: 600;
+    color: var(--analytics-text);
+    font-size: 0.9rem;
+}
+
+.user-list-org {
+    font-size: 0.8rem;
+    color: var(--analytics-text-secondary);
+}
+
+.user-list-hubspot {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.user-list-hubspot.linked {
+    color: var(--analytics-success);
+}
+
+.user-list-hubspot.pending {
+    color: #ffb74d;
+}
+
+/* ============================================
+   Tooltip
+   ============================================ */
+.analytics-tooltip {
+    position: absolute;
+    z-index: 1000;
+    background: white;
+    border: 1px solid var(--analytics-border);
+    border-radius: 4px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.12);
+    padding: var(--spacing-md);
+    max-width: 280px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.analytics-tooltip.visible {
+    opacity: 1;
+}
+
+/* ============================================
+   Empty State
+   ============================================ */
+.empty-state {
+    text-align: center;
+    padding: var(--spacing-xxl) var(--spacing-lg);
+    color: var(--analytics-text-muted);
+}
+
+.empty-state i {
+    font-size: 2.5rem;
+    margin-bottom: var(--spacing-md);
+    opacity: 0.5;
+}
+
+.empty-state h4 {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    color: var(--analytics-text-secondary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.empty-state p {
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* ============================================
+   Loading Spinner
+   ============================================ */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--analytics-border);
+    border-radius: 50%;
+    border-top-color: var(--analytics-accent);
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+@media (max-width: 768px) {
+    .analytics-container {
+        padding: var(--spacing-md);
+    }
+
+    .analytics-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .analytics-header h1 {
+        font-size: 1.5rem;
+    }
+
+    .header-right {
+        width: 100%;
+    }
+
+    .analytics-summary {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    .summary-card {
+        padding: var(--spacing-md);
+    }
+
+    .summary-value {
+        font-size: 1.75rem;
+    }
+
+    .analytics-tabs {
+        gap: 0;
+    }
+
+    .analytics-tabs .tab {
+        padding: 10px 14px;
+        font-size: 0.85rem;
+    }
+
+    .analytics-map {
+        height: 350px;
+    }
+
+    .card-content {
+        padding: var(--spacing-md);
+    }
+
+    .app-bar .app-name {
+        width: 100px;
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .analytics-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .analytics-tabs .tab span {
+        display: none;
+    }
+
+    .analytics-tabs .tab i {
+        margin: 0;
+    }
+}
+
+/* ============================================
+   Print Styles
+   ============================================ */
+@media print {
+    .analytics-container {
+        max-width: none;
+        padding: 0;
+    }
+
+    .analytics-header .header-right,
+    .btn-refresh,
+    .btn-export,
+    .back-link {
+        display: none;
+    }
+
+    .analytics-card,
+    .table-section,
+    .sidebar-panel {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #ccc;
+    }
+
+    .analytics-map {
+        height: 400px;
+    }
+}

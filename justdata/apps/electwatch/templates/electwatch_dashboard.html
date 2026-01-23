@@ -4681,13 +4681,16 @@
                 const data = await response.json();
 
                 // Show date range (e.g., "Jan 1, 2025 - Jan 10, 2026")
-                if (data.data_window) {
-                    document.getElementById('freshness-date').textContent =
-                        `${data.data_window.start} - ${data.data_window.end}`;
-                } else if (data.last_updated_display) {
-                    document.getElementById('freshness-date').textContent = data.last_updated_display;
-                } else if (data.last_updated) {
-                    document.getElementById('freshness-date').textContent = data.last_updated;
+                const freshnessDateEl = document.getElementById('freshness-date');
+                if (freshnessDateEl) {
+                    if (data.data_window) {
+                        freshnessDateEl.textContent =
+                            `${data.data_window.start} - ${data.data_window.end}`;
+                    } else if (data.last_updated_display) {
+                        freshnessDateEl.textContent = data.last_updated_display;
+                    } else if (data.last_updated) {
+                        freshnessDateEl.textContent = data.last_updated;
+                    }
                 }
 
                 // Individual sources - map API field names to display
@@ -4700,7 +4703,8 @@
                 }
             } catch (error) {
                 console.error('Error loading freshness data:', error);
-                document.getElementById('freshness-date').textContent = 'Unable to load';
+                const errorEl = document.getElementById('freshness-date');
+                if (errorEl) errorEl.textContent = 'Unable to load';
             }
         }
 

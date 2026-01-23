@@ -1,0 +1,122 @@
+{% extends "base_app.html" %}
+
+{% block title %}Research Activity | Analytics | JustData{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <!-- Header -->
+    <div class="analytics-header">
+        <div class="header-left">
+            <a href="{{ url_for('analytics.dashboard') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <h1><i class="fas fa-search-location"></i> Research Activity</h1>
+        </div>
+        <div class="header-right">
+            <div class="filter-group">
+                <label for="app-filter">App:</label>
+                <select id="app-filter" class="form-select">
+                    <option value="">All Apps</option>
+                    <option value="lendsight_report">LendSight</option>
+                    <option value="bizsight_report">BizSight</option>
+                    <option value="branchsight_report">BranchSight</option>
+                    <option value="branchmapper_report">BranchMapper</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="state-filter">State:</label>
+                <select id="state-filter" class="form-select">
+                    <option value="">All States</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="time-period">Period:</label>
+                <select id="time-period" class="form-select">
+                    <option value="7">7 days</option>
+                    <option value="30">30 days</option>
+                    <option value="90" selected>90 days</option>
+                </select>
+            </div>
+            <button id="refresh-btn" class="btn-refresh" onclick="loadData()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="analytics-tabs">
+        <a href="{{ url_for('analytics.dashboard') }}" class="tab">
+            <i class="fas fa-tachometer-alt"></i> Overview
+        </a>
+        <a href="{{ url_for('analytics.user_map') }}" class="tab">
+            <i class="fas fa-map-marked-alt"></i> User Locations
+        </a>
+        <a href="{{ url_for('analytics.research_map') }}" class="tab active">
+            <i class="fas fa-search-location"></i> Research Activity
+        </a>
+        <a href="{{ url_for('analytics.lender_map') }}" class="tab">
+            <i class="fas fa-university"></i> Lender Interest
+        </a>
+        <a href="{{ url_for('analytics.coalitions') }}" class="tab">
+            <i class="fas fa-users-cog"></i> Coalitions
+        </a>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-section">
+        <div id="research-map" class="analytics-map"></div>
+        <div class="map-legend">
+            <h4>Reports per County</h4>
+            <div class="legend-scale">
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #deebf7;"></span>
+                    <span>1-5</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #9ecae1;"></span>
+                    <span>6-10</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #6baed6;"></span>
+                    <span>11-20</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #4292c6;"></span>
+                    <span>21-50</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-box" style="background: #08306b;"></span>
+                    <span>50+</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- County List Sidebar -->
+    <div class="sidebar-panel">
+        <div class="panel-header">
+            <h3><i class="fas fa-list"></i> Top Counties</h3>
+            <span class="county-count" id="county-count">0 counties</span>
+        </div>
+        <div class="county-list" id="county-list">
+            <div class="loading-item">Loading counties...</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('analytics.static', filename='js/analytics-maps.js') }}"></script>
+<script>
+    const MAP_TYPE = 'research_activity';
+    const API_ENDPOINT = '/analytics/api/research-activity';
+</script>
+<script src="{{ url_for('analytics.static', filename='js/analytics-research-map.js') }}"></script>
+{% endblock %}

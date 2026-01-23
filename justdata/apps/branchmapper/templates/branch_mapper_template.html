@@ -1479,7 +1479,18 @@
             
             // Store all branches
             allBranches = branches;
-            
+
+            // Log analytics event for BranchMapper report
+            if (window.JustDataAnalytics && window.JustDataAnalytics.logBranchMapperReport) {
+                const state = document.getElementById('stateSelect')?.value || '';
+                window.JustDataAnalytics.logBranchMapperReport({
+                    state: state,
+                    year: String(year),
+                    branchCount: branches.length,
+                    reportType: 'branch_mapping'
+                });
+            }
+
             // Populate bank selector
             populateBankSelector(branches);
             
@@ -2329,9 +2340,13 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
 
     <!-- JustData Auth -->
     <script src="/static/js/auth.js"></script>
+
+    <!-- JustData Analytics Event Logging -->
+    <script src="/static/js/analytics-events.js"></script>
 
     {% include 'shared_header_js.html' %}
 </body>

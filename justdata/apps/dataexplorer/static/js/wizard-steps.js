@@ -3550,6 +3550,28 @@ async function generateReport() {
             result = await apiClient.generateLenderReport(wizardState.data);
         }
         
+        // Log analytics event
+        if (window.JustDataAnalytics) {
+            if (wizardState.data.analysisType === 'area') {
+                window.JustDataAnalytics.logDataExplorerAreaReport({
+                    countyFips: wizardState.data.county?.geoid5 || '',
+                    countyName: wizardState.data.county?.name || '',
+                    state: wizardState.data.state || '',
+                    year: wizardState.data.years?.join('-') || '',
+                    dataTypes: wizardState.data.dataTypes?.join(',') || '',
+                    reportType: 'area_exploration'
+                });
+            } else {
+                window.JustDataAnalytics.logDataExplorerLenderReport({
+                    lenderName: wizardState.data.lender?.name || '',
+                    lei: wizardState.data.lender?.lei || '',
+                    year: wizardState.data.years?.join('-') || '',
+                    dataTypes: wizardState.data.dataTypes?.join(',') || '',
+                    reportType: 'lender_exploration'
+                });
+            }
+        }
+
         // Redirect to report view (which will show progress page if not ready)
         if (result.report_id) {
             window.location.href = `/dataexplorer/report/${result.report_id}`;

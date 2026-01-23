@@ -108,7 +108,10 @@ def populate_template_from_file(
     
     # Delete and recreate Notes sheet with all metadata
     _populate_notes_sheet(wb, bank_a_name, bank_b_name, metadata, assessment_areas)
-    
+
+    # FORMATTING PASS: Apply number formats to all data sheets
+    _apply_number_formatting(wb, bank_a_name, bank_b_name)
+
     # FINAL PASS: Remove ALL cell colors one more time before saving
     no_fill = PatternFill(fill_type=None)
     for sheet_name in wb.sheetnames:
@@ -1127,6 +1130,87 @@ def _match_cbsa_in_data(data: pd.DataFrame, cbsa_name: str) -> pd.DataFrame:
     return pd.DataFrame()
 
 
+def _apply_number_formatting(wb, bank_a_name: str, bank_b_name: str):
+    """
+    Apply number formatting to all data sheets after population.
+
+    Format rules:
+    - Row 2 (Loans): '#,##0' (whole number with thousands separator)
+    - Rows with '%' metrics: '0.00' (2 decimal places - values are already *100)
+    - Rows with '$' metrics: '$#,##0' (currency)
+    - Difference columns (E): '0.00' or percentage as appropriate
+    - Branch difference columns: '0.00%' (but values need to be in decimal form)
+    """
+    # Define metric patterns and their formats
+    # Note: Percentages are stored as 5.5 meaning 5.5%, so format as '0.00'
+    PERCENTAGE_ROWS = ['LMICT%', 'LMIB%', 'MMCT%', 'MINB%', 'Asian%', 'Black%',
+                       'Native American%', 'HoPI%', 'Hispanic%']
+    CURRENCY_ROWS = ['LMIB$']
+    LOAN_COUNT_ROWS = ['Loans', 'SB Loans', 'Branches']
+
+    # Get sheet name patterns for mortgage data sheets
+    short_name_a = bank_a_name.split()[0] if bank_a_name else 'Bank A'
+    short_name_b = bank_b_name.split()[0] if bank_b_name else 'Bank B'
+
+    for sheet_name in wb.sheetnames:
+        ws = wb[sheet_name]
+
+        # Check if this is a mortgage or SB data sheet
+        is_mortgage_sheet = 'MORTGAGE' in sheet_name.upper() and 'GOALS' not in sheet_name.upper()
+        is_sb_sheet = 'SB' in sheet_name.upper() or 'SMALL BUSINESS' in sheet_name.upper()
+        is_branch_sheet = 'BRANCH' in sheet_name.upper()
+
+        if not (is_mortgage_sheet or is_sb_sheet or is_branch_sheet):
+            continue
+
+        # Iterate through data rows (start from row 2)
+        for row in range(2, ws.max_row + 1):
+            # Get metric name from column B
+            metric_cell = ws.cell(row, 2)
+            metric_name = str(metric_cell.value).strip() if metric_cell.value else ''
+
+            # Apply formatting to columns C, D, E (Subject, Peer, Difference)
+            for col in [3, 4, 5]:
+                cell = ws.cell(row, col)
+                if cell.value is None or cell.value == '':
+                    continue
+
+                # Skip if it's a formula (starts with =)
+                if isinstance(cell.value, str) and cell.value.startswith('='):
+                    # Apply format based on metric type for formula cells too
+                    if any(pct in metric_name for pct in PERCENTAGE_ROWS):
+                        cell.number_format = '0.00'
+                    elif any(curr in metric_name for curr in CURRENCY_ROWS):
+                        cell.number_format = '$#,##0'
+                    elif any(cnt in metric_name for cnt in LOAN_COUNT_ROWS):
+                        cell.number_format = '#,##0'
+                    elif is_branch_sheet and col == 5:
+                        # Branch difference column should be percentage
+                        cell.number_format = '0.00%'
+                    continue
+
+                # Apply format based on metric type
+                if any(pct in metric_name for pct in PERCENTAGE_ROWS):
+                    cell.number_format = '0.00'
+                elif any(curr in metric_name for curr in CURRENCY_ROWS):
+                    cell.number_format = '$#,##0'
+                elif any(cnt in metric_name for cnt in LOAN_COUNT_ROWS):
+                    cell.number_format = '#,##0'
+                elif is_branch_sheet:
+                    if col == 5 and metric_name not in ['Branches']:
+                        # Branch LMICT/MMCT difference column - percentage
+                        cell.number_format = '0.00%'
+                    elif col in [3, 4]:
+                        cell.number_format = '#,##0'
+                else:
+                    # Default: numeric with 2 decimals
+                    if isinstance(cell.value, (int, float)):
+                        if abs(cell.value) > 100:
+                            cell.number_format = '#,##0'
+                        else:
+                            cell.number_format = '0.00'
+
+
 def _unmerge_cells_in_range(ws, range_str: str):
     """Unmerge any merged cells that overlap with the given range."""
     try:
@@ -1153,8 +1237,16 @@ def _unmerge_cells_in_range(ws, range_str: str):
         pass
 
 
-def _safe_set_cell_value(ws, row: int, col: int, value):
-    """Safely set a cell value, handling merged cells."""
+def _safe_set_cell_value(ws, row: int, col: int, value, number_format: str = None):
+    """Safely set a cell value, handling merged cells and optional number formatting.
+
+    Args:
+        ws: Worksheet object
+        row: Row number (1-indexed)
+        col: Column number (1-indexed)
+        value: Value to set
+        number_format: Optional Excel number format string (e.g., '#,##0', '0.00%', '$#,##0')
+    """
     try:
         cell = ws.cell(row, col)
         # Check if this cell is part of a merged range
@@ -1164,13 +1256,19 @@ def _safe_set_cell_value(ws, row: int, col: int, value):
                 # This cell is in a merged range - unmerge first
                 ws.unmerge_cells(str(merged_range))
                 break
-        
+
         # Now set the value
         cell.value = value
+
+        # Apply number format if specified
+        if number_format:
+            cell.number_format = number_format
     except Exception as e:
         # Fallback: try direct assignment
         try:
             ws.cell(row, col).value = value
+            if number_format:
+                ws.cell(row, col).number_format = number_format
         except:
             pass
 

@@ -1,0 +1,358 @@
+/**
+ * Analytics Maps JavaScript
+ * Shared map utilities for analytics views
+ */
+
+// US center coordinates
+const US_CENTER = [39.8283, -98.5795];
+const US_ZOOM = 4;
+
+// State abbreviation to full name mapping
+const STATE_NAMES = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+    'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+    'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+    'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+    'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+    'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+    'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
+};
+
+// State center coordinates for approximate city placement
+const STATE_CENTERS = {
+    'Alabama': { lat: 32.806671, lng: -86.791130 },
+    'Alaska': { lat: 61.370716, lng: -152.404419 },
+    'Arizona': { lat: 33.729759, lng: -111.431221 },
+    'Arkansas': { lat: 34.969704, lng: -92.373123 },
+    'California': { lat: 36.116203, lng: -119.681564 },
+    'Colorado': { lat: 39.059811, lng: -105.311104 },
+    'Connecticut': { lat: 41.597782, lng: -72.755371 },
+    'Delaware': { lat: 39.318523, lng: -75.507141 },
+    'Florida': { lat: 27.766279, lng: -81.686783 },
+    'Georgia': { lat: 33.040619, lng: -83.643074 },
+    'Hawaii': { lat: 21.094318, lng: -157.498337 },
+    'Idaho': { lat: 44.240459, lng: -114.478828 },
+    'Illinois': { lat: 40.349457, lng: -88.986137 },
+    'Indiana': { lat: 39.849426, lng: -86.258278 },
+    'Iowa': { lat: 42.011539, lng: -93.210526 },
+    'Kansas': { lat: 38.526600, lng: -96.726486 },
+    'Kentucky': { lat: 37.668140, lng: -84.670067 },
+    'Louisiana': { lat: 31.169546, lng: -91.867805 },
+    'Maine': { lat: 44.693947, lng: -69.381927 },
+    'Maryland': { lat: 39.063946, lng: -76.802101 },
+    'Massachusetts': { lat: 42.230171, lng: -71.530106 },
+    'Michigan': { lat: 43.326618, lng: -84.536095 },
+    'Minnesota': { lat: 45.694454, lng: -93.900192 },
+    'Mississippi': { lat: 32.741646, lng: -89.678696 },
+    'Missouri': { lat: 38.456085, lng: -92.288368 },
+    'Montana': { lat: 46.921925, lng: -110.454353 },
+    'Nebraska': { lat: 41.125370, lng: -98.268082 },
+    'Nevada': { lat: 38.313515, lng: -117.055374 },
+    'New Hampshire': { lat: 43.452492, lng: -71.563896 },
+    'New Jersey': { lat: 40.298904, lng: -74.521011 },
+    'New Mexico': { lat: 34.840515, lng: -106.248482 },
+    'New York': { lat: 42.165726, lng: -74.948051 },
+    'North Carolina': { lat: 35.630066, lng: -79.806419 },
+    'North Dakota': { lat: 47.528912, lng: -99.784012 },
+    'Ohio': { lat: 40.388783, lng: -82.764915 },
+    'Oklahoma': { lat: 35.565342, lng: -96.928917 },
+    'Oregon': { lat: 44.572021, lng: -122.070938 },
+    'Pennsylvania': { lat: 40.590752, lng: -77.209755 },
+    'Rhode Island': { lat: 41.680893, lng: -71.511780 },
+    'South Carolina': { lat: 33.856892, lng: -80.945007 },
+    'South Dakota': { lat: 44.299782, lng: -99.438828 },
+    'Tennessee': { lat: 35.747845, lng: -86.692345 },
+    'Texas': { lat: 31.054487, lng: -97.563461 },
+    'Utah': { lat: 40.150032, lng: -111.862434 },
+    'Vermont': { lat: 44.045876, lng: -72.710686 },
+    'Virginia': { lat: 37.769337, lng: -78.169968 },
+    'Washington': { lat: 47.400902, lng: -121.490494 },
+    'West Virginia': { lat: 38.491226, lng: -80.954453 },
+    'Wisconsin': { lat: 44.268543, lng: -89.616508 },
+    'Wyoming': { lat: 42.755966, lng: -107.302490 },
+    'District of Columbia': { lat: 38.897438, lng: -77.026817 }
+};
+
+/**
+ * Initialize a Leaflet map
+ * @param {string} elementId - DOM element ID for the map
+ * @param {object} options - Optional map options
+ * @returns {L.Map} Leaflet map instance
+ */
+function initMap(elementId, options = {}) {
+    const map = L.map(elementId, {
+        center: options.center || US_CENTER,
+        zoom: options.zoom || US_ZOOM,
+        scrollWheelZoom: true,
+        ...options
+    });
+
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 18
+    }).addTo(map);
+
+    return map;
+}
+
+/**
+ * Generate user profile popup HTML
+ * Shows user info with HubSpot integration placeholder
+ * @param {object} user - User data object
+ * @returns {string} HTML for popup
+ */
+function generateUserProfilePopup(user) {
+    const name = user.display_name || user.name || user.email || 'Unknown User';
+    const email = user.email || '';
+    const organization = user.organization || user.company_name || '';
+    const userType = user.user_type || '';
+    const city = user.city || '';
+    const state = user.state || '';
+    const location = city && state ? city + ', ' + state : (city || state || '');
+    const eventCount = user.total_events || user.event_count || 0;
+    const lastActivity = user.last_activity ? formatDate(user.last_activity) : '';
+
+    // HubSpot integration status
+    const hubspotLinked = user.hubspot_contact_id ? true : false;
+
+    let html = '<div class="user-profile-popup">';
+
+    // User header
+    html += '<div class="popup-header">';
+    html += '<div class="popup-avatar"><i class="fas fa-user"></i></div>';
+    html += '<div class="popup-name">';
+    html += '<strong>' + escapeHtml(name) + '</strong>';
+    if (userType) {
+        html += '<span class="popup-badge">' + escapeHtml(userType) + '</span>';
+    }
+    html += '</div>';
+    html += '</div>';
+
+    // User details
+    html += '<div class="popup-details">';
+    if (email) {
+        html += '<div class="popup-row"><i class="fas fa-envelope"></i> ' + escapeHtml(email) + '</div>';
+    }
+    if (organization) {
+        html += '<div class="popup-row"><i class="fas fa-building"></i> ' + escapeHtml(organization) + '</div>';
+    }
+    if (location) {
+        html += '<div class="popup-row"><i class="fas fa-map-marker-alt"></i> ' + escapeHtml(location) + '</div>';
+    }
+    if (eventCount > 0) {
+        html += '<div class="popup-row"><i class="fas fa-chart-bar"></i> ' + formatNumber(eventCount) + ' events</div>';
+    }
+    if (lastActivity) {
+        html += '<div class="popup-row"><i class="fas fa-clock"></i> Last active: ' + lastActivity + '</div>';
+    }
+    html += '</div>';
+
+    // HubSpot integration section
+    html += '<div class="popup-hubspot">';
+    html += '<div class="popup-hubspot-header">';
+    html += '<i class="fab fa-hubspot"></i> HubSpot Integration';
+    html += '</div>';
+    if (hubspotLinked) {
+        html += '<div class="popup-hubspot-linked">';
+        html += '<i class="fas fa-check-circle"></i> Linked';
+        if (user.hubspot_company_name) {
+            html += '<br><small>' + escapeHtml(user.hubspot_company_name) + '</small>';
+        }
+        html += '</div>';
+    } else {
+        html += '<div class="popup-hubspot-pending">';
+        html += '<i class="fas fa-link"></i> Link coming soon';
+        html += '<br><small style="color: #888;">Organization data will appear here</small>';
+        html += '</div>';
+    }
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+}
+
+/**
+ * Add circle markers for user locations
+ * @param {L.Map} map - Leaflet map instance
+ * @param {Array} data - Location data array
+ * @param {object} options - Marker options
+ * @returns {L.LayerGroup} Layer group containing markers
+ */
+function addUserMarkers(map, data, options = {}) {
+    const markers = L.layerGroup();
+
+    data.forEach(function(location) {
+        // Get coordinates - use state center if city coords not available
+        let lat, lng;
+        if (location.latitude && location.longitude) {
+            lat = location.latitude;
+            lng = location.longitude;
+        } else if (location.state && STATE_CENTERS[location.state]) {
+            // Use state center with slight random offset
+            const center = STATE_CENTERS[location.state];
+            lat = center.lat + (Math.random() - 0.5) * 2;
+            lng = center.lng + (Math.random() - 0.5) * 2;
+        } else {
+            return; // Skip if no coordinates available
+        }
+
+        // Calculate marker size based on user count
+        const users = location.unique_users || 1;
+        const radius = Math.min(Math.max(Math.sqrt(users) * 4, 5), 30);
+
+        const marker = L.circleMarker([lat, lng], {
+            radius: radius,
+            fillColor: options.color || '#1a5a96',
+            color: '#fff',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.7
+        });
+
+        // Add enhanced popup with user profile
+        const popupContent = generateUserProfilePopup({
+            name: location.city || 'Location',
+            city: location.city,
+            state: location.state,
+            total_events: location.total_events,
+            organization: location.organization,
+            hubspot_contact_id: location.hubspot_contact_id,
+            hubspot_company_name: location.hubspot_company_name
+        });
+
+        marker.bindPopup(popupContent, {
+            maxWidth: 300,
+            className: 'user-popup'
+        });
+
+        markers.addLayer(marker);
+    });
+
+    markers.addTo(map);
+    return markers;
+}
+
+/**
+ * Add circle markers for county research activity
+ * @param {L.Map} map - Leaflet map instance
+ * @param {Array} data - County research data
+ * @returns {L.LayerGroup} Layer group containing markers
+ */
+function addCountyMarkers(map, data) {
+    const markers = L.layerGroup();
+
+    // Color scale for report counts
+    function getColor(count) {
+        return count > 50 ? '#08306b' :
+               count > 20 ? '#2171b5' :
+               count > 10 ? '#4292c6' :
+               count > 5  ? '#6baed6' :
+               count > 1  ? '#9ecae1' :
+                           '#deebf7';
+    }
+
+    data.forEach(function(county) {
+        // Get coordinates - use state center if not available
+        let lat, lng;
+        if (county.latitude && county.longitude) {
+            lat = county.latitude;
+            lng = county.longitude;
+        } else if (county.state && STATE_CENTERS[county.state]) {
+            const center = STATE_CENTERS[county.state];
+            lat = center.lat + (Math.random() - 0.5) * 1;
+            lng = center.lng + (Math.random() - 0.5) * 1;
+        } else {
+            return;
+        }
+
+        const count = county.report_count || 0;
+        const radius = Math.min(Math.max(Math.sqrt(count) * 3, 6), 25);
+
+        const marker = L.circleMarker([lat, lng], {
+            radius: radius,
+            fillColor: getColor(count),
+            color: '#fff',
+            weight: 1,
+            opacity: 1,
+            fillOpacity: 0.8
+        });
+
+        const name = county.county_name || county.county_fips || 'Unknown';
+        const state = county.state || '';
+        const users = county.unique_users || 0;
+
+        marker.bindPopup(
+            '<strong>' + escapeHtml(name) + (state ? ', ' + state : '') + '</strong><br>' +
+            'Reports: ' + formatNumber(count) + '<br>' +
+            'Unique Users: ' + formatNumber(users)
+        );
+
+        markers.addLayer(marker);
+    });
+
+    markers.addTo(map);
+    return markers;
+}
+
+/**
+ * Populate state filter dropdown
+ * @param {string} selectId - Select element ID
+ */
+function populateStateFilter(selectId) {
+    const select = $('#' + selectId);
+
+    // Sort states by name
+    const sortedStates = Object.entries(STATE_NAMES)
+        .sort((a, b) => a[1].localeCompare(b[1]));
+
+    sortedStates.forEach(function([abbr, name]) {
+        select.append($('<option>').val(name).text(name));
+    });
+}
+
+/**
+ * Format number with commas
+ */
+function formatNumber(num) {
+    if (num === null || num === undefined) return '0';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
+/**
+ * Escape HTML
+ */
+function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return text.toString().replace(/[&<>"']/g, m => map[m]);
+}
+
+/**
+ * Format date for display
+ */
+function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    try {
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    } catch (e) {
+        return dateStr;
+    }
+}

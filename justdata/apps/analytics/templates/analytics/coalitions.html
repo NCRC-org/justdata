@@ -1,0 +1,119 @@
+{% extends "base_app.html" %}
+
+{% block title %}Coalition Opportunities | Analytics | JustData{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <!-- Header -->
+    <div class="analytics-header">
+        <div class="header-left">
+            <a href="{{ url_for('analytics.dashboard') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <h1><i class="fas fa-users-cog"></i> Coalition Opportunities</h1>
+        </div>
+        <div class="header-right">
+            <div class="filter-group">
+                <label for="entity-type">Type:</label>
+                <select id="entity-type" class="form-select">
+                    <option value="">All</option>
+                    <option value="county">Counties</option>
+                    <option value="lender">Lenders</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="min-users">Min Users:</label>
+                <select id="min-users" class="form-select">
+                    <option value="2">2+</option>
+                    <option value="3" selected>3+</option>
+                    <option value="5">5+</option>
+                    <option value="10">10+</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="time-period">Period:</label>
+                <select id="time-period" class="form-select">
+                    <option value="30">30 days</option>
+                    <option value="90" selected>90 days</option>
+                    <option value="180">6 months</option>
+                </select>
+            </div>
+            <button id="refresh-btn" class="btn-refresh" onclick="loadData()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="analytics-tabs">
+        <a href="{{ url_for('analytics.dashboard') }}" class="tab">
+            <i class="fas fa-tachometer-alt"></i> Overview
+        </a>
+        <a href="{{ url_for('analytics.user_map') }}" class="tab">
+            <i class="fas fa-map-marked-alt"></i> User Locations
+        </a>
+        <a href="{{ url_for('analytics.research_map') }}" class="tab">
+            <i class="fas fa-search-location"></i> Research Activity
+        </a>
+        <a href="{{ url_for('analytics.lender_map') }}" class="tab">
+            <i class="fas fa-university"></i> Lender Interest
+        </a>
+        <a href="{{ url_for('analytics.coalitions') }}" class="tab active">
+            <i class="fas fa-users-cog"></i> Coalitions
+        </a>
+    </div>
+
+    <!-- Info Box -->
+    <div class="info-box">
+        <i class="fas fa-lightbulb"></i>
+        <p>
+            <strong>Coalition Opportunities</strong> shows counties and lenders being researched by multiple users.
+            When different organizations research the same entity, it may indicate an opportunity for collaboration.
+        </p>
+    </div>
+
+    <!-- Coalition Table -->
+    <div class="table-section">
+        <div class="table-header">
+            <h3><i class="fas fa-table"></i> Entities with Multiple Researchers</h3>
+            <span id="coalition-count">0 opportunities</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="analytics-table coalitions-table" id="coalition-table">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Entity</th>
+                        <th>Unique Users</th>
+                        <th>Organizations</th>
+                        <th>Researcher States</th>
+                        <th>Last Activity</th>
+                    </tr>
+                </thead>
+                <tbody id="coalition-tbody">
+                    <tr>
+                        <td colspan="6" class="loading-cell">Loading coalition data...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="export-section">
+        <button class="btn-export" onclick="exportToCSV()">
+            <i class="fas fa-download"></i> Export to CSV
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="{{ url_for('analytics.static', filename='js/analytics-tables.js') }}"></script>
+<script src="{{ url_for('analytics.static', filename='js/analytics-coalitions.js') }}"></script>
+{% endblock %}

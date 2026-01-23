@@ -3,6 +3,7 @@ Configuration for MergerMeter application.
 """
 
 import os
+import tempfile
 from pathlib import Path
 
 # Base directory for this application
@@ -14,7 +15,10 @@ JUSTDATA_BASE = BASE_DIR.parent.parent
 TEMPLATES_DIR = str(BASE_DIR / 'templates')
 # Use shared static folder (same as BranchSeeker and LendSight)
 STATIC_DIR = str(JUSTDATA_BASE / 'shared' / 'web' / 'static')
-OUTPUT_DIR = BASE_DIR / 'output'
+
+# Output directory - use temp directory for Cloud Run compatibility
+# Cloud Run containers have read-only filesystems except for /tmp
+OUTPUT_DIR = Path(tempfile.gettempdir()) / 'mergermeter_output'
 
 # Excel template file path (for matching original merger report format)
 # Support multiple path options for flexibility across different environments

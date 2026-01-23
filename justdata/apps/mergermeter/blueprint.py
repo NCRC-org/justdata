@@ -165,14 +165,14 @@ def analyze():
             'loan_purpose': request.form.get('loan_purpose', ''),
             'peer_group': request.form.get('peer_group', 'volume_50_200').strip(),  # Peer group selection
             # Analysis year ranges
-            'hmda_start_year': request.form.get('hmda_start_year', '2020').strip(),
+            'hmda_start_year': request.form.get('hmda_start_year', '2023').strip(),
             'hmda_end_year': request.form.get('hmda_end_year', '2024').strip(),
-            'sb_start_year': request.form.get('sb_start_year', '2019').strip(),
+            'sb_start_year': request.form.get('sb_start_year', '2023').strip(),
             'sb_end_year': request.form.get('sb_end_year', '2024').strip(),
             # Goal baseline year ranges
-            'baseline_hmda_start_year': request.form.get('baseline_hmda_start_year', '2022').strip(),
+            'baseline_hmda_start_year': request.form.get('baseline_hmda_start_year', '2023').strip(),
             'baseline_hmda_end_year': request.form.get('baseline_hmda_end_year', '2024').strip(),
-            'baseline_sb_start_year': request.form.get('baseline_sb_start_year', '2021').strip(),
+            'baseline_sb_start_year': request.form.get('baseline_sb_start_year', '2023').strip(),
             'baseline_sb_end_year': request.form.get('baseline_sb_end_year', '2024').strip(),
             'action_taken': request.form.get('action_taken', '1'),
             'occupancy_type': request.form.get('occupancy_type', '1'),

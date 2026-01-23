@@ -229,8 +229,8 @@ def analyze():
             'acquirer_assessment_areas': request.form.get('acquirer_assessment_areas', '[]'),
             'target_assessment_areas': request.form.get('target_assessment_areas', '[]'),
             'loan_purpose': request.form.get('loan_purpose', ''),
-            'hmda_years': request.form.get('hmda_years', '2020,2021,2022,2023,2024'),
-            'sb_years': request.form.get('sb_years', '2020,2021,2022,2023,2024'),
+            'hmda_years': request.form.get('hmda_years', '2023,2024'),
+            'sb_years': request.form.get('sb_years', '2023,2024'),
             'action_taken': request.form.get('action_taken', '1'),
             'occupancy_type': request.form.get('occupancy_type', '1'),
             'total_units': request.form.get('total_units', '1-4'),
@@ -496,15 +496,15 @@ def _perform_analysis(job_id, form_data):
         peer_group = form_data.get('peer_group', 'volume_50_200')  # Peer group selection
 
         # Parse analysis year ranges (for analysis sheets)
-        hmda_start_year = int(form_data.get('hmda_start_year') or 2020)
+        hmda_start_year = int(form_data.get('hmda_start_year') or 2023)
         hmda_end_year = int(form_data.get('hmda_end_year') or 2024)
-        sb_start_year = int(form_data.get('sb_start_year') or 2019)
+        sb_start_year = int(form_data.get('sb_start_year') or 2023)
         sb_end_year = int(form_data.get('sb_end_year') or 2024)
 
         # Parse baseline year ranges (for goals sheets)
-        baseline_hmda_start_year = int(form_data.get('baseline_hmda_start_year') or 2022)
+        baseline_hmda_start_year = int(form_data.get('baseline_hmda_start_year') or 2023)
         baseline_hmda_end_year = int(form_data.get('baseline_hmda_end_year') or 2024)
-        baseline_sb_start_year = int(form_data.get('baseline_sb_start_year') or 2021)
+        baseline_sb_start_year = int(form_data.get('baseline_sb_start_year') or 2023)
         baseline_sb_end_year = int(form_data.get('baseline_sb_end_year') or 2024)
 
         # Generate year lists from ranges
