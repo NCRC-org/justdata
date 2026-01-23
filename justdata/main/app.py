@@ -210,8 +210,10 @@ def create_app():
         """Get platform statistics for homepage display.
 
         Returns:
-            - reports_generated: Total report events from BigQuery
-            - active_researchers: Unique users in last 30 days from Firebase
+            - mortgage_records: Total HMDA records available
+            - lenders_tracked: Unique lenders (LEIs) in HMDA data
+            - reports_generated: Total report events from analytics
+            - active_researchers: Unique users from analytics
 
         Results are cached for 1 hour.
         """
@@ -228,44 +230,68 @@ def create_app():
             return jsonify(_stats_cache['data'])
 
         stats = {
+            'mortgage_records': 0,
+            'lenders_tracked': 0,
             'reports_generated': 0,
             'active_researchers': 0,
             'cached_at': datetime.utcnow().isoformat()
         }
 
-        # Get reports count from BigQuery analytics
         try:
             from justdata.shared.utils.bigquery_client import get_bigquery_client
             client = get_bigquery_client()
             if client:
-                # Count report generation events
-                query = """
-                    SELECT COUNT(*) as total
-                    FROM `hdma1-242116.justdata_analytics.report_events`
-                """
-                result = client.query(query).result()
-                for row in result:
-                    stats['reports_generated'] = row.total or 0
-                    break
-        except Exception as e:
-            print(f"[WARN] Failed to get report count from BigQuery: {e}")
-            # Fallback to a reasonable estimate
-            stats['reports_generated'] = 1247
+                # Get mortgage records and lenders count from HMDA (2018+)
+                try:
+                    query = """
+                        SELECT
+                            COUNT(*) as total_records,
+                            COUNT(DISTINCT lei) as unique_leis
+                        FROM `hdma1-242116.hmda.hmda`
+                        WHERE activity_year >= '2018'
+                    """
+                    result = client.query(query).result()
+                    for row in result:
+                        stats['mortgage_records'] = row.total_records or 0
+                        stats['lenders_tracked'] = row.unique_leis or 0
+                        break
+                except Exception as e:
+                    print(f"[WARN] Failed to get HMDA stats: {e}")
 
-        # Get active users from Firebase (last 30 days)
-        try:
-            from justdata.main.auth import get_firestore_client
-            db = get_firestore_client()
-            if db:
-                thirty_days_ago = datetime.utcnow() - timedelta(days=30)
-                users_ref = db.collection('users')
-                # Query users with lastLoginAt in last 30 days
-                active_users = users_ref.where('lastLoginAt', '>=', thirty_days_ago).stream()
-                stats['active_researchers'] = sum(1 for _ in active_users)
+                # Get reports count from analytics
+                try:
+                    query = """
+                        SELECT COUNT(*) as total
+                        FROM `hdma1-242116.justdata_analytics.all_events`
+                        WHERE event_name IN (
+                            'lendsight_report', 'bizsight_report', 'branchsight_report',
+                            'branchmapper_report', 'mergermeter_report',
+                            'dataexplorer_area_report', 'dataexplorer_lender_report'
+                        )
+                    """
+                    result = client.query(query).result()
+                    for row in result:
+                        stats['reports_generated'] = row.total or 0
+                        break
+                except Exception as e:
+                    print(f"[WARN] Failed to get report count: {e}")
+
+                # Get unique researchers from analytics (last 90 days)
+                try:
+                    query = """
+                        SELECT COUNT(DISTINCT COALESCE(user_id, event_id)) as total
+                        FROM `hdma1-242116.justdata_analytics.all_events`
+                        WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 90 DAY)
+                    """
+                    result = client.query(query).result()
+                    for row in result:
+                        stats['active_researchers'] = row.total or 0
+                        break
+                except Exception as e:
+                    print(f"[WARN] Failed to get active users: {e}")
+
         except Exception as e:
-            print(f"[WARN] Failed to get active users from Firebase: {e}")
-            # Fallback to a reasonable estimate
-            stats['active_researchers'] = 48
+            print(f"[WARN] Failed to connect to BigQuery: {e}")
 
         # Update cache
         _stats_cache['data'] = stats
