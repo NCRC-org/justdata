@@ -226,6 +226,8 @@ def analyze():
         session['job_id'] = job_id
         
         # Capture all form data BEFORE starting thread (Flask request context is thread-local)
+        print(f"[DEBUG] Form keys received: {list(request.form.keys())}")
+        print(f"[DEBUG] use_national_data from form: '{request.form.get('use_national_data', 'NOT_FOUND')}'")
         form_data = {
             'acquirer_lei': request.form.get('acquirer_lei', '').strip(),
             'acquirer_rssd': request.form.get('acquirer_rssd', '').strip(),
@@ -315,7 +317,9 @@ def _perform_analysis(job_id, form_data):
             target_aa_data = []
 
         # Check if using national level data
-        use_national_data = form_data.get('use_national_data', '0') == '1'
+        use_national_data_raw = form_data.get('use_national_data', '0')
+        use_national_data = use_national_data_raw == '1'
+        print(f"[DEBUG] use_national_data_raw = '{use_national_data_raw}', use_national_data = {use_national_data}")
 
         update_progress(job_id, {'percent': 5, 'step': 'Parsing assessment areas and counties...', 'done': False, 'error': None})
         

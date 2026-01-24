@@ -2152,14 +2152,16 @@
 
             function formatAssets(assets) {
                 if (!assets) return '';
-                if (assets >= 1000000000) {
-                    return `$${(assets / 1000000000).toFixed(1)}B`;
-                } else if (assets >= 1000000) {
-                    return `$${(assets / 1000000).toFixed(0)}M`;
-                } else if (assets >= 1000) {
-                    return `$${(assets / 1000).toFixed(0)}K`;
+                // Assets are stored in thousands in the database, convert to actual dollars
+                const actualAssets = assets * 1000;
+                if (actualAssets >= 1000000000) {
+                    return `$${(actualAssets / 1000000000).toFixed(1)}B`;
+                } else if (actualAssets >= 1000000) {
+                    return `$${(actualAssets / 1000000).toFixed(0)}M`;
+                } else if (actualAssets >= 1000) {
+                    return `$${(actualAssets / 1000).toFixed(0)}K`;
                 }
-                return `$${assets}`;
+                return `$${actualAssets}`;
             }
         })();
 
