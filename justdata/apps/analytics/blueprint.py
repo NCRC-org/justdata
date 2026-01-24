@@ -27,7 +27,7 @@ analytics_bp = Blueprint(
     url_prefix='/analytics',
     template_folder='templates',
     static_folder='static',
-    static_url_path='/analytics/static'
+    static_url_path='/static'
 )
 
 # Base template context
