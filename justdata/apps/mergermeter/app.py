@@ -3274,9 +3274,9 @@ def _extract_mortgage_goals_data(raw_data):
     print(f"[Goals Calculator] HMDA acquirer records: {len(acquirer_subject)}, target records: {len(target_subject)}")
     if acquirer_subject:
         print(f"[Goals Calculator] HMDA data fields: {list(acquirer_subject[0].keys())[:20]}")
-        # Log a sample record to see actual values
-        sample = acquirer_subject[0]
-        print(f"[Goals Calculator] Sample HMDA record: total_loans={sample.get('total_loans')}, lmib_amount={sample.get('lmib_amount')}")
+        # Log first 3 sample records to see actual values
+        for i, sample in enumerate(acquirer_subject[:3]):
+            print(f"[Goals Calculator] Sample HMDA record {i+1}: total_loans={sample.get('total_loans')}, total_amount={sample.get('total_amount')}, lmib_loans={sample.get('lmib_loans')}, lmib_amount={sample.get('lmib_amount')}")
 
     # CBSA to State mapping (first 2 digits of CBSA = state FIPS)
     # Common state FIPS codes
@@ -3412,7 +3412,13 @@ def _extract_mortgage_goals_data(raw_data):
         if state and state != 'Unknown':
             mortgage_data[state] = metrics
 
-    print(f"[Goals Calculator] Mortgage data summary: {len(mortgage_data)} regions, Grand Total Loans HP={grand_total['Loans']['hp']}")
+    # Debug: Log key metrics
+    lmib_total = grand_total['LMIB$']['hp'] + grand_total['LMIB$']['refi'] + grand_total['LMIB$']['hi']
+    lmib_count = grand_total['~LMIB']['hp'] + grand_total['~LMIB']['refi'] + grand_total['~LMIB']['hi']
+    print(f"[Goals Calculator] Mortgage data summary: {len(mortgage_data)} regions")
+    print(f"[Goals Calculator]   - Total Loans: HP={grand_total['Loans']['hp']}, Refi={grand_total['Loans']['refi']}, HI={grand_total['Loans']['hi']}")
+    print(f"[Goals Calculator]   - LMIB Count: HP={grand_total['~LMIB']['hp']}, Refi={grand_total['~LMIB']['refi']}, HI={grand_total['~LMIB']['hi']} (total: {lmib_count})")
+    print(f"[Goals Calculator]   - LMIB$: HP=${grand_total['LMIB$']['hp']:,.0f}, Refi=${grand_total['LMIB$']['refi']:,.0f}, HI=${grand_total['LMIB$']['hi']:,.0f} (total: ${lmib_total:,.0f})")
 
     return mortgage_data
 
