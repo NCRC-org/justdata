@@ -3220,19 +3220,30 @@ def _extract_mortgage_goals_data(raw_data):
     """Extract mortgage metrics by state from raw data for goals calculator."""
     mortgage_data = {}
 
-    # Get combined mortgage data from acquirer and target
-    acquirer_mortgage = raw_data.get('acquirer_mortgage_data', {})
-    target_mortgage = raw_data.get('target_mortgage_data', {})
+    # Get HMDA subject data from both banks (using actual keys from raw_data)
+    acquirer_subject = raw_data.get('bank_a_hmda_subject', [])
+    target_subject = raw_data.get('bank_b_hmda_subject', [])
 
-    # Combine subject data
-    acquirer_subject = acquirer_mortgage.get('subject_data', [])
-    target_subject = target_mortgage.get('subject_data', [])
+    # Debug: Log what fields are available
+    if acquirer_subject:
+        print(f"[Goals Calculator] HMDA data fields: {list(acquirer_subject[0].keys())[:15]}")
 
-    # Process by state
+    # Helper function to get value with multiple possible field names
+    def get_value(record, *field_names):
+        for name in field_names:
+            val = record.get(name)
+            if val is not None and val != 0:
+                return val
+        return 0
+
+    # Process by state - aggregate all records
     state_data = {}
 
     for record in acquirer_subject + target_subject:
-        state = record.get('state_name') or record.get('state') or 'Unknown'
+        # Try multiple field names for state
+        state = (record.get('state_name') or record.get('state') or
+                 record.get('State') or record.get('state_code') or 'Unknown')
+
         if state not in state_data:
             state_data[state] = {
                 'hp_loans': 0,
@@ -3248,18 +3259,18 @@ def _extract_mortgage_goals_data(raw_data):
                 'hi_lmi_loans': 0
             }
 
-        # Aggregate metrics
-        state_data[state]['hp_loans'] += record.get('hp_loans', 0) or 0
-        state_data[state]['hp_amount'] += record.get('hp_amount', 0) or 0
-        state_data[state]['hp_lmi_loans'] += record.get('hp_lmi_loans', 0) or 0
-        state_data[state]['hp_lmi_amount'] += record.get('hp_lmi_amount', 0) or 0
-        state_data[state]['refi_loans'] += record.get('refi_loans', 0) or 0
-        state_data[state]['refi_amount'] += record.get('refi_amount', 0) or 0
-        state_data[state]['refi_lmi_loans'] += record.get('refi_lmi_loans', 0) or 0
-        state_data[state]['refi_lmi_amount'] += record.get('refi_lmi_amount', 0) or 0
-        state_data[state]['hi_loans'] += record.get('hi_loans', 0) or 0
-        state_data[state]['hi_amount'] += record.get('hi_amount', 0) or 0
-        state_data[state]['hi_lmi_loans'] += record.get('hi_lmi_loans', 0) or 0
+        # Aggregate metrics - try multiple possible field names
+        state_data[state]['hp_loans'] += get_value(record, 'hp_loans', 'HP Loans', 'hp_loans_count', 'home_purchase_loans', 'HP_Loans')
+        state_data[state]['hp_amount'] += get_value(record, 'hp_amount', 'HP Amount', 'hp_loans_amount', 'home_purchase_amount', 'HP_Amount')
+        state_data[state]['hp_lmi_loans'] += get_value(record, 'hp_lmi_loans', 'HP LMI Loans', 'hp_lmi_count', 'HP_LMI_Loans')
+        state_data[state]['hp_lmi_amount'] += get_value(record, 'hp_lmi_amount', 'HP LMI Amount', 'HP_LMI_Amount')
+        state_data[state]['refi_loans'] += get_value(record, 'refi_loans', 'Refi Loans', 'refi_loans_count', 'refinance_loans', 'Refi_Loans')
+        state_data[state]['refi_amount'] += get_value(record, 'refi_amount', 'Refi Amount', 'refi_loans_amount', 'refinance_amount', 'Refi_Amount')
+        state_data[state]['refi_lmi_loans'] += get_value(record, 'refi_lmi_loans', 'Refi LMI Loans', 'refi_lmi_count', 'Refi_LMI_Loans')
+        state_data[state]['refi_lmi_amount'] += get_value(record, 'refi_lmi_amount', 'Refi LMI Amount', 'Refi_LMI_Amount')
+        state_data[state]['hi_loans'] += get_value(record, 'hi_loans', 'HI Loans', 'hi_loans_count', 'home_improvement_loans', 'HI_Loans')
+        state_data[state]['hi_amount'] += get_value(record, 'hi_amount', 'HI Amount', 'hi_loans_amount', 'home_improvement_amount', 'HI_Amount')
+        state_data[state]['hi_lmi_loans'] += get_value(record, 'hi_lmi_loans', 'HI LMI Loans', 'hi_lmi_count', 'HI_LMI_Loans')
 
     # Calculate grand total
     grand_total = {
@@ -3290,19 +3301,30 @@ def _extract_sb_goals_data(raw_data):
     """Extract small business metrics by state from raw data for goals calculator."""
     sb_data = {}
 
-    # Get combined SB data from acquirer and target
-    acquirer_sb = raw_data.get('acquirer_sb_data', {})
-    target_sb = raw_data.get('target_sb_data', {})
+    # Get SB subject data from both banks (using actual keys from raw_data)
+    acquirer_subject = raw_data.get('bank_a_sb_subject', [])
+    target_subject = raw_data.get('bank_b_sb_subject', [])
 
-    # Combine subject data
-    acquirer_subject = acquirer_sb.get('subject_data', [])
-    target_subject = target_sb.get('subject_data', [])
+    # Debug: Log what fields are available
+    if acquirer_subject:
+        print(f"[Goals Calculator] SB data fields: {list(acquirer_subject[0].keys())[:15]}")
+
+    # Helper function to get value with multiple possible field names
+    def get_value(record, *field_names):
+        for name in field_names:
+            val = record.get(name)
+            if val is not None and val != 0:
+                return val
+        return 0
 
     # Process by state
     state_data = {}
 
     for record in acquirer_subject + target_subject:
-        state = record.get('state_name') or record.get('state') or 'Unknown'
+        # Try multiple field names for state
+        state = (record.get('state_name') or record.get('state') or
+                 record.get('State') or record.get('state_code') or 'Unknown')
+
         if state not in state_data:
             state_data[state] = {
                 'sb_loans': 0,
@@ -3313,13 +3335,13 @@ def _extract_sb_goals_data(raw_data):
                 'sb_minority_amount': 0
             }
 
-        # Aggregate metrics
-        state_data[state]['sb_loans'] += record.get('sb_loans', 0) or record.get('total_loans', 0) or 0
-        state_data[state]['sb_amount'] += record.get('sb_amount', 0) or record.get('total_amount', 0) or 0
-        state_data[state]['sb_lmi_loans'] += record.get('sb_lmi_loans', 0) or record.get('lmi_loans', 0) or 0
-        state_data[state]['sb_lmi_amount'] += record.get('sb_lmi_amount', 0) or record.get('lmi_amount', 0) or 0
-        state_data[state]['sb_minority_loans'] += record.get('sb_minority_loans', 0) or record.get('minority_loans', 0) or 0
-        state_data[state]['sb_minority_amount'] += record.get('sb_minority_amount', 0) or record.get('minority_amount', 0) or 0
+        # Aggregate metrics - try multiple possible field names
+        state_data[state]['sb_loans'] += get_value(record, 'sb_loans', 'sb_loans_total', 'SB Loans', 'total_loans', 'Total Loans')
+        state_data[state]['sb_amount'] += get_value(record, 'sb_amount', 'sb_loans_amount', 'SB Amount', 'total_amount', 'Total Amount')
+        state_data[state]['sb_lmi_loans'] += get_value(record, 'sb_lmi_loans', 'lmict_count', 'LMICT Loans', 'lmi_loans', 'LMI Loans')
+        state_data[state]['sb_lmi_amount'] += get_value(record, 'sb_lmi_amount', 'lmict_loans_amount', 'LMICT Amount', 'lmi_amount', 'LMI Amount')
+        state_data[state]['sb_minority_loans'] += get_value(record, 'sb_minority_loans', 'minority_loans', 'Minority Loans')
+        state_data[state]['sb_minority_amount'] += get_value(record, 'sb_minority_amount', 'minority_amount', 'Minority Amount')
 
     # Calculate grand total
     grand_total = {
