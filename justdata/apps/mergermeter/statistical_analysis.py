@@ -132,12 +132,46 @@ def analyze_sb_lending_distribution(
                 'underperforming_cbsas': [],
                 'summary': f'CBSA column "{cbsa_column}" not found in data.'
             }
-        
-        cbsa_totals = sb_data.groupby(cbsa_column).agg({
-            'sb_loans_count': 'sum',
-            'sb_loans_amount': 'sum',
-            'lmict_loans_count': 'sum'
-        }).reset_index()
+
+        # Dynamically find loan count columns - try various naming patterns
+        loan_count_col = None
+        loan_amount_col = None
+        lmict_count_col = None
+
+        # Check for loan count columns with various naming patterns
+        for col in sb_data.columns:
+            col_lower = str(col).lower()
+            if loan_count_col is None and ('sb_loans_count' in col_lower or 'loan_count' in col_lower or 'loans_count' in col_lower or col_lower == 'count'):
+                loan_count_col = col
+            if loan_amount_col is None and ('sb_loans_amount' in col_lower or 'loan_amount' in col_lower or 'loans_amount' in col_lower or col_lower == 'amount'):
+                loan_amount_col = col
+            if lmict_count_col is None and ('lmict' in col_lower or 'lmi' in col_lower):
+                lmict_count_col = col
+
+        # If no matching columns found, return early
+        if loan_count_col is None:
+            return {
+                'test_result': None,
+                'concerning_cbsas': [],
+                'underperforming_cbsas': [],
+                'summary': f'No loan count column found in data. Available columns: {list(sb_data.columns)[:10]}'
+            }
+
+        # Build aggregation dict with only available columns
+        agg_dict = {loan_count_col: 'sum'}
+        if loan_amount_col:
+            agg_dict[loan_amount_col] = 'sum'
+        if lmict_count_col:
+            agg_dict[lmict_count_col] = 'sum'
+
+        cbsa_totals = sb_data.groupby(cbsa_column).agg(agg_dict).reset_index()
+
+        # Rename columns for consistency
+        cbsa_totals = cbsa_totals.rename(columns={
+            loan_count_col: 'sb_loans_count',
+            loan_amount_col: 'sb_loans_amount' if loan_amount_col else None,
+            lmict_count_col: 'lmict_loans_count' if lmict_count_col else None
+        })
         
         # Calculate expected distribution (equal across all CBSAs)
         total_loans = cbsa_totals['sb_loans_count'].sum()
