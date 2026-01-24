@@ -448,68 +448,17 @@
                 // Show loading state
                 document.getElementById('reportContent').innerHTML = `
                     <div class="report-section">
-                        <h2>Generating AI Analysis Summary...</h2>
-                        <p>Please wait while we analyze the merger data and generate a comprehensive summary.</p>
+                        <h2>Loading Report Data...</h2>
+                        <p>Please wait while we load the merger analysis data.</p>
                         <div class="loading-spinner" style="text-align: center; margin: 20px 0;">
                             <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #034ea0;"></i>
                         </div>
                     </div>
                 `;
-                
-                // Generate AI summary
+
+                // Load report data directly (no AI summary)
                 console.log('[MergerMeter Report] Loading report for job:', jobId);
                 console.log('[MergerMeter Report] Base URL:', baseUrl);
-                console.log('[MergerMeter Report] Fetching:', `${baseUrl}/api/generate-ai-summary`);
-
-                fetch(`${baseUrl}/api/generate-ai-summary`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ job_id: jobId })
-                })
-                .then(response => {
-                    console.log('[MergerMeter Report] AI summary response status:', response.status);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('[MergerMeter Report] AI summary data:', data);
-                    if (data.success && data.summary) {
-                        displayAISummary(data.summary, data.statistical_analysis, jobId);
-                    } else {
-                        document.getElementById('reportContent').innerHTML = `
-                            <div class="report-section">
-                                <h2>Error Generating Summary</h2>
-                                <p>${data.error || 'Unable to generate AI summary.'}</p>
-                                <p>You can still download the full Excel report below.</p>
-                                <a href="${baseUrl}/download?format=excel&job_id=${jobId}" class="action-btn primary">
-                                    <i class="fas fa-download"></i> Download Excel Report
-                                </a>
-                            </div>
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('[MergerMeter Report] Error generating AI summary:', error);
-                    document.getElementById('reportContent').innerHTML = `
-                        <div class="report-section">
-                            <h2>Error Generating Summary</h2>
-                            <p>An error occurred while generating the AI summary: ${error.message}</p>
-                            <p>You can still download the full Excel report below.</p>
-                            <a href="${baseUrl}/download?format=excel&job_id=${jobId}" class="action-btn primary">
-                                <i class="fas fa-download"></i> Download Excel Report
-                            </a>
-                        </div>
-                    `;
-                });
-            }
-
-            function displayAISummary(summary, statisticalAnalysis, jobId) {
-                console.log('[MergerMeter Report] displayAISummary called');
                 console.log('[MergerMeter Report] Fetching report-data:', `${baseUrl}/report-data?job_id=${jobId}`);
 
                 // First, load metadata and HHI data to build introduction
@@ -536,48 +485,19 @@
                         
                         // Build introduction section
                         const introHTML = buildIntroductionSection(metadata);
-                        
+
                         // Build HHI table section
                         const hhiHTML = buildHHITableSection(hhiData, metadata);
-                        
-                        // Convert plain text to formatted HTML
-                        function formatSummaryText(text) {
-                            if (!text) return '';
-                            
-                            // Split into paragraphs (double newlines)
-                            let paragraphs = text.split(/\n\s*\n/);
-                            
-                            let html = '';
-                            for (let para of paragraphs) {
-                                para = para.trim();
-                                if (!para) continue;
-                                
-                                // Check if it's a heading (all caps, short, or ends with colon)
-                                if (para.length < 100 && (
-                                    para === para.toUpperCase() || 
-                                    para.endsWith(':') ||
-                                    /^(EXECUTIVE SUMMARY|KEY FINDINGS|RECOMMENDATIONS|CONCLUSION|DATA ANALYSIS|STATISTICAL FINDINGS)/i.test(para)
-                                )) {
-                                    html += `<h3 style="color: #034ea0; margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem; font-weight: 600;">${escapeHtml(para)}</h3>`;
-                                } else {
-                                    html += `<p style="margin-bottom: 15px; line-height: 1.8;">${escapeHtml(para).replace(/\n/g, '<br>')}</p>`;
-                                }
-                            }
-                            
-                            return html;
-                        }
-                        
-                        // Format the complete report with introduction, HHI table, and AI summary
-                        const summaryHTML = `
+
+                        // Build data tables section from Excel data
+                        const dataTablesHTML = buildDataTablesSection(data);
+
+                        // Format the complete report with introduction, HHI table, and data tables
+                        const reportHTML = `
                             ${introHTML}
                             ${hhiHTML}
-                            <div class="ai-summary-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.8; color: #333; margin-top: 30px;">
-                                <h2 style="color: #034ea0; margin-bottom: 20px; font-size: 1.8rem;">AI-Generated Analysis Summary</h2>
-                                <div style="font-family: 'Inter', sans-serif; font-size: 1rem;">
-                                    ${formatSummaryText(summary)}
-                                </div>
-                            </div>
-                            
+                            ${dataTablesHTML}
+
                             <div class="download-section" style="margin-top: 30px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
                                 <p style="margin: 0 0 15px 0; color: #666;">For detailed data tables and analysis, download the full Excel report:</p>
                                 <a href="${baseUrl}/download?format=excel&job_id=${jobId}" class="action-btn primary" style="display: inline-block;">
@@ -585,40 +505,87 @@
                                 </a>
                             </div>
                         `;
-                        
-                        document.getElementById('reportContent').innerHTML = summaryHTML;
+
+                        document.getElementById('reportContent').innerHTML = reportHTML;
                     })
                     .catch(error => {
                         console.error('Error loading report data:', error);
-                        // Fallback: just show AI summary without intro/HHI
-                        function formatSummaryText(text) {
-                            if (!text) return '';
-                            let paragraphs = text.split(/\n\s*\n/);
-                            let html = '';
-                            for (let para of paragraphs) {
-                                para = para.trim();
-                                if (!para) continue;
-                                if (para.length < 100 && (
-                                    para === para.toUpperCase() || 
-                                    para.endsWith(':') ||
-                                    /^(EXECUTIVE SUMMARY|KEY FINDINGS|RECOMMENDATIONS|CONCLUSION|DATA ANALYSIS|STATISTICAL FINDINGS)/i.test(para)
-                                )) {
-                                    html += `<h3 style="color: #034ea0; margin-top: 25px; margin-bottom: 15px; font-size: 1.3rem; font-weight: 600;">${escapeHtml(para)}</h3>`;
-                                } else {
-                                    html += `<p style="margin-bottom: 15px; line-height: 1.8;">${escapeHtml(para).replace(/\n/g, '<br>')}</p>`;
-                                }
-                            }
-                            return html;
-                        }
-                        const summaryHTML = `
-                            <div class="ai-summary-section" style="background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.8; color: #333;">
-                                <div style="font-family: 'Inter', sans-serif; font-size: 1rem;">
-                                    ${formatSummaryText(summary)}
-                                </div>
+                        document.getElementById('reportContent').innerHTML = `
+                            <div class="report-section">
+                                <h2>Error Loading Report</h2>
+                                <p>An error occurred while loading the report data: ${error.message}</p>
+                                <p>You can still download the full Excel report below.</p>
+                                <a href="${baseUrl}/download?format=excel&job_id=${jobId}" class="action-btn primary">
+                                    <i class="fas fa-download"></i> Download Excel Report
+                                </a>
                             </div>
                         `;
-                        document.getElementById('reportContent').innerHTML = summaryHTML;
                     });
+            }
+
+            function buildDataTablesSection(data) {
+                // Build HTML tables from the report data
+                let html = '';
+                const sheets = data.sheets || {};
+
+                // Filter to only show key data sheets
+                const keySheets = ['Mortgage Subject', 'Mortgage Peer', 'Small Business Subject', 'Small Business Peer', 'Branch'];
+
+                for (const [sheetName, sheetData] of Object.entries(sheets)) {
+                    // Check if this is a key sheet we want to display
+                    const isKeySheet = keySheets.some(key => sheetName.toLowerCase().includes(key.toLowerCase()));
+                    if (!isKeySheet || !sheetData || sheetData.length === 0) continue;
+
+                    html += `
+                        <div class="data-table-section" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-top: 20px;">
+                            <h3 style="color: #034ea0; margin-bottom: 15px;">${escapeHtml(sheetName)}</h3>
+                            <div style="overflow-x: auto;">
+                                <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                                    <thead>
+                                        <tr style="background: #034ea0; color: white;">
+                    `;
+
+                    // Get column headers from first row
+                    if (sheetData.length > 0) {
+                        const columns = Object.keys(sheetData[0]);
+                        for (const col of columns.slice(0, 8)) { // Limit to 8 columns for readability
+                            html += `<th style="padding: 10px; text-align: left; border: 1px solid #ddd;">${escapeHtml(col)}</th>`;
+                        }
+                    }
+
+                    html += `
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    // Add data rows (limit to 10 rows for summary view)
+                    for (const row of sheetData.slice(0, 10)) {
+                        html += '<tr>';
+                        const columns = Object.keys(row);
+                        for (const col of columns.slice(0, 8)) {
+                            let value = row[col];
+                            if (typeof value === 'number') {
+                                value = value.toLocaleString();
+                            }
+                            html += `<td style="padding: 8px; border: 1px solid #ddd;">${escapeHtml(String(value || ''))}</td>`;
+                        }
+                        html += '</tr>';
+                    }
+
+                    if (sheetData.length > 10) {
+                        html += `<tr><td colspan="8" style="padding: 10px; text-align: center; color: #666; font-style: italic;">... and ${sheetData.length - 10} more rows (see Excel download for full data)</td></tr>`;
+                    }
+
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                return html;
             }
             
             function buildIntroductionSection(metadata) {
