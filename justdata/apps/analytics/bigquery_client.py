@@ -263,13 +263,23 @@ def sync_new_events() -> dict:
         return {'error': str(e), 'synced_count': 0}
 
 
-# Use unified view combining backfilled data + live Firebase export
-# The all_events view is in justdata-f7da7.justdata_analytics and combines:
-#   - Historical: hdma1-242116.justdata_analytics.backfilled_events (Nov 24, 2025 - Jan 22, 2026)
-#   - Live: justdata-f7da7.analytics_520863329.events_* (Jan 23, 2026 onwards)
-ANALYTICS_VIEW_PROJECT = 'justdata-f7da7'
+# Analytics data source configuration
+#
+# IMPORTANT: The unified view in justdata-f7da7.justdata_analytics.all_events
+# requires the service account to have BigQuery Data Viewer permission on that dataset.
+# Until that's granted, we fall back to querying backfilled_events directly.
+#
+# To enable the unified view (includes live Firebase data):
+# 1. Go to GCP Console > justdata-f7da7 > BigQuery > justdata_analytics dataset
+# 2. Grant "BigQuery Data Viewer" to: apiclient@hdma1-242116.iam.gserviceaccount.com
+# 3. Change EVENTS_TABLE below to use the unified view
+#
+# Unified view (requires permission):
+# EVENTS_TABLE = 'justdata-f7da7.justdata_analytics.all_events'
+#
+# Backfilled data only (current - works without additional permissions):
 ANALYTICS_DATASET = 'justdata_analytics'
-EVENTS_TABLE = f'{ANALYTICS_VIEW_PROJECT}.{ANALYTICS_DATASET}.all_events'
+EVENTS_TABLE = 'hdma1-242116.justdata_analytics.backfilled_events'
 
 # Project where we run queries (where service account has bigquery.jobs.create permission)
 # This is different from ANALYTICS_VIEW_PROJECT - we can query cross-project data
