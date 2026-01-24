@@ -1390,6 +1390,7 @@ def _perform_analysis(job_id, form_data):
         # Save raw data for AI analysis (more robust than reading from Excel)
         raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
         raw_data = {
+            'years_analyzed': hmda_years,  # For goals calculator to know data period
             'bank_a_hmda_subject': bank_a_hmda_subject.to_dict('records') if not bank_a_hmda_subject.empty else [],
             'bank_a_hmda_peer': bank_a_hmda_peer.to_dict('records') if not bank_a_hmda_peer.empty else [],
             'bank_b_hmda_subject': bank_b_hmda_subject.to_dict('records') if not bank_b_hmda_subject.empty else [],
@@ -3171,19 +3172,25 @@ def goals_calculator():
     if metadata.get('target_name'):
         bank_name = f"{metadata.get('acquirer_name', 'Bank A')} + {metadata.get('target_name', 'Bank B')}"
 
-    # Build bank info for display
+    # Build bank info for display (include all identifiers)
     bank_info = {
         'acquirer': {
             'name': metadata.get('acquirer_name', 'N/A'),
             'city': metadata.get('acquirer_city', ''),
             'state': metadata.get('acquirer_state', ''),
-            'totalAssets': metadata.get('acquirer_total_assets', 0)
+            'totalAssets': metadata.get('acquirer_total_assets', 0),
+            'lei': metadata.get('acquirer_lei', ''),
+            'rssd': metadata.get('acquirer_rssd', ''),
+            'respondentId': metadata.get('acquirer_sb_id', '')
         },
         'target': {
             'name': metadata.get('target_name', 'N/A'),
             'city': metadata.get('target_city', ''),
             'state': metadata.get('target_state', ''),
-            'totalAssets': metadata.get('target_total_assets', 0)
+            'totalAssets': metadata.get('target_total_assets', 0),
+            'lei': metadata.get('target_lei', ''),
+            'rssd': metadata.get('target_rssd', ''),
+            'respondentId': metadata.get('target_sb_id', '')
         }
     }
 
@@ -3258,9 +3265,13 @@ def _extract_mortgage_goals_data(raw_data):
     acquirer_subject = raw_data.get('bank_a_hmda_subject', [])
     target_subject = raw_data.get('bank_b_hmda_subject', [])
 
-    # Debug: Log what fields are available
+    # Debug: Log what data is available
+    print(f"[Goals Calculator] HMDA acquirer records: {len(acquirer_subject)}, target records: {len(target_subject)}")
     if acquirer_subject:
         print(f"[Goals Calculator] HMDA data fields: {list(acquirer_subject[0].keys())[:20]}")
+        # Log a sample record to see actual values
+        sample = acquirer_subject[0]
+        print(f"[Goals Calculator] Sample HMDA record: total_loans={sample.get('total_loans')}, lmib_amount={sample.get('lmib_amount')}")
 
     # CBSA to State mapping (first 2 digits of CBSA = state FIPS)
     # Common state FIPS codes

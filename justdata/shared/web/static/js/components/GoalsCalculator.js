@@ -131,9 +131,19 @@
     GoalsCalculator.prototype.render = function() {
         var html = '';
 
-        // Header
+        // Header with breadcrumb navigation
         html += '<header style="background: #034ea0; color: white; padding: 14px 0;">';
         html += '<div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">';
+
+        // Breadcrumb navigation
+        html += '<nav style="font-size: 12px; margin-bottom: 8px;">';
+        html += '<a href="/" style="color: rgba(255,255,255,0.8); text-decoration: none;">JustData</a>';
+        html += '<span style="margin: 0 8px; color: rgba(255,255,255,0.5);">/</span>';
+        html += '<a href="/mergermeter" style="color: rgba(255,255,255,0.8); text-decoration: none;">MergerMeter</a>';
+        html += '<span style="margin: 0 8px; color: rgba(255,255,255,0.5);">/</span>';
+        html += '<span style="color: white;">CBA Goals Calculator</span>';
+        html += '</nav>';
+
         html += '<h1 style="margin: 0; font-size: 18px; font-weight: 600;">MergerMeter</h1>';
         html += '<p style="margin: 2px 0 0; font-size: 12px; opacity: 0.9;">CBA Goals Calculator</p>';
         html += '</div></header>';
@@ -189,36 +199,44 @@
         html += '</div></div></div>';
 
         // Bank info grid
-        html += '<div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center;">';
+        html += '<div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: start;">';
 
         // Acquirer
-        html += '<div>';
-        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 2px;">Acquiring Bank</div>';
-        html += '<div style="font-size: 14px; font-weight: 600; color: #034ea0;">' + this._escapeHtml(bankA.name || 'N/A') + '</div>';
-        if (bankA.city || bankA.state || bankA.totalAssets) {
-            html += '<div style="font-size: 12px; color: #666;">';
-            if (bankA.city) html += bankA.city;
-            if (bankA.state) html += (bankA.city ? ', ' : '') + bankA.state;
-            if (bankA.totalAssets) html += ' • ' + formatAssets(bankA.totalAssets);
+        html += '<div style="background: #f8f9fa; border-radius: 6px; padding: 12px;">';
+        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px;">Acquiring Bank</div>';
+        html += '<div style="font-size: 15px; font-weight: 600; color: #034ea0; margin-bottom: 6px;">' + this._escapeHtml(bankA.name || 'N/A') + '</div>';
+        html += '<div style="font-size: 12px; color: #555; line-height: 1.6;">';
+        if (bankA.city || bankA.state) {
+            html += '<div>';
+            if (bankA.city) html += this._escapeHtml(bankA.city);
+            if (bankA.state) html += (bankA.city ? ', ' : '') + this._escapeHtml(bankA.state);
             html += '</div>';
         }
-        html += '</div>';
+        if (bankA.totalAssets) html += '<div>Assets: ' + formatAssets(bankA.totalAssets) + '</div>';
+        if (bankA.lei) html += '<div style="font-size: 11px; color: #777;">LEI: ' + this._escapeHtml(bankA.lei) + '</div>';
+        if (bankA.rssd) html += '<div style="font-size: 11px; color: #777;">RSSD: ' + this._escapeHtml(bankA.rssd) + '</div>';
+        if (bankA.respondentId) html += '<div style="font-size: 11px; color: #777;">Respondent ID: ' + this._escapeHtml(bankA.respondentId) + '</div>';
+        html += '</div></div>';
 
         // Plus symbol
-        html += '<div style="font-size: 28px; color: #034ea0; font-weight: 300;">+</div>';
+        html += '<div style="font-size: 28px; color: #034ea0; font-weight: 300; padding-top: 30px;">+</div>';
 
         // Target
-        html += '<div>';
-        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 2px;">Target Bank</div>';
-        html += '<div style="font-size: 14px; font-weight: 600; color: #034ea0;">' + this._escapeHtml(bankB.name || 'N/A') + '</div>';
-        if (bankB.city || bankB.state || bankB.totalAssets) {
-            html += '<div style="font-size: 12px; color: #666;">';
-            if (bankB.city) html += bankB.city;
-            if (bankB.state) html += (bankB.city ? ', ' : '') + bankB.state;
-            if (bankB.totalAssets) html += ' • ' + formatAssets(bankB.totalAssets);
+        html += '<div style="background: #f8f9fa; border-radius: 6px; padding: 12px;">';
+        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px;">Target Bank</div>';
+        html += '<div style="font-size: 15px; font-weight: 600; color: #034ea0; margin-bottom: 6px;">' + this._escapeHtml(bankB.name || 'N/A') + '</div>';
+        html += '<div style="font-size: 12px; color: #555; line-height: 1.6;">';
+        if (bankB.city || bankB.state) {
+            html += '<div>';
+            if (bankB.city) html += this._escapeHtml(bankB.city);
+            if (bankB.state) html += (bankB.city ? ', ' : '') + this._escapeHtml(bankB.state);
             html += '</div>';
         }
-        html += '</div>';
+        if (bankB.totalAssets) html += '<div>Assets: ' + formatAssets(bankB.totalAssets) + '</div>';
+        if (bankB.lei) html += '<div style="font-size: 11px; color: #777;">LEI: ' + this._escapeHtml(bankB.lei) + '</div>';
+        if (bankB.rssd) html += '<div style="font-size: 11px; color: #777;">RSSD: ' + this._escapeHtml(bankB.rssd) + '</div>';
+        if (bankB.respondentId) html += '<div style="font-size: 11px; color: #777;">Respondent ID: ' + this._escapeHtml(bankB.respondentId) + '</div>';
+        html += '</div></div>';
 
         html += '</div></div></div>';
         return html;
@@ -350,9 +368,12 @@
 
         html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">';
 
-        // Mortgage Card
+        // Mortgage Card - LMI BORROWERS (not census tracts)
         html += '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;">';
-        html += '<div style="background: #034ea0; color: white; padding: 14px 20px; font-size: 14px; font-weight: 600;">Mortgage Lending to LMI Borrowers</div>';
+        html += '<div style="background: #034ea0; color: white; padding: 14px 20px;">';
+        html += '<div style="font-size: 14px; font-weight: 600;">Mortgage Lending to LMI Borrowers</div>';
+        html += '<div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">Loans to borrowers earning ≤80% of area median income</div>';
+        html += '</div>';
         html += '<div style="padding: 28px 24px; text-align: center;">';
         html += '<div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Total Increase Over ' + this.agreementLength + ' Years</div>';
         html += '<div style="font-size: 48px; font-weight: 700; color: #034ea0; line-height: 1;">' + formatCurrency(lmibIncrease) + '</div>';
@@ -363,13 +384,26 @@
         html += '<div style="font-size: 20px; font-weight: 600; color: #666;">' + formatCurrency(lmibBaselineOverPeriod) + '</div></div>';
         html += '</div></div></div>';
 
-        // SB Card
+        // SB Card - Show breakdown of LMICT vs <$1M Revenue
+        var sbLmictIncrease = calcGoal(sbLmictTotal, this.dataYears, this.sbPercent, this.agreementLength) - calcBaseline(sbLmictTotal, this.dataYears, this.agreementLength);
+        var sbRevIncrease = calcGoal(sbRevTotal, this.dataYears, this.sbPercent, this.agreementLength) - calcBaseline(sbRevTotal, this.dataYears, this.agreementLength);
+
         html += '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;">';
-        html += '<div style="background: #2e7d32; color: white; padding: 14px 20px; font-size: 14px; font-weight: 600;">Small Business Lending</div>';
+        html += '<div style="background: #2e7d32; color: white; padding: 14px 20px;">';
+        html += '<div style="font-size: 14px; font-weight: 600;">Small Business Lending</div>';
+        html += '<div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">LMI census tracts + businesses &lt;$1M revenue</div>';
+        html += '</div>';
         html += '<div style="padding: 28px 24px; text-align: center;">';
         html += '<div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Total Increase Over ' + this.agreementLength + ' Years</div>';
         html += '<div style="font-size: 48px; font-weight: 700; color: #2e7d32; line-height: 1;">' + formatCurrency(sbIncrease) + '</div>';
-        html += '<div style="margin-top: 24px; background: #f5f7fa; border-radius: 4px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">';
+
+        // Breakdown section
+        html += '<div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; font-size: 12px;">';
+        html += '<div style="background: #e8f5e9; padding: 8px 10px; border-radius: 4px;"><div style="color: #666; font-size: 10px;">LMI Census Tracts</div><div style="color: #2e7d32; font-weight: 600;">+' + formatCurrency(sbLmictIncrease) + '</div></div>';
+        html += '<div style="background: #e8f5e9; padding: 8px 10px; border-radius: 4px;"><div style="color: #666; font-size: 10px;">Businesses &lt;$1M Rev</div><div style="color: #2e7d32; font-weight: 600;">+' + formatCurrency(sbRevIncrease) + '</div></div>';
+        html += '</div>';
+
+        html += '<div style="margin-top: 16px; background: #f5f7fa; border-radius: 4px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">';
         html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">NCRC Proposal</div>';
         html += '<div style="font-size: 20px; font-weight: 700; color: #2e7d32;">' + formatCurrency(sbGoal) + '</div></div>';
         html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">Baseline (' + this.agreementLength + ' yr)</div>';
