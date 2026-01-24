@@ -77,19 +77,15 @@ def index():
 @mergermeter_bp.route('/report')
 @require_access('mergermeter', 'full')
 def report():
-    """Report display page"""
-    job_id_from_url = request.args.get('job_id')
-    if job_id_from_url and not session.get('job_id'):
-        session['job_id'] = job_id_from_url
-    app_base_url = url_for('mergermeter.index').rstrip('/')
-    return render_template('mergermeter_report.html',
-                         version=__version__,
-                         app_base_url=app_base_url,
-                         app_name='MergerMeter',
-                         breadcrumb_items=[
-                             {'name': 'MergerMeter', 'url': '/mergermeter'},
-                             {'name': 'Report', 'url': '/mergermeter/report'}
-                         ])
+    """Report display page - renders Goals Calculator directly"""
+    try:
+        from .app import goals_calculator as goals_calc_func
+        # Call the goals calculator function which handles all the data loading
+        return goals_calc_func()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @mergermeter_bp.route('/progress/<job_id>')
