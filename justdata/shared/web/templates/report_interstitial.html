@@ -1,0 +1,182 @@
+<!-- Report Interstitial Modal - Loading gate before report display -->
+<!-- Include this in report templates and call showReportInterstitial() before loading data -->
+
+<style>
+    .report-interstitial {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #fafafa;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
+    }
+
+    .report-interstitial.fade-out {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .report-interstitial-content {
+        text-align: center;
+        max-width: 600px;
+        padding: 40px;
+    }
+
+    .report-interstitial-tagline {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 28px;
+        font-weight: bold;
+        color: #1a1a1a;
+        margin-bottom: 24px;
+        line-height: 1.3;
+    }
+
+    .report-interstitial-status {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 16px;
+        color: #666666;
+        margin-bottom: 40px;
+        transition: color 0.2s ease;
+    }
+
+    .report-interstitial-status.ready {
+        color: #1a1a1a;
+    }
+
+    .report-interstitial-button {
+        font-family: Georgia, 'Times New Roman', serif;
+        font-size: 14px;
+        padding: 12px 28px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background-color: #1E3D5C;
+        color: white;
+    }
+
+    .report-interstitial-button:disabled {
+        background-color: #cccccc;
+        color: #888888;
+        cursor: not-allowed;
+    }
+
+    .report-interstitial-button:not(:disabled):hover {
+        background-color: #2a5580;
+        transform: translateY(-1px);
+    }
+
+    /* Hide report content while interstitial is visible */
+    .report-content-hidden {
+        visibility: hidden;
+        opacity: 0;
+    }
+
+    .report-content-visible {
+        visibility: visible;
+        opacity: 1;
+        transition: opacity 0.3s ease-in;
+    }
+</style>
+
+<div id="reportInterstitial" class="report-interstitial">
+    <div class="report-interstitial-content">
+        <div class="report-interstitial-tagline">Data drives the movement.</div>
+        <div id="interstitialStatus" class="report-interstitial-status">Your report is being prepared...</div>
+        <button id="interstitialButton" class="report-interstitial-button" disabled>Preparing Report...</button>
+    </div>
+</div>
+
+<script>
+    // Report Interstitial Controller
+    const ReportInterstitial = {
+        modal: null,
+        statusEl: null,
+        buttonEl: null,
+        reportContainer: null,
+        onContinue: null,
+
+        init: function(reportContainerSelector) {
+            this.modal = document.getElementById('reportInterstitial');
+            this.statusEl = document.getElementById('interstitialStatus');
+            this.buttonEl = document.getElementById('interstitialButton');
+            this.reportContainer = document.querySelector(reportContainerSelector || '.report-container, .container, main');
+
+            // Hide report content initially
+            if (this.reportContainer) {
+                this.reportContainer.classList.add('report-content-hidden');
+            }
+
+            // Button click handler
+            this.buttonEl.addEventListener('click', () => {
+                if (!this.buttonEl.disabled) {
+                    this.hide();
+                }
+            });
+
+            console.log('[Interstitial] Initialized');
+        },
+
+        setReady: function() {
+            this.statusEl.textContent = 'Your report is ready.';
+            this.statusEl.classList.add('ready');
+            this.buttonEl.textContent = 'Continue to Report';
+            this.buttonEl.disabled = false;
+            console.log('[Interstitial] Report ready');
+        },
+
+        setError: function(message) {
+            this.statusEl.textContent = message || 'There was an error loading your report.';
+            this.statusEl.classList.add('ready');
+            this.buttonEl.textContent = 'Try Again';
+            this.buttonEl.disabled = false;
+            this.buttonEl.onclick = () => window.location.reload();
+            console.log('[Interstitial] Error state');
+        },
+
+        hide: function() {
+            // Fade out modal
+            this.modal.classList.add('fade-out');
+
+            // Show report content
+            if (this.reportContainer) {
+                this.reportContainer.classList.remove('report-content-hidden');
+                this.reportContainer.classList.add('report-content-visible');
+            }
+
+            // Remove modal from DOM after animation
+            setTimeout(() => {
+                if (this.modal && this.modal.parentNode) {
+                    this.modal.parentNode.removeChild(this.modal);
+                }
+                // Trigger callback if set
+                if (typeof this.onContinue === 'function') {
+                    this.onContinue();
+                }
+            }, 300);
+
+            console.log('[Interstitial] Hidden');
+        },
+
+        // Set a callback to run when user clicks continue
+        setOnContinue: function(callback) {
+            this.onContinue = callback;
+        }
+    };
+
+    // Auto-initialize when DOM is ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            ReportInterstitial.init();
+        });
+    } else {
+        ReportInterstitial.init();
+    }
+</script>

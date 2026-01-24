@@ -82,6 +82,14 @@ app = create_app(
     static_folder=STATIC_DIR
 )
 
+# Configure shared templates (needed for standalone running)
+from jinja2 import ChoiceLoader, FileSystemLoader
+SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
+app.jinja_loader = ChoiceLoader([
+    FileSystemLoader(str(TEMPLATES_DIR)),       # App templates first
+    FileSystemLoader(str(SHARED_TEMPLATES_DIR)), # Shared templates second
+])
+
 # Add ProxyFix for proper request handling behind Render's proxy
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
@@ -105,7 +113,7 @@ def report():
     job_id_from_url = request.args.get('job_id')
     if job_id_from_url and not session.get('job_id'):
         session['job_id'] = job_id_from_url
-    return render_template('report_template.html',
+    return render_template('mergermeter_report.html',
                          version=__version__,
                          app_name='MergerMeter',
                          breadcrumb_items=[
@@ -3123,6 +3131,443 @@ register_standard_routes(
 # Register MergerMeter-specific routes
 app.add_url_rule('/report', 'report', report, methods=['GET'])
 # Note: /report-data and /api/generate-assessment-areas-from-branches are already registered via @app.route decorators above
+
+
+# ============================================================================
+# GOALS CALCULATOR ROUTES
+# ============================================================================
+
+@app.route('/goals-calculator')
+def goals_calculator():
+    """
+    CBA Goals Calculator page - interactive tool for setting lending goals.
+    Reads data from the completed analysis and allows users to adjust
+    improvement percentages to calculate Community Benefits Agreement targets.
+    """
+    import pandas as pd
+    from justdata.shared.analysis.ai_provider import convert_numpy_types
+
+    job_id = request.args.get('job_id') or session.get('job_id')
+    if not job_id:
+        return render_template('goals_calculator.html',
+                             mortgage_data={},
+                             sb_data={},
+                             bank_name='No Analysis Found',
+                             data_years=3,
+                             error='No job ID found. Please run a merger analysis first.')
+
+    # Load metadata
+    metadata = {}
+    metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
+    if metadata_file.exists():
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+
+    bank_name = metadata.get('acquirer_name', 'Combined Entity')
+    if metadata.get('target_name'):
+        bank_name = f"{metadata.get('acquirer_name', 'Bank A')} + {metadata.get('target_name', 'Bank B')}"
+
+    # Load raw data if available
+    raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
+    mortgage_data = {}
+    sb_data = {}
+    data_years = 3  # Default
+
+    if raw_data_file.exists():
+        try:
+            with open(raw_data_file, 'r') as f:
+                raw_data = json.load(f)
+
+            # Extract years from data if available
+            years_analyzed = raw_data.get('years_analyzed', [])
+            if years_analyzed:
+                data_years = len(years_analyzed)
+
+            # Process mortgage data by state
+            mortgage_data = _extract_mortgage_goals_data(raw_data)
+
+            # Process small business data by state
+            sb_data = _extract_sb_goals_data(raw_data)
+
+        except Exception as e:
+            print(f"Error loading raw data for goals calculator: {e}")
+            import traceback
+            traceback.print_exc()
+
+    # If no raw data, try to load from Excel
+    if not mortgage_data and not sb_data:
+        excel_filename = get_excel_filename(job_id)
+        excel_file = OUTPUT_DIR / excel_filename
+        if excel_file.exists():
+            try:
+                mortgage_data, sb_data, data_years = _extract_goals_data_from_excel(excel_file)
+            except Exception as e:
+                print(f"Error loading Excel for goals calculator: {e}")
+                import traceback
+                traceback.print_exc()
+
+    return render_template('goals_calculator.html',
+                         mortgage_data=mortgage_data,
+                         sb_data=sb_data,
+                         bank_name=bank_name,
+                         data_years=data_years)
+
+
+def _extract_mortgage_goals_data(raw_data):
+    """Extract mortgage metrics by state from raw data for goals calculator."""
+    mortgage_data = {}
+
+    # Get combined mortgage data from acquirer and target
+    acquirer_mortgage = raw_data.get('acquirer_mortgage_data', {})
+    target_mortgage = raw_data.get('target_mortgage_data', {})
+
+    # Combine subject data
+    acquirer_subject = acquirer_mortgage.get('subject_data', [])
+    target_subject = target_mortgage.get('subject_data', [])
+
+    # Process by state
+    state_data = {}
+
+    for record in acquirer_subject + target_subject:
+        state = record.get('state_name') or record.get('state') or 'Unknown'
+        if state not in state_data:
+            state_data[state] = {
+                'hp_loans': 0,
+                'hp_amount': 0,
+                'hp_lmi_loans': 0,
+                'hp_lmi_amount': 0,
+                'refi_loans': 0,
+                'refi_amount': 0,
+                'refi_lmi_loans': 0,
+                'refi_lmi_amount': 0,
+                'hi_loans': 0,
+                'hi_amount': 0,
+                'hi_lmi_loans': 0
+            }
+
+        # Aggregate metrics
+        state_data[state]['hp_loans'] += record.get('hp_loans', 0) or 0
+        state_data[state]['hp_amount'] += record.get('hp_amount', 0) or 0
+        state_data[state]['hp_lmi_loans'] += record.get('hp_lmi_loans', 0) or 0
+        state_data[state]['hp_lmi_amount'] += record.get('hp_lmi_amount', 0) or 0
+        state_data[state]['refi_loans'] += record.get('refi_loans', 0) or 0
+        state_data[state]['refi_amount'] += record.get('refi_amount', 0) or 0
+        state_data[state]['refi_lmi_loans'] += record.get('refi_lmi_loans', 0) or 0
+        state_data[state]['refi_lmi_amount'] += record.get('refi_lmi_amount', 0) or 0
+        state_data[state]['hi_loans'] += record.get('hi_loans', 0) or 0
+        state_data[state]['hi_amount'] += record.get('hi_amount', 0) or 0
+        state_data[state]['hi_lmi_loans'] += record.get('hi_lmi_loans', 0) or 0
+
+    # Calculate grand total
+    grand_total = {
+        'hp_loans': 0,
+        'hp_amount': 0,
+        'hp_lmi_loans': 0,
+        'hp_lmi_amount': 0,
+        'refi_loans': 0,
+        'refi_amount': 0,
+        'refi_lmi_loans': 0,
+        'refi_lmi_amount': 0,
+        'hi_loans': 0,
+        'hi_amount': 0,
+        'hi_lmi_loans': 0
+    }
+
+    for state, data in state_data.items():
+        for key in grand_total:
+            grand_total[key] += data.get(key, 0)
+
+    mortgage_data['Grand Total'] = grand_total
+    mortgage_data.update(state_data)
+
+    return mortgage_data
+
+
+def _extract_sb_goals_data(raw_data):
+    """Extract small business metrics by state from raw data for goals calculator."""
+    sb_data = {}
+
+    # Get combined SB data from acquirer and target
+    acquirer_sb = raw_data.get('acquirer_sb_data', {})
+    target_sb = raw_data.get('target_sb_data', {})
+
+    # Combine subject data
+    acquirer_subject = acquirer_sb.get('subject_data', [])
+    target_subject = target_sb.get('subject_data', [])
+
+    # Process by state
+    state_data = {}
+
+    for record in acquirer_subject + target_subject:
+        state = record.get('state_name') or record.get('state') or 'Unknown'
+        if state not in state_data:
+            state_data[state] = {
+                'sb_loans': 0,
+                'sb_amount': 0,
+                'sb_lmi_loans': 0,
+                'sb_lmi_amount': 0,
+                'sb_minority_loans': 0,
+                'sb_minority_amount': 0
+            }
+
+        # Aggregate metrics
+        state_data[state]['sb_loans'] += record.get('sb_loans', 0) or record.get('total_loans', 0) or 0
+        state_data[state]['sb_amount'] += record.get('sb_amount', 0) or record.get('total_amount', 0) or 0
+        state_data[state]['sb_lmi_loans'] += record.get('sb_lmi_loans', 0) or record.get('lmi_loans', 0) or 0
+        state_data[state]['sb_lmi_amount'] += record.get('sb_lmi_amount', 0) or record.get('lmi_amount', 0) or 0
+        state_data[state]['sb_minority_loans'] += record.get('sb_minority_loans', 0) or record.get('minority_loans', 0) or 0
+        state_data[state]['sb_minority_amount'] += record.get('sb_minority_amount', 0) or record.get('minority_amount', 0) or 0
+
+    # Calculate grand total
+    grand_total = {
+        'sb_loans': 0,
+        'sb_amount': 0,
+        'sb_lmi_loans': 0,
+        'sb_lmi_amount': 0,
+        'sb_minority_loans': 0,
+        'sb_minority_amount': 0
+    }
+
+    for state, data in state_data.items():
+        for key in grand_total:
+            grand_total[key] += data.get(key, 0)
+
+    sb_data['Grand Total'] = grand_total
+    sb_data.update(state_data)
+
+    return sb_data
+
+
+def _extract_goals_data_from_excel(excel_file):
+    """Extract goals data from Excel file as fallback."""
+    import pandas as pd
+
+    mortgage_data = {}
+    sb_data = {}
+    data_years = 3
+
+    try:
+        excel = pd.ExcelFile(excel_file)
+
+        # Look for Mortgage Goals sheet
+        mortgage_sheets = [s for s in excel.sheet_names if 'mortgage' in s.lower() and 'goal' in s.lower()]
+        if mortgage_sheets:
+            df = pd.read_excel(excel, sheet_name=mortgage_sheets[0])
+            # Process mortgage data from Excel
+            # This is a simplified extraction - adjust based on actual Excel structure
+            mortgage_data['Grand Total'] = {
+                'hp_loans': df.get('HP Loans', pd.Series([0])).sum() if 'HP Loans' in df.columns else 0,
+                'hp_amount': df.get('HP Amount', pd.Series([0])).sum() if 'HP Amount' in df.columns else 0,
+                'hp_lmi_loans': 0,
+                'hp_lmi_amount': 0,
+                'refi_loans': df.get('Refi Loans', pd.Series([0])).sum() if 'Refi Loans' in df.columns else 0,
+                'refi_amount': df.get('Refi Amount', pd.Series([0])).sum() if 'Refi Amount' in df.columns else 0,
+                'refi_lmi_loans': 0,
+                'refi_lmi_amount': 0,
+                'hi_loans': df.get('HI Loans', pd.Series([0])).sum() if 'HI Loans' in df.columns else 0,
+                'hi_amount': df.get('HI Amount', pd.Series([0])).sum() if 'HI Amount' in df.columns else 0,
+                'hi_lmi_loans': 0
+            }
+
+        # Look for Small Business sheets
+        sb_sheets = [s for s in excel.sheet_names if 'small business' in s.lower() or 'sb' in s.lower()]
+        if sb_sheets:
+            df = pd.read_excel(excel, sheet_name=sb_sheets[0])
+            sb_data['Grand Total'] = {
+                'sb_loans': df.get('Total Loans', pd.Series([0])).sum() if 'Total Loans' in df.columns else 0,
+                'sb_amount': df.get('Total Amount', pd.Series([0])).sum() if 'Total Amount' in df.columns else 0,
+                'sb_lmi_loans': df.get('LMI Loans', pd.Series([0])).sum() if 'LMI Loans' in df.columns else 0,
+                'sb_lmi_amount': df.get('LMI Amount', pd.Series([0])).sum() if 'LMI Amount' in df.columns else 0,
+                'sb_minority_loans': df.get('Minority Loans', pd.Series([0])).sum() if 'Minority Loans' in df.columns else 0,
+                'sb_minority_amount': df.get('Minority Amount', pd.Series([0])).sum() if 'Minority Amount' in df.columns else 0
+            }
+    except Exception as e:
+        print(f"Error extracting goals data from Excel: {e}")
+
+    return mortgage_data, sb_data, data_years
+
+
+@app.route('/api/export-goals', methods=['POST'])
+def export_goals():
+    """Export goals calculator configuration and data to Excel."""
+    import pandas as pd
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.utils.dataframe import dataframe_to_rows
+
+    try:
+        config = json.loads(request.form.get('config', '{}'))
+        mortgage_data = json.loads(request.form.get('mortgage_data', '{}'))
+        sb_data = json.loads(request.form.get('sb_data', '{}'))
+        bank_name = request.form.get('bank_name', 'Combined Entity')
+
+        # Create workbook
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "CBA Goals Summary"
+
+        # Styles
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="034ea0", end_color="034ea0", fill_type="solid")
+        sb_header_fill = PatternFill(start_color="2e7d32", end_color="2e7d32", fill_type="solid")
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+
+        # Title
+        ws['A1'] = f"CBA Goals Calculator - {bank_name}"
+        ws['A1'].font = Font(bold=True, size=14)
+        ws.merge_cells('A1:F1')
+
+        # Configuration summary
+        ws['A3'] = "Configuration"
+        ws['A3'].font = Font(bold=True, size=12)
+
+        ws['A4'] = "Baseline Data Years:"
+        ws['B4'] = config.get('dataYears', 3)
+        ws['A5'] = "Agreement Length:"
+        ws['B5'] = f"{config.get('agreementLength', 5)} years"
+        ws['A6'] = "Home Purchase Improvement:"
+        ws['B6'] = f"+{config.get('hpPercent', 5)}%"
+        ws['A7'] = "Refinance Improvement:"
+        ws['B7'] = f"+{config.get('refiPercent', 5)}%"
+        ws['A8'] = "Home Improvement:"
+        ws['B8'] = f"+{config.get('hiPercent', 5)}%"
+        ws['A9'] = "Small Business Improvement:"
+        ws['B9'] = f"+{config.get('sbPercent', 5)}%"
+
+        # Mortgage Goals Table
+        row = 12
+        ws[f'A{row}'] = "Mortgage Lending Goals"
+        ws[f'A{row}'].font = Font(bold=True, size=12)
+
+        row += 2
+        headers = ['Region', 'Metric', 'Baseline', 'Annual Avg', 'Improvement', f"{config.get('agreementLength', 5)}-Year Goal"]
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.border = thin_border
+
+        row += 1
+        data_years = config.get('dataYears', 3)
+        agreement_length = config.get('agreementLength', 5)
+
+        # Add mortgage data
+        for region, data in mortgage_data.items():
+            metrics = [
+                ('HP Loans', data.get('hp_loans', 0), config.get('hpPercent', 5)),
+                ('HP Amount', data.get('hp_amount', 0), config.get('hpPercent', 5)),
+                ('Refi Loans', data.get('refi_loans', 0), config.get('refiPercent', 5)),
+                ('Refi Amount', data.get('refi_amount', 0), config.get('refiPercent', 5)),
+                ('HI Loans', data.get('hi_loans', 0), config.get('hiPercent', 5)),
+            ]
+
+            for metric_name, baseline, percent in metrics:
+                annual = baseline / data_years if data_years > 0 else 0
+                goal = ((baseline / data_years) * (1 + percent / 100)) * agreement_length if data_years > 0 else 0
+
+                ws.cell(row=row, column=1, value=region).border = thin_border
+                ws.cell(row=row, column=2, value=metric_name).border = thin_border
+                ws.cell(row=row, column=3, value=baseline).border = thin_border
+                ws.cell(row=row, column=4, value=round(annual)).border = thin_border
+                ws.cell(row=row, column=5, value=f"+{percent}%").border = thin_border
+                ws.cell(row=row, column=6, value=round(goal)).border = thin_border
+                row += 1
+
+        # Small Business Goals Table
+        row += 2
+        ws[f'A{row}'] = "Small Business Lending Goals"
+        ws[f'A{row}'].font = Font(bold=True, size=12)
+
+        row += 2
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=col, value=header)
+            cell.font = header_font
+            cell.fill = sb_header_fill
+            cell.border = thin_border
+
+        row += 1
+        sb_percent = config.get('sbPercent', 5)
+
+        for region, data in sb_data.items():
+            metrics = [
+                ('SB Loans', data.get('sb_loans', 0)),
+                ('SB Amount', data.get('sb_amount', 0)),
+                ('SB LMI Loans', data.get('sb_lmi_loans', 0)),
+                ('SB Minority Loans', data.get('sb_minority_loans', 0)),
+            ]
+
+            for metric_name, baseline in metrics:
+                annual = baseline / data_years if data_years > 0 else 0
+                goal = ((baseline / data_years) * (1 + sb_percent / 100)) * agreement_length if data_years > 0 else 0
+
+                ws.cell(row=row, column=1, value=region).border = thin_border
+                ws.cell(row=row, column=2, value=metric_name).border = thin_border
+                ws.cell(row=row, column=3, value=baseline).border = thin_border
+                ws.cell(row=row, column=4, value=round(annual)).border = thin_border
+                ws.cell(row=row, column=5, value=f"+{sb_percent}%").border = thin_border
+                ws.cell(row=row, column=6, value=round(goal)).border = thin_border
+                row += 1
+
+        # Auto-adjust column widths
+        for col in range(1, 7):
+            ws.column_dimensions[chr(64 + col)].width = 18
+
+        # Save to temp file
+        import tempfile
+        from datetime import datetime
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"NCRC_CBA_Goals_{timestamp}.xlsx"
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx') as tmp:
+            wb.save(tmp.name)
+            return send_file(
+                tmp.name,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/save-goals-config', methods=['POST'])
+def save_goals_config():
+    """Save goals calculator configuration to session/file."""
+    try:
+        data = request.get_json()
+        config = data.get('config', {})
+        bank_name = data.get('bank_name', 'Unknown')
+
+        # Save to session
+        session['goals_config'] = config
+        session['goals_bank_name'] = bank_name
+
+        # Optionally save to file for persistence
+        job_id = session.get('job_id')
+        if job_id:
+            config_file = OUTPUT_DIR / f'goals_config_{job_id}.json'
+            with open(config_file, 'w') as f:
+                json.dump({
+                    'config': config,
+                    'bank_name': bank_name,
+                    'saved_at': datetime.now().isoformat()
+                }, f, indent=2)
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Debug: Verify route is registered
 print(f"[DEBUG] Checking if /api/generate-assessment-areas-from-branches is registered...")

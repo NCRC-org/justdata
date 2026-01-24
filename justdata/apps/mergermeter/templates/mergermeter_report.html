@@ -328,6 +328,19 @@
     {% include "shared_header.html" %}
 
     <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb no-print" style="padding: 15px 0; margin-bottom: 10px;">
+            <a href="/" style="color: #034ea0; text-decoration: none;">
+                <i class="fas fa-home"></i> JustData
+            </a>
+            <span style="color: #666; margin: 0 8px;">/</span>
+            <a href="{{ app_base_url|default('/mergermeter') }}" style="color: #034ea0; text-decoration: none;">
+                MergerMeter
+            </a>
+            <span style="color: #666; margin: 0 8px;">/</span>
+            <span style="color: #666;">Report</span>
+        </nav>
+
         <!-- Info Modal -->
         <div id="infoModal" class="info-modal">
             <div class="info-modal-content">
@@ -351,8 +364,11 @@
                             <strong>Analysis Period:</strong> <span id="analysisPeriod"></span>
                         </div>
                         <div class="report-actions no-print">
-                            <a href="/" class="action-btn">
-                                <i class="fas fa-arrow-left"></i> Return to Main Page
+                            <a href="{{ app_base_url|default('/mergermeter') }}" class="action-btn">
+                                <i class="fas fa-plus-circle"></i> New Analysis
+                            </a>
+                            <a href="#" class="action-btn" id="goalsCalculatorBtn" style="background-color: #2e7d32; color: white;">
+                                <i class="fas fa-calculator"></i> Goals Calculator
                             </a>
                             <a href="#" class="action-btn primary" id="downloadReportBtn">
                                 <i class="fas fa-download"></i> Download Report
@@ -423,7 +439,7 @@
                     <div class="report-section">
                         <h2>No Report Data Found</h2>
                         <p>Please run an analysis first to generate a report.</p>
-                        <a href="/" class="action-btn primary">Start New Analysis</a>
+                        <a href="${baseUrl}" class="action-btn primary">Start New Analysis</a>
                     </div>
                 `;
             }
@@ -885,7 +901,18 @@
                     window.location.href = `${baseUrl}/download?format=excel&job_id=${jobId}`;
                 }
             });
-            
+
+            // Goals Calculator button handler
+            $('#goalsCalculatorBtn').on('click', function(e) {
+                e.preventDefault();
+                const jobId = new URLSearchParams(window.location.search).get('job_id') || sessionStorage.getItem('merger_job_id');
+                if (jobId) {
+                    window.location.href = `${baseUrl}/goals-calculator?job_id=${jobId}`;
+                } else {
+                    alert('No analysis job found. Please run a merger analysis first.');
+                }
+            });
+
             // Info modal handlers - initialize immediately when DOM is ready
             function initializeInfoModals() {
                 const modal = document.getElementById('infoModal');

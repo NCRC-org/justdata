@@ -82,7 +82,7 @@ def report():
     if job_id_from_url and not session.get('job_id'):
         session['job_id'] = job_id_from_url
     app_base_url = url_for('mergermeter.index').rstrip('/')
-    return render_template('report_template.html',
+    return render_template('mergermeter_report.html',
                          version=__version__,
                          app_base_url=app_base_url,
                          app_name='MergerMeter',
@@ -176,6 +176,7 @@ def analyze():
             'target_name': request.form.get('target_name', 'Bank B').strip(),
             'acquirer_assessment_areas': request.form.get('acquirer_assessment_areas', '[]'),
             'target_assessment_areas': request.form.get('target_assessment_areas', '[]'),
+            'use_national_data': request.form.get('use_national_data', '0'),  # National level data flag
             'loan_purpose': request.form.get('loan_purpose', ''),
             'peer_group': request.form.get('peer_group', 'volume_50_200').strip(),  # Peer group selection
             # Analysis year ranges
