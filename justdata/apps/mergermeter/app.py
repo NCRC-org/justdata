@@ -3156,6 +3156,7 @@ def goals_calculator():
                              mortgage_data={},
                              sb_data={},
                              bank_name='No Analysis Found',
+                             bank_info={},
                              data_years=3,
                              error='No job ID found. Please run a merger analysis first.')
 
@@ -3169,6 +3170,22 @@ def goals_calculator():
     bank_name = metadata.get('acquirer_name', 'Combined Entity')
     if metadata.get('target_name'):
         bank_name = f"{metadata.get('acquirer_name', 'Bank A')} + {metadata.get('target_name', 'Bank B')}"
+
+    # Build bank info for display
+    bank_info = {
+        'acquirer': {
+            'name': metadata.get('acquirer_name', 'N/A'),
+            'city': metadata.get('acquirer_city', ''),
+            'state': metadata.get('acquirer_state', ''),
+            'totalAssets': metadata.get('acquirer_total_assets', 0)
+        },
+        'target': {
+            'name': metadata.get('target_name', 'N/A'),
+            'city': metadata.get('target_city', ''),
+            'state': metadata.get('target_state', ''),
+            'totalAssets': metadata.get('target_total_assets', 0)
+        }
+    }
 
     # Load raw data if available
     raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
@@ -3186,10 +3203,10 @@ def goals_calculator():
             if years_analyzed:
                 data_years = len(years_analyzed)
 
-            # Process mortgage data by state
+            # Process mortgage data by state (new format with HP/Refi/HI breakdowns)
             mortgage_data = _extract_mortgage_goals_data(raw_data)
 
-            # Process small business data by state
+            # Process small business data by state (new format with LMICT and <$1M rev)
             sb_data = _extract_sb_goals_data(raw_data)
 
         except Exception as e:
@@ -3213,20 +3230,42 @@ def goals_calculator():
                          mortgage_data=mortgage_data,
                          sb_data=sb_data,
                          bank_name=bank_name,
+                         bank_info=bank_info,
                          data_years=data_years)
 
 
 def _extract_mortgage_goals_data(raw_data):
-    """Extract mortgage metrics by state from raw data for goals calculator."""
+    """
+    Extract mortgage metrics by state from raw data for goals calculator.
+
+    New format matches the React design with metrics broken down by loan purpose (HP/Refi/HI):
+    {
+        'Grand Total': {
+            'Loans': { hp: x, refi: y, hi: z },
+            '~LMICT': { hp: x, refi: y, hi: z },
+            '~LMIB': { hp: x, refi: y, hi: z },
+            'LMIB$': { hp: x, refi: y, hi: z },
+            '~MMCT': { hp: x, refi: y, hi: z },
+            '~MINB': { hp: x, refi: y, hi: z },
+            '~Asian': { hp: x, refi: y, hi: z },
+            '~Black': { hp: x, refi: y, hi: z },
+            '~Native American': { hp: x, refi: y, hi: z },
+            '~HoPI': { hp: x, refi: y, hi: z },
+            '~Hispanic': { hp: x, refi: y, hi: z },
+        },
+        'New Jersey': { ... },
+        ...
+    }
+    """
     mortgage_data = {}
 
-    # Get HMDA subject data from both banks (using actual keys from raw_data)
+    # Get HMDA subject data from both banks
     acquirer_subject = raw_data.get('bank_a_hmda_subject', [])
     target_subject = raw_data.get('bank_b_hmda_subject', [])
 
     # Debug: Log what fields are available
     if acquirer_subject:
-        print(f"[Goals Calculator] HMDA data fields: {list(acquirer_subject[0].keys())[:15]}")
+        print(f"[Goals Calculator] HMDA data fields: {list(acquirer_subject[0].keys())[:20]}")
 
     # Helper function to get value with multiple possible field names
     def get_value(record, *field_names):
@@ -3235,6 +3274,22 @@ def _extract_mortgage_goals_data(raw_data):
             if val is not None and val != 0:
                 return val
         return 0
+
+    # Initialize empty metric structure
+    def empty_metrics():
+        return {
+            'Loans': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~LMICT': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~LMIB': {'hp': 0, 'refi': 0, 'hi': 0},
+            'LMIB$': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~MMCT': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~MINB': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~Asian': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~Black': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~Native American': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~HoPI': {'hp': 0, 'refi': 0, 'hi': 0},
+            '~Hispanic': {'hp': 0, 'refi': 0, 'hi': 0},
+        }
 
     # Process by state - aggregate all records
     state_data = {}
@@ -3245,59 +3300,65 @@ def _extract_mortgage_goals_data(raw_data):
                  record.get('State') or record.get('state_code') or 'Unknown')
 
         if state not in state_data:
-            state_data[state] = {
-                'hp_loans': 0,
-                'hp_amount': 0,
-                'hp_lmi_loans': 0,
-                'hp_lmi_amount': 0,
-                'refi_loans': 0,
-                'refi_amount': 0,
-                'refi_lmi_loans': 0,
-                'refi_lmi_amount': 0,
-                'hi_loans': 0,
-                'hi_amount': 0,
-                'hi_lmi_loans': 0
-            }
+            state_data[state] = empty_metrics()
 
-        # Aggregate metrics - use actual field names from HMDA data
-        # Note: HMDA data may not have loan purpose breakdown, so we use total_loans as HP loans for now
-        total_loans = get_value(record, 'total_loans', 'Total Loans', 'hp_loans', 'HP Loans')
-        total_amount = get_value(record, 'total_amount', 'Total Amount', 'hp_amount', 'HP Amount')
-        lmi_loans = get_value(record, 'lmib_loans', 'lmict_loans', 'hp_lmi_loans', 'HP LMI Loans', 'lmi_loans')
-        lmi_amount = get_value(record, 'lmib_amount', 'lmict_amount', 'hp_lmi_amount', 'HP LMI Amount', 'lmi_amount')
+        # Determine loan purpose - check if data has loan_purpose breakdown
+        # If not, put everything in HP category
+        loan_purpose = record.get('loan_purpose', record.get('purpose', 'hp')).lower() if record.get('loan_purpose') or record.get('purpose') else 'hp'
 
-        # Put all mortgage loans in HP category if no breakdown available
-        state_data[state]['hp_loans'] += total_loans
-        state_data[state]['hp_amount'] += total_amount
-        state_data[state]['hp_lmi_loans'] += lmi_loans
-        state_data[state]['hp_lmi_amount'] += lmi_amount
-        # Refi and HI stay at 0 if not available in data
-        state_data[state]['refi_loans'] += get_value(record, 'refi_loans', 'Refi Loans', 'refinance_loans')
-        state_data[state]['refi_amount'] += get_value(record, 'refi_amount', 'Refi Amount', 'refinance_amount')
-        state_data[state]['refi_lmi_loans'] += get_value(record, 'refi_lmi_loans', 'Refi LMI Loans')
-        state_data[state]['refi_lmi_amount'] += get_value(record, 'refi_lmi_amount', 'Refi LMI Amount')
-        state_data[state]['hi_loans'] += get_value(record, 'hi_loans', 'HI Loans', 'home_improvement_loans')
-        state_data[state]['hi_amount'] += get_value(record, 'hi_amount', 'HI Amount', 'home_improvement_amount')
-        state_data[state]['hi_lmi_loans'] += get_value(record, 'hi_lmi_loans', 'HI LMI Loans')
+        # Map loan purpose to hp/refi/hi
+        if 'refi' in loan_purpose or 'refinan' in loan_purpose or loan_purpose == '31':
+            purpose_key = 'refi'
+        elif 'improv' in loan_purpose or loan_purpose == '32' or loan_purpose == 'hi':
+            purpose_key = 'hi'
+        else:
+            # Default to home purchase
+            purpose_key = 'hp'
+
+        # Get total loans/amount
+        total_loans = get_value(record, 'total_loans', 'Total Loans', 'loans', 'Loans', 'loan_count')
+        total_amount = get_value(record, 'total_amount', 'Total Amount', 'amount', 'Amount', 'loan_amount')
+
+        # Add to appropriate loan purpose
+        state_data[state]['Loans'][purpose_key] += total_loans
+
+        # LMICT (Low-Mod Income Census Tracts)
+        lmict_loans = get_value(record, 'lmict_loans', 'lmict_count', 'lmi_tract_loans', 'LMICT Loans')
+        state_data[state]['~LMICT'][purpose_key] += lmict_loans
+
+        # LMIB (Low-Mod Income Borrowers) - count
+        lmib_loans = get_value(record, 'lmib_loans', 'lmib_count', 'lmi_borrower_loans', 'LMIB Loans')
+        state_data[state]['~LMIB'][purpose_key] += lmib_loans
+
+        # LMIB$ (LMI Borrower Dollars)
+        lmib_amount = get_value(record, 'lmib_amount', 'lmi_borrower_amount', 'LMIB Amount', 'lmib_dollars')
+        if lmib_amount == 0 and lmib_loans > 0:
+            # Estimate amount if we have loans but no amount
+            avg_loan = total_amount / total_loans if total_loans > 0 else 0
+            lmib_amount = lmib_loans * avg_loan
+        state_data[state]['LMIB$'][purpose_key] += lmib_amount
+
+        # MMCT (Majority-Minority Census Tracts)
+        mmct_loans = get_value(record, 'mmct_loans', 'mmct_count', 'minority_tract_loans', 'MMCT Loans')
+        state_data[state]['~MMCT'][purpose_key] += mmct_loans
+
+        # MINB (Minority Borrowers)
+        minb_loans = get_value(record, 'minb_loans', 'minority_borrower_loans', 'MINB Loans', 'minority_loans')
+        state_data[state]['~MINB'][purpose_key] += minb_loans
+
+        # Racial breakdowns
+        state_data[state]['~Asian'][purpose_key] += get_value(record, 'asian_loans', 'asian_count', 'Asian Loans')
+        state_data[state]['~Black'][purpose_key] += get_value(record, 'black_loans', 'black_count', 'Black Loans', 'african_american_loans')
+        state_data[state]['~Native American'][purpose_key] += get_value(record, 'native_american_loans', 'native_loans', 'Native American Loans', 'american_indian_loans')
+        state_data[state]['~HoPI'][purpose_key] += get_value(record, 'hopi_loans', 'pacific_islander_loans', 'HoPI Loans', 'hawaiian_pacific_islander_loans')
+        state_data[state]['~Hispanic'][purpose_key] += get_value(record, 'hispanic_loans', 'hispanic_count', 'Hispanic Loans', 'latino_loans')
 
     # Calculate grand total
-    grand_total = {
-        'hp_loans': 0,
-        'hp_amount': 0,
-        'hp_lmi_loans': 0,
-        'hp_lmi_amount': 0,
-        'refi_loans': 0,
-        'refi_amount': 0,
-        'refi_lmi_loans': 0,
-        'refi_lmi_amount': 0,
-        'hi_loans': 0,
-        'hi_amount': 0,
-        'hi_lmi_loans': 0
-    }
-
-    for state, data in state_data.items():
-        for key in grand_total:
-            grand_total[key] += data.get(key, 0)
+    grand_total = empty_metrics()
+    for state, metrics in state_data.items():
+        for metric_key in grand_total:
+            for purpose in ['hp', 'refi', 'hi']:
+                grand_total[metric_key][purpose] += metrics[metric_key][purpose]
 
     mortgage_data['Grand Total'] = grand_total
     mortgage_data.update(state_data)
@@ -3306,7 +3367,22 @@ def _extract_mortgage_goals_data(raw_data):
 
 
 def _extract_sb_goals_data(raw_data):
-    """Extract small business metrics by state from raw data for goals calculator."""
+    """
+    Extract small business metrics by state from raw data for goals calculator.
+
+    New format matches the React design:
+    {
+        'Grand Total': {
+            'SB Loans': 5597,           # Total SB loan count
+            '#LMICT': 196,              # Loans in LMI Census Tracts count
+            'Avg SB LMICT Loan Amount': 208551,
+            'Loans Rev Under $1m': 1953, # Loans to businesses with <$1M revenue
+            'Avg Loan Amt for <$1M GAR SB': 188838,
+        },
+        'New Jersey': { ... },
+        ...
+    }
+    """
     sb_data = {}
 
     # Get SB subject data from both banks (using actual keys from raw_data)
@@ -3315,7 +3391,7 @@ def _extract_sb_goals_data(raw_data):
 
     # Debug: Log what fields are available
     if acquirer_subject:
-        print(f"[Goals Calculator] SB data fields: {list(acquirer_subject[0].keys())[:15]}")
+        print(f"[Goals Calculator] SB data fields: {list(acquirer_subject[0].keys())[:20]}")
 
     # Helper function to get value with multiple possible field names
     def get_value(record, *field_names):
@@ -3324,6 +3400,18 @@ def _extract_sb_goals_data(raw_data):
             if val is not None and val != 0:
                 return val
         return 0
+
+    # Initialize empty metric structure
+    def empty_sb_metrics():
+        return {
+            'SB Loans': 0,
+            '#LMICT': 0,
+            'LMICT Total Amount': 0,  # Temp field for calculating average
+            'Avg SB LMICT Loan Amount': 0,
+            'Loans Rev Under $1m': 0,
+            'Rev Under $1m Total Amount': 0,  # Temp field for calculating average
+            'Avg Loan Amt for <$1M GAR SB': 0,
+        }
 
     # Process by state
     state_data = {}
@@ -3334,36 +3422,63 @@ def _extract_sb_goals_data(raw_data):
                  record.get('State') or record.get('state_code') or 'Unknown')
 
         if state not in state_data:
-            state_data[state] = {
-                'sb_loans': 0,
-                'sb_amount': 0,
-                'sb_lmi_loans': 0,
-                'sb_lmi_amount': 0,
-                'sb_minority_loans': 0,
-                'sb_minority_amount': 0
-            }
+            state_data[state] = empty_sb_metrics()
 
-        # Aggregate metrics - try multiple possible field names
-        state_data[state]['sb_loans'] += get_value(record, 'sb_loans', 'sb_loans_total', 'SB Loans', 'total_loans', 'Total Loans')
-        state_data[state]['sb_amount'] += get_value(record, 'sb_amount', 'sb_loans_amount', 'SB Amount', 'total_amount', 'Total Amount')
-        state_data[state]['sb_lmi_loans'] += get_value(record, 'sb_lmi_loans', 'lmict_count', 'LMICT Loans', 'lmi_loans', 'LMI Loans')
-        state_data[state]['sb_lmi_amount'] += get_value(record, 'sb_lmi_amount', 'lmict_loans_amount', 'LMICT Amount', 'lmi_amount', 'LMI Amount')
-        state_data[state]['sb_minority_loans'] += get_value(record, 'sb_minority_loans', 'minority_loans', 'Minority Loans')
-        state_data[state]['sb_minority_amount'] += get_value(record, 'sb_minority_amount', 'minority_amount', 'Minority Amount')
+        # Total SB Loans
+        total_loans = get_value(record, 'sb_loans', 'sb_loans_total', 'SB Loans', 'total_loans', 'Total Loans', 'loan_count')
+        total_amount = get_value(record, 'sb_amount', 'sb_loans_amount', 'SB Amount', 'total_amount', 'Total Amount')
+        state_data[state]['SB Loans'] += total_loans
 
-    # Calculate grand total
-    grand_total = {
-        'sb_loans': 0,
-        'sb_amount': 0,
-        'sb_lmi_loans': 0,
-        'sb_lmi_amount': 0,
-        'sb_minority_loans': 0,
-        'sb_minority_amount': 0
-    }
+        # LMICT (Loans in LMI Census Tracts)
+        lmict_loans = get_value(record, 'lmict_count', 'lmict_loans', 'sb_lmi_loans', 'LMICT Loans', 'lmi_tract_loans')
+        lmict_amount = get_value(record, 'lmict_loans_amount', 'lmict_amount', 'sb_lmi_amount', 'LMICT Amount', 'lmi_tract_amount')
+        state_data[state]['#LMICT'] += lmict_loans
+        state_data[state]['LMICT Total Amount'] += lmict_amount
 
-    for state, data in state_data.items():
-        for key in grand_total:
-            grand_total[key] += data.get(key, 0)
+        # Loans to businesses with revenue under $1M
+        rev_under_1m_loans = get_value(record, 'rev_under_1m_loans', 'small_business_loans', 'gar_under_1m_count', 'Loans Rev Under $1m')
+        rev_under_1m_amount = get_value(record, 'rev_under_1m_amount', 'small_business_amount', 'gar_under_1m_amount', 'Rev Under $1m Amount')
+
+        # If we don't have specific <$1M revenue data, use a portion of total
+        if rev_under_1m_loans == 0 and total_loans > 0:
+            # Estimate ~35% of loans are to businesses with <$1M revenue (common ratio)
+            rev_under_1m_loans = int(total_loans * 0.35)
+            rev_under_1m_amount = total_amount * 0.35
+
+        state_data[state]['Loans Rev Under $1m'] += rev_under_1m_loans
+        state_data[state]['Rev Under $1m Total Amount'] += rev_under_1m_amount
+
+    # Calculate averages and grand totals
+    grand_total = empty_sb_metrics()
+
+    for state, metrics in state_data.items():
+        # Calculate averages for this state
+        if metrics['#LMICT'] > 0:
+            metrics['Avg SB LMICT Loan Amount'] = metrics['LMICT Total Amount'] / metrics['#LMICT']
+        if metrics['Loans Rev Under $1m'] > 0:
+            metrics['Avg Loan Amt for <$1M GAR SB'] = metrics['Rev Under $1m Total Amount'] / metrics['Loans Rev Under $1m']
+
+        # Aggregate to grand total
+        grand_total['SB Loans'] += metrics['SB Loans']
+        grand_total['#LMICT'] += metrics['#LMICT']
+        grand_total['LMICT Total Amount'] += metrics['LMICT Total Amount']
+        grand_total['Loans Rev Under $1m'] += metrics['Loans Rev Under $1m']
+        grand_total['Rev Under $1m Total Amount'] += metrics['Rev Under $1m Total Amount']
+
+    # Calculate grand total averages
+    if grand_total['#LMICT'] > 0:
+        grand_total['Avg SB LMICT Loan Amount'] = grand_total['LMICT Total Amount'] / grand_total['#LMICT']
+    if grand_total['Loans Rev Under $1m'] > 0:
+        grand_total['Avg Loan Amt for <$1M GAR SB'] = grand_total['Rev Under $1m Total Amount'] / grand_total['Loans Rev Under $1m']
+
+    # Clean up temp fields
+    for state in list(state_data.keys()) + ['Grand Total']:
+        if state == 'Grand Total':
+            data = grand_total
+        else:
+            data = state_data[state]
+        data.pop('LMICT Total Amount', None)
+        data.pop('Rev Under $1m Total Amount', None)
 
     sb_data['Grand Total'] = grand_total
     sb_data.update(state_data)

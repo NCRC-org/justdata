@@ -1,9 +1,6 @@
 /**
  * MergerMeter Goals Calculator - Vanilla JavaScript Implementation
- *
- * A lightweight calculator for setting Community Benefits Agreement (CBA)
- * lending goals for bank mergers. Allows users to adjust improvement
- * percentages and agreement length to project lending goals.
+ * Matches the React design with full metric breakdowns
  */
 
 (function() {
@@ -13,36 +10,41 @@
     // UTILITY FUNCTIONS
     // ========================================================================
 
-    function formatNumber(num, decimals = 0) {
-        if (num === null || num === undefined || isNaN(num)) return '—';
-        return num.toLocaleString('en-US', {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals
-        });
+    function formatNum(v) {
+        if (v === null || v === undefined || isNaN(v)) return '—';
+        return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(Math.round(v));
     }
 
-    function formatCurrency(num, decimals = 0) {
-        if (num === null || num === undefined || isNaN(num)) return '—';
-        return '$' + formatNumber(num, decimals);
+    function formatCurrency(v) {
+        if (v === null || v === undefined || isNaN(v)) return '—';
+        if (v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+        if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+        if (v >= 1e3) return '$' + (v / 1e3).toFixed(0) + 'K';
+        return '$' + Math.round(v);
     }
 
-    function formatCompact(num) {
-        if (num === null || num === undefined || isNaN(num)) return '—';
-        if (num >= 1e9) return '$' + (num / 1e9).toFixed(1) + 'B';
-        if (num >= 1e6) return '$' + (num / 1e6).toFixed(1) + 'M';
-        if (num >= 1e3) return '$' + (num / 1e3).toFixed(0) + 'K';
-        return '$' + num.toLocaleString();
+    function formatFullCurrency(v) {
+        if (v === null || v === undefined || isNaN(v)) return '—';
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v);
+    }
+
+    function formatAssets(v) {
+        if (!v) return '—';
+        return v >= 1e9 ? '$' + (v / 1e9).toFixed(1) + 'B' : '$' + (v / 1e6).toFixed(0) + 'M';
     }
 
     /**
      * Calculate goal from baseline
      * Formula: ((baseline / dataYears) * (1 + percent/100)) * agreementLength
      */
-    function calculateGoal(baseline, dataYears, percent, agreementLength) {
+    function calcGoal(baseline, dataYears, percent, agreementLength) {
         if (!baseline || !dataYears) return 0;
-        const annualized = baseline / dataYears;
-        const withIncrease = annualized * (1 + percent / 100);
-        return Math.round(withIncrease * agreementLength);
+        return ((baseline / dataYears) * (1 + percent / 100)) * agreementLength;
+    }
+
+    function calcBaseline(baseline, dataYears, agreementLength) {
+        if (!baseline || !dataYears) return 0;
+        return (baseline / dataYears) * agreementLength;
     }
 
     // ========================================================================
@@ -54,20 +56,39 @@
         this.mortgageData = options.mortgageData || {};
         this.sbData = options.sbData || {};
         this.bankName = options.bankName || 'Combined Entity';
+        this.bankInfo = options.bankInfo || {};
         this.onExport = options.onExport || null;
         this.onSave = options.onSave || null;
 
         // State
         this.dataYears = options.defaultDataYears || 3;
         this.agreementLength = 5;
-        this.hpPercent = 5;
-        this.refiPercent = 5;
-        this.hiPercent = 5;
-        this.sbPercent = 5;
+        this.hpPercent = 10;
+        this.refiPercent = 25;
+        this.hiPercent = 0;
+        this.sbPercent = 20;
         this.activeTab = 'summary';
+        this.activeSubTab = 'mortgage';
 
         // Get regions from data
         this.regions = this._getRegions();
+
+        // Metric definitions
+        this.metricLabels = {
+            'Loans': 'Loans',
+            '~LMICT': 'Low-Mod Income Census Tracts',
+            '~LMIB': 'Low-Mod Income Borrowers',
+            'LMIB$': 'LMI Borrower Dollars',
+            '~MMCT': 'Majority-Minority Census Tracts',
+            '~MINB': 'Minority Borrowers',
+            '~Asian': 'Asian Borrowers',
+            '~Black': 'Black Borrowers',
+            '~Native American': 'Native American Borrowers',
+            '~HoPI': 'Hawaiian/Pacific Islander',
+            '~Hispanic': 'Hispanic Borrowers'
+        };
+
+        this.metricOrder = ['Loans', '~LMICT', '~LMIB', 'LMIB$', '~MMCT', '~MINB', '~Asian', '~Black', '~Native American', '~HoPI', '~Hispanic'];
 
         this.init();
     }
@@ -103,80 +124,145 @@
         };
     };
 
+    // ========================================================================
+    // RENDER METHODS
+    // ========================================================================
+
     GoalsCalculator.prototype.render = function() {
-        var self = this;
         var html = '';
 
         // Header
-        html += '<div class="gc-header">';
-        html += '<h2 class="gc-title">CBA Goals Calculator &mdash; ' + this._escapeHtml(this.bankName) + '</h2>';
-        html += '<p class="gc-subtitle">Set improvement targets and agreement length to calculate Community Benefits Agreement lending goals</p>';
-        html += '</div>';
+        html += '<header style="background: #034ea0; color: white; padding: 14px 0;">';
+        html += '<div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">';
+        html += '<h1 style="margin: 0; font-size: 18px; font-weight: 600;">MergerMeter</h1>';
+        html += '<p style="margin: 2px 0 0; font-size: 12px; opacity: 0.9;">CBA Goals Calculator</p>';
+        html += '</div></header>';
 
-        // Controls Panel
-        html += '<div class="gc-controls">';
+        // Bank Info
+        html += this._renderBankInfo();
+
+        // Main content
+        html += '<main style="max-width: 1200px; margin: 0 auto; padding: 20px;">';
+
+        // Controls
         html += this._renderControls();
-        html += '</div>';
 
         // Tabs
-        html += '<div class="gc-tabs">';
         html += this._renderTabs();
-        html += '</div>';
 
         // Content
-        html += '<div class="gc-content" id="gcContent">';
+        html += '<div id="gcContent">';
         html += this._renderTabContent();
         html += '</div>';
 
-        // Action Buttons
-        html += '<div class="gc-actions">';
-        html += '<button class="gc-btn gc-btn-secondary" id="gcSaveBtn">Save Configuration</button>';
-        html += '<button class="gc-btn gc-btn-primary" id="gcExportBtn">Export to Excel</button>';
+        // Actions
+        html += '<div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">';
+        html += '<button id="gcExportBtn" style="padding: 10px 20px; background: white; border: 1px solid #034ea0; color: #034ea0; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer;">Export to Excel</button>';
+        html += '<button id="gcSaveBtn" style="padding: 10px 20px; background: #034ea0; border: none; color: white; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer;">Save Configuration</button>';
         html += '</div>';
+
+        html += '</main>';
+
+        // Slider styles
+        html += '<style>';
+        html += 'input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: white; border: 2px solid currentColor; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }';
+        html += 'input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: white; border: 2px solid currentColor; cursor: pointer; }';
+        html += '</style>';
 
         this.container.innerHTML = html;
     };
 
+    GoalsCalculator.prototype._renderBankInfo = function() {
+        var bankA = this.bankInfo.acquirer || {};
+        var bankB = this.bankInfo.target || {};
+
+        var html = '<div style="background: white; border-bottom: 1px solid #e0e0e0;">';
+        html += '<div style="max-width: 1200px; margin: 0 auto; padding: 14px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">';
+
+        // Acquirer
+        html += '<div>';
+        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 2px;">Acquiring Bank</div>';
+        html += '<div style="font-size: 14px; font-weight: 600; color: #034ea0;">' + this._escapeHtml(bankA.name || 'N/A') + '</div>';
+        if (bankA.city || bankA.state || bankA.totalAssets) {
+            html += '<div style="font-size: 12px; color: #666;">';
+            if (bankA.city) html += bankA.city;
+            if (bankA.state) html += (bankA.city ? ', ' : '') + bankA.state;
+            if (bankA.totalAssets) html += ' • ' + formatAssets(bankA.totalAssets);
+            html += '</div>';
+        }
+        html += '</div>';
+
+        // Target
+        html += '<div>';
+        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 2px;">Target Bank</div>';
+        html += '<div style="font-size: 14px; font-weight: 600; color: #034ea0;">' + this._escapeHtml(bankB.name || 'N/A') + '</div>';
+        if (bankB.city || bankB.state || bankB.totalAssets) {
+            html += '<div style="font-size: 12px; color: #666;">';
+            if (bankB.city) html += bankB.city;
+            if (bankB.state) html += (bankB.city ? ', ' : '') + bankB.state;
+            if (bankB.totalAssets) html += ' • ' + formatAssets(bankB.totalAssets);
+            html += '</div>';
+        }
+        html += '</div>';
+
+        html += '</div></div>';
+        return html;
+    };
+
     GoalsCalculator.prototype._renderControls = function() {
-        var html = '';
+        var self = this;
+        var html = '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px;">';
+
+        html += '<div style="display: grid; grid-template-columns: 160px 100px 1fr; gap: 24px; align-items: end;">';
+
+        // Agreement Length buttons
+        html += '<div>';
+        html += '<label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 8px; color: #444;">Agreement Length</label>';
+        html += '<div style="display: flex; gap: 4px;">';
+        [3, 4, 5, 6, 7].forEach(function(y) {
+            var isActive = y === self.agreementLength;
+            html += '<button class="gc-agreement-btn" data-years="' + y + '" style="flex: 1; padding: 8px 4px; border-radius: 4px; border: ' + (isActive ? '2px solid #034ea0' : '1px solid #ddd') + '; background: ' + (isActive ? '#034ea0' : 'white') + '; color: ' + (isActive ? 'white' : '#333') + '; font-weight: 500; font-size: 12px; cursor: pointer;">' + y + '</button>';
+        });
+        html += '</div></div>';
 
         // Data Years dropdown
-        html += '<div class="gc-control-group">';
-        html += '<label class="gc-label">Baseline Data Years</label>';
-        html += '<select id="gcDataYears" class="gc-select">';
+        html += '<div>';
+        html += '<label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 8px; color: #444;">Data Years</label>';
+        html += '<select id="gcDataYears" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-size: 13px;">';
         for (var y = 1; y <= 6; y++) {
             var selected = y === this.dataYears ? ' selected' : '';
             html += '<option value="' + y + '"' + selected + '>' + y + ' year' + (y > 1 ? 's' : '') + '</option>';
         }
-        html += '</select>';
-        html += '</div>';
-
-        // Agreement Length dropdown
-        html += '<div class="gc-control-group">';
-        html += '<label class="gc-label">Agreement Length</label>';
-        html += '<select id="gcAgreementLength" class="gc-select">';
-        for (var y = 3; y <= 7; y++) {
-            var selected = y === this.agreementLength ? ' selected' : '';
-            html += '<option value="' + y + '"' + selected + '>' + y + ' years</option>';
-        }
-        html += '</select>';
-        html += '</div>';
+        html += '</select></div>';
 
         // Sliders
-        html += this._renderSlider('gcHpPercent', 'Home Purchase Improvement', this.hpPercent, '#034ea0');
-        html += this._renderSlider('gcRefiPercent', 'Refinance Improvement', this.refiPercent, '#034ea0');
+        html += '<div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;">';
+        html += this._renderSlider('gcHpPercent', 'Home Purchase', this.hpPercent, '#034ea0');
+        html += this._renderSlider('gcRefiPercent', 'Refinance', this.refiPercent, '#034ea0');
         html += this._renderSlider('gcHiPercent', 'Home Improvement', this.hiPercent, '#034ea0');
-        html += this._renderSlider('gcSbPercent', 'Small Business Improvement', this.sbPercent, '#2e7d32');
+        html += this._renderSlider('gcSbPercent', 'Small Business', this.sbPercent, '#2e7d32');
+        html += '</div>';
 
+        html += '</div>';
+
+        // Info text
+        html += '<div style="margin-top: 12px; font-size: 12px; color: #888;">';
+        html += 'Based on <strong>' + this.dataYears + ' year' + (this.dataYears > 1 ? 's' : '') + '</strong> of baseline data. ';
+        html += 'Goals calculated for <strong>' + this.agreementLength + '-year</strong> agreement period.';
+        html += '</div>';
+
+        html += '</div>';
         return html;
     };
 
     GoalsCalculator.prototype._renderSlider = function(id, label, value, color) {
-        var html = '<div class="gc-control-group">';
-        html += '<label class="gc-label">' + label + '</label>';
-        html += '<input type="range" id="' + id + '" min="0" max="25" step="1" value="' + value + '" class="gc-slider" style="accent-color: ' + color + ';">';
-        html += '<span class="gc-slider-value" id="' + id + 'Value" style="color: ' + color + ';">+' + value + '%</span>';
-        html += '</div>';
+        var pct = (value / 25) * 100;
+        var html = '<div>';
+        html += '<label style="display: block; font-size: 11px; font-weight: 500; margin-bottom: 6px; color: #444;">' + label + '</label>';
+        html += '<div style="display: flex; align-items: center; gap: 10px;">';
+        html += '<input type="range" id="' + id + '" min="0" max="25" value="' + value + '" style="flex: 1; height: 6px; border-radius: 3px; background: linear-gradient(to right, ' + color + ' ' + pct + '%, #ddd ' + pct + '%); appearance: none; -webkit-appearance: none; cursor: pointer;">';
+        html += '<span id="' + id + 'Value" style="min-width: 42px; font-weight: 700; font-size: 14px; color: ' + color + '; text-align: right;">' + value + '%</span>';
+        html += '</div></div>';
         return html;
     };
 
@@ -188,15 +274,15 @@
         ];
 
         this.regions.forEach(function(r) {
-            tabs.push({ id: r, label: r });
+            tabs.push({ id: r.toLowerCase().replace(/ /g, '-'), label: r });
         });
 
-        var html = '';
+        var html = '<div style="display: flex; gap: 2px; border-bottom: 2px solid #ddd; margin-bottom: 20px;">';
         tabs.forEach(function(tab) {
-            var activeClass = tab.id === self.activeTab ? ' gc-tab-active' : '';
-            html += '<button class="gc-tab' + activeClass + '" data-tab="' + tab.id + '">' + self._escapeHtml(tab.label) + '</button>';
+            var isActive = tab.id === self.activeTab;
+            html += '<button class="gc-tab" data-tab="' + tab.id + '" style="padding: 10px 16px; background: ' + (isActive ? 'white' : '#f0f0f0') + '; border: ' + (isActive ? '1px solid #ddd' : 'none') + '; border-bottom: ' + (isActive ? '2px solid white' : 'none') + '; border-radius: 4px 4px 0 0; margin-bottom: ' + (isActive ? '-2px' : '0') + '; color: ' + (isActive ? '#034ea0' : '#666') + '; font-weight: ' + (isActive ? '600' : '400') + '; font-size: 13px; cursor: pointer;">' + self._escapeHtml(tab.label) + '</button>';
         });
-
+        html += '</div>';
         return html;
     };
 
@@ -206,227 +292,362 @@
         } else if (this.activeTab === 'grand-total') {
             return this._renderDetailTab('Grand Total');
         } else {
-            return this._renderDetailTab(this.activeTab);
+            // Find matching region
+            var self = this;
+            var region = this.regions.find(function(r) {
+                return r.toLowerCase().replace(/ /g, '-') === self.activeTab;
+            });
+            return this._renderDetailTab(region || 'Grand Total');
         }
     };
+
+    // ========================================================================
+    // SUMMARY TAB
+    // ========================================================================
 
     GoalsCalculator.prototype._renderSummaryTab = function() {
-        var grandTotal = this.mortgageData['Grand Total'] || {};
-        var sbGrandTotal = this.sbData['Grand Total'] || {};
+        var grandMortgage = this.mortgageData['Grand Total'] || {};
+        var grandSB = this.sbData['Grand Total'] || {};
 
-        // Calculate key goals
-        var hpLoansGoal = calculateGoal(grandTotal.hp_loans, this.dataYears, this.hpPercent, this.agreementLength);
-        var hpAmountGoal = calculateGoal(grandTotal.hp_amount, this.dataYears, this.hpPercent, this.agreementLength);
-        var refiLoansGoal = calculateGoal(grandTotal.refi_loans, this.dataYears, this.refiPercent, this.agreementLength);
-        var refiAmountGoal = calculateGoal(grandTotal.refi_amount, this.dataYears, this.refiPercent, this.agreementLength);
-        var hiLoansGoal = calculateGoal(grandTotal.hi_loans, this.dataYears, this.hiPercent, this.agreementLength);
-        var sbLoansGoal = calculateGoal(sbGrandTotal.sb_loans, this.dataYears, this.sbPercent, this.agreementLength);
-        var sbAmountGoal = calculateGoal(sbGrandTotal.sb_amount, this.dataYears, this.sbPercent, this.agreementLength);
+        // Calculate LMIB$ totals
+        var lmibData = grandMortgage['LMIB$'] || { hp: 0, refi: 0, hi: 0 };
+        var lmibBaseline = (lmibData.hp || 0) + (lmibData.refi || 0) + (lmibData.hi || 0);
+        var lmibGoal = calcGoal(lmibData.hp || 0, this.dataYears, this.hpPercent, this.agreementLength) +
+                       calcGoal(lmibData.refi || 0, this.dataYears, this.refiPercent, this.agreementLength) +
+                       calcGoal(lmibData.hi || 0, this.dataYears, this.hiPercent, this.agreementLength);
+        var lmibBaselineOverPeriod = calcBaseline(lmibBaseline, this.dataYears, this.agreementLength);
+        var lmibIncrease = lmibGoal - lmibBaselineOverPeriod;
 
-        var totalMortgageLoans = hpLoansGoal + refiLoansGoal + hiLoansGoal;
-        var totalMortgageAmount = hpAmountGoal + refiAmountGoal;
+        // Calculate SB totals
+        var sbLmictTotal = (grandSB['#LMICT'] || 0) * (grandSB['Avg SB LMICT Loan Amount'] || 0);
+        var sbRevTotal = (grandSB['Loans Rev Under $1m'] || 0) * (grandSB['Avg Loan Amt for <$1M GAR SB'] || 0);
+        var sbBaseline = sbLmictTotal + sbRevTotal;
+        var sbGoal = calcGoal(sbBaseline, this.dataYears, this.sbPercent, this.agreementLength);
+        var sbBaselineOverPeriod = calcBaseline(sbBaseline, this.dataYears, this.agreementLength);
+        var sbIncrease = sbGoal - sbBaselineOverPeriod;
 
-        var html = '<h3 class="gc-section-title">Mortgage Lending Goals</h3>';
-        html += '<div class="gc-summary-grid">';
-        html += this._renderSummaryCard('Total Mortgage Loans', formatNumber(totalMortgageLoans), this.agreementLength + '-year commitment');
-        html += this._renderSummaryCard('Total Mortgage Amount', formatCompact(totalMortgageAmount), 'HP: ' + formatCompact(hpAmountGoal) + ' | Refi: ' + formatCompact(refiAmountGoal));
-        html += this._renderSummaryCard('Home Purchase Loans', formatNumber(hpLoansGoal), '+' + this.hpPercent + '% annual increase');
-        html += this._renderSummaryCard('Refinance Loans', formatNumber(refiLoansGoal), '+' + this.refiPercent + '% annual increase');
+        var html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">';
+
+        // Mortgage Card
+        html += '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;">';
+        html += '<div style="background: #034ea0; color: white; padding: 14px 20px; font-size: 14px; font-weight: 600;">Mortgage Lending to LMI Borrowers</div>';
+        html += '<div style="padding: 28px 24px; text-align: center;">';
+        html += '<div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Total Increase Over ' + this.agreementLength + ' Years</div>';
+        html += '<div style="font-size: 48px; font-weight: 700; color: #034ea0; line-height: 1;">' + formatCurrency(lmibIncrease) + '</div>';
+        html += '<div style="margin-top: 24px; background: #f5f7fa; border-radius: 4px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">';
+        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">NCRC Proposal</div>';
+        html += '<div style="font-size: 20px; font-weight: 700; color: #034ea0;">' + formatCurrency(lmibGoal) + '</div></div>';
+        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">Baseline (' + this.agreementLength + ' yr)</div>';
+        html += '<div style="font-size: 20px; font-weight: 600; color: #666;">' + formatCurrency(lmibBaselineOverPeriod) + '</div></div>';
+        html += '</div></div></div>';
+
+        // SB Card
+        html += '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;">';
+        html += '<div style="background: #2e7d32; color: white; padding: 14px 20px; font-size: 14px; font-weight: 600;">Small Business Lending</div>';
+        html += '<div style="padding: 28px 24px; text-align: center;">';
+        html += '<div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Total Increase Over ' + this.agreementLength + ' Years</div>';
+        html += '<div style="font-size: 48px; font-weight: 700; color: #2e7d32; line-height: 1;">' + formatCurrency(sbIncrease) + '</div>';
+        html += '<div style="margin-top: 24px; background: #f5f7fa; border-radius: 4px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">';
+        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">NCRC Proposal</div>';
+        html += '<div style="font-size: 20px; font-weight: 700; color: #2e7d32;">' + formatCurrency(sbGoal) + '</div></div>';
+        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">Baseline (' + this.agreementLength + ' yr)</div>';
+        html += '<div style="font-size: 20px; font-weight: 600; color: #666;">' + formatCurrency(sbBaselineOverPeriod) + '</div></div>';
+        html += '</div></div></div>';
+
         html += '</div>';
-
-        html += '<h3 class="gc-section-title gc-section-title-sb">Small Business Lending Goals</h3>';
-        html += '<div class="gc-summary-grid">';
-        html += this._renderSummaryCard('Total SB Loans', formatNumber(sbLoansGoal), this.agreementLength + '-year commitment', '#2e7d32');
-        html += this._renderSummaryCard('Total SB Amount', formatCompact(sbAmountGoal), '+' + this.sbPercent + '% annual increase', '#2e7d32');
-        html += '</div>';
-
         return html;
     };
 
-    GoalsCalculator.prototype._renderSummaryCard = function(title, value, subtext, color) {
-        color = color || '#034ea0';
-        var html = '<div class="gc-summary-card">';
-        html += '<div class="gc-card-header">' + title + '</div>';
-        html += '<div class="gc-card-value" style="color: ' + color + ';">' + value + '</div>';
-        if (subtext) {
-            html += '<div class="gc-card-subtext">' + subtext + '</div>';
-        }
-        html += '</div>';
-        return html;
-    };
+    // ========================================================================
+    // DETAIL TAB (with sub-tabs)
+    // ========================================================================
 
     GoalsCalculator.prototype._renderDetailTab = function(stateName) {
-        var mortgage = this.mortgageData[stateName] || {};
-        var sb = this.sbData[stateName] || {};
+        var self = this;
+        var html = '<div>';
 
-        var html = '<h3 class="gc-section-title">Mortgage Lending Goals &mdash; ' + this._escapeHtml(stateName) + '</h3>';
-        html += this._renderMortgageTable(mortgage);
+        html += '<h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #333;">';
+        html += stateName === 'Grand Total' ? 'All States Combined' : this._escapeHtml(stateName);
+        html += '</h3>';
 
-        html += '<h3 class="gc-section-title gc-section-title-sb" style="margin-top: 40px;">Small Business Lending Goals &mdash; ' + this._escapeHtml(stateName) + '</h3>';
-        html += this._renderSBTable(sb);
+        // Sub-tabs
+        html += '<div style="display: flex; gap: 4px; margin-bottom: 20px;">';
+        html += '<button class="gc-subtab" data-subtab="mortgage" style="padding: 10px 20px; background: ' + (this.activeSubTab === 'mortgage' ? '#034ea0' : '#f0f0f0') + '; color: ' + (this.activeSubTab === 'mortgage' ? 'white' : '#666') + '; border: none; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer;">Mortgage Goals</button>';
+        html += '<button class="gc-subtab" data-subtab="sb" style="padding: 10px 20px; background: ' + (this.activeSubTab === 'sb' ? '#2e7d32' : '#f0f0f0') + '; color: ' + (this.activeSubTab === 'sb' ? 'white' : '#666') + '; border: none; border-radius: 4px; font-weight: 500; font-size: 13px; cursor: pointer;">Small Business Goals</button>';
+        html += '</div>';
 
+        if (this.activeSubTab === 'mortgage') {
+            html += this._renderMortgageTable(stateName);
+        } else {
+            html += this._renderSBTable(stateName);
+        }
+
+        html += '</div>';
         return html;
     };
 
-    GoalsCalculator.prototype._renderMortgageTable = function(data) {
+    // ========================================================================
+    // MORTGAGE GOALS TABLE
+    // ========================================================================
+
+    GoalsCalculator.prototype._renderMortgageTable = function(stateName) {
         var self = this;
-        var metrics = [
-            { key: 'hp_loans', label: 'Home Purchase Loans', percent: this.hpPercent, isCurrency: false },
-            { key: 'hp_amount', label: 'Home Purchase Amount', percent: this.hpPercent, isCurrency: true },
-            { key: 'hp_lmi_loans', label: 'HP Loans to LMI Borrowers', percent: this.hpPercent, isCurrency: false },
-            { key: 'hp_lmi_amount', label: 'HP Amount to LMI Borrowers', percent: this.hpPercent, isCurrency: true },
-            { key: 'refi_loans', label: 'Refinance Loans', percent: this.refiPercent, isCurrency: false },
-            { key: 'refi_amount', label: 'Refinance Amount', percent: this.refiPercent, isCurrency: true },
-            { key: 'refi_lmi_loans', label: 'Refi Loans to LMI Borrowers', percent: this.refiPercent, isCurrency: false },
-            { key: 'refi_lmi_amount', label: 'Refi Amount to LMI Borrowers', percent: this.refiPercent, isCurrency: true },
-            { key: 'hi_loans', label: 'Home Improvement Loans', percent: this.hiPercent, isCurrency: false },
-            { key: 'hi_amount', label: 'Home Improvement Amount', percent: this.hiPercent, isCurrency: true },
-            { key: 'hi_lmi_loans', label: 'HI Loans to LMI Borrowers', percent: this.hiPercent, isCurrency: false }
+        var data = this.mortgageData[stateName] || this.mortgageData['Grand Total'] || {};
+
+        var html = '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;">';
+        html += '<div style="overflow-x: auto;">';
+        html += '<table style="width: 100%; border-collapse: collapse; font-size: 13px; min-width: 900px;">';
+
+        // Header row 1
+        html += '<thead><tr style="background: #034ea0; color: white;">';
+        html += '<th style="padding: 12px 14px; text-align: left; font-weight: 600; position: sticky; left: 0; background: #034ea0; z-index: 1;">Metric</th>';
+        html += '<th colspan="3" style="padding: 10px 14px; text-align: center; font-weight: 600; border-left: 1px solid rgba(255,255,255,0.2);">Baseline (Data)</th>';
+        html += '<th style="padding: 10px 14px; text-align: center; font-weight: 600; border-left: 1px solid rgba(255,255,255,0.2);">Total</th>';
+        html += '<th colspan="3" style="padding: 10px 14px; text-align: center; font-weight: 600; border-left: 1px solid rgba(255,255,255,0.2);">' + this.agreementLength + '-Year Goals</th>';
+        html += '<th style="padding: 10px 14px; text-align: center; font-weight: 600; border-left: 1px solid rgba(255,255,255,0.2);">NCRC Proposal</th>';
+        html += '</tr>';
+
+        // Header row 2
+        html += '<tr style="background: #f0f4f8;">';
+        html += '<th style="padding: 8px 14px; text-align: left; font-weight: 500; font-size: 11px; color: #666; position: sticky; left: 0; background: #f0f4f8; z-index: 1;"></th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #666;">Home Purch</th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #666;">Refinance</th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #666;">Home Improv</th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #666; border-left: 1px solid #ddd;"></th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #034ea0;">HP (' + this.hpPercent + '%)</th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #034ea0;">Refi (' + this.refiPercent + '%)</th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #034ea0;">HI (' + this.hiPercent + '%)</th>';
+        html += '<th style="padding: 8px 10px; text-align: right; font-weight: 500; font-size: 11px; color: #034ea0; border-left: 1px solid #ddd;">Total</th>';
+        html += '</tr></thead>';
+
+        // Body
+        html += '<tbody>';
+        this.metricOrder.forEach(function(metric, idx) {
+            var row = data[metric] || { hp: 0, refi: 0, hi: 0 };
+            var total = (row.hp || 0) + (row.refi || 0) + (row.hi || 0);
+            var hpGoal = calcGoal(row.hp || 0, self.dataYears, self.hpPercent, self.agreementLength);
+            var refiGoal = calcGoal(row.refi || 0, self.dataYears, self.refiPercent, self.agreementLength);
+            var hiGoal = calcGoal(row.hi || 0, self.dataYears, self.hiPercent, self.agreementLength);
+            var totalGoal = hpGoal + refiGoal + hiGoal;
+            var isCurrency = metric === 'LMIB$';
+            var fmt = isCurrency ? formatFullCurrency : formatNum;
+            var bgColor = idx % 2 === 0 ? 'white' : '#fafafa';
+
+            html += '<tr style="background: ' + bgColor + ';">';
+            html += '<td style="padding: 10px 14px; font-weight: 500; border-bottom: 1px solid #eee; position: sticky; left: 0; background: ' + bgColor + '; z-index: 1;">' + self.metricLabels[metric] + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee;">' + fmt(row.hp || 0) + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee;">' + fmt(row.refi || 0) + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee;">' + fmt(row.hi || 0) + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600; border-left: 1px solid #eee;">' + fmt(total) + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee; color: #034ea0;">' + fmt(hpGoal) + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee; color: #034ea0;">' + fmt(refiGoal) + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee; color: #034ea0;">' + fmt(hiGoal) + '</td>';
+            html += '<td style="padding: 10px 10px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600; color: #034ea0; border-left: 1px solid #eee;">' + fmt(totalGoal) + '</td>';
+            html += '</tr>';
+        });
+        html += '</tbody></table></div>';
+
+        // LMIB$ Summary
+        var lmibData = data['LMIB$'] || { hp: 0, refi: 0, hi: 0 };
+        var lmibBaseline = (lmibData.hp || 0) + (lmibData.refi || 0) + (lmibData.hi || 0);
+        var lmibGoal = calcGoal(lmibData.hp || 0, this.dataYears, this.hpPercent, this.agreementLength) +
+                       calcGoal(lmibData.refi || 0, this.dataYears, this.refiPercent, this.agreementLength) +
+                       calcGoal(lmibData.hi || 0, this.dataYears, this.hiPercent, this.agreementLength);
+        var lmibBaselineOverPeriod = calcBaseline(lmibBaseline, this.dataYears, this.agreementLength);
+        var lmibIncrease = lmibGoal - lmibBaselineOverPeriod;
+
+        html += '<div style="background: #e3f2fd; padding: 16px 20px; border-top: 2px solid #034ea0;">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">';
+        html += '<div><span style="font-size: 13px; color: #666;">LMI Borrower Lending Increase: </span>';
+        html += '<span style="font-size: 20px; font-weight: 700; color: #034ea0;">' + formatFullCurrency(lmibIncrease) + '</span></div>';
+        html += '<div style="font-size: 12px; color: #666;">Baseline: ' + formatFullCurrency(lmibBaselineOverPeriod) + ' → Goal: ' + formatFullCurrency(lmibGoal) + '</div>';
+        html += '</div></div>';
+
+        html += '</div>';
+        return html;
+    };
+
+    // ========================================================================
+    // SMALL BUSINESS GOALS TABLE
+    // ========================================================================
+
+    GoalsCalculator.prototype._renderSBTable = function(stateName) {
+        var self = this;
+        var data = this.sbData[stateName] || this.sbData['Grand Total'] || {};
+
+        var lmictCount = data['#LMICT'] || 0;
+        var lmictAvg = data['Avg SB LMICT Loan Amount'] || 0;
+        var lmictTotal = lmictCount * lmictAvg;
+
+        var revCount = data['Loans Rev Under $1m'] || 0;
+        var revAvg = data['Avg Loan Amt for <$1M GAR SB'] || 0;
+        var revTotal = revCount * revAvg;
+
+        var grandTotal = lmictTotal + revTotal;
+
+        var rows = [
+            { label: 'Loans in LMI Census Tracts', count: lmictCount, avg: lmictAvg, total: lmictTotal },
+            { label: 'Loans to Businesses <$1M Revenue', count: revCount, avg: revAvg, total: revTotal }
         ];
 
-        var html = '<div class="gc-table-wrapper"><table class="gc-table">';
-        html += '<thead><tr>';
-        html += '<th>Metric</th>';
-        html += '<th class="gc-th-right">Baseline (' + this.dataYears + ' yr)</th>';
-        html += '<th class="gc-th-right">Annual Avg</th>';
-        html += '<th class="gc-th-right">Improvement</th>';
-        html += '<th class="gc-th-right gc-th-goal">' + this.agreementLength + '-Year Goal</th>';
-        html += '</tr></thead><tbody>';
+        var html = '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;">';
+        html += '<div style="overflow-x: auto;">';
+        html += '<table style="width: 100%; border-collapse: collapse; font-size: 13px;">';
 
-        metrics.forEach(function(metric) {
-            var baseline = data[metric.key] || 0;
-            var annualAvg = baseline / self.dataYears;
-            var goal = calculateGoal(baseline, self.dataYears, metric.percent, self.agreementLength);
-            var formatter = metric.isCurrency ? formatCurrency : formatNumber;
+        // Header
+        html += '<thead><tr style="background: #2e7d32; color: white;">';
+        html += '<th style="padding: 12px 14px; text-align: left; font-weight: 600;">Category</th>';
+        html += '<th style="padding: 12px 14px; text-align: right; font-weight: 600;">Loans</th>';
+        html += '<th style="padding: 12px 14px; text-align: right; font-weight: 600;">Avg Amount</th>';
+        html += '<th style="padding: 12px 14px; text-align: right; font-weight: 600;">Total Baseline</th>';
+        html += '<th style="padding: 12px 14px; text-align: right; font-weight: 600;">' + this.agreementLength + '-Yr Goal (' + this.sbPercent + '%)</th>';
+        html += '<th style="padding: 12px 14px; text-align: right; font-weight: 600;">Increase</th>';
+        html += '</tr></thead>';
 
-            html += '<tr>';
-            html += '<td class="gc-td-bold">' + metric.label + '</td>';
-            html += '<td class="gc-td-right">' + formatter(baseline) + '</td>';
-            html += '<td class="gc-td-right">' + formatter(annualAvg) + '</td>';
-            html += '<td class="gc-td-right gc-td-blue">+' + metric.percent + '%</td>';
-            html += '<td class="gc-td-right gc-td-goal">' + formatter(goal) + '</td>';
+        // Body
+        html += '<tbody>';
+        rows.forEach(function(row, idx) {
+            var goal = calcGoal(row.total, self.dataYears, self.sbPercent, self.agreementLength);
+            var baseline = calcBaseline(row.total, self.dataYears, self.agreementLength);
+            var increase = goal - baseline;
+            var bgColor = idx % 2 === 0 ? 'white' : '#fafafa';
+
+            html += '<tr style="background: ' + bgColor + ';">';
+            html += '<td style="padding: 12px 14px; font-weight: 500; border-bottom: 1px solid #eee;">' + row.label + '</td>';
+            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatNum(row.count) + '</td>';
+            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatFullCurrency(row.avg) + '</td>';
+            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatFullCurrency(row.total) + '</td>';
+            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee; color: #2e7d32;">' + formatFullCurrency(goal) + '</td>';
+            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee; color: #2e7d32; font-weight: 600;">' + formatFullCurrency(increase) + '</td>';
             html += '</tr>';
         });
 
-        html += '</tbody></table></div>';
+        // Total row
+        var totalGoal = calcGoal(grandTotal, this.dataYears, this.sbPercent, this.agreementLength);
+        var totalBaseline = calcBaseline(grandTotal, this.dataYears, this.agreementLength);
+        var totalIncrease = totalGoal - totalBaseline;
+
+        html += '<tr style="background: #e8f5e9; font-weight: 600;">';
+        html += '<td style="padding: 14px; border-top: 2px solid #2e7d32;" colspan="3">TOTAL</td>';
+        html += '<td style="padding: 14px; text-align: right; border-top: 2px solid #2e7d32;">' + formatFullCurrency(grandTotal) + '</td>';
+        html += '<td style="padding: 14px; text-align: right; border-top: 2px solid #2e7d32; color: #2e7d32;">' + formatFullCurrency(totalGoal) + '</td>';
+        html += '<td style="padding: 14px; text-align: right; border-top: 2px solid #2e7d32; color: #2e7d32; font-size: 15px;">' + formatFullCurrency(totalIncrease) + '</td>';
+        html += '</tr></tbody></table></div>';
+
+        // Summary
+        html += '<div style="background: #e8f5e9; padding: 16px 20px; border-top: 2px solid #2e7d32;">';
+        html += '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">';
+        html += '<div><span style="font-size: 13px; color: #666;">Small Business Lending Increase: </span>';
+        html += '<span style="font-size: 20px; font-weight: 700; color: #2e7d32;">' + formatFullCurrency(totalIncrease) + '</span></div>';
+        html += '<div style="font-size: 12px; color: #666;">Baseline: ' + formatFullCurrency(totalBaseline) + ' → Goal: ' + formatFullCurrency(totalGoal) + '</div>';
+        html += '</div></div>';
+
+        html += '</div>';
         return html;
     };
 
-    GoalsCalculator.prototype._renderSBTable = function(data) {
-        var self = this;
-        var metrics = [
-            { key: 'sb_loans', label: 'Small Business Loans', isCurrency: false },
-            { key: 'sb_amount', label: 'Small Business Amount', isCurrency: true },
-            { key: 'sb_lmi_loans', label: 'SB Loans in LMI Tracts', isCurrency: false },
-            { key: 'sb_lmi_amount', label: 'SB Amount in LMI Tracts', isCurrency: true },
-            { key: 'sb_minority_loans', label: 'SB Loans in Minority Tracts', isCurrency: false },
-            { key: 'sb_minority_amount', label: 'SB Amount in Minority Tracts', isCurrency: true }
-        ];
-
-        var html = '<div class="gc-table-wrapper"><table class="gc-table">';
-        html += '<thead><tr>';
-        html += '<th>Metric</th>';
-        html += '<th class="gc-th-right">Baseline (' + this.dataYears + ' yr)</th>';
-        html += '<th class="gc-th-right">Annual Avg</th>';
-        html += '<th class="gc-th-right">Improvement</th>';
-        html += '<th class="gc-th-right gc-th-goal-sb">' + this.agreementLength + '-Year Goal</th>';
-        html += '</tr></thead><tbody>';
-
-        metrics.forEach(function(metric) {
-            var baseline = data[metric.key] || 0;
-            var annualAvg = baseline / self.dataYears;
-            var goal = calculateGoal(baseline, self.dataYears, self.sbPercent, self.agreementLength);
-            var formatter = metric.isCurrency ? formatCurrency : formatNumber;
-
-            html += '<tr>';
-            html += '<td class="gc-td-bold">' + metric.label + '</td>';
-            html += '<td class="gc-td-right">' + formatter(baseline) + '</td>';
-            html += '<td class="gc-td-right">' + formatter(annualAvg) + '</td>';
-            html += '<td class="gc-td-right gc-td-green">+' + self.sbPercent + '%</td>';
-            html += '<td class="gc-td-right gc-td-goal-sb">' + formatter(goal) + '</td>';
-            html += '</tr>';
-        });
-
-        html += '</tbody></table></div>';
-        return html;
-    };
+    // ========================================================================
+    // EVENT BINDING
+    // ========================================================================
 
     GoalsCalculator.prototype.bindEvents = function() {
         var self = this;
 
-        // Dropdowns
-        document.getElementById('gcDataYears').addEventListener('change', function(e) {
-            self.dataYears = parseInt(e.target.value);
-            self.updateContent();
-        });
+        // Data Years dropdown
+        var dataYearsEl = document.getElementById('gcDataYears');
+        if (dataYearsEl) {
+            dataYearsEl.addEventListener('change', function(e) {
+                self.dataYears = parseInt(e.target.value);
+                self.render();
+                self.bindEvents();
+            });
+        }
 
-        document.getElementById('gcAgreementLength').addEventListener('change', function(e) {
-            self.agreementLength = parseInt(e.target.value);
-            self.updateContent();
+        // Agreement Length buttons
+        this.container.querySelectorAll('.gc-agreement-btn').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                self.agreementLength = parseInt(e.target.getAttribute('data-years'));
+                self.render();
+                self.bindEvents();
+            });
         });
 
         // Sliders
         var sliders = [
-            { id: 'gcHpPercent', prop: 'hpPercent' },
-            { id: 'gcRefiPercent', prop: 'refiPercent' },
-            { id: 'gcHiPercent', prop: 'hiPercent' },
-            { id: 'gcSbPercent', prop: 'sbPercent' }
+            { id: 'gcHpPercent', prop: 'hpPercent', color: '#034ea0' },
+            { id: 'gcRefiPercent', prop: 'refiPercent', color: '#034ea0' },
+            { id: 'gcHiPercent', prop: 'hiPercent', color: '#034ea0' },
+            { id: 'gcSbPercent', prop: 'sbPercent', color: '#2e7d32' }
         ];
 
         sliders.forEach(function(slider) {
             var el = document.getElementById(slider.id);
             var valueEl = document.getElementById(slider.id + 'Value');
-
-            el.addEventListener('input', function(e) {
-                var val = parseInt(e.target.value);
-                self[slider.prop] = val;
-                valueEl.textContent = '+' + val + '%';
-                self.updateContent();
-            });
+            if (el && valueEl) {
+                el.addEventListener('input', function(e) {
+                    var val = parseInt(e.target.value);
+                    self[slider.prop] = val;
+                    valueEl.textContent = val + '%';
+                    // Update gradient
+                    var pct = (val / 25) * 100;
+                    el.style.background = 'linear-gradient(to right, ' + slider.color + ' ' + pct + '%, #ddd ' + pct + '%)';
+                    self.updateContent();
+                });
+            }
         });
 
         // Tabs
         this.container.querySelectorAll('.gc-tab').forEach(function(tab) {
             tab.addEventListener('click', function(e) {
                 self.activeTab = e.target.getAttribute('data-tab');
-                self.updateTabs();
+                self.render();
+                self.bindEvents();
+            });
+        });
+
+        // Sub-tabs
+        this.container.querySelectorAll('.gc-subtab').forEach(function(tab) {
+            tab.addEventListener('click', function(e) {
+                self.activeSubTab = e.target.getAttribute('data-subtab');
                 self.updateContent();
             });
         });
 
         // Action buttons
-        document.getElementById('gcExportBtn').addEventListener('click', function() {
-            if (self.onExport) {
-                self.onExport(self.getConfig());
-            }
-        });
+        var exportBtn = document.getElementById('gcExportBtn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function() {
+                if (self.onExport) {
+                    self.onExport(self.getConfig());
+                }
+            });
+        }
 
-        document.getElementById('gcSaveBtn').addEventListener('click', function() {
-            if (self.onSave) {
-                self.onSave(self.getConfig());
-            } else {
-                // Default: save to localStorage
-                localStorage.setItem('mergerMeterGoalsConfig', JSON.stringify(self.getConfig()));
-                alert('Configuration saved to local storage.');
-            }
-        });
-    };
-
-    GoalsCalculator.prototype.updateTabs = function() {
-        var self = this;
-        this.container.querySelectorAll('.gc-tab').forEach(function(tab) {
-            if (tab.getAttribute('data-tab') === self.activeTab) {
-                tab.classList.add('gc-tab-active');
-            } else {
-                tab.classList.remove('gc-tab-active');
-            }
-        });
+        var saveBtn = document.getElementById('gcSaveBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function() {
+                if (self.onSave) {
+                    self.onSave(self.getConfig());
+                } else {
+                    localStorage.setItem('mergerMeterGoalsConfig', JSON.stringify(self.getConfig()));
+                    alert('Configuration saved to local storage.');
+                }
+            });
+        }
     };
 
     GoalsCalculator.prototype.updateContent = function() {
         var contentEl = document.getElementById('gcContent');
         if (contentEl) {
             contentEl.innerHTML = this._renderTabContent();
+            // Re-bind sub-tab events
+            var self = this;
+            this.container.querySelectorAll('.gc-subtab').forEach(function(tab) {
+                tab.addEventListener('click', function(e) {
+                    self.activeSubTab = e.target.getAttribute('data-subtab');
+                    self.updateContent();
+                });
+            });
         }
     };
 
