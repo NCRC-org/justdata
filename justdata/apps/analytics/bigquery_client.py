@@ -789,20 +789,21 @@ def get_coalition_opportunities(
         results = client.query(query).result()
         data = [dict(row) for row in results]
 
-        # Enrich county entities with names if missing
-        county_data = [d for d in data if d.get('entity_type') == 'county' and not d.get('entity_name')]
+        # Enrich county entities with names and coordinates
+        county_data = [d for d in data if d.get('entity_type') == 'county']
         if county_data:
-            fips_to_name = {}
             fips_list = [d['entity_id'] for d in county_data if d.get('entity_id')]
             if fips_list:
                 fips_str = "', '".join(fips_list)
 
+                # Get county names
                 name_query = f"""
                     SELECT DISTINCT geoid5, County
                     FROM `hdma1-242116.geo.cbsa_to_county`
                     WHERE geoid5 IN ('{fips_str}')
                 """
                 try:
+                    fips_to_name = {}
                     name_results = client.query(name_query).result()
                     for row in name_results:
                         fips_to_name[row['geoid5']] = row['County']
@@ -810,6 +811,32 @@ def get_coalition_opportunities(
                     for item in data:
                         if item.get('entity_type') == 'county' and not item.get('entity_name'):
                             item['entity_name'] = fips_to_name.get(item['entity_id'])
+                except:
+                    pass
+
+                # Get county centroids for map display
+                centroid_query = f"""
+                    SELECT
+                        geo_id AS county_fips,
+                        ST_Y(ST_CENTROID(county_geom)) AS latitude,
+                        ST_X(ST_CENTROID(county_geom)) AS longitude
+                    FROM `bigquery-public-data.geo_us_boundaries.counties`
+                    WHERE geo_id IN ('{fips_str}')
+                """
+                try:
+                    fips_to_coords = {}
+                    coord_results = client.query(centroid_query).result()
+                    for row in coord_results:
+                        fips_to_coords[row['county_fips']] = {
+                            'latitude': row['latitude'],
+                            'longitude': row['longitude']
+                        }
+
+                    for item in data:
+                        if item.get('entity_type') == 'county' and item.get('entity_id') in fips_to_coords:
+                            coords = fips_to_coords[item['entity_id']]
+                            item['latitude'] = coords['latitude']
+                            item['longitude'] = coords['longitude']
                 except:
                     pass
 

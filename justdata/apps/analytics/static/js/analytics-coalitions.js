@@ -6,6 +6,9 @@ let coalitionData = [];
 let selectedEntity = null;
 let demoMode = false;
 let syntheticData = null;
+let coalitionMap = null;
+let mapMarkersLayer = null;
+let currentView = 'table';
 
 // US States for filter dropdown
 const US_STATES = [
@@ -217,6 +220,9 @@ function loadData() {
         const demoData = getDemoCoalitions(days, minUsers, entityType, stateFilter);
         coalitionData = demoData;
         renderTable(demoData);
+        if (currentView === 'map') {
+            renderMapMarkers(demoData);
+        }
         return;
     }
 
@@ -232,6 +238,9 @@ function loadData() {
             if (response.success) {
                 coalitionData = response.data;
                 renderTable(coalitionData);
+                if (currentView === 'map') {
+                    renderMapMarkers(coalitionData);
+                }
             } else {
                 showError('Failed to load data: ' + response.error);
             }
@@ -450,4 +459,220 @@ function showError(message) {
         '<i class="fas fa-exclamation-triangle"></i> ' + escapeHtml(message) +
         '</td></tr>'
     );
+}
+
+/**
+ * Set view mode (table or map)
+ */
+function setView(view) {
+    currentView = view;
+
+    // Update toggle buttons
+    $('.view-toggle .toggle-btn').removeClass('active');
+    $('.view-toggle .toggle-btn[data-view="' + view + '"]').addClass('active');
+
+    if (view === 'table') {
+        $('.table-section').show();
+        $('#map-section').hide();
+    } else {
+        $('.table-section').hide();
+        $('#map-section').show();
+
+        // Initialize map if not already done
+        if (!coalitionMap) {
+            initCoalitionMap();
+        }
+
+        // Render markers with current data
+        renderMapMarkers(coalitionData);
+    }
+}
+
+/**
+ * Initialize the coalition map
+ */
+function initCoalitionMap() {
+    if (coalitionMap) return;
+
+    // Use initMap from analytics-maps.js
+    coalitionMap = initMap('coalition-map', {
+        center: US_CENTER,
+        zoom: US_ZOOM
+    });
+
+    // Initialize empty markers layer
+    mapMarkersLayer = L.layerGroup().addTo(coalitionMap);
+
+    // Fix map rendering after container is shown
+    setTimeout(function() {
+        coalitionMap.invalidateSize();
+    }, 100);
+}
+
+/**
+ * Render map markers for coalition data
+ */
+function renderMapMarkers(data) {
+    if (!coalitionMap || !mapMarkersLayer) return;
+
+    // Clear existing markers
+    mapMarkersLayer.clearLayers();
+
+    if (!data || data.length === 0) return;
+
+    // Separate counties and lenders
+    const counties = data.filter(d => d.entity_type === 'county');
+    const lenders = data.filter(d => d.entity_type === 'lender');
+
+    // Add county markers (need coordinates from BigQuery centroids or state centers)
+    counties.forEach(function(item) {
+        addCoalitionMarker(item, 'county');
+    });
+
+    // Add lender markers (grouped by researcher states)
+    lenders.forEach(function(item) {
+        addCoalitionMarker(item, 'lender');
+    });
+
+    // Fit bounds if we have markers
+    if (mapMarkersLayer.getLayers().length > 0) {
+        const bounds = mapMarkersLayer.getBounds();
+        if (bounds.isValid()) {
+            coalitionMap.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }
+}
+
+/**
+ * Add a coalition marker to the map
+ */
+function addCoalitionMarker(item, type) {
+    let lat, lng;
+
+    if (type === 'county') {
+        // Try to get county centroid from the data
+        if (item.latitude && item.longitude) {
+            lat = item.latitude;
+            lng = item.longitude;
+        } else if (item.entity_id) {
+            // Use FIPS-based lookup (state from first 2 digits)
+            const stateCode = item.entity_id.substring(0, 2);
+            const stateName = getStateNameFromFips(stateCode);
+            if (stateName && STATE_CENTERS[stateName]) {
+                const center = STATE_CENTERS[stateName];
+                // Add slight offset to prevent overlapping
+                lat = center.lat + (Math.random() - 0.5) * 1.5;
+                lng = center.lng + (Math.random() - 0.5) * 1.5;
+            }
+        }
+    } else if (type === 'lender') {
+        // For lenders, use researcher states to place marker
+        const states = item.researcher_states || [];
+        if (states.length > 0) {
+            // Use the most common state or first state
+            const primaryState = states[0];
+            const stateName = STATE_NAMES[primaryState] || primaryState;
+            if (STATE_CENTERS[stateName]) {
+                const center = STATE_CENTERS[stateName];
+                lat = center.lat + (Math.random() - 0.5) * 2;
+                lng = center.lng + (Math.random() - 0.5) * 2;
+            }
+        }
+    }
+
+    if (!lat || !lng) return;
+
+    // Calculate marker radius based on number of users
+    const users = item.unique_users || 1;
+    const radius = Math.min(Math.max(Math.sqrt(users) * 6, 10), 35);
+
+    // Create marker with appropriate color
+    const color = type === 'county' ? '#0077B6' : '#2a9d8f';
+
+    const marker = L.circleMarker([lat, lng], {
+        radius: radius,
+        fillColor: color,
+        color: '#1a1a1a',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.85
+    });
+
+    // Add popup
+    const popupContent = generateCoalitionPopup(item, type);
+    marker.bindPopup(popupContent, {
+        maxWidth: 280,
+        className: 'coalition-popup-container'
+    });
+
+    // Add click handler to show detail panel
+    marker.on('click', function() {
+        showEntityDetail(item);
+    });
+
+    mapMarkersLayer.addLayer(marker);
+}
+
+/**
+ * Generate popup HTML for coalition marker
+ */
+function generateCoalitionPopup(item, type) {
+    const entityName = item.entity_name || item.entity_id || 'Unknown';
+    const users = item.unique_users || 0;
+    const orgs = item.unique_organizations || 0;
+    const states = (item.researcher_states || []).slice(0, 5).join(', ');
+    const lastActivity = item.last_activity ? formatDate(item.last_activity) : '';
+
+    let html = '<div class="coalition-popup">';
+    html += '<span class="popup-type ' + type + '">' + (type === 'county' ? 'County' : 'Lender') + '</span>';
+    html += '<div class="popup-title">' + escapeHtml(entityName) + '</div>';
+
+    html += '<div class="popup-stats">';
+    html += '<div><span class="stat-value">' + formatNumber(users) + '</span> researchers</div>';
+    if (orgs > 0) {
+        html += '<div><span class="stat-value">' + formatNumber(orgs) + '</span> organizations</div>';
+    }
+    html += '</div>';
+
+    if (states) {
+        html += '<div class="popup-orgs">';
+        html += '<i class="fas fa-map-marker-alt"></i> Researcher locations: ' + escapeHtml(states);
+        html += '</div>';
+    }
+
+    if (lastActivity) {
+        html += '<div style="font-size: 0.8rem; color: #888; margin-top: 6px;">';
+        html += '<i class="fas fa-clock"></i> Last activity: ' + lastActivity;
+        html += '</div>';
+    }
+
+    html += '<div class="popup-link">';
+    html += '<a href="#" onclick="showEntityDetail(' + JSON.stringify(item).replace(/"/g, '&quot;') + '); return false;">';
+    html += '<i class="fas fa-users"></i> View researchers</a>';
+    html += '</div>';
+
+    html += '</div>';
+    return html;
+}
+
+/**
+ * Get state name from FIPS code
+ */
+function getStateNameFromFips(fipsCode) {
+    const fipsToState = {
+        '01': 'Alabama', '02': 'Alaska', '04': 'Arizona', '05': 'Arkansas',
+        '06': 'California', '08': 'Colorado', '09': 'Connecticut', '10': 'Delaware',
+        '11': 'District of Columbia', '12': 'Florida', '13': 'Georgia', '15': 'Hawaii',
+        '16': 'Idaho', '17': 'Illinois', '18': 'Indiana', '19': 'Iowa',
+        '20': 'Kansas', '21': 'Kentucky', '22': 'Louisiana', '23': 'Maine',
+        '24': 'Maryland', '25': 'Massachusetts', '26': 'Michigan', '27': 'Minnesota',
+        '28': 'Mississippi', '29': 'Missouri', '30': 'Montana', '31': 'Nebraska',
+        '32': 'Nevada', '33': 'New Hampshire', '34': 'New Jersey', '35': 'New Mexico',
+        '36': 'New York', '37': 'North Carolina', '38': 'North Dakota', '39': 'Ohio',
+        '40': 'Oklahoma', '41': 'Oregon', '42': 'Pennsylvania', '44': 'Rhode Island',
+        '45': 'South Carolina', '46': 'South Dakota', '47': 'Tennessee', '48': 'Texas',
+        '49': 'Utah', '50': 'Vermont', '51': 'Virginia', '53': 'Washington',
+        '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming'
+    };
+    return fipsToState[fipsCode] || null;
 }

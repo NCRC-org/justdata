@@ -3,7 +3,147 @@
 {% block title %}Coalition Opportunities | Analytics | JustData{% endblock %}
 
 {% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+<style>
+    /* View toggle buttons */
+    .view-toggle {
+        display: flex;
+        gap: 0;
+        margin-right: 20px;
+    }
+    .view-toggle .toggle-btn {
+        padding: 6px 14px;
+        border: 1px solid var(--analytics-border);
+        background: var(--analytics-bg);
+        color: var(--analytics-text);
+        cursor: pointer;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    .view-toggle .toggle-btn:first-child {
+        border-radius: 4px 0 0 4px;
+    }
+    .view-toggle .toggle-btn:last-child {
+        border-radius: 0 4px 4px 0;
+        border-left: none;
+    }
+    .view-toggle .toggle-btn.active {
+        background: var(--analytics-primary);
+        color: white;
+        border-color: var(--analytics-primary);
+    }
+    .view-toggle .toggle-btn:hover:not(.active) {
+        background: var(--analytics-bg-alt);
+    }
+
+    /* Coalition map markers */
+    .coalition-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: white;
+        font-weight: bold;
+        font-size: 12px;
+        border: 2px solid #1a1a1a;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    .coalition-marker.county {
+        background: linear-gradient(135deg, #0077B6, #005a8c);
+    }
+    .coalition-marker.lender {
+        background: linear-gradient(135deg, #2a9d8f, #1e7a6d);
+    }
+
+    /* Coalition popup */
+    .coalition-popup {
+        min-width: 200px;
+    }
+    .coalition-popup .popup-type {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+    .coalition-popup .popup-type.county {
+        background: #0077B6;
+        color: white;
+    }
+    .coalition-popup .popup-type.lender {
+        background: #2a9d8f;
+        color: white;
+    }
+    .coalition-popup .popup-title {
+        font-size: 1rem;
+        font-weight: bold;
+        margin-bottom: 8px;
+    }
+    .coalition-popup .popup-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        margin-bottom: 8px;
+        font-size: 0.85rem;
+    }
+    .coalition-popup .popup-stats .stat-value {
+        font-weight: bold;
+        color: var(--analytics-primary);
+    }
+    .coalition-popup .popup-orgs {
+        font-size: 0.8rem;
+        color: var(--analytics-text-secondary);
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--analytics-border-light);
+    }
+    .coalition-popup .popup-link {
+        margin-top: 10px;
+        text-align: center;
+    }
+    .coalition-popup .popup-link a {
+        color: var(--analytics-primary);
+        text-decoration: none;
+        font-size: 0.85rem;
+    }
+    .coalition-popup .popup-link a:hover {
+        text-decoration: underline;
+    }
+
+    /* Map legend */
+    .map-legend {
+        position: absolute;
+        bottom: 20px;
+        left: 20px;
+        background: white;
+        padding: 10px 15px;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        z-index: 1000;
+        font-size: 0.85rem;
+    }
+    .map-legend h4 {
+        margin: 0 0 8px 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+    }
+    .legend-dot {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid #1a1a1a;
+    }
+    .legend-dot.county { background: #0077B6; }
+    .legend-dot.lender { background: #2a9d8f; }
+</style>
 {% endblock %}
 
 {% block extra_head %}
@@ -22,6 +162,14 @@
             <h1><i class="fas fa-users-cog"></i> Coalition Opportunities</h1>
         </div>
         <div class="header-right">
+            <div class="view-toggle">
+                <button class="toggle-btn active" data-view="table" onclick="setView('table')">
+                    <i class="fas fa-table"></i> Table
+                </button>
+                <button class="toggle-btn" data-view="map" onclick="setView('map')">
+                    <i class="fas fa-map"></i> Map
+                </button>
+            </div>
             <div class="filter-group">
                 <label for="state-filter">State:</label>
                 <select id="state-filter" class="form-select">
@@ -115,6 +263,26 @@
         </div>
     </div>
 
+    <!-- Map Section (hidden by default) -->
+    <div id="map-section" class="map-section" style="display: none; margin-top: 20px;">
+        <h3><i class="fas fa-map"></i> Coalition Opportunities Map</h3>
+        <div id="coalition-map" class="analytics-map"></div>
+        <div class="map-legend">
+            <h4>Legend</h4>
+            <div class="legend-item">
+                <span class="legend-dot county"></span>
+                <span>County (multiple researchers)</span>
+            </div>
+            <div class="legend-item">
+                <span class="legend-dot lender"></span>
+                <span>Lender (multiple researchers)</span>
+            </div>
+            <div class="legend-item" style="margin-top: 6px; font-size: 0.8rem; color: #666;">
+                <em>Marker size = number of researchers</em>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Section -->
     <div class="export-section">
         <button class="btn-export" onclick="exportToCSV()">
@@ -144,7 +312,9 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- auth.js already loaded by base_app.html -->
 <script src="{{ url_for('analytics.static', filename='js/analytics-tables.js') }}"></script>
+<script src="{{ url_for('analytics.static', filename='js/analytics-maps.js') }}"></script>
 <script src="{{ url_for('analytics.static', filename='js/analytics-coalitions.js') }}"></script>
 {% endblock %}
