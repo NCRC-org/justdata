@@ -37,7 +37,8 @@
         <div class="footer-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
             <!-- Left side: Copyright and links -->
             <div style="text-align: left;">
-                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <p style="margin: 0 0 4px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                {% if version %}<p style="margin: 0 0 8px 0; font-size: 11px; color: rgba(255,255,255,0.6);">{{ app_name | default('App') }} v{{ version }}</p>{% endif %}
                 <div style="display: flex; gap: 16px; font-size: 13px;">
                     <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
                     <span style="color: rgba(255,255,255,0.5);">|</span>
