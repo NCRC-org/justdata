@@ -267,9 +267,14 @@ def sync_new_events() -> dict:
 # The all_events view is in justdata-f7da7.justdata_analytics and combines:
 #   - Historical: hdma1-242116.justdata_analytics.backfilled_events (Nov 24, 2025 - Jan 22, 2026)
 #   - Live: justdata-f7da7.analytics_520863329.events_* (Jan 23, 2026 onwards)
-ANALYTICS_PROJECT = 'justdata-f7da7'
+ANALYTICS_VIEW_PROJECT = 'justdata-f7da7'
 ANALYTICS_DATASET = 'justdata_analytics'
-EVENTS_TABLE = f'{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.all_events'
+EVENTS_TABLE = f'{ANALYTICS_VIEW_PROJECT}.{ANALYTICS_DATASET}.all_events'
+
+# Project where we run queries (where service account has bigquery.jobs.create permission)
+# This is different from ANALYTICS_VIEW_PROJECT - we can query cross-project data
+# using fully-qualified table names while running jobs in our home project
+QUERY_PROJECT = 'hdma1-242116'
 
 # Backfill source (for sync_new_events function - syncs from usage_log to backfilled_events)
 BACKFILL_PROJECT = 'hdma1-242116'
@@ -337,21 +342,21 @@ def get_bigquery_client():
                     except json.JSONDecodeError:
                         # Last resort: try to load using ast.literal_eval after some cleanup
                         print(f"[WARN] Analytics: Could not parse credentials JSON, falling back to default auth")
-                        _client = bigquery.Client(project=ANALYTICS_PROJECT)
+                        _client = bigquery.Client(project=QUERY_PROJECT)
                         return _client
 
                 credentials = service_account.Credentials.from_service_account_info(creds_dict)
                 _client = bigquery.Client(
-                    project=ANALYTICS_PROJECT,
+                    project=QUERY_PROJECT,
                     credentials=credentials
                 )
             except Exception as e:
                 print(f"[ERROR] Analytics: Error parsing credentials: {e}")
                 # Fall back to default credentials
-                _client = bigquery.Client(project=ANALYTICS_PROJECT)
+                _client = bigquery.Client(project=QUERY_PROJECT)
         else:
             # Fall back to default credentials
-            _client = bigquery.Client(project=ANALYTICS_PROJECT)
+            _client = bigquery.Client(project=QUERY_PROJECT)
     return _client
 
 
