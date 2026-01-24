@@ -97,6 +97,8 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
             notes_content.append(('', f'State: {state_name}'))
         notes_content.append(('', f'Years: {years_str}'))
         notes_content.append(('', f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'))
+        from justdata.shared.utils.versions import get_version
+        notes_content.append(('', f'Application Version: {get_version("bizsight")}'))
         notes_content.append(('', ''))
         
         notes_content.append(('Data Limitations', ''))

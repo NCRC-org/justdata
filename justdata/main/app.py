@@ -119,7 +119,12 @@ def create_app():
         env.globals['url_for'] = url_for
         
         template = env.get_template('justdata_landing_page.html')
-        return template.render(user_type=user_type, permissions=permissions)
+        from justdata.shared.utils.versions import get_version
+        return template.render(
+            user_type=user_type,
+            permissions=permissions,
+            platform_version=get_version('platform')
+        )
     
     # About page route
     @app.route('/about')
@@ -215,10 +220,11 @@ def create_app():
     @app.route('/health')
     def health():
         """Health check endpoint."""
+        from justdata.shared.utils.versions import get_version
         return jsonify({
             'status': 'healthy',
             'app': 'justdata',
-            'version': MainConfig.APP_VERSION
+            'version': get_version('platform')
         })
 
     # Platform stats cache

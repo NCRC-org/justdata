@@ -492,7 +492,7 @@ def create_trend_analysis(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
     return yearly_totals.round(1)
 
 
-def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, metadata: Dict[str, Any] = None):
+def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, metadata: Dict[str, Any] = None, app_version: str = None):
     """
     Save the report data to an Excel file with multiple sheets.
     
@@ -557,6 +557,14 @@ def save_excel_report(report_data: Dict[str, pd.DataFrame], output_path: str, me
                 notes_content.append(('Report Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')))
         else:
             notes_content.append(('Report Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')))
+
+        # Add application version
+        if app_version:
+            notes_content.append(('Application Version:', app_version))
+        else:
+            # Default to branchsight version if not specified
+            from justdata.shared.utils.versions import get_version
+            notes_content.append(('Application Version:', get_version('branchsight')))
         notes_content.append(('', ''))
         
         # Dates Analyzed

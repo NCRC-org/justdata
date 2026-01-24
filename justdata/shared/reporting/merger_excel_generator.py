@@ -424,6 +424,15 @@ def _create_notes_sheet(
     # Race/Ethnicity Classification
     ws.cell(row, 1, "Race/Ethnicity Classification:")
     ws.cell(row, 2, "NCRC hierarchical methodology for HMDA data.")
+    row += 2
+
+    # Application Version
+    from justdata.shared.utils.versions import get_version
+    ws.cell(row, 1, "Application Version")
+    ws.cell(row, 1).font = Font(bold=True, size=12)
+    row += 1
+    ws.cell(row, 1, "MergerMeter Version:")
+    ws.cell(row, 2, get_version('mergermeter'))
     row += 1
 
     # Adjust column widths

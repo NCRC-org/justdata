@@ -189,7 +189,10 @@ function generateUserProfilePopup(user) {
 function addUserMarkers(map, data, options = {}) {
     const markers = L.layerGroup();
 
-    data.forEach(function(location) {
+    // Aggregate data by county_fips to handle multiple reports at same location
+    const aggregatedData = aggregateByCounty(data);
+
+    aggregatedData.forEach(function(location) {
         // Get coordinates - use state center if city coords not available
         let lat, lng;
         if (location.latitude && location.longitude) {
@@ -204,33 +207,26 @@ function addUserMarkers(map, data, options = {}) {
             return; // Skip if no coordinates available
         }
 
-        // Calculate marker size based on user count
-        const users = location.unique_users || 1;
-        const radius = Math.min(Math.max(Math.sqrt(users) * 4, 5), 30);
+        // Calculate marker size based on total event count
+        const events = location.total_events || 1;
+        const radius = Math.min(Math.max(Math.sqrt(events) * 4, 6), 35);
 
+        // High contrast marker styles
         const marker = L.circleMarker([lat, lng], {
             radius: radius,
-            fillColor: options.color || '#1a5a96',
-            color: '#fff',
+            fillColor: options.color || '#0d4a7c',  // Darker blue
+            color: '#1a1a1a',  // Dark border for contrast
             weight: 2,
             opacity: 1,
-            fillOpacity: 0.7
+            fillOpacity: 0.85  // Higher opacity
         });
 
-        // Add enhanced popup with user profile
-        const popupContent = generateUserProfilePopup({
-            name: location.city || 'Location',
-            city: location.city,
-            state: location.state,
-            total_events: location.total_events,
-            organization: location.organization,
-            hubspot_contact_id: location.hubspot_contact_id,
-            hubspot_company_name: location.hubspot_company_name
-        });
+        // Add enhanced popup with aggregated data
+        const popupContent = generateAggregatedPopup(location);
 
         marker.bindPopup(popupContent, {
-            maxWidth: 300,
-            className: 'user-popup'
+            maxWidth: 320,
+            className: 'aggregated-popup-container'
         });
 
         markers.addLayer(marker);
@@ -249,17 +245,20 @@ function addUserMarkers(map, data, options = {}) {
 function addCountyMarkers(map, data) {
     const markers = L.layerGroup();
 
-    // Color scale for report counts
+    // Aggregate data by county
+    const aggregatedData = aggregateByCounty(data);
+
+    // High contrast color scale for report counts
     function getColor(count) {
-        return count > 50 ? '#08306b' :
-               count > 20 ? '#2171b5' :
-               count > 10 ? '#4292c6' :
-               count > 5  ? '#6baed6' :
-               count > 1  ? '#9ecae1' :
-                           '#deebf7';
+        return count > 50 ? '#023858' :  // Very dark blue
+               count > 20 ? '#045a8d' :  // Dark blue
+               count > 10 ? '#0570b0' :  // Medium-dark blue
+               count > 5  ? '#3690c0' :  // Medium blue
+               count > 1  ? '#74a9cf' :  // Light-medium blue
+                           '#a6bddb';    // Light blue
     }
 
-    data.forEach(function(county) {
+    aggregatedData.forEach(function(county) {
         // Get coordinates - use state center if not available
         let lat, lng;
         if (county.latitude && county.longitude) {
@@ -273,27 +272,25 @@ function addCountyMarkers(map, data) {
             return;
         }
 
-        const count = county.report_count || 0;
-        const radius = Math.min(Math.max(Math.sqrt(count) * 3, 6), 25);
+        const count = county.total_events || county.report_count || 0;
+        const radius = Math.min(Math.max(Math.sqrt(count) * 3.5, 7), 30);
 
+        // High contrast marker with dark border
         const marker = L.circleMarker([lat, lng], {
             radius: radius,
             fillColor: getColor(count),
-            color: '#fff',
-            weight: 1,
+            color: '#1a1a1a',  // Dark border for contrast
+            weight: 2,
             opacity: 1,
-            fillOpacity: 0.8
+            fillOpacity: 0.9
         });
 
-        const name = county.county_name || county.county_fips || 'Unknown';
-        const state = county.state || '';
-        const users = county.unique_users || 0;
-
-        marker.bindPopup(
-            '<strong>' + escapeHtml(name) + (state ? ', ' + state : '') + '</strong><br>' +
-            'Reports: ' + formatNumber(count) + '<br>' +
-            'Unique Users: ' + formatNumber(users)
-        );
+        // Use aggregated popup with breakdown
+        const popupContent = generateAggregatedPopup(county);
+        marker.bindPopup(popupContent, {
+            maxWidth: 320,
+            className: 'aggregated-popup-container'
+        });
 
         markers.addLayer(marker);
     });
@@ -356,4 +353,123 @@ function formatDate(dateStr) {
     } catch (e) {
         return dateStr;
     }
+}
+
+/**
+ * Aggregate data by county FIPS code
+ * Combines multiple records at the same location into one with breakdown
+ * @param {Array} data - Array of location records
+ * @returns {Array} Aggregated data with app breakdown
+ */
+function aggregateByCounty(data) {
+    const countyMap = {};
+
+    data.forEach(function(item) {
+        const key = item.county_fips || item.city + '_' + item.state;
+        if (!key) return;
+
+        if (!countyMap[key]) {
+            countyMap[key] = {
+                county_fips: item.county_fips,
+                county_name: item.county_name || item.city,
+                state: item.state,
+                latitude: item.latitude,
+                longitude: item.longitude,
+                unique_users: 0,
+                total_events: 0,
+                apps: {},
+                last_activity: null,
+                organization_name: item.organization_name,
+                hubspot_contact_id: item.hubspot_contact_id,
+                hubspot_company_id: item.hubspot_company_id
+            };
+        }
+
+        const agg = countyMap[key];
+        agg.unique_users += (item.unique_users || 1);
+        agg.total_events += (item.total_events || item.report_count || 1);
+
+        // Track app breakdown
+        const appName = item.app_name || item.event_name || 'Report';
+        agg.apps[appName] = (agg.apps[appName] || 0) + (item.report_count || item.total_events || 1);
+
+        // Keep latest activity
+        if (item.last_activity) {
+            if (!agg.last_activity || new Date(item.last_activity) > new Date(agg.last_activity)) {
+                agg.last_activity = item.last_activity;
+            }
+        }
+    });
+
+    return Object.values(countyMap);
+}
+
+/**
+ * Format county name with state, avoiding duplicates
+ * @param {string} countyName - County name (may already include state)
+ * @param {string} state - State abbreviation
+ * @returns {string} Formatted location string
+ */
+function formatCountyName(countyName, state) {
+    if (!countyName) return state || 'Unknown';
+
+    // Check if county name already contains state abbreviation
+    const statePattern = new RegExp(',\\s*' + state + '$', 'i');
+    if (state && statePattern.test(countyName)) {
+        return countyName;  // Already has state
+    }
+
+    // Also check for common patterns like "County, ST"
+    if (countyName.includes(', ') && countyName.match(/, [A-Z]{2}$/)) {
+        return countyName;  // Already has state abbreviation
+    }
+
+    return state ? countyName + ', ' + state : countyName;
+}
+
+/**
+ * Generate popup content for aggregated county data
+ * @param {object} location - Aggregated location data
+ * @returns {string} HTML popup content
+ */
+function generateAggregatedPopup(location) {
+    const name = formatCountyName(location.county_name || location.city, location.state);
+    const totalEvents = location.total_events || 0;
+    const uniqueUsers = location.unique_users || 0;
+    const apps = location.apps || {};
+    const lastActivity = location.last_activity ? formatDate(location.last_activity) : '';
+
+    let html = '<div class="aggregated-popup">';
+    html += '<div class="popup-title"><strong>' + escapeHtml(name) + '</strong></div>';
+    html += '<div class="popup-stats">';
+    html += '<div>' + formatNumber(totalEvents) + ' total reports</div>';
+    html += '<div>' + formatNumber(uniqueUsers) + ' unique researchers</div>';
+    html += '</div>';
+
+    // App breakdown
+    if (Object.keys(apps).length > 0) {
+        html += '<div class="popup-breakdown">';
+        html += '<div class="breakdown-header">Report Breakdown:</div>';
+        const appNames = {
+            'lendsight_report': 'LendSight',
+            'bizsight_report': 'BizSight',
+            'branchsight_report': 'BranchSight',
+            'dataexplorer_area_report': 'DataExplorer (Area)',
+            'dataexplorer_lender_report': 'DataExplorer (Lender)'
+        };
+        for (const [app, count] of Object.entries(apps)) {
+            const displayName = appNames[app] || app;
+            html += '<div class="breakdown-item">' + escapeHtml(displayName) + ': ' + formatNumber(count) + '</div>';
+        }
+        html += '</div>';
+    }
+
+    if (lastActivity) {
+        html += '<div class="popup-activity">Last activity: ' + lastActivity + '</div>';
+    }
+
+    html += '<div class="popup-note"><em>Researcher details coming soon</em></div>';
+    html += '</div>';
+
+    return html;
 }

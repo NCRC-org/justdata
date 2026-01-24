@@ -270,60 +270,63 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
             metrics['reports_by_app'][app_name] = row.count
 
         # Query for reports by state (user's state)
+        # Note: all_events table uses 'state' column, not 'user_state'
         state_query = f"""
             SELECT
-                user_state,
+                state,
                 COUNT(*) as count
             FROM `hdma1-242116.justdata_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
               AND event_name LIKE '%_report'
-              AND user_state IS NOT NULL
-            GROUP BY user_state
+              AND state IS NOT NULL
+            GROUP BY state
         """
 
         result = client.query(state_query).result()
         for row in result:
-            if row.user_state:
-                metrics['reports_by_state'][row.user_state] = row.count
+            if row.state:
+                metrics['reports_by_state'][row.state] = row.count
 
         # Query for top lenders researched
+        # Note: all_events table uses 'lender_id' column, not 'lender_lei'
         lender_query = f"""
             SELECT
-                lender_lei,
+                lender_id,
                 lender_name,
                 COUNT(*) as count,
                 COUNT(DISTINCT user_id) as unique_users
             FROM `hdma1-242116.justdata_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
-              AND lender_lei IS NOT NULL
-            GROUP BY lender_lei, lender_name
+              AND lender_id IS NOT NULL
+            GROUP BY lender_id, lender_name
             ORDER BY count DESC
             LIMIT 50
         """
 
         result = client.query(lender_query).result()
         for row in result:
-            metrics['lenders_researched'][row.lender_lei] = {
+            metrics['lenders_researched'][row.lender_id] = {
                 'name': row.lender_name,
                 'count': row.count,
                 'unique_users': row.unique_users
             }
 
         # Query for top counties researched
+        # Note: all_events table uses 'state' column, not 'state_code'
         county_query = f"""
             SELECT
                 county_fips,
                 county_name,
-                state_code,
+                state,
                 COUNT(*) as count,
                 COUNT(DISTINCT user_id) as unique_users
             FROM `hdma1-242116.justdata_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
               AND county_fips IS NOT NULL
-            GROUP BY county_fips, county_name, state_code
+            GROUP BY county_fips, county_name, state
             ORDER BY count DESC
             LIMIT 100
         """
@@ -332,7 +335,7 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
         for row in result:
             metrics['counties_researched'][row.county_fips] = {
                 'name': row.county_name,
-                'state': row.state_code,
+                'state': row.state,
                 'count': row.count,
                 'unique_users': row.unique_users
             }

@@ -117,7 +117,7 @@
 
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<!-- auth.js already loaded by base_app.html -->
 <script src="{{ url_for('analytics.static', filename='js/analytics-maps.js') }}"></script>
 <script>
     const MAP_TYPE = 'research_activity';

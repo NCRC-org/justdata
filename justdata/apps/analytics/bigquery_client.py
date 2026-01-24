@@ -87,10 +87,199 @@ def clear_analytics_cache() -> None:
     global _cache
     _cache = {}
 
+
+def sync_new_events() -> dict:
+    """
+    Sync new events from usage_log to backfilled_events.
+
+    This function queries the usage_log table for entries newer than the last
+    sync timestamp, transforms them to match the backfilled_events schema,
+    and inserts them. Called on dashboard load with rate limiting.
+
+    Returns:
+        dict with 'synced_count', 'last_sync', 'skipped' (if rate limited)
+    """
+    global _last_sync_check
+
+    # Rate limiting - only sync once per hour
+    now = datetime.utcnow()
+    if _last_sync_check and (now - _last_sync_check).total_seconds() < SYNC_CHECK_INTERVAL_SECONDS:
+        return {'skipped': True, 'reason': 'Rate limited'}
+
+    _last_sync_check = now
+
+    try:
+        # Get last sync timestamp from Firestore
+        from justdata.main.auth import get_firestore_client
+        db = get_firestore_client()
+        last_sync_ts = None
+
+        if db:
+            try:
+                sync_doc = db.collection('system').document('analytics_sync').get()
+                if sync_doc.exists:
+                    data = sync_doc.to_dict()
+                    last_sync_ts = data.get('last_sync_timestamp')
+            except Exception as e:
+                print(f"[WARN] Analytics: Could not read sync timestamp from Firestore: {e}")
+
+        client = get_bigquery_client()
+
+        # Build the timestamp filter
+        if last_sync_ts:
+            # Handle both datetime and Firestore Timestamp
+            if hasattr(last_sync_ts, 'isoformat'):
+                ts_str = last_sync_ts.strftime('%Y-%m-%d %H:%M:%S')
+            else:
+                ts_str = str(last_sync_ts)
+            timestamp_filter = f"AND timestamp > TIMESTAMP('{ts_str}')"
+        else:
+            # First sync - get last 7 days of data
+            seven_days_ago = (now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+            timestamp_filter = f"AND timestamp > TIMESTAMP('{seven_days_ago}')"
+
+        # Query usage_log for new entries with report events
+        # Map event names to standard format
+        sync_query = f"""
+            WITH new_events AS (
+                SELECT
+                    GENERATE_UUID() as event_id,
+                    timestamp as event_timestamp,
+                    CASE
+                        WHEN action = 'lendsight_report_generated' THEN 'lendsight_report'
+                        WHEN action = 'bizsight_report_generated' THEN 'bizsight_report'
+                        WHEN action = 'branchsight_report_generated' THEN 'branchsight_report'
+                        WHEN action = 'dataexplorer_area_report' THEN 'dataexplorer_area_report'
+                        WHEN action = 'dataexplorer_lender_report' THEN 'dataexplorer_lender_report'
+                        ELSE action
+                    END as event_name,
+                    user_id,
+                    CAST(NULL AS STRING) as user_email,
+                    CAST(NULL AS STRING) as user_type,
+                    CAST(NULL AS STRING) as organization_name,
+                    JSON_VALUE(details, '$.county_fips') as county_fips,
+                    JSON_VALUE(details, '$.county_name') as county_name,
+                    JSON_VALUE(details, '$.state') as state,
+                    JSON_VALUE(details, '$.lender_id') as lender_id,
+                    JSON_VALUE(details, '$.lender_name') as lender_name,
+                    JSON_VALUE(details, '$.lei') as lender_id_alt,
+                    JSON_VALUE(details, '$.respondent_name') as lender_name_alt,
+                    CAST(NULL AS STRING) as hubspot_contact_id,
+                    CAST(NULL AS STRING) as hubspot_company_id
+                FROM `{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.usage_log`
+                WHERE action IN (
+                    'lendsight_report_generated',
+                    'bizsight_report_generated',
+                    'branchsight_report_generated',
+                    'dataexplorer_area_report',
+                    'dataexplorer_lender_report'
+                )
+                {timestamp_filter}
+            )
+            SELECT
+                event_id,
+                event_timestamp,
+                event_name,
+                user_id,
+                user_email,
+                user_type,
+                organization_name,
+                county_fips,
+                county_name,
+                state,
+                COALESCE(lender_id, lender_id_alt) as lender_id,
+                COALESCE(lender_name, lender_name_alt) as lender_name,
+                hubspot_contact_id,
+                hubspot_company_id
+            FROM new_events
+        """
+
+        # Get the count of new events first
+        count_query = f"""
+            SELECT COUNT(*) as cnt
+            FROM `{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.usage_log`
+            WHERE action IN (
+                'lendsight_report_generated',
+                'bizsight_report_generated',
+                'branchsight_report_generated',
+                'dataexplorer_area_report',
+                'dataexplorer_lender_report'
+            )
+            {timestamp_filter}
+        """
+
+        count_result = list(client.query(count_query).result())
+        new_count = count_result[0].cnt if count_result else 0
+
+        if new_count == 0:
+            # Update last sync time even if no new events
+            if db:
+                try:
+                    db.collection('system').document('analytics_sync').set({
+                        'last_sync_timestamp': now,
+                        'last_sync_count': 0,
+                        'status': 'no_new_events'
+                    }, merge=True)
+                except Exception as e:
+                    print(f"[WARN] Analytics: Could not update sync timestamp: {e}")
+
+            return {'synced_count': 0, 'last_sync': now.isoformat()}
+
+        # Insert new events into backfilled_events
+        insert_query = f"""
+            INSERT INTO `{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.backfilled_events`
+            (event_id, event_timestamp, event_name, user_id, user_email, user_type,
+             organization_name, county_fips, county_name, state, lender_id, lender_name,
+             hubspot_contact_id, hubspot_company_id)
+            {sync_query}
+        """
+
+        try:
+            client.query(insert_query).result()
+            synced_count = new_count
+        except Exception as e:
+            print(f"[ERROR] Analytics: Failed to insert synced events: {e}")
+            return {'error': str(e), 'synced_count': 0}
+
+        # Update sync timestamp in Firestore
+        if db:
+            try:
+                db.collection('system').document('analytics_sync').set({
+                    'last_sync_timestamp': now,
+                    'last_sync_count': synced_count,
+                    'status': 'success'
+                }, merge=True)
+            except Exception as e:
+                print(f"[WARN] Analytics: Could not update sync timestamp: {e}")
+
+        # Clear cache to pick up new data
+        clear_analytics_cache()
+
+        print(f"[INFO] Analytics: Synced {synced_count} new events from usage_log")
+        return {'synced_count': synced_count, 'last_sync': now.isoformat()}
+
+    except Exception as e:
+        print(f"[ERROR] Analytics sync failed: {e}")
+        return {'error': str(e), 'synced_count': 0}
+
+
 # Use backfilled data from hdma1-242116 project
 ANALYTICS_PROJECT = os.environ.get('GCP_PROJECT_ID', 'hdma1-242116')
 ANALYTICS_DATASET = 'justdata_analytics'
 EVENTS_TABLE = f'{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.all_events'
+
+# Target apps for analytics (exclude mergermeter_report, lenderprofile_view, branchmapper_report)
+TARGET_APPS = [
+    'lendsight_report',
+    'bizsight_report',
+    'branchsight_report',
+    'dataexplorer_area_report',
+    'dataexplorer_lender_report'
+]
+
+# Last sync tracking
+_last_sync_check = None
+SYNC_CHECK_INTERVAL_SECONDS = 3600  # Only check/sync once per hour
 
 
 def get_bigquery_client():
@@ -262,6 +451,9 @@ def get_user_locations(
         types_str = "', '".join(exclude_user_types)
         user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
 
+    # Use target apps for user locations
+    target_apps_str = "', '".join(TARGET_APPS)
+
     query = f"""
         SELECT
             county_fips,
@@ -274,7 +466,8 @@ def get_user_locations(
             hubspot_company_id,
             organization_name
         FROM `{EVENTS_TABLE}`
-        WHERE state IS NOT NULL
+        WHERE event_name IN ('{target_apps_str}')
+            AND state IS NOT NULL
             {date_filter}
             {user_type_filter}
     """
@@ -342,6 +535,9 @@ def get_research_activity(
         types_str = "', '".join(exclude_user_types)
         user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
 
+    # Use target apps for research activity
+    target_apps_str = "', '".join(TARGET_APPS)
+
     query = f"""
         SELECT
             county_fips,
@@ -352,7 +548,7 @@ def get_research_activity(
             COUNT(*) AS report_count,
             MAX(event_timestamp) AS last_activity
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('lendsight_report', 'bizsight_report', 'branchsight_report', 'branchmapper_report')
+        WHERE event_name IN ('{target_apps_str}')
             {date_filter}
             {user_type_filter}
     """
@@ -488,7 +684,8 @@ def get_lender_interest(
 def get_coalition_opportunities(
     days: int = 90,
     min_users: int = 3,
-    entity_type: Optional[str] = None
+    entity_type: Optional[str] = None,
+    state: Optional[str] = None
 ) -> List[Dict[str, Any]]:
     """
     Get entities (counties or lenders) with multiple researchers.
@@ -498,12 +695,13 @@ def get_coalition_opportunities(
         days: Number of days to look back (0 = all time)
         min_users: Minimum unique users researching same entity
         entity_type: Filter by 'county' or 'lender'
+        state: Filter by state code (e.g., 'CA', 'NY')
 
     Returns:
         List of coalition opportunity records
     """
     # Check cache first
-    cache_key = _cache_key('get_coalition_opportunities', days=days, min_users=min_users, entity_type=entity_type)
+    cache_key = _cache_key('get_coalition_opportunities', days=days, min_users=min_users, entity_type=entity_type, state=state)
     cached = _get_cached(cache_key)
     if cached is not None:
         return cached
@@ -511,7 +709,10 @@ def get_coalition_opportunities(
     client = get_bigquery_client()
 
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    state_filter = f"AND state = '{state}'" if state else ""
 
+    # Note: organization_name may not exist in events table - using NULL for now
+    # Will be enriched from Firestore user profiles
     query = f"""
         WITH all_research AS (
             -- Lender research
@@ -520,13 +721,14 @@ def get_coalition_opportunities(
                 lender_id AS entity_id,
                 lender_name AS entity_name,
                 COALESCE(user_id, event_id) AS user_id,
-                organization_name AS user_organization,
+                CAST(NULL AS STRING) AS user_organization,
                 state AS researcher_state,
                 event_timestamp
             FROM `{EVENTS_TABLE}`
-            WHERE event_name IN ('mergermeter_report', 'dataexplorer_lender_report', 'lenderprofile_view')
+            WHERE event_name IN ('{TARGET_APPS[3]}', '{TARGET_APPS[4]}')
                 {date_filter}
                 AND lender_id IS NOT NULL
+                {state_filter}
 
             UNION ALL
 
@@ -534,15 +736,16 @@ def get_coalition_opportunities(
             SELECT
                 'county' AS entity_type,
                 county_fips AS entity_id,
-                county_name AS entity_name,
+                CONCAT(county_name, ', ', state) AS entity_name,
                 COALESCE(user_id, event_id) AS user_id,
-                organization_name AS user_organization,
+                CAST(NULL AS STRING) AS user_organization,
                 state AS researcher_state,
                 event_timestamp
             FROM `{EVENTS_TABLE}`
-            WHERE event_name IN ('lendsight_report', 'bizsight_report', 'branchsight_report', 'branchmapper_report')
+            WHERE event_name IN ('{TARGET_APPS[0]}', '{TARGET_APPS[1]}', '{TARGET_APPS[2]}')
                 {date_filter}
                 AND county_fips IS NOT NULL
+                {state_filter}
         )
         SELECT
             entity_type,
@@ -556,7 +759,6 @@ def get_coalition_opportunities(
         FROM all_research
         GROUP BY entity_type, entity_id
         HAVING COUNT(DISTINCT user_id) >= {min_users}
-            AND COUNT(DISTINCT user_organization) > 0
     """
 
     if entity_type:
@@ -610,7 +812,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         days: Number of days to look back (0 = all time)
 
     Returns:
-        Summary dict with total_users, total_events, top_counties, top_lenders
+        Summary dict with total_users, total_events, total_lenders, top_counties, top_lenders
     """
     # Check cache first
     cache_key = _cache_key('get_summary', days=days)
@@ -620,19 +822,21 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
 
     client = get_bigquery_client()
 
-    # Build date filter (empty for all time)
-    date_filter = ""
-    if days > 0:
-        date_filter = f"WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)"
+    # Build app filter for target apps only
+    target_apps_str = "', '".join(TARGET_APPS)
 
-    # Total users and events
-    # Count only actual user_ids (not events) for accurate user count
+    # Build date filter
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # Total users and events (filtered to target apps only)
     totals_query = f"""
         SELECT
             COUNT(DISTINCT user_id) AS total_users,
-            COUNT(*) AS total_events
+            COUNT(*) AS total_events,
+            COUNT(DISTINCT lender_id) AS total_lenders
         FROM `{EVENTS_TABLE}`
-        {date_filter}
+        WHERE event_name IN ('{target_apps_str}')
+            {date_filter}
     """
 
     try:
@@ -640,16 +844,18 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         if totals_result:
             total_users = totals_result[0].get('total_users', 0)
             total_events = totals_result[0].get('total_events', 0)
+            total_lenders = totals_result[0].get('total_lenders', 0)
         else:
             total_users = 0
             total_events = 0
+            total_lenders = 0
     except Exception as e:
         print(f"BigQuery error getting totals: {e}")
         total_users = 0
         total_events = 0
+        total_lenders = 0
 
-    # Top researched counties
-    counties_date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    # Top researched counties (filtered to target apps)
     top_counties_query = f"""
         SELECT
             county_fips,
@@ -657,8 +863,8 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             county_name,
             COUNT(*) AS total_reports
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('lendsight_report', 'bizsight_report', 'branchsight_report', 'branchmapper_report')
-            {counties_date_filter}
+        WHERE event_name IN ('{target_apps_str}')
+            {date_filter}
             AND county_fips IS NOT NULL
         GROUP BY county_fips, state, county_name
         ORDER BY total_reports DESC
@@ -675,16 +881,15 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         print(f"BigQuery error getting top counties: {e}")
         top_counties = []
 
-    # Top researched lenders
-    lenders_date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    # Top researched lenders (from target apps with lender data)
     top_lenders_query = f"""
         SELECT
             lender_id,
             lender_name,
             COUNT(*) AS total_events
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('mergermeter_report', 'dataexplorer_lender_report', 'lenderprofile_view')
-            {lenders_date_filter}
+        WHERE event_name IN ('{target_apps_str}')
+            {date_filter}
             AND lender_id IS NOT NULL
         GROUP BY lender_id, lender_name
         ORDER BY total_events DESC
@@ -697,20 +902,15 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         print(f"BigQuery error getting top lenders: {e}")
         top_lenders = []
 
-    # App usage breakdown
-    usage_date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    # App usage breakdown (target apps only)
     app_usage_query = f"""
         SELECT
             event_name,
             COUNT(*) AS event_count,
             COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN (
-            'lendsight_report', 'bizsight_report', 'branchsight_report',
-            'branchmapper_report', 'mergermeter_report',
-            'dataexplorer_area_report', 'dataexplorer_lender_report', 'lenderprofile_view'
-        )
-            {usage_date_filter}
+        WHERE event_name IN ('{target_apps_str}')
+            {date_filter}
         GROUP BY event_name
         ORDER BY event_count DESC
     """
@@ -724,6 +924,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     result = {
         'total_users': total_users,
         'total_events': total_events,
+        'total_lenders': total_lenders,
         'top_counties': top_counties,
         'top_lenders': top_lenders,
         'app_usage': app_usage,
@@ -731,6 +932,293 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     }
     _set_cached(cache_key, result)
     return result
+
+
+def get_users(
+    days: int = 90,
+    search: Optional[str] = None
+) -> List[Dict[str, Any]]:
+    """
+    Get list of users with their activity summary.
+
+    Note: User email, type, and organization are not in BigQuery events table.
+    These should be enriched from Firestore user profiles if needed.
+
+    Args:
+        days: Number of days to look back (0 = all time)
+        search: Optional search term for user_id
+
+    Returns:
+        List of user records with activity counts
+    """
+    # Check cache first
+    cache_key = _cache_key('get_users', days=days, search=search)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+
+    client = get_bigquery_client()
+    target_apps_str = "', '".join(TARGET_APPS)
+
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    search_filter = ""
+    if search:
+        search_filter = f"AND user_id LIKE '%{search}%'"
+
+    query = f"""
+        SELECT
+            user_id,
+            MAX(state) AS last_state,
+            MAX(county_name) AS last_county,
+            COUNT(*) AS total_reports,
+            COUNT(DISTINCT county_fips) AS counties_researched,
+            COUNT(DISTINCT lender_id) AS lenders_researched,
+            MAX(event_timestamp) AS last_activity,
+            MIN(event_timestamp) AS first_activity
+        FROM `{EVENTS_TABLE}`
+        WHERE event_name IN ('{target_apps_str}')
+            AND user_id IS NOT NULL
+            {date_filter}
+            {search_filter}
+        GROUP BY user_id
+        ORDER BY total_reports DESC
+        LIMIT 200
+    """
+
+    try:
+        results = client.query(query).result()
+        data = [dict(row) for row in results]
+
+        # Enrich with Firestore user profile data
+        data = _enrich_users_from_firestore(data)
+
+        _set_cached(cache_key, data)
+        return data
+    except Exception as e:
+        print(f"BigQuery error in get_users: {e}")
+        return []
+
+
+def get_user_activity(
+    user_id: str,
+    days: int = 90
+) -> Dict[str, Any]:
+    """
+    Get detailed activity for a specific user.
+
+    Args:
+        user_id: The user ID to look up
+        days: Number of days to look back (0 = all time)
+
+    Returns:
+        Dict with user details and activity breakdown
+    """
+    client = get_bigquery_client()
+    target_apps_str = "', '".join(TARGET_APPS)
+
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # Get user summary (user email, type, org from Firestore, not BigQuery)
+    summary_query = f"""
+        SELECT
+            user_id,
+            COUNT(*) AS total_reports,
+            COUNT(DISTINCT county_fips) AS counties_researched,
+            COUNT(DISTINCT lender_id) AS lenders_researched,
+            MAX(event_timestamp) AS last_activity,
+            MIN(event_timestamp) AS first_activity
+        FROM `{EVENTS_TABLE}`
+        WHERE event_name IN ('{target_apps_str}')
+            AND user_id = '{user_id}'
+            {date_filter}
+        GROUP BY user_id
+    """
+
+    # Get activity by app
+    by_app_query = f"""
+        SELECT
+            event_name,
+            COUNT(*) AS count
+        FROM `{EVENTS_TABLE}`
+        WHERE event_name IN ('{target_apps_str}')
+            AND user_id = '{user_id}'
+            {date_filter}
+        GROUP BY event_name
+        ORDER BY count DESC
+    """
+
+    # Get recent reports
+    recent_query = f"""
+        SELECT
+            event_timestamp,
+            event_name,
+            county_name,
+            state,
+            lender_name,
+            lender_id
+        FROM `{EVENTS_TABLE}`
+        WHERE event_name IN ('{target_apps_str}')
+            AND user_id = '{user_id}'
+            {date_filter}
+        ORDER BY event_timestamp DESC
+        LIMIT 20
+    """
+
+    # Get counties researched
+    counties_query = f"""
+        SELECT
+            county_fips,
+            county_name,
+            state,
+            COUNT(*) AS report_count
+        FROM `{EVENTS_TABLE}`
+        WHERE event_name IN ('{target_apps_str}')
+            AND user_id = '{user_id}'
+            AND county_fips IS NOT NULL
+            {date_filter}
+        GROUP BY county_fips, county_name, state
+        ORDER BY report_count DESC
+        LIMIT 20
+    """
+
+    # Get lenders researched
+    lenders_query = f"""
+        SELECT
+            lender_id,
+            lender_name,
+            COUNT(*) AS report_count
+        FROM `{EVENTS_TABLE}`
+        WHERE event_name IN ('{target_apps_str}')
+            AND user_id = '{user_id}'
+            AND lender_id IS NOT NULL
+            {date_filter}
+        GROUP BY lender_id, lender_name
+        ORDER BY report_count DESC
+        LIMIT 20
+    """
+
+    try:
+        # Execute queries
+        summary_result = list(client.query(summary_query).result())
+        by_app_result = [dict(row) for row in client.query(by_app_query).result()]
+        recent_result = [dict(row) for row in client.query(recent_query).result()]
+        counties_result = [dict(row) for row in client.query(counties_query).result()]
+        lenders_result = [dict(row) for row in client.query(lenders_query).result()]
+
+        if not summary_result:
+            return {'error': 'User not found'}
+
+        summary = dict(summary_result[0])
+
+        return {
+            'user': summary,
+            'by_app': by_app_result,
+            'recent_reports': recent_result,
+            'counties': counties_result,
+            'lenders': lenders_result
+        }
+    except Exception as e:
+        print(f"BigQuery error in get_user_activity: {e}")
+        return {'error': str(e)}
+
+
+def get_entity_users(
+    entity_type: str,
+    entity_id: str,
+    days: int = 90
+) -> List[Dict[str, Any]]:
+    """
+    Get users researching a specific entity (county or lender).
+
+    Enriches user data from Firestore profiles to include email, user_type,
+    and organization_name.
+
+    Args:
+        entity_type: 'county' or 'lender'
+        entity_id: FIPS code (county) or LEI (lender)
+        days: Number of days to look back (0 = all time)
+
+    Returns:
+        List of user records with activity counts for this entity
+    """
+    client = get_bigquery_client()
+    target_apps_str = "', '".join(TARGET_APPS)
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # Build entity filter based on type
+    if entity_type == 'county':
+        entity_filter = f"AND county_fips = '{entity_id}'"
+    elif entity_type == 'lender':
+        entity_filter = f"AND lender_id = '{entity_id}'"
+    else:
+        return []
+
+    query = f"""
+        SELECT
+            user_id,
+            COUNT(*) AS report_count,
+            MAX(event_timestamp) AS last_activity,
+            MIN(event_timestamp) AS first_activity
+        FROM `{EVENTS_TABLE}`
+        WHERE event_name IN ('{target_apps_str}')
+            AND user_id IS NOT NULL
+            {entity_filter}
+            {date_filter}
+        GROUP BY user_id
+        ORDER BY report_count DESC
+        LIMIT 50
+    """
+
+    try:
+        results = client.query(query).result()
+        users = [dict(row) for row in results]
+
+        # Enrich with Firestore user profile data
+        users = _enrich_users_from_firestore(users)
+
+        return users
+    except Exception as e:
+        print(f"BigQuery error in get_entity_users: {e}")
+        return []
+
+
+def _enrich_users_from_firestore(users: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """
+    Enrich user records with profile data from Firestore.
+
+    Args:
+        users: List of user records with at least user_id
+
+    Returns:
+        Users enriched with user_email, user_type, organization_name, user_name
+    """
+    try:
+        from firebase_admin import firestore
+        db = firestore.client()
+    except Exception as e:
+        print(f"Could not connect to Firestore: {e}")
+        return users
+
+    for user in users:
+        user_id = user.get('user_id')
+        if not user_id:
+            continue
+
+        try:
+            # Get user profile from Firestore
+            user_doc = db.collection('users').document(user_id).get()
+            if user_doc.exists:
+                profile = user_doc.to_dict()
+                user['user_email'] = profile.get('email', '')
+                user['user_name'] = profile.get('displayName', profile.get('email', ''))
+                user['user_type'] = profile.get('userType', '')
+                user['organization_name'] = profile.get('organizationName', '')
+        except Exception as e:
+            # Continue even if one user fails
+            print(f"Failed to get Firestore profile for {user_id}: {e}")
+            continue
+
+    return users
 
 
 def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:

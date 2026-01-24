@@ -1733,6 +1733,7 @@
             <!-- Left side: Copyright and links -->
             <div style="text-align: left;">
                 <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <p style="margin: 0 0 8px 0; font-size: 11px; color: rgba(255,255,255,0.6);">JustData Platform v{{ platform_version }}</p>
                 <div style="display: flex; gap: 16px; font-size: 13px;">
                     <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
                     <span style="color: rgba(255,255,255,0.5);">|</span>
@@ -2073,8 +2074,14 @@
         // Slack Support Button
         function openSlackSupport(event) {
             event.preventDefault();
-            // Placeholder URL - will be replaced with actual Slack channel link
-            const slackChannelUrl = 'https://slack.com/app_redirect?channel=PLACEHOLDER';
+            const currentUserType = document.getElementById('userTypeSelect').value;
+            const isInternalUser = ['staff', 'senior_executive', 'admin'].includes(currentUserType);
+
+            // Staff channel for internal users, public support channel for everyone else
+            const slackChannelUrl = isInternalUser
+                ? 'https://ncrcgroup.slack.com/archives/C0A0BBWRT36'  // justdata_staff
+                : 'https://ncrcgroup.slack.com/archives/C0AAHCK98A0'; // public support
+
             window.open(slackChannelUrl, '_blank');
         }
 

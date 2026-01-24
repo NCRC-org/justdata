@@ -4,6 +4,8 @@
 
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
 {% endblock %}
 
@@ -51,14 +53,14 @@
         <a href="{{ url_for('analytics.user_map') }}" class="tab active">
             <i class="fas fa-map-marked-alt"></i> Report Locations
         </a>
-        <a href="{{ url_for('analytics.research_map') }}" class="tab">
-            <i class="fas fa-search-location"></i> Research Activity
-        </a>
         <a href="{{ url_for('analytics.lender_map') }}" class="tab">
             <i class="fas fa-university"></i> Lender Interest
         </a>
         <a href="{{ url_for('analytics.coalitions') }}" class="tab">
             <i class="fas fa-users-cog"></i> Coalitions
+        </a>
+        <a href="{{ url_for('analytics.users') }}" class="tab">
+            <i class="fas fa-users"></i> Users
         </a>
     </div>
 
@@ -84,16 +86,37 @@
             <div class="loading-item">Loading locations...</div>
         </div>
     </div>
+
+    <!-- Location Detail Panel (Researchers at this location) -->
+    <div id="location-detail-panel" class="detail-panel" style="display: none;">
+        <div class="detail-panel-header">
+            <h3 id="location-detail-title">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="location-name-display">Location Name</span>
+            </h3>
+            <button class="detail-close-btn" onclick="closeLocationDetail()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="detail-panel-content">
+            <p class="detail-subtitle">Researchers working in this area:</p>
+            <div class="users-list" id="location-users-list">
+                <div class="loading-item">Loading researchers...</div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+<!-- auth.js already loaded by base_app.html -->
 <script src="{{ url_for('analytics.static', filename='js/analytics-maps.js') }}"></script>
 <script>
     const MAP_TYPE = 'user_locations';
     const API_ENDPOINT = '/analytics/api/user-locations';
+    const USE_CLUSTERING = true;
 </script>
 <script src="{{ url_for('analytics.static', filename='js/analytics-user-map.js') }}"></script>
 {% endblock %}
