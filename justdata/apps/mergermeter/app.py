@@ -3243,19 +3243,14 @@ def _extract_mortgage_goals_data(raw_data):
         'Grand Total': {
             'Loans': { hp: x, refi: y, hi: z },
             '~LMICT': { hp: x, refi: y, hi: z },
-            '~LMIB': { hp: x, refi: y, hi: z },
-            'LMIB$': { hp: x, refi: y, hi: z },
-            '~MMCT': { hp: x, refi: y, hi: z },
-            '~MINB': { hp: x, refi: y, hi: z },
-            '~Asian': { hp: x, refi: y, hi: z },
-            '~Black': { hp: x, refi: y, hi: z },
-            '~Native American': { hp: x, refi: y, hi: z },
-            '~HoPI': { hp: x, refi: y, hi: z },
-            '~Hispanic': { hp: x, refi: y, hi: z },
+            ...
         },
-        'New Jersey': { ... },
+        'Illinois': { ... },
         ...
     }
+
+    Note: HMDA data may be aggregated by CBSA (not state), and may not have loan purpose breakdown.
+    In those cases, we aggregate to Grand Total and put all in HP category.
     """
     mortgage_data = {}
 
@@ -3267,6 +3262,24 @@ def _extract_mortgage_goals_data(raw_data):
     if acquirer_subject:
         print(f"[Goals Calculator] HMDA data fields: {list(acquirer_subject[0].keys())[:20]}")
 
+    # CBSA to State mapping (first 2 digits of CBSA = state FIPS)
+    # Common state FIPS codes
+    state_fips_map = {
+        '01': 'Alabama', '02': 'Alaska', '04': 'Arizona', '05': 'Arkansas',
+        '06': 'California', '08': 'Colorado', '09': 'Connecticut', '10': 'Delaware',
+        '11': 'District of Columbia', '12': 'Florida', '13': 'Georgia', '15': 'Hawaii',
+        '16': 'Idaho', '17': 'Illinois', '18': 'Indiana', '19': 'Iowa',
+        '20': 'Kansas', '21': 'Kentucky', '22': 'Louisiana', '23': 'Maine',
+        '24': 'Maryland', '25': 'Massachusetts', '26': 'Michigan', '27': 'Minnesota',
+        '28': 'Mississippi', '29': 'Missouri', '30': 'Montana', '31': 'Nebraska',
+        '32': 'Nevada', '33': 'New Hampshire', '34': 'New Jersey', '35': 'New Mexico',
+        '36': 'New York', '37': 'North Carolina', '38': 'North Dakota', '39': 'Ohio',
+        '40': 'Oklahoma', '41': 'Oregon', '42': 'Pennsylvania', '44': 'Rhode Island',
+        '45': 'South Carolina', '46': 'South Dakota', '47': 'Tennessee', '48': 'Texas',
+        '49': 'Utah', '50': 'Vermont', '51': 'Virginia', '53': 'Washington',
+        '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming', '72': 'Puerto Rico',
+    }
+
     # Helper function to get value with multiple possible field names
     def get_value(record, *field_names):
         for name in field_names:
@@ -3274,6 +3287,19 @@ def _extract_mortgage_goals_data(raw_data):
             if val is not None and val != 0:
                 return val
         return 0
+
+    # Helper to determine state from record
+    def get_state(record):
+        # Try direct state fields first
+        state = (record.get('state_name') or record.get('state') or
+                 record.get('State') or record.get('state_code'))
+        if state and state != 'Unknown':
+            return state
+
+        # Try to map from CBSA code (CBSA codes don't directly map to states,
+        # but we can use state_code if available in the record)
+        # For now, aggregate unknown states into Grand Total only
+        return None  # Will aggregate to Grand Total
 
     # Initialize empty metric structure
     def empty_metrics():
@@ -3291,77 +3317,86 @@ def _extract_mortgage_goals_data(raw_data):
             '~Hispanic': {'hp': 0, 'refi': 0, 'hi': 0},
         }
 
-    # Process by state - aggregate all records
+    # Process all records - aggregate by state or into Grand Total
     state_data = {}
+    grand_total = empty_metrics()
 
     for record in acquirer_subject + target_subject:
-        # Try multiple field names for state
-        state = (record.get('state_name') or record.get('state') or
-                 record.get('State') or record.get('state_code') or 'Unknown')
-
-        if state not in state_data:
-            state_data[state] = empty_metrics()
+        state = get_state(record)
 
         # Determine loan purpose - check if data has loan_purpose breakdown
-        # If not, put everything in HP category
-        loan_purpose = record.get('loan_purpose', record.get('purpose', 'hp')).lower() if record.get('loan_purpose') or record.get('purpose') else 'hp'
-
-        # Map loan purpose to hp/refi/hi
-        if 'refi' in loan_purpose or 'refinan' in loan_purpose or loan_purpose == '31':
-            purpose_key = 'refi'
-        elif 'improv' in loan_purpose or loan_purpose == '32' or loan_purpose == 'hi':
-            purpose_key = 'hi'
+        # If not, put everything in HP category (most common for CBA analysis)
+        loan_purpose = record.get('loan_purpose', record.get('purpose', ''))
+        if loan_purpose:
+            loan_purpose = str(loan_purpose).lower()
+            if 'refi' in loan_purpose or 'refinan' in loan_purpose or loan_purpose == '31':
+                purpose_key = 'refi'
+            elif 'improv' in loan_purpose or loan_purpose == '32' or loan_purpose == 'hi':
+                purpose_key = 'hi'
+            else:
+                purpose_key = 'hp'
         else:
-            # Default to home purchase
+            # No loan purpose breakdown - put all in HP
             purpose_key = 'hp'
 
-        # Get total loans/amount
+        # Get metrics from record
         total_loans = get_value(record, 'total_loans', 'Total Loans', 'loans', 'Loans', 'loan_count')
         total_amount = get_value(record, 'total_amount', 'Total Amount', 'amount', 'Amount', 'loan_amount')
-
-        # Add to appropriate loan purpose
-        state_data[state]['Loans'][purpose_key] += total_loans
-
-        # LMICT (Low-Mod Income Census Tracts)
         lmict_loans = get_value(record, 'lmict_loans', 'lmict_count', 'lmi_tract_loans', 'LMICT Loans')
-        state_data[state]['~LMICT'][purpose_key] += lmict_loans
-
-        # LMIB (Low-Mod Income Borrowers) - count
         lmib_loans = get_value(record, 'lmib_loans', 'lmib_count', 'lmi_borrower_loans', 'LMIB Loans')
-        state_data[state]['~LMIB'][purpose_key] += lmib_loans
-
-        # LMIB$ (LMI Borrower Dollars)
         lmib_amount = get_value(record, 'lmib_amount', 'lmi_borrower_amount', 'LMIB Amount', 'lmib_dollars')
-        if lmib_amount == 0 and lmib_loans > 0:
-            # Estimate amount if we have loans but no amount
-            avg_loan = total_amount / total_loans if total_loans > 0 else 0
-            lmib_amount = lmib_loans * avg_loan
-        state_data[state]['LMIB$'][purpose_key] += lmib_amount
-
-        # MMCT (Majority-Minority Census Tracts)
         mmct_loans = get_value(record, 'mmct_loans', 'mmct_count', 'minority_tract_loans', 'MMCT Loans')
-        state_data[state]['~MMCT'][purpose_key] += mmct_loans
-
-        # MINB (Minority Borrowers)
         minb_loans = get_value(record, 'minb_loans', 'minority_borrower_loans', 'MINB Loans', 'minority_loans')
-        state_data[state]['~MINB'][purpose_key] += minb_loans
+        asian_loans = get_value(record, 'asian_loans', 'asian_count', 'Asian Loans')
+        black_loans = get_value(record, 'black_loans', 'black_count', 'Black Loans', 'african_american_loans')
+        native_loans = get_value(record, 'native_american_loans', 'native_loans', 'Native American Loans', 'american_indian_loans')
+        hopi_loans = get_value(record, 'hopi_loans', 'pacific_islander_loans', 'HoPI Loans', 'hawaiian_pacific_islander_loans')
+        hispanic_loans = get_value(record, 'hispanic_loans', 'hispanic_count', 'Hispanic Loans', 'latino_loans')
 
-        # Racial breakdowns
-        state_data[state]['~Asian'][purpose_key] += get_value(record, 'asian_loans', 'asian_count', 'Asian Loans')
-        state_data[state]['~Black'][purpose_key] += get_value(record, 'black_loans', 'black_count', 'Black Loans', 'african_american_loans')
-        state_data[state]['~Native American'][purpose_key] += get_value(record, 'native_american_loans', 'native_loans', 'Native American Loans', 'american_indian_loans')
-        state_data[state]['~HoPI'][purpose_key] += get_value(record, 'hopi_loans', 'pacific_islander_loans', 'HoPI Loans', 'hawaiian_pacific_islander_loans')
-        state_data[state]['~Hispanic'][purpose_key] += get_value(record, 'hispanic_loans', 'hispanic_count', 'Hispanic Loans', 'latino_loans')
+        # If we don't have LMIB$ but have LMIB count, estimate the dollar amount
+        if lmib_amount == 0 and lmib_loans > 0 and total_loans > 0:
+            avg_loan = total_amount / total_loans
+            lmib_amount = lmib_loans * avg_loan
 
-    # Calculate grand total
-    grand_total = empty_metrics()
-    for state, metrics in state_data.items():
-        for metric_key in grand_total:
-            for purpose in ['hp', 'refi', 'hi']:
-                grand_total[metric_key][purpose] += metrics[metric_key][purpose]
+        # Aggregate to Grand Total (always)
+        grand_total['Loans'][purpose_key] += total_loans
+        grand_total['~LMICT'][purpose_key] += lmict_loans
+        grand_total['~LMIB'][purpose_key] += lmib_loans
+        grand_total['LMIB$'][purpose_key] += lmib_amount
+        grand_total['~MMCT'][purpose_key] += mmct_loans
+        grand_total['~MINB'][purpose_key] += minb_loans
+        grand_total['~Asian'][purpose_key] += asian_loans
+        grand_total['~Black'][purpose_key] += black_loans
+        grand_total['~Native American'][purpose_key] += native_loans
+        grand_total['~HoPI'][purpose_key] += hopi_loans
+        grand_total['~Hispanic'][purpose_key] += hispanic_loans
 
+        # Also aggregate by state if we have state info
+        if state:
+            if state not in state_data:
+                state_data[state] = empty_metrics()
+
+            state_data[state]['Loans'][purpose_key] += total_loans
+            state_data[state]['~LMICT'][purpose_key] += lmict_loans
+            state_data[state]['~LMIB'][purpose_key] += lmib_loans
+            state_data[state]['LMIB$'][purpose_key] += lmib_amount
+            state_data[state]['~MMCT'][purpose_key] += mmct_loans
+            state_data[state]['~MINB'][purpose_key] += minb_loans
+            state_data[state]['~Asian'][purpose_key] += asian_loans
+            state_data[state]['~Black'][purpose_key] += black_loans
+            state_data[state]['~Native American'][purpose_key] += native_loans
+            state_data[state]['~HoPI'][purpose_key] += hopi_loans
+            state_data[state]['~Hispanic'][purpose_key] += hispanic_loans
+
+    # Build final result with Grand Total first
     mortgage_data['Grand Total'] = grand_total
-    mortgage_data.update(state_data)
+
+    # Add state-level data (excluding 'Unknown' which shouldn't exist now)
+    for state, metrics in sorted(state_data.items()):
+        if state and state != 'Unknown':
+            mortgage_data[state] = metrics
+
+    print(f"[Goals Calculator] Mortgage data summary: {len(mortgage_data)} regions, Grand Total Loans HP={grand_total['Loans']['hp']}")
 
     return mortgage_data
 
@@ -3480,8 +3515,15 @@ def _extract_sb_goals_data(raw_data):
         data.pop('LMICT Total Amount', None)
         data.pop('Rev Under $1m Total Amount', None)
 
+    # Build final result with Grand Total first
     sb_data['Grand Total'] = grand_total
-    sb_data.update(state_data)
+
+    # Add state-level data (excluding 'Unknown')
+    for state, metrics in sorted(state_data.items()):
+        if state and state != 'Unknown':
+            sb_data[state] = metrics
+
+    print(f"[Goals Calculator] SB data summary: {len(sb_data)} regions, Grand Total SB Loans={grand_total['SB Loans']}")
 
     return sb_data
 
