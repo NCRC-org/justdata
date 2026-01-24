@@ -5,6 +5,61 @@
 {% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+<style>
+    /* Clickable lender links in popup */
+    .lender-popup .lender-link {
+        color: #0077B6;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .lender-popup .lender-link:hover {
+        text-decoration: underline;
+        color: #005a8c;
+    }
+
+    /* User research details in state panel */
+    .user-lenders, .user-counties {
+        font-size: 0.85rem;
+        color: var(--analytics-text-secondary);
+        margin-bottom: 4px;
+    }
+    .user-lenders i, .user-counties i {
+        color: var(--analytics-text-muted);
+        width: 16px;
+        font-size: 0.8rem;
+    }
+
+    /* Summary card for fallback mode */
+    .summary-card {
+        background: var(--analytics-bg-alt);
+        border: 1px solid var(--analytics-border);
+        border-radius: 4px;
+        padding: var(--spacing-md);
+    }
+    .summary-header {
+        margin-bottom: var(--spacing-md);
+        padding-bottom: var(--spacing-sm);
+        border-bottom: 1px solid var(--analytics-border-light);
+    }
+    .summary-section {
+        margin-bottom: var(--spacing-sm);
+    }
+    .summary-section h5 {
+        font-size: 0.8rem;
+        color: var(--analytics-text-muted);
+        text-transform: uppercase;
+        margin: 0 0 6px 0;
+    }
+    .lender-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    .lender-list li {
+        font-size: 0.85rem;
+        padding: 2px 0;
+    }
+</style>
 {% endblock %}
 
 {% block extra_head %}
@@ -96,6 +151,25 @@
     <div class="map-section" style="margin-top: 30px;">
         <h3><i class="fas fa-map"></i> Researcher Locations</h3>
         <div id="lender-map" class="analytics-map"></div>
+    </div>
+
+    <!-- State Researchers Detail Panel -->
+    <div id="state-detail-panel" class="detail-panel" style="display: none;">
+        <div class="detail-panel-header">
+            <h3 id="state-detail-title">
+                <i class="fas fa-map-marker-alt"></i>
+                <span id="state-name-display">State Name</span>
+            </h3>
+            <button class="detail-close-btn" onclick="closeStateDetail()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="detail-panel-content">
+            <p class="detail-subtitle">Researchers in this state:</p>
+            <div class="users-list" id="state-users-list">
+                <div class="loading-item">Loading researchers...</div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

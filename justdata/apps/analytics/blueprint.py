@@ -270,6 +270,33 @@ def api_timeline():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@analytics_bp.route('/lender-interest/<lender_id>')
+@login_required
+@staff_required
+def lender_detail(lender_id):
+    """Lender detail page showing reports and researchers for a specific lender."""
+    breadcrumbs = [
+        {'name': 'Analytics', 'url': '/analytics'},
+        {'name': 'Lender Interest', 'url': '/analytics/lender-map'},
+        {'name': 'Lender Details', 'url': f'/analytics/lender-interest/{lender_id}'}
+    ]
+    return render_template('analytics/lender_detail.html', lender_id=lender_id, **get_context(breadcrumbs))
+
+
+@analytics_bp.route('/api/lender-detail/<lender_id>')
+@login_required
+@staff_required
+def api_lender_detail(lender_id):
+    """Get detailed data for a specific lender including reports and researchers."""
+    try:
+        from .bigquery_client import get_lender_detail
+        days = request.args.get('days', 90, type=int)
+        data = get_lender_detail(lender_id=lender_id, days=days)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @analytics_bp.route('/api/users')
 @login_required
 @staff_required

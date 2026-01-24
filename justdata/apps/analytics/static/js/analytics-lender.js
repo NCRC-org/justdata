@@ -6,6 +6,8 @@ let map;
 let lenderData = [];
 let demoMode = false;
 let syntheticData = null;
+let selectedState = null;
+let stateDataCache = {};
 
 /**
  * Initialize on page load
@@ -28,6 +30,13 @@ $(document).ready(function() {
 
     // Handle filter changes
     $('#time-period, #min-users').on('change', loadData);
+
+    // Close detail panel when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#state-detail-panel, .leaflet-popup, .btn-view-researchers').length) {
+            closeStateDetail();
+        }
+    });
 });
 
 /**
@@ -145,6 +154,13 @@ function loadData() {
 }
 
 /**
+ * Navigate to lender detail page
+ */
+function navigateToLenderDetail(lenderId) {
+    window.location.href = '/analytics/lender-interest/' + encodeURIComponent(lenderId);
+}
+
+/**
  * Render lender table
  */
 function renderTable(data) {
@@ -200,13 +216,39 @@ function renderTable(data) {
             ? ' +' + (lender.locations.length - 3) + ' more'
             : '';
 
+        // Create clickable lender name link
+        const nameLink = $('<a>')
+            .attr('href', '/analytics/lender-interest/' + encodeURIComponent(lender.lender_id))
+            .css({
+                'color': '#0077B6',
+                'text-decoration': 'none',
+                'font-weight': 'bold',
+                'cursor': 'pointer'
+            })
+            .text(name)
+            .on('mouseenter', function() {
+                $(this).css('text-decoration', 'underline');
+            })
+            .on('mouseleave', function() {
+                $(this).css('text-decoration', 'none');
+            });
+
         const row = $('<tr>')
-            .append('<td><strong>' + escapeHtml(name) + '</strong></td>')
+            .addClass('clickable-row')
+            .css('cursor', 'pointer')
+            .append($('<td>').append(nameLink))
             .append('<td><code>' + escapeHtml(lender.lender_id) + '</code></td>')
             .append('<td>' + formatNumber(lender.unique_users) + '</td>')
             .append('<td>' + formatNumber(lender.event_count) + '</td>')
             .append('<td>' + escapeHtml(locations) + '<span style="color: #888;">' + moreLocations + '</span></td>')
             .append('<td>' + formatDate(lender.last_activity) + '</td>');
+
+        // Make entire row clickable (except for direct link clicks)
+        row.on('click', function(e) {
+            // If clicking the link itself, let it handle navigation
+            if ($(e.target).is('a')) return;
+            navigateToLenderDetail(lender.lender_id);
+        });
 
         tbody.append(row);
     });
@@ -293,6 +335,9 @@ function generateLenderMapPopup(info) {
         .sort((a, b) => b[1].count - a[1].count)
         .slice(0, 5);
 
+    // Cache the state data for the detail panel
+    stateDataCache[info.state] = info;
+
     let html = '<div class="lender-popup">';
     html += '<div class="popup-title"><strong>' + escapeHtml(info.state) + '</strong></div>';
     html += '<div class="popup-stats">';
@@ -304,7 +349,13 @@ function generateLenderMapPopup(info) {
         html += '<div class="popup-lenders">';
         html += '<div class="lenders-header">Top Lenders Researched:</div>';
         topLenders.forEach(function([id, lender]) {
-            html += '<div class="lender-item">' + escapeHtml(lender.name) + ' (' + formatNumber(lender.count) + ')</div>';
+            // Make lender names clickable links
+            html += '<div class="lender-item">';
+            html += '<a href="/analytics/lender-interest/' + encodeURIComponent(id) + '" class="lender-link" onclick="event.stopPropagation();">';
+            html += escapeHtml(lender.name);
+            html += '</a>';
+            html += ' (' + formatNumber(lender.count) + ')';
+            html += '</div>';
         });
         if (lenderCount > 5) {
             html += '<div class="lender-more">+' + (lenderCount - 5) + ' more lenders</div>';
@@ -322,6 +373,13 @@ function generateLenderMapPopup(info) {
         html += '</div>';
     }
 
+    // Add View All Researchers button
+    html += '<div class="popup-actions">';
+    html += '<button class="btn-view-researchers" onclick="showStateResearchers(\'' + escapeHtml(info.state) + '\'); return false;">';
+    html += '<i class="fas fa-users"></i> View All Researchers';
+    html += '</button>';
+    html += '</div>';
+
     html += '</div>';
     return html;
 }
@@ -336,4 +394,280 @@ function showError(message) {
         '<i class="fas fa-exclamation-triangle"></i> ' + escapeHtml(message) +
         '</td></tr>'
     );
+}
+
+/**
+ * Show state researchers detail panel
+ */
+function showStateResearchers(stateAbbr) {
+    selectedState = stateAbbr;
+    const panel = $('#state-detail-panel');
+    const stateName = STATE_NAMES[stateAbbr] || stateAbbr;
+
+    // Update panel header
+    $('#state-name-display').text(stateName + ' (' + stateAbbr + ')');
+
+    // Show loading state
+    $('#state-users-list').html('<div class="loading-item">Loading researchers...</div>');
+
+    // Show panel
+    panel.fadeIn(200);
+
+    // Load researchers for this state
+    loadStateResearchers(stateAbbr);
+}
+
+/**
+ * Close state detail panel
+ */
+function closeStateDetail() {
+    $('#state-detail-panel').fadeOut(200);
+    selectedState = null;
+}
+
+/**
+ * Load researchers for a specific state
+ */
+function loadStateResearchers(stateAbbr) {
+    const days = parseInt($('#time-period').val()) || 90;
+
+    // Use demo data if in demo mode
+    if (demoMode && syntheticData) {
+        const researchers = getDemoStateResearchers(stateAbbr, days);
+        renderStateResearchers(researchers, stateAbbr);
+        return;
+    }
+
+    // Call API for state researchers
+    $.ajax({
+        url: '/analytics/api/state-researchers',
+        data: {
+            state: stateAbbr,
+            days: days
+        },
+        success: function(response) {
+            if (response.success) {
+                renderStateResearchers(response.data, stateAbbr);
+            } else {
+                $('#state-users-list').html('<div class="error-item">Failed to load researchers</div>');
+            }
+        },
+        error: function() {
+            // Fallback to building from lenderData if API not available
+            const researchers = buildResearchersFromLenderData(stateAbbr);
+            renderStateResearchers(researchers, stateAbbr);
+        }
+    });
+}
+
+/**
+ * Get demo researchers for a specific state
+ */
+function getDemoStateResearchers(stateAbbr, days) {
+    if (!syntheticData || !syntheticData.events) {
+        return [];
+    }
+
+    const now = new Date();
+    const cutoff = days > 0 ? new Date(now - days * 24 * 60 * 60 * 1000) : new Date(0);
+
+    // Filter events for this state with lender research
+    const events = syntheticData.events.filter(function(e) {
+        return e.state === stateAbbr &&
+               e.lender_id &&
+               new Date(e.event_timestamp) >= cutoff;
+    });
+
+    // Group by user
+    const users = {};
+    events.forEach(function(e) {
+        if (!e.user_id) return;
+        if (!users[e.user_id]) {
+            users[e.user_id] = {
+                user_id: e.user_id,
+                user_email: e.user_email,
+                user_type: e.user_type,
+                organization_name: e.organization_name,
+                lenders: {},
+                counties: new Set(),
+                last_activity: e.event_timestamp
+            };
+        }
+
+        // Track lenders researched
+        if (e.lender_id) {
+            if (!users[e.user_id].lenders[e.lender_id]) {
+                users[e.user_id].lenders[e.lender_id] = {
+                    name: e.lender_name || e.lender_id,
+                    count: 0
+                };
+            }
+            users[e.user_id].lenders[e.lender_id].count++;
+        }
+
+        // Track counties
+        if (e.county_name) {
+            users[e.user_id].counties.add(e.county_name);
+        }
+
+        if (new Date(e.event_timestamp) > new Date(users[e.user_id].last_activity)) {
+            users[e.user_id].last_activity = e.event_timestamp;
+        }
+    });
+
+    // Convert to array and format for display
+    return Object.values(users).map(function(u) {
+        const lenderList = Object.values(u.lenders)
+            .sort((a, b) => b.count - a.count)
+            .map(l => l.name);
+        return {
+            user_id: u.user_id,
+            user_email: u.user_email,
+            user_type: u.user_type,
+            organization_name: u.organization_name,
+            lenders_researched: lenderList,
+            lender_count: lenderList.length,
+            counties: Array.from(u.counties),
+            last_activity: u.last_activity
+        };
+    }).sort(function(a, b) {
+        return b.lender_count - a.lender_count;
+    });
+}
+
+/**
+ * Build researchers list from cached lender data (fallback)
+ */
+function buildResearchersFromLenderData(stateAbbr) {
+    // Group lenderData by user for this state
+    const stateRecords = lenderData.filter(function(item) {
+        return item.researcher_state === stateAbbr;
+    });
+
+    // Since we may not have user-level data in lenderData, return a summary
+    const info = stateDataCache[stateAbbr];
+    if (!info) return [];
+
+    // Create synthetic researcher entries based on aggregate data
+    // This is a fallback when we don't have real user data
+    return [{
+        user_id: 'summary',
+        user_email: null,
+        user_type: null,
+        organization_name: null,
+        lenders_researched: Object.values(info.lenders).map(l => l.name),
+        lender_count: Object.keys(info.lenders).length,
+        counties: Array.from(info.cities),
+        last_activity: null,
+        is_summary: true,
+        researcher_count: info.count
+    }];
+}
+
+/**
+ * Render researchers in the state detail panel
+ */
+function renderStateResearchers(researchers, stateAbbr) {
+    const container = $('#state-users-list').empty();
+
+    if (!researchers || researchers.length === 0) {
+        container.html('<div class="no-data-item">No researcher details available</div>');
+        return;
+    }
+
+    // Check if this is summary data (fallback mode)
+    if (researchers.length === 1 && researchers[0].is_summary) {
+        const summary = researchers[0];
+        let html = '<div class="summary-card">';
+        html += '<div class="summary-header">';
+        html += '<strong>' + formatNumber(summary.researcher_count) + ' researchers</strong> in this state';
+        html += '</div>';
+        html += '<div class="summary-section">';
+        html += '<h5>Lenders Researched (' + summary.lender_count + '):</h5>';
+        html += '<ul class="lender-list">';
+        summary.lenders_researched.slice(0, 10).forEach(function(lender) {
+            html += '<li>' + escapeHtml(lender) + '</li>';
+        });
+        if (summary.lenders_researched.length > 10) {
+            html += '<li class="more-items">+' + (summary.lenders_researched.length - 10) + ' more</li>';
+        }
+        html += '</ul>';
+        html += '</div>';
+        if (summary.counties.length > 0) {
+            html += '<div class="summary-section">';
+            html += '<h5>Counties:</h5>';
+            html += '<p>' + summary.counties.slice(0, 5).map(escapeHtml).join(', ');
+            if (summary.counties.length > 5) {
+                html += ' +' + (summary.counties.length - 5) + ' more';
+            }
+            html += '</p>';
+            html += '</div>';
+        }
+        html += '</div>';
+        container.html(html);
+        return;
+    }
+
+    // Render individual researcher cards
+    researchers.forEach(function(user) {
+        const displayName = user.user_email || (user.user_id ? user.user_id.substring(0, 12) + '...' : 'Unknown');
+        const orgName = user.organization_name || '';
+        const userType = user.user_type || '';
+        const lenderCount = user.lender_count || 0;
+        const lenders = user.lenders_researched || [];
+        const counties = user.counties || [];
+
+        const userCard = $('<div class="user-card">');
+
+        // Header with name and type badge
+        let headerHtml = '<div class="user-card-header">';
+        headerHtml += '<a href="/analytics/users?user=' + encodeURIComponent(user.user_id) + '" class="user-name-link">';
+        headerHtml += '<i class="fas fa-user"></i> ' + escapeHtml(displayName);
+        headerHtml += '</a>';
+        if (userType) {
+            headerHtml += '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>';
+        }
+        headerHtml += '</div>';
+        userCard.append(headerHtml);
+
+        // Organization
+        if (orgName) {
+            userCard.append('<div class="user-org"><i class="fas fa-building"></i> ' + escapeHtml(orgName) + '</div>');
+        }
+
+        // Lenders researched
+        if (lenders.length > 0) {
+            let lenderHtml = '<div class="user-lenders">';
+            lenderHtml += '<i class="fas fa-university"></i> ';
+            lenderHtml += lenders.slice(0, 3).map(escapeHtml).join(', ');
+            if (lenders.length > 3) {
+                lenderHtml += ' <span class="more-indicator">+' + (lenders.length - 3) + ' more</span>';
+            }
+            lenderHtml += '</div>';
+            userCard.append(lenderHtml);
+        }
+
+        // Counties
+        if (counties.length > 0) {
+            let countyHtml = '<div class="user-counties">';
+            countyHtml += '<i class="fas fa-map-marker-alt"></i> ';
+            countyHtml += counties.slice(0, 3).map(escapeHtml).join(', ');
+            if (counties.length > 3) {
+                countyHtml += ' <span class="more-indicator">+' + (counties.length - 3) + ' more</span>';
+            }
+            countyHtml += '</div>';
+            userCard.append(countyHtml);
+        }
+
+        // Activity info
+        let activityHtml = '<div class="user-activity">';
+        activityHtml += '<span><i class="fas fa-university"></i> ' + formatNumber(lenderCount) + ' lenders</span>';
+        if (user.last_activity) {
+            activityHtml += '<span><i class="fas fa-clock"></i> ' + formatDate(user.last_activity) + '</span>';
+        }
+        activityHtml += '</div>';
+        userCard.append(activityHtml);
+
+        container.append(userCard);
+    });
 }

@@ -27,6 +27,47 @@
                 <input type="text" id="search-input" class="form-control" placeholder="User ID or email...">
             </div>
             <div class="filter-group">
+                <label for="org-filter">Organization:</label>
+                <select id="org-filter" class="form-select">
+                    <option value="">All Organizations</option>
+                </select>
+            </div>
+            <div class="filter-group user-type-dropdown">
+                <label>Type:</label>
+                <button type="button" class="form-select user-type-btn" id="type-filter-btn">
+                    <span id="type-filter-label">All Types</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="user-type-menu" id="type-filter-menu" style="display: none;">
+                    <div class="user-type-options">
+                        <label class="user-type-option select-all">
+                            <input type="checkbox" id="type-select-all" checked> Select All
+                        </label>
+                        <label class="user-type-option">
+                            <input type="checkbox" class="type-checkbox" value="REGISTERED" checked> REGISTERED
+                        </label>
+                        <label class="user-type-option">
+                            <input type="checkbox" class="type-checkbox" value="INSTITUTIONAL" checked> INSTITUTIONAL
+                        </label>
+                        <label class="user-type-option">
+                            <input type="checkbox" class="type-checkbox" value="MEDIA" checked> MEDIA
+                        </label>
+                        <label class="user-type-option">
+                            <input type="checkbox" class="type-checkbox" value="MEMBER" checked> MEMBER
+                        </label>
+                        <label class="user-type-option">
+                            <input type="checkbox" class="type-checkbox" value="OTHER" checked> OTHER
+                        </label>
+                        <label class="user-type-option">
+                            <input type="checkbox" class="type-checkbox" value="RESEARCH" checked> RESEARCH
+                        </label>
+                    </div>
+                    <div class="user-type-actions">
+                        <button type="button" class="btn-apply" id="type-apply-btn">Apply</button>
+                    </div>
+                </div>
+            </div>
+            <div class="filter-group">
                 <label for="time-period">Period:</label>
                 <select id="time-period" class="form-select">
                     <option value="30">30 days</option>
@@ -35,6 +76,9 @@
                     <option value="0">All Time</option>
                 </select>
             </div>
+            <button id="clear-filters-btn" class="btn-refresh" title="Clear all filters" style="display: none;">
+                <i class="fas fa-times"></i> Clear
+            </button>
             <button id="refresh-btn" class="btn-refresh" onclick="loadUsers()">
                 <i class="fas fa-sync-alt"></i>
             </button>
@@ -78,16 +122,16 @@
                     <h3><i class="fas fa-table"></i> Active Users</h3>
                     <span id="user-count">0 users</span>
                 </div>
-                <div class="table-wrapper">
+                <div class="table-wrapper users-table-container">
                     <table class="analytics-table users-table" id="users-table">
                         <thead>
                             <tr>
                                 <th>User ID</th>
                                 <th>Type</th>
-                                <th>Reports</th>
-                                <th>Counties</th>
-                                <th>Lenders</th>
-                                <th>Last Active</th>
+                                <th class="sortable" data-sort="total_reports">Reports <i class="fas fa-sort-down sort-icon active"></i></th>
+                                <th class="sortable" data-sort="counties_researched">Counties <i class="fas fa-sort sort-icon"></i></th>
+                                <th class="sortable" data-sort="lenders_researched">Lenders <i class="fas fa-sort sort-icon"></i></th>
+                                <th class="sortable" data-sort="last_activity">Last Active <i class="fas fa-sort sort-icon"></i></th>
                             </tr>
                         </thead>
                         <tbody id="users-tbody">

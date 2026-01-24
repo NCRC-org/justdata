@@ -748,47 +748,59 @@ h1, h2, h3, h4 {
 
 /* Marker Cluster Styles */
 .marker-cluster {
-    background-clip: padding-box;
+    background-color: rgba(0, 123, 255, 0.6);
     border-radius: 50%;
-}
-
-.marker-cluster div {
-    width: 32px;
-    height: 32px;
-    margin-left: 4px;
-    margin-top: 4px;
     text-align: center;
-    border-radius: 50%;
-    font-size: 12px;
-    font-weight: 600;
     color: white;
+    font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-.marker-cluster-small {
-    background-color: rgba(13, 74, 124, 0.5);
+.marker-cluster div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
 }
 
-.marker-cluster-small div {
-    background-color: rgba(13, 74, 124, 0.85);
+.marker-cluster div span {
+    font-size: 12px;
+}
+
+.marker-cluster-small {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    background-color: rgba(13, 74, 124, 0.7);
+}
+
+.marker-cluster-small div span {
+    font-size: 11px;
 }
 
 .marker-cluster-medium {
-    background-color: rgba(11, 94, 156, 0.5);
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    background-color: rgba(11, 94, 156, 0.75);
 }
 
-.marker-cluster-medium div {
-    background-color: rgba(11, 94, 156, 0.85);
+.marker-cluster-medium div span {
+    font-size: 13px;
 }
 
 .marker-cluster-large {
-    background-color: rgba(30, 61, 92, 0.5);
+    width: 50px;
+    height: 50px;
+    line-height: 50px;
+    background-color: rgba(30, 61, 92, 0.85);
 }
 
-.marker-cluster-large div {
-    background-color: rgba(30, 61, 92, 0.95);
+.marker-cluster-large div span {
+    font-size: 14px;
 }
 
 .map-legend {
@@ -1449,6 +1461,99 @@ h1, h2, h3, h4 {
     font-weight: 600;
 }
 
+.lender-popup .popup-actions {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--analytics-border-light);
+}
+
+/* Lender Links in Popup */
+.lender-popup .lender-link {
+    color: #7b1fa2;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.15s;
+}
+
+.lender-popup .lender-link:hover {
+    color: #4a148c;
+    text-decoration: underline;
+}
+
+/* State Researchers Panel Styles */
+.user-card .user-lenders,
+.user-card .user-counties {
+    font-size: 0.8rem;
+    color: var(--analytics-text-secondary);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.user-card .user-lenders i,
+.user-card .user-counties i {
+    color: var(--analytics-text-muted);
+    width: 14px;
+    margin-top: 2px;
+}
+
+/* Summary card for fallback mode */
+.summary-card {
+    background: var(--analytics-bg-alt);
+    border: 1px solid var(--analytics-border);
+    border-radius: 6px;
+    padding: var(--spacing-md);
+}
+
+.summary-card .summary-header {
+    font-size: 1rem;
+    color: var(--analytics-header);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--analytics-border-light);
+}
+
+.summary-card .summary-section {
+    margin-bottom: var(--spacing-md);
+}
+
+.summary-card .summary-section:last-child {
+    margin-bottom: 0;
+}
+
+.summary-card .summary-section h5 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--analytics-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.summary-card .lender-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.summary-card .lender-list li {
+    font-size: 0.85rem;
+    color: var(--analytics-text);
+    padding: 3px 0;
+}
+
+.summary-card .lender-list li.more-items {
+    color: var(--analytics-text-muted);
+    font-style: italic;
+}
+
+.summary-card p {
+    font-size: 0.85rem;
+    color: var(--analytics-text);
+    margin: 0;
+}
+
 /* ============================================
    Users Tab Styles
    ============================================ */
@@ -1466,6 +1571,75 @@ h1, h2, h3, h4 {
 
 .users-table-section {
     min-width: 0;
+}
+
+/* Users table scroll container */
+.users-table-container {
+    max-height: 550px;
+    overflow-y: auto;
+}
+
+.users-table-container thead {
+    position: sticky;
+    top: 0;
+    background: var(--analytics-header);
+    z-index: 1;
+}
+
+.users-table-container thead th {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Custom scrollbar for users table */
+.users-table-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.users-table-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.users-table-container::-webkit-scrollbar-thumb {
+    background: #c0c0c0;
+    border-radius: 4px;
+}
+
+.users-table-container::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0;
+}
+
+/* Sortable column headers */
+.users-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.15s;
+}
+
+.users-table th.sortable:hover {
+    background: #2a5070;
+}
+
+.users-table th .sort-icon {
+    margin-left: 4px;
+    opacity: 0.4;
+    font-size: 0.75rem;
+}
+
+.users-table th .sort-icon.active {
+    opacity: 1;
+}
+
+/* User name and org in table */
+.user-name {
+    font-weight: 500;
+    color: var(--analytics-text);
+}
+
+.user-org-small {
+    font-size: 0.8rem;
+    color: var(--analytics-text-muted);
+    margin-top: 2px;
 }
 
 .users-table tbody tr {

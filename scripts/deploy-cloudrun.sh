@@ -149,6 +149,11 @@ load_env_vars() {
             if grep -q "^${key}$" "$added_keys_file" 2>/dev/null; then
                 continue
             fi
+
+            # Skip GOOGLE_APPLICATION_CREDENTIALS_JSON - it's configured as a Secret Manager reference
+            if [ "$key" = "GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
+                continue
+            fi
             
             # Handle value - preserve everything after first = sign
             if [ -n "$value" ]; then

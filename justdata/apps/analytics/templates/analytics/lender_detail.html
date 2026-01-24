@@ -1,0 +1,711 @@
+{% extends "base_app.html" %}
+
+{% block title %}Lender Details | Analytics | JustData{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+<style>
+    /* Lender Detail Page Specific Styles */
+    .lender-header {
+        background: white;
+        border: 1px solid var(--analytics-border);
+        border-radius: 4px;
+        padding: var(--spacing-lg);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .lender-header h2 {
+        font-family: var(--font-serif);
+        font-size: 1.75rem;
+        color: var(--analytics-header);
+        margin: 0 0 8px 0;
+    }
+
+    .lender-id {
+        font-size: 0.9rem;
+        color: var(--analytics-text-muted);
+        margin-bottom: var(--spacing-md);
+    }
+
+    .lender-id code {
+        background: var(--analytics-bg-alt);
+        padding: 2px 8px;
+        border-radius: 3px;
+        font-size: 0.85rem;
+    }
+
+    .lender-stats {
+        display: flex;
+        gap: var(--spacing-lg);
+        flex-wrap: wrap;
+        font-size: 0.9rem;
+        color: var(--analytics-text-secondary);
+    }
+
+    .lender-stat {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .lender-stat strong {
+        color: var(--analytics-header);
+    }
+
+    .lender-stat i {
+        color: var(--analytics-accent);
+    }
+
+    /* Two column layout for reports and researchers */
+    .detail-layout {
+        display: grid;
+        grid-template-columns: 1fr 400px;
+        gap: var(--spacing-lg);
+    }
+
+    @media (max-width: 1100px) {
+        .detail-layout {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Reports table */
+    .reports-section {
+        min-width: 0;
+    }
+
+    .analytics-table tbody tr.clickable-row {
+        cursor: default;
+    }
+
+    /* Researchers section */
+    .researchers-section {
+        background: white;
+        border: 1px solid var(--analytics-border);
+        border-radius: 4px;
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 200px);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .researchers-section .table-header {
+        flex-shrink: 0;
+    }
+
+    .researchers-list {
+        flex: 1;
+        overflow-y: auto;
+        padding: var(--spacing-sm);
+    }
+
+    .researcher-card {
+        background: var(--analytics-bg-alt);
+        border: 1px solid var(--analytics-border-light);
+        border-radius: 4px;
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-sm);
+        transition: border-color 0.2s;
+    }
+
+    .researcher-card:hover {
+        border-color: var(--analytics-accent);
+    }
+
+    .researcher-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .researcher-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 6px;
+    }
+
+    .researcher-name {
+        font-weight: 600;
+        color: var(--analytics-text);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .researcher-name i {
+        color: var(--analytics-accent);
+    }
+
+    .researcher-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .researcher-org {
+        font-size: 0.85rem;
+        color: var(--analytics-text-secondary);
+        margin-bottom: 6px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .researcher-org i {
+        color: var(--analytics-text-muted);
+        font-size: 0.8rem;
+    }
+
+    .researcher-meta {
+        display: flex;
+        gap: var(--spacing-md);
+        font-size: 0.8rem;
+        color: var(--analytics-text-muted);
+    }
+
+    .researcher-meta span {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .researcher-meta i {
+        font-size: 0.75rem;
+    }
+
+    /* Report type badge */
+    .report-type-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .report-type-badge.lendsight {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .report-type-badge.bizsight {
+        background: #fff3e0;
+        color: #e65100;
+    }
+
+    .report-type-badge.dataexplorer {
+        background: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .report-type-badge.branchsight {
+        background: #fce4ec;
+        color: #c2185b;
+    }
+
+    .report-type-badge.default {
+        background: var(--analytics-bg-alt);
+        color: var(--analytics-text-secondary);
+    }
+
+    /* Filter bar */
+    .filter-bar {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .filter-bar .filter-group {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    .filter-bar label {
+        font-size: 0.8rem;
+        color: var(--analytics-text-secondary);
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .filter-bar .form-select,
+    .filter-bar .form-control {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+        min-width: 120px;
+    }
+
+    /* Loading state */
+    .loading-state {
+        text-align: center;
+        padding: var(--spacing-xxl);
+        color: var(--analytics-text-muted);
+    }
+
+    .loading-state i {
+        font-size: 2rem;
+        margin-bottom: var(--spacing-md);
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block extra_head %}
+<!-- jQuery for analytics -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="analytics-container">
+    <!-- Header -->
+    <div class="analytics-header">
+        <div class="header-left">
+            <a href="{{ url_for('analytics.lender_map') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i> Back to Lender Interest
+            </a>
+            <h1><i class="fas fa-university"></i> Lender Details</h1>
+        </div>
+        <div class="header-right">
+            <div class="filter-group">
+                <label for="time-period">Period:</label>
+                <select id="time-period" class="form-select">
+                    <option value="30">30 days</option>
+                    <option value="90" selected>90 days</option>
+                    <option value="180">6 months</option>
+                    <option value="0">All Time</option>
+                </select>
+            </div>
+            <button id="refresh-btn" class="btn-refresh" onclick="loadLenderDetail()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="analytics-tabs">
+        <a href="{{ url_for('analytics.dashboard') }}" class="tab">
+            <i class="fas fa-tachometer-alt"></i> Overview
+        </a>
+        <a href="{{ url_for('analytics.user_map') }}" class="tab">
+            <i class="fas fa-map-marked-alt"></i> Report Locations
+        </a>
+        <a href="{{ url_for('analytics.lender_map') }}" class="tab active">
+            <i class="fas fa-university"></i> Lender Interest
+        </a>
+        <a href="{{ url_for('analytics.coalitions') }}" class="tab">
+            <i class="fas fa-users-cog"></i> Coalitions
+        </a>
+        <a href="{{ url_for('analytics.users') }}" class="tab">
+            <i class="fas fa-users"></i> Users
+        </a>
+    </div>
+
+    <!-- Lender Header Info -->
+    <div class="lender-header" id="lender-header">
+        <div class="loading-state">
+            <i class="fas fa-spinner"></i>
+            <p>Loading lender details...</p>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="detail-layout">
+        <!-- Reports Table -->
+        <div class="reports-section">
+            <div class="table-section">
+                <div class="table-header">
+                    <h3><i class="fas fa-file-alt"></i> Reports</h3>
+                    <span id="report-count">0 reports</span>
+                </div>
+                <div class="filter-bar" style="padding: 12px 16px; border-bottom: 1px solid var(--analytics-border);">
+                    <div class="filter-group">
+                        <label for="report-type-filter">Type:</label>
+                        <select id="report-type-filter" class="form-select">
+                            <option value="">All Types</option>
+                            <option value="lendsight_report">LendSight</option>
+                            <option value="bizsight_report">BizSight</option>
+                            <option value="dataexplorer_lender_report">DataExplorer</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="state-filter">State:</label>
+                        <select id="state-filter" class="form-select">
+                            <option value="">All States</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="search-filter">Search:</label>
+                        <input type="text" id="search-filter" class="form-control" placeholder="County name...">
+                    </div>
+                </div>
+                <div class="table-wrapper scrollable-table">
+                    <table class="analytics-table" id="reports-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Report Type</th>
+                                <th>County</th>
+                                <th>State</th>
+                                <th>Researcher</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-tbody">
+                            <tr>
+                                <td colspan="5" class="loading-cell">Loading reports...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Researchers Section -->
+        <div class="researchers-section">
+            <div class="table-header">
+                <h3><i class="fas fa-users"></i> Researchers</h3>
+                <span id="researcher-count">0 researchers</span>
+            </div>
+            <div class="researchers-list" id="researchers-list">
+                <div class="loading-item">Loading researchers...</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- auth.js already loaded by base_app.html -->
+<script src="{{ url_for('analytics.static', filename='js/analytics-tables.js') }}"></script>
+<script>
+    // Store lender ID from template
+    const LENDER_ID = '{{ lender_id }}';
+
+    // Data storage
+    let lenderData = null;
+    let allReports = [];
+    let allResearchers = [];
+
+    // App name mappings
+    const APP_NAMES = {
+        'lendsight_report': 'LendSight',
+        'bizsight_report': 'BizSight',
+        'branchsight_report': 'BranchSight',
+        'dataexplorer_area_report': 'DataExplorer (Area)',
+        'dataexplorer_lender_report': 'DataExplorer (Lender)'
+    };
+
+    // Initialize on page load
+    $(document).ready(function() {
+        loadLenderDetail();
+
+        // Handle filter changes
+        $('#time-period').on('change', loadLenderDetail);
+        $('#report-type-filter, #state-filter').on('change', filterReports);
+        $('#search-filter').on('input', debounce(filterReports, 300));
+    });
+
+    /**
+     * Load lender detail data from API
+     */
+    function loadLenderDetail() {
+        const days = parseInt($('#time-period').val()) || 90;
+
+        // Show loading states
+        $('#lender-header').html(`
+            <div class="loading-state">
+                <i class="fas fa-spinner"></i>
+                <p>Loading lender details...</p>
+            </div>
+        `);
+        $('#reports-tbody').html('<tr><td colspan="5" class="loading-cell">Loading reports...</td></tr>');
+        $('#researchers-list').html('<div class="loading-item">Loading researchers...</div>');
+
+        $.ajax({
+            url: '/analytics/api/lender-detail/' + encodeURIComponent(LENDER_ID),
+            data: { days: days },
+            success: function(response) {
+                if (response.success) {
+                    lenderData = response.data;
+                    allReports = lenderData.reports || [];
+                    allResearchers = lenderData.researchers || [];
+
+                    renderLenderHeader(lenderData.lender);
+                    populateStateFilter();
+                    renderReports(allReports);
+                    renderResearchers(allResearchers);
+                } else {
+                    showError(response.error || 'Failed to load lender data');
+                }
+            },
+            error: function(xhr) {
+                console.error('API error:', xhr.responseText);
+                showError('Failed to connect to API');
+            }
+        });
+    }
+
+    /**
+     * Render lender header information
+     */
+    function renderLenderHeader(lender) {
+        if (!lender) {
+            $('#lender-header').html('<p class="error-item">Lender not found</p>');
+            return;
+        }
+
+        const firstActivity = lender.first_activity ? formatDate(lender.first_activity) : 'N/A';
+
+        $('#lender-header').html(`
+            <h2>${escapeHtml(lender.lender_name || 'Unknown Lender')}</h2>
+            <div class="lender-id">
+                Lender ID: <code>${escapeHtml(lender.lender_id)}</code>
+            </div>
+            <div class="lender-stats">
+                <div class="lender-stat">
+                    <i class="fas fa-file-alt"></i>
+                    <strong>${formatNumber(lender.total_reports || 0)}</strong> Total Reports
+                </div>
+                <div class="lender-stat">
+                    <i class="fas fa-users"></i>
+                    <strong>${formatNumber(lender.unique_researchers || 0)}</strong> Unique Researchers
+                </div>
+                <div class="lender-stat">
+                    <i class="fas fa-calendar"></i>
+                    Active Since: <strong>${firstActivity}</strong>
+                </div>
+            </div>
+        `);
+    }
+
+    /**
+     * Populate state filter dropdown from reports data
+     */
+    function populateStateFilter() {
+        const states = new Set();
+        allReports.forEach(function(report) {
+            if (report.state) {
+                states.add(report.state);
+            }
+        });
+
+        const select = $('#state-filter');
+        select.find('option:not(:first)').remove();
+
+        Array.from(states).sort().forEach(function(state) {
+            select.append($('<option>').val(state).text(state));
+        });
+    }
+
+    /**
+     * Filter reports based on current filter values
+     */
+    function filterReports() {
+        const typeFilter = $('#report-type-filter').val();
+        const stateFilter = $('#state-filter').val();
+        const searchFilter = $('#search-filter').val().toLowerCase();
+
+        const filtered = allReports.filter(function(report) {
+            // Type filter
+            if (typeFilter && report.report_type !== typeFilter) {
+                return false;
+            }
+
+            // State filter
+            if (stateFilter && report.state !== stateFilter) {
+                return false;
+            }
+
+            // Search filter (county name)
+            if (searchFilter) {
+                const countyName = (report.county_name || '').toLowerCase();
+                if (!countyName.includes(searchFilter)) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        renderReports(filtered);
+    }
+
+    /**
+     * Render reports table
+     */
+    function renderReports(reports) {
+        const tbody = $('#reports-tbody').empty();
+        $('#report-count').text(reports.length + ' reports');
+
+        if (reports.length === 0) {
+            tbody.html('<tr><td colspan="5" class="loading-cell">No reports found</td></tr>');
+            return;
+        }
+
+        reports.forEach(function(report) {
+            const reportType = report.report_type || 'unknown';
+            const displayName = APP_NAMES[reportType] || reportType;
+            const badgeClass = getBadgeClass(reportType);
+            const researcherDisplay = getResearcherDisplay(report.user_id);
+
+            const row = $('<tr>')
+                .append('<td>' + formatDate(report.event_timestamp) + '</td>')
+                .append('<td><span class="report-type-badge ' + badgeClass + '">' + escapeHtml(displayName) + '</span></td>')
+                .append('<td>' + escapeHtml(report.county_name || 'N/A') + '</td>')
+                .append('<td>' + escapeHtml(report.state || 'N/A') + '</td>')
+                .append('<td>' + researcherDisplay + '</td>');
+
+            tbody.append(row);
+        });
+    }
+
+    /**
+     * Get badge class for report type
+     */
+    function getBadgeClass(reportType) {
+        if (reportType.includes('lendsight')) return 'lendsight';
+        if (reportType.includes('bizsight')) return 'bizsight';
+        if (reportType.includes('dataexplorer')) return 'dataexplorer';
+        if (reportType.includes('branchsight')) return 'branchsight';
+        return 'default';
+    }
+
+    /**
+     * Get researcher display for table
+     */
+    function getResearcherDisplay(userId) {
+        if (!userId) return '<span class="no-data">Anonymous</span>';
+
+        // Try to find enriched researcher info
+        const researcher = allResearchers.find(r => r.user_id === userId);
+        if (researcher && researcher.user_email) {
+            const name = researcher.user_name || researcher.user_email.split('@')[0];
+            return escapeHtml(name);
+        }
+
+        // Truncate user ID for display
+        const truncated = userId.length > 12 ? userId.substring(0, 12) + '...' : userId;
+        return '<code title="' + escapeHtml(userId) + '">' + escapeHtml(truncated) + '</code>';
+    }
+
+    /**
+     * Render researchers list
+     */
+    function renderResearchers(researchers) {
+        const container = $('#researchers-list').empty();
+        $('#researcher-count').text(researchers.length + ' researchers');
+
+        if (researchers.length === 0) {
+            container.html('<div class="no-data-item">No researchers found</div>');
+            return;
+        }
+
+        researchers.forEach(function(researcher) {
+            const name = researcher.user_name || researcher.user_email || 'Unknown User';
+            const email = researcher.user_email || '';
+            const org = researcher.organization_name || '';
+            const userType = researcher.user_type || '';
+            const reportCount = researcher.report_count || 0;
+            const lastActive = formatDate(researcher.last_activity);
+
+            let html = '<div class="researcher-card">';
+            html += '<div class="researcher-header">';
+            html += '<div class="researcher-name"><i class="fas fa-user"></i> ' + escapeHtml(name) + '</div>';
+            if (userType) {
+                html += '<span class="researcher-badge">' + escapeHtml(userType) + '</span>';
+            }
+            html += '</div>';
+
+            if (org) {
+                html += '<div class="researcher-org"><i class="fas fa-building"></i> ' + escapeHtml(org) + '</div>';
+            } else if (email) {
+                html += '<div class="researcher-org"><i class="fas fa-envelope"></i> ' + escapeHtml(email) + '</div>';
+            }
+
+            html += '<div class="researcher-meta">';
+            html += '<span><i class="fas fa-file-alt"></i> ' + formatNumber(reportCount) + ' reports</span>';
+            html += '<span><i class="fas fa-clock"></i> ' + lastActive + '</span>';
+            html += '</div>';
+            html += '</div>';
+
+            container.append(html);
+        });
+    }
+
+    /**
+     * Show error message
+     */
+    function showError(message) {
+        $('#lender-header').html('<p class="error-item"><i class="fas fa-exclamation-triangle"></i> ' + escapeHtml(message) + '</p>');
+        $('#reports-tbody').html('<tr><td colspan="5" class="loading-cell" style="color: #dc3545;">' + escapeHtml(message) + '</td></tr>');
+        $('#researchers-list').html('<div class="error-item">' + escapeHtml(message) + '</div>');
+    }
+
+    /**
+     * Utility: Format number with commas
+     */
+    function formatNumber(num) {
+        if (num === null || num === undefined) return '0';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    /**
+     * Utility: Escape HTML
+     */
+    function escapeHtml(text) {
+        if (!text) return '';
+        const map = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        };
+        return text.toString().replace(/[&<>"']/g, m => map[m]);
+    }
+
+    /**
+     * Utility: Format date
+     */
+    function formatDate(dateStr) {
+        if (!dateStr) return 'N/A';
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch (e) {
+            return dateStr;
+        }
+    }
+
+    /**
+     * Utility: Debounce function
+     */
+    function debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+</script>
+{% endblock %}

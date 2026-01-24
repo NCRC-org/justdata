@@ -253,29 +253,17 @@ function renderMap(data) {
             zoomToBoundsOnClick: true,
             disableClusteringAtZoom: 10,
             iconCreateFunction: function(cluster) {
-                const childCount = cluster.getChildCount();
-                // Sum up total events in cluster
-                let totalEvents = 0;
-                cluster.getAllChildMarkers().forEach(function(marker) {
-                    if (marker.locationData) {
-                        totalEvents += marker.locationData.total_events || 1;
-                    }
-                });
-
-                // Size based on total events
-                let size = 'small';
-                let sizeClass = 'marker-cluster-small';
-                if (totalEvents > 100) {
+                var count = cluster.getChildCount();
+                var size = 'small';
+                if (count >= 50) {
                     size = 'large';
-                    sizeClass = 'marker-cluster-large';
-                } else if (totalEvents > 30) {
+                } else if (count >= 10) {
                     size = 'medium';
-                    sizeClass = 'marker-cluster-medium';
                 }
 
                 return L.divIcon({
-                    html: '<div><span>' + childCount + '</span></div>',
-                    className: 'marker-cluster ' + sizeClass,
+                    html: '<div><span>' + count + '</span></div>',
+                    className: 'marker-cluster marker-cluster-' + size,
                     iconSize: L.point(40, 40)
                 });
             }

@@ -1239,6 +1239,94 @@ def _enrich_users_from_firestore(users: List[Dict[str, Any]]) -> List[Dict[str, 
     return users
 
 
+def get_lender_detail(
+    lender_id: str,
+    days: int = 90
+) -> Dict[str, Any]:
+    """
+    Get detailed information for a specific lender including reports and researchers.
+
+    Args:
+        lender_id: The lender ID (LEI) to look up
+        days: Number of days to look back (0 = all time)
+
+    Returns:
+        Dict with lender info, reports, and researchers
+    """
+    client = get_bigquery_client()
+
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # Get lender summary
+    summary_query = f"""
+        SELECT
+            lender_id,
+            MAX(lender_name) AS lender_name,
+            COUNT(*) AS total_reports,
+            COUNT(DISTINCT user_id) AS unique_researchers,
+            MIN(event_timestamp) AS first_activity,
+            MAX(event_timestamp) AS last_activity
+        FROM `{EVENTS_TABLE}`
+        WHERE lender_id = '{lender_id}'
+            {date_filter}
+        GROUP BY lender_id
+    """
+
+    # Get all reports for this lender
+    reports_query = f"""
+        SELECT
+            event_timestamp,
+            event_name AS report_type,
+            county_name,
+            state,
+            user_id
+        FROM `{EVENTS_TABLE}`
+        WHERE lender_id = '{lender_id}'
+            {date_filter}
+        ORDER BY event_timestamp DESC
+        LIMIT 500
+    """
+
+    # Get researchers for this lender
+    researchers_query = f"""
+        SELECT
+            user_id,
+            COUNT(*) AS report_count,
+            MAX(event_timestamp) AS last_activity,
+            MIN(event_timestamp) AS first_activity
+        FROM `{EVENTS_TABLE}`
+        WHERE lender_id = '{lender_id}'
+            AND user_id IS NOT NULL
+            {date_filter}
+        GROUP BY user_id
+        ORDER BY report_count DESC
+        LIMIT 100
+    """
+
+    try:
+        # Execute queries
+        summary_result = list(client.query(summary_query).result())
+        reports_result = [dict(row) for row in client.query(reports_query).result()]
+        researchers_result = [dict(row) for row in client.query(researchers_query).result()]
+
+        if not summary_result:
+            return {'error': 'Lender not found'}
+
+        summary = dict(summary_result[0])
+
+        # Enrich researchers with Firestore user profile data
+        researchers_result = _enrich_users_from_firestore(researchers_result)
+
+        return {
+            'lender': summary,
+            'reports': reports_result,
+            'researchers': researchers_result
+        }
+    except Exception as e:
+        print(f"BigQuery error in get_lender_detail: {e}")
+        return {'error': str(e)}
+
+
 def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
     """
     Get daily activity counts for timeline chart.

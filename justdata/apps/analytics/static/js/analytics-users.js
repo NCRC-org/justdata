@@ -4,10 +4,14 @@
  */
 
 let usersData = [];
+let filteredUsersData = [];
 let selectedUserId = null;
 let searchTimeout = null;
 let demoMode = false;
 let syntheticData = null;
+let allOrganizations = [];
+let currentSort = { field: 'total_reports', direction: 'desc' };
+let selectedTypes = ['REGISTERED', 'INSTITUTIONAL', 'MEDIA', 'MEMBER', 'OTHER', 'RESEARCH'];
 
 /**
  * Initialize on page load
@@ -39,11 +43,12 @@ $(document).ready(function() {
 
     // Handle filter changes
     $('#time-period').on('change', loadUsers);
+    $('#org-filter').on('change', applyFilters);
 
     // Handle search with debounce
     $('#search-input').on('input', function() {
         clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(loadUsers, 300);
+        searchTimeout = setTimeout(applyFilters, 300);
     });
 
     // Handle row clicks
@@ -53,6 +58,63 @@ $(document).ready(function() {
             selectUser(userId);
         }
     });
+
+    // Handle sortable column clicks
+    $(document).on('click', '.users-table th.sortable', function() {
+        const field = $(this).data('sort');
+        if (currentSort.field === field) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.field = field;
+            currentSort.direction = 'desc';
+        }
+        updateSortIcons();
+        applyFilters();
+    });
+
+    // User type dropdown toggle
+    $('#type-filter-btn').on('click', function(e) {
+        e.stopPropagation();
+        const menu = $('#type-filter-menu');
+        const isVisible = menu.is(':visible');
+        menu.toggle();
+        $(this).toggleClass('open', !isVisible);
+    });
+
+    // Close dropdown when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.user-type-dropdown').length) {
+            $('#type-filter-menu').hide();
+            $('#type-filter-btn').removeClass('open');
+        }
+    });
+
+    // Select all checkbox
+    $('#type-select-all').on('change', function() {
+        const isChecked = $(this).is(':checked');
+        $('.type-checkbox').prop('checked', isChecked);
+    });
+
+    // Individual type checkboxes
+    $('.type-checkbox').on('change', function() {
+        const allChecked = $('.type-checkbox:checked').length === $('.type-checkbox').length;
+        $('#type-select-all').prop('checked', allChecked);
+    });
+
+    // Apply type filter
+    $('#type-apply-btn').on('click', function() {
+        selectedTypes = [];
+        $('.type-checkbox:checked').each(function() {
+            selectedTypes.push($(this).val());
+        });
+        updateTypeFilterLabel();
+        $('#type-filter-menu').hide();
+        $('#type-filter-btn').removeClass('open');
+        applyFilters();
+    });
+
+    // Clear filters button
+    $('#clear-filters-btn').on('click', clearAllFilters);
 });
 
 /**
@@ -238,34 +300,195 @@ function getDemoUserActivity(userId, days) {
 }
 
 /**
+ * Extract unique organizations from users data
+ */
+function extractOrganizations(data) {
+    const orgs = new Set();
+    data.forEach(function(user) {
+        if (user.organization_name && user.organization_name.trim()) {
+            orgs.add(user.organization_name.trim());
+        }
+    });
+    return Array.from(orgs).sort(function(a, b) {
+        return a.toLowerCase().localeCompare(b.toLowerCase());
+    });
+}
+
+/**
+ * Populate organization dropdown
+ */
+function populateOrgDropdown(orgs) {
+    const select = $('#org-filter');
+    const currentVal = select.val();
+    select.find('option:not(:first)').remove();
+    orgs.forEach(function(org) {
+        select.append('<option value="' + escapeHtml(org) + '">' + escapeHtml(org) + '</option>');
+    });
+    // Restore selection if it still exists
+    if (currentVal && orgs.includes(currentVal)) {
+        select.val(currentVal);
+    }
+}
+
+/**
+ * Update type filter label
+ */
+function updateTypeFilterLabel() {
+    const total = 6; // Total number of type options
+    if (selectedTypes.length === 0) {
+        $('#type-filter-label').text('None selected');
+    } else if (selectedTypes.length === total) {
+        $('#type-filter-label').text('All Types');
+    } else if (selectedTypes.length === 1) {
+        $('#type-filter-label').text(selectedTypes[0]);
+    } else {
+        $('#type-filter-label').text(selectedTypes.length + ' selected');
+    }
+}
+
+/**
+ * Update sort icons in table header
+ */
+function updateSortIcons() {
+    $('.users-table th.sortable .sort-icon').removeClass('fa-sort-up fa-sort-down active').addClass('fa-sort');
+    const th = $('.users-table th[data-sort="' + currentSort.field + '"]');
+    const icon = th.find('.sort-icon');
+    icon.removeClass('fa-sort').addClass('active');
+    icon.addClass(currentSort.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down');
+}
+
+/**
+ * Sort users data
+ */
+function sortUsers(data) {
+    return data.slice().sort(function(a, b) {
+        let valA = a[currentSort.field];
+        let valB = b[currentSort.field];
+
+        // Handle date sorting for last_activity
+        if (currentSort.field === 'last_activity') {
+            valA = valA ? new Date(valA).getTime() : 0;
+            valB = valB ? new Date(valB).getTime() : 0;
+        }
+
+        // Handle null/undefined values
+        if (valA == null) valA = 0;
+        if (valB == null) valB = 0;
+
+        if (currentSort.direction === 'asc') {
+            return valA > valB ? 1 : valA < valB ? -1 : 0;
+        } else {
+            return valA < valB ? 1 : valA > valB ? -1 : 0;
+        }
+    });
+}
+
+/**
+ * Apply all filters to users data
+ */
+function applyFilters() {
+    const search = $('#search-input').val() ? $('#search-input').val().trim().toLowerCase() : '';
+    const orgFilter = $('#org-filter').val();
+
+    let filtered = usersData.slice();
+
+    // Apply search filter
+    if (search) {
+        filtered = filtered.filter(function(u) {
+            return (u.user_id && u.user_id.toLowerCase().includes(search)) ||
+                   (u.user_email && u.user_email.toLowerCase().includes(search)) ||
+                   (u.organization_name && u.organization_name.toLowerCase().includes(search));
+        });
+    }
+
+    // Apply organization filter
+    if (orgFilter) {
+        filtered = filtered.filter(function(u) {
+            return u.organization_name === orgFilter;
+        });
+    }
+
+    // Apply type filter
+    if (selectedTypes.length < 6) {
+        filtered = filtered.filter(function(u) {
+            return selectedTypes.includes(u.user_type) || (!u.user_type && selectedTypes.includes('OTHER'));
+        });
+    }
+
+    // Apply sorting
+    filtered = sortUsers(filtered);
+
+    filteredUsersData = filtered;
+    renderUsersTable(filtered);
+    updateClearFiltersButton();
+}
+
+/**
+ * Check if any filters are active and show/hide clear button
+ */
+function updateClearFiltersButton() {
+    const hasSearch = $('#search-input').val() && $('#search-input').val().trim();
+    const hasOrg = $('#org-filter').val();
+    const hasTypeFilter = selectedTypes.length < 6;
+
+    if (hasSearch || hasOrg || hasTypeFilter) {
+        $('#clear-filters-btn').show();
+    } else {
+        $('#clear-filters-btn').hide();
+    }
+}
+
+/**
+ * Clear all filters
+ */
+function clearAllFilters() {
+    // Clear search
+    $('#search-input').val('');
+
+    // Clear org filter
+    $('#org-filter').val('');
+
+    // Reset type filter
+    selectedTypes = ['REGISTERED', 'INSTITUTIONAL', 'MEDIA', 'MEMBER', 'OTHER', 'RESEARCH'];
+    $('#type-select-all').prop('checked', true);
+    $('.type-checkbox').prop('checked', true);
+    updateTypeFilterLabel();
+
+    // Reapply filters
+    applyFilters();
+}
+
+/**
  * Load users list
  * Returns a promise for chaining
  */
 function loadUsers() {
     const days = parseInt($('#time-period').val()) || 90;
-    const search = $('#search-input').val() ? $('#search-input').val().trim() : null;
 
     // Show loading state
     $('#users-tbody').html('<tr><td colspan="6" class="loading-cell">Loading users...</td></tr>');
 
     // Use demo data if in demo mode
     if (demoMode && syntheticData) {
-        const demoUsers = getDemoUsers(days, search);
+        const demoUsers = getDemoUsers(days, null);
         usersData = demoUsers;
-        renderUsersTable(demoUsers);
+        allOrganizations = extractOrganizations(demoUsers);
+        populateOrgDropdown(allOrganizations);
+        applyFilters();
         return Promise.resolve();
     }
 
     return $.ajax({
         url: '/analytics/api/users',
         data: {
-            days: days,
-            search: search
+            days: days
         },
         success: function(response) {
             if (response.success) {
                 usersData = response.data;
-                renderUsersTable(usersData);
+                allOrganizations = extractOrganizations(usersData);
+                populateOrgDropdown(allOrganizations);
+                applyFilters();
             } else {
                 showError('Failed to load users: ' + response.error);
             }
