@@ -43,6 +43,7 @@ credentials/
 !package.json
 !package-lock.json
 !justdata/apps/electwatch/data/current/*.json
+!justdata/apps/analytics/static/demo_data/synthetic_events.json
 gcp-service-account-key.json
 .secrets/
 
