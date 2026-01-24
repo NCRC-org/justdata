@@ -12,7 +12,9 @@ from typing import List, Tuple, Dict, Any
 
 def convert_numpy_types(obj):
     """Convert numpy types to native Python types for JSON serialization."""
-    if isinstance(obj, np.integer):
+    if isinstance(obj, (np.bool_, bool)):
+        return bool(obj)
+    elif isinstance(obj, np.integer):
         return int(obj)
     elif isinstance(obj, np.floating):
         return float(obj)

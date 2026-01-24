@@ -2693,14 +2693,17 @@ IMPORTANT:
                 'details': 'This may be due to missing API key, API rate limits, or network issues.'
             }), 500
         
+        # Convert numpy types to JSON-serializable Python types
+        from justdata.shared.analysis.ai_provider import convert_numpy_types
+
         return jsonify({
             'success': True,
             'summary': ai_summary,
-            'statistical_analysis': {
+            'statistical_analysis': convert_numpy_types({
                 'sb': sb_analysis,
                 'branch': branch_analysis,
                 'hhi': hhi_analysis
-            }
+            })
         })
         
     except Exception as e:
