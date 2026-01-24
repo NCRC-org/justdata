@@ -3259,18 +3259,26 @@ def _extract_mortgage_goals_data(raw_data):
                 'hi_lmi_loans': 0
             }
 
-        # Aggregate metrics - try multiple possible field names
-        state_data[state]['hp_loans'] += get_value(record, 'hp_loans', 'HP Loans', 'hp_loans_count', 'home_purchase_loans', 'HP_Loans')
-        state_data[state]['hp_amount'] += get_value(record, 'hp_amount', 'HP Amount', 'hp_loans_amount', 'home_purchase_amount', 'HP_Amount')
-        state_data[state]['hp_lmi_loans'] += get_value(record, 'hp_lmi_loans', 'HP LMI Loans', 'hp_lmi_count', 'HP_LMI_Loans')
-        state_data[state]['hp_lmi_amount'] += get_value(record, 'hp_lmi_amount', 'HP LMI Amount', 'HP_LMI_Amount')
-        state_data[state]['refi_loans'] += get_value(record, 'refi_loans', 'Refi Loans', 'refi_loans_count', 'refinance_loans', 'Refi_Loans')
-        state_data[state]['refi_amount'] += get_value(record, 'refi_amount', 'Refi Amount', 'refi_loans_amount', 'refinance_amount', 'Refi_Amount')
-        state_data[state]['refi_lmi_loans'] += get_value(record, 'refi_lmi_loans', 'Refi LMI Loans', 'refi_lmi_count', 'Refi_LMI_Loans')
-        state_data[state]['refi_lmi_amount'] += get_value(record, 'refi_lmi_amount', 'Refi LMI Amount', 'Refi_LMI_Amount')
-        state_data[state]['hi_loans'] += get_value(record, 'hi_loans', 'HI Loans', 'hi_loans_count', 'home_improvement_loans', 'HI_Loans')
-        state_data[state]['hi_amount'] += get_value(record, 'hi_amount', 'HI Amount', 'hi_loans_amount', 'home_improvement_amount', 'HI_Amount')
-        state_data[state]['hi_lmi_loans'] += get_value(record, 'hi_lmi_loans', 'HI LMI Loans', 'hi_lmi_count', 'HI_LMI_Loans')
+        # Aggregate metrics - use actual field names from HMDA data
+        # Note: HMDA data may not have loan purpose breakdown, so we use total_loans as HP loans for now
+        total_loans = get_value(record, 'total_loans', 'Total Loans', 'hp_loans', 'HP Loans')
+        total_amount = get_value(record, 'total_amount', 'Total Amount', 'hp_amount', 'HP Amount')
+        lmi_loans = get_value(record, 'lmib_loans', 'lmict_loans', 'hp_lmi_loans', 'HP LMI Loans', 'lmi_loans')
+        lmi_amount = get_value(record, 'lmib_amount', 'lmict_amount', 'hp_lmi_amount', 'HP LMI Amount', 'lmi_amount')
+
+        # Put all mortgage loans in HP category if no breakdown available
+        state_data[state]['hp_loans'] += total_loans
+        state_data[state]['hp_amount'] += total_amount
+        state_data[state]['hp_lmi_loans'] += lmi_loans
+        state_data[state]['hp_lmi_amount'] += lmi_amount
+        # Refi and HI stay at 0 if not available in data
+        state_data[state]['refi_loans'] += get_value(record, 'refi_loans', 'Refi Loans', 'refinance_loans')
+        state_data[state]['refi_amount'] += get_value(record, 'refi_amount', 'Refi Amount', 'refinance_amount')
+        state_data[state]['refi_lmi_loans'] += get_value(record, 'refi_lmi_loans', 'Refi LMI Loans')
+        state_data[state]['refi_lmi_amount'] += get_value(record, 'refi_lmi_amount', 'Refi LMI Amount')
+        state_data[state]['hi_loans'] += get_value(record, 'hi_loans', 'HI Loans', 'home_improvement_loans')
+        state_data[state]['hi_amount'] += get_value(record, 'hi_amount', 'HI Amount', 'home_improvement_amount')
+        state_data[state]['hi_lmi_loans'] += get_value(record, 'hi_lmi_loans', 'HI LMI Loans')
 
     # Calculate grand total
     grand_total = {
