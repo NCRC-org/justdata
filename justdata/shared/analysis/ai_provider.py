@@ -63,7 +63,11 @@ def ask_ai(prompt: str, ai_provider: str = "claude", model: str = None, api_key:
             api_key = os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
         else:
             api_key = os.getenv("OPENAI_API_KEY")
-    
+
+    # Strip any whitespace/newlines from API key (prevents "Illegal header value" errors)
+    if api_key:
+        api_key = api_key.strip()
+
     if not api_key:
         raise Exception(f"No API key found for provider: {ai_provider}")
     
@@ -109,7 +113,11 @@ class AIAnalyzer:
             self.api_key = api_key or os.getenv("CLAUDE_API_KEY") or os.getenv("ANTHROPIC_API_KEY")
         else:
             self.api_key = api_key or os.getenv("OPENAI_API_KEY")
-        
+
+        # Strip any whitespace/newlines from API key (prevents "Illegal header value" errors)
+        if self.api_key:
+            self.api_key = self.api_key.strip()
+
         if not self.api_key:
             raise Exception(f"No API key found for provider: {ai_provider}")
         
