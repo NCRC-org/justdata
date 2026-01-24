@@ -434,6 +434,30 @@ def _enrich_with_coordinates(data: List[Dict], fips_field: str = 'county_fips') 
     return data
 
 
+def _enrich_lender_interest_with_coordinates(data: List[Dict]) -> List[Dict]:
+    """
+    Add latitude/longitude to lender interest data based on researcher county FIPS.
+
+    Args:
+        data: List of lender interest records with researcher_county_fips field
+
+    Returns:
+        Data enriched with latitude/longitude coordinates for map display
+    """
+    centroids = get_county_centroids()
+
+    for item in data:
+        fips = item.get('researcher_county_fips')
+        if fips and fips in centroids:
+            item['latitude'] = centroids[fips]['lat']
+            item['longitude'] = centroids[fips]['lng']
+        else:
+            item['latitude'] = None
+            item['longitude'] = None
+
+    return data
+
+
 def get_user_locations(
     days: int = 90,
     state: Optional[str] = None,
@@ -672,12 +696,13 @@ def get_lender_interest(
         types_str = "', '".join(exclude_user_types)
         user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
 
-    # Include all lender-related events
+    # Include all lender-related events with county FIPS for coordinate lookup
     query = f"""
         SELECT
             lender_id,
             lender_name,
             state AS researcher_state,
+            county_fips AS researcher_county_fips,
             county_name AS researcher_city,
             COUNT(DISTINCT user_id) AS unique_users,
             COUNT(*) AS event_count,
@@ -686,7 +711,7 @@ def get_lender_interest(
         WHERE lender_id IS NOT NULL
             {date_filter}
             {user_type_filter}
-        GROUP BY lender_id, lender_name, researcher_state, researcher_city
+        GROUP BY lender_id, lender_name, researcher_state, researcher_county_fips, researcher_city
         HAVING COUNT(DISTINCT user_id) >= {min_users}
         ORDER BY event_count DESC, unique_users DESC
         LIMIT 500
@@ -695,6 +720,10 @@ def get_lender_interest(
     try:
         results = client.query(query).result()
         data = [dict(row) for row in results]
+
+        # Enrich with county centroid coordinates for map display
+        data = _enrich_lender_interest_with_coordinates(data)
+
         _set_cached(cache_key, data)
         return data
     except Exception as e:

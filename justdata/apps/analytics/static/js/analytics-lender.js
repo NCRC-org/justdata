@@ -255,7 +255,7 @@ function renderTable(data) {
 }
 
 /**
- * Render researcher locations on map
+ * Render researcher locations on map - showing county-level markers
  */
 function renderMap(data) {
     // Clear existing layers
@@ -265,52 +265,78 @@ function renderMap(data) {
         }
     });
 
-    // Aggregate by state with lender details
+    // Aggregate by county (using coordinates from API) with lender details
+    const countyData = {};
+    // Also aggregate by state for items without county coordinates
     const stateData = {};
+
     data.forEach(function(item) {
         const state = item.researcher_state;
         if (!state) return;
 
-        if (!stateData[state]) {
-            stateData[state] = {
-                state: state,
-                count: 0,
-                lenders: {},
-                cities: new Set()
-            };
-        }
+        // If we have county-level coordinates, use them
+        if (item.latitude && item.longitude && item.researcher_city) {
+            const countyKey = item.researcher_county_fips || (item.researcher_city + '_' + state);
 
-        stateData[state].count += item.unique_users || 1;
-
-        // Track which lenders are being researched from this state
-        if (item.lender_id) {
-            if (!stateData[state].lenders[item.lender_id]) {
-                stateData[state].lenders[item.lender_id] = {
-                    name: item.lender_name || item.lender_id,
-                    count: 0
+            if (!countyData[countyKey]) {
+                countyData[countyKey] = {
+                    county: item.researcher_city,
+                    state: state,
+                    latitude: item.latitude,
+                    longitude: item.longitude,
+                    count: 0,
+                    lenders: {},
+                    users: new Set()
                 };
             }
-            stateData[state].lenders[item.lender_id].count += item.event_count || 1;
-        }
 
-        // Track cities/counties
-        if (item.researcher_city) {
-            stateData[state].cities.add(item.researcher_city);
+            countyData[countyKey].count += item.unique_users || 1;
+
+            // Track which lenders are being researched from this county
+            if (item.lender_id) {
+                if (!countyData[countyKey].lenders[item.lender_id]) {
+                    countyData[countyKey].lenders[item.lender_id] = {
+                        name: item.lender_name || item.lender_id,
+                        count: 0
+                    };
+                }
+                countyData[countyKey].lenders[item.lender_id].count += item.event_count || 1;
+            }
+        } else {
+            // Fall back to state-level aggregation for items without coordinates
+            if (!stateData[state]) {
+                stateData[state] = {
+                    state: state,
+                    count: 0,
+                    lenders: {},
+                    cities: new Set()
+                };
+            }
+
+            stateData[state].count += item.unique_users || 1;
+
+            if (item.lender_id) {
+                if (!stateData[state].lenders[item.lender_id]) {
+                    stateData[state].lenders[item.lender_id] = {
+                        name: item.lender_name || item.lender_id,
+                        count: 0
+                    };
+                }
+                stateData[state].lenders[item.lender_id].count += item.event_count || 1;
+            }
+
+            if (item.researcher_city) {
+                stateData[state].cities.add(item.researcher_city);
+            }
         }
     });
 
-    // Add markers for each state with research activity
-    Object.values(stateData).forEach(function(info) {
-        const stateAbbr = info.state;
-        // Convert abbreviation to full name for STATE_CENTERS lookup
-        const stateName = STATE_NAMES[stateAbbr] || stateAbbr;
-        const center = STATE_CENTERS[stateName];
-        if (!center) return;
-
+    // Add markers for each county with research activity
+    Object.values(countyData).forEach(function(info) {
         const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
 
-        // High contrast purple markers
-        L.circleMarker([center.lat, center.lng], {
+        // Purple markers for county-level data
+        L.circleMarker([info.latitude, info.longitude], {
             radius: radius,
             fillColor: '#6a1b9a',  // Darker purple
             color: '#1a1a1a',      // Dark border for contrast
@@ -318,12 +344,74 @@ function renderMap(data) {
             opacity: 1,
             fillOpacity: 0.85
         })
+        .bindPopup(generateCountyMapPopup(info), {
+            maxWidth: 320,
+            className: 'lender-map-popup'
+        })
+        .addTo(map);
+    });
+
+    // Add markers for state-level fallback data (lighter color to distinguish)
+    Object.values(stateData).forEach(function(info) {
+        const stateAbbr = info.state;
+        const stateName = STATE_NAMES[stateAbbr] || stateAbbr;
+        const center = STATE_CENTERS[stateName];
+        if (!center) return;
+
+        const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
+
+        // Lighter purple for state-level aggregates
+        L.circleMarker([center.lat, center.lng], {
+            radius: radius,
+            fillColor: '#9c27b0',  // Lighter purple for state-level
+            color: '#1a1a1a',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.7
+        })
         .bindPopup(generateLenderMapPopup(info), {
             maxWidth: 320,
             className: 'lender-map-popup'
         })
         .addTo(map);
     });
+}
+
+/**
+ * Generate popup content for county-level map markers
+ */
+function generateCountyMapPopup(info) {
+    const lenderCount = Object.keys(info.lenders).length;
+    const topLenders = Object.entries(info.lenders)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 5);
+
+    let html = '<div class="lender-popup">';
+    html += '<div class="popup-title"><strong>' + escapeHtml(info.county) + ', ' + escapeHtml(info.state) + '</strong></div>';
+    html += '<div class="popup-stats">';
+    html += '<div>' + formatNumber(info.count) + ' researchers</div>';
+    html += '<div>' + formatNumber(lenderCount) + ' lenders researched</div>';
+    html += '</div>';
+
+    if (topLenders.length > 0) {
+        html += '<div class="popup-lenders">';
+        html += '<div class="lenders-header">Top Lenders Researched:</div>';
+        topLenders.forEach(function([id, lender]) {
+            html += '<div class="lender-item">';
+            html += '<a href="/analytics/lender-interest/' + encodeURIComponent(id) + '" class="lender-link" onclick="event.stopPropagation();">';
+            html += escapeHtml(lender.name);
+            html += '</a>';
+            html += ' (' + formatNumber(lender.count) + ')';
+            html += '</div>';
+        });
+        if (lenderCount > 5) {
+            html += '<div class="lender-more">+' + (lenderCount - 5) + ' more lenders</div>';
+        }
+        html += '</div>';
+    }
+
+    html += '</div>';
+    return html;
 }
 
 /**
