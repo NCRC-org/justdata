@@ -3238,7 +3238,12 @@ def goals_calculator():
                          sb_data=sb_data,
                          bank_name=bank_name,
                          bank_info=bank_info,
-                         data_years=data_years)
+                         data_years=data_years,
+                         app_name='MergerMeter',
+                         breadcrumb_items=[
+                             {'name': 'MergerMeter', 'url': '/mergermeter'},
+                             {'name': 'CBA Goals Calculator', 'url': '#'}
+                         ])
 
 
 def _extract_mortgage_goals_data(raw_data):

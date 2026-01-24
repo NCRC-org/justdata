@@ -131,22 +131,8 @@
     GoalsCalculator.prototype.render = function() {
         var html = '';
 
-        // Header with breadcrumb navigation
-        html += '<header style="background: #034ea0; color: white; padding: 14px 0;">';
-        html += '<div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">';
-
-        // Breadcrumb navigation
-        html += '<nav style="font-size: 12px; margin-bottom: 8px;">';
-        html += '<a href="/" style="color: rgba(255,255,255,0.8); text-decoration: none;">JustData</a>';
-        html += '<span style="margin: 0 8px; color: rgba(255,255,255,0.5);">/</span>';
-        html += '<a href="/mergermeter" style="color: rgba(255,255,255,0.8); text-decoration: none;">MergerMeter</a>';
-        html += '<span style="margin: 0 8px; color: rgba(255,255,255,0.5);">/</span>';
-        html += '<span style="color: white;">CBA Goals Calculator</span>';
-        html += '</nav>';
-
-        html += '<h1 style="margin: 0; font-size: 18px; font-weight: 600;">MergerMeter</h1>';
-        html += '<p style="margin: 2px 0 0; font-size: 12px; opacity: 0.9;">CBA Goals Calculator</p>';
-        html += '</div></header>';
+        // Note: Header is now provided by shared_header.html in the template
+        // This component only renders the content area
 
         // Bank Info
         html += this._renderBankInfo();
