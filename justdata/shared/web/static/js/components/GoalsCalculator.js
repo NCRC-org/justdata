@@ -177,7 +177,19 @@
         var bankB = this.bankInfo.target || {};
 
         var html = '<div style="background: white; border-bottom: 1px solid #e0e0e0;">';
-        html += '<div style="max-width: 1200px; margin: 0 auto; padding: 14px 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">';
+        html += '<div style="max-width: 1200px; margin: 0 auto; padding: 14px 20px;">';
+
+        // Combined Entity Banner
+        html += '<div style="background: linear-gradient(135deg, #e3f2fd 0%, #fff3e0 100%); border: 1px solid #90caf9; border-radius: 6px; padding: 12px 16px; margin-bottom: 14px;">';
+        html += '<div style="display: flex; align-items: center; gap: 10px;">';
+        html += '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#034ea0" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
+        html += '<div>';
+        html += '<div style="font-size: 13px; font-weight: 600; color: #034ea0;">Combined Entity CBA Goals</div>';
+        html += '<div style="font-size: 12px; color: #555;">These goals reflect the <strong>combined lending commitments</strong> for the merged institution, calculated from the historical lending of <strong>both banks</strong> over the baseline data period.</div>';
+        html += '</div></div></div>';
+
+        // Bank info grid
+        html += '<div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: center;">';
 
         // Acquirer
         html += '<div>';
@@ -192,6 +204,9 @@
         }
         html += '</div>';
 
+        // Plus symbol
+        html += '<div style="font-size: 28px; color: #034ea0; font-weight: 300;">+</div>';
+
         // Target
         html += '<div>';
         html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 2px;">Target Bank</div>';
@@ -205,7 +220,7 @@
         }
         html += '</div>';
 
-        html += '</div></div>';
+        html += '</div></div></div>';
         return html;
     };
 
@@ -246,9 +261,9 @@
         html += '</div>';
 
         // Info text
-        html += '<div style="margin-top: 12px; font-size: 12px; color: #888;">';
-        html += 'Based on <strong>' + this.dataYears + ' year' + (this.dataYears > 1 ? 's' : '') + '</strong> of baseline data. ';
-        html += 'Goals calculated for <strong>' + this.agreementLength + '-year</strong> agreement period.';
+        html += '<div style="margin-top: 12px; font-size: 12px; color: #666;">';
+        html += 'Baseline data reflects <strong>combined lending from both institutions</strong> over <strong>' + this.dataYears + ' year' + (this.dataYears > 1 ? 's' : '') + '</strong>. ';
+        html += 'Goals represent commitments for the <strong>merged entity</strong> over a <strong>' + this.agreementLength + '-year</strong> agreement period.';
         html += '</div>';
 
         html += '</div>';
@@ -326,7 +341,14 @@
         var sbBaselineOverPeriod = calcBaseline(sbBaseline, this.dataYears, this.agreementLength);
         var sbIncrease = sbGoal - sbBaselineOverPeriod;
 
-        var html = '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">';
+        var html = '';
+
+        // Combined entity context
+        html += '<div style="background: #f8f9fa; border-left: 4px solid #034ea0; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 4px 4px 0;">';
+        html += '<div style="font-size: 13px; color: #444;"><strong>Summary of Proposed CBA Goals</strong> — These totals represent lending commitments for the combined entity, based on ' + this.dataYears + '-year historical data from both ' + this._escapeHtml((this.bankInfo.acquirer || {}).name || 'the acquiring bank') + ' and ' + this._escapeHtml((this.bankInfo.target || {}).name || 'the target bank') + '.</div>';
+        html += '</div>';
+
+        html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">';
 
         // Mortgage Card
         html += '<div style="background: white; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); overflow: hidden;">';
@@ -366,9 +388,14 @@
         var self = this;
         var html = '<div>';
 
-        html += '<h3 style="font-size: 18px; font-weight: 600; margin-bottom: 16px; color: #333;">';
+        html += '<h3 style="font-size: 18px; font-weight: 600; margin-bottom: 8px; color: #333;">';
         html += stateName === 'Grand Total' ? 'All States Combined' : this._escapeHtml(stateName);
         html += '</h3>';
+
+        // Context note
+        html += '<p style="font-size: 12px; color: #666; margin: 0 0 16px 0;">';
+        html += 'Goals for the combined entity based on ' + this.dataYears + '-year lending data from both institutions.';
+        html += '</p>';
 
         // Sub-tabs
         html += '<div style="display: flex; gap: 4px; margin-bottom: 20px;">';
