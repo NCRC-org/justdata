@@ -1,14 +1,86 @@
 -- BigQuery Views for JustData Analytics
 -- These views aggregate Firebase Analytics data exported to BigQuery
 -- Project: justdata-f7da7
--- Dataset: analytics_MEASUREMENT_ID (where MEASUREMENT_ID is from Firebase)
+-- Firebase Export Dataset: analytics_520863329
+-- Analytics Views Dataset: justdata_analytics
 
 -- ============================================================================
 -- PREREQUISITES:
 -- 1. Enable Firebase Analytics -> BigQuery export in Firebase Console:
 --    Project Settings -> Integrations -> BigQuery -> Link
--- 2. Note the dataset name created (usually: analytics_MEASUREMENT_ID)
--- 3. Update the dataset references in these views accordingly
+-- 2. Dataset name: analytics_520863329 (Firebase export)
+-- 3. Grant BigQuery Data Viewer role to Cloud Run service account on hdma1-242116
+--    for access to historical backfilled data
+-- ============================================================================
+
+-- ============================================================================
+-- UNIFIED ALL_EVENTS VIEW (CRITICAL - Required by Analytics Dashboard)
+-- Combines historical backfilled data with live Firebase export
+-- ============================================================================
+
+CREATE OR REPLACE VIEW `justdata-f7da7.justdata_analytics.all_events` AS
+
+-- Historical backfilled data (Nov 24, 2025 - Jan 22, 2026)
+-- Source: hdma1-242116.justdata_analytics.backfilled_events
+SELECT
+    event_id,
+    event_timestamp,
+    event_name,
+    user_id,
+    user_type,
+    organization_name,
+    county_fips,
+    county_name,
+    state,
+    lender_id,
+    lender_name,
+    hubspot_contact_id,
+    hubspot_company_id
+FROM `hdma1-242116.justdata_analytics.backfilled_events`
+
+UNION ALL
+
+-- Live Firebase export (Jan 23, 2026 onwards)
+-- Source: justdata-f7da7.analytics_520863329.events_*
+-- Note: user_type, organization_name are enriched from Firestore at runtime
+-- Use user_pseudo_id as fallback since user_id requires explicit setUserId() call
+SELECT
+    GENERATE_UUID() AS event_id,
+    TIMESTAMP_MICROS(event_timestamp) AS event_timestamp,
+    event_name,
+    COALESCE(user_id, user_pseudo_id) AS user_id,
+    CAST(NULL AS STRING) AS user_type,
+    CAST(NULL AS STRING) AS organization_name,
+    (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'county_fips') AS county_fips,
+    (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'county_name') AS county_name,
+    (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'state') AS state,
+    COALESCE(
+        (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'lender_id'),
+        (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'lei')
+    ) AS lender_id,
+    COALESCE(
+        (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'lender_name'),
+        (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'respondent_name')
+    ) AS lender_name,
+    CAST(NULL AS STRING) AS hubspot_contact_id,
+    CAST(NULL AS STRING) AS hubspot_company_id
+FROM `justdata-f7da7.analytics_520863329.events_*`
+WHERE
+    _TABLE_SUFFIX >= '20260123'  -- Start after backfill end date
+    AND event_name IN (
+        'lendsight_report',
+        'bizsight_report',
+        'branchsight_report',
+        'dataexplorer_area_report',
+        'dataexplorer_lender_report',
+        'mergermeter_report',
+        'lenderprofile_view',
+        'branchmapper_report'
+    );
+
+
+-- ============================================================================
+-- ADDITIONAL VIEWS FOR SPECIFIC ANALYTICS FEATURES
 -- ============================================================================
 
 -- View: User Locations
@@ -23,7 +95,7 @@ SELECT
     device.operating_system AS os,
     MAX(event_timestamp) AS last_activity,
     COUNT(*) AS event_count
-FROM `justdata-f7da7.analytics_*.events_*`
+FROM `justdata-f7da7.analytics_520863329.events_*`
 WHERE
     _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
     AND FORMAT_DATE('%Y%m%d', CURRENT_DATE())
@@ -47,7 +119,7 @@ SELECT
     TIMESTAMP_MICROS(event_timestamp) AS event_timestamp,
     geo.city AS researcher_city,
     geo.region AS researcher_state
-FROM `justdata-f7da7.analytics_*.events_*`
+FROM `justdata-f7da7.analytics_520863329.events_*`
 WHERE
     event_name IN ('lendsight_report', 'bizsight_report', 'branchsight_report', 'dataexplorer_area_report')
     AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
@@ -72,7 +144,7 @@ SELECT
     TIMESTAMP_MICROS(event_timestamp) AS event_timestamp,
     geo.city AS researcher_city,
     geo.region AS researcher_state
-FROM `justdata-f7da7.analytics_*.events_*`
+FROM `justdata-f7da7.analytics_520863329.events_*`
 WHERE
     event_name IN ('lendsight_report', 'lenderprofile_view', 'dataexplorer_lender_report', 'mergermeter_report')
     AND _TABLE_SUFFIX BETWEEN FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL 90 DAY))
@@ -122,7 +194,7 @@ SELECT
     event_name AS app_name,
     COUNT(*) AS event_count,
     COUNT(DISTINCT user_pseudo_id) AS unique_users
-FROM `justdata-f7da7.analytics_*.events_*`
+FROM `justdata-f7da7.analytics_520863329.events_*`
 WHERE
     event_name IN (
         'lendsight_report',
@@ -155,7 +227,7 @@ SELECT
     COUNTIF(event_name = 'dataexplorer_area_report') AS dataexplorer_area_events,
     COUNTIF(event_name = 'dataexplorer_lender_report') AS dataexplorer_lender_events,
     COUNTIF(event_name = 'lenderprofile_view') AS lenderprofile_events
-FROM `justdata-f7da7.analytics_*.events_*`
+FROM `justdata-f7da7.analytics_520863329.events_*`
 WHERE
     event_name IN (
         'lendsight_report',
@@ -211,18 +283,34 @@ LIMIT 100;
 -- ============================================================================
 -- SETUP INSTRUCTIONS:
 --
--- 1. Enable BigQuery export in Firebase Console:
---    - Go to Project Settings -> Integrations -> BigQuery
---    - Click "Link" to enable daily exports
---    - Note the dataset name (e.g., analytics_ZEJ2B1BG7B)
+-- 1. Firebase Analytics -> BigQuery export is ENABLED:
+--    - Project: justdata-f7da7
+--    - Dataset: analytics_520863329
+--    - Export frequency: Daily
 --
--- 2. Create the justdata_analytics dataset:
+-- 2. Create the justdata_analytics dataset (if not exists):
 --    CREATE SCHEMA IF NOT EXISTS `justdata-f7da7.justdata_analytics`;
 --
--- 3. Update the analytics_* references in these views to match your
---    Firebase Analytics dataset name (e.g., analytics_ZEJ2B1BG7B)
+-- 3. Run all CREATE OR REPLACE VIEW statements in BigQuery Console
+--    IMPORTANT: Run the all_events view FIRST as other views may depend on it
 --
--- 4. Run each CREATE OR REPLACE VIEW statement in BigQuery Console
+-- 4. Grant cross-project access for the unified view:
+--    The Cloud Run service account needs BigQuery Data Viewer role on hdma1-242116
+--    to access historical backfilled data.
 --
--- 5. Set up scheduled queries if you want materialized tables for performance
+--    Service account: [PROJECT_NUMBER]-compute@developer.gserviceaccount.com
+--    Or check Cloud Run service configuration for the actual service account.
+--
+--    In Google Cloud Console:
+--    a) Go to hdma1-242116 project -> IAM
+--    b) Add the service account from justdata-f7da7
+--    c) Grant role: BigQuery Data Viewer
+--
+-- 5. Test the unified view:
+--    SELECT COUNT(*) as total_events,
+--           MIN(event_timestamp) as earliest,
+--           MAX(event_timestamp) as latest
+--    FROM `justdata-f7da7.justdata_analytics.all_events`;
+--
+--    Expected: Total should exceed 284 (backfill count), latest should be recent.
 -- ============================================================================

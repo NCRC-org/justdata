@@ -166,7 +166,7 @@ def sync_new_events() -> dict:
                     JSON_VALUE(details, '$.respondent_name') as lender_name_alt,
                     CAST(NULL AS STRING) as hubspot_contact_id,
                     CAST(NULL AS STRING) as hubspot_company_id
-                FROM `{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.usage_log`
+                FROM `{BACKFILL_PROJECT}.{BACKFILL_DATASET}.usage_log`
                 WHERE action IN (
                     'lendsight_report_generated',
                     'bizsight_report_generated',
@@ -197,7 +197,7 @@ def sync_new_events() -> dict:
         # Get the count of new events first
         count_query = f"""
             SELECT COUNT(*) as cnt
-            FROM `{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.usage_log`
+            FROM `{BACKFILL_PROJECT}.{BACKFILL_DATASET}.usage_log`
             WHERE action IN (
                 'lendsight_report_generated',
                 'bizsight_report_generated',
@@ -227,7 +227,7 @@ def sync_new_events() -> dict:
 
         # Insert new events into backfilled_events
         insert_query = f"""
-            INSERT INTO `{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.backfilled_events`
+            INSERT INTO `{BACKFILL_PROJECT}.{BACKFILL_DATASET}.backfilled_events`
             (event_id, event_timestamp, event_name, user_id, user_email, user_type,
              organization_name, county_fips, county_name, state, lender_id, lender_name,
              hubspot_contact_id, hubspot_company_id)
@@ -263,17 +263,33 @@ def sync_new_events() -> dict:
         return {'error': str(e), 'synced_count': 0}
 
 
-# Use backfilled data from hdma1-242116 project
-ANALYTICS_PROJECT = os.environ.get('GCP_PROJECT_ID', 'hdma1-242116')
+# Use unified view combining backfilled data + live Firebase export
+# The all_events view is in justdata-f7da7.justdata_analytics and combines:
+#   - Historical: hdma1-242116.justdata_analytics.backfilled_events (Nov 24, 2025 - Jan 22, 2026)
+#   - Live: justdata-f7da7.analytics_520863329.events_* (Jan 23, 2026 onwards)
+ANALYTICS_PROJECT = 'justdata-f7da7'
 ANALYTICS_DATASET = 'justdata_analytics'
 EVENTS_TABLE = f'{ANALYTICS_PROJECT}.{ANALYTICS_DATASET}.all_events'
 
-# Target apps for analytics (exclude mergermeter_report, lenderprofile_view, branchmapper_report)
+# Backfill source (for sync_new_events function - syncs from usage_log to backfilled_events)
+BACKFILL_PROJECT = 'hdma1-242116'
+BACKFILL_DATASET = 'justdata_analytics'
+
+# Target apps for main analytics counts
 TARGET_APPS = [
     'lendsight_report',
     'bizsight_report',
     'branchsight_report',
     'dataexplorer_area_report',
+    'dataexplorer_lender_report'
+]
+
+# Apps that track lender data (for lender-specific metrics)
+LENDER_APPS = [
+    'lendsight_report',
+    'bizsight_report',
+    'mergermeter_report',
+    'lenderprofile_view',
     'dataexplorer_lender_report'
 ]
 
@@ -822,8 +838,9 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
 
     client = get_bigquery_client()
 
-    # Build app filter for target apps only
+    # Build app filters
     target_apps_str = "', '".join(TARGET_APPS)
+    lender_apps_str = "', '".join(LENDER_APPS)
 
     # Build date filter
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
@@ -833,7 +850,8 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         SELECT
             COUNT(DISTINCT user_id) AS total_users,
             COUNT(*) AS total_events,
-            COUNT(DISTINCT lender_id) AS total_lenders
+            (SELECT COUNT(DISTINCT lender_id) FROM `{EVENTS_TABLE}`
+             WHERE event_name IN ('{lender_apps_str}') {date_filter} AND lender_id IS NOT NULL) AS total_lenders
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
             {date_filter}
@@ -881,14 +899,14 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         print(f"BigQuery error getting top counties: {e}")
         top_counties = []
 
-    # Top researched lenders (from target apps with lender data)
+    # Top researched lenders (from lender-tracking apps)
     top_lenders_query = f"""
         SELECT
             lender_id,
             lender_name,
             COUNT(*) AS total_events
         FROM `{EVENTS_TABLE}`
-        WHERE event_name IN ('{target_apps_str}')
+        WHERE event_name IN ('{lender_apps_str}')
             {date_filter}
             AND lender_id IS NOT NULL
         GROUP BY lender_id, lender_name

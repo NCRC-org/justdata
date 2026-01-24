@@ -77,7 +77,7 @@ function toggleDemoMode() {
  */
 function loadSyntheticData() {
     return $.ajax({
-        url: '/analytics/analytics/static/demo_data/synthetic_events.json',
+        url: '/analytics/static/demo_data/synthetic_events.json',
         dataType: 'json',
         success: function(data) {
             syntheticData = data;
