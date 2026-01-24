@@ -13,13 +13,15 @@
         margin-right: 20px;
     }
     .view-toggle .toggle-btn {
-        padding: 6px 14px;
-        border: 1px solid var(--analytics-border);
-        background: var(--analytics-bg);
-        color: var(--analytics-text);
+        padding: 8px 16px;
+        border: 1px solid var(--analytics-border, #e0e0e0);
+        background: var(--analytics-bg, #ffffff);
+        color: var(--analytics-text, #1a1a1a);
         cursor: pointer;
         font-size: 0.85rem;
+        font-weight: 500;
         transition: all 0.2s;
+        outline: none;
     }
     .view-toggle .toggle-btn:first-child {
         border-radius: 4px 0 0 4px;
@@ -29,12 +31,15 @@
         border-left: none;
     }
     .view-toggle .toggle-btn.active {
-        background: var(--analytics-primary);
+        background: var(--analytics-accent, #0077B6);
         color: white;
-        border-color: var(--analytics-primary);
+        border-color: var(--analytics-accent, #0077B6);
     }
     .view-toggle .toggle-btn:hover:not(.active) {
-        background: var(--analytics-bg-alt);
+        background: var(--analytics-bg-alt, #f7f7f7);
+    }
+    .view-toggle .toggle-btn:focus {
+        box-shadow: 0 0 0 2px rgba(0, 119, 182, 0.3);
     }
 
     /* Coalition map markers */
