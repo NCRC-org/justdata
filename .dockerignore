@@ -73,6 +73,9 @@ cloudbuild.yaml
 datasets/
 justdata/data/
 
+# Keep analytics demo data
+!justdata/apps/analytics/static/demo_data/synthetic_events.json
+
 # Exclude electwatch cache and weekly data, but keep current
 justdata/apps/electwatch/data/cache/
 justdata/apps/electwatch/data/weekly/
