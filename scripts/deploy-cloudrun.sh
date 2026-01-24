@@ -150,8 +150,13 @@ load_env_vars() {
                 continue
             fi
 
-            # Skip GOOGLE_APPLICATION_CREDENTIALS_JSON - it's configured as a Secret Manager reference
-            if [ "$key" = "GOOGLE_APPLICATION_CREDENTIALS_JSON" ]; then
+            # Skip variables that are configured as Secret Manager references in Cloud Run
+            # These cannot be overwritten with string literals
+            if [ "$key" = "GOOGLE_APPLICATION_CREDENTIALS_JSON" ] || \
+               [ "$key" = "CLAUDE_API_KEY" ] || \
+               [ "$key" = "ANTHROPIC_API_KEY" ] || \
+               [ "$key" = "OPENAI_API_KEY" ] || \
+               [ "$key" = "CENSUS_API_KEY" ]; then
                 continue
             fi
             
