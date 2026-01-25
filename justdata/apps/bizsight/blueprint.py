@@ -594,7 +594,7 @@ def report():
     ]
 
     return render_template(
-        'report_template.html',
+        'bizsight_report.html',
         job_id=job_id,
         app_base_url=app_base_url,
         app_name='BizSight',

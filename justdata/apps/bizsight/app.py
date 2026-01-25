@@ -547,7 +547,7 @@ def report():
                 app.jinja_env.cache.clear()
         except:
             pass
-        print(f"DEBUG: Rendering report_template.html for job_id={job_id}, bytecode_cache={app.jinja_env.bytecode_cache}", flush=True)
+        print(f"DEBUG: Rendering bizsight_report.html for job_id={job_id}, bytecode_cache={app.jinja_env.bytecode_cache}", flush=True)
 
     # Breadcrumb for report page
     breadcrumb_items = [
@@ -556,7 +556,7 @@ def report():
     ]
 
     response = make_response(render_template(
-        'report_template.html',
+        'bizsight_report.html',
         job_id=job_id,
         version=__version__,
         app_base_url='',
