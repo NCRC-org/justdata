@@ -4,6 +4,7 @@ Shared across BranchSeeker, BizSight, LendSight, MergerMeter, and other JustData
 """
 
 from flask import Flask, jsonify
+from jinja2 import ChoiceLoader, FileSystemLoader
 from datetime import datetime
 import os
 
@@ -11,6 +12,9 @@ import os
 # Shared fallback secret key for all JustData apps (consistent across instances)
 # In production, SECRET_KEY should ALWAYS be set via environment variable
 _FALLBACK_SECRET_KEY = 'justdata-shared-secret-key-set-SECRET_KEY-in-production'
+
+# Path to shared templates
+SHARED_TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), 'templates')
 
 
 def create_app(app_name: str, template_folder: str = None, static_folder: str = None, config: dict = None):
@@ -31,6 +35,14 @@ def create_app(app_name: str, template_folder: str = None, static_folder: str = 
         template_folder=template_folder,
         static_folder=static_folder
     )
+
+    # Add shared templates directory to Jinja search path
+    # This allows apps to include shared templates like report_interstitial.html
+    if template_folder:
+        app.jinja_loader = ChoiceLoader([
+            FileSystemLoader(template_folder),
+            FileSystemLoader(SHARED_TEMPLATES_DIR)
+        ])
 
     # Get SECRET_KEY from environment - use consistent fallback across all apps
     # This ensures sessions persist across different apps in the unified platform
