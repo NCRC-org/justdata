@@ -25,8 +25,8 @@
         :root {
             --ncrc-primary-blue: #552d87;
             --ncrc-secondary-blue: #2fade3;
-            --ncrc-justdata-blue: #1a8fc9;
-            --ncrc-dark-blue: #1a8fc9;
+            --ncrc-justdata-blue: #1e3a5f;
+            --ncrc-dark-blue: #1e3a5f;
             --ncrc-gray-light: #F5F5F5;
             --ncrc-gray-dark: #333333;
             --ncrc-gray: #666666;
@@ -186,9 +186,10 @@
         .table-container {
             position: relative;
             margin: 20px 0;
-            overflow-x: hidden;
+            overflow-x: auto;
             overflow-y: visible;
             width: 100%;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
         }
         
         .table-caption {
@@ -361,12 +362,9 @@
     {% include "shared_header.html" %}
 
     <div class="report-container">
-        <!-- Back Button and Export Controls -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <a href="/dataexplorer" class="action-btn" style="background: var(--ncrc-dark-blue);">
-                <i class="fas fa-arrow-left"></i> Back to DataExplorer
-            </a>
-            <button class="action-btn" onclick="exportToExcel()" style="background: #28a745; margin-left: 10px;">
+        <!-- Export Controls -->
+        <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
+            <button class="action-btn" onclick="exportToExcel()" style="background: #28a745;">
                 <i class="fas fa-file-excel"></i> Export Full Report to Excel
             </button>
         </div>
@@ -406,8 +404,8 @@
                         <h4>Table 1: Population Demographics (Adult Population 18+)</h4>
                     </div>
                     <div class="table-card-body" id="populationDemographicsCard">
-                        <div style="position: relative; height: 400px; margin-bottom: 1rem;">
-                            <canvas id="populationDemographicsChart"></canvas>
+                        <div style="position: relative; width: 100%; height: 400px; margin-bottom: 1rem;">
+                            <canvas id="populationDemographicsChart" style="width: 100% !important;"></canvas>
                         </div>
                         <p class="table-caption">
                             <strong>Source:</strong> NCRC - U.S. Census Bureau data. Most recent data from ACS 5-year estimates, showing adult population (18+). 2020 and 2010 data from Decennial Census (adult population 18+). Groups representing less than 1% of the total population in all time periods are excluded from this chart.
