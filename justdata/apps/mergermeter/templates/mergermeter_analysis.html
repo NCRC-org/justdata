@@ -1381,17 +1381,20 @@
                     
                     if (!response.ok) {
                         // Try to get error message from JSON response
+                        console.log('[Assessment Areas] Response not OK, status:', response.status);
                         let errorMessage = null;
                         try {
                             const errorData = await response.json();
+                            console.log('[Assessment Areas] Error response data:', errorData);
                             if (errorData.error) {
                                 errorMessage = errorData.error;
                             }
                         } catch (jsonError) {
-                            // JSON parsing failed, will use fallback below
+                            console.log('[Assessment Areas] Failed to parse error JSON:', jsonError);
                         }
 
                         if (errorMessage) {
+                            console.log('[Assessment Areas] Using server error message:', errorMessage);
                             throw new Error(errorMessage);
                         } else if (response.status === 404) {
                             throw new Error('Endpoint not found. Please refresh the page (Ctrl+F5) and try again.');
