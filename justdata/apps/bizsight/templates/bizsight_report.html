@@ -419,7 +419,12 @@
         .expand-btn:hover {
             background: var(--ncrc-primary-blue);
         }
-        
+
+        /* Excel export button hover style */
+        #downloadExcelBtn:hover {
+            background: #218838 !important;
+        }
+
         .data-table {
             width: 100%;
             max-width: 100%;
@@ -727,19 +732,11 @@
 
     {% include "shared_header.html" %}
     <div class="report-container">
-        <!-- Header Actions Row - Back button on left, Export/Print on right -->
-        <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
-            <a href="/bizsight" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
-                <i class="fas fa-arrow-left"></i> Back to New Analysis
+        <!-- Header Actions Row - Excel export only -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+            <a href="/bizsight/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; font-size: 1rem; transition: background-color 0.2s;">
+                <i class="fas fa-file-excel"></i> Export Full Report to Excel
             </a>
-            <div style="display: flex; gap: 10px;">
-                <a href="/bizsight/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
-                    <i class="fas fa-file-excel"></i> Export Data (Excel)
-                </a>
-                <button class="action-btn" id="printReportBtn" onclick="window.print()" style="cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
-                    <i class="fas fa-print"></i> Print Report
-                </button>
-            </div>
         </div>
 
         <div class="report-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 8px;">
@@ -3579,6 +3576,44 @@
     <script src="/static/js/analytics-events.js"></script>
 
     {% include "shared_header_js.html" %}
+
+    <!-- JustData Standard Footer -->
+    <footer class="justdata-footer no-print" style="background-color: #1e3a5f; color: white; padding: 2rem; margin-top: 3rem;">
+        <div class="footer-content" style="max-width: 1200px; margin: 0 auto; text-align: center;">
+            <!-- Main Branding -->
+            <div style="margin-bottom: 1rem;">
+                <strong style="font-size: 1.2rem;">JustData</strong>
+                <span style="margin: 0 0.5rem;">|</span>
+                <span>National Community Reinvestment Coalition</span>
+            </div>
+
+            <!-- Platform Info -->
+            <div style="margin-bottom: 1rem;">
+                <p style="margin: 0.5rem 0;">
+                    Fair Lending Analysis Platform
+                    <span style="margin: 0 0.5rem;">|</span>
+                    <a href="https://justdata.org" style="color: white; text-decoration: underline;">justdata.org</a>
+                </p>
+            </div>
+
+            <!-- Data Sources -->
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
+                <p style="margin: 0.25rem 0;">
+                    <strong>Data Sources:</strong> FFIEC Community Reinvestment Act (CRA) Small Business Lending Data
+                </p>
+                <p style="margin: 0.25rem 0;">
+                    Federal Financial Institutions Examination Council | U.S. Census Bureau
+                </p>
+            </div>
+
+            <!-- Copyright -->
+            <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 1rem;">
+                <p style="margin: 0;">
+                    &copy; <script>document.write(new Date().getFullYear())</script> National Community Reinvestment Coalition. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>
 
