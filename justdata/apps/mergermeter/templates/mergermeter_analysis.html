@@ -119,8 +119,21 @@
                             <input type="hidden" id="acquirer_name" name="acquirer_name">
                         </div>
 
+                        <!-- Single Bank Analysis Toggle -->
+                        <div style="background: #fff3cd; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ffc107;">
+                            <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="singleBankMode" name="single_bank_mode" style="width: 18px; height: 18px; margin-right: 12px; cursor: pointer;">
+                                <span style="font-weight: 600; color: #856404;">
+                                    <i class="fas fa-university"></i> Single Bank Analysis
+                                </span>
+                                <span style="margin-left: 10px; font-size: 0.9rem; color: #856404;">
+                                    — Analyze only Bank A (no merger comparison)
+                                </span>
+                            </label>
+                        </div>
+
                         <!-- Bank B (Target) -->
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                        <div id="bankBSection" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
                             <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
                                 <i class="fas fa-bullseye"></i> Bank B (Target)
                             </h4>
@@ -317,7 +330,7 @@
                         </div>
 
                         <!-- Bank B Assessment Areas -->
-                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                        <div id="bankBAASection" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
                             <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
                                 <i class="fas fa-bullseye"></i> Bank B (Target) Assessment Areas
                             </h4>
@@ -563,9 +576,10 @@
                             <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
                                 <label for="loan_purpose" style="font-size: 0.85rem; color: #666; margin-right: 8px; font-weight: 600;">Loan Purpose:</label>
                                 <select id="loan_purpose" name="loan_purpose" style="padding: 8px 12px; font-size: 0.85rem; border: 2px solid var(--ncrc-secondary-blue); border-radius: 6px; background: #f0f7fa; min-width: 180px;">
-                                    <option value="1" selected>Home Purchase</option>
-                                    <option value="31,32">Refinance</option>
-                                    <option value="2,4,5">Home Equity</option>
+                                    <option value="" selected>All Loan Purposes</option>
+                                    <option value="1">Home Purchase Only</option>
+                                    <option value="31,32">Refinance Only</option>
+                                    <option value="2">Home Improvement Only</option>
                                 </select>
                             </div>
 
@@ -980,6 +994,28 @@
                     assessmentInputs.find('.aa-toggle-btn.active').removeClass('active');
                 } else {
                     assessmentInputs.slideDown(300);
+                }
+            });
+
+            // Handle "Single Bank Analysis" checkbox
+            $('#singleBankMode').on('change', function() {
+                const isChecked = $(this).is(':checked');
+                const bankBSection = $('#bankBSection');
+                const bankBAASection = $('#bankBAASection');
+
+                if (isChecked) {
+                    bankBSection.slideUp(300);
+                    bankBAASection.slideUp(300);
+                    // Clear Bank B fields
+                    $('#target_lei').val('');
+                    $('#target_rssd').val('');
+                    $('#target_sb_id').val('');
+                    $('#target_selected').hide();
+                    $('#target_search_container').show();
+                    $('#target_search').val('');
+                } else {
+                    bankBSection.slideDown(300);
+                    bankBAASection.slideDown(300);
                 }
             });
 
@@ -1657,33 +1693,39 @@
             // Form submission handler
             $('#analysisForm').on('submit', async function(e) {
                 e.preventDefault();
-                
+
+                // Check if single bank mode
+                const singleBankMode = $('#singleBankMode').is(':checked');
+
                 // Validate required fields
                 const acquirerLei = $('#acquirer_lei').val().trim();
                 const targetLei = $('#target_lei').val().trim();
                 const acquirerName = $('#analysisForm').data('acquirer_name') || $('#acquirer_name_display').text().trim();
                 const targetName = $('#analysisForm').data('target_name') || $('#target_name_display').text().trim();
-                
+
                 if (!acquirerLei || acquirerLei.length !== 20) {
                     alert('Please enter a valid LEI number (20 characters) for Bank A (Acquirer) and click "Load Bank Names".');
                     return;
                 }
-                
-                if (!targetLei || targetLei.length !== 20) {
-                    alert('Please enter a valid LEI number (20 characters) for Bank B (Target) and click "Load Bank Names".');
-                    return;
+
+                // Only validate Bank B if not in single bank mode
+                if (!singleBankMode) {
+                    if (!targetLei || targetLei.length !== 20) {
+                        alert('Please enter a valid LEI number (20 characters) for Bank B (Target) and click "Load Bank Names".');
+                        return;
+                    }
+
+                    if (!targetName || targetName === '') {
+                        alert('Please click "Load Bank Names" to confirm Bank B name before submitting.');
+                        return;
+                    }
                 }
-                
+
                 if (!acquirerName || acquirerName === '') {
                     alert('Please click "Load Bank Names" to confirm Bank A name before submitting.');
                     return;
                 }
-                
-                if (!targetName || targetName === '') {
-                    alert('Please click "Load Bank Names" to confirm Bank B name before submitting.');
-                    return;
-                }
-                
+
                 // Check if using national level data
                 const useNationalData = $('#useNationalData').is(':checked');
 
@@ -1711,7 +1753,8 @@
                         return;
                     }
 
-                    if (targetAA.length === 0 && targetManual.length === 0) {
+                    // Only validate Bank B assessment areas if not in single bank mode
+                    if (!singleBankMode && targetAA.length === 0 && targetManual.length === 0) {
                         alert('Please upload or manually enter assessment areas for Bank B (Target), or select "Use National Level Data".');
                         return;
                     }
@@ -1720,16 +1763,19 @@
                 // Get form data
                 const formData = new FormData(this);
 
+                // Add single bank mode flag
+                formData.append('single_bank_mode', singleBankMode ? '1' : '0');
+
                 // Add national data flag
                 formData.append('use_national_data', useNationalData ? '1' : '0');
 
-                // Add bank names
+                // Add bank names (empty for Bank B in single bank mode)
                 formData.append('acquirer_name', acquirerName);
-                formData.append('target_name', targetName);
+                formData.append('target_name', singleBankMode ? '' : targetName);
 
-                // Add assessment areas as JSON (empty arrays if using national data)
+                // Add assessment areas as JSON (empty arrays if using national data or single bank mode for target)
                 formData.append('acquirer_assessment_areas', JSON.stringify(acquirerAA));
-                formData.append('target_assessment_areas', JSON.stringify(targetAA));
+                formData.append('target_assessment_areas', JSON.stringify(singleBankMode ? [] : targetAA));
                 
                 // Get loan purpose from dropdown
                 const loanPurpose = $('#loan_purpose').val() || '';

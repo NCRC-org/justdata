@@ -279,6 +279,70 @@
             content: ' ▼';
             font-size: 0.8em;
         }
+
+        /* Methods and Definitions Card */
+        .methods-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .methods-card h2 {
+            color: #1e3a5f;
+            font-size: 24px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1e3a5f;
+            padding-bottom: 10px;
+        }
+
+        .methods-card h3 {
+            color: #1e3a5f;
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .methods-card h4 {
+            color: #333;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .methods-card p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .methods-card ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .methods-card li {
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .methods-card .contingency-table {
+            margin: 15px auto;
+            max-width: 600px;
+        }
+
+        .methods-card .contingency-table th,
+        .methods-card .contingency-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .methods-card .contingency-table th {
+            background-color: #f5f5f5;
+        }
     </style>
 </head>
 <body>
@@ -2429,147 +2493,193 @@
     </script>
     
     <!-- Methods and Definitions Section -->
-    <div class="report-section" style="margin-top: 3rem; padding: 2rem; background-color: #f9f9f9; border-top: 2px solid #ddd;">
-        <h2 class="section-title">Methods and Definitions</h2>
-        
-        <div style="max-width: 1200px; margin: 0 auto;">
-            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Data Sources</h3>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>HMDA Data:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Data includes loan-level information on mortgage applications and originations.</li>
-                <li><strong>Census Data:</strong> U.S. Census Bureau - American Community Survey (ACS) 5-year estimates for most recent available year, 2020 Decennial Census, and 2010 Decennial Census for historical comparisons.</li>
-                <li><strong>Income Benchmarks:</strong> HUD Low/Moderate Income data and FFIEC MSA/MD Median Family Income for borrower and neighborhood income classifications.</li>
-                <li><strong>Branch Data:</strong> FDIC Summary of Deposits (SOD) data for branch location information used in geographic selection methods.</li>
-                <li><strong>Lender Information:</strong> HMDA Lenders18 table and CFPB API for lender metadata including assets, type, and location.</li>
-            </ul>
-            
-            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Peer Selection Method</h3>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Volume-Based Peer Selection:</strong> Peer lenders are selected based on loan volume within the selected geography. By default, peers are lenders with loan volumes between 50% and 200% of the subject lender's volume in the selected geographic area.</li>
-                <li><strong>Comparison Group:</strong> The analysis can be filtered by lender type (All Lenders, Banks Only, or Mortgage Companies Only) to ensure appropriate peer comparisons.</li>
-                <li><strong>Geographic Scope:</strong> Peer volume is calculated using the same geographic area selected for the subject lender analysis.</li>
-            </ul>
-            
-            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Geographic Selection Methods</h3>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>All CBSAs:</strong> Includes all counties (CBSAs) where the subject lender has originated loans in the selected years.</li>
-                <li><strong>Branch CBSAs:</strong> Includes counties within CBSAs where the subject lender has more than 1% of its total branches (based on FDIC Summary of Deposits data). All counties within those CBSAs are included.</li>
-                <li><strong>Loan CBSAs:</strong> Includes counties where the subject lender has more than 1% of total loan originations in that county for the selected years.</li>
-            </ul>
-            
-            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Definitions</h3>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Borrower Income Categories</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Low Income Borrowers:</strong> Borrowers with income ≤50% of Area Median Family Income (AMFI)</li>
-                <li><strong>Moderate Income Borrowers:</strong> Borrowers with income >50% and ≤80% of AMFI</li>
-                <li><strong>Middle Income Borrowers:</strong> Borrowers with income >80% and ≤120% of AMFI</li>
-                <li><strong>Upper Income Borrowers:</strong> Borrowers with income >120% of AMFI</li>
-                <li><strong>Low to Moderate Income (LMI):</strong> Combined Low and Moderate Income (≤80% of AMFI)</li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Neighborhood Income Categories</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Low Income Census Tracts:</strong> Census tracts where median family income ≤50% of AMFI</li>
-                <li><strong>Moderate Income Census Tracts:</strong> Census tracts where median family income >50% and ≤80% of AMFI</li>
-                <li><strong>Middle Income Census Tracts:</strong> Census tracts where median family income >80% and ≤120% of AMFI</li>
-                <li><strong>Upper Income Census Tracts:</strong> Census tracts where median family income >120% of AMFI</li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Race and Ethnicity Classifications</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Hispanic:</strong> Borrowers who indicated Hispanic or Latino ethnicity (codes 1, 11, 12, 13, 14) in any ethnicity field, regardless of race selection. Uses NCRC methodology where Hispanic borrowers are counted in the Hispanic category regardless of race.</li>
-                <li><strong>Black or African American:</strong> Non-Hispanic borrowers whose first valid race selection is Black (code 3)</li>
-                <li><strong>Asian:</strong> Non-Hispanic borrowers whose first valid race selection is Asian (codes 2, 21-27)</li>
-                <li><strong>Native American:</strong> Non-Hispanic borrowers whose first valid race selection is American Indian or Alaska Native (code 1)</li>
-                <li><strong>Hawaiian/Pacific Islander (HoPI):</strong> Non-Hispanic borrowers whose first valid race selection is Native Hawaiian or Other Pacific Islander (codes 4, 41-44)</li>
-                <li><strong>White:</strong> Non-Hispanic borrowers whose first valid race selection is White (code 5)</li>
-                <li><strong>Multi-Racial:</strong> Non-Hispanic borrowers who selected 2 or more distinct main race categories (not just multiple subcategories of the same race). Main categories are: 1=Native American, 2=Asian (includes subcategories), 3=Black, 4=HoPI (includes subcategories), 5=White</li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Neighborhood Demographics</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Majority Minority Census Tracts (MMCT):</strong> Census tracts where minority population ≥50%</li>
-                <li><strong>Minority Population:</strong> Population that is not non-Hispanic White</li>
-                <li><strong>High Minority Census Tracts:</strong> Census tracts where minority population ≥80%</li>
-                <li><strong>Middle Minority Census Tracts:</strong> Census tracts where minority population is 50-80%</li>
-                <li><strong>Moderate Minority Census Tracts:</strong> Census tracts where minority population is 20-50%</li>
-                <li><strong>Low Minority Census Tracts:</strong> Census tracts where minority population <20%</li>
-                <li style="margin-top: 0.5rem; font-style: italic; color: #777;"><strong>Note:</strong> Lender analysis uses fixed percentage thresholds (not quartiles) because the analysis may span dozens of CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts.</li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Loan Purpose Categories</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Home Purchase:</strong> Loans for the purchase of a home (loan purpose code 1)</li>
-                <li><strong>Refinance:</strong> Loans that refinance existing mortgages (loan purpose codes 31, 32)</li>
-                <li><strong>Home Equity:</strong> Home equity loans and lines of credit (loan purpose codes 2, 4)</li>
-            </ul>
-            
-            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Calculations and Methods</h3>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Minority Population Categorization</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Minority Population Calculation:</strong> Minority population percentage is calculated as <code>(total_persons - total_white) / total_persons × 100</code>, where <code>total_white</code> is the non-Hispanic White population in the census tract.</li>
-                <li><strong>Categorization Method:</strong> Lender analysis uses <strong>fixed percentage thresholds</strong> (not quartiles) because the analysis may span dozens of CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts, allowing meaningful comparison of lender performance across different markets.</li>
-                <li><strong>Fixed Thresholds:</strong>
-                    <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
-                        <li>High Minority: ≥80%</li>
-                        <li>Middle Minority: 50%-<80%</li>
-                        <li>Moderate Minority: 20%-<50%</li>
-                        <li>Low Minority: <20%</li>
-                    </ul>
-                </li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Percentage Calculations</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Subject Lender Percentages:</strong> Calculated as (metric count / total originations) × 100 for each year</li>
-                <li><strong>Peer Averages:</strong> Weighted average across all peer lenders, where each peer's percentage is weighted by their total loan volume</li>
-                <li><strong>Difference:</strong> Calculated as Subject percentage - Peer average percentage, shown in percentage points (pp)</li>
-                <li><strong>Statistical Significance:</strong> Chi-squared tests are performed for demographic and income metrics. An asterisk (*) indicates a statistically significant negative difference (p < 0.05) where the subject lender's percentage is significantly lower than peers.</li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Loan Costs Calculations</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Weighted Averages:</strong> All loan cost metrics (Property Value, Loan Amount, Interest Rate, Closing Costs, Origination Fees) are calculated as weighted averages, where each loan is weighted by the number of originations in that tract/loan purpose combination</li>
-                <li><strong>Downpayment/Equity:</strong> Calculated as Property Value - Loan Amount</li>
-                <li><strong>Subject vs Peer:</strong> Subject lender values are weighted averages across all loans. Peer values are weighted averages across all peer lenders, where each peer's average is weighted by their total loan volume</li>
-                <li><strong>Difference:</strong> Calculated as Subject value - Peer average value. For currency values, shown in dollars. For interest rates, shown in percentage points (pp)</li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Top Metros Table</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Metro Selection:</strong> Shows all CBSAs (metropolitan statistical areas) where the subject lender has originated loans, regardless of the selected geographic scope for the main analysis</li>
-                <li><strong>Ranking:</strong> Metros are ranked by total loan volume across all years in the analysis</li>
-                <li><strong>Display:</strong> Shows top 10 metros by total loan volume, or all metros if fewer than 10</li>
-            </ul>
-            
-            <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Data Aggregation</h4>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Aggregation Level:</strong> Data is aggregated at the census tract and loan purpose level. Each row in the source data represents loans aggregated by: lender, year, county, tract, and loan purpose</li>
-                <li><strong>Year Filtering:</strong> Section 1 tables show all selected years. Section 2 tables show the most recent 3 years of data</li>
-                <li><strong>Loan Purpose Filtering:</strong> Section 2 tables are available for All Loans, Home Purchase, Refinance, and Home Equity separately</li>
-            </ul>
-            
-            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">HMDA Filters Applied</h3>
-            <ul style="line-height: 1.8; color: #555;">
-                <li><strong>Action Taken:</strong> The report can analyze either Originations (action taken = 1) or Applications (action taken = 1, 2, 3, 4, 5) based on user selection</li>
-                <li><strong>Occupancy:</strong> Can be filtered to Owner-occupied, Second residence, or Investment properties</li>
-                <li><strong>Total Units:</strong> Can be filtered to 1-4 units or 5+ units</li>
-                <li><strong>Construction:</strong> Can be filtered to Site-built or Manufactured homes</li>
-                <li><strong>Loan Type:</strong> Can be filtered to Conventional, FHA, VA, USDA, or combinations thereof</li>
-                <li><strong>Reverse Mortgages:</strong> Excluded by default, but can be included if selected</li>
-            </ul>
-            
-            <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Notes</h3>
-            <ul style="line-height: 1.8; color: #555;">
-                <li>All dollar amounts are rounded to the nearest dollar for display purposes</li>
-                <li>Percentages are rounded to one decimal place, except interest rates which are shown to two decimal places</li>
-                <li>Differences are calculated as Subject - Peer, so positive values indicate the subject lender has higher values than peers, and negative values indicate lower values</li>
-                <li>Statistical significance testing uses chi-squared tests with a significance level of p < 0.05</li>
-                <li>Peer averages are weighted by loan volume to ensure larger lenders have appropriate influence on the peer average</li>
-                <li>Data may be suppressed or shown as "N/A" when there are insufficient loans for reliable calculation or when data is not available</li>
-            </ul>
-        </div>
+    <div class="methods-card">
+        <h2>Methods and Definitions</h2>
+
+        <h3>Data Sources</h3>
+        <p><strong>HMDA Data:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Data includes loan-level information on mortgage applications and originations.</p>
+
+        <p><strong>Census Data:</strong> U.S. Census Bureau - American Community Survey (ACS) 5-year estimates for most recent available year, 2020 Decennial Census, and 2010 Decennial Census for historical comparisons.</p>
+
+        <p><strong>Income Benchmarks:</strong> HUD Low/Moderate Income data and FFIEC MSA/MD Median Family Income for borrower and neighborhood income classifications.</p>
+
+        <p><strong>Branch Data:</strong> FDIC Summary of Deposits (SOD) data for branch location information used in geographic selection methods.</p>
+
+        <p><strong>Lender Information:</strong> HMDA Lenders18 table and CFPB API for lender metadata including assets, type, and location.</p>
+
+        <h3>Peer Selection Method</h3>
+        <p><strong>Volume-Based Peer Selection:</strong> Peer lenders are selected based on loan volume within the selected geography. By default, peers are lenders with loan volumes between 50% and 200% of the subject lender's volume in the selected geographic area.</p>
+
+        <p><strong>Comparison Group:</strong> The analysis can be filtered by lender type (All Lenders, Banks Only, or Mortgage Companies Only) to ensure appropriate peer comparisons.</p>
+
+        <p><strong>Geographic Scope:</strong> Peer volume is calculated using the same geographic area selected for the subject lender analysis.</p>
+
+        <h3>Geographic Selection Methods</h3>
+        <p><strong>All CBSAs:</strong> Includes all counties (CBSAs) where the subject lender has originated loans in the selected years.</p>
+
+        <p><strong>Branch CBSAs:</strong> Includes counties within CBSAs where the subject lender has more than 1% of its total branches (based on FDIC Summary of Deposits data). All counties within those CBSAs are included.</p>
+
+        <p><strong>Loan CBSAs:</strong> Includes counties where the subject lender has more than 1% of total loan originations in that county for the selected years.</p>
+
+        <h3>Definitions</h3>
+
+        <h4>Borrower Income Categories</h4>
+        <ul>
+            <li><strong>Low Income Borrowers:</strong> Borrowers with income ≤50% of Area Median Family Income (AMFI)</li>
+            <li><strong>Moderate Income Borrowers:</strong> Borrowers with income >50% and ≤80% of AMFI</li>
+            <li><strong>Middle Income Borrowers:</strong> Borrowers with income >80% and ≤120% of AMFI</li>
+            <li><strong>Upper Income Borrowers:</strong> Borrowers with income >120% of AMFI</li>
+            <li><strong>Low to Moderate Income (LMI):</strong> Combined Low and Moderate Income (≤80% of AMFI)</li>
+        </ul>
+
+        <h4>Neighborhood Income Categories</h4>
+        <ul>
+            <li><strong>Low Income Census Tracts:</strong> Census tracts where median family income ≤50% of AMFI</li>
+            <li><strong>Moderate Income Census Tracts:</strong> Census tracts where median family income >50% and ≤80% of AMFI</li>
+            <li><strong>Middle Income Census Tracts:</strong> Census tracts where median family income >80% and ≤120% of AMFI</li>
+            <li><strong>Upper Income Census Tracts:</strong> Census tracts where median family income >120% of AMFI</li>
+        </ul>
+
+        <h4>Race and Ethnicity Classifications</h4>
+        <ul>
+            <li><strong>Hispanic:</strong> Borrowers who indicated Hispanic or Latino ethnicity (codes 1, 11, 12, 13, 14) in any ethnicity field, regardless of race selection. Uses NCRC methodology where Hispanic borrowers are counted in the Hispanic category regardless of race.</li>
+            <li><strong>Black or African American:</strong> Non-Hispanic borrowers whose first valid race selection is Black (code 3)</li>
+            <li><strong>Asian:</strong> Non-Hispanic borrowers whose first valid race selection is Asian (codes 2, 21-27)</li>
+            <li><strong>Native American:</strong> Non-Hispanic borrowers whose first valid race selection is American Indian or Alaska Native (code 1)</li>
+            <li><strong>Hawaiian/Pacific Islander (HoPI):</strong> Non-Hispanic borrowers whose first valid race selection is Native Hawaiian or Other Pacific Islander (codes 4, 41-44)</li>
+            <li><strong>White:</strong> Non-Hispanic borrowers whose first valid race selection is White (code 5)</li>
+            <li><strong>Multi-Racial:</strong> Non-Hispanic borrowers who selected 2 or more distinct main race categories (not just multiple subcategories of the same race). Main categories are: 1=Native American, 2=Asian (includes subcategories), 3=Black, 4=HoPI (includes subcategories), 5=White</li>
+        </ul>
+
+        <h4>Neighborhood Demographics</h4>
+        <ul>
+            <li><strong>Majority Minority Census Tracts (MMCT):</strong> Census tracts where minority population ≥50%</li>
+            <li><strong>Minority Population:</strong> Population that is not non-Hispanic White</li>
+            <li><strong>High Minority Census Tracts:</strong> Census tracts where minority population ≥80%</li>
+            <li><strong>Middle Minority Census Tracts:</strong> Census tracts where minority population is 50-80%</li>
+            <li><strong>Moderate Minority Census Tracts:</strong> Census tracts where minority population is 20-50%</li>
+            <li><strong>Low Minority Census Tracts:</strong> Census tracts where minority population <20%</li>
+        </ul>
+
+        <p><strong>Note:</strong> Lender analysis uses fixed percentage thresholds (not quartiles) because the analysis may span dozens of CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts.</p>
+
+        <h4>Loan Purpose Categories</h4>
+        <ul>
+            <li><strong>Home Purchase:</strong> Loans for the purchase of a home (loan purpose code 1)</li>
+            <li><strong>Refinance:</strong> Loans that refinance existing mortgages (loan purpose codes 31, 32)</li>
+            <li><strong>Home Equity:</strong> Home equity loans and lines of credit (loan purpose codes 2, 4)</li>
+        </ul>
+
+        <h3>Calculations and Methods</h3>
+
+        <h4>Minority Population Categorization</h4>
+        <p><strong>Minority Population Calculation:</strong> Minority population percentage is calculated as (total_persons - total_white) / total_persons × 100, where total_white is the non-Hispanic White population in the census tract.</p>
+
+        <p><strong>Categorization Method:</strong> Lender analysis uses fixed percentage thresholds (not quartiles) because the analysis may span dozens of CBSAs. Fixed thresholds ensure consistent categorization across different geographic contexts, allowing meaningful comparison of lender performance across different markets.</p>
+
+        <p><strong>Fixed Thresholds:</strong></p>
+        <ul>
+            <li>High Minority: ≥80%</li>
+            <li>Middle Minority: 50%-<80%</li>
+            <li>Moderate Minority: 20%-<50%</li>
+            <li>Low Minority: <20%</li>
+        </ul>
+
+        <h4>Percentage Calculations</h4>
+        <p><strong>Subject Lender Percentages:</strong> Calculated as (metric count / total originations) × 100 for each year</p>
+
+        <p><strong>Peer Averages:</strong> Weighted average across all peer lenders, where each peer's percentage is weighted by their total loan volume</p>
+
+        <p><strong>Difference:</strong> Calculated as Subject percentage - Peer average percentage, shown in percentage points (pp)</p>
+
+        <p><strong>Statistical Significance:</strong> Chi-squared tests are performed for demographic and income metrics. An asterisk (*) indicates a statistically significant negative difference (p < 0.05) where the subject lender's percentage is significantly lower than peers.</p>
+
+        <h4>Chi-Squared Test for Statistical Significance</h4>
+        <p><strong>Test Used:</strong> Chi-squared test of independence (scipy.stats.chi2_contingency)</p>
+
+        <p><strong>Significance Level:</strong> α = 0.05 (p-value < 0.05 = statistically significant)</p>
+
+        <p><strong>How It Works:</strong> A 2x2 contingency table is constructed for each metric comparison:</p>
+
+        <table class="contingency-table">
+            <tr>
+                <th></th>
+                <th>With Characteristic</th>
+                <th>Without Characteristic</th>
+            </tr>
+            <tr>
+                <td><strong>Subject Lender</strong></td>
+                <td>subject_with</td>
+                <td>subject_total - subject_with</td>
+            </tr>
+            <tr>
+                <td><strong>Peer Group</strong></td>
+                <td>peer_with</td>
+                <td>peer_total - peer_with</td>
+            </tr>
+        </table>
+
+        <p><strong>Applied To:</strong></p>
+        <ul>
+            <li>Race/ethnicity lending comparisons (% to minority borrowers, % to Black, Hispanic, etc.)</li>
+            <li>Neighborhood income tract comparisons (% to LMI tracts, MMCT tracts, etc.)</li>
+            <li>Borrower income comparisons</li>
+        </ul>
+
+        <p><strong>Visual Indicator:</strong> When the difference is both statistically significant AND negative (subject underperforming peers), an asterisk (*) is appended to the difference value (e.g., -5.2pp*)</p>
+
+        <p><strong>Edge Cases Handled:</strong></p>
+        <ul>
+            <li>Returns False if either total count is 0</li>
+            <li>Notes when expected cell frequencies are < 5 (chi-squared assumption may be violated)</li>
+            <li>Falls back to False if scipy is unavailable or errors occur</li>
+        </ul>
+
+        <h4>Loan Costs Calculations</h4>
+        <p><strong>Weighted Averages:</strong> All loan cost metrics (Property Value, Loan Amount, Interest Rate, Closing Costs, Origination Fees) are calculated as weighted averages, where each loan is weighted by the number of originations in that tract/loan purpose combination</p>
+
+        <p><strong>Downpayment/Equity:</strong> Calculated as Property Value - Loan Amount</p>
+
+        <p><strong>Subject vs Peer:</strong> Subject lender values are weighted averages across all loans. Peer values are weighted averages across all peer lenders, where each peer's average is weighted by their total loan volume</p>
+
+        <p><strong>Difference:</strong> Calculated as Subject value - Peer average value. For currency values, shown in dollars. For interest rates, shown in percentage points (pp)</p>
+
+        <h4>Top Metros Table</h4>
+        <p><strong>Metro Selection:</strong> Shows all CBSAs (metropolitan statistical areas) where the subject lender has originated loans, regardless of the selected geographic scope for the main analysis</p>
+
+        <p><strong>Ranking:</strong> Metros are ranked by total loan volume across all years in the analysis</p>
+
+        <p><strong>Display:</strong> Shows top 10 metros by total loan volume, or all metros if fewer than 10</p>
+
+        <h3>Data Aggregation</h3>
+        <p><strong>Aggregation Level:</strong> Data is aggregated at the census tract and loan purpose level. Each row in the source data represents loans aggregated by: lender, year, county, tract, and loan purpose</p>
+
+        <p><strong>Year Filtering:</strong> Section 1 tables show all selected years. Section 2 tables show the most recent 3 years of data</p>
+
+        <p><strong>Loan Purpose Filtering:</strong> Section 2 tables are available for All Loans, Home Purchase, Refinance, and Home Equity separately</p>
+
+        <h3>HMDA Filters Applied</h3>
+        <p><strong>Action Taken:</strong> The report can analyze either Originations (action taken = 1) or Applications (action taken = 1, 2, 3, 4, 5) based on user selection</p>
+
+        <p><strong>Occupancy:</strong> Can be filtered to Owner-occupied, Second residence, or Investment properties</p>
+
+        <p><strong>Total Units:</strong> Can be filtered to 1-4 units or 5+ units</p>
+
+        <p><strong>Construction:</strong> Can be filtered to Site-built or Manufactured homes</p>
+
+        <p><strong>Loan Type:</strong> Can be filtered to Conventional, FHA, VA, USDA, or combinations thereof</p>
+
+        <p><strong>Reverse Mortgages:</strong> Excluded by default, but can be included if selected</p>
+
+        <h3>Notes</h3>
+        <ul>
+            <li>All dollar amounts are rounded to the nearest dollar for display purposes</li>
+            <li>Percentages are rounded to one decimal place, except interest rates which are shown to two decimal places</li>
+            <li>Differences are calculated as Subject - Peer, so positive values indicate the subject lender has higher values than peers, and negative values indicate lower values</li>
+            <li>Statistical significance testing uses chi-squared tests with a significance level of p < 0.05</li>
+            <li>Peer averages are weighted by loan volume to ensure larger lenders have appropriate influence on the peer average</li>
+            <li>Data may be suppressed or shown as "N/A" when there are insufficient loans for reliable calculation or when data is not available</li>
+        </ul>
     </div>
     
     <!-- Footer -->

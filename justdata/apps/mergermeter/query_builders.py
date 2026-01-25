@@ -144,6 +144,16 @@ filtered_hmda AS (
         CAST(h.activity_year AS STRING) as activity_year,
         -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
         COALESCE(c.cbsa_code, '99999') as cbsa_code,
+        -- State code for Goals Calculator state tabs
+        h.state_code,
+        -- Loan purpose category for HP/Refi/HI breakdown
+        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Other, 5=N/A
+        CASE
+            WHEN h.loan_purpose = '1' THEN 'hp'
+            WHEN h.loan_purpose = '2' THEN 'hi'
+            WHEN h.loan_purpose IN ('31', '32') THEN 'refi'
+            ELSE 'other'
+        END as loan_purpose_cat,
         h.loan_amount,
         CASE 
             WHEN h.tract_to_msa_income_percentage IS NOT NULL
@@ -270,9 +280,11 @@ filtered_hmda AS (
         AND LPAD(CAST(h.county_code AS STRING), 5, '0') IN ('{geoid5_list}')
 ),
 aggregated_metrics AS (
-    SELECT 
+    SELECT
         activity_year,
         cbsa_code,
+        state_code,
+        loan_purpose_cat,
         COUNT(*) as total_loans,
         SUM(loan_amount) as total_amount,
         COUNTIF(is_lmict = 1) as lmict_loans,
@@ -282,9 +294,9 @@ aggregated_metrics AS (
         SUM(CASE WHEN is_lmib = 1 THEN loan_amount END) as lmib_amount,
         COUNTIF(is_mmct = 1) as mmct_loans,
         SAFE_DIVIDE(COUNTIF(is_mmct = 1), COUNT(*)) * 100 as mmct_percentage,
-        COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1 
+        COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
                 OR is_native_american = 1 OR is_hopi = 1) as minb_loans,
-        SAFE_DIVIDE(COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1 
+        SAFE_DIVIDE(COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
                            OR is_native_american = 1 OR is_hopi = 1), COUNT(*)) * 100 as minb_percentage,
         -- Individual race/ethnicity counts (using total loans as denominator)
         COUNTIF(is_asian = 1) as asian_loans,
@@ -298,10 +310,10 @@ aggregated_metrics AS (
         COUNTIF(is_hispanic = 1) as hispanic_loans,
         SAFE_DIVIDE(COUNTIF(is_hispanic = 1), COUNT(*)) * 100 as hispanic_percentage
     FROM filtered_hmda
-    GROUP BY activity_year, cbsa_code
+    GROUP BY activity_year, cbsa_code, state_code, loan_purpose_cat
 )
 SELECT * FROM aggregated_metrics
-ORDER BY activity_year, cbsa_code
+ORDER BY activity_year, state_code, cbsa_code, loan_purpose_cat
 """
     return query
 
@@ -473,6 +485,16 @@ filtered_hmda AS (
         CAST(h.activity_year AS STRING) as activity_year,
         -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
         COALESCE(c.cbsa_code, '99999') as cbsa_code,
+        -- State code for Goals Calculator state tabs
+        h.state_code,
+        -- Loan purpose category for HP/Refi/HI breakdown
+        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Other, 5=N/A
+        CASE
+            WHEN h.loan_purpose = '1' THEN 'hp'
+            WHEN h.loan_purpose = '2' THEN 'hi'
+            WHEN h.loan_purpose IN ('31', '32') THEN 'refi'
+            ELSE 'other'
+        END as loan_purpose_cat,
         h.lei,
         h.loan_amount,
         CASE
@@ -484,14 +506,14 @@ filtered_hmda AS (
             WHEN h.income IS NOT NULL
               AND h.ffiec_msa_md_median_family_income IS NOT NULL
               AND h.ffiec_msa_md_median_family_income > 0
-              AND (CAST(h.income AS FLOAT64) * 1000.0) / 
+              AND (CAST(h.income AS FLOAT64) * 1000.0) /
                   CAST(h.ffiec_msa_md_median_family_income AS FLOAT64) * 100.0 <= 80.0
-            THEN 1 ELSE 0 
+            THEN 1 ELSE 0
         END as is_lmib,
-        CASE 
+        CASE
             WHEN h.tract_minority_population_percent IS NOT NULL
-                AND CAST(h.tract_minority_population_percent AS FLOAT64) > 50 
-            THEN 1 ELSE 0 
+                AND CAST(h.tract_minority_population_percent AS FLOAT64) > 50
+            THEN 1 ELSE 0
         END as is_mmct,
         -- Race/Ethnicity classification using COALESCE methodology
         -- First check for Hispanic ethnicity (if ANY ethnicity field indicates Hispanic)
@@ -638,9 +660,11 @@ peer_hmda AS (
         AND f.lei = p.lei
 ),
 aggregated_peer_metrics AS (
-    SELECT 
+    SELECT
         activity_year,
         cbsa_code,
+        state_code,
+        loan_purpose_cat,
         COUNT(*) as total_loans,
         SUM(loan_amount) as total_amount,
         COUNTIF(is_lmict = 1) as lmict_loans,
@@ -650,9 +674,9 @@ aggregated_peer_metrics AS (
         SUM(CASE WHEN is_lmib = 1 THEN loan_amount END) as lmib_amount,
         COUNTIF(is_mmct = 1) as mmct_loans,
         SAFE_DIVIDE(COUNTIF(is_mmct = 1), COUNT(*)) * 100 as mmct_percentage,
-        COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1 
+        COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
                 OR is_native_american = 1 OR is_hopi = 1) as minb_loans,
-        SAFE_DIVIDE(COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1 
+        SAFE_DIVIDE(COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
                            OR is_native_american = 1 OR is_hopi = 1), COUNT(*)) * 100 as minb_percentage,
         -- Individual race/ethnicity counts (using total loans as denominator)
         COUNTIF(is_asian = 1) as asian_loans,
@@ -666,10 +690,10 @@ aggregated_peer_metrics AS (
         COUNTIF(is_hispanic = 1) as hispanic_loans,
         SAFE_DIVIDE(COUNTIF(is_hispanic = 1), COUNT(*)) * 100 as hispanic_percentage
     FROM peer_hmda
-    GROUP BY activity_year, cbsa_code
+    GROUP BY activity_year, cbsa_code, state_code, loan_purpose_cat
 )
 SELECT * FROM aggregated_peer_metrics
-ORDER BY activity_year, cbsa_code
+ORDER BY activity_year, state_code, cbsa_code, loan_purpose_cat
 """
     return query
 
@@ -723,20 +747,23 @@ WITH cbsa_crosswalk AS (
         CAST(geoid5 AS STRING) as geoid5,
         CAST(cbsa_code AS STRING) as cbsa_code,
         CBSA as cbsa_name,
-        State as state_name
+        State as state_name,
+        -- Extract state FIPS code from geoid5 (first 2 digits) for Goals Calculator state tabs
+        LPAD(SUBSTR(CAST(geoid5 AS STRING), 1, 2), 2, '0') as state_code
     FROM `hdma1-242116.geo.cbsa_to_county`
     WHERE CAST(geoid5 AS STRING) IN ('{geoid5_list}')
 ),
 filtered_sb_data AS (
-    SELECT 
+    SELECT
         CAST(d.year AS STRING) as year,
         COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
-        COALESCE(c.cbsa_name, 
-            CASE 
+        COALESCE(c.cbsa_name,
+            CASE
                 WHEN c.state_name IS NOT NULL THEN CONCAT(c.state_name, ' Non-MSA')
                 ELSE 'Non-MSA'
             END
         ) as cbsa_name,
+        c.state_code,
         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         -- SB amounts are stored in thousands of dollars, convert to actual dollars
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
@@ -767,6 +794,7 @@ filtered_sb_data AS (
 aggregated_sb_metrics AS (
     SELECT
         year,
+        state_code,
         cbsa_code,
         MAX(cbsa_name) as cbsa_name,  -- Get CBSA name (should be same for all rows with same cbsa_code)
         SUM(sb_loans_count) as sb_loans_total,
@@ -779,10 +807,10 @@ aggregated_sb_metrics AS (
         SAFE_DIVIDE(SUM(lmict_loans_amount), SUM(lmict_loans_count)) as avg_sb_lmict_loan_amount,
         SAFE_DIVIDE(SUM(amount_rev_under_1m), SUM(loans_rev_under_1m)) as avg_loan_amt_rum_sb
     FROM filtered_sb_data
-    GROUP BY year, cbsa_code
+    GROUP BY year, state_code, cbsa_code
 )
 SELECT * FROM aggregated_sb_metrics
-ORDER BY year, cbsa_code
+ORDER BY year, state_code, cbsa_code
 """
     return query
 

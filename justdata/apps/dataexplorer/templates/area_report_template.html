@@ -307,6 +307,54 @@
             border-bottom-color: var(--ncrc-dark-blue);
             font-weight: 600;
         }
+
+        /* Methods and Definitions Card */
+        .methods-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .methods-card h2 {
+            color: #1e3a5f;
+            font-size: 24px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1e3a5f;
+            padding-bottom: 10px;
+        }
+
+        .methods-card h3 {
+            color: #1e3a5f;
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .methods-card h4 {
+            color: #333;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .methods-card p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .methods-card ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .methods-card li {
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
     </style>
 </head>
 <body>
@@ -829,180 +877,179 @@
             </div>
             
             <!-- Methods and Definitions Section -->
-            <div class="report-section" style="margin-top: 3rem; padding: 2rem; background-color: #f9f9f9; border-top: 2px solid #ddd;">
-                <h2 class="section-title">Methods and Definitions</h2>
-                
-                <div style="max-width: 1200px; margin: 0 auto;">
-                    <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Data Sources</h3>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>HMDA Data:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Data includes loan-level information on mortgage applications and originations.</li>
-                        <li><strong>Census Data:</strong> U.S. Census Bureau - American Community Survey (ACS) 5-year estimates for most recent available year, 2020 Decennial Census, and 2010 Decennial Census for historical comparisons.</li>
-                        <li><strong>Income Benchmarks:</strong> HUD Low/Moderate Income data and FFIEC MSA/MD Median Family Income for borrower and neighborhood income classifications.</li>
-                    </ul>
-                    
-                    <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Geographic Scope</h3>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Analysis Area:</strong> Area analysis is limited to a single CBSA (Core Based Statistical Area) or selected counties. This geographic limitation allows for meaningful relative comparisons within the selected area.</li>
-                        <li><strong>County Selection:</strong> Users can select one or more counties within a single CBSA for analysis. All selected counties must be within the same CBSA.</li>
-                    </ul>
-                    
-                    <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Definitions</h3>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Borrower Income Categories</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Low Income Borrowers:</strong> Borrowers with income ≤50% of Area Median Family Income (AMFI)</li>
-                        <li><strong>Moderate Income Borrowers:</strong> Borrowers with income >50% and ≤80% of AMFI</li>
-                        <li><strong>Middle Income Borrowers:</strong> Borrowers with income >80% and ≤120% of AMFI</li>
-                        <li><strong>Upper Income Borrowers:</strong> Borrowers with income >120% of AMFI</li>
-                        <li><strong>Low to Moderate Income (LMI):</strong> Combined Low and Moderate Income (≤80% of AMFI)</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Neighborhood Income Categories</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Low Income Census Tracts:</strong> Census tracts where median family income ≤50% of AMFI</li>
-                        <li><strong>Moderate Income Census Tracts:</strong> Census tracts where median family income >50% and ≤80% of AMFI</li>
-                        <li><strong>Middle Income Census Tracts:</strong> Census tracts where median family income >80% and ≤120% of AMFI</li>
-                        <li><strong>Upper Income Census Tracts:</strong> Census tracts where median family income >120% of AMFI</li>
-                        <li><strong>Low to Moderate Income Census Tracts:</strong> Census tracts where median family income ≤80% of AMFI</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Race and Ethnicity Classifications</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Hispanic:</strong> Borrowers who indicated Hispanic or Latino ethnicity (codes 1, 11, 12, 13, 14) in any ethnicity field, regardless of race selection. Uses NCRC methodology where Hispanic borrowers are counted in the Hispanic category regardless of race.</li>
-                        <li><strong>Black or African American:</strong> Non-Hispanic borrowers whose first valid race selection is Black (code 3)</li>
-                        <li><strong>Asian:</strong> Non-Hispanic borrowers whose first valid race selection is Asian (codes 2, 21-27)</li>
-                        <li><strong>Native American:</strong> Non-Hispanic borrowers whose first valid race selection is American Indian or Alaska Native (code 1)</li>
-                        <li><strong>Hawaiian/Pacific Islander (HoPI):</strong> Non-Hispanic borrowers whose first valid race selection is Native Hawaiian or Other Pacific Islander (codes 4, 41-44)</li>
-                        <li><strong>White:</strong> Non-Hispanic borrowers whose first valid race selection is White (code 5)</li>
-                        <li><strong>Multi-Racial:</strong> Non-Hispanic borrowers who selected 2 or more distinct main race categories (not just multiple subcategories of the same race). Main categories are: 1=Native American, 2=Asian (includes subcategories), 3=Black, 4=HoPI (includes subcategories), 5=White</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Neighborhood Demographics</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Majority Minority Census Tracts (MMCT):</strong> Census tracts where minority population ≥50%</li>
-                        <li><strong>Minority Population:</strong> Population that is not non-Hispanic White</li>
-                        <li><strong>High Minority Census Tracts:</strong> Census tracts in the top quartile of minority population (75th-100th percentile) for the analysis area</li>
-                        <li><strong>Middle Minority Census Tracts:</strong> Census tracts in the third quartile of minority population (50th-75th percentile) for the analysis area</li>
-                        <li><strong>Moderate Minority Census Tracts:</strong> Census tracts in the second quartile of minority population (25th-50th percentile) for the analysis area</li>
-                        <li><strong>Low Minority Census Tracts:</strong> Census tracts in the bottom quartile of minority population (0-25th percentile) for the analysis area</li>
-                        <li style="margin-top: 0.5rem; font-style: italic; color: #777;"><strong>Note:</strong> Area analysis uses dynamic quartiles (relative to the analysis area) because analysis is limited to a single CBSA. Quartiles are calculated from the distribution of minority population percentages across all census tracts in the selected geography. This provides meaningful relative comparison within the selected area.</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Loan Purpose Categories</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Home Purchase:</strong> Loans for the purchase of a home (loan purpose code 1)</li>
-                        <li><strong>Refinance:</strong> Loans that refinance existing mortgages (loan purpose codes 31, 32)</li>
-                        <li><strong>Home Equity:</strong> Home equity loans and lines of credit (loan purpose codes 2, 4)</li>
-                    </ul>
-                    
-                    <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Section 1 Housing Tables (Tables 4-6)</h3>
-                    <p style="line-height: 1.8; color: #555; margin-bottom: 1rem;">The following tables use data from the U.S. Census Bureau's American Community Survey (ACS) 5-year estimates. Data is aggregated across all selected counties for each time period (2006-2010 ACS, 2016-2020 ACS, and most recent ACS).</p>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Table 4: Housing Costs and Burden</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Median Household Income:</strong> Median annual income of all households (Census variable B19013_001E). Calculated as weighted median of county medians, weighted by number of households.</li>
-                        <li><strong>Median Home Value:</strong> Median value of owner-occupied housing units (B25077_001E). Calculated as weighted median of county medians, weighted by number of owner-occupied units.</li>
-                        <li><strong>Median Owner Costs (Monthly):</strong> Median selected monthly owner costs including mortgage, taxes, insurance, utilities (B25088_001E). Calculated as weighted median of county medians, weighted by number of owner-occupied units.</li>
-                        <li><strong>Owner Cost Burden (%):</strong> Percentage of owner-occupied households spending 30% or more of income on housing costs. Calculated from B25091 burden categories (30-34.9%, 35-39.9%, 40-49.9%, 50%+). Aggregated as weighted median of county percentages, weighted by number of owner-occupied households.</li>
-                        <li><strong>Median Rent (Monthly):</strong> Median gross rent (rent + utilities) for renter-occupied units (B25064_001E). Calculated as weighted median of county medians, weighted by number of renter-occupied units.</li>
-                        <li><strong>Rental Burden (%):</strong> Percentage of renter-occupied households spending 30% or more of income on rent. Calculated from B25070 burden categories (30-34.9%, 35-39.9%, 40-49.9%, 50%+). Aggregated as weighted median of county percentages, weighted by number of renter-occupied households.</li>
-                        <li><strong>Change %:</strong> Percentage change from earliest time period (2006-2010) to most recent. Green indicates favorable change (income/home value increase, cost/burden decrease), red indicates unfavorable change.</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Table 5: Owner Occupancy by Race and Ethnicity</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Overall Owner Occupancy (%):</strong> Percentage of all occupied housing units that are owner-occupied. Calculated from B25003_001E (total occupied) and B25003_002E (owner-occupied). Aggregated as sum of owner-occupied / sum of total occupied across counties.</li>
-                        <li><strong>Owner Occupancy by Race/Ethnicity (%):</strong> Percentage of occupied units for each race/ethnicity group that are owner-occupied. Uses B25003B through B25003I variables (total and owner-occupied by race). Aggregated as sum of owner-occupied by race / sum of total occupied by race across counties.</li>
-                        <li><strong>Race/Ethnicity Filtering:</strong> Only groups representing 1% or more of total population in the selected counties are shown. Determined using most recent ACS demographic data.</li>
-                        <li><strong>Change %:</strong> Percentage point change (not percentage change) from earliest to most recent time period. Green indicates increase in owner occupancy, red indicates decrease.</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Table 6: Housing Units by Structure Type</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Total Housing Units:</strong> Total number of housing units (occupied and vacant) in selected counties (B25001_001E). Summed across all counties.</li>
-                        <li><strong>% 1-4 Units:</strong> Percentage of total units that are 1-4 unit structures. Calculated from B25024 variables: 1-unit detached (B25024_002E), 1-unit attached (B25024_003E), 2 units (B25024_004E), 3-4 units (B25024_005E). Aggregated as sum of 1-4 units / sum of total units.</li>
-                        <li><strong>% Manufactured/Mobile:</strong> Percentage of total units that are manufactured/mobile homes (B25024_010E). Aggregated as sum of mobile units / sum of total units. Shown as sub-category of 1-4 units.</li>
-                        <li><strong>% 5+ Units:</strong> Percentage of total units that are structures with 5 or more units. Calculated as (Total Units - 1-4 Units - Mobile Units) / Total Units × 100.</li>
-                        <li><strong>% of 1-4 Units Owner-Occupied:</strong> Percentage of occupied 1-4 unit structures that are owner-occupied. Uses B25032 variables (occupied units by structure type) for accurate calculation. Denominator is occupied 1-4 units (not total 1-4 units) to show percentage of occupied units that are owner-occupied.</li>
-                        <li><strong>Change %:</strong> Percentage change from earliest to most recent time period. Green indicates favorable change (increase in owner-occupied %), red indicates unfavorable change.</li>
-                    </ul>
-                    
-                    <p style="line-height: 1.8; color: #555; margin-top: 1rem; font-style: italic;">For detailed technical documentation including Census variable codes, aggregation formulas, and API implementation details, see HOUSING_TABLES_METHODS.md in the codebase.</p>
-                    
-                    <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Calculations and Methods</h3>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Minority Population Categorization</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Minority Population Calculation:</strong> Minority population percentage is calculated as <code>(total_persons - total_white) / total_persons × 100</code>, where <code>total_white</code> is the non-Hispanic White population in the census tract.</li>
-                        <li><strong>Categorization Method:</strong> Area analysis uses <strong>dynamic quartiles</strong> calculated from the distribution of minority population percentages across all census tracts in the selected geography. Quartiles provide meaningful relative comparison within a single CBSA, allowing the categories to adapt to the actual distribution of minority populations in that area.</li>
-                        <li><strong>Quartile Calculation:</strong>
-                            <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
-                                <li>All unique census tracts in the analysis area are identified</li>
-                                <li>Quartile thresholds (25th, 50th, 75th percentiles) are calculated from the distribution</li>
-                                <li>Each tract is classified into a quartile based on its minority percentage relative to the distribution</li>
-                                <li>High Minority: 75th-100th percentile (varies by area)</li>
-                                <li>Middle Minority: 50th-75th percentile (varies by area)</li>
-                                <li>Moderate Minority: 25th-50th percentile (varies by area)</li>
-                                <li>Low Minority: 0-25th percentile (varies by area)</li>
-                            </ul>
-                        </li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Percentage Calculations</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Loan Percentages:</strong> Calculated as (metric count / total originations) × 100 for each year and category</li>
-                        <li><strong>Population Share:</strong> Percentage of total population in each demographic or income category, based on Census data. Used to compare loan distribution to population distribution.</li>
-                        <li><strong>Change Over Time:</strong> Percentage point change from first year to last year in the selected time period</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Market Concentration (HHI)</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>HHI (Herfindahl-Hirschman Index):</strong> Measure of market concentration. Range: 0-10,000. Higher values indicate more concentration (fewer lenders dominate the market).</li>
-                        <li><strong>HHI Calculation:</strong> Sum of squared market shares (as percentages) of all lenders. HHI = Σ(market share²) × 10,000, where market share = (lender loans / total loans) × 100</li>
-                        <li><strong>HHI Interpretation:</strong>
-                            <ul style="margin-top: 0.5rem; margin-left: 1.5rem;">
-                                <li>HHI < 1,500: Competitive market</li>
-                                <li>HHI 1,500-2,500: Moderately concentrated market</li>
-                                <li>HHI > 2,500: Highly concentrated market</li>
-                            </ul>
-                        </li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Top Lenders Selection</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Selection Method:</strong> Top 10 lenders by loan volume in the most recent year of the analysis</li>
-                        <li><strong>Recalculation by Loan Purpose:</strong> Top lenders are recalculated separately for each loan purpose (All Loans, Home Purchase, Refinance, Home Equity), so different lenders may appear in each tab</li>
-                        <li><strong>Section 3 Display:</strong> Section 3 tables show lender-level data with lenders as rows and metrics as columns. Only the top 10 lenders are shown by default, but the table can be expanded to show all lenders</li>
-                    </ul>
-                    
-                    <h4 style="color: #34495e; margin-top: 1.5rem; margin-bottom: 0.75rem; font-size: 1.1rem;">Data Aggregation</h4>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Section 2 Tables:</strong> Aggregate data across all lenders for the selected geographic area. Years are shown as columns, with metrics as rows.</li>
-                        <li><strong>Section 3 Tables:</strong> Lender-level data showing top lenders with metrics as columns. Data is aggregated at the census tract and loan purpose level.</li>
-                        <li><strong>Year Filtering:</strong> Section 2 tables show the most recent 5 years of data. Section 1 (Population Demographics) shows all selected years.</li>
-                        <li><strong>Loan Purpose Filtering:</strong> Section 2 and Section 3 tables are available for All Loans, Home Purchase, Refinance, and Home Equity separately</li>
-                        <li><strong>Race/Ethnicity Filtering:</strong> Race/ethnicity categories are shown only if they represent ≥1% of total loans in any year (Section 2) or ≥1% of total loans across all lenders (Section 3)</li>
-                    </ul>
-                    
-                    <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">HMDA Filters Applied</h3>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li><strong>Action Taken:</strong> The report can analyze either Originations (action taken = 1) or Applications (action taken = 1, 2, 3, 4, 5) based on user selection</li>
-                        <li><strong>Occupancy:</strong> Can be filtered to Owner-occupied, Second residence, or Investment properties</li>
-                        <li><strong>Total Units:</strong> Can be filtered to 1-4 units or 5+ units</li>
-                        <li><strong>Construction:</strong> Can be filtered to Site-built or Manufactured homes</li>
-                        <li><strong>Loan Type:</strong> Can be filtered to Conventional, FHA, VA, USDA, or combinations thereof</li>
-                        <li><strong>Reverse Mortgages:</strong> Excluded by default, but can be included if selected</li>
-                    </ul>
-                    
-                    <h3 style="color: #2c3e50; margin-top: 2rem; margin-bottom: 1rem; font-size: 1.3rem;">Notes</h3>
-                    <ul style="line-height: 1.8; color: #555;">
-                        <li>All dollar amounts are rounded to the nearest dollar for display purposes</li>
-                        <li>Percentages are rounded to one decimal place, except interest rates which are shown to two decimal places</li>
-                        <li>Population Share calculations use Census data to compare loan distribution to population distribution, helping identify potential disparities</li>
-                        <li>Quartile thresholds for minority census tracts vary by analysis area and are calculated dynamically from the actual distribution in the selected geography</li>
-                        <li>Top lenders in Section 3 may differ across loan purpose tabs because lenders are ranked separately for each purpose</li>
-                    </ul>
-                </div>
+            <div class="methods-card">
+                <h2>Methods and Definitions</h2>
+
+                <h3>Data Sources</h3>
+                <p><strong>HMDA Data:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Data includes loan-level information on mortgage applications and originations.</p>
+
+                <p><strong>Census Data:</strong> U.S. Census Bureau - American Community Survey (ACS) 5-year estimates for most recent available year, 2020 Decennial Census, and 2010 Decennial Census for historical comparisons.</p>
+
+                <p><strong>Income Benchmarks:</strong> HUD Low/Moderate Income data and FFIEC MSA/MD Median Family Income for borrower and neighborhood income classifications.</p>
+
+                <h3>Geographic Scope</h3>
+                <p><strong>Analysis Area:</strong> Area analysis is limited to a single CBSA (Core Based Statistical Area) or selected counties. This geographic limitation allows for meaningful relative comparisons within the selected area.</p>
+
+                <p><strong>County Selection:</strong> Users can select one or more counties within a single CBSA for analysis. All selected counties must be within the same CBSA.</p>
+
+                <h3>Definitions</h3>
+
+                <h4>Borrower Income Categories</h4>
+                <ul>
+                    <li><strong>Low Income Borrowers:</strong> Borrowers with income ≤50% of Area Median Family Income (AMFI)</li>
+                    <li><strong>Moderate Income Borrowers:</strong> Borrowers with income >50% and ≤80% of AMFI</li>
+                    <li><strong>Middle Income Borrowers:</strong> Borrowers with income >80% and ≤120% of AMFI</li>
+                    <li><strong>Upper Income Borrowers:</strong> Borrowers with income >120% of AMFI</li>
+                    <li><strong>Low to Moderate Income (LMI):</strong> Combined Low and Moderate Income (≤80% of AMFI)</li>
+                </ul>
+
+                <h4>Neighborhood Income Categories</h4>
+                <ul>
+                    <li><strong>Low Income Census Tracts:</strong> Census tracts where median family income ≤50% of AMFI</li>
+                    <li><strong>Moderate Income Census Tracts:</strong> Census tracts where median family income >50% and ≤80% of AMFI</li>
+                    <li><strong>Middle Income Census Tracts:</strong> Census tracts where median family income >80% and ≤120% of AMFI</li>
+                    <li><strong>Upper Income Census Tracts:</strong> Census tracts where median family income >120% of AMFI</li>
+                    <li><strong>Low to Moderate Income Census Tracts:</strong> Census tracts where median family income ≤80% of AMFI</li>
+                </ul>
+
+                <h4>Race and Ethnicity Classifications</h4>
+                <ul>
+                    <li><strong>Hispanic:</strong> Borrowers who indicated Hispanic or Latino ethnicity (codes 1, 11, 12, 13, 14) in any ethnicity field, regardless of race selection. Uses NCRC methodology where Hispanic borrowers are counted in the Hispanic category regardless of race.</li>
+                    <li><strong>Black or African American:</strong> Non-Hispanic borrowers whose first valid race selection is Black (code 3)</li>
+                    <li><strong>Asian:</strong> Non-Hispanic borrowers whose first valid race selection is Asian (codes 2, 21-27)</li>
+                    <li><strong>Native American:</strong> Non-Hispanic borrowers whose first valid race selection is American Indian or Alaska Native (code 1)</li>
+                    <li><strong>Hawaiian/Pacific Islander (HoPI):</strong> Non-Hispanic borrowers whose first valid race selection is Native Hawaiian or Other Pacific Islander (codes 4, 41-44)</li>
+                    <li><strong>White:</strong> Non-Hispanic borrowers whose first valid race selection is White (code 5)</li>
+                    <li><strong>Multi-Racial:</strong> Non-Hispanic borrowers who selected 2 or more distinct main race categories (not just multiple subcategories of the same race). Main categories are: 1=Native American, 2=Asian (includes subcategories), 3=Black, 4=HoPI (includes subcategories), 5=White</li>
+                </ul>
+
+                <h4>Neighborhood Demographics</h4>
+                <ul>
+                    <li><strong>Majority Minority Census Tracts (MMCT):</strong> Census tracts where minority population ≥50%</li>
+                    <li><strong>Minority Population:</strong> Population that is not non-Hispanic White</li>
+                    <li><strong>High Minority Census Tracts:</strong> Census tracts in the top quartile of minority population (75th-100th percentile) for the analysis area</li>
+                    <li><strong>Middle Minority Census Tracts:</strong> Census tracts in the third quartile of minority population (50th-75th percentile) for the analysis area</li>
+                    <li><strong>Moderate Minority Census Tracts:</strong> Census tracts in the second quartile of minority population (25th-50th percentile) for the analysis area</li>
+                    <li><strong>Low Minority Census Tracts:</strong> Census tracts in the bottom quartile of minority population (0-25th percentile) for the analysis area</li>
+                </ul>
+
+                <p><strong>Note:</strong> Area analysis uses dynamic quartiles (relative to the analysis area) because analysis is limited to a single CBSA. Quartiles are calculated from the distribution of minority population percentages across all census tracts in the selected geography. This provides meaningful relative comparison within the selected area.</p>
+
+                <h4>Loan Purpose Categories</h4>
+                <ul>
+                    <li><strong>Home Purchase:</strong> Loans for the purchase of a home (loan purpose code 1)</li>
+                    <li><strong>Refinance:</strong> Loans that refinance existing mortgages (loan purpose codes 31, 32)</li>
+                    <li><strong>Home Equity:</strong> Home equity loans and lines of credit (loan purpose codes 2, 4)</li>
+                </ul>
+
+                <h3>Section 1 Housing Tables (Tables 4-6)</h3>
+                <p>The following tables use data from the U.S. Census Bureau's American Community Survey (ACS) 5-year estimates. Data is aggregated across all selected counties for each time period (2006-2010 ACS, 2016-2020 ACS, and most recent ACS).</p>
+
+                <h4>Table 4: Housing Costs and Burden</h4>
+                <ul>
+                    <li><strong>Median Household Income:</strong> Median annual income of all households (Census variable B19013_001E). Calculated as weighted median of county medians, weighted by number of households.</li>
+                    <li><strong>Median Home Value:</strong> Median value of owner-occupied housing units (B25077_001E). Calculated as weighted median of county medians, weighted by number of owner-occupied units.</li>
+                    <li><strong>Median Owner Costs (Monthly):</strong> Median selected monthly owner costs including mortgage, taxes, insurance, utilities (B25088_001E). Calculated as weighted median of county medians, weighted by number of owner-occupied units.</li>
+                    <li><strong>Owner Cost Burden (%):</strong> Percentage of owner-occupied households spending 30% or more of income on housing costs. Calculated from B25091 burden categories (30-34.9%, 35-39.9%, 40-49.9%, 50%+). Aggregated as weighted median of county percentages, weighted by number of owner-occupied households.</li>
+                    <li><strong>Median Rent (Monthly):</strong> Median gross rent (rent + utilities) for renter-occupied units (B25064_001E). Calculated as weighted median of county medians, weighted by number of renter-occupied units.</li>
+                    <li><strong>Rental Burden (%):</strong> Percentage of renter-occupied households spending 30% or more of income on rent. Calculated from B25070 burden categories (30-34.9%, 35-39.9%, 40-49.9%, 50%+). Aggregated as weighted median of county percentages, weighted by number of renter-occupied households.</li>
+                    <li><strong>Change %:</strong> Percentage change from earliest time period (2006-2010) to most recent. Green indicates favorable change (income/home value increase, cost/burden decrease), red indicates unfavorable change.</li>
+                </ul>
+
+                <h4>Table 5: Owner Occupancy by Race and Ethnicity</h4>
+                <ul>
+                    <li><strong>Overall Owner Occupancy (%):</strong> Percentage of all occupied housing units that are owner-occupied. Calculated from B25003_001E (total occupied) and B25003_002E (owner-occupied). Aggregated as sum of owner-occupied / sum of total occupied across counties.</li>
+                    <li><strong>Owner Occupancy by Race/Ethnicity (%):</strong> Percentage of occupied units for each race/ethnicity group that are owner-occupied. Uses B25003B through B25003I variables (total and owner-occupied by race). Aggregated as sum of owner-occupied by race / sum of total occupied by race across counties.</li>
+                    <li><strong>Race/Ethnicity Filtering:</strong> Only groups representing 1% or more of total population in the selected counties are shown. Determined using most recent ACS demographic data.</li>
+                    <li><strong>Change %:</strong> Percentage point change (not percentage change) from earliest to most recent time period. Green indicates increase in owner occupancy, red indicates decrease.</li>
+                </ul>
+
+                <h4>Table 6: Housing Units by Structure Type</h4>
+                <ul>
+                    <li><strong>Total Housing Units:</strong> Total number of housing units (occupied and vacant) in selected counties (B25001_001E). Summed across all counties.</li>
+                    <li><strong>% 1-4 Units:</strong> Percentage of total units that are 1-4 unit structures. Calculated from B25024 variables: 1-unit detached (B25024_002E), 1-unit attached (B25024_003E), 2 units (B25024_004E), 3-4 units (B25024_005E). Aggregated as sum of 1-4 units / sum of total units.</li>
+                    <li><strong>% Manufactured/Mobile:</strong> Percentage of total units that are manufactured/mobile homes (B25024_010E). Aggregated as sum of mobile units / sum of total units. Shown as sub-category of 1-4 units.</li>
+                    <li><strong>% 5+ Units:</strong> Percentage of total units that are structures with 5 or more units. Calculated as (Total Units - 1-4 Units - Mobile Units) / Total Units × 100.</li>
+                    <li><strong>% of 1-4 Units Owner-Occupied:</strong> Percentage of occupied 1-4 unit structures that are owner-occupied. Uses B25032 variables (occupied units by structure type) for accurate calculation. Denominator is occupied 1-4 units (not total 1-4 units) to show percentage of occupied units that are owner-occupied.</li>
+                    <li><strong>Change %:</strong> Percentage change from earliest to most recent time period. Green indicates favorable change (increase in owner-occupied %), red indicates unfavorable change.</li>
+                </ul>
+
+                <h3>Calculations and Methods</h3>
+
+                <h4>Minority Population Categorization</h4>
+                <p><strong>Minority Population Calculation:</strong> Minority population percentage is calculated as (total_persons - total_white) / total_persons × 100, where total_white is the non-Hispanic White population in the census tract.</p>
+
+                <p><strong>Categorization Method:</strong> Area analysis uses dynamic quartiles calculated from the distribution of minority population percentages across all census tracts in the selected geography. Quartiles provide meaningful relative comparison within a single CBSA, allowing the categories to adapt to the actual distribution of minority populations in that area.</p>
+
+                <p><strong>Quartile Calculation:</strong></p>
+                <ul>
+                    <li>All unique census tracts in the analysis area are identified</li>
+                    <li>Quartile thresholds (25th, 50th, 75th percentiles) are calculated from the distribution</li>
+                    <li>Each tract is classified into a quartile based on its minority percentage relative to the distribution</li>
+                    <li>High Minority: 75th-100th percentile (varies by area)</li>
+                    <li>Middle Minority: 50th-75th percentile (varies by area)</li>
+                    <li>Moderate Minority: 25th-50th percentile (varies by area)</li>
+                    <li>Low Minority: 0-25th percentile (varies by area)</li>
+                </ul>
+
+                <h4>Percentage Calculations</h4>
+                <p><strong>Loan Percentages:</strong> Calculated as (metric count / total originations) × 100 for each year and category</p>
+
+                <p><strong>Population Share:</strong> Percentage of total population in each demographic or income category, based on Census data. Used to compare loan distribution to population distribution.</p>
+
+                <p><strong>Change Over Time:</strong> Percentage point change from first year to last year in the selected time period</p>
+
+                <h4>Market Concentration (HHI)</h4>
+                <p><strong>HHI (Herfindahl-Hirschman Index):</strong> Measure of market concentration. Range: 0-10,000. Higher values indicate more concentration (fewer lenders dominate the market).</p>
+
+                <p><strong>HHI Calculation:</strong> Sum of squared market shares (as percentages) of all lenders. HHI = Σ(market share²) × 10,000, where market share = (lender loans / total loans) × 100</p>
+
+                <p><strong>HHI Interpretation:</strong></p>
+                <ul>
+                    <li>HHI < 1,500: Competitive market</li>
+                    <li>HHI 1,500-2,500: Moderately concentrated market</li>
+                    <li>HHI > 2,500: Highly concentrated market</li>
+                </ul>
+
+                <h4>Top Lenders Selection</h4>
+                <p><strong>Selection Method:</strong> Top 10 lenders by loan volume in the most recent year of the analysis</p>
+
+                <p><strong>Recalculation by Loan Purpose:</strong> Top lenders are recalculated separately for each loan purpose (All Loans, Home Purchase, Refinance, Home Equity), so different lenders may appear in each tab</p>
+
+                <p><strong>Section 3 Display:</strong> Section 3 tables show lender-level data with lenders as rows and metrics as columns. Only the top 10 lenders are shown by default, but the table can be expanded to show all lenders</p>
+
+                <h3>Data Aggregation</h3>
+                <p><strong>Section 2 Tables:</strong> Aggregate data across all lenders for the selected geographic area. Years are shown as columns, with metrics as rows.</p>
+
+                <p><strong>Section 3 Tables:</strong> Lender-level data showing top lenders with metrics as columns. Data is aggregated at the census tract and loan purpose level.</p>
+
+                <p><strong>Year Filtering:</strong> Section 2 tables show the most recent 5 years of data. Section 1 (Population Demographics) shows all selected years.</p>
+
+                <p><strong>Loan Purpose Filtering:</strong> Section 2 and Section 3 tables are available for All Loans, Home Purchase, Refinance, and Home Equity separately</p>
+
+                <p><strong>Race/Ethnicity Filtering:</strong> Race/ethnicity categories are shown only if they represent ≥1% of total loans in any year (Section 2) or ≥1% of total loans across all lenders (Section 3)</p>
+
+                <h3>HMDA Filters Applied</h3>
+                <p><strong>Action Taken:</strong> The report can analyze either Originations (action taken = 1) or Applications (action taken = 1, 2, 3, 4, 5) based on user selection</p>
+
+                <p><strong>Occupancy:</strong> Can be filtered to Owner-occupied, Second residence, or Investment properties</p>
+
+                <p><strong>Total Units:</strong> Can be filtered to 1-4 units or 5+ units</p>
+
+                <p><strong>Construction:</strong> Can be filtered to Site-built or Manufactured homes</p>
+
+                <p><strong>Loan Type:</strong> Can be filtered to Conventional, FHA, VA, USDA, or combinations thereof</p>
+
+                <p><strong>Reverse Mortgages:</strong> Excluded by default, but can be included if selected</p>
+
+                <h3>Notes</h3>
+                <ul>
+                    <li>All dollar amounts are rounded to the nearest dollar for display purposes</li>
+                    <li>Percentages are rounded to one decimal place, except interest rates which are shown to two decimal places</li>
+                    <li>Population Share calculations use Census data to compare loan distribution to population distribution, helping identify potential disparities</li>
+                    <li>Quartile thresholds for minority census tracts vary by analysis area and are calculated dynamically from the actual distribution in the selected geography</li>
+                    <li>Top lenders in Section 3 may differ across loan purpose tabs because lenders are ranked separately for each purpose</li>
+                </ul>
             </div>
             
         </main>

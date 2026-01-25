@@ -767,7 +767,7 @@ def run_area_analysis(
         
         if progress_tracker:
             progress_tracker.complete(success=True)
-        
+
         return {
             'success': True,
             'report_data': report_data,

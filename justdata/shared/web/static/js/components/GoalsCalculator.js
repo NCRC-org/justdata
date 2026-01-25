@@ -57,6 +57,7 @@
         this.sbData = options.sbData || {};
         this.bankName = options.bankName || 'Combined Entity';
         this.bankInfo = options.bankInfo || {};
+        this.singleBankMode = options.singleBankMode || false;
         this.onExport = options.onExport || null;
         this.onSave = options.onSave || null;
 
@@ -171,60 +172,89 @@
     GoalsCalculator.prototype._renderBankInfo = function() {
         var bankA = this.bankInfo.acquirer || {};
         var bankB = this.bankInfo.target || {};
+        var isSingleBank = this.singleBankMode;
 
         var html = '<div style="background: white; border-bottom: 1px solid #e0e0e0;">';
         html += '<div style="max-width: 1200px; margin: 0 auto; padding: 14px 20px;">';
 
-        // Combined Entity Banner
+        // Banner - different messaging for single bank vs merger
         html += '<div style="background: linear-gradient(135deg, #e3f2fd 0%, #fff3e0 100%); border: 1px solid #90caf9; border-radius: 6px; padding: 12px 16px; margin-bottom: 14px;">';
         html += '<div style="display: flex; align-items: center; gap: 10px;">';
         html += '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#034ea0" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>';
         html += '<div>';
-        html += '<div style="font-size: 13px; font-weight: 600; color: #034ea0;">Combined Entity CBA Goals</div>';
-        html += '<div style="font-size: 12px; color: #555;">These goals reflect the <strong>combined lending commitments</strong> for the merged institution, calculated from the historical lending of <strong>both banks</strong> over the baseline data period.</div>';
+        if (isSingleBank) {
+            html += '<div style="font-size: 13px; font-weight: 600; color: #034ea0;">CBA Goals Calculator</div>';
+            html += '<div style="font-size: 12px; color: #555;">These goals reflect <strong>lending commitments</strong> for the institution, calculated from historical lending over the baseline data period.</div>';
+        } else {
+            html += '<div style="font-size: 13px; font-weight: 600; color: #034ea0;">Combined Entity CBA Goals</div>';
+            html += '<div style="font-size: 12px; color: #555;">These goals reflect the <strong>combined lending commitments</strong> for the merged institution, calculated from the historical lending of <strong>both banks</strong> over the baseline data period.</div>';
+        }
         html += '</div></div></div>';
 
-        // Bank info grid
-        html += '<div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: start;">';
+        // Bank info - single column for single bank, grid for merger
+        if (isSingleBank) {
+            // Single bank layout - centered
+            html += '<div style="max-width: 400px; margin: 0 auto;">';
+            html += '<div style="background: #f8f9fa; border-radius: 6px; padding: 12px;">';
+            html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px;">Subject Bank</div>';
+            html += '<div style="font-size: 15px; font-weight: 600; color: #034ea0; margin-bottom: 6px;">' + this._escapeHtml(bankA.name || 'N/A') + '</div>';
+            html += '<div style="font-size: 12px; color: #555; line-height: 1.6;">';
+            if (bankA.city || bankA.state) {
+                html += '<div>';
+                if (bankA.city) html += this._escapeHtml(bankA.city);
+                if (bankA.state) html += (bankA.city ? ', ' : '') + this._escapeHtml(bankA.state);
+                html += '</div>';
+            }
+            if (bankA.totalAssets) html += '<div>Assets: ' + formatAssets(bankA.totalAssets) + '</div>';
+            if (bankA.lei) html += '<div style="font-size: 11px; color: #777;">LEI: ' + this._escapeHtml(bankA.lei) + '</div>';
+            if (bankA.rssd) html += '<div style="font-size: 11px; color: #777;">RSSD: ' + this._escapeHtml(bankA.rssd) + '</div>';
+            if (bankA.respondentId) html += '<div style="font-size: 11px; color: #777;">Respondent ID: ' + this._escapeHtml(bankA.respondentId) + '</div>';
+            html += '</div></div></div>';
+        } else {
+            // Merger layout - two banks with plus symbol
+            html += '<div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 24px; align-items: start;">';
 
-        // Acquirer
-        html += '<div style="background: #f8f9fa; border-radius: 6px; padding: 12px;">';
-        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px;">Acquiring Bank</div>';
-        html += '<div style="font-size: 15px; font-weight: 600; color: #034ea0; margin-bottom: 6px;">' + this._escapeHtml(bankA.name || 'N/A') + '</div>';
-        html += '<div style="font-size: 12px; color: #555; line-height: 1.6;">';
-        if (bankA.city || bankA.state) {
-            html += '<div>';
-            if (bankA.city) html += this._escapeHtml(bankA.city);
-            if (bankA.state) html += (bankA.city ? ', ' : '') + this._escapeHtml(bankA.state);
+            // Acquirer
+            html += '<div style="background: #f8f9fa; border-radius: 6px; padding: 12px;">';
+            html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px;">Acquiring Bank</div>';
+            html += '<div style="font-size: 15px; font-weight: 600; color: #034ea0; margin-bottom: 6px;">' + this._escapeHtml(bankA.name || 'N/A') + '</div>';
+            html += '<div style="font-size: 12px; color: #555; line-height: 1.6;">';
+            if (bankA.city || bankA.state) {
+                html += '<div>';
+                if (bankA.city) html += this._escapeHtml(bankA.city);
+                if (bankA.state) html += (bankA.city ? ', ' : '') + this._escapeHtml(bankA.state);
+                html += '</div>';
+            }
+            if (bankA.totalAssets) html += '<div>Assets: ' + formatAssets(bankA.totalAssets) + '</div>';
+            if (bankA.lei) html += '<div style="font-size: 11px; color: #777;">LEI: ' + this._escapeHtml(bankA.lei) + '</div>';
+            if (bankA.rssd) html += '<div style="font-size: 11px; color: #777;">RSSD: ' + this._escapeHtml(bankA.rssd) + '</div>';
+            if (bankA.respondentId) html += '<div style="font-size: 11px; color: #777;">Respondent ID: ' + this._escapeHtml(bankA.respondentId) + '</div>';
+            html += '</div></div>';
+
+            // Plus symbol
+            html += '<div style="font-size: 28px; color: #034ea0; font-weight: 300; padding-top: 30px;">+</div>';
+
+            // Target
+            html += '<div style="background: #f8f9fa; border-radius: 6px; padding: 12px;">';
+            html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px;">Target Bank</div>';
+            html += '<div style="font-size: 15px; font-weight: 600; color: #034ea0; margin-bottom: 6px;">' + this._escapeHtml(bankB.name || 'N/A') + '</div>';
+            html += '<div style="font-size: 12px; color: #555; line-height: 1.6;">';
+            if (bankB.city || bankB.state) {
+                html += '<div>';
+                if (bankB.city) html += this._escapeHtml(bankB.city);
+                if (bankB.state) html += (bankB.city ? ', ' : '') + this._escapeHtml(bankB.state);
+                html += '</div>';
+            }
+            if (bankB.totalAssets) html += '<div>Assets: ' + formatAssets(bankB.totalAssets) + '</div>';
+            if (bankB.lei) html += '<div style="font-size: 11px; color: #777;">LEI: ' + this._escapeHtml(bankB.lei) + '</div>';
+            if (bankB.rssd) html += '<div style="font-size: 11px; color: #777;">RSSD: ' + this._escapeHtml(bankB.rssd) + '</div>';
+            if (bankB.respondentId) html += '<div style="font-size: 11px; color: #777;">Respondent ID: ' + this._escapeHtml(bankB.respondentId) + '</div>';
+            html += '</div></div>';
+
             html += '</div>';
         }
-        if (bankA.totalAssets) html += '<div>Assets: ' + formatAssets(bankA.totalAssets) + '</div>';
-        if (bankA.lei) html += '<div style="font-size: 11px; color: #777;">LEI: ' + this._escapeHtml(bankA.lei) + '</div>';
-        if (bankA.rssd) html += '<div style="font-size: 11px; color: #777;">RSSD: ' + this._escapeHtml(bankA.rssd) + '</div>';
-        if (bankA.respondentId) html += '<div style="font-size: 11px; color: #777;">Respondent ID: ' + this._escapeHtml(bankA.respondentId) + '</div>';
+
         html += '</div></div>';
-
-        // Plus symbol
-        html += '<div style="font-size: 28px; color: #034ea0; font-weight: 300; padding-top: 30px;">+</div>';
-
-        // Target
-        html += '<div style="background: #f8f9fa; border-radius: 6px; padding: 12px;">';
-        html += '<div style="font-size: 10px; text-transform: uppercase; color: #888; margin-bottom: 4px;">Target Bank</div>';
-        html += '<div style="font-size: 15px; font-weight: 600; color: #034ea0; margin-bottom: 6px;">' + this._escapeHtml(bankB.name || 'N/A') + '</div>';
-        html += '<div style="font-size: 12px; color: #555; line-height: 1.6;">';
-        if (bankB.city || bankB.state) {
-            html += '<div>';
-            if (bankB.city) html += this._escapeHtml(bankB.city);
-            if (bankB.state) html += (bankB.city ? ', ' : '') + this._escapeHtml(bankB.state);
-            html += '</div>';
-        }
-        if (bankB.totalAssets) html += '<div>Assets: ' + formatAssets(bankB.totalAssets) + '</div>';
-        if (bankB.lei) html += '<div style="font-size: 11px; color: #777;">LEI: ' + this._escapeHtml(bankB.lei) + '</div>';
-        if (bankB.rssd) html += '<div style="font-size: 11px; color: #777;">RSSD: ' + this._escapeHtml(bankB.rssd) + '</div>';
-        if (bankB.respondentId) html += '<div style="font-size: 11px; color: #777;">Respondent ID: ' + this._escapeHtml(bankB.respondentId) + '</div>';
-        html += '</div></div>';
-
-        html += '</div></div></div>';
         return html;
     };
 
@@ -264,10 +294,15 @@
 
         html += '</div>';
 
-        // Info text
+        // Info text - different for single bank vs merger
         html += '<div style="margin-top: 12px; font-size: 12px; color: #666;">';
-        html += 'Baseline data reflects <strong>combined lending from both institutions</strong> over <strong>' + this.dataYears + ' year' + (this.dataYears > 1 ? 's' : '') + '</strong>. ';
-        html += 'Goals represent commitments for the <strong>merged entity</strong> over a <strong>' + this.agreementLength + '-year</strong> agreement period.';
+        if (this.singleBankMode) {
+            html += 'Baseline data reflects <strong>historical lending</strong> over <strong>' + this.dataYears + ' year' + (this.dataYears > 1 ? 's' : '') + '</strong>. ';
+            html += 'Goals represent commitments over a <strong>' + this.agreementLength + '-year</strong> agreement period.';
+        } else {
+            html += 'Baseline data reflects <strong>combined lending from both institutions</strong> over <strong>' + this.dataYears + ' year' + (this.dataYears > 1 ? 's' : '') + '</strong>. ';
+            html += 'Goals represent commitments for the <strong>merged entity</strong> over a <strong>' + this.agreementLength + '-year</strong> agreement period.';
+        }
         html += '</div>';
 
         html += '</div>';
@@ -296,10 +331,10 @@
             tabs.push({ id: r.toLowerCase().replace(/ /g, '-'), label: r });
         });
 
-        var html = '<div style="display: flex; gap: 2px; border-bottom: 2px solid #ddd; margin-bottom: 20px;">';
+        var html = '<div class="gc-tabs-container" style="display: flex; gap: 2px; border-bottom: 2px solid #ddd; margin-bottom: 20px; overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: thin;">';
         tabs.forEach(function(tab) {
             var isActive = tab.id === self.activeTab;
-            html += '<button class="gc-tab" data-tab="' + tab.id + '" style="padding: 10px 16px; background: ' + (isActive ? 'white' : '#f0f0f0') + '; border: ' + (isActive ? '1px solid #ddd' : 'none') + '; border-bottom: ' + (isActive ? '2px solid white' : 'none') + '; border-radius: 4px 4px 0 0; margin-bottom: ' + (isActive ? '-2px' : '0') + '; color: ' + (isActive ? '#034ea0' : '#666') + '; font-weight: ' + (isActive ? '600' : '400') + '; font-size: 13px; cursor: pointer;">' + self._escapeHtml(tab.label) + '</button>';
+            html += '<button class="gc-tab" data-tab="' + tab.id + '" style="padding: 10px 16px; background: ' + (isActive ? 'white' : '#f0f0f0') + '; border: ' + (isActive ? '1px solid #ddd' : 'none') + '; border-bottom: ' + (isActive ? '2px solid white' : 'none') + '; border-radius: 4px 4px 0 0; margin-bottom: ' + (isActive ? '-2px' : '0') + '; color: ' + (isActive ? '#034ea0' : '#666') + '; font-weight: ' + (isActive ? '600' : '400') + '; font-size: 13px; cursor: pointer; flex-shrink: 0; white-space: nowrap;">' + self._escapeHtml(tab.label) + '</button>';
         });
         html += '</div>';
         return html;
@@ -347,9 +382,13 @@
 
         var html = '';
 
-        // Combined entity context
+        // Context banner - different messaging for single bank vs merger
         html += '<div style="background: #f8f9fa; border-left: 4px solid #034ea0; padding: 12px 16px; margin-bottom: 20px; border-radius: 0 4px 4px 0;">';
-        html += '<div style="font-size: 13px; color: #444;"><strong>Summary of Proposed CBA Goals</strong> — These totals represent lending commitments for the combined entity, based on ' + this.dataYears + '-year historical data from both ' + this._escapeHtml((this.bankInfo.acquirer || {}).name || 'the acquiring bank') + ' and ' + this._escapeHtml((this.bankInfo.target || {}).name || 'the target bank') + '.</div>';
+        if (this.singleBankMode) {
+            html += '<div style="font-size: 13px; color: #444;"><strong>Summary of Proposed CBA Goals</strong> — These totals represent lending commitments based on ' + this.dataYears + '-year historical data from ' + this._escapeHtml((this.bankInfo.acquirer || {}).name || 'the subject bank') + '.</div>';
+        } else {
+            html += '<div style="font-size: 13px; color: #444;"><strong>Summary of Proposed CBA Goals</strong> — These totals represent lending commitments for the combined entity, based on ' + this.dataYears + '-year historical data from both ' + this._escapeHtml((this.bankInfo.acquirer || {}).name || 'the acquiring bank') + ' and ' + this._escapeHtml((this.bankInfo.target || {}).name || 'the target bank') + '.</div>';
+        }
         html += '</div>';
 
         html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">';
@@ -364,10 +403,10 @@
         html += '<div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Total Increase Over ' + this.agreementLength + ' Years</div>';
         html += '<div style="font-size: 48px; font-weight: 700; color: #034ea0; line-height: 1;">' + formatCurrency(lmibIncrease) + '</div>';
         html += '<div style="margin-top: 24px; background: #f5f7fa; border-radius: 4px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">';
-        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">NCRC Proposal</div>';
-        html += '<div style="font-size: 20px; font-weight: 700; color: #034ea0;">' + formatCurrency(lmibGoal) + '</div></div>';
         html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">Baseline (' + this.agreementLength + ' yr)</div>';
         html += '<div style="font-size: 20px; font-weight: 600; color: #666;">' + formatCurrency(lmibBaselineOverPeriod) + '</div></div>';
+        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">NCRC Proposal</div>';
+        html += '<div style="font-size: 20px; font-weight: 700; color: #034ea0;">' + formatCurrency(lmibGoal) + '</div></div>';
         html += '</div></div></div>';
 
         // SB Card - Show breakdown of LMICT vs <$1M Revenue
@@ -390,10 +429,10 @@
         html += '</div>';
 
         html += '<div style="margin-top: 16px; background: #f5f7fa; border-radius: 4px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">';
-        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">NCRC Proposal</div>';
-        html += '<div style="font-size: 20px; font-weight: 700; color: #2e7d32;">' + formatCurrency(sbGoal) + '</div></div>';
         html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">Baseline (' + this.agreementLength + ' yr)</div>';
         html += '<div style="font-size: 20px; font-weight: 600; color: #666;">' + formatCurrency(sbBaselineOverPeriod) + '</div></div>';
+        html += '<div><div style="font-size: 10px; color: #666; text-transform: uppercase;">NCRC Proposal</div>';
+        html += '<div style="font-size: 20px; font-weight: 700; color: #2e7d32;">' + formatCurrency(sbGoal) + '</div></div>';
         html += '</div></div></div>';
 
         html += '</div>';
@@ -412,9 +451,13 @@
         html += stateName === 'Grand Total' ? 'All States Combined' : this._escapeHtml(stateName);
         html += '</h3>';
 
-        // Context note
+        // Context note - different for single bank vs merger
         html += '<p style="font-size: 12px; color: #666; margin: 0 0 16px 0;">';
-        html += 'Goals for the combined entity based on ' + this.dataYears + '-year lending data from both institutions.';
+        if (this.singleBankMode) {
+            html += 'Goals based on ' + this.dataYears + '-year historical lending data.';
+        } else {
+            html += 'Goals for the combined entity based on ' + this.dataYears + '-year lending data from both institutions.';
+        }
         html += '</p>';
 
         // Sub-tabs
@@ -522,6 +565,9 @@
         var self = this;
         var data = this.sbData[stateName] || this.sbData['Grand Total'] || {};
 
+        // Total SB Loans (for display - no dollar goals, just count)
+        var totalSBLoans = data['SB Loans'] || 0;
+
         var lmictCount = data['#LMICT'] || 0;
         var lmictAvg = data['Avg SB LMICT Loan Amount'] || 0;
         var lmictTotal = lmictCount * lmictAvg;
@@ -533,6 +579,7 @@
         var grandTotal = lmictTotal + revTotal;
 
         var rows = [
+            { label: 'Total Small Business Loans', count: totalSBLoans, avg: null, total: null, isCountOnly: true },
             { label: 'Loans in LMI Census Tracts', count: lmictCount, avg: lmictAvg, total: lmictTotal },
             { label: 'Loans to Businesses <$1M Revenue', count: revCount, avg: revAvg, total: revTotal }
         ];
@@ -554,19 +601,29 @@
         // Body
         html += '<tbody>';
         rows.forEach(function(row, idx) {
-            var goal = calcGoal(row.total, self.dataYears, self.sbPercent, self.agreementLength);
-            var baseline = calcBaseline(row.total, self.dataYears, self.agreementLength);
-            var increase = goal - baseline;
             var bgColor = idx % 2 === 0 ? 'white' : '#fafafa';
 
-            html += '<tr style="background: ' + bgColor + ';">';
-            html += '<td style="padding: 12px 14px; font-weight: 500; border-bottom: 1px solid #eee;">' + row.label + '</td>';
-            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatNum(row.count) + '</td>';
-            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatFullCurrency(row.avg) + '</td>';
-            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatFullCurrency(row.total) + '</td>';
-            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee; color: #2e7d32;">' + formatFullCurrency(goal) + '</td>';
-            html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee; color: #2e7d32; font-weight: 600;">' + formatFullCurrency(increase) + '</td>';
-            html += '</tr>';
+            if (row.isCountOnly) {
+                // Total SB Loans row - just show count, no dollar calculations
+                html += '<tr style="background: ' + bgColor + '; font-weight: 600;">';
+                html += '<td style="padding: 12px 14px; font-weight: 600; border-bottom: 1px solid #eee;">' + row.label + '</td>';
+                html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee; font-weight: 600;">' + formatNum(row.count) + '</td>';
+                html += '<td style="padding: 12px 14px; text-align: center; border-bottom: 1px solid #eee; color: #999;" colspan="4">—</td>';
+                html += '</tr>';
+            } else {
+                var goal = calcGoal(row.total, self.dataYears, self.sbPercent, self.agreementLength);
+                var baseline = calcBaseline(row.total, self.dataYears, self.agreementLength);
+                var increase = goal - baseline;
+
+                html += '<tr style="background: ' + bgColor + ';">';
+                html += '<td style="padding: 12px 14px; font-weight: 500; border-bottom: 1px solid #eee;">' + row.label + '</td>';
+                html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatNum(row.count) + '</td>';
+                html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatFullCurrency(row.avg) + '</td>';
+                html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee;">' + formatFullCurrency(row.total) + '</td>';
+                html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee; color: #2e7d32;">' + formatFullCurrency(goal) + '</td>';
+                html += '<td style="padding: 12px 14px; text-align: right; border-bottom: 1px solid #eee; color: #2e7d32; font-weight: 600;">' + formatFullCurrency(increase) + '</td>';
+                html += '</tr>';
+            }
         });
 
         // Total row

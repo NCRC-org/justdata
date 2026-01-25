@@ -29,6 +29,9 @@ from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_uni
 from justdata.apps.mergermeter.config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
 from justdata.apps.mergermeter.version import __version__
 
+# GCS storage for persistent file storage across Cloud Run instances
+from justdata.shared.utils.gcs_storage import upload_json, download_json
+
 # Load unified environment configuration (primary method - works for both local and Render)
 ensure_unified_env_loaded(verbose=True)
 config = get_unified_config(verbose=True)
@@ -247,6 +250,7 @@ def analyze():
             'target_name': request.form.get('target_name', 'Bank B').strip(),
             'acquirer_assessment_areas': request.form.get('acquirer_assessment_areas', '[]'),
             'target_assessment_areas': request.form.get('target_assessment_areas', '[]'),
+            'single_bank_mode': request.form.get('single_bank_mode', '0'),
             'use_national_data': request.form.get('use_national_data', '0'),
             'loan_purpose': request.form.get('loan_purpose', ''),
             'hmda_years': request.form.get('hmda_years', '2023,2024'),
@@ -328,6 +332,19 @@ def _perform_analysis(job_id, form_data):
         use_national_data_raw = form_data.get('use_national_data', '0')
         use_national_data = use_national_data_raw == '1'
         print(f"[DEBUG] use_national_data_raw = '{use_national_data_raw}', use_national_data = {use_national_data}")
+
+        # Check if single bank mode (no Bank B)
+        single_bank_mode_raw = form_data.get('single_bank_mode', '0')
+        single_bank_mode = single_bank_mode_raw == '1'
+        print(f"[DEBUG] single_bank_mode = {single_bank_mode}")
+
+        # Clear target data if in single bank mode
+        if single_bank_mode:
+            target_lei = ''
+            target_rssd = ''
+            target_sb_id = ''
+            target_name = ''
+            target_aa_data = []
 
         update_progress(job_id, {'percent': 5, 'step': 'Parsing assessment areas and counties...', 'done': False, 'error': None})
         
@@ -1313,6 +1330,7 @@ def _perform_analysis(job_id, form_data):
             'acquirer_name': acquirer_name,
             'target_name': target_name,
             'acquirer_name_short': acquirer_name_short,
+            'single_bank_mode': single_bank_mode,
             'excel_filename': excel_file.name  # Store the actual filename for later retrieval
         }
         
@@ -1410,9 +1428,18 @@ def _perform_analysis(job_id, form_data):
         
         with open(raw_data_file, 'w') as f:
             json.dump(raw_data, f, indent=2, default=str)
-        
+
         print(f"  Saved raw data to {raw_data_file}")
-        
+
+        # Upload to GCS for persistence across Cloud Run instances
+        try:
+            upload_json(f'mergermeter/merger_metadata_{job_id}.json', metadata)
+            upload_json(f'mergermeter/merger_raw_data_{job_id}.json', raw_data)
+            print(f"[GCS] Uploaded analysis files for job {job_id}")
+        except Exception as e:
+            print(f"[GCS] Warning: Failed to upload to GCS: {e}")
+            # Continue - local files still available for same-instance access
+
         # "Doing something cool" step before completion
         update_progress(job_id, {'percent': 98, 'step': 'Doing something cool...', 'done': False, 'error': None})
         print("\nDoing something cool...")
@@ -2315,28 +2342,39 @@ def generate_ai_summary():
         if not excel_file.exists():
             return jsonify({'success': False, 'error': 'Report file not found'}), 404
         
-        # Load metadata
+        # Load metadata - try GCS first, then local file
+        import pandas as pd
         metadata = {}
         metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
-        if metadata_file.exists():
+        gcs_metadata_path = f'mergermeter/merger_metadata_{job_id}.json'
+
+        metadata = download_json(gcs_metadata_path)
+        if metadata:
+            print(f"  Loaded metadata from GCS")
+        elif metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
-        
+            print(f"  Loaded metadata from local file")
+
         # Load raw data (preferred - more reliable than reading from Excel)
-        import pandas as pd
+        # Try GCS first, then local file
         raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
+        gcs_raw_data_path = f'mergermeter/merger_raw_data_{job_id}.json'
         raw_data = {}
-        
-        if raw_data_file.exists():
+
+        raw_data = download_json(gcs_raw_data_path)
+        if raw_data:
+            print(f"  Loaded raw data from GCS")
+        elif raw_data_file.exists():
             try:
                 with open(raw_data_file, 'r') as f:
                     raw_data = json.load(f)
-                print(f"  Loaded raw data from {raw_data_file}")
+                print(f"  Loaded raw data from local file")
             except Exception as e:
                 print(f"  Warning: Could not load raw data file: {e}")
                 raw_data = {}
         else:
-            print(f"  Warning: Raw data file not found: {raw_data_file}")
+            print(f"  Warning: Raw data not found (GCS or local)")
         
         # Fallback: Read Excel data if raw data not available
         report_data = {}
@@ -2961,37 +2999,58 @@ def report_data():
                 ordered_report_data[sheet_name] = report_data[sheet_name]
                 ordered_sheet_names.append(sheet_name)
         
-        # Try to load metadata if available
+        # Try to load metadata if available - try GCS first, then local file
         metadata = {}
         metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
-        metadata = {}
-        if metadata_file.exists():
+        gcs_metadata_path = f'mergermeter/merger_metadata_{job_id}.json'
+
+        # Try GCS first (works across Cloud Run instances)
+        metadata = download_json(gcs_metadata_path)
+        if metadata:
+            print(f"[DEBUG] Loaded metadata from GCS for job {job_id}")
+        elif metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
-            print(f"[DEBUG] Loaded metadata for job {job_id}")
+            print(f"[DEBUG] Loaded metadata from local file for job {job_id}")
+        else:
+            print(f"[DEBUG] Metadata not found (GCS or local) for job {job_id}")
+            metadata = {}
+
+        if metadata:
             print(f"[DEBUG] acquirer_sb_id: '{metadata.get('acquirer_sb_id', 'NOT SET')}'")
             print(f"[DEBUG] target_sb_id: '{metadata.get('target_sb_id', 'NOT SET')}'")
         else:
-            print(f"[DEBUG] Metadata file not found: {metadata_file}")
+            print(f"[DEBUG] No metadata available for job {job_id}")
         
-        # Load HHI data if available (from Excel HHI Analysis sheet or from raw data)
+        # Load HHI data if available (from raw data or Excel HHI Analysis sheet)
         hhi_data = {}
-        # Try to load from raw data file first (most reliable)
         raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
-        if raw_data_file.exists():
+        gcs_raw_data_path = f'mergermeter/merger_raw_data_{job_id}.json'
+
+        # Try to load from GCS first, then local file
+        raw_data = download_json(gcs_raw_data_path)
+        if raw_data:
+            print(f"[HHI] Loaded raw_data from GCS for job {job_id}")
+        elif raw_data_file.exists():
             try:
                 with open(raw_data_file, 'r') as f:
                     raw_data = json.load(f)
-                    if 'hhi_data' in raw_data and raw_data['hhi_data']:
-                        hhi_df = pd.DataFrame(raw_data['hhi_data'])
-                        if not hhi_df.empty:
-                            hhi_data = {
-                                'headers': list(hhi_df.columns),
-                                'data': convert_numpy_types(hhi_df.to_dict('records'))
-                            }
-                            print(f"[HHI] Loaded HHI data from raw_data file: {len(hhi_df)} rows, {len(hhi_df.columns)} columns")
+                print(f"[HHI] Loaded raw_data from local file for job {job_id}")
             except Exception as e:
-                print(f"Error loading HHI data from raw data file: {e}")
+                print(f"Error loading raw data file: {e}")
+                raw_data = None
+
+        if raw_data and 'hhi_data' in raw_data and raw_data['hhi_data']:
+            try:
+                hhi_df = pd.DataFrame(raw_data['hhi_data'])
+                if not hhi_df.empty:
+                    hhi_data = {
+                        'headers': list(hhi_df.columns),
+                        'data': convert_numpy_types(hhi_df.to_dict('records'))
+                    }
+                    print(f"[HHI] Loaded HHI data from raw_data: {len(hhi_df)} rows, {len(hhi_df.columns)} columns")
+            except Exception as e:
+                print(f"Error processing HHI data from raw data: {e}")
                 import traceback
                 traceback.print_exc()
         
@@ -3026,33 +3085,39 @@ def report_data():
 def get_excel_filename(job_id: str) -> str:
     """
     Get the Excel filename for a given job_id.
-    Tries to get from metadata first, then constructs it if needed.
+    Tries to get from metadata first (GCS then local), then constructs it if needed.
     """
     import re
-    
-    # Try to load metadata to get the stored filename
+
+    metadata = None
     metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
-    if metadata_file.exists():
+    gcs_metadata_path = f'mergermeter/merger_metadata_{job_id}.json'
+
+    # Try GCS first (works across Cloud Run instances)
+    metadata = download_json(gcs_metadata_path)
+    if not metadata and metadata_file.exists():
+        # Fall back to local file
         try:
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
-            
-            # First try: get the stored filename
-            if 'excel_filename' in metadata:
-                return metadata['excel_filename']
-            
-            # Second try: construct from acquirer_name_short
-            if 'acquirer_name_short' in metadata:
-                acquirer_name_short = metadata['acquirer_name_short']
-                acquirer_name_safe = re.sub(r'[^\w\s-]', '', acquirer_name_short)
-                acquirer_name_safe = re.sub(r'[\s-]+', '_', acquirer_name_safe)
-                acquirer_name_safe = re.sub(r'__+', '_', acquirer_name_safe).strip('_')
-                if len(acquirer_name_safe) > 50:
-                    acquirer_name_safe = acquirer_name_safe[:50]
-                return f'merger_analysis_{acquirer_name_safe}_{job_id}.xlsx'
         except Exception as e:
-            print(f"Error loading metadata for job {job_id}: {e}")
-    
+            print(f"Error loading local metadata for job {job_id}: {e}")
+
+    if metadata:
+        # First try: get the stored filename
+        if 'excel_filename' in metadata:
+            return metadata['excel_filename']
+
+        # Second try: construct from acquirer_name_short
+        if 'acquirer_name_short' in metadata:
+            acquirer_name_short = metadata['acquirer_name_short']
+            acquirer_name_safe = re.sub(r'[^\w\s-]', '', acquirer_name_short)
+            acquirer_name_safe = re.sub(r'[\s-]+', '_', acquirer_name_safe)
+            acquirer_name_safe = re.sub(r'__+', '_', acquirer_name_safe).strip('_')
+            if len(acquirer_name_safe) > 50:
+                acquirer_name_safe = acquirer_name_safe[:50]
+            return f'merger_analysis_{acquirer_name_safe}_{job_id}.xlsx'
+
     # Fallback: old format
     return f'merger_analysis_{job_id}.xlsx'
 
@@ -3100,15 +3165,18 @@ def download():
         if not excel_file.exists():
             return jsonify({'error': 'Report file not found. The analysis may not have completed yet.'}), 404
         
-        # Try to load metadata for filename generation
+        # Try to load metadata for filename generation - try GCS first, then local
         metadata = {}
         metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
-        if metadata_file.exists():
+        gcs_metadata_path = f'mergermeter/merger_metadata_{job_id}.json'
+
+        metadata = download_json(gcs_metadata_path)
+        if not metadata and metadata_file.exists():
             with open(metadata_file, 'r') as f:
                 metadata = json.load(f)
-        
+
         # Generate filename with NCRC, MergerMeter, bank names, and timestamp
-        filename = generate_filename(metadata, '.xlsx')
+        filename = generate_filename(metadata or {}, '.xlsx')
         
         return send_file(
             str(excel_file),
@@ -3159,14 +3227,44 @@ def goals_calculator():
                              bank_name='No Analysis Found',
                              bank_info={},
                              data_years=3,
-                             error='No job ID found. Please run a merger analysis first.')
+                             error='No job ID found. Please run a merger analysis first.',
+                             version=__version__)
 
-    # Load metadata
-    metadata = {}
+    # Load metadata - try GCS first (works across Cloud Run instances), then local
+    metadata = None
+    raw_data = None
     metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
-    if metadata_file.exists():
-        with open(metadata_file, 'r') as f:
-            metadata = json.load(f)
+    raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
+
+    print(f"[Goals Calculator] Looking for job_id={job_id}")
+
+    # Try GCS first (works across container instances)
+    gcs_metadata_path = f'mergermeter/merger_metadata_{job_id}.json'
+    gcs_raw_data_path = f'mergermeter/merger_raw_data_{job_id}.json'
+
+    metadata = download_json(gcs_metadata_path)
+    if metadata:
+        print(f"[Goals Calculator] Loaded metadata from GCS: {gcs_metadata_path}")
+    else:
+        # Fall back to local file (same instance)
+        print(f"[Goals Calculator] GCS metadata not found, trying local file: {metadata_file}")
+        if metadata_file.exists():
+            with open(metadata_file, 'r') as f:
+                metadata = json.load(f)
+            print(f"[Goals Calculator] Loaded metadata from local file")
+        else:
+            print(f"[Goals Calculator] Local metadata file not found")
+
+    if not metadata:
+        # Data files not found - neither GCS nor local
+        return render_template('goals_calculator.html',
+                             mortgage_data={},
+                             sb_data={},
+                             bank_name='Analysis Data Not Found',
+                             bank_info={},
+                             data_years=3,
+                             error=f'Analysis data not found for job {job_id}. This can happen if Cloud Run served this request on a different container instance and GCS storage is unavailable. Please run a new analysis.',
+                             version=__version__)
 
     bank_name = metadata.get('acquirer_name', 'Combined Entity')
     if metadata.get('target_name'):
@@ -3194,17 +3292,26 @@ def goals_calculator():
         }
     }
 
-    # Load raw data if available
-    raw_data_file = OUTPUT_DIR / f'merger_raw_data_{job_id}.json'
+    # Load raw data if available - try GCS first, then local file
     mortgage_data = {}
     sb_data = {}
     data_years = 3  # Default
 
-    if raw_data_file.exists():
+    # Try GCS first for raw_data (gcs_raw_data_path defined above)
+    raw_data = download_json(gcs_raw_data_path)
+    if raw_data:
+        print(f"[Goals Calculator] Loaded raw_data from GCS: {gcs_raw_data_path}")
+    elif raw_data_file.exists():
+        # Fall back to local file
         try:
             with open(raw_data_file, 'r') as f:
                 raw_data = json.load(f)
+            print(f"[Goals Calculator] Loaded raw_data from local file")
+        except Exception as e:
+            print(f"[Goals Calculator] Error loading local raw_data: {e}")
 
+    if raw_data:
+        try:
             # Extract years from data if available
             years_analyzed = raw_data.get('years_analyzed', [])
             if years_analyzed:
@@ -3217,7 +3324,7 @@ def goals_calculator():
             sb_data = _extract_sb_goals_data(raw_data)
 
         except Exception as e:
-            print(f"Error loading raw data for goals calculator: {e}")
+            print(f"Error processing raw data for goals calculator: {e}")
             import traceback
             traceback.print_exc()
 
@@ -3233,12 +3340,17 @@ def goals_calculator():
                 import traceback
                 traceback.print_exc()
 
+    # Check if single bank mode
+    single_bank_mode = metadata.get('single_bank_mode', False)
+
     return render_template('goals_calculator.html',
                          mortgage_data=mortgage_data,
                          sb_data=sb_data,
                          bank_name=bank_name,
                          bank_info=bank_info,
                          data_years=data_years,
+                         single_bank_mode=single_bank_mode,
+                         version=__version__,
                          app_name='MergerMeter',
                          breadcrumb_items=[
                              {'name': 'MergerMeter', 'url': '/mergermeter'},
@@ -3274,9 +3386,17 @@ def _extract_mortgage_goals_data(raw_data):
     print(f"[Goals Calculator] HMDA acquirer records: {len(acquirer_subject)}, target records: {len(target_subject)}")
     if acquirer_subject:
         print(f"[Goals Calculator] HMDA data fields: {list(acquirer_subject[0].keys())[:20]}")
-        # Log first 3 sample records to see actual values
+        # Log first 3 sample records with TYPE information to see actual values
         for i, sample in enumerate(acquirer_subject[:3]):
-            print(f"[Goals Calculator] Sample HMDA record {i+1}: total_loans={sample.get('total_loans')}, total_amount={sample.get('total_amount')}, lmib_loans={sample.get('lmib_loans')}, lmib_amount={sample.get('lmib_amount')}")
+            lmib_val = sample.get('lmib_amount')
+            loan_cat = sample.get('loan_purpose_cat')
+            print(f"[Goals Calculator] Sample HMDA record {i+1}: loan_purpose_cat={loan_cat}, total_loans={sample.get('total_loans')}, lmib_loans={sample.get('lmib_loans')}")
+
+        # Count loan_purpose_cat distribution
+        from collections import Counter
+        all_records = acquirer_subject + target_subject
+        cat_counts = Counter(r.get('loan_purpose_cat') for r in all_records)
+        print(f"[Goals Calculator] loan_purpose_cat distribution: {dict(cat_counts)}")
 
     # CBSA to State mapping (first 2 digits of CBSA = state FIPS)
     # Common state FIPS codes
@@ -3297,25 +3417,62 @@ def _extract_mortgage_goals_data(raw_data):
     }
 
     # Helper function to get value with multiple possible field names
+    # IMPORTANT: Handles NaN values which pass `!= 0` check but break sums
+    import math
     def get_value(record, *field_names):
         for name in field_names:
             val = record.get(name)
             if val is not None and val != 0:
-                return val
+                # Check for NaN - critical because NaN != 0 is True but NaN + x = NaN
+                if isinstance(val, float) and math.isnan(val):
+                    return 0.0
+                return float(val) if isinstance(val, (int, float)) else val
         return 0
+
+    # State code to state name mapping
+    state_code_to_name = {
+        'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+        'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+        'DC': 'District of Columbia', 'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii',
+        'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
+        'KS': 'Kansas', 'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine',
+        'MD': 'Maryland', 'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota',
+        'MS': 'Mississippi', 'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska',
+        'NV': 'Nevada', 'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico',
+        'NY': 'New York', 'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio',
+        'OK': 'Oklahoma', 'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island',
+        'SC': 'South Carolina', 'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas',
+        'UT': 'Utah', 'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington',
+        'WV': 'West Virginia', 'WI': 'Wisconsin', 'WY': 'Wyoming', 'PR': 'Puerto Rico',
+        'VI': 'Virgin Islands', 'GU': 'Guam', 'AS': 'American Samoa', 'MP': 'Northern Mariana Islands',
+    }
 
     # Helper to determine state from record
     def get_state(record):
-        # Try direct state fields first
-        state = (record.get('state_name') or record.get('state') or
-                 record.get('State') or record.get('state_code'))
+        # Try state_code first (from new query format)
+        state_code = record.get('state_code')
+        if state_code:
+            # Normalize to string and pad to 2 digits
+            state_code_str = str(state_code).strip().zfill(2)
+
+            # Try numeric FIPS code first (e.g., '01', '06')
+            if state_code_str in state_fips_map:
+                return state_fips_map[state_code_str]
+
+            # Try 2-letter abbreviation (e.g., 'AL', 'CA')
+            state_code_upper = state_code_str.upper()
+            if state_code_upper in state_code_to_name:
+                return state_code_to_name[state_code_upper]
+
+        # Try direct state fields
+        state = (record.get('state_name') or record.get('state') or record.get('State'))
         if state and state != 'Unknown':
             return state
 
-        # Try to map from CBSA code (CBSA codes don't directly map to states,
-        # but we can use state_code if available in the record)
-        # For now, aggregate unknown states into Grand Total only
-        return None  # Will aggregate to Grand Total
+        return None  # Will aggregate to Grand Total only
+
+    # Track lmib_amount values for debugging
+    lmib_debug_values = []
 
     # Initialize empty metric structure
     def empty_metrics():
@@ -3340,20 +3497,33 @@ def _extract_mortgage_goals_data(raw_data):
     for record in acquirer_subject + target_subject:
         state = get_state(record)
 
-        # Determine loan purpose - check if data has loan_purpose breakdown
-        # If not, put everything in HP category (most common for CBA analysis)
-        loan_purpose = record.get('loan_purpose', record.get('purpose', ''))
-        if loan_purpose:
-            loan_purpose = str(loan_purpose).lower()
-            if 'refi' in loan_purpose or 'refinan' in loan_purpose or loan_purpose == '31':
-                purpose_key = 'refi'
-            elif 'improv' in loan_purpose or loan_purpose == '32' or loan_purpose == 'hi':
-                purpose_key = 'hi'
-            else:
-                purpose_key = 'hp'
+        # Determine loan purpose from loan_purpose_cat field (from new query format)
+        # Falls back to legacy loan_purpose field for older data
+        # Categories: hp=Home Purchase, refi=Refinance/Cash-out, hi=Home Improvement, other=Other purposes
+        loan_purpose_cat = record.get('loan_purpose_cat')
+        if loan_purpose_cat in ('hp', 'refi', 'hi'):
+            purpose_key = loan_purpose_cat
+        elif loan_purpose_cat == 'other':
+            # Skip 'other' purposes - don't include in goals (or include as 'hp' if needed)
+            continue  # Skip this record for goals calculation
         else:
-            # No loan purpose breakdown - put all in HP
-            purpose_key = 'hp'
+            # Legacy fallback - try old loan_purpose field
+            # HMDA codes: 1=HP, 2=HI, 31=Refi, 32=Cash-out Refi, 4/5=Other
+            loan_purpose = record.get('loan_purpose', record.get('purpose', ''))
+            if loan_purpose:
+                loan_purpose_str = str(loan_purpose).strip()
+                if loan_purpose_str in ('31', '32') or 'refi' in loan_purpose_str.lower():
+                    purpose_key = 'refi'
+                elif loan_purpose_str == '2' or 'improv' in loan_purpose_str.lower():
+                    purpose_key = 'hi'
+                elif loan_purpose_str == '1' or 'purchase' in loan_purpose_str.lower():
+                    purpose_key = 'hp'
+                else:
+                    # Other purposes (4, 5) - skip for goals
+                    continue
+            else:
+                # No loan purpose - default to HP
+                purpose_key = 'hp'
 
         # Get metrics from record
         total_loans = get_value(record, 'total_loans', 'Total Loans', 'loans', 'Loans', 'loan_count')
@@ -3361,6 +3531,15 @@ def _extract_mortgage_goals_data(raw_data):
         lmict_loans = get_value(record, 'lmict_loans', 'lmict_count', 'lmi_tract_loans', 'LMICT Loans')
         lmib_loans = get_value(record, 'lmib_loans', 'lmib_count', 'lmi_borrower_loans', 'LMIB Loans')
         lmib_amount = get_value(record, 'lmib_amount', 'lmi_borrower_amount', 'LMIB Amount', 'lmib_dollars')
+
+        # Debug: Track lmib_amount values (first 10 non-zero)
+        if len(lmib_debug_values) < 10 and (record.get('lmib_amount') is not None or lmib_amount > 0):
+            lmib_debug_values.append({
+                'raw': record.get('lmib_amount'),
+                'extracted': lmib_amount,
+                'lmib_loans': record.get('lmib_loans')
+            })
+
         mmct_loans = get_value(record, 'mmct_loans', 'mmct_count', 'minority_tract_loans', 'MMCT Loans')
         minb_loans = get_value(record, 'minb_loans', 'minority_borrower_loans', 'MINB Loans', 'minority_loans')
         asian_loans = get_value(record, 'asian_loans', 'asian_count', 'Asian Loans')
@@ -3420,6 +3599,12 @@ def _extract_mortgage_goals_data(raw_data):
     print(f"[Goals Calculator]   - LMIB Count: HP={grand_total['~LMIB']['hp']}, Refi={grand_total['~LMIB']['refi']}, HI={grand_total['~LMIB']['hi']} (total: {lmib_count})")
     print(f"[Goals Calculator]   - LMIB$: HP=${grand_total['LMIB$']['hp']:,.0f}, Refi=${grand_total['LMIB$']['refi']:,.0f}, HI=${grand_total['LMIB$']['hi']:,.0f} (total: ${lmib_total:,.0f})")
 
+    # Debug: Show sample lmib_amount values
+    if lmib_debug_values:
+        print(f"[Goals Calculator] LMIB$ DEBUG - Sample values (first {len(lmib_debug_values)}):")
+        for i, val in enumerate(lmib_debug_values[:5]):
+            print(f"[Goals Calculator]   Record {i+1}: raw={val['raw']}, extracted={val['extracted']}, lmib_loans={val['lmib_loans']}")
+
     return mortgage_data
 
 
@@ -3449,14 +3634,56 @@ def _extract_sb_goals_data(raw_data):
     # Debug: Log what fields are available
     if acquirer_subject:
         print(f"[Goals Calculator] SB data fields: {list(acquirer_subject[0].keys())[:20]}")
+        # Log sample state_code values
+        sample_states = [r.get('state_code') for r in acquirer_subject[:5]]
+        print(f"[Goals Calculator] SB sample state_codes: {sample_states}")
+
+    # State FIPS code to state name mapping (same as mortgage data)
+    state_fips_map = {
+        '01': 'Alabama', '02': 'Alaska', '04': 'Arizona', '05': 'Arkansas',
+        '06': 'California', '08': 'Colorado', '09': 'Connecticut', '10': 'Delaware',
+        '11': 'District of Columbia', '12': 'Florida', '13': 'Georgia', '15': 'Hawaii',
+        '16': 'Idaho', '17': 'Illinois', '18': 'Indiana', '19': 'Iowa',
+        '20': 'Kansas', '21': 'Kentucky', '22': 'Louisiana', '23': 'Maine',
+        '24': 'Maryland', '25': 'Massachusetts', '26': 'Michigan', '27': 'Minnesota',
+        '28': 'Mississippi', '29': 'Missouri', '30': 'Montana', '31': 'Nebraska',
+        '32': 'Nevada', '33': 'New Hampshire', '34': 'New Jersey', '35': 'New Mexico',
+        '36': 'New York', '37': 'North Carolina', '38': 'North Dakota', '39': 'Ohio',
+        '40': 'Oklahoma', '41': 'Oregon', '42': 'Pennsylvania', '44': 'Rhode Island',
+        '45': 'South Carolina', '46': 'South Dakota', '47': 'Tennessee', '48': 'Texas',
+        '49': 'Utah', '50': 'Vermont', '51': 'Virginia', '53': 'Washington',
+        '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming', '72': 'Puerto Rico',
+    }
 
     # Helper function to get value with multiple possible field names
+    # IMPORTANT: Handles NaN values which pass `!= 0` check but break sums
+    import math
     def get_value(record, *field_names):
         for name in field_names:
             val = record.get(name)
             if val is not None and val != 0:
-                return val
+                # Check for NaN - critical because NaN != 0 is True but NaN + x = NaN
+                if isinstance(val, float) and math.isnan(val):
+                    return 0.0
+                return float(val) if isinstance(val, (int, float)) else val
         return 0
+
+    # Helper to determine state from record (same logic as mortgage data)
+    def get_state(record):
+        # Try state_code first (from query - numeric FIPS code)
+        state_code = record.get('state_code')
+        if state_code:
+            # Normalize to string and pad to 2 digits
+            state_code_str = str(state_code).strip().zfill(2)
+            if state_code_str in state_fips_map:
+                return state_fips_map[state_code_str]
+
+        # Try direct state name fields
+        state = (record.get('state_name') or record.get('state') or record.get('State'))
+        if state and state != 'Unknown':
+            return state
+
+        return None  # Will aggregate to Grand Total only
 
     # Initialize empty metric structure
     def empty_sb_metrics():
@@ -3472,11 +3699,10 @@ def _extract_sb_goals_data(raw_data):
 
     # Process by state
     state_data = {}
+    grand_total = empty_sb_metrics()
 
     for record in acquirer_subject + target_subject:
-        # Try multiple field names for state
-        state = (record.get('state_name') or record.get('state') or
-                 record.get('State') or record.get('state_code') or 'Unknown')
+        state = get_state(record)
 
         if state not in state_data:
             state_data[state] = empty_sb_metrics()
@@ -3493,8 +3719,8 @@ def _extract_sb_goals_data(raw_data):
         state_data[state]['LMICT Total Amount'] += lmict_amount
 
         # Loans to businesses with revenue under $1M
-        rev_under_1m_loans = get_value(record, 'rev_under_1m_loans', 'small_business_loans', 'gar_under_1m_count', 'Loans Rev Under $1m')
-        rev_under_1m_amount = get_value(record, 'rev_under_1m_amount', 'small_business_amount', 'gar_under_1m_amount', 'Rev Under $1m Amount')
+        rev_under_1m_loans = get_value(record, 'loans_rev_under_1m_count', 'rev_under_1m_loans', 'small_business_loans', 'gar_under_1m_count', 'Loans Rev Under $1m')
+        rev_under_1m_amount = get_value(record, 'amount_rev_under_1m', 'rev_under_1m_amount', 'small_business_amount', 'gar_under_1m_amount', 'Rev Under $1m Amount')
 
         # If we don't have specific <$1M revenue data, use a portion of total
         if rev_under_1m_loans == 0 and total_loans > 0:
@@ -3540,12 +3766,13 @@ def _extract_sb_goals_data(raw_data):
     # Build final result with Grand Total first
     sb_data['Grand Total'] = grand_total
 
-    # Add state-level data (excluding 'Unknown')
-    for state, metrics in sorted(state_data.items()):
-        if state and state != 'Unknown':
+    # Add state-level data (excluding None and 'Unknown')
+    for state, metrics in sorted(state_data.items(), key=lambda x: (x[0] is None, x[0] or '')):
+        if state and state != 'Unknown' and state is not None:
             sb_data[state] = metrics
 
     print(f"[Goals Calculator] SB data summary: {len(sb_data)} regions, Grand Total SB Loans={grand_total['SB Loans']}")
+    print(f"[Goals Calculator] SB states found: {list(sb_data.keys())}")
 
     return sb_data
 

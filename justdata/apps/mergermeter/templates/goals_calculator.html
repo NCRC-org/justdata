@@ -11,6 +11,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 
+    <!-- Firebase SDK for Authentication -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics-compat.js"></script>
+
+    <!-- JustData Authentication -->
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
     <style>
         :root {
             --ncrc-dark-blue: #1E3D5C;
@@ -124,7 +132,7 @@
                 <a href="/contact">Contact</a>
             </div>
             <div class="footer-copyright">
-                &copy; {{ now().year if now is defined else 2026 }} National Community Reinvestment Coalition
+                MergerMeter v{{ version | default('0.9.7') }} | &copy; {{ now().year if now is defined else 2026 }} National Community Reinvestment Coalition
             </div>
         </div>
     </footer>
@@ -140,6 +148,7 @@
         var bankName = {{ bank_name | tojson | safe }};
         var bankInfo = {{ bank_info | default({}) | tojson | safe }};
         var defaultDataYears = {{ data_years | default(3) | tojson | safe }};
+        var singleBankMode = {{ single_bank_mode | default(false) | tojson | safe }};
 
         // Export handler
         function handleExport(config) {
@@ -200,6 +209,7 @@
                 bankName: bankName,
                 bankInfo: bankInfo,
                 defaultDataYears: defaultDataYears,
+                singleBankMode: singleBankMode,
                 onExport: handleExport,
                 onSave: handleSave
             });

@@ -172,21 +172,24 @@ def get_unified_config(load_env: bool = True, verbose: bool = False) -> Dict[str
         # BigQuery / GCP
         'GCP_PROJECT_ID': os.getenv('GCP_PROJECT_ID', 'hdma1-242116'),
         'GOOGLE_APPLICATION_CREDENTIALS_JSON': bq_creds_json,
-        
+
+        # Google Cloud Storage
+        'GCS_BUCKET_NAME': os.getenv('GCS_BUCKET_NAME', 'justdata-mergermeter-output'),
+
         # API Keys
         'CLAUDE_API_KEY': get_api_key('CLAUDE_API_KEY', 'ANTHROPIC_API_KEY', verbose=verbose),
         'CENSUS_API_KEY': get_api_key('CENSUS_API_KEY', verbose=verbose),
         'OPENAI_API_KEY': get_api_key('OPENAI_API_KEY', verbose=verbose),
-        
+
         # AI Provider
         'AI_PROVIDER': os.getenv('AI_PROVIDER', 'claude'),
-        
+
         # App Settings
         'DEBUG': os.getenv('DEBUG', 'False').lower() == 'true',
         'LOG_LEVEL': os.getenv('LOG_LEVEL', 'INFO'),
         'SECRET_KEY': os.getenv('SECRET_KEY', 'change-this-secret'),
         'FLASK_DEBUG': os.getenv('FLASK_DEBUG', 'false').lower() == 'true',
-        
+
         # Environment info
         'IS_LOCAL': is_local_development(),
         'IS_RENDER': not is_local_development(),
