@@ -40,19 +40,22 @@ bizsight_bp = Blueprint(
 
 @bizsight_bp.record_once
 def configure_template_loader(state):
-    """Configure Jinja2 to search both blueprint templates and shared templates.
+    """Configure Jinja2 to search blueprint templates first.
 
     IMPORTANT: Blueprint templates must come FIRST in the ChoiceLoader so that
     app-specific templates (like report_template.html) are found before shared
     templates with the same name.
+
+    NOTE: We do NOT add shared_loader here because the main app already includes
+    shared templates. Adding it again would cause shared templates to be searched
+    BEFORE other blueprint templates, leading to wrong template being rendered
+    (e.g., BranchSeeker's report_template.html instead of BizSight's).
     """
     app = state.app
     blueprint_loader = FileSystemLoader(TEMPLATES_DIR_STR)
-    shared_loader = FileSystemLoader(str(SHARED_TEMPLATES_DIR))
     app.jinja_loader = ChoiceLoader([
         blueprint_loader,  # Blueprint templates first (highest priority)
-        shared_loader,     # Shared templates second
-        app.jinja_loader   # Main app loader last (fallback)
+        app.jinja_loader   # Main app loader (already includes shared templates)
     ])
 
 
