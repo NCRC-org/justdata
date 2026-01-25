@@ -1,33 +1,26 @@
 /**
  * Population Demographics Chart Module
  * Renders grouped bar charts showing population demographics over time
+ * Layout: X-axis = time periods, bars grouped by race within each period
+ * Matches LendSight report format
  */
 
 window.PopulationDemographics = (function() {
     'use strict';
 
-    // Race/ethnicity categories configuration
-    const RACE_CATEGORIES = [
-        { key: 'white', label: 'White', color: 'rgba(54, 162, 235, 0.8)', borderColor: 'rgba(54, 162, 235, 1)' },
-        { key: 'black', label: 'Black', color: 'rgba(255, 99, 132, 0.8)', borderColor: 'rgba(255, 99, 132, 1)' },
-        { key: 'hispanic', label: 'Hispanic', color: 'rgba(255, 206, 86, 0.8)', borderColor: 'rgba(255, 206, 86, 1)' },
-        { key: 'asian', label: 'Asian', color: 'rgba(75, 192, 192, 0.8)', borderColor: 'rgba(75, 192, 192, 1)' },
-        { key: 'native_american', label: 'Native American', color: 'rgba(153, 102, 255, 0.8)', borderColor: 'rgba(153, 102, 255, 1)' },
-        { key: 'hawaiian_pi', label: 'Hawaiian/PI', color: 'rgba(255, 159, 64, 0.8)', borderColor: 'rgba(255, 159, 64, 1)' },
-        { key: 'multi_racial', label: 'Multi-Racial', color: 'rgba(199, 199, 199, 0.8)', borderColor: 'rgba(199, 199, 199, 1)' }
+    // Race/ethnicity categories configuration with colors matching LendSight
+    const RACE_GROUPS = [
+        { key: 'white_percentage', label: 'White', bg: 'rgba(65, 105, 225, 0.7)', border: 'rgb(65, 105, 225)' },
+        { key: 'black_percentage', label: 'Black', bg: 'rgba(34, 139, 34, 0.7)', border: 'rgb(34, 139, 34)' },
+        { key: 'hispanic_percentage', label: 'Hispanic', bg: 'rgba(255, 140, 0, 0.7)', border: 'rgb(255, 140, 0)' },
+        { key: 'asian_percentage', label: 'Asian', bg: 'rgba(220, 20, 60, 0.7)', border: 'rgb(220, 20, 60)' },
+        { key: 'native_american_percentage', label: 'Native Am.', bg: 'rgba(148, 103, 189, 0.7)', border: 'rgb(148, 103, 189)' },
+        { key: 'hopi_percentage', label: 'Hawaiian/PI', bg: 'rgba(23, 190, 207, 0.7)', border: 'rgb(23, 190, 207)' },
+        { key: 'multi_racial_percentage', label: 'Multi-Racial', bg: 'rgba(188, 189, 34, 0.7)', border: 'rgb(188, 189, 34)' }
     ];
-
-    // Time period labels
-    const TIME_PERIOD_LABELS = {
-        '2010': '2010 Census',
-        '2020': '2020 Census',
-        'acs': 'Current ACS'
-    };
 
     /**
      * Format number with commas for display
-     * @param {number} num - Number to format
-     * @returns {string} Formatted number string
      */
     function formatNumber(num) {
         if (num === null || num === undefined || isNaN(num)) return 'N/A';
@@ -35,103 +28,18 @@ window.PopulationDemographics = (function() {
     }
 
     /**
-     * Format percentage for display
-     * @param {number} pct - Percentage to format
-     * @returns {string} Formatted percentage string
+     * Calculate population count from percentage and total
      */
-    function formatPercentage(pct) {
-        if (pct === null || pct === undefined || isNaN(pct)) return 'N/A';
-        return pct.toFixed(1) + '%';
+    function getPopulationCount(totalPop, percentage) {
+        if (!totalPop || !percentage) return 0;
+        return Math.round((percentage / 100) * totalPop);
     }
 
     /**
-     * Get population count from percentage and total
-     * @param {number} percentage - Percentage value
-     * @param {number} totalPopulation - Total population
-     * @returns {number} Population count
-     */
-    function getPopulationCount(percentage, totalPopulation) {
-        if (percentage === null || percentage === undefined || isNaN(percentage)) return 0;
-        if (totalPopulation === null || totalPopulation === undefined || isNaN(totalPopulation)) return 0;
-        return Math.round((percentage / 100) * totalPopulation);
-    }
-
-    /**
-     * Check if a race category should be included (>= 1% in any time period)
-     * @param {string} raceKey - Race category key
-     * @param {object} timePeriods - Time periods data
-     * @returns {boolean} Whether to include the category
-     */
-    function shouldIncludeCategory(raceKey, timePeriods) {
-        const percentageKey = raceKey + '_percentage';
-        for (const period in timePeriods) {
-            if (timePeriods.hasOwnProperty(period)) {
-                const pct = timePeriods[period][percentageKey];
-                if (pct !== null && pct !== undefined && pct >= 1) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Get available time periods from data, sorted chronologically
-     * @param {object} timePeriods - Time periods data object
-     * @returns {string[]} Array of time period keys
-     */
-    function getAvailableTimePeriods(timePeriods) {
-        const periods = Object.keys(timePeriods);
-        // Sort: numeric years first (ascending), then 'acs' last
-        return periods.sort((a, b) => {
-            if (a === 'acs') return 1;
-            if (b === 'acs') return -1;
-            return parseInt(a) - parseInt(b);
-        });
-    }
-
-    /**
-     * Generate datasets for Chart.js
-     * @param {object} timePeriods - Time periods data
-     * @param {object[]} includedCategories - Categories to include
-     * @param {string[]} availablePeriods - Available time periods
-     * @returns {object[]} Chart.js datasets array
-     */
-    function generateDatasets(timePeriods, includedCategories, availablePeriods) {
-        const datasets = [];
-
-        availablePeriods.forEach((period, periodIndex) => {
-            const periodData = timePeriods[period] || {};
-            const totalPopulation = periodData.total_population || 0;
-
-            const data = includedCategories.map(cat => {
-                const pct = periodData[cat.key + '_percentage'];
-                return getPopulationCount(pct, totalPopulation);
-            });
-
-            // Calculate color opacity based on time period (older = lighter)
-            const opacityMultiplier = 0.5 + (periodIndex * 0.25);
-
-            datasets.push({
-                label: TIME_PERIOD_LABELS[period] || period,
-                data: data,
-                backgroundColor: includedCategories.map(cat => {
-                    // Adjust opacity for each time period
-                    return cat.color.replace(/[\d.]+\)$/, (opacityMultiplier) + ')');
-                }),
-                borderColor: includedCategories.map(cat => cat.borderColor),
-                borderWidth: 1,
-                // Store period info for tooltips
-                _period: period,
-                _timePeriods: timePeriods
-            });
-        });
-
-        return datasets;
-    }
-
-    /**
-     * Render population demographics chart
+     * Render population demographics chart (LendSight format)
+     * X-axis: Time periods (2010 Census, 2020 Census, ACS)
+     * Bars: Grouped by race within each time period
+     *
      * @param {string} chartId - Canvas element ID
      * @param {object} censusData - Census data object with county/area data
      * @param {object} options - Optional configuration options
@@ -139,6 +47,8 @@ window.PopulationDemographics = (function() {
      */
     function renderPopulationDemographicsChart(chartId, censusData, options) {
         options = options || {};
+
+        console.log('[PopulationDemographics] Rendering chart with data:', censusData);
 
         const canvas = document.getElementById(chartId);
         if (!canvas) {
@@ -159,104 +69,147 @@ window.PopulationDemographics = (function() {
             return null;
         }
 
-        const areaName = options.areaName || areaKeys[0];
-        const areaData = censusData[areaName];
+        const areaKey = areaKeys[0];
+        const areaData = censusData[areaKey];
 
         if (!areaData || !areaData.time_periods) {
-            console.error('PopulationDemographics: Invalid data structure for area:', areaName);
+            console.error('PopulationDemographics: Invalid data structure for area:', areaKey);
             return null;
         }
 
         const timePeriods = areaData.time_periods;
-        const availablePeriods = getAvailableTimePeriods(timePeriods);
+        console.log('[PopulationDemographics] Time periods:', Object.keys(timePeriods));
 
-        if (availablePeriods.length === 0) {
-            console.error('PopulationDemographics: No time periods found in data');
+        // Determine which race groups to show (>= 1% in any time period)
+        const visibleGroups = RACE_GROUPS.filter(group => {
+            const vals = [];
+            if (timePeriods.census2010?.demographics) vals.push(timePeriods.census2010.demographics[group.key] || 0);
+            if (timePeriods.census2020?.demographics) vals.push(timePeriods.census2020.demographics[group.key] || 0);
+            if (timePeriods.acs?.demographics) vals.push(timePeriods.acs.demographics[group.key] || 0);
+            return Math.max(...vals) >= 1;
+        });
+
+        console.log('[PopulationDemographics] Visible groups:', visibleGroups.map(g => g.label));
+
+        if (visibleGroups.length === 0) {
+            console.error('PopulationDemographics: No race groups meet the 1% threshold');
             return null;
         }
 
-        // Filter categories to only include those with >= 1% in any period
-        const includedCategories = RACE_CATEGORIES.filter(cat =>
-            shouldIncludeCategory(cat.key, timePeriods)
-        );
+        // Track max population count for dynamic Y-axis scaling
+        let maxPopCount = 0;
 
-        if (includedCategories.length === 0) {
-            console.error('PopulationDemographics: No categories meet the 1% threshold');
+        // Build vintage labels with population totals (X-axis)
+        const vintageLabels = [];
+        const vintageData = {};
+
+        if (timePeriods.census2010?.demographics) {
+            const demo = timePeriods.census2010.demographics;
+            const totalPop = demo.total_population || 0;
+            const label = `2010 Census\n(Pop: ${totalPop.toLocaleString()})`;
+            vintageLabels.push(label);
+            vintageData['2010'] = { demo, totalPop, label: '2010 Census' };
+        }
+
+        if (timePeriods.census2020?.demographics) {
+            const demo = timePeriods.census2020.demographics;
+            const totalPop = demo.total_population || 0;
+            const label = `2020 Census\n(Pop: ${totalPop.toLocaleString()})`;
+            vintageLabels.push(label);
+            vintageData['2020'] = { demo, totalPop, label: '2020 Census' };
+        }
+
+        if (timePeriods.acs?.demographics) {
+            const acsLabel = timePeriods.acs.year || 'Current ACS';
+            const demo = timePeriods.acs.demographics;
+            const totalPop = demo.total_population || 0;
+            const label = `${acsLabel}\n(Pop: ${totalPop.toLocaleString()})`;
+            vintageLabels.push(label);
+            vintageData['acs'] = { demo, totalPop, label: acsLabel };
+        }
+
+        console.log('[PopulationDemographics] Vintage labels:', vintageLabels);
+
+        if (vintageLabels.length === 0) {
+            console.error('PopulationDemographics: No time period data available');
             return null;
         }
 
-        // Generate datasets
-        const datasets = generateDatasets(timePeriods, includedCategories, availablePeriods);
+        // Build datasets - one dataset per race, with data points for each vintage
+        const datasets = [];
+        const vintageKeys = Object.keys(vintageData);
 
-        // Chart configuration
+        visibleGroups.forEach(group => {
+            const dataPoints = [];
+            const percentages = [];
+
+            vintageKeys.forEach(key => {
+                const { demo, totalPop } = vintageData[key];
+                const pct = parseFloat((demo[group.key] || 0).toFixed(1));
+                const popCount = getPopulationCount(totalPop, demo[group.key] || 0);
+                if (popCount > maxPopCount) maxPopCount = popCount;
+                dataPoints.push(popCount);  // Use raw population count as data point
+                percentages.push(pct);      // Store percentage for tooltip
+            });
+
+            datasets.push({
+                label: group.label,
+                data: dataPoints,
+                backgroundColor: group.bg,
+                borderColor: group.border,
+                borderWidth: 1,
+                percentages: percentages  // Store percentages for tooltip
+            });
+        });
+
+        // Calculate dynamic Y-axis max: 10% above highest population count, rounded to nice number
+        const yAxisMax = Math.ceil((maxPopCount * 1.10) / 10000) * 10000 || 10000;
+
+        // Get area name for title
+        const areaName = areaData.county_name || options.areaName || areaKey;
+
+        // Chart configuration (matches LendSight format)
         const chartConfig = {
             type: 'bar',
             data: {
-                labels: includedCategories.map(cat => cat.label),
+                labels: vintageLabels,
                 datasets: datasets
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: options.maintainAspectRatio !== false,
                 plugins: {
-                    title: {
-                        display: !!options.title,
-                        text: options.title || 'Population Demographics Over Time',
-                        font: {
-                            size: options.titleFontSize || 16,
-                            weight: 'bold'
-                        }
-                    },
                     legend: {
                         display: true,
                         position: options.legendPosition || 'top'
                     },
+                    title: {
+                        display: !!options.showTitle,
+                        text: options.title || `Population Demographics Over Time: ${areaName}`,
+                        font: { size: 16, weight: 'bold' }
+                    },
                     tooltip: {
                         callbacks: {
                             label: function(context) {
-                                const datasetLabel = context.dataset.label || '';
-                                const value = context.parsed.y;
-                                const period = context.dataset._period;
-                                const periodData = timePeriods[period] || {};
-                                const totalPop = periodData.total_population || 0;
-
-                                // Calculate percentage
-                                const percentage = totalPop > 0 ? (value / totalPop) * 100 : 0;
-
-                                return datasetLabel + ': ' + formatNumber(value) + ' (' + formatPercentage(percentage) + ')';
-                            },
-                            afterBody: function(tooltipItems) {
-                                if (tooltipItems.length === 0) return '';
-
-                                const item = tooltipItems[0];
-                                const period = item.dataset._period;
-                                const periodData = timePeriods[period] || {};
-                                const totalPop = periodData.total_population;
-
-                                if (totalPop) {
-                                    return '\nTotal Population: ' + formatNumber(totalPop);
-                                }
-                                return '';
+                                const dataset = context.dataset;
+                                const count = context.raw;  // Raw data is population count
+                                const percentage = dataset.percentages ? dataset.percentages[context.dataIndex] : 0;
+                                return `${dataset.label}: ${count.toLocaleString()} persons (${percentage}%)`;
                             }
                         }
                     }
                 },
                 scales: {
-                    x: {
-                        title: {
-                            display: true,
-                            text: options.xAxisLabel || 'Race/Ethnicity'
-                        }
-                    },
                     y: {
                         beginAtZero: true,
+                        max: yAxisMax,
                         title: {
                             display: true,
                             text: options.yAxisLabel || 'Population'
                         },
                         ticks: {
                             callback: function(value) {
-                                return formatNumber(value);
+                                return value.toLocaleString();
                             }
                         }
                     }
@@ -271,6 +224,7 @@ window.PopulationDemographics = (function() {
 
         // Create and return the chart
         try {
+            console.log('[PopulationDemographics] Creating chart with', datasets.length, 'datasets');
             return new Chart(ctx, chartConfig);
         } catch (error) {
             console.error('PopulationDemographics: Error creating chart:', error);
@@ -281,9 +235,10 @@ window.PopulationDemographics = (function() {
     /**
      * Generate source caption for census data
      * @param {object} censusData - Census data object
+     * @param {string} areaName - Optional area name to include
      * @returns {string} Source caption string
      */
-    function generateSourceCaption(censusData) {
+    function generateSourceCaption(censusData, areaName) {
         if (!censusData) return '';
 
         const areaKeys = Object.keys(censusData);
@@ -293,39 +248,24 @@ window.PopulationDemographics = (function() {
         if (!areaData || !areaData.time_periods) return '';
 
         const timePeriods = areaData.time_periods;
-        const availablePeriods = getAvailableTimePeriods(timePeriods);
-
         const sources = [];
 
-        availablePeriods.forEach(period => {
-            if (period === '2010') {
-                sources.push('2010 Decennial Census');
-            } else if (period === '2020') {
-                sources.push('2020 Decennial Census');
-            } else if (period === 'acs') {
-                // Try to get the ACS year from the data
-                const acsData = timePeriods[period];
-                const acsYear = acsData && acsData.year ? acsData.year : 'Current';
-                sources.push(acsYear + ' American Community Survey 5-Year Estimates');
-            } else if (/^\d{4}$/.test(period)) {
-                sources.push(period + ' Census/ACS Data');
-            }
-        });
+        if (timePeriods.census2010) sources.push('2010 Decennial Census');
+        if (timePeriods.census2020) sources.push('2020 Decennial Census');
+        if (timePeriods.acs) sources.push('American Community Survey');
 
         if (sources.length === 0) return '';
 
-        return 'Sources: ' + sources.join('; ') + '. U.S. Census Bureau.';
+        const area = areaName || areaData.county_name || areaKeys[0];
+        return `<strong>Source:</strong> U.S. Census Bureau - ${sources.join(', ')}. Population figures represent ${area}.`;
     }
 
     // Public API
     return {
         renderPopulationDemographicsChart: renderPopulationDemographicsChart,
         generateSourceCaption: generateSourceCaption,
-        // Expose utilities for testing/extension
         formatNumber: formatNumber,
-        formatPercentage: formatPercentage,
-        RACE_CATEGORIES: RACE_CATEGORIES,
-        TIME_PERIOD_LABELS: TIME_PERIOD_LABELS
+        RACE_GROUPS: RACE_GROUPS
     };
 
 })();

@@ -19,7 +19,7 @@
     <!-- Excel Export Library -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <!-- Shared Population Demographics Module -->
-    <script src="/shared/population_demographics.js"></script>
+    <script src="/shared/population_demographics.js?v=20260125a"></script>
     
     <style>
         :root {
@@ -356,9 +356,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 1: Population Demographics (Adult Population 18+)</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('populationDemographicsCard', 'Table 1: Population Demographics')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="populationDemographicsCard">
                         <div style="position: relative; height: 400px; margin-bottom: 1rem;">
@@ -374,9 +371,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 2: Loans by Loan Purpose Over Time</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('loanPurposeCard', 'Table 2: Loans by Loan Purpose Over Time')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="loanPurposeCard">
                         <div style="position: relative; height: 400px; margin-bottom: 1rem;">
@@ -392,9 +386,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 3: Loan Amounts by Loan Purpose Over Time</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('loanAmountPurposeCard', 'Table 3: Loan Amounts by Loan Purpose Over Time')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="loanAmountPurposeCard">
                         <div style="position: relative; height: 400px; margin-bottom: 1rem;">
@@ -410,9 +401,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 4: Housing Costs and Burden</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('housingCostsCard', 'Table 4: Housing Costs and Burden')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="housingCostsCard">
                         <div class="table-container">
@@ -441,9 +429,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 5: Owner Occupancy Rates</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('ownerOccupancyCard', 'Table 5: Owner Occupancy Rates')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="ownerOccupancyCard">
                         <div class="table-container">
@@ -472,9 +457,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 6: Housing Units</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('housingUnitsCard', 'Table 6: Housing Units')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="housingUnitsCard">
                         <div class="table-container">
@@ -507,9 +489,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 1: Loans by Race and Ethnicity</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section2RaceEthnicityCard', 'Table 1: Loans by Race and Ethnicity')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section2RaceEthnicityCard">
                         <div class="loan-purpose-tabs">
@@ -539,9 +518,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 2: Loans by Borrower Income</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section2BorrowerIncomeCard', 'Table 2: Loans by Borrower Income')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section2BorrowerIncomeCard">
                         <div class="loan-purpose-tabs">
@@ -571,9 +547,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 3: Loans by Neighborhood Income</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section2NeighborhoodIncomeCard', 'Table 3: Loans by Neighborhood Income')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section2NeighborhoodIncomeCard">
                         <div class="loan-purpose-tabs">
@@ -603,9 +576,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 4: Loans by Neighborhood Demographics</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section2NeighborhoodDemographicsCard', 'Table 4: Loans by Neighborhood Demographics')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section2NeighborhoodDemographicsCard">
                         <div class="loan-purpose-tabs">
@@ -635,9 +605,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 5: Loan Costs</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section2LoanCostsCard', 'Table 5: Loan Costs')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section2LoanCostsCard">
                         <div class="loan-purpose-tabs">
@@ -687,9 +654,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 1: Loans by Race and Ethnicity by Lender</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section3RaceEthnicityCard', 'Table 1: Loans by Race and Ethnicity by Lender')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section3RaceEthnicityCard">
                         <div class="loan-purpose-tabs">
@@ -720,9 +684,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 2: Loans by Borrower Income by Lender</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section3BorrowerIncomeCard', 'Table 2: Loans by Borrower Income by Lender')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section3BorrowerIncomeCard">
                         <div class="loan-purpose-tabs">
@@ -753,9 +714,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 3: Loans by Neighborhood Income by Lender</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section3NeighborhoodIncomeCard', 'Table 3: Loans by Neighborhood Income by Lender')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section3NeighborhoodIncomeCard">
                         <div class="loan-purpose-tabs">
@@ -786,9 +744,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 4: Loans by Neighborhood Demographics by Lender</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section3NeighborhoodDemographicsCard', 'Table 4: Loans by Neighborhood Demographics by Lender')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section3NeighborhoodDemographicsCard">
                         <div class="loan-purpose-tabs">
@@ -819,9 +774,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 5: Loan Costs by Lender</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('section3LoanCostsCard', 'Table 5: Loan Costs by Lender')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="section3LoanCostsCard">
                         <div style="margin-bottom: 15px;">
@@ -864,9 +816,6 @@
                 <div class="table-card">
                     <div class="table-card-header">
                         <h4>Table 1: HHI Market Concentration</h4>
-                        <button class="export-btn" onclick="exportTableToPDF('hhiCard', 'Table 1: HHI Market Concentration')">
-                            <i class="fas fa-file-pdf"></i> Export PDF
-                        </button>
                     </div>
                     <div class="table-card-body" id="hhiCard">
                         <div style="position: relative; height: 400px;">
@@ -4066,11 +4015,33 @@
                 
                 // Initialize population demographics chart
                 // Use historical_census_data if available, otherwise fall back to census_data
-                const censusDataForChart = (historicalCensusData && Object.keys(historicalCensusData).length > 0) 
-                    ? historicalCensusData 
+                const censusDataForChart = (historicalCensusData && Object.keys(historicalCensusData).length > 0)
+                    ? historicalCensusData
                     : (censusData && Object.keys(censusData).length > 0 ? censusData : null);
-                
+
+                // DEBUG: Log what census data we have
+                console.log('[Area Report DEBUG] historicalCensusData:', historicalCensusData);
+                console.log('[Area Report DEBUG] historicalCensusData keys:', historicalCensusData ? Object.keys(historicalCensusData) : 'null');
+                console.log('[Area Report DEBUG] censusData:', censusData);
+                console.log('[Area Report DEBUG] censusData keys:', censusData ? Object.keys(censusData) : 'null');
+                console.log('[Area Report DEBUG] censusDataForChart:', censusDataForChart);
+
                 if (censusDataForChart) {
+                    // DEBUG: Log the structure of the first area
+                    const firstKey = Object.keys(censusDataForChart)[0];
+                    const firstArea = censusDataForChart[firstKey];
+                    console.log('[Area Report DEBUG] First area key:', firstKey);
+                    console.log('[Area Report DEBUG] First area data:', firstArea);
+                    if (firstArea && firstArea.time_periods) {
+                        console.log('[Area Report DEBUG] time_periods keys:', Object.keys(firstArea.time_periods));
+                        for (const [period, periodData] of Object.entries(firstArea.time_periods)) {
+                            console.log(`[Area Report DEBUG] ${period}:`, periodData);
+                            if (periodData.demographics) {
+                                console.log(`[Area Report DEBUG] ${period} demographics:`, periodData.demographics);
+                            }
+                        }
+                    }
+
                     console.log('[Area Report] Initializing population demographics chart');
                     if (typeof window.PopulationDemographics !== 'undefined') {
                         window.PopulationDemographics.renderPopulationDemographicsChart(
