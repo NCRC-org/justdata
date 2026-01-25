@@ -770,23 +770,33 @@ def run_area_analysis(
 
         # If census_data is empty but historical_census_data has ACS data, extract current census from it
         # This ensures Section 2 tables have the current demographic data they need
+        logger.info(f"[Census Debug] Before fallback: census_data={bool(census_data)}, len={len(census_data) if census_data else 0}, historical={bool(historical_census_data)}")
         if (not census_data or len(census_data) == 0) and historical_census_data:
             logger.info("[Census Fallback] census_data empty, extracting current demographics from historical_census_data ACS")
             census_data = {}
             for geoid, county_data in historical_census_data.items():
+                logger.info(f"[Census Fallback] Processing geoid {geoid}, has time_periods: {'time_periods' in county_data}")
                 if 'time_periods' in county_data and 'acs' in county_data['time_periods']:
                     acs_data = county_data['time_periods']['acs']
+                    demographics = acs_data.get('demographics', {})
+                    # Note: The key is 'total_population' not 'total_persons' in the demographics dict
+                    adult_pop = demographics.get('total_population', 0)
+                    logger.info(f"[Census Fallback] geoid {geoid}: ACS demographics keys={list(demographics.keys())}, total_population={adult_pop}")
                     census_data[geoid] = {
                         'county_fips': county_data.get('county_fips'),
                         'county_name': county_data.get('county_name'),
                         'state_fips': county_data.get('state_fips'),
-                        'demographics': acs_data.get('demographics', {}),
-                        'adult_population': acs_data.get('demographics', {}).get('total_persons', 0),
+                        'demographics': demographics,
+                        'adult_population': adult_pop,
                         'data_year': acs_data.get('data_year', ''),
                         'data_source': 'Extracted from historical_census_data ACS'
                     }
+                else:
+                    logger.warning(f"[Census Fallback] geoid {geoid} missing time_periods or acs data")
             if census_data:
                 logger.info(f"[Census Fallback] Extracted census_data for {len(census_data)} counties from historical ACS")
+            else:
+                logger.warning("[Census Fallback] Failed to extract any census_data from historical data")
 
         return {
             'success': True,

@@ -1325,19 +1325,30 @@ def build_area_report(
     
     # Get HUD data for benchmark figures (check cache first)
     from justdata.apps.dataexplorer.cache_utils import load_hud_data, save_hud_data
-    
+
+    logger.info(f"[HUD Debug] Loading HUD data for geoids: {geoids}")
     hud_data = load_hud_data(geoids)
-    
+
     if hud_data is None:
         # Cache miss - fetch from HUD processor
         try:
             # get_hud_data_for_counties expects a list of GEOID5 strings
+            logger.info(f"[HUD Debug] Cache miss, fetching from HUD processor")
             hud_data = get_hud_data_for_counties(geoids)
+            if hud_data:
+                logger.info(f"[HUD Debug] HUD data loaded for {len(hud_data)} counties")
+                # Log sample data for first county
+                if hud_data:
+                    sample_geoid = list(hud_data.keys())[0]
+                    sample_data = hud_data[sample_geoid]
+                    logger.info(f"[HUD Debug] Sample HUD data for {sample_geoid}: low_mod_pct={sample_data.get('low_mod_income_pct', 'N/A')}, total_persons={sample_data.get('total_persons', 'N/A')}")
             save_hud_data(geoids, hud_data)
             logger.info("Cached HUD data")
         except Exception as e:
-            logger.warning(f"Error fetching HUD data: {e}")
+            logger.error(f"[HUD Debug] Error fetching HUD data: {e}", exc_info=True)
             hud_data = {}
+    else:
+        logger.info(f"[HUD Debug] Loaded HUD data from cache for {len(hud_data)} counties")
     
     # Section 2: Most recent 5 years - aggregate tables
     # Get most recent 5 years (already filtered in years list)

@@ -25,7 +25,7 @@ _hud_cache: Optional[Dict[str, Dict[str, float]]] = None
 def load_hud_data() -> Dict[str, Dict[str, float]]:
     """
     Load and process HUD Low-Mod Excel file.
-    
+
     Returns:
         Dictionary mapping GEOID5 to income distribution percentages:
         {
@@ -40,13 +40,25 @@ def load_hud_data() -> Dict[str, Dict[str, float]]:
         }
     """
     global _hud_cache
-    
+
     if _hud_cache is not None:
+        logger.info(f"[HUD] Returning cached data ({len(_hud_cache)} counties)")
         return _hud_cache
-    
+
+    logger.info(f"[HUD] Looking for HUD file at: {HUD_FILE}")
+    logger.info(f"[HUD] HUD_DATA_DIR: {HUD_DATA_DIR}")
+    logger.info(f"[HUD] HUD_DATA_DIR exists: {HUD_DATA_DIR.exists()}")
+
     if not HUD_FILE.exists():
-        print(f"[WARNING] HUD file not found at {HUD_FILE}")
-        logger.warning(f"HUD file not found at {HUD_FILE}")
+        logger.error(f"[HUD CRITICAL] HUD file not found at {HUD_FILE}")
+        logger.error(f"[HUD CRITICAL] This will cause Population Share columns to be missing in income tables")
+        # List contents of parent directory to help debug
+        if HUD_DATA_DIR.exists():
+            try:
+                contents = list(HUD_DATA_DIR.iterdir())
+                logger.error(f"[HUD CRITICAL] Contents of {HUD_DATA_DIR}: {contents}")
+            except Exception as e:
+                logger.error(f"[HUD CRITICAL] Could not list directory contents: {e}")
         return {}
 
     print(f"[INFO] Loading HUD file: {HUD_FILE}")
