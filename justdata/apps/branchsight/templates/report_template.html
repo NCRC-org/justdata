@@ -2119,18 +2119,8 @@
         document.addEventListener('DOMContentLoaded', loadReportData);
     </script>
     
-    <!-- Footer -->
-    <footer class="footer" style="background-color: #1e3a5f; color: white; padding: 2rem; margin-top: 3rem; text-align: center;">
-        <div class="footer-content">
-            <p style="margin: 0;"><strong>JustData</strong> | National Community Reinvestment Coalition</p>
-            <p style="margin: 0.5rem 0;">Fair Lending Analysis Platform | <a href="https://justdata.org" style="color: white;">justdata.org</a></p>
-            <p style="font-size: 0.85rem; margin-top: 1rem; color: rgba(255,255,255,0.9);">
-                Data sources: FDIC Summary of Deposits, U.S. Census Bureau ACS
-            </p>
-            <p style="font-size: 0.8rem; margin-top: 0.5rem; color: rgba(255,255,255,0.7);">
-                <span class="version-text">Version {{ version }}</span>
-            </p>
-        </div>
-    </footer>
+    <!-- Shared Footer -->
+    {% set app_name = "BranchSight" %}
+    {% include "shared_footer.html" %}
 </body>
 </html>

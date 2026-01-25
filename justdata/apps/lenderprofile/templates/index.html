@@ -554,34 +554,9 @@
         }
     </script>
     
-    <!-- Footer (matching DataExplorer) -->
-    <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-col">
-                <h4>LenderProfile</h4>
-                <p>Comprehensive lender intelligence platform</p>
-            </div>
-            <div class="footer-col">
-                <h4>Developed by</h4>
-                <p>NCRC - National Community Reinvestment Coalition<br>
-                Jad Edlebi &amp; Jay Richardson</p>
-            </div>
-            <div class="footer-col">
-                <h4>Links</h4>
-                <p>
-                    <a href="https://github.com/jadedlebi/justdata" target="_blank"><i class="fab fa-github"></i> GitHub</a><br>
-                    <a href="https://ncrc.org" target="_blank"><i class="fas fa-globe"></i> NCRC Website</a>
-                </p>
-            </div>
-            <div class="footer-col footer-logo">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" onerror="this.style.display='none';">
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2025 JustData - LenderProfile. Powered by AI and BigQuery.<br>
-            <span class="version-text">Version {{ version if version else '1.0.0' }}</span>
-        </div>
-    </footer>
+    <!-- Shared Footer -->
+    {% set app_name = "LenderProfile" %}
+    {% include "shared_footer.html" %}
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>

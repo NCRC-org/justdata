@@ -2308,34 +2308,9 @@
         });
     </script>
 
-    <!-- Footer (matching LendSight style) -->
-    <footer class="footer" style="background: var(--ncrc-dark-blue, #1e3a5f); padding: 2rem 0 0.5rem 0; margin-top: 2rem; width: 100%; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);">
-        <div class="footer-container" style="max-width: 1400px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: flex-start; align-items: flex-start; flex-wrap: wrap; gap: 3rem;">
-            <div class="footer-col" style="flex: 1 1 0; min-width: 200px; max-width: 300px; margin-bottom: 1rem;">
-                <h4 style="color: #ffc23a; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">BranchMapper</h4>
-                <p style="color: #fff; margin: 0; line-height: 1.6;">Interactive bank branch mapping with demographic overlays</p>
-            </div>
-            <div class="footer-col" style="flex: 1 1 0; min-width: 200px; max-width: 300px; margin-bottom: 1rem;">
-                <h4 style="color: #ffc23a; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Developed by</h4>
-                <p style="color: #fff; margin: 0; line-height: 1.6;">NCRC - National Community Reinvestment Coalition<br>Jad Edlebi &amp; Jay Richardson</p>
-            </div>
-            <div class="footer-col" style="flex: 1 1 0; min-width: 200px; max-width: 300px; margin-bottom: 1rem;">
-                <h4 style="color: #ffc23a; margin-bottom: 0.5rem; font-size: 1.1rem; font-weight: 700;">Links</h4>
-                <p style="color: #fff; margin: 0; line-height: 1.6;">
-                    <a href="/" style="color: #fff; text-decoration: none;"><i class="fas fa-home"></i> JustData Home</a><br>
-                    <a href="https://github.com/jadedlebi/justdata" target="_blank" style="color: #fff; text-decoration: none;"><i class="fab fa-github"></i> GitHub</a><br>
-                    <a href="https://ncrc.org" target="_blank" style="color: #fff; text-decoration: none;"><i class="fas fa-globe"></i> NCRC Website</a>
-                </p>
-            </div>
-            <div class="footer-col footer-logo" style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; min-width: auto; max-width: none; margin-left: auto;">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" class="footer-logo-img" style="height: 90px; width: auto; border-radius: 8px;" onerror="this.style.display='none';">
-            </div>
-        </div>
-        <div class="footer-bottom" style="text-align: center; color: #ccc; font-size: 0.95rem; margin-top: 1.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.08);">
-            &copy; 2025 JustData - BranchMapper. Powered by FDIC Summary of Deposits data.<br>
-            <span class="version-text" style="font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 0.5rem; display: inline-block;">Version {{ version|default('1.0.0') }}</span>
-        </div>
-    </footer>
+    <!-- Shared Footer -->
+    {% set app_name = "BranchMapper" %}
+    {% include "shared_footer.html" %}
 
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>

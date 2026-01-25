@@ -1,0 +1,139 @@
+<!-- Shared Footer Component -->
+<!-- Variables: app_name (required), version (required) -->
+<style>
+    .shared-footer {
+        background: #1e3a5f;
+        color: white;
+        padding: 24px 20px;
+        margin-top: 40px;
+    }
+
+    .shared-footer-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        flex-wrap: wrap;
+        gap: 20px;
+    }
+
+    .shared-footer-left {
+        text-align: left;
+    }
+
+    .shared-footer-copyright {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .shared-footer-version {
+        margin: 0 0 8px 0;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .shared-footer-links {
+        display: flex;
+        gap: 16px;
+        font-size: 13px;
+        flex-wrap: wrap;
+    }
+
+    .shared-footer-links a {
+        color: #8bb8ff;
+        text-decoration: none;
+    }
+
+    .shared-footer-links a:hover {
+        text-decoration: underline;
+    }
+
+    .shared-footer-separator {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    .shared-footer-credits {
+        margin: 12px 0 0 0;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .shared-footer-logo {
+        flex-shrink: 0;
+    }
+
+    .shared-footer-logo img {
+        height: 50px;
+        width: auto;
+        opacity: 0.9;
+    }
+
+    @media (max-width: 600px) {
+        .shared-footer-container {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .shared-footer-left {
+            text-align: center;
+        }
+
+        .shared-footer-links {
+            justify-content: center;
+        }
+    }
+
+    @media print {
+        .shared-footer {
+            background: white !important;
+            color: #333 !important;
+            border-top: 2px solid #1e3a5f;
+        }
+
+        .shared-footer-links a,
+        .shared-footer-copyright,
+        .shared-footer-version,
+        .shared-footer-credits {
+            color: #333 !important;
+        }
+
+        .shared-footer-logo img {
+            filter: invert(1);
+        }
+    }
+</style>
+
+<footer class="shared-footer">
+    <div class="shared-footer-container">
+        <!-- Left side: Copyright and links -->
+        <div class="shared-footer-left">
+            <p class="shared-footer-copyright">&copy; <span id="shared-footer-year"></span> National Community Reinvestment Coalition</p>
+            <p class="shared-footer-version">{{ app_name|default('JustData') }} v{{ version|default('0.0.0') }}</p>
+            <div class="shared-footer-links">
+                <a href="mailto:research@ncrc.org">research@ncrc.org</a>
+                <span class="shared-footer-separator">|</span>
+                <a href="tel:+12024644600">(202) 464-4600</a>
+                <span class="shared-footer-separator">|</span>
+                <a href="/privacy">Privacy</a>
+                <span class="shared-footer-separator">|</span>
+                <a href="/terms">Terms</a>
+            </div>
+            <p class="shared-footer-credits">Created by Jay Richardson &amp; Jad Edlebi</p>
+        </div>
+        <!-- Right side: NCRC Logo -->
+        <div class="shared-footer-logo">
+            <img src="/static/img/ncrc-logo-white.png" alt="NCRC" onerror="this.style.display='none';">
+        </div>
+    </div>
+</footer>
+
+<script>
+(function() {
+    var yearEl = document.getElementById('shared-footer-year');
+    if (yearEl) {
+        yearEl.textContent = new Date().getFullYear();
+    }
+})();
+</script>

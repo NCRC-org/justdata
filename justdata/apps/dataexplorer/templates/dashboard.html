@@ -108,10 +108,9 @@
             </div>
         </div>
 
-        <footer>
-            <p>DataExplorer 2.0 - Version {{ version }}</p>
-            <p><a href="/">Return to JustData Home</a></p>
-        </footer>
+        <!-- Shared Footer -->
+        {% set app_name = "DataExplorer" %}
+        {% include "shared_footer.html" %}
     </div>
 
     <script src="{{ url_for('.static', filename='js/dashboard.js') }}?v={{ version }}"></script>

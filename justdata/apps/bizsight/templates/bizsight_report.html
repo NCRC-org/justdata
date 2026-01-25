@@ -3577,43 +3577,9 @@
 
     {% include "shared_header_js.html" %}
 
-    <!-- JustData Standard Footer -->
-    <footer class="justdata-footer no-print" style="background-color: #1e3a5f; color: white; padding: 2rem; margin-top: 3rem;">
-        <div class="footer-content" style="max-width: 1200px; margin: 0 auto; text-align: center;">
-            <!-- Main Branding -->
-            <div style="margin-bottom: 1rem;">
-                <strong style="font-size: 1.2rem;">JustData</strong>
-                <span style="margin: 0 0.5rem;">|</span>
-                <span>National Community Reinvestment Coalition</span>
-            </div>
-
-            <!-- Platform Info -->
-            <div style="margin-bottom: 1rem;">
-                <p style="margin: 0.5rem 0;">
-                    Fair Lending Analysis Platform
-                    <span style="margin: 0 0.5rem;">|</span>
-                    <a href="https://justdata.org" style="color: white; text-decoration: underline;">justdata.org</a>
-                </p>
-            </div>
-
-            <!-- Data Sources -->
-            <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
-                <p style="margin: 0.25rem 0;">
-                    <strong>Data Sources:</strong> FFIEC Community Reinvestment Act (CRA) Small Business Lending Data
-                </p>
-                <p style="margin: 0.25rem 0;">
-                    Federal Financial Institutions Examination Council | U.S. Census Bureau
-                </p>
-            </div>
-
-            <!-- Copyright -->
-            <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 1rem;">
-                <p style="margin: 0;">
-                    &copy; <script>document.write(new Date().getFullYear())</script> National Community Reinvestment Coalition. All rights reserved.
-                </p>
-            </div>
-        </div>
-    </footer>
+    <!-- Shared Footer -->
+    {% set app_name = "BizSight" %}
+    {% include "shared_footer.html" %}
 </body>
 </html>
 

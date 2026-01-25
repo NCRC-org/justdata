@@ -338,31 +338,9 @@
         </div>
     </div>
 
-    <!-- Footer (Standardized) -->
-    <footer class="footer" style="background: #1E3D5C; color: white; padding: 0; margin-top: 40px;">
-        <div class="footer-container" style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
-            <!-- Left side: Copyright and links -->
-            <div style="text-align: left;">
-                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
-                <div style="display: flex; gap: 16px; font-size: 13px;">
-                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="/privacy" style="color: #8bb8ff; text-decoration: none;">Privacy</a>
-                    <span style="color: rgba(255,255,255,0.5);">|</span>
-                    <a href="/terms" style="color: #8bb8ff; text-decoration: none;">Terms</a>
-                </div>
-                <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
-                    Created by Jay Richardson &amp; Jad Edlebi
-                </p>
-            </div>
-            <!-- Right side: NCRC Logo -->
-            <div style="flex-shrink: 0;">
-                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; width: auto; opacity: 0.9;">
-            </div>
-        </div>
-    </footer>
+    <!-- Shared Footer -->
+    {% set app_name = "BizSight" %}
+    {% include "shared_footer.html" %}
 
     <!-- Scripts -->
     <!-- jQuery (required for app.js) -->

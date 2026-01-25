@@ -338,13 +338,9 @@
 
     </main>
 
-    <!-- Footer -->
-    <footer class="report-footer">
-        <div class="footer-inner">
-            <span>LenderProfile Intelligence by NCRC | Generated {{ generated_at | default('') }}</span>
-            <span>Data: SEC EDGAR, FDIC, GLEIF, CFPB, Quiver Quantitative, NewsAPI</span>
-        </div>
-    </footer>
+    <!-- Shared Footer -->
+    {% set app_name = "LenderProfile" %}
+    {% include "shared_footer.html" %}
 
     <script>
         // Report data from backend
