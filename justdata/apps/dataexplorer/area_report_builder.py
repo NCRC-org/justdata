@@ -1495,11 +1495,11 @@ def build_area_report(
         
         # Table 2: Loans by Borrower Income
         loans_by_borrower_income = create_income_borrowers_table(
-            purpose_df, 
-            recent_years, 
+            purpose_df,
+            recent_years,
             hud_data=hud_data
         )
-        
+
         # Add income ranges to borrower income table labels
         if isinstance(loans_by_borrower_income, pd.DataFrame) and not loans_by_borrower_income.empty and 'Metric' in loans_by_borrower_income.columns:
             income_range_map = {
@@ -2049,7 +2049,7 @@ def build_area_report_all_lenders(
     if 'section2' in report_data and 'by_purpose' in report_data['section2']:
         section2 = report_data['section2']
         for purpose, tables in section2['by_purpose'].items():
-            for table_name in ['loans_by_race_ethnicity', 'loans_by_borrower_income', 
+            for table_name in ['loans_by_race_ethnicity', 'loans_by_borrower_income',
                               'loans_by_neighborhood_income', 'loans_by_neighborhood_demographics']:
                 if isinstance(tables.get(table_name), pd.DataFrame):
                     tables[table_name] = convert_numpy_types(

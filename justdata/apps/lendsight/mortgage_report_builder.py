@@ -1065,7 +1065,7 @@ def create_income_borrowers_table(df: pd.DataFrame, years: List[int], hud_data: 
     # Add Population Share column (if HUD data available)
     if hud_data and total_persons > 0:
         result_data['Population Share (%)'] = []
-    
+
     # Add change column
     if len(years) >= 2:
         time_span = f"{min(years)}-{max(years)}"
@@ -1159,12 +1159,12 @@ def create_income_borrowers_table(df: pd.DataFrame, years: List[int], hud_data: 
                 total_loans_row['Change'] = "N/A"
         else:
             total_loans_row['Change'] = "N/A"
-    
+
     # Insert Total Loans row at the beginning
     result = pd.DataFrame(result_data)
     total_loans_df = pd.DataFrame([total_loans_row])
     result = pd.concat([total_loans_df, result], ignore_index=True)
-    
+
     return result
 
 
