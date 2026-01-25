@@ -506,20 +506,15 @@
     <!-- Report Interstitial Modal - shows while data loads -->
     {% include "report_interstitial.html" %}
 
+    <!-- Shared Site Header with Navigation -->
+    {% include "shared_header.html" %}
+
     <div class="report-container">
-        <!-- Header Actions Row - Back button on left, Export/Print on right -->
-        <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
-            <a href="{{ app_base_url|default('/branchsight') }}" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
-                <i class="fas fa-arrow-left"></i> Back to New Analysis
+        <!-- Header Actions Row - Excel export only -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+            <a href="{{ url_for('branchsight.download', format='excel') }}" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-file-excel"></i> Export Full Report to Excel
             </a>
-            <div style="display: flex; gap: 10px;">
-                <a href="{{ url_for('branchsight.download', format='excel') }}" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
-                    <i class="fas fa-file-excel"></i> Export Data (Excel)
-                </a>
-                <button class="action-btn" id="printReportBtn" onclick="window.print()" style="cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
-                    <i class="fas fa-print"></i> Print Report
-                </button>
-            </div>
         </div>
 
         <!-- Report Header -->

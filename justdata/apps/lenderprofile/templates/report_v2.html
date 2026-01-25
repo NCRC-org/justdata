@@ -13,20 +13,15 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/report_v2.css') }}">
 </head>
 <body>
-    <!-- Compact Header -->
-    <header class="report-header">
-        <div class="header-inner">
-            <div class="header-left">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC" class="header-logo" onerror="this.style.display='none';">
-            </div>
-            <div class="header-center">
-                <span class="header-title">LenderProfile Intelligence</span>
-            </div>
-            <div class="header-right">
-                <button id="export-pdf-btn" class="btn-export"><i class="fas fa-file-pdf"></i> Export PDF</button>
-            </div>
-        </div>
-    </header>
+    <!-- Shared Site Header with Navigation -->
+    {% include "shared_header.html" %}
+
+    <!-- Header Actions Row - Excel export only -->
+    <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin: 10px 24px 20px 24px; padding: 10px 0; max-width: 1200px; margin-left: auto; margin-right: auto;">
+        <a href="/lenderprofile/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+            <i class="fas fa-file-excel"></i> Export Full Report to Excel
+        </a>
+    </div>
 
     <!-- Breadcrumb Navigation -->
     <nav class="breadcrumb-bar" aria-label="Breadcrumb" style="background: #f5f5f5; border-bottom: 1px solid #e0e0e0; padding: 8px 24px;">

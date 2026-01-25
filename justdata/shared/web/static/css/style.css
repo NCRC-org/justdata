@@ -1,19 +1,30 @@
 /* NCRC Brand Colors - From NCRC Brand Guidelines V19b + JustData Palette */
+/* Standardized January 2026 - All headers/footers use --ncrc-navy (#1e3a5f) */
 :root {
-    --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC blue */
+    /* Primary Brand Colors */
+    --ncrc-navy: #1e3a5f;              /* Standard Navy - ALL headers, footers, report headers */
+    --ncrc-primary-blue: #552d87;      /* Deep Purple - Primary NCRC brand */
     --ncrc-secondary-blue: #2fade3;     /* Bright Sky Blue - Secondary blue */
-    --ncrc-justdata-blue: #1a8fc9;      /* JustData Blue - Header background */
     --ncrc-accent-red: #e82e2e;         /* Vibrant Red - NCRC red accent */
     --ncrc-pink: #eb2f89;               /* Bright Pink/Fuchsia */
-    --ncrc-dark-blue: #034ea0;          /* Dark Blue (legacy) */
-    --ncrc-light-blue: #E6F2FF;         /* Light blue background (custom, not in palette) */
     --ncrc-gold: #ffc23a;               /* Golden Yellow */
     --ncrc-purple: #552d87;             /* Deep Purple (same as primary blue) */
+
+    /* Legacy aliases - point to standard navy for backwards compatibility */
+    --ncrc-justdata-blue: #1e3a5f;      /* DEPRECATED: Use --ncrc-navy instead */
+    --ncrc-dark-blue: #1e3a5f;          /* DEPRECATED: Use --ncrc-navy instead */
+
+    /* Neutral Colors */
+    --ncrc-light-blue: #E6F2FF;         /* Light blue background */
     --ncrc-gray: #818390;               /* Medium Gray */
     --ncrc-white: #FFFFFF;
     --ncrc-black: #000000;              /* Solid Black */
-    --ncrc-gray-light: #F5F5F5;         /* Light gray background (custom) */
-    --ncrc-gray-dark: #333333;          /* Dark gray text (custom) */
+    --ncrc-gray-light: #F5F5F5;         /* Light gray background */
+    --ncrc-gray-dark: #333333;          /* Dark gray text */
+
+    /* Button Colors */
+    --ncrc-success: #28a745;            /* Green - Excel export button */
+    --ncrc-success-hover: #218838;      /* Green hover state */
 }
 
 

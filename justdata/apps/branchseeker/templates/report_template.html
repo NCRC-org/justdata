@@ -37,7 +37,7 @@
             text-align: center;
             margin-bottom: 40px;
             padding: 30px 20px;
-            background: #1a8fc9;
+            background: #1e3a5f;
             color: white;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -96,7 +96,7 @@
         }
         
         .action-btn.primary:hover {
-            background: #1a8fc9;
+            background: #1e3a5f;
         }
         
         .dropdown {
@@ -174,7 +174,7 @@
         }
         
         .ai-insight-card h3 i {
-            color: #1a8fc9;
+            color: #1e3a5f;
         }
         
         .ai-content {
@@ -234,7 +234,7 @@
             line-height: 1.7;
             padding: 20px;
             background: #f8f9fa;
-            border-left: 4px solid #1a8fc9;
+            border-left: 4px solid #1e3a5f;
             border-radius: 4px;
         }
         
@@ -479,51 +479,27 @@
     </style>
 </head>
 <body>
+    <!-- Shared Site Header with Navigation -->
+    {% include "shared_header.html" %}
+
     <div class="report-container">
-        <!-- Back Button -->
-        <a href="/" class="back-btn no-print">
-            <i class="fas fa-arrow-left"></i>
-            Back to Analysis
-        </a>
-        
+        <!-- Header Actions Row - Excel export only -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+            <a href="/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-file-excel"></i> Export Full Report to Excel
+            </a>
+        </div>
+
         <!-- Report Header -->
         <div class="report-header">
-            <div style="text-align: center; margin-bottom: 20px;">
-                <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC Logo" style="max-height: 90px; width: auto;" onerror="this.style.display='none';">
-            </div>
             <h1 class="report-title">Bank Branch Analysis</h1>
             <p class="report-subtitle">Data drives the <em>movement</em></p>
-            <div class="report-meta">
-                <div>
-                    <strong>Generated:</strong> <span id="generatedAt">Loading...</span><br>
-                    <strong>Counties:</strong> <span id="counties">Loading...</span><br>
-                    <strong>Years:</strong> <span id="years">Loading...</span><br>
+            <div class="report-meta" style="justify-content: center;">
+                <div style="text-align: center;">
+                    <strong>Generated:</strong> <span id="generatedAt">Loading...</span> |
+                    <strong>Counties:</strong> <span id="counties">Loading...</span> |
+                    <strong>Years:</strong> <span id="years">Loading...</span> |
                     <strong>Total Records:</strong> <span id="totalRecords">Loading...</span>
-                </div>
-                <div class="report-actions no-print">
-                    <button class="action-btn" onclick="window.print()">
-                        <i class="fas fa-print"></i> Print Report
-                    </button>
-                    <div class="dropdown">
-                        <button class="action-btn primary dropdown-toggle">
-                            <i class="fas fa-download"></i> Export Data
-                            <i class="fas fa-chevron-down"></i>
-                        </button>
-                        <div class="dropdown-menu">
-                            <a href="/download?format=excel" class="dropdown-item">
-                                <i class="fas fa-file-excel"></i> Excel (.xlsx)
-                            </a>
-                            <a href="/download?format=csv" class="dropdown-item">
-                                <i class="fas fa-file-csv"></i> CSV (.csv)
-                            </a>
-                            <a href="/download?format=json" class="dropdown-item">
-                                <i class="fas fa-file-code"></i> JSON (.json)
-                            </a>
-                            <a href="/download?format=zip" class="dropdown-item">
-                                <i class="fas fa-file-archive"></i> ZIP (.zip)
-                            </a>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>

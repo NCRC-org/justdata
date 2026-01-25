@@ -19,45 +19,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/report.css') }}">
 </head>
 <body style="background: var(--ncrc-gray-light); min-height: 100vh;">
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-layout">
-                <div class="logo">
-                    <a href="/" aria-label="Return to JustData Home">
-                        <img src="/static/img/justdata-logo.png" alt="JustData Logo" style="max-height: 90px; width: auto;" onerror="this.src='{{ url_for('static', filename='img/ncrc-logo.png') }}';">
-                    </a>
-                </div>
-                <div class="header-title-section">
-                    <h1>LenderProfile</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div class="header-tagline">
-                    <div class="tagline-box">
-                        <p>Data drives the <em>movement</em></p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Return to JustData Home Button -->
-    <div style="max-width: 1400px; margin: 0 auto; padding: 10px 20px;">
-        <a href="https://justdata-landing.onrender.com" class="btn btn-primary" style="display: inline-block; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; text-decoration: none; border-radius: 6px; font-size: 0.95rem; margin-bottom: 10px;">
-            <i class="fas fa-arrow-left"></i> Return to JustData Home
-        </a>
-    </div>
+    <!-- Shared Site Header with Navigation -->
+    {% include "shared_header.html" %}
 
     <div class="container">
         <div class="content-wrapper">
             <main class="main-content">
-                <div class="report-actions">
-                    <a href="/" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Back to Search
+                <!-- Header Actions Row - Excel export only -->
+                <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+                    <a href="/lenderprofile/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                        <i class="fas fa-file-excel"></i> Export Full Report to Excel
                     </a>
-                    <button id="export-pdf-btn" class="btn btn-primary">
-                        <i class="fas fa-file-pdf"></i> Export PDF
-                    </button>
                 </div>
 
                 <div id="report-content" class="report-content">
