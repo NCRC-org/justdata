@@ -192,15 +192,10 @@ def analyze():
 @require_access('branchsight', 'partial')
 def report():
     """Report display page"""
-    from jinja2 import Environment, FileSystemLoader, select_autoescape
     app_base_url = url_for('branchsight.index').rstrip('/')
-    env = Environment(
-        loader=FileSystemLoader(str(TEMPLATES_DIR_PATH)),
-        autoescape=select_autoescape(['html', 'xml'])
-    )
-    env.globals['url_for'] = url_for
-    template = env.get_template('report_template.html')
-    return template.render(app_base_url=app_base_url, version=__version__)
+    # Use Flask's render_template which uses the app's configured jinja_loader
+    # that includes both blueprint templates and shared templates
+    return render_template('report_template.html', app_base_url=app_base_url, version=__version__)
 
 
 @branchsight_bp.route('/report-data')
