@@ -519,7 +519,13 @@ def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> 
                             logger.error(f"ACS {attempt_year} housing API returned {response.status_code} for {geoid5}: {response.text[:200]}")
                             continue
                         response.raise_for_status()
-                        data = response.json()
+
+                        # Check if response is valid JSON before parsing
+                        try:
+                            data = response.json()
+                        except Exception as json_err:
+                            logger.error(f"ACS {attempt_year} housing API returned non-JSON for {geoid5}. Response preview: {response.text[:300]}")
+                            continue
                         
                         if data and len(data) > 1:
                             headers = data[0]
