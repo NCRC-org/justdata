@@ -1,24 +1,18 @@
 <!-- Shared Header JavaScript -->
-<!-- Note: Firebase SDK and auth.js should be loaded by the parent template (base_app.html or directly) -->
-<!-- to avoid duplicate declarations of firebaseConfig -->
+<!-- Note: This file is included by base_app.html after the main shared_header.html -->
+<!-- The main toggle functions are in shared_header.html, this is kept for backwards compatibility -->
 
 <script>
-    // Toggle hamburger navigation menu
-    function toggleNavMenu() {
-        const menu = document.getElementById('navMenu');
-        if (menu.style.display === 'none' || menu.style.display === '') {
-            menu.style.display = 'block';
-        } else {
-            menu.style.display = 'none';
+    // The toggleNavMenu function is now defined in shared_header.html
+    // This file is kept for backwards compatibility with templates that include it separately
+
+    // If toggleNavMenu isn't already defined, define it here as fallback
+    if (typeof toggleNavMenu !== 'function') {
+        function toggleNavMenu() {
+            const navMenu = document.getElementById('navMenu');
+            if (navMenu) {
+                navMenu.classList.toggle('active');
+            }
         }
     }
-
-    // Close menu when clicking outside
-    document.addEventListener('click', function(event) {
-        const menu = document.getElementById('navMenu');
-        const hamburger = document.querySelector('.hamburger-menu');
-        if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target)) {
-            menu.style.display = 'none';
-        }
-    });
 </script>
