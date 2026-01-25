@@ -277,7 +277,7 @@
             text-align: center;
             margin-bottom: 40px;
             padding: 30px 20px;
-            background: #034ea0;
+            background: #1e3a5f;
             color: white;
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -330,14 +330,19 @@
         }
         
         .action-btn.primary {
-            background: #2fade3;
+            background: #28a745;
             color: white;
-            border-color: #2fade3;
+            border-color: #28a745;
         }
-        
+
         .action-btn.primary:hover {
-            background: #034ea0;
-            border-color: #034ea0;
+            background: #218838;
+            border-color: #218838;
+        }
+
+        /* Excel export button specific hover */
+        #downloadExcelBtn:hover {
+            background: #218838 !important;
         }
         
         .dropdown {
@@ -728,19 +733,11 @@
     {% include "shared_header.html" %}
 
     <div class="report-container">
-        <!-- Header Actions Row - Back button on left, Export/Print on right -->
-        <div class="report-actions-row no-print" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 10px 0;">
-            <a href="{{ app_base_url|default('/lendsight') }}" class="action-btn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 5px; display: inline-block; font-weight: 500;">
-                <i class="fas fa-arrow-left"></i> Back to New Analysis
+        <!-- Header Actions Row - Excel export only -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+            <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-file-excel"></i> Export Full Report to Excel
             </a>
-            <div style="display: flex; gap: 10px;">
-                <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border-radius: 5px; display: inline-block;">
-                    <i class="fas fa-file-excel"></i> Export Data (Excel)
-                </a>
-                <button class="action-btn" id="printReportBtn" onclick="window.print()" style="cursor: pointer; padding: 10px 20px; background: var(--ncrc-primary-blue); color: white; border-radius: 5px; border: none; display: inline-block;">
-                    <i class="fas fa-print"></i> Print Report
-                </button>
-            </div>
         </div>
 
         <!-- Loading State -->
@@ -3757,10 +3754,37 @@
     {% include 'shared_header_js.html' %}
 
     <!-- Footer -->
-    <footer class="footer" style="margin-top: 40px;">
-        <div class="footer-bottom">
-            &copy; 2025 JustData - LendSight. Powered by AI and BigQuery.<br>
-            <span class="version-text">Version {{ version }}</span>
+    <footer class="justdata-footer" style="background-color: #1e3a5f; color: white; padding: 2rem; margin-top: 3rem;">
+        <div class="footer-content" style="max-width: 1200px; margin: 0 auto; text-align: center;">
+            <div style="margin-bottom: 1rem;">
+                <strong style="font-size: 1.2rem;">JustData</strong>
+                <span style="margin: 0 0.5rem;">|</span>
+                <span>National Community Reinvestment Coalition</span>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <p style="margin: 0.5rem 0;">
+                    Fair Lending Analysis Platform
+                    <span style="margin: 0 0.5rem;">|</span>
+                    <a href="https://justdata.org" style="color: white; text-decoration: underline;">justdata.org</a>
+                </p>
+            </div>
+
+            <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.3);">
+                <p style="margin: 0.25rem 0;">
+                    <strong>Data Sources:</strong> FFIEC Home Mortgage Disclosure Act (HMDA) Data
+                </p>
+                <p style="margin: 0.25rem 0;">
+                    Federal Financial Institutions Examination Council | U.S. Census Bureau
+                </p>
+            </div>
+
+            <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 1rem;">
+                <p style="margin: 0;">
+                    &copy; {{ current_year|default('2025') }} National Community Reinvestment Coalition. All rights reserved.
+                </p>
+                <span class="version-text" style="font-size: 0.7rem; opacity: 0.7;">Version {{ version }}</span>
+            </div>
         </div>
     </footer>
 </body>
