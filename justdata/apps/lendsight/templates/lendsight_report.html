@@ -1070,15 +1070,15 @@
                 <div class="ai-insight-card">
                     <div class="ai-content">
                         <h3>Data Sources</h3>
-                        <p><strong>HMDA Data:</strong> This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff.</p>
+                        <p><strong>HMDA Data:</strong> This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff. For more information about HMDA data collection and reporting requirements, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
 
-                        <p><strong>HMDA Data Coverage:</strong> This analysis includes mortgage loan originations (action taken = 1) for owner-occupied, site-built, 1-4 unit properties. <span id="loanPurposeCoverage">Loan purpose information will be populated dynamically.</span> Reverse mortgages are excluded from the analysis. For more information about HMDA data collection and reporting requirements, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
+                        <p><strong>HMDA Data Coverage:</strong> This analysis includes mortgage loan originations (action taken = 1) for owner-occupied, site-built, 1-4 unit properties. <span id="loanPurposeCoverage">The analysis includes home purchase loans (loan purpose = 1).</span> Reverse mortgages are excluded from the analysis.</p>
 
-                        <p id="censusDataSource"><strong>Census Data:</strong> <span id="censusDataSourceText">Population demographic data is sourced from the U.S. Census Bureau and includes three time periods: the 2010 Decennial Census, 2020 Decennial Census, and the most recent American Community Survey (ACS) 5-year estimates. This data is displayed in the Population Demographics chart to show demographic trends over time.</span></p>
+                        <p id="censusDataSource"><strong>Census Data:</strong> <span id="censusDataSourceText">Population demographic data is sourced from the U.S. Census Bureau, including the 2010 Decennial Census, 2020 Decennial Census, and American Community Survey (ACS) 5-year estimates.</span></p>
 
-                        <p><strong>HUD Data:</strong> Population Share data in Table 2 (Lending to Income Borrowers) is sourced from the U.S. Department of Housing and Urban Development (HUD) Low-Mod Summary Data. This data shows the percentage of county residents in each income bracket (Low, Moderate, Middle, and Upper income) based on 2020 ACS data. HUD defines income categories relative to the Area Median Family Income (AMFI).</p>
+                        <p><strong>HUD Data:</strong> Income category population shares are sourced from the U.S. Department of Housing and Urban Development (HUD) Low-Mod Summary Data, which shows the percentage of county residents in each income bracket based on 2020 ACS data.</p>
 
-                        <p><strong>Data Filters Applied:</strong> The following filters are automatically applied to all analyses in this report:
+                        <p><strong>Data Filters Applied:</strong> The following filters are automatically applied to all analyses:
                             <ul id="dataFiltersList" style="margin-top: 8px; padding-left: 20px;">
                                 <li>Originations only (action taken = 1)</li>
                                 <li>Site-built properties (construction method = 1)</li>
@@ -1092,26 +1092,45 @@
 
                         <p><strong>Loan Originations:</strong> Completed mortgage loans where action taken = 1. This excludes applications, denials, and withdrawn/incomplete applications.</p>
 
-                        <p><strong>Low Income:</strong> Borrowers or census tracts with income at or below 50% of the Area Median Family Income (AMFI).</p>
+                        <p><strong>Low-to-Moderate Income Borrower (LMIB):</strong> Borrowers whose reported income is at or below 80% of Area Median Family Income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) where the property is located.</p>
 
-                        <p><strong>Moderate Income:</strong> Borrowers or census tracts with income greater than 50% but at or below 80% of AMFI.</p>
+                        <h4 style="margin-top: 15px; color: #333;">Borrower Income Categories</h4>
+                        <p>Borrower income is classified relative to AMFI:</p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Low Income Borrower:</strong> Income at or below 50% of AMFI</li>
+                            <li><strong>Moderate Income Borrower:</strong> Income greater than 50% but at or below 80% of AMFI</li>
+                            <li><strong>Middle Income Borrower:</strong> Income greater than 80% but at or below 120% of AMFI</li>
+                            <li><strong>Upper Income Borrower:</strong> Income greater than 120% of AMFI</li>
+                        </ul>
 
-                        <p><strong>Middle Income:</strong> Borrowers or census tracts with income greater than 80% but at or below 120% of AMFI.</p>
+                        <h4 style="margin-top: 15px; color: #333;">Census Tract Income Categories</h4>
+                        <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+                            <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+                            <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+                            <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+                            <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+                        </ul>
 
-                        <p><strong>Upper Income:</strong> Borrowers or census tracts with income greater than 120% of AMFI.</p>
+                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population, as defined by the U.S. Census Bureau.</p>
 
-                        <p><strong>Low-to-Moderate Income Borrower (LMIB):</strong> Borrowers whose reported income is at or below 80% of AMFI for the MSA or MD where the property is located.</p>
+                        <p><strong>Multi-Racial Borrowers:</strong> Non-Hispanic borrowers who report two or more distinct main race categories. This aligns with the Census Bureau's "Two or More Races" category. Based on national HMDA data (2018-2024), the most common race combinations among multi-racial mortgage borrowers are:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Asian and White: 38% of multi-racial borrowers</li>
+                            <li>Native American and White: 22%</li>
+                            <li>Black and White: 17%</li>
+                            <li>Hawaiian/Pacific Islander and White: 5%</li>
+                            <li>Native American and Black: 4%</li>
+                        </ul>
+                        <p>These five combinations account for approximately 86% of all multi-racial mortgage borrowers nationally.</p>
 
-                        <p><strong>Low-to-Moderate Income Census Tract (LMICT):</strong> Census tracts where the tract median family income is at or below 80% of AMFI, as defined by HUD.</p>
-
-                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population.</p>
-
-                        <p><strong>Population Share:</strong> In Table 2, this column shows the percentage of county residents in each income category based on HUD Low-Mod Summary Data (2020). This allows comparison between lending patterns and the underlying population distribution.</p>
+                        <p><strong>Population Share:</strong> The percentage of the population (for borrower income categories) or census tracts (for tract income and minority categories) in each category, based on Census Bureau and HUD data.</p>
 
                         <h3>Calculations</h3>
 
                         <p><strong>Race and Ethnicity Classification:</strong> Race and ethnicity are determined from HMDA applicant fields:</p>
-                        <ol>
+                        <ul style="padding-left: 20px;">
                             <li><strong>Hispanic:</strong> Classified if any ethnicity field indicates Hispanic (codes 1, 11, 12, 13, or 14), regardless of race codes.</li>
                             <li><strong>Non-Hispanic Race:</strong> For non-Hispanic borrowers, race is determined from the first valid race code (excluding codes 6, 7, 8):
                                 <ul>
@@ -1122,36 +1141,37 @@
                                     <li>Code 5: White</li>
                                 </ul>
                             </li>
-                            <li><strong>Multi-Racial:</strong> Non-Hispanic borrowers who report two or more distinct main race categories. This aligns with the Census Bureau's "Two or More Races" category. Based on national HMDA data (2018-2024), the most common race combinations among multi-racial mortgage borrowers are:
-                                <ul style="margin-top: 5px; margin-bottom: 5px;">
-                                    <li>Asian and White: 38% of multi-racial borrowers</li>
-                                    <li>Native American and White: 22%</li>
-                                    <li>Black and White: 17%</li>
-                                    <li>Hawaiian/Pacific Islander and White: 5%</li>
-                                    <li>Native American and Black: 4%</li>
-                                </ul>
-                                These five combinations account for approximately 86% of all multi-racial mortgage borrowers nationally.
-                            </li>
-                        </ol>
+                        </ul>
 
-                        <p><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100. Loans without race/ethnicity data are excluded from the denominator. Only groups representing ≥1% of loans are displayed.</p>
+                        <p><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100. Loans without race/ethnicity data are excluded from the denominator. Income and neighborhood indicator percentages use total loans as the denominator. Only groups representing ≥1% of loans are displayed in tables.</p>
 
-                        <p><strong>Change Over Time:</strong> The difference between values in the first and final year of the analysis period. Positive changes are displayed in blue; negative changes in red. Changes are shown in percentage points (pp).</p>
+                        <p><strong>Change Over Time:</strong> The difference between values in the first and final year of the analysis period. Positive changes are displayed in blue; negative changes in red. Changes for percentages are shown in percentage points (pp).</p>
 
-                        <p><strong>Herfindahl-Hirschman Index (HHI):</strong> A measure of market concentration calculated as the sum of squared market shares of all lenders. HHI ranges from 0 to 10,000. Concentration levels: &lt;1,500 = Low; 1,500-2,500 = Moderate; &gt;2,500 = High.</p>
+                        <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
+                        <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
+                        <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+                        <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
+                        <p><strong>Concentration Levels:</strong></p>
+                        <ul style="padding-left: 20px;">
+                            <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+                            <li>HHI 1,500-2,500: Moderate concentration</li>
+                            <li>HHI &gt; 2,500: High concentration</li>
+                        </ul>
 
-                        <p><strong>Top Lenders:</strong> Lenders ranked by total loan originations. Race/ethnicity percentages use loans with demographic data as denominator; income and neighborhood indicators use total loans as denominator.</p>
+                        <p><strong>Top Lenders:</strong> Lenders ranked by total loan originations in the most recent year. Race/ethnicity percentages use loans with demographic data as denominator; income and neighborhood indicators use total loans as denominator.</p>
+
+                        <p><strong>Minority Population Quartiles:</strong> Census tracts are divided into quartiles based on the distribution of minority population percentages across all census tracts in the Core Based Statistical Area (CBSA). Quartile boundaries are calculated from the actual distribution in each CBSA.</p>
 
                         <h3>Abbreviations</h3>
                         <ul>
                             <li><strong>ACS:</strong> American Community Survey</li>
                             <li><strong>AMFI:</strong> Area Median Family Income</li>
+                            <li><strong>CBSA:</strong> Core Based Statistical Area</li>
                             <li><strong>CFPB:</strong> Consumer Financial Protection Bureau</li>
                             <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
                             <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
                             <li><strong>HMDA:</strong> Home Mortgage Disclosure Act</li>
                             <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
-                            <li><strong>LEI:</strong> Legal Entity Identifier</li>
                             <li><strong>LMIB:</strong> Low-to-Moderate Income Borrower</li>
                             <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
                             <li><strong>MD:</strong> Metropolitan Division</li>
@@ -1162,9 +1182,10 @@
                         </ul>
 
                         <h3>Data Quality and AI Disclosure</h3>
-                        <p>All data has been cleaned and validated by NCRC Research staff. Users can download the complete dataset via Excel Export to verify statistics. AI-generated narrative content (introductions, key findings, discussions) is produced using Claude language models. All data points and calculations are derived directly from NCRC databases—AI interprets patterns and generates summaries only. Always verify AI interpretations against the underlying data.</p>
-
-                        <p>For official HMDA data and documentation, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
+                        <p style="font-style: italic; color: #666;">[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]</p>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+                        <p style="font-style: italic; color: #666;">[END LOREM IPSUM PLACEHOLDER]</p>
                     </div>
                 </div>
             </div>

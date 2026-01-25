@@ -818,50 +818,82 @@
                 <div class="ai-insight-card">
                     <div class="ai-content">
                         <h3>Data Sources</h3>
-                        <p>This report uses data from the Federal Deposit Insurance Corporation (FDIC) Summary of Deposits (SOD). Branch-level data is sourced from the FDIC's annual survey of all FDIC-insured institutions, compiled and maintained in NCRC's curated databases. Data is queried from NCRC datasets for the years specified in the analysis.</p>
-                        
+                        <p><strong>FDIC Summary of Deposits:</strong> This report uses data from the Federal Deposit Insurance Corporation (FDIC) Summary of Deposits (SOD). Branch-level data is sourced from the FDIC's annual survey of all FDIC-insured institutions, compiled and maintained in NCRC's curated databases.</p>
+
                         <p><strong>Branch Service Types:</strong> This analysis includes all branch service types reported in the FDIC Summary of Deposits, including Full Service Branches, Limited Service Branches, Drive-Through Branches, and other branch service types. No service type filtering is applied to the data.</p>
-                        
-                        <p><strong>Data Quality Assurance:</strong> All data used in this report has been downloaded, cleaned, and tested by NCRC Research staff to ensure accuracy and reliability. Users can download the complete raw dataset for their report using the Excel Export feature to verify any claims or statistics presented in the AI-generated narratives. When using AI-generated content, always keep a human in the loop—review AI interpretations against the underlying data and exercise professional judgment in your analysis.</p>
-                        
+
+                        <p><strong>Census Data:</strong> Census tract characteristics are sourced from the U.S. Census Bureau American Community Survey (ACS) 5-year estimates.</p>
+
+                        <p><strong>Data Quality Assurance:</strong> All data used in this report has been downloaded, cleaned, and validated by NCRC Research staff to ensure accuracy and reliability.</p>
+
+                        <h3>Definitions</h3>
+
+                        <p><strong>Branch:</strong> A unique physical branch location identified using the FDIC unique institution number (uninumbr). Branch counts represent distinct physical locations, not transactions or accounts.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Census Tract Income Categories</h4>
+                        <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+                            <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+                            <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+                            <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+                            <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+                        </ul>
+
+                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population, as defined by the U.S. Census Bureau.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Branch Category Classifications (Mutually Exclusive)</h4>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>LMI Only Branches:</strong> Branches located in Low-to-Moderate Income Census Tracts that are not Majority-Minority Census Tracts</li>
+                            <li><strong>MMCT Only Branches:</strong> Branches located in Majority-Minority Census Tracts that are not Low-to-Moderate Income Census Tracts</li>
+                            <li><strong>Both LMICT/MMCT Branches:</strong> Branches located in census tracts that are both Low-to-Moderate Income and Majority-Minority</li>
+                            <li><strong>Other Branches:</strong> Branches that are neither LMICT nor MMCT</li>
+                        </ul>
+                        <p><em>Note: Each branch is counted in only one category based on its census tract characteristics.</em></p>
+
+                        <p><strong>2020 Census Boundary Changes:</strong> The 2020 census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts. When analyzing changes between 2021 and 2022, this census boundary update should be considered as it may create apparent shifts that reflect statistical reclassification rather than actual changes.</p>
+
+                        <p><strong>Deposits:</strong> Total deposits held at each branch location, expressed in millions of dollars, as reported in the FDIC Summary of Deposits.</p>
+
                         <h3>Calculations</h3>
-                        
-                        <p><strong>Branch Counts:</strong> Unique branches are identified using the unique institution number (<code>uninumbr</code>). Branch counts represent distinct physical branch locations, not transactions or accounts.</p>
-            
-                        <p><strong>Low-to-Moderate Income (LMI) Designation:</strong> Branches are classified as located in Low-to-Moderate Income Census Tracts (LMICT) when the census tract's median family income is below 80% of the area median family income, as defined by the U.S. Department of Housing and Urban Development (HUD).</p>
-                        
-                        <p><strong>Majority-Minority Census Tract (MMCT) Designation:</strong> Branches are classified as located in Majority-Minority Census Tracts when minority populations represent more than 50% of the total population in the census tract, as defined by the U.S. Census Bureau.</p>
-                        
-                        <p><strong>2020 Census Boundary Changes:</strong> The 2020 census boundaries that took effect in 2022 resulted in a dramatic increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a dramatic increase in majority-minority branch locations between 2021 and 2022. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual branch location changes or banking strategy shifts. When analyzing MMCT branch changes between 2021 and 2022, this census boundary change effect should be considered.</p>
-                        
-                        <p><strong>Deduplication:</strong> Branch categories (LMI Only, MMCT Only, and Both LMICT/MMCT) are mutually exclusive. Each branch is counted in only one category based on its census tract characteristics. Branches that are both LMICT and MMCT are counted only in the "Both LMICT/MMCT Branches" category.</p>
-                        
+
+                        <p><strong>Branch Counts:</strong> Unique branches are identified using the unique institution number (uninumbr). Branch counts represent distinct physical branch locations.</p>
+
                         <p><strong>Net Change:</strong> Calculated as the difference between branch counts in the first year and the final year of the analysis period.</p>
-                        
-                        <p><strong>Herfindahl-Hirschman Index (HHI):</strong> Market concentration is measured using the HHI, calculated as the sum of squared market shares of all banks in the study area based on deposit market share. Market shares are expressed as percentages, and the HHI scale ranges from 0 to 10,000:</p>
-                        <ul>
+
+                        <p><strong>Percentage of Total Branches:</strong> Calculated as (branches in category / total branches) × 100.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
+                        <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all banks in a market:</p>
+                        <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+                        <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many banks; higher values indicate concentrated markets dominated by few banks.</p>
+                        <p><strong>Concentration Levels:</strong></p>
+                        <ul style="padding-left: 20px;">
                             <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
                             <li>HHI 1,500-2,500: Moderate concentration</li>
                             <li>HHI &gt; 2,500: High concentration</li>
                         </ul>
-                        <p>The HHI calculation uses deposit data from all banks in the study area, not just the banks shown in the report tables.</p>
-                        
-                        <p><strong>Geographic Identifiers:</strong> Counties are identified using <code>geoid5</code>, a 5-digit code where the first 2 digits represent the state FIPS code and the next 3 digits represent the county FIPS code. Leading zeros are preserved to maintain proper formatting.</p>
-                        
-                        <h3>Abbreviations and Acronyms</h3>
+                        <p><strong>Note on HHI Calculation:</strong> The HHI calculation uses deposit data from all banks in the study area, not just the banks shown in the report tables.</p>
+
+                        <p><strong>Geographic Identifiers:</strong> Counties are identified using geoid5, a 5-digit code where the first 2 digits represent the state FIPS code and the next 3 digits represent the county FIPS code.</p>
+
+                        <h3>Abbreviations</h3>
                         <ul>
                             <li><strong>FDIC:</strong> Federal Deposit Insurance Corporation</li>
-                            <li><strong>SOD:</strong> Summary of Deposits</li>
+                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                            <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
                             <li><strong>LMI:</strong> Low-to-Moderate Income</li>
                             <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
                             <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
-                            <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
-                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
-                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                            <li><strong>SOD:</strong> Summary of Deposits</li>
                         </ul>
-                        
+
                         <h3>AI Disclosure</h3>
-                        <p>This report was generated using AI assistance through Cursor and other language models (primarily Claude Sonnet 4). AI-generated content includes narrative analysis, executive summaries, key findings, and table introductions. All data points, statistics, and figures are pulled directly from NCRC staff-maintained databases—AI is used only to interpret patterns and generate written summaries. All underlying data and calculations are based on FDIC Summary of Deposits data compiled by NCRC research staff. Users should verify specific claims and data points using the Excel Export, which contains the complete underlying dataset.</p>
+                        <p style="font-style: italic; color: #666;">[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]</p>
+                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+                        <p style="font-style: italic; color: #666;">[END LOREM IPSUM PLACEHOLDER]</p>
                     </div>
                 </div>
             </div>

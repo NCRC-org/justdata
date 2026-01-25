@@ -1090,14 +1090,14 @@
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Data Sources</h3>
                 <p><strong>CRA Small Business Lending Data:</strong> This report uses data collected under the Community Reinvestment Act (CRA), which requires depository institutions to report information about small business loans. The data is collected by the Federal Financial Institutions Examination Council (FFIEC) and includes lending activity from banks regulated by the Office of the Comptroller of the Currency (OCC), Federal Reserve, and Federal Deposit Insurance Corporation (FDIC). For more information, visit the <a href="https://www.ffiec.gov/cra/craproducts.htm" target="_blank">FFIEC CRA website</a>.</p>
 
-                <p><strong>Data Coverage:</strong> CRA small business lending data includes loans with original amounts of $1 million or less for commercial and industrial purposes. The data is reported at the county level and includes information about loan size categories, loans to businesses with revenues under $1 million, and lending in census tracts of different income levels. All institutions regulated by the OCC, Federal Reserve, and FDIC that meet asset size thresholds are subject to reporting requirements.</p>
+                <p><strong>Data Coverage:</strong> CRA small business lending data includes loans with original amounts of $1 million or less for commercial and industrial purposes. The data is reported at the county level and includes information about loan size categories, loans to businesses with revenues under $1 million, and lending in census tracts of different income levels.</p>
 
                 <p><strong>NCRC Data Processing:</strong> The data used in this report is sourced from NCRC's curated small business lending databases, compiled and maintained by NCRC Research staff. State and national benchmark data is aggregated from the same FFIEC source data to enable geographic comparisons.</p>
 
-                <p><strong>Important Notes:</strong>
+                <p><strong>Important Data Notes:</strong>
                     <ul style="margin-top: 8px; padding-left: 20px;">
                         <li><strong>PPP Impact (2020-2021):</strong> Small business lending volumes in 2020 and 2021 were significantly influenced by the Paycheck Protection Program (PPP), which may result in elevated loan counts and amounts during those years.</li>
-                        <li><strong>Section 1071:</strong> Section 1071 of the Dodd-Frank Act, which will require demographic data on small business loan applicants, has not yet been fully implemented. This report does not include borrower demographic information such as race, ethnicity, or gender of business owners.</li>
+                        <li><strong>Section 1071 Limitation:</strong> Section 1071 of the Dodd-Frank Act, which will require demographic data on small business loan applicants, has not yet been fully implemented. This report does not include borrower demographic information such as race, ethnicity, or gender of business owners.</li>
                     </ul>
                 </p>
 
@@ -1121,7 +1121,7 @@
                     <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
                     <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
                     <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
-                    <li><strong>LMI Tract:</strong> Low-to-Moderate Income Census Tract - areas where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+                    <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
                 </ul>
 
                 <h4 style="margin-top: 15px; color: #333;">Table Column Definitions</h4>
@@ -1137,24 +1137,24 @@
 
                 <p><strong>Percentage Calculations:</strong> All percentages are calculated as: (category value / total value) × 100. For example, the percentage of loans under $100K equals (number of loans under $100K / total number of loans) × 100.</p>
 
-                <p><strong>Change Over Time (pp):</strong> Change is calculated as the difference between the final year value and the baseline year value. For percentages, change is expressed in percentage points (pp). For example, if loans under $100K increased from 89.1% to 96.7%, the change is +7.6 pp. Positive changes are displayed in blue; negative changes in red.</p>
+                <p><strong>Change Over Time:</strong> Change is calculated as the difference between the final year value and the baseline year value. For percentages, change is expressed in percentage points (pp). Positive changes are displayed in blue; negative changes in red.</p>
 
                 <p><strong>Dollar Amount Aggregation:</strong> Loan amounts are aggregated from individual lender reports. All dollar figures in tables are expressed in thousands ($000s) or millions ($M) as noted.</p>
 
-                <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Market Concentration (HHI)</h3>
-                <p><strong>Herfindahl-Hirschman Index (HHI):</strong> A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all firms in a market:</p>
+                <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
+                <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
                 <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
                 <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
+                <p><strong>Concentration Levels:</strong></p>
                 <ul style="padding-left: 20px;">
-                    <li><strong>HHI &lt; 1,500:</strong> Low concentration (competitive market)</li>
-                    <li><strong>HHI 1,500-2,500:</strong> Moderate concentration</li>
-                    <li><strong>HHI &gt; 2,500:</strong> High concentration</li>
+                    <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+                    <li>HHI 1,500-2,500: Moderate concentration</li>
+                    <li>HHI &gt; 2,500: High concentration</li>
                 </ul>
-                <p>In this report, HHI is calculated using the dollar amount of small business loans from all lenders that reported CRA data for the county, not just the top lenders shown in the tables.</p>
+                <p><strong>Note on HHI Calculation:</strong> In this report, HHI is calculated using the dollar amount of small business loans from all lenders that reported CRA data for the county, not just the top lenders shown in the tables.</p>
 
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Abbreviations</h3>
                 <ul style="padding-left: 20px; column-count: 2; column-gap: 40px;">
-                    <li><strong>ACS:</strong> American Community Survey</li>
                     <li><strong>AMFI:</strong> Area Median Family Income</li>
                     <li><strong>CRA:</strong> Community Reinvestment Act</li>
                     <li><strong>FDIC:</strong> Federal Deposit Insurance Corporation</li>
@@ -1162,6 +1162,7 @@
                     <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
                     <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
                     <li><strong>LMI:</strong> Low-to-Moderate Income</li>
+                    <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
                     <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
                     <li><strong>OCC:</strong> Office of the Comptroller of the Currency</li>
                     <li><strong>pp:</strong> Percentage Points</li>
@@ -1170,23 +1171,10 @@
                 </ul>
 
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Data Quality and AI Disclosure</h3>
-                <p>All data has been cleaned and validated by NCRC Research staff. Users can download the complete dataset via the Export Data option to verify statistics and conduct additional analysis.</p>
-
-                <p><strong>Use of Artificial Intelligence:</strong> This report includes AI-generated narrative content to help interpret data patterns. AI-generated sections are clearly marked with the notation "Above text is AI generated from NCRC data and analysis" appearing directly below each AI narrative. The following content is AI-generated:</p>
-                <ul style="padding-left: 20px;">
-                    <li>Section 2: County Summary discussion</li>
-                    <li>Section 3: Geographic Comparison analysis</li>
-                    <li>Section 4: Top Lenders analysis</li>
-                    <li>Section 5: Market Concentration trends discussion</li>
-                </ul>
-
-                <p><strong>AI Model:</strong> Narrative content is generated using Claude (Anthropic), a large language model. The AI is provided with the data tables and summary statistics and instructed to write in plain, accessible language while focusing on trends and patterns rather than repeating specific numbers from the tables.</p>
-
-                <p><strong>AI Limitations:</strong> AI-generated content is intended to assist readers in understanding data patterns but has limitations. AI may occasionally misinterpret data relationships or draw conclusions not fully supported by the data. AI narratives should be read in conjunction with the underlying data tables, which represent the authoritative source. Users should verify any specific claims or interpretations against the data before citing in research or policy documents.</p>
-
-                <p><strong>Human Review:</strong> All AI-generated content undergoes review for accuracy and appropriateness. However, NCRC cannot guarantee the accuracy of AI interpretations. For questions about methodology or data, contact NCRC Research.</p>
-
-                <p>For official CRA data and documentation, visit the <a href="https://www.ffiec.gov/cra/craproducts.htm" target="_blank">FFIEC CRA Data Products page</a>.</p>
+                <p style="font-style: italic; color: #666;">[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]</p>
+                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+                <p style="font-style: italic; color: #666;">[END LOREM IPSUM PLACEHOLDER]</p>
             </div>
         </div>
     </div>
