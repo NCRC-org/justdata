@@ -1458,7 +1458,9 @@
                 <a href="/mergermeter" class="nav-item" data-app="mergermeter" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
                 <a href="/dataexplorer" class="nav-item" data-app="dataexplorer" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
                 <a href="/lenderprofile" class="nav-item" data-app="lenderprofile" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
-                <a href="/electwatch" class="nav-item" data-app="electwatch" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
+                <a href="/analytics" class="nav-item" data-app="analytics" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-pie" style="margin-right: 10px; color: #10b981;"></i>Analytics</a>
+                <a href="/electwatch" class="nav-item" data-app="electwatch" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
+                <a href="/admin" class="nav-item" data-app="admin" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-cog" style="margin-right: 10px; color: #6b7280;"></i>Admin</a>
             </nav>
 
         </div>
@@ -2502,6 +2504,7 @@
             }
 
             // Update hamburger nav menu visibility based on user type
+            // Only show apps where user has FULL access
             document.querySelectorAll('#navMenu .nav-item').forEach(item => {
                 const appKey = item.getAttribute('data-app');
                 if (appKey === 'home') {
@@ -2509,23 +2512,13 @@
                     return;
                 }
                 const access = appAccessConfig[appKey];
-                if (!access || access[userType] === 'hidden') {
+                // Only show apps with 'full' access - hide everything else
+                if (!access || access[userType] !== 'full') {
                     item.style.display = 'none';
-                } else if (access[userType] === 'locked') {
-                    item.style.display = 'flex';
-                    item.style.alignItems = 'center';
-                    item.style.opacity = '0.75';
-                    // Add lock icon if not present
-                    if (!item.querySelector('.nav-lock-icon')) {
-                        const lockIcon = document.createElement('i');
-                        lockIcon.className = 'fas fa-lock nav-lock-icon';
-                        lockIcon.style.cssText = 'margin-left: auto; color: #999; font-size: 0.8rem;';
-                        item.appendChild(lockIcon);
-                    }
                 } else {
                     item.style.display = 'block';
                     item.style.opacity = '1';
-                    // Remove lock icon if present
+                    // Remove lock icon if present (from previous state)
                     const lockIcon = item.querySelector('.nav-lock-icon');
                     if (lockIcon) lockIcon.remove();
                 }

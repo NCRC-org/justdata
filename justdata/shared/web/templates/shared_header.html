@@ -113,15 +113,17 @@
         </div>
         <!-- Dropdown Nav Menu -->
         <nav id="navMenu" class="app-nav-dropdown" style="display: none; position: absolute; top: 100%; left: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 99999;">
-            <a href="/" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
-            <a href="/lendsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
-            <a href="/bizsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
-            <a href="/branchsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px; color: #7c3aed;"></i>BranchSight</a>
-            <a href="/branchmapper" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-map-marked-alt" style="margin-right: 10px; color: #0891b2;"></i>BranchMapper</a>
-            <a href="/mergermeter" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
-            <a href="/dataexplorer" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
-            <a href="/lenderprofile" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
-            <a href="/electwatch" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
+            <a href="/" class="nav-item" data-app="home" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
+            <a href="/lendsight" class="nav-item" data-app="lendsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
+            <a href="/bizsight" class="nav-item" data-app="bizsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
+            <a href="/branchsight" class="nav-item" data-app="branchseeker" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px; color: #7c3aed;"></i>BranchSight</a>
+            <a href="/branchmapper" class="nav-item" data-app="branchmapper" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-map-marked-alt" style="margin-right: 10px; color: #0891b2;"></i>BranchMapper</a>
+            <a href="/mergermeter" class="nav-item" data-app="mergermeter" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
+            <a href="/dataexplorer" class="nav-item" data-app="dataexplorer" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
+            <a href="/lenderprofile" class="nav-item" data-app="lenderprofile" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
+            <a href="/analytics" class="nav-item" data-app="analytics" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-pie" style="margin-right: 10px; color: #10b981;"></i>Analytics</a>
+            <a href="/electwatch" class="nav-item" data-app="electwatch" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
+            <a href="/admin" class="nav-item" data-app="admin" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-cog" style="margin-right: 10px; color: #6b7280;"></i>Admin</a>
         </nav>
     </div>
 </header>
@@ -318,4 +320,163 @@ async function handleGoogleLogin() {
         loginBtn.disabled = false;
     }
 }
+
+// App Access Configuration - defines which user types have access to which apps
+// Access levels: 'hidden' (not visible), 'locked' (visible but not accessible),
+//                'limited' (partial access), 'full' (complete access)
+const sharedHeaderAppAccessConfig = {
+    'lendsight': {
+        public_anonymous: 'locked',
+        public_registered: 'limited',
+        just_economy_club: 'limited',
+        member: 'full',
+        member_premium: 'full',
+        non_member_org: 'full',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'branchseeker': {
+        public_anonymous: 'locked',
+        public_registered: 'locked',
+        just_economy_club: 'limited',
+        member: 'full',
+        member_premium: 'full',
+        non_member_org: 'full',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'branchmapper': {
+        public_anonymous: 'locked',
+        public_registered: 'locked',
+        just_economy_club: 'locked',
+        member: 'full',
+        member_premium: 'full',
+        non_member_org: 'full',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'bizsight': {
+        public_anonymous: 'locked',
+        public_registered: 'locked',
+        just_economy_club: 'limited',
+        member: 'full',
+        member_premium: 'full',
+        non_member_org: 'full',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'dataexplorer': {
+        public_anonymous: 'locked',
+        public_registered: 'locked',
+        just_economy_club: 'locked',
+        member: 'locked',
+        member_premium: 'full',
+        non_member_org: 'full',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'mergermeter': {
+        public_anonymous: 'hidden',
+        public_registered: 'hidden',
+        just_economy_club: 'hidden',
+        member: 'hidden',
+        member_premium: 'hidden',
+        non_member_org: 'hidden',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'lenderprofile': {
+        public_anonymous: 'hidden',
+        public_registered: 'hidden',
+        just_economy_club: 'hidden',
+        member: 'hidden',
+        member_premium: 'hidden',
+        non_member_org: 'hidden',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'analytics': {
+        public_anonymous: 'hidden',
+        public_registered: 'hidden',
+        just_economy_club: 'hidden',
+        member: 'hidden',
+        member_premium: 'hidden',
+        non_member_org: 'hidden',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    },
+    'admin': {
+        public_anonymous: 'hidden',
+        public_registered: 'hidden',
+        just_economy_club: 'hidden',
+        member: 'hidden',
+        member_premium: 'hidden',
+        non_member_org: 'hidden',
+        staff: 'hidden',
+        senior_executive: 'hidden',
+        admin: 'full'
+    },
+    'electwatch': {
+        public_anonymous: 'hidden',
+        public_registered: 'hidden',
+        just_economy_club: 'hidden',
+        member: 'hidden',
+        member_premium: 'hidden',
+        non_member_org: 'hidden',
+        staff: 'full',
+        senior_executive: 'full',
+        admin: 'full'
+    }
+};
+
+// Filter hamburger nav menu to show only apps with FULL access for the current user type
+function filterNavMenuByAccess(userType) {
+    // Default to public_anonymous if no user type
+    userType = userType || 'public_anonymous';
+
+    document.querySelectorAll('#navMenu .nav-item').forEach(item => {
+        const appKey = item.getAttribute('data-app');
+
+        // Home is always visible
+        if (appKey === 'home') {
+            item.style.display = 'block';
+            return;
+        }
+
+        const accessConfig = sharedHeaderAppAccessConfig[appKey];
+
+        // If no config for this app, or access is not 'full', hide it
+        if (!accessConfig || accessConfig[userType] !== 'full') {
+            item.style.display = 'none';
+        } else {
+            // Full access - show the item
+            item.style.display = 'block';
+        }
+    });
+}
+
+// Initialize nav menu filtering when auth state changes
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if JustDataAuth is available and set up auth state listener
+    if (typeof JustDataAuth !== 'undefined' && JustDataAuth.onAuthStateChanged) {
+        JustDataAuth.onAuthStateChanged(function(user) {
+            if (user && user.userType) {
+                filterNavMenuByAccess(user.userType);
+            } else {
+                filterNavMenuByAccess('public_anonymous');
+            }
+        });
+    } else {
+        // If auth not available, default to public_anonymous
+        filterNavMenuByAccess('public_anonymous');
+    }
+});
 </script>
