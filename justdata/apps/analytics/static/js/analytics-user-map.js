@@ -90,8 +90,9 @@ function getDemoLocationData(days, stateFilter) {
                 county_fips: e.county_fips,
                 county_name: e.county_name,
                 state: e.state,
-                latitude: getCountyLat(e.county_fips, e.state),
-                longitude: getCountyLng(e.county_fips, e.state),
+                // Use coordinates from synthetic data if available, otherwise fall back to state center approximation
+                latitude: e.latitude || getCountyLat(e.county_fips, e.state),
+                longitude: e.longitude || getCountyLng(e.county_fips, e.state),
                 users: new Set(),
                 total_events: 0,
                 apps: {},
@@ -273,16 +274,10 @@ function renderMap(data) {
     }
 
     aggregatedData.forEach(function(location) {
-        // Get coordinates
-        let lat, lng;
-        if (location.latitude && location.longitude) {
-            lat = location.latitude;
-            lng = location.longitude;
-        } else if (location.state && STATE_CENTERS[location.state]) {
-            const center = STATE_CENTERS[location.state];
-            lat = center.lat + (Math.random() - 0.5) * 2;
-            lng = center.lng + (Math.random() - 0.5) * 2;
-        } else {
+        // Get validated coordinates with fallback to state center
+        const coords = getValidCoordinates(location);
+        if (!coords) {
+            console.warn('Skipping location with no valid coordinates:', location.county_name || location.city, location.state);
             return;
         }
 
@@ -293,7 +288,7 @@ function renderMap(data) {
         const radius = Math.min(Math.max(Math.sqrt(events) * baseRadius, 5), maxRadius);
 
         // Create marker
-        const marker = L.circleMarker([lat, lng], {
+        const marker = L.circleMarker([coords.lat, coords.lng], {
             radius: radius,
             fillColor: '#0d4a7c',
             color: '#1a1a1a',
@@ -528,11 +523,13 @@ function renderLocationList(data) {
  * Zoom to a specific location
  */
 function zoomToLocation(location) {
-    if (location.latitude && location.longitude) {
-        map.setView([location.latitude, location.longitude], 10);
-    } else if (location.state && STATE_CENTERS[location.state]) {
-        const center = STATE_CENTERS[location.state];
-        map.setView([center.lat, center.lng], 7);
+    const coords = getValidCoordinates(location);
+    if (coords) {
+        // If we have actual coordinates (not state center fallback), zoom in closer
+        const hasActualCoords = location.latitude && location.longitude &&
+                                validateCoordinates(location.latitude, location.longitude).valid;
+        const zoomLevel = hasActualCoords ? 10 : 7;
+        map.setView([coords.lat, coords.lng], zoomLevel);
     }
 }
 

@@ -7,6 +7,87 @@
 const US_CENTER = [39.8283, -98.5795];
 const US_ZOOM = 4;
 
+// Enable clustering by default
+const USE_CLUSTERING = true;
+
+/**
+ * Validate that coordinates are within reasonable US bounds
+ * @param {number} lat - Latitude
+ * @param {number} lng - Longitude
+ * @returns {object} Validation result with 'valid' boolean and optional 'reason'
+ */
+function validateCoordinates(lat, lng) {
+    // Basic range check
+    if (lat === null || lat === undefined || lng === null || lng === undefined) {
+        return { valid: false, reason: 'Missing coordinates' };
+    }
+
+    // Convert to numbers
+    lat = parseFloat(lat);
+    lng = parseFloat(lng);
+
+    if (isNaN(lat) || isNaN(lng)) {
+        return { valid: false, reason: 'Invalid number format' };
+    }
+
+    if (Math.abs(lat) > 90) {
+        return { valid: false, reason: 'Latitude out of range (-90 to 90)' };
+    }
+
+    if (Math.abs(lng) > 180) {
+        return { valid: false, reason: 'Longitude out of range (-180 to 180)' };
+    }
+
+    // Check for null island (0, 0)
+    if (lat === 0 && lng === 0) {
+        return { valid: false, reason: 'Coordinates are (0, 0) - null island' };
+    }
+
+    // US bounds check (including Alaska, Hawaii, Puerto Rico)
+    const inMainland = lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0;
+    const inAlaska = lat >= 51.0 && lat <= 72.0 && lng >= -180.0 && lng <= -129.0;
+    const inHawaii = lat >= 18.0 && lat <= 23.0 && lng >= -161.0 && lng <= -154.0;
+    const inPuertoRico = lat >= 17.5 && lat <= 18.6 && lng >= -68.0 && lng <= -65.0;
+
+    if (!inMainland && !inAlaska && !inHawaii && !inPuertoRico) {
+        return { valid: false, reason: 'Coordinates outside US bounds' };
+    }
+
+    return { valid: true };
+}
+
+/**
+ * Get valid coordinates from location data, with fallback to state center
+ * @param {object} location - Location data with latitude, longitude, state
+ * @returns {object|null} {lat, lng} or null if no valid coordinates
+ */
+function getValidCoordinates(location) {
+    // Try location's coordinates first
+    if (location.latitude && location.longitude) {
+        const validation = validateCoordinates(location.latitude, location.longitude);
+        if (validation.valid) {
+            return { lat: parseFloat(location.latitude), lng: parseFloat(location.longitude) };
+        } else {
+            console.warn('Invalid coordinates for', location.county_name || location.city, location.state + ':', validation.reason);
+        }
+    }
+
+    // Fall back to state center with small random offset
+    const state = location.state;
+    if (state) {
+        const stateCenter = STATE_CENTERS[state] || STATE_CENTERS[STATE_NAMES[state]];
+        if (stateCenter) {
+            // Add small random offset so multiple locations in same state don't stack
+            return {
+                lat: stateCenter.lat + (Math.random() - 0.5) * 2,
+                lng: stateCenter.lng + (Math.random() - 0.5) * 2
+            };
+        }
+    }
+
+    return null;
+}
+
 // State abbreviation to full name mapping
 const STATE_NAMES = {
     'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
@@ -193,18 +274,11 @@ function addUserMarkers(map, data, options = {}) {
     const aggregatedData = aggregateByCounty(data);
 
     aggregatedData.forEach(function(location) {
-        // Get coordinates - use state center if city coords not available
-        let lat, lng;
-        if (location.latitude && location.longitude) {
-            lat = location.latitude;
-            lng = location.longitude;
-        } else if (location.state && STATE_CENTERS[location.state]) {
-            // Use state center with slight random offset
-            const center = STATE_CENTERS[location.state];
-            lat = center.lat + (Math.random() - 0.5) * 2;
-            lng = center.lng + (Math.random() - 0.5) * 2;
-        } else {
-            return; // Skip if no coordinates available
+        // Get validated coordinates with fallback to state center
+        const coords = getValidCoordinates(location);
+        if (!coords) {
+            console.warn('Skipping location with no valid coordinates:', location.county_name || location.city, location.state);
+            return;
         }
 
         // Calculate marker size based on total event count
@@ -212,7 +286,7 @@ function addUserMarkers(map, data, options = {}) {
         const radius = Math.min(Math.max(Math.sqrt(events) * 4, 6), 35);
 
         // High contrast marker styles
-        const marker = L.circleMarker([lat, lng], {
+        const marker = L.circleMarker([coords.lat, coords.lng], {
             radius: radius,
             fillColor: options.color || '#0d4a7c',  // Darker blue
             color: '#1a1a1a',  // Dark border for contrast
@@ -259,16 +333,10 @@ function addCountyMarkers(map, data) {
     }
 
     aggregatedData.forEach(function(county) {
-        // Get coordinates - use state center if not available
-        let lat, lng;
-        if (county.latitude && county.longitude) {
-            lat = county.latitude;
-            lng = county.longitude;
-        } else if (county.state && STATE_CENTERS[county.state]) {
-            const center = STATE_CENTERS[county.state];
-            lat = center.lat + (Math.random() - 0.5) * 1;
-            lng = center.lng + (Math.random() - 0.5) * 1;
-        } else {
+        // Get validated coordinates with fallback to state center
+        const coords = getValidCoordinates(county);
+        if (!coords) {
+            console.warn('Skipping county with no valid coordinates:', county.county_name, county.state);
             return;
         }
 
@@ -276,7 +344,7 @@ function addCountyMarkers(map, data) {
         const radius = Math.min(Math.max(Math.sqrt(count) * 3.5, 7), 30);
 
         // High contrast marker with dark border
-        const marker = L.circleMarker([lat, lng], {
+        const marker = L.circleMarker([coords.lat, coords.lng], {
             radius: radius,
             fillColor: getColor(count),
             color: '#1a1a1a',  // Dark border for contrast
