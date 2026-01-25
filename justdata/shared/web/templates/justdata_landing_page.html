@@ -1386,10 +1386,19 @@
     <header class="header" style="padding: 10px 20px;">
         <div class="header-content">
             <div class="header-layout" style="display: flex; justify-content: space-between; align-items: center;">
-                <!-- Logo - Left aligned -->
-                <a href="/" class="logo" style="display: flex; align-items: center; text-decoration: none;">
-                    <img src="/static/img/justdata-logo-white.png" alt="JustData" style="height: 48px; width: auto;" onerror="this.onerror=null; this.src='/static/img/justdata-logo.png';">
-                </a>
+                <!-- Left side: Hamburger Menu + Logo -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <!-- Hamburger Menu (moved to left) -->
+                    <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
+                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                    </button>
+                    <!-- Logo -->
+                    <a href="/" class="logo" style="display: flex; align-items: center; text-decoration: none;">
+                        <img src="/static/img/justdata-logo-white.png" alt="JustData" style="height: 48px; width: auto;" onerror="this.onerror=null; this.src='/static/img/justdata-logo.png';">
+                    </a>
+                </div>
 
                 <!-- Executive/Admin Buttons (only visible to senior_executive and admin) -->
                 <div id="adminButtonsContainer" style="display: none; flex-direction: row; align-items: center; gap: 8px;">
@@ -1415,7 +1424,7 @@
                     <option value="senior_executive">Senior Executive</option>
                     <option value="admin">Admin</option>
                 </select>
-                <!-- Right side: Auth & Hamburger Menu -->
+                <!-- Right side: Auth -->
                 <div style="display: flex; align-items: center; min-width: 280px; justify-content: flex-end; gap: 12px;">
                     <!-- User Info (shown when logged in) -->
                     <div id="userInfo" style="display: none; align-items: center; gap: 8px;">
@@ -1437,17 +1446,10 @@
                         <i class="fas fa-sign-out-alt" style="font-size: 14px;"></i>
                         <span>Sign Out</span>
                     </button>
-
-                    <!-- Hamburger Menu -->
-                    <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
-                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                        <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                    </button>
                 </div>
             </div>
             <!-- Dropdown Nav Menu -->
-            <nav id="navMenu" class="nav-menu" style="display: none; position: absolute; top: 100%; right: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 1000;">
+            <nav id="navMenu" class="nav-menu" style="display: none; position: absolute; top: 100%; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 1000;">
                 <a href="/" class="nav-item" data-app="home" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
                 <a href="/lendsight" class="nav-item" data-app="lendsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
                 <a href="/bizsight" class="nav-item" data-app="bizsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>

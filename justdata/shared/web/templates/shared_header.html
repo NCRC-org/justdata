@@ -77,11 +77,17 @@
 <header class="header shared-header" style="position: relative; z-index: 99999; background: var(--color-header); padding: 0 var(--spacing-lg); color: white; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
     <div class="header-content" style="max-width: 1200px; margin: 0 auto; position: relative; z-index: 99999;">
         <div class="header-layout">
-            <!-- App Title on Left -->
-            <div class="app-title-section">
+            <!-- Left side: Hamburger Menu + App Title -->
+            <div class="app-title-section" style="display: flex; align-items: center; gap: 12px;">
+                <!-- Hamburger Menu (moved to left) -->
+                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
+                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                </button>
                 <h1>{{ app_name }}</h1>
             </div>
-            <!-- Auth & Hamburger Menu on Right -->
+            <!-- Auth on Right -->
             <div style="flex: 0 0 auto; display: flex; align-items: center; justify-content: flex-end; gap: 12px;">
                 <!-- User Info (shown when logged in) -->
                 <div id="userInfo" style="display: none; align-items: center; gap: 8px;">
@@ -103,17 +109,10 @@
                     <i class="fas fa-sign-out-alt" style="font-size: 14px;"></i>
                     <span>Sign Out</span>
                 </button>
-
-                <!-- Hamburger Menu -->
-                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
-                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                </button>
             </div>
         </div>
         <!-- Dropdown Nav Menu -->
-        <nav id="navMenu" class="app-nav-dropdown" style="display: none; position: absolute; top: 100%; right: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 99999;">
+        <nav id="navMenu" class="app-nav-dropdown" style="display: none; position: absolute; top: 100%; left: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 99999;">
             <a href="/" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
             <a href="/lendsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
             <a href="/bizsight" class="nav-item" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
