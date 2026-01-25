@@ -768,6 +768,26 @@ def run_area_analysis(
         if progress_tracker:
             progress_tracker.complete(success=True)
 
+        # If census_data is empty but historical_census_data has ACS data, extract current census from it
+        # This ensures Section 2 tables have the current demographic data they need
+        if (not census_data or len(census_data) == 0) and historical_census_data:
+            logger.info("[Census Fallback] census_data empty, extracting current demographics from historical_census_data ACS")
+            census_data = {}
+            for geoid, county_data in historical_census_data.items():
+                if 'time_periods' in county_data and 'acs' in county_data['time_periods']:
+                    acs_data = county_data['time_periods']['acs']
+                    census_data[geoid] = {
+                        'county_fips': county_data.get('county_fips'),
+                        'county_name': county_data.get('county_name'),
+                        'state_fips': county_data.get('state_fips'),
+                        'demographics': acs_data.get('demographics', {}),
+                        'adult_population': acs_data.get('demographics', {}).get('total_persons', 0),
+                        'data_year': acs_data.get('data_year', ''),
+                        'data_source': 'Extracted from historical_census_data ACS'
+                    }
+            if census_data:
+                logger.info(f"[Census Fallback] Extracted census_data for {len(census_data)} counties from historical ACS")
+
         return {
             'success': True,
             'report_data': report_data,
