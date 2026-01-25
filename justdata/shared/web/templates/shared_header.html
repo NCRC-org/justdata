@@ -12,7 +12,7 @@
         width: 100%;
         position: sticky;
         top: 0;
-        z-index: 1000;
+        z-index: 998;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
@@ -23,7 +23,6 @@
         padding: 12px 20px;
         max-width: 100%;
         margin: 0 auto;
-        position: relative;
     }
 
     /* ============================================
@@ -166,48 +165,112 @@
     }
 
     /* ============================================
-       NAV MENU DROPDOWN
+       NAV BACKDROP (Semi-transparent overlay)
        ============================================ */
-    .nav-dropdown {
+    .nav-backdrop {
         display: none;
-        position: absolute;
-        top: 100%;
-        left: 20px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        height: 100dvh; /* Dynamic viewport height for mobile */
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .nav-backdrop.active {
+        display: block;
+        opacity: 1;
+    }
+
+    /* ============================================
+       NAV MENU SIDEBAR (Slides in from left)
+       ============================================ */
+    .nav-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 280px;
+        height: 100vh;
+        height: 100dvh;
         background: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border-radius: 0 0 8px 8px;
-        min-width: 220px;
-        z-index: 99999;
-        overflow: visible !important;
-        height: auto !important;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 1000;
+        overflow-y: auto;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
     }
 
-    .nav-dropdown.active {
-        display: block;
+    .nav-sidebar.active {
+        transform: translateX(0);
     }
 
-    .nav-dropdown .nav-item {
-        display: block;
-        padding: 12px 20px;
+    .nav-sidebar-header {
+        background: #1e3a5f;
+        color: white;
+        padding: 16px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .nav-sidebar-title {
+        font-family: Georgia, "Times New Roman", serif;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .nav-close-btn {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        padding: 4px 8px;
+        line-height: 1;
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .nav-close-btn:hover {
+        background: rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-sidebar .nav-item {
+        display: flex;
+        align-items: center;
+        padding: 14px 20px;
         color: #333;
         text-decoration: none;
         border-bottom: 1px solid #eee;
         transition: background 0.15s;
     }
 
-    .nav-dropdown .nav-item:last-child {
-        border-bottom: none;
-        border-radius: 0 0 8px 8px;
-    }
-
-    .nav-dropdown .nav-item:hover {
+    .nav-sidebar .nav-item:hover {
         background: #f5f5f5;
     }
 
-    .nav-dropdown .nav-item i {
-        margin-right: 10px;
-        width: 16px;
+    .nav-sidebar .nav-item i {
+        margin-right: 12px;
+        width: 20px;
         text-align: center;
+        font-size: 16px;
+    }
+
+    .nav-sidebar .nav-item span {
+        font-size: 15px;
+        font-weight: 500;
+    }
+
+    /* Prevent body scroll when menu open */
+    body.nav-open {
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
     }
 
     /* ============================================
@@ -240,7 +303,7 @@
     }
 
     .breadcrumb-bar .breadcrumb-item + .breadcrumb-item::before {
-        content: "›";
+        content: ">";
         color: #999;
         margin: 0 8px;
         font-size: 14px;
@@ -301,14 +364,40 @@
         .app-branding .app-name {
             font-size: 1rem;
         }
+
+        .nav-sidebar {
+            width: 260px;
+        }
     }
 </style>
+
+<!-- Backdrop for mobile menu -->
+<div class="nav-backdrop" id="navBackdrop" aria-hidden="true"></div>
+
+<!-- Navigation Sidebar -->
+<nav class="nav-sidebar" id="navSidebar" aria-label="Main navigation" role="navigation">
+    <div class="nav-sidebar-header">
+        <h2 class="nav-sidebar-title">JustData</h2>
+        <button class="nav-close-btn" id="navCloseBtn" aria-label="Close navigation menu">&times;</button>
+    </div>
+    <a href="/" class="nav-item" data-app="home"><i class="fas fa-home" style="color: #1e3a5f;"></i><span>Home</span></a>
+    <a href="/lendsight" class="nav-item" data-app="lendsight"><i class="fas fa-chart-line" style="color: #2563eb;"></i><span>LendSight</span></a>
+    <a href="/bizsight" class="nav-item" data-app="bizsight"><i class="fas fa-briefcase" style="color: #059669;"></i><span>BizSight</span></a>
+    <a href="/branchsight" class="nav-item" data-app="branchseeker"><i class="fas fa-building" style="color: #7c3aed;"></i><span>BranchSight</span></a>
+    <a href="/branchmapper" class="nav-item" data-app="branchmapper"><i class="fas fa-map-marked-alt" style="color: #0891b2;"></i><span>BranchMapper</span></a>
+    <a href="/mergermeter" class="nav-item" data-app="mergermeter"><i class="fas fa-exchange-alt" style="color: #dc2626;"></i><span>MergerMeter</span></a>
+    <a href="/dataexplorer" class="nav-item" data-app="dataexplorer"><i class="fas fa-search" style="color: #ca8a04;"></i><span>DataExplorer</span></a>
+    <a href="/lenderprofile" class="nav-item" data-app="lenderprofile"><i class="fas fa-university" style="color: #be185d;"></i><span>LenderProfile</span></a>
+    <a href="/analytics" class="nav-item" data-app="analytics"><i class="fas fa-chart-pie" style="color: #10b981;"></i><span>Analytics</span></a>
+    <a href="/electwatch" class="nav-item" data-app="electwatch"><i class="fas fa-landmark" style="color: #4f46e5;"></i><span>ElectWatch</span></a>
+    <a href="/admin" class="nav-item" data-app="admin"><i class="fas fa-cog" style="color: #6b7280;"></i><span>Admin</span></a>
+</nav>
 
 <header class="app-header">
     <div class="header-container">
         <!-- LEFT SECTION: Hamburger + App Name -->
         <div class="header-left">
-            <button class="hamburger-menu" id="menuToggle" onclick="toggleNavMenu()" aria-label="Toggle navigation menu">
+            <button class="hamburger-menu" id="menuToggle" aria-label="Toggle navigation menu" aria-expanded="false" aria-controls="navSidebar">
                 <span class="hamburger-line"></span>
                 <span class="hamburger-line"></span>
                 <span class="hamburger-line"></span>
@@ -342,21 +431,6 @@
                 <span>Sign Out</span>
             </button>
         </div>
-
-        <!-- Nav Menu Dropdown -->
-        <nav id="navMenu" class="nav-dropdown" style="display: none;">
-            <a href="/" class="nav-item" data-app="home"><i class="fas fa-home" style="color: #1e3a5f;"></i>Home</a>
-            <a href="/lendsight" class="nav-item" data-app="lendsight"><i class="fas fa-chart-line" style="color: #2563eb;"></i>LendSight</a>
-            <a href="/bizsight" class="nav-item" data-app="bizsight"><i class="fas fa-briefcase" style="color: #059669;"></i>BizSight</a>
-            <a href="/branchsight" class="nav-item" data-app="branchseeker"><i class="fas fa-building" style="color: #7c3aed;"></i>BranchSight</a>
-            <a href="/branchmapper" class="nav-item" data-app="branchmapper"><i class="fas fa-map-marked-alt" style="color: #0891b2;"></i>BranchMapper</a>
-            <a href="/mergermeter" class="nav-item" data-app="mergermeter"><i class="fas fa-exchange-alt" style="color: #dc2626;"></i>MergerMeter</a>
-            <a href="/dataexplorer" class="nav-item" data-app="dataexplorer"><i class="fas fa-search" style="color: #ca8a04;"></i>DataExplorer</a>
-            <a href="/lenderprofile" class="nav-item" data-app="lenderprofile"><i class="fas fa-university" style="color: #be185d;"></i>LenderProfile</a>
-            <a href="/analytics" class="nav-item" data-app="analytics"><i class="fas fa-chart-pie" style="color: #10b981;"></i>Analytics</a>
-            <a href="/electwatch" class="nav-item" data-app="electwatch"><i class="fas fa-landmark" style="color: #4f46e5;"></i>ElectWatch</a>
-            <a href="/admin" class="nav-item" data-app="admin"><i class="fas fa-cog" style="color: #6b7280;"></i>Admin</a>
-        </nav>
     </div>
 </header>
 
@@ -428,26 +502,70 @@
 </div>
 
 <script>
-// Toggle nav menu - use display style for reliability
-function toggleNavMenu() {
-    const navMenu = document.getElementById('navMenu');
-    if (!navMenu) return;
+// Nav Menu Elements
+const menuToggle = document.getElementById('menuToggle');
+const navSidebar = document.getElementById('navSidebar');
+const navBackdrop = document.getElementById('navBackdrop');
+const navCloseBtn = document.getElementById('navCloseBtn');
 
-    // Toggle visibility using display property directly
-    if (navMenu.style.display === 'block') {
-        navMenu.style.display = 'none';
-    } else {
-        navMenu.style.display = 'block';
-    }
-    console.log('[Header] Nav menu toggled, display:', navMenu.style.display);
+// Open navigation menu
+function openNavMenu() {
+    navSidebar.classList.add('active');
+    navBackdrop.classList.add('active');
+    document.body.classList.add('nav-open');
+    menuToggle.setAttribute('aria-expanded', 'true');
+    navBackdrop.setAttribute('aria-hidden', 'false');
+    console.log('[Nav] Menu opened');
 }
 
-// Close nav menu when clicking outside
-document.addEventListener('click', function(e) {
-    const navMenu = document.getElementById('navMenu');
-    const hamburger = document.getElementById('menuToggle');
-    if (navMenu && hamburger && !navMenu.contains(e.target) && !hamburger.contains(e.target)) {
-        navMenu.style.display = 'none';
+// Close navigation menu
+function closeNavMenu() {
+    navSidebar.classList.remove('active');
+    navBackdrop.classList.remove('active');
+    document.body.classList.remove('nav-open');
+    menuToggle.setAttribute('aria-expanded', 'false');
+    navBackdrop.setAttribute('aria-hidden', 'true');
+    console.log('[Nav] Menu closed');
+}
+
+// Toggle navigation menu
+function toggleNavMenu() {
+    if (navSidebar.classList.contains('active')) {
+        closeNavMenu();
+    } else {
+        openNavMenu();
+    }
+}
+
+// Event listeners
+if (menuToggle) {
+    menuToggle.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        toggleNavMenu();
+    });
+}
+
+if (navBackdrop) {
+    navBackdrop.addEventListener('click', closeNavMenu);
+}
+
+if (navCloseBtn) {
+    navCloseBtn.addEventListener('click', closeNavMenu);
+}
+
+// Close menu when clicking a nav link
+document.querySelectorAll('.nav-sidebar .nav-item').forEach(link => {
+    link.addEventListener('click', function() {
+        // Small delay to allow navigation to start
+        setTimeout(closeNavMenu, 100);
+    });
+});
+
+// ESC key closes menu
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && navSidebar.classList.contains('active')) {
+        closeNavMenu();
     }
 });
 
@@ -558,15 +676,15 @@ function filterNavMenuByAccess(userType) {
     userType = userType || 'public_anonymous';
     console.log('[NavMenu] Filtering for userType:', userType);
 
-    document.querySelectorAll('#navMenu .nav-item').forEach(item => {
+    document.querySelectorAll('#navSidebar .nav-item').forEach(item => {
         const appKey = item.getAttribute('data-app');
         if (appKey === 'home') {
-            item.style.display = 'block';
+            item.style.display = 'flex';
             return;
         }
         const accessConfig = sharedHeaderAppAccessConfig[appKey];
         if (!accessConfig) {
-            item.style.display = 'block'; // Show if no config (default to visible)
+            item.style.display = 'flex'; // Show if no config (default to visible)
             return;
         }
         const accessLevel = accessConfig[userType];
@@ -574,7 +692,7 @@ function filterNavMenuByAccess(userType) {
         if (accessLevel === 'hidden') {
             item.style.display = 'none';
         } else {
-            item.style.display = 'block';
+            item.style.display = 'flex';
         }
     });
 }
