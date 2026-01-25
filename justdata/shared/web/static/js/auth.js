@@ -18,6 +18,8 @@ const firebaseConfig = {
 let firebaseApp = null;
 let firebaseAuth = null;
 let signInInProgress = false;  // Prevent multiple sign-in attempts
+let authStateCallbacks = [];   // Callbacks for auth state changes
+let lastKnownUser = null;      // Track last known user for new callback registrations
 
 function initFirebase() {
     if (firebaseApp) return;
@@ -48,21 +50,69 @@ function initFirebase() {
  * Handle authentication state changes
  */
 async function handleAuthStateChange(user) {
+    // Store user with additional info for callbacks
+    let userWithType = null;
+
     if (user) {
         // User is signed in
         console.log('User signed in:', user.email);
 
         // Get ID token and notify backend
         const idToken = await user.getIdToken();
-        await notifyBackendLogin(idToken, user);
+        const backendResponse = await notifyBackendLogin(idToken, user);
 
         // Update UI
         updateAuthUI(user);
+
+        // Create user object with type info for callbacks
+        userWithType = {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            emailVerified: user.emailVerified,
+            userType: window.justDataUserType || 'public_registered',
+            getIdTokenResult: user.getIdTokenResult.bind(user)
+        };
     } else {
         // User is signed out
         console.log('User signed out');
         updateAuthUI(null);
     }
+
+    // Store for new callback registrations
+    lastKnownUser = userWithType;
+
+    // Notify all registered callbacks
+    authStateCallbacks.forEach(callback => {
+        try {
+            callback(userWithType);
+        } catch (err) {
+            console.error('Auth state callback error:', err);
+        }
+    });
+}
+
+/**
+ * Register a callback for auth state changes
+ * @param {Function} callback - Function to call when auth state changes
+ */
+function onAuthStateChanged(callback) {
+    if (typeof callback !== 'function') {
+        console.error('onAuthStateChanged requires a function callback');
+        return;
+    }
+
+    // Add to callbacks array
+    authStateCallbacks.push(callback);
+
+    // If we already have a known user state, call immediately
+    if (lastKnownUser !== null || firebaseAuth) {
+        // Call with current state (may be null if not logged in)
+        setTimeout(() => callback(lastKnownUser), 0);
+    }
+
+    console.log('[Auth] Registered auth state callback, total:', authStateCallbacks.length);
 }
 
 /**
@@ -372,6 +422,25 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Store user type for UI updates
             window.justDataUserType = data.user_type;
             window.justDataPermissions = data.permissions;
+
+            // Set lastKnownUser for callbacks registered later
+            lastKnownUser = {
+                uid: data.user.uid,
+                email: data.user.email,
+                displayName: data.user.name,
+                photoURL: data.user.picture,
+                emailVerified: data.user.email_verified || false,
+                userType: data.user_type
+            };
+
+            // Notify any already-registered callbacks
+            authStateCallbacks.forEach(callback => {
+                try {
+                    callback(lastKnownUser);
+                } catch (err) {
+                    console.error('Auth state callback error:', err);
+                }
+            });
         }
     } catch (error) {
         console.log('Backend session check skipped:', error.message);
@@ -395,5 +464,6 @@ window.JustDataAuth = {
     getCurrentUser,
     isAuthenticated,
     getAuthStatus,
-    authFetch
+    authFetch,
+    onAuthStateChanged
 };

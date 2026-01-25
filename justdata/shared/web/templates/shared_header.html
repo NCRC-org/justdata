@@ -563,7 +563,13 @@ function filterNavMenuByAccess(userType) {
             return;
         }
         const accessConfig = sharedHeaderAppAccessConfig[appKey];
-        if (!accessConfig || accessConfig[userType] !== 'full') {
+        if (!accessConfig) {
+            item.style.display = 'block'; // Show if no config (default to visible)
+            return;
+        }
+        const accessLevel = accessConfig[userType];
+        // Show app if access level is NOT 'hidden' (show full, limited, and locked)
+        if (accessLevel === 'hidden') {
             item.style.display = 'none';
         } else {
             item.style.display = 'block';
