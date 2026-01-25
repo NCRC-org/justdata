@@ -80,10 +80,10 @@
             <!-- Left side: Hamburger Menu + App Title -->
             <div class="app-title-section" style="display: flex; align-items: center; gap: 12px;">
                 <!-- Hamburger Menu (moved to left) -->
-                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 7px;">
-                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
-                    <span style="display: block; width: 36px; height: 5px; background: white; border-radius: 2px;"></span>
+                <button class="hamburger-menu" onclick="toggleNavMenu()" aria-label="Toggle navigation menu" style="background: none; border: none; cursor: pointer; padding: 8px; display: flex; flex-direction: column; gap: 5px;">
+                    <span style="display: block; width: 24px; height: 3px; background: white; border-radius: 1px;"></span>
+                    <span style="display: block; width: 24px; height: 3px; background: white; border-radius: 1px;"></span>
+                    <span style="display: block; width: 24px; height: 3px; background: white; border-radius: 1px;"></span>
                 </button>
                 <h1>{{ app_name }}</h1>
             </div>
@@ -112,7 +112,7 @@
             </div>
         </div>
         <!-- Dropdown Nav Menu -->
-        <nav id="navMenu" class="app-nav-dropdown" style="display: none; position: absolute; top: 100%; left: 20px; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 99999;">
+        <nav id="navMenu" class="app-nav-dropdown" style="display: none; position: absolute; top: 64px; left: 0; background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 0 0 8px 8px; min-width: 220px; z-index: 99999;">
             <a href="/" class="nav-item" data-app="home" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
             <a href="/lendsight" class="nav-item" data-app="lendsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
             <a href="/bizsight" class="nav-item" data-app="bizsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
@@ -442,6 +442,8 @@ function filterNavMenuByAccess(userType) {
     // Default to public_anonymous if no user type
     userType = userType || 'public_anonymous';
 
+    console.log('[NavMenu] Filtering for userType:', userType);
+
     document.querySelectorAll('#navMenu .nav-item').forEach(item => {
         const appKey = item.getAttribute('data-app');
 
@@ -465,18 +467,55 @@ function filterNavMenuByAccess(userType) {
 
 // Initialize nav menu filtering when auth state changes
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if JustDataAuth is available and set up auth state listener
-    if (typeof JustDataAuth !== 'undefined' && JustDataAuth.onAuthStateChanged) {
-        JustDataAuth.onAuthStateChanged(function(user) {
-            if (user && user.userType) {
-                filterNavMenuByAccess(user.userType);
-            } else {
-                filterNavMenuByAccess('public_anonymous');
-            }
-        });
-    } else {
-        // If auth not available, default to public_anonymous
-        filterNavMenuByAccess('public_anonymous');
+    // Function to get user type from various possible sources
+    function getUserType(user) {
+        if (!user) return 'public_anonymous';
+
+        // Try different property names that might contain user type
+        const userType = user.userType || user.user_type || user.role || user.type;
+
+        // Also check custom claims if available
+        if (!userType && user.customClaims) {
+            return user.customClaims.userType || user.customClaims.role || 'public_anonymous';
+        }
+
+        // Check if it's stored in the user object directly
+        if (!userType && user.getIdTokenResult) {
+            // This is a Firebase user, we need to get claims
+            user.getIdTokenResult().then(function(idTokenResult) {
+                const claims = idTokenResult.claims;
+                const claimUserType = claims.userType || claims.user_type || claims.role || 'public_anonymous';
+                console.log('[NavMenu] Got userType from claims:', claimUserType);
+                filterNavMenuByAccess(claimUserType);
+            }).catch(function(err) {
+                console.error('[NavMenu] Error getting token claims:', err);
+            });
+            return null; // Will be handled async
+        }
+
+        return userType || 'public_anonymous';
     }
+
+    // Check if JustDataAuth is available and set up auth state listener
+    function setupAuthListener() {
+        if (typeof JustDataAuth !== 'undefined' && JustDataAuth.onAuthStateChanged) {
+            console.log('[NavMenu] JustDataAuth found, setting up listener');
+            JustDataAuth.onAuthStateChanged(function(user) {
+                console.log('[NavMenu] Auth state changed, user:', user);
+                const userType = getUserType(user);
+                if (userType !== null) {
+                    filterNavMenuByAccess(userType);
+                }
+            });
+        } else {
+            // If auth not available yet, try again shortly
+            console.log('[NavMenu] JustDataAuth not ready, will retry...');
+            setTimeout(setupAuthListener, 500);
+        }
+    }
+
+    // Start with public_anonymous, then update when auth is ready
+    filterNavMenuByAccess('public_anonymous');
+    setupAuthListener();
 });
 </script>
