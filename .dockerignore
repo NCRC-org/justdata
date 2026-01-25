@@ -73,9 +73,10 @@ cloudbuild.yaml
 datasets/
 
 # Exclude most of justdata/data but keep specific directories
-justdata/data/*
+justdata/data/**
 # Keep HUD data for Area Analysis (needed for Population Share calculations)
-!justdata/data/hud
+!justdata/data/hud/
+!justdata/data/hud/**
 
 # Keep analytics demo data
 !justdata/apps/analytics/static/demo_data/synthetic_events.json
