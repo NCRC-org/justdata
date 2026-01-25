@@ -1380,8 +1380,17 @@
                     });
                     
                     if (!response.ok) {
-                        if (response.status === 404) {
-                            throw new Error('Endpoint not found. Please refresh the page (Ctrl+F5) and try again.');
+                        // Try to get error message from JSON response
+                        try {
+                            const errorData = await response.json();
+                            if (errorData.error) {
+                                throw new Error(errorData.error);
+                            }
+                        } catch (jsonError) {
+                            // If JSON parsing fails, fall back to text
+                            if (response.status === 404) {
+                                throw new Error('Endpoint not found. Please refresh the page (Ctrl+F5) and try again.');
+                            }
                         }
                         const errorText = await response.text();
                         throw new Error(`Server error (${response.status}): ${errorText}`);
