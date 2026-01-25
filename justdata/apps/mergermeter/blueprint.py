@@ -473,7 +473,7 @@ def api_generate_assessment_areas():
         if not assessment_areas:
             return jsonify({
                 'success': False,
-                'error': f'No branches found for RSSD {rssd} in year {year}. Please verify the RSSD number and year.'
+                'error': f'No branches found for RSSD {rssd} as of {year}. This may indicate the bank has merged, been acquired, or changed its charter. Try searching for the bank under its new name, or manually enter the assessment areas.'
             }), 404
         
         return jsonify({
