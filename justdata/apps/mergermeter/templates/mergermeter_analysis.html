@@ -1381,19 +1381,23 @@
                     
                     if (!response.ok) {
                         // Try to get error message from JSON response
+                        let errorMessage = null;
                         try {
                             const errorData = await response.json();
                             if (errorData.error) {
-                                throw new Error(errorData.error);
+                                errorMessage = errorData.error;
                             }
                         } catch (jsonError) {
-                            // If JSON parsing fails, fall back to text
-                            if (response.status === 404) {
-                                throw new Error('Endpoint not found. Please refresh the page (Ctrl+F5) and try again.');
-                            }
+                            // JSON parsing failed, will use fallback below
                         }
-                        const errorText = await response.text();
-                        throw new Error(`Server error (${response.status}): ${errorText}`);
+
+                        if (errorMessage) {
+                            throw new Error(errorMessage);
+                        } else if (response.status === 404) {
+                            throw new Error('Endpoint not found. Please refresh the page (Ctrl+F5) and try again.');
+                        } else {
+                            throw new Error(`Server error (${response.status})`);
+                        }
                     }
                     
                     const result = await response.json();
