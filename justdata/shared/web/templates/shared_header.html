@@ -342,7 +342,7 @@
         </div>
 
         <!-- Nav Menu Dropdown -->
-        <nav id="navMenu" class="nav-dropdown">
+        <nav id="navMenu" class="nav-dropdown" style="display: none;">
             <a href="/" class="nav-item" data-app="home"><i class="fas fa-home" style="color: #1e3a5f;"></i>Home</a>
             <a href="/lendsight" class="nav-item" data-app="lendsight"><i class="fas fa-chart-line" style="color: #2563eb;"></i>LendSight</a>
             <a href="/bizsight" class="nav-item" data-app="bizsight"><i class="fas fa-briefcase" style="color: #059669;"></i>BizSight</a>
@@ -426,10 +426,18 @@
 </div>
 
 <script>
-// Toggle nav menu
+// Toggle nav menu - use display style for reliability
 function toggleNavMenu() {
     const navMenu = document.getElementById('navMenu');
-    navMenu.classList.toggle('active');
+    if (!navMenu) return;
+
+    // Toggle visibility using display property directly
+    if (navMenu.style.display === 'block') {
+        navMenu.style.display = 'none';
+    } else {
+        navMenu.style.display = 'block';
+    }
+    console.log('[Header] Nav menu toggled, display:', navMenu.style.display);
 }
 
 // Close nav menu when clicking outside
@@ -437,7 +445,7 @@ document.addEventListener('click', function(e) {
     const navMenu = document.getElementById('navMenu');
     const hamburger = document.getElementById('menuToggle');
     if (navMenu && hamburger && !navMenu.contains(e.target) && !hamburger.contains(e.target)) {
-        navMenu.classList.remove('active');
+        navMenu.style.display = 'none';
     }
 });
 

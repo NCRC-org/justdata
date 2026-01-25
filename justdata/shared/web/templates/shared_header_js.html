@@ -1,18 +1,3 @@
-<!-- Shared Header JavaScript -->
-<!-- Note: This file is included by base_app.html after the main shared_header.html -->
-<!-- The main toggle functions are in shared_header.html, this is kept for backwards compatibility -->
-
-<script>
-    // The toggleNavMenu function is now defined in shared_header.html
-    // This file is kept for backwards compatibility with templates that include it separately
-
-    // If toggleNavMenu isn't already defined, define it here as fallback
-    if (typeof toggleNavMenu !== 'function') {
-        function toggleNavMenu() {
-            const navMenu = document.getElementById('navMenu');
-            if (navMenu) {
-                navMenu.classList.toggle('active');
-            }
-        }
-    }
-</script>
+<!-- Shared Header JavaScript - Backwards Compatibility -->
+<!-- Main toggle logic is in shared_header.html -->
+<!-- This file is kept for templates that include it separately -->
