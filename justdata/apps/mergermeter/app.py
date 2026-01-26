@@ -1191,22 +1191,25 @@ def _perform_analysis(job_id, form_data):
                     WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
                 ),
                 filtered_sb_data AS (
-                    SELECT 
+                    SELECT
                         LPAD(CAST(d.geoid5 AS STRING), 5, '0') as geoid5,
                         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
-                        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) as sb_loans_amount,
-                        CASE 
-                            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
+                        -- SB amounts are stored in thousands of dollars, convert to actual dollars
+                        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
+                        -- LMICT: income_group_total codes - 101/102 = Low/Moderate, 001-008 = LMI subcategories
+                        -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
+                        CASE
+                            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
                             THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
                             ELSE 0
                         END as lmict_loans_count,
-                        CASE 
-                            WHEN d.income_group_total IN ('101', '102', '1', '2', '3', '4', '5', '6', '7', '8')
-                            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m)
+                        CASE
+                            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
+                            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
                             ELSE 0
                         END as lmict_loans_amount,
                         d.numsbrev_under_1m as loans_rev_under_1m,
-                        d.amtsbrev_under_1m as amount_rev_under_1m
+                        d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
                     FROM `hdma1-242116.sb.disclosure` d
                     INNER JOIN `hdma1-242116.sb.lenders` l
                         ON d.respondent_id = l.sb_resid
