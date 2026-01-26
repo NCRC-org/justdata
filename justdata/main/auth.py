@@ -54,6 +54,7 @@ SENIOR_EXECUTIVE_EMAILS = [
     'jmatthews@ncrc.org',    # Jacelyn Matthews
     'awiltse@ncrc.org',      # Alyssa Wiltse
     'testexec@justdata.ncrc.org',  # Test Executive Account
+    'testsenior@justdata.ncrc.org',  # Test Senior Executive (working login)
 ]
 
 # User types matching the 9-tier system
