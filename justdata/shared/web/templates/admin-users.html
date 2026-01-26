@@ -1,1768 +1,2223 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management | JustData Admin</title>
-    <meta name="description" content="Admin dashboard for managing JustData users and permissions">
+{% extends "base_app.html" %}
 
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+{% set app_name = "User Management" %}
+{% set app_description = "Admin dashboard for managing JustData users and permissions" %}
+{% set version = "1.0.0" %}
 
-    <!-- Firebase SDK -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+{% block title %}User Management | JustData Admin{% endblock %}
 
-    <style>
-        /* ProPublica-Inspired Design - Matching Homepage */
-        :root {
-            /* Colors - ProPublica Style */
-            --color-header: #1E3D5C;           /* Navy header bar */
-            --color-primary: #0077B6;          /* Primary accent */
-            --color-primary-hover: #005a8c;    /* Primary hover state */
-            --color-text: #1a1a1a;             /* Main text color */
-            --color-text-secondary: #666666;   /* Secondary text */
-            --color-text-muted: #999999;       /* Muted text */
-            --color-background: #f8f8f8;       /* Page background */
-            --color-card: #ffffff;             /* Card background */
-            --color-border: #e0e0e0;           /* Card borders */
+{% block extra_css %}
+<style>
+    /* Admin User Management Styles */
 
-            /* Legacy variables for compatibility */
-            --ncrc-primary-blue: #0077B6;
-            --ncrc-secondary-blue: #005a8c;
-            --ncrc-dark-blue: #1E3D5C;
-            --ncrc-light-blue: #E6F2FF;
-            --ncrc-gold: #ffc23a;
-            --ncrc-gray: #666666;
-            --ncrc-white: #FFFFFF;
-            --ncrc-black: #000000;
-            --ncrc-gray-light: #f8f8f8;
-            --ncrc-gray-dark: #1a1a1a;
-            --ncrc-success: #28a745;
-            --ncrc-warning: #ffc107;
-            --ncrc-danger: #dc3545;
+    /* Main Container */
+    .dashboard-container {
+        max-width: 1600px;
+        margin: 0 auto;
+        padding: 30px;
+    }
 
-            /* Typography */
-            --font-serif: Georgia, "Times New Roman", serif;
-            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+    /* Action Bar */
+    .action-bar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    .action-bar h2 {
+        font-family: var(--font-serif);
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--color-text);
+    }
 
-        body {
-            font-family: var(--font-sans);
-            background: var(--color-background);
-            min-height: 100vh;
-            color: var(--color-text);
-            line-height: 1.6;
-        }
+    .action-buttons-group {
+        display: flex;
+        gap: 10px;
+    }
 
-        /* Header - ProPublica Style */
-        .header {
-            background: var(--color-header);
-            padding: 10px 24px;
-            color: white;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
+    .btn-primary {
+        background: var(--ncrc-primary-blue);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
 
-        .header-content {
-            max-width: 1600px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    .btn-primary:hover {
+        background: var(--ncrc-secondary-blue);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(85, 45, 135, 0.3);
+    }
 
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
+    .btn-primary:disabled {
+        background: var(--ncrc-gray);
+        cursor: not-allowed;
+        transform: none;
+    }
 
-        .back-button {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: background 0.2s ease;
-        }
+    .btn-secondary {
+        background: var(--ncrc-gray-light);
+        color: var(--ncrc-gray-dark);
+        border: 2px solid #e0e0e0;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
 
-        .back-button:hover {
-            background: rgba(255,255,255,0.3);
-        }
+    .btn-secondary:hover {
+        background: #e0e0e0;
+    }
 
-        .header-title {
-            font-family: var(--font-serif);
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
+    .btn-success {
+        background: var(--ncrc-success, #28a745);
+        color: white;
+    }
 
-        .user-role-badge {
-            background: var(--ncrc-gold);
-            color: var(--ncrc-black);
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
+    .btn-success:hover {
+        background: #218838;
+    }
 
-        .header-right {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+    /* Stats Cards */
+    .stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
 
-        .current-user {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-        }
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        text-align: center;
+    }
 
-        .current-user img {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            border: 2px solid white;
-        }
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--ncrc-primary-blue);
+    }
 
-        /* Main Container */
+    .stat-card .stat-label {
+        color: var(--ncrc-gray);
+        font-size: 0.9rem;
+        margin-top: 5px;
+    }
+
+    /* Table Container */
+    .table-container {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .table-header {
+        padding: 20px;
+        background: var(--ncrc-light-blue);
+        border-bottom: 2px solid var(--ncrc-primary-blue);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .table-header h3 {
+        font-size: 1.1rem;
+        color: var(--ncrc-primary-blue);
+        margin: 0;
+    }
+
+    .search-filter-group {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border: 2px solid #e0e0e0;
+    }
+
+    .search-box input {
+        border: none;
+        outline: none;
+        font-size: 0.9rem;
+        width: 250px;
+    }
+
+    .search-box i {
+        color: var(--ncrc-gray);
+    }
+
+    .filter-select {
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        background: white;
+        cursor: pointer;
+    }
+
+    .filter-select:focus {
+        outline: none;
+        border-color: var(--ncrc-primary-blue);
+    }
+
+    /* Table */
+    .table-wrapper {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        min-width: 900px;
+    }
+
+    thead {
+        background: var(--ncrc-primary-blue);
+        color: white;
+    }
+
+    th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 0.9rem;
+        cursor: pointer;
+        user-select: none;
+        white-space: nowrap;
+    }
+
+    th:hover {
+        background: rgba(255,255,255,0.1);
+    }
+
+    th .sort-icon {
+        margin-left: 5px;
+        opacity: 0.5;
+    }
+
+    th.sorted .sort-icon {
+        opacity: 1;
+    }
+
+    td {
+        padding: 15px;
+        border-bottom: 1px solid #e0e0e0;
+        vertical-align: middle;
+    }
+
+    tbody tr:hover {
+        background: var(--ncrc-light-blue);
+    }
+
+    /* User Type Badges */
+    .user-type-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .badge-public_anonymous { background: #f8f9fa; color: #6c757d; }
+    .badge-public_registered { background: #e3f2fd; color: #1976d2; }
+    .badge-just_economy_club { background: #fff3e0; color: #f57c00; }
+    .badge-member { background: #e8f5e9; color: #388e3c; }
+    .badge-member_premium { background: #e1f5fe; color: #0288d1; }
+    .badge-non_member_org { background: #fce4ec; color: #c2185b; }
+    .badge-staff { background: #f3e5f5; color: #7b1fa2; }
+    .badge-senior_executive { background: #e8eaf6; color: #3949ab; }
+    .badge-admin { background: #ffebee; color: #c62828; }
+    .badge-pending { background: #fff8e1; color: #ff8f00; border: 1px dashed #ff8f00; }
+
+    /* Inline Type Dropdown */
+    .type-dropdown {
+        padding: 6px 10px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        background: white;
+        cursor: pointer;
+        min-width: 150px;
+    }
+
+    .type-dropdown:focus {
+        outline: none;
+        border-color: var(--ncrc-primary-blue);
+    }
+
+    .type-dropdown.saving {
+        opacity: 0.6;
+        pointer-events: none;
+    }
+
+    /* Action Buttons */
+    .action-cell {
+        display: flex;
+        gap: 8px;
+    }
+
+    .btn-icon {
+        background: none;
+        border: none;
+        padding: 6px 10px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        color: var(--ncrc-gray);
+    }
+
+    .btn-icon:hover {
+        background: var(--ncrc-light-blue);
+        color: var(--ncrc-primary-blue);
+    }
+
+    .btn-icon.delete:hover {
+        color: #dc3545;
+    }
+
+    .btn-icon.reset:hover {
+        color: var(--ncrc-dark-blue);
+    }
+
+    /* Delete Button (Danger) */
+    .btn-danger {
+        background: #dc3545;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: all 0.2s ease;
+    }
+
+    .btn-danger:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    }
+
+    .btn-danger:disabled {
+        background: #e9a0a8;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
+
+    /* Checkbox styling */
+    .user-checkbox {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+        accent-color: var(--ncrc-primary-blue);
+    }
+
+    .user-checkbox:disabled {
+        cursor: not-allowed;
+        opacity: 0.4;
+    }
+
+    .checkbox-cell {
+        width: 40px;
+        text-align: center;
+    }
+
+    /* Auth method badges */
+    .auth-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+
+    .auth-badge.google {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .auth-badge.email {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    /* Delete confirmation modal styles */
+    .delete-user-list {
+        max-height: 200px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 12px;
+        margin: 15px 0;
+    }
+
+    .delete-user-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .delete-user-item:last-child {
+        border-bottom: none;
+    }
+
+    .delete-warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+        color: #856404;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+
+    .confirm-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 1rem;
+        text-align: center;
+        letter-spacing: 2px;
+    }
+
+    .confirm-input:focus {
+        outline: none;
+        border-color: #dc3545;
+    }
+
+    /* Password modal styles */
+    .password-display {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 1.1rem;
+    }
+
+    .password-display input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        font-family: monospace;
+        font-size: 1.1rem;
+        outline: none;
+    }
+
+    .copy-btn {
+        background: var(--ncrc-primary-blue);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.85rem;
+    }
+
+    .copy-btn:hover {
+        background: var(--ncrc-secondary-blue);
+    }
+
+    .generate-btn {
+        background: var(--ncrc-gray-light);
+        color: var(--ncrc-gray-dark);
+        border: 2px solid #e0e0e0;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .generate-btn:hover {
+        background: #e0e0e0;
+    }
+
+    /* Status Indicators */
+    .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 6px;
+    }
+
+    .status-dot.active { background: #28a745; }
+    .status-dot.pending { background: #ffc107; }
+    .status-dot.inactive { background: var(--ncrc-gray); }
+
+    /* Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.6);
+        z-index: 10000;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        backdrop-filter: blur(4px);
+    }
+
+    .modal-overlay.active {
+        display: flex;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 12px;
+        max-width: 600px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-header {
+        padding: 25px 30px;
+        border-bottom: 2px solid var(--ncrc-light-blue);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .modal-header h3 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: var(--ncrc-primary-blue);
+    }
+
+    .modal-close {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--ncrc-gray);
+        cursor: pointer;
+        padding: 5px 10px;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .modal-close:hover {
+        background: var(--ncrc-light-blue);
+        color: var(--ncrc-primary-blue);
+    }
+
+    .modal-body {
+        padding: 30px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--ncrc-dark-blue);
+        margin-bottom: 8px;
+    }
+
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        transition: border-color 0.2s ease;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: var(--ncrc-primary-blue);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 30px;
+    }
+
+    /* Toast Notifications */
+    .toast-container {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 10001;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .toast {
+        padding: 15px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        animation: slideIn 0.3s ease;
+    }
+
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+    .toast.warning { background: #ffc107; color: #1a1a1a; }
+    .toast.info { background: var(--ncrc-dark-blue); }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Loading Spinner */
+    .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(255,255,255,0.3);
+        border-radius: 50%;
+        border-top-color: white;
+        animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .loading-overlay {
+        display: none;
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255,255,255,0.8);
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+    }
+
+    .loading-overlay.active {
+        display: flex;
+    }
+
+    /* ============================================
+       ADMIN TABS
+       ============================================ */
+    .admin-tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 25px;
+        border-bottom: 2px solid #e0e0e0;
+        padding-bottom: 0;
+    }
+
+    .tab-btn {
+        background: transparent;
+        border: none;
+        padding: 12px 20px;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #666;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .tab-btn:hover {
+        color: var(--ncrc-primary-blue);
+        background: rgba(30, 58, 95, 0.05);
+    }
+
+    .tab-btn.active {
+        color: var(--ncrc-primary-blue);
+        border-bottom-color: var(--ncrc-primary-blue);
+    }
+
+    .tab-btn .badge {
+        background: #ff6b6b;
+        color: white;
+        font-size: 0.75rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-weight: 700;
+    }
+
+    .tab-btn.active .badge {
+        background: var(--ncrc-primary-blue);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* ============================================
+       MEMBER REQUESTS UI
+       ============================================ */
+    .request-card {
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 16px;
+        overflow: hidden;
+    }
+
+    .request-header {
+        padding: 16px 20px;
+        background: var(--ncrc-light-blue);
+        border-bottom: 1px solid #e0e0e0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .request-header strong {
+        font-size: 1.05rem;
+        color: var(--ncrc-primary-blue);
+    }
+
+    .request-date {
+        font-size: 0.85rem;
+        color: #888;
+        margin-left: 12px;
+    }
+
+    .request-body {
+        padding: 16px 20px;
+    }
+
+    .request-body p {
+        margin: 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .request-body i {
+        width: 18px;
+        color: #888;
+    }
+
+    .hubspot-search {
+        padding: 16px 20px;
+        background: #f8f9fa;
+        border-top: 1px solid #e0e0e0;
+    }
+
+    .hubspot-search label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    .hubspot-search-input {
+        flex: 1;
+        padding: 10px 14px;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        font-size: 0.95rem;
+    }
+
+    .hubspot-search-input:focus {
+        border-color: var(--ncrc-primary-blue);
+        outline: none;
+    }
+
+    .search-btn {
+        padding: 10px 16px;
+        background: var(--ncrc-primary-blue);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .search-btn:hover {
+        background: var(--ncrc-secondary-blue);
+    }
+
+    .hubspot-results {
+        margin-top: 12px;
+    }
+
+    .hubspot-matches {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .company-option {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px;
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .company-option:hover {
+        border-color: var(--ncrc-primary-blue);
+        background: #f8f9ff;
+    }
+
+    .company-option input[type="radio"] {
+        width: 18px;
+        height: 18px;
+    }
+
+    .company-option input[type="radio"]:checked + .company-info {
+        font-weight: 600;
+    }
+
+    .company-info {
+        flex: 1;
+    }
+
+    .company-info strong {
+        display: block;
+    }
+
+    .company-info small {
+        color: #888;
+    }
+
+    .membership-status {
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+
+    .status-active {
+        background: #e8f5e9;
+        color: #388e3c;
+    }
+
+    .status-inactive {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    .status-grace {
+        background: #fff3e0;
+        color: #f57c00;
+    }
+
+    .request-actions {
+        padding: 16px 20px;
+        border-top: 1px solid #e0e0e0;
+        display: flex;
+        gap: 12px;
+        justify-content: flex-end;
+    }
+
+    .approve-btn {
+        padding: 10px 20px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .approve-btn:hover:not(:disabled) {
+        background: #218838;
+    }
+
+    .approve-btn:disabled {
+        background: #c3e6cb;
+        cursor: not-allowed;
+    }
+
+    .deny-btn {
+        padding: 10px 20px;
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .deny-btn:hover {
+        background: #c82333;
+    }
+
+    .no-requests {
+        text-align: center;
+        padding: 60px 20px;
+        color: #888;
+    }
+
+    .no-requests i {
+        font-size: 3rem;
+        margin-bottom: 15px;
+        color: #ddd;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
         .dashboard-container {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 30px;
+            padding: 15px;
         }
 
-        /* Action Bar */
         .action-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .action-bar h2 {
-            font-family: var(--font-serif);
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--color-text);
+            flex-direction: column;
+            align-items: stretch;
         }
 
         .action-buttons-group {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn-primary {
-            background: var(--ncrc-primary-blue);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-primary:hover {
-            background: var(--ncrc-secondary-blue);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(85, 45, 135, 0.3);
-        }
-
-        .btn-primary:disabled {
-            background: var(--ncrc-gray);
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-secondary {
-            background: var(--ncrc-gray-light);
-            color: var(--ncrc-gray-dark);
-            border: 2px solid #e0e0e0;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-secondary:hover {
-            background: #e0e0e0;
-        }
-
-        .btn-success {
-            background: var(--ncrc-success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #218838;
-        }
-
-        /* Stats Cards */
-        .stats-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        .stat-card .stat-value {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--ncrc-primary-blue);
-        }
-
-        .stat-card .stat-label {
-            color: var(--ncrc-gray);
-            font-size: 0.9rem;
-            margin-top: 5px;
-        }
-
-        /* Table Container */
-        .table-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .table-header {
-            padding: 20px;
-            background: var(--ncrc-light-blue);
-            border-bottom: 2px solid var(--ncrc-primary-blue);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .table-header h3 {
-            font-size: 1.1rem;
-            color: var(--ncrc-primary-blue);
-            margin: 0;
         }
 
         .search-filter-group {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .search-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: white;
-            padding: 8px 12px;
-            border-radius: 6px;
-            border: 2px solid #e0e0e0;
+            flex-direction: column;
         }
 
         .search-box input {
-            border: none;
-            outline: none;
-            font-size: 0.9rem;
-            width: 250px;
-        }
-
-        .search-box i {
-            color: var(--ncrc-gray);
-        }
-
-        .filter-select {
-            padding: 10px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 0.9rem;
-            background: white;
-            cursor: pointer;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: var(--ncrc-primary-blue);
-        }
-
-        /* Table */
-        .table-wrapper {
-            overflow-x: auto;
+            width: 100%;
         }
 
         table {
-            width: 100%;
-            border-collapse: collapse;
-            min-width: 900px;
-        }
-
-        thead {
-            background: var(--ncrc-primary-blue);
-            color: white;
-        }
-
-        th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-            font-size: 0.9rem;
-            cursor: pointer;
-            user-select: none;
-            white-space: nowrap;
-        }
-
-        th:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        th .sort-icon {
-            margin-left: 5px;
-            opacity: 0.5;
-        }
-
-        th.sorted .sort-icon {
-            opacity: 1;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #e0e0e0;
-            vertical-align: middle;
-        }
-
-        tbody tr:hover {
-            background: var(--ncrc-light-blue);
-        }
-
-        /* User Type Badges */
-        .user-type-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .badge-public_anonymous { background: #f8f9fa; color: #6c757d; }
-        .badge-public_registered { background: #e3f2fd; color: #1976d2; }
-        .badge-just_economy_club { background: #fff3e0; color: #f57c00; }
-        .badge-member { background: #e8f5e9; color: #388e3c; }
-        .badge-member_premium { background: #e1f5fe; color: #0288d1; }
-        .badge-non_member_org { background: #fce4ec; color: #c2185b; }
-        .badge-staff { background: #f3e5f5; color: #7b1fa2; }
-        .badge-senior_executive { background: #e8eaf6; color: #3949ab; }
-        .badge-admin { background: #ffebee; color: #c62828; }
-        .badge-pending { background: #fff8e1; color: #ff8f00; border: 1px dashed #ff8f00; }
-
-        /* Inline Type Dropdown */
-        .type-dropdown {
-            padding: 6px 10px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            background: white;
-            cursor: pointer;
-            min-width: 150px;
-        }
-
-        .type-dropdown:focus {
-            outline: none;
-            border-color: var(--ncrc-primary-blue);
-        }
-
-        .type-dropdown.saving {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        /* Action Buttons */
-        .action-cell {
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-icon {
-            background: none;
-            border: none;
-            padding: 6px 10px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s ease;
-            color: var(--ncrc-gray);
-        }
-
-        .btn-icon:hover {
-            background: var(--ncrc-light-blue);
-            color: var(--ncrc-primary-blue);
-        }
-
-        .btn-icon.delete:hover {
-            color: var(--ncrc-accent-red);
-        }
-
-        .btn-icon.reset:hover {
-            color: var(--ncrc-dark-blue);
-        }
-
-        /* Delete Button (Danger) */
-        .btn-danger {
-            background: var(--ncrc-danger);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-        }
-
-        .btn-danger:disabled {
-            background: #e9a0a8;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-
-        /* Checkbox styling */
-        .user-checkbox {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-            accent-color: var(--ncrc-primary-blue);
-        }
-
-        .user-checkbox:disabled {
-            cursor: not-allowed;
-            opacity: 0.4;
-        }
-
-        .checkbox-cell {
-            width: 40px;
-            text-align: center;
-        }
-
-        /* Auth method badges */
-        .auth-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-
-        .auth-badge.google {
-            background: #fef2f2;
-            color: #dc2626;
-        }
-
-        .auth-badge.email {
-            background: #eff6ff;
-            color: #2563eb;
-        }
-
-        /* Delete confirmation modal styles */
-        .delete-user-list {
-            max-height: 200px;
-            overflow-y: auto;
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 12px;
-            margin: 15px 0;
-        }
-
-        .delete-user-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        .delete-user-item:last-child {
-            border-bottom: none;
-        }
-
-        .delete-warning {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-
-        .confirm-input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 1rem;
-            text-align: center;
-            letter-spacing: 2px;
-        }
-
-        .confirm-input:focus {
-            outline: none;
-            border-color: var(--ncrc-danger);
-        }
-
-        /* Password modal styles */
-        .password-display {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: #f8f9fa;
-            padding: 12px 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 1.1rem;
-        }
-
-        .password-display input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            font-family: monospace;
-            font-size: 1.1rem;
-            outline: none;
-        }
-
-        .copy-btn {
-            background: var(--ncrc-primary-blue);
-            color: white;
-            border: none;
-            padding: 6px 12px;
-            border-radius: 4px;
-            cursor: pointer;
             font-size: 0.85rem;
         }
 
-        .copy-btn:hover {
-            background: var(--ncrc-secondary-blue);
+        th, td {
+            padding: 10px 8px;
         }
+    }
+</style>
+{% endblock %}
 
-        .generate-btn {
-            background: var(--ncrc-gray-light);
-            color: var(--ncrc-gray-dark);
-            border: 2px solid #e0e0e0;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-        }
+{% block content %}
+<div class="dashboard-container">
+    <!-- Stats Row -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-value" id="totalUsers">-</div>
+            <div class="stat-label">Total Users</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="staffCount">-</div>
+            <div class="stat-label">Staff Members</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="memberCount">-</div>
+            <div class="stat-label">Members</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value" id="pendingCount">-</div>
+            <div class="stat-label">Pending Activation</div>
+        </div>
+        <div class="stat-card" style="cursor: pointer;" onclick="showTab('requests')">
+            <div class="stat-value" id="memberRequestCount" style="color: #ff6b6b;">-</div>
+            <div class="stat-label">Member Requests</div>
+        </div>
+    </div>
 
-        .generate-btn:hover {
-            background: #e0e0e0;
-        }
+    <!-- Admin Tabs -->
+    <div class="admin-tabs">
+        <button class="tab-btn active" onclick="showTab('users')" id="usersTabBtn">
+            <i class="fas fa-users"></i> All Users
+        </button>
+        <button class="tab-btn" onclick="showTab('requests')" id="requestsTabBtn">
+            <i class="fas fa-user-clock"></i> Member Requests <span class="badge" id="requestBadge" style="display: none;">0</span>
+        </button>
+    </div>
 
-        /* Status Indicators */
-        .status-dot {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 6px;
-        }
+    <!-- Users Tab Content -->
+    <div id="usersTabContent" class="tab-content active">
 
-        .status-dot.active { background: var(--ncrc-success); }
-        .status-dot.pending { background: var(--ncrc-warning); }
-        .status-dot.inactive { background: var(--ncrc-gray); }
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <h2><i class="fas fa-users"></i> JustData Users</h2>
+        <div class="action-buttons-group">
+            <button class="btn-danger" onclick="openDeleteModal()" id="deleteSelectedBtn" disabled title="Select users to delete">
+                <i class="fas fa-trash-alt"></i> Delete Selected (<span id="selectedCount">0</span>)
+            </button>
+            <button class="btn-secondary" onclick="syncAllUsers()" id="syncBtn">
+                <i class="fas fa-sync-alt"></i> Sync All Users
+            </button>
+            <button class="btn-primary" onclick="openCreateModal()">
+                <i class="fas fa-plus"></i> Create User
+            </button>
+        </div>
+    </div>
 
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            z-index: 10000;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            backdrop-filter: blur(4px);
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 12px;
-            max-width: 600px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-header {
-            padding: 25px 30px;
-            border-bottom: 2px solid var(--ncrc-light-blue);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            font-size: 1.5rem;
-            color: var(--ncrc-primary-blue);
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            color: var(--ncrc-gray);
-            cursor: pointer;
-            padding: 5px 10px;
-            border-radius: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .modal-close:hover {
-            background: var(--ncrc-light-blue);
-            color: var(--ncrc-primary-blue);
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--ncrc-dark-blue);
-            margin-bottom: 8px;
-        }
-
-        .form-group input,
-        .form-group select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            transition: border-color 0.2s ease;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: var(--ncrc-primary-blue);
-        }
-
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            justify-content: flex-end;
-            margin-top: 30px;
-        }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            z-index: 10001;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .toast {
-            padding: 15px 20px;
-            border-radius: 8px;
-            color: white;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            animation: slideIn 0.3s ease;
-        }
-
-        .toast.success { background: var(--ncrc-success); }
-        .toast.error { background: var(--ncrc-danger); }
-        .toast.warning { background: var(--ncrc-warning); color: var(--ncrc-black); }
-        .toast.info { background: var(--ncrc-dark-blue); }
-
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-
-        /* Loading Spinner */
-        .loading-spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        .loading-overlay {
-            display: none;
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255,255,255,0.8);
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-        }
-
-        .loading-overlay.active {
-            display: flex;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .dashboard-container {
-                padding: 15px;
-            }
-
-            .action-bar {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .action-buttons-group {
-                flex-wrap: wrap;
-            }
-
-            .search-filter-group {
-                flex-direction: column;
-            }
-
-            .search-box input {
-                width: 100%;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-
-            th, td {
-                padding: 10px 8px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <!-- Header -->
-    <header class="header">
-        <div class="header-content">
-            <div class="header-left">
-                <a href="/" class="back-button">
-                    <i class="fas fa-arrow-left"></i>
-                    Back to JustData
-                </a>
-                <div>
-                    <h1 class="header-title">User Management</h1>
-                    <span class="user-role-badge">Admin Access</span>
+    <!-- Table Container -->
+    <div class="table-container">
+        <div class="table-header">
+            <h3 id="tableTitle">All Users</h3>
+            <div class="search-filter-group">
+                <div class="search-box">
+                    <i class="fas fa-search"></i>
+                    <input type="text" placeholder="Search by email or name..." id="searchInput" onkeyup="filterAndRenderUsers()">
                 </div>
+                <select class="filter-select" id="typeFilter" onchange="filterAndRenderUsers()">
+                    <option value="">All User Types</option>
+                    <option value="admin">Admin</option>
+                    <option value="senior_executive">Senior Executive</option>
+                    <option value="staff">Staff</option>
+                    <option value="member">Member</option>
+                    <option value="member_premium">Premium Member</option>
+                    <option value="non_member_org">Institutional</option>
+                    <option value="just_economy_club">Just Economy Club</option>
+                    <option value="public_registered">Public Registered</option>
+                    <option value="public_anonymous">Anonymous</option>
+                </select>
             </div>
-            <div class="header-right">
-                <div class="current-user" id="currentUserDisplay">
-                    <!-- Populated by JS -->
+        </div>
+        <div class="table-wrapper" style="position: relative;">
+            <div class="loading-overlay" id="tableLoading">
+                <div class="loading-spinner" style="width: 40px; height: 40px; border-width: 4px;"></div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="checkbox-cell">
+                            <input type="checkbox" class="user-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" title="Select all non-admin users">
+                        </th>
+                        <th onclick="sortTable('email')">
+                            Email <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th onclick="sortTable('displayName')">
+                            Name <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th onclick="sortTable('userType')">
+                            User Type <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th onclick="sortTable('authMethod')">
+                            Auth <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th onclick="sortTable('organization')">
+                            Organization <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th onclick="sortTable('lastLoginAt')">
+                            Last Login <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th onclick="sortTable('loginCount')">
+                            Logins <i class="fas fa-sort sort-icon"></i>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 40px;">
+                            <div class="loading-spinner"></div>
+                            <p style="margin-top: 10px; color: var(--ncrc-gray);">Loading users...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </div>
+    <!-- End Users Tab Content -->
+
+    <!-- Member Requests Tab Content -->
+    <div id="requestsTabContent" class="tab-content">
+        <div id="requestsList">
+            <div class="no-requests">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Loading member requests...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create/Edit User Modal -->
+<div class="modal-overlay" id="userModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="modalTitle">Create New User</h3>
+            <button class="modal-close" onclick="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="userForm" onsubmit="handleFormSubmit(event)">
+                <input type="hidden" id="editingUid" value="">
+
+                <div class="form-group">
+                    <label for="userEmail">Email Address *</label>
+                    <input type="email" id="userEmail" name="email" required>
                 </div>
-            </div>
-        </div>
-    </header>
 
-    <div class="dashboard-container">
-        <!-- Stats Row -->
-        <div class="stats-row">
-            <div class="stat-card">
-                <div class="stat-value" id="totalUsers">-</div>
-                <div class="stat-label">Total Users</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="staffCount">-</div>
-                <div class="stat-label">Staff Members</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="memberCount">-</div>
-                <div class="stat-label">Members</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="pendingCount">-</div>
-                <div class="stat-label">Pending Activation</div>
-            </div>
-        </div>
+                <div class="form-group">
+                    <label for="userDisplayName">Display Name</label>
+                    <input type="text" id="userDisplayName" name="displayName">
+                </div>
 
-        <!-- Action Bar -->
-        <div class="action-bar">
-            <h2><i class="fas fa-users"></i> JustData Users</h2>
-            <div class="action-buttons-group">
-                <button class="btn-danger" onclick="openDeleteModal()" id="deleteSelectedBtn" disabled title="Select users to delete">
-                    <i class="fas fa-trash-alt"></i> Delete Selected (<span id="selectedCount">0</span>)
-                </button>
-                <button class="btn-secondary" onclick="syncAllUsers()" id="syncBtn">
-                    <i class="fas fa-sync-alt"></i> Sync All Users
-                </button>
-                <button class="btn-primary" onclick="openCreateModal()">
-                    <i class="fas fa-plus"></i> Create User
-                </button>
-            </div>
-        </div>
-
-        <!-- Table Container -->
-        <div class="table-container">
-            <div class="table-header">
-                <h3 id="tableTitle">All Users</h3>
-                <div class="search-filter-group">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Search by email or name..." id="searchInput" onkeyup="filterAndRenderUsers()">
-                    </div>
-                    <select class="filter-select" id="typeFilter" onchange="filterAndRenderUsers()">
-                        <option value="">All User Types</option>
-                        <option value="admin">Admin</option>
-                        <option value="senior_executive">Senior Executive</option>
-                        <option value="staff">Staff</option>
-                        <option value="member">Member</option>
-                        <option value="member_premium">Premium Member</option>
-                        <option value="non_member_org">Institutional</option>
-                        <option value="just_economy_club">Just Economy Club</option>
+                <div class="form-group">
+                    <label for="userType">User Type *</label>
+                    <select id="userTypeSelect" name="userType" required>
+                        <option value="">Select user type...</option>
+                        <option value="public_anonymous">Public Anonymous</option>
                         <option value="public_registered">Public Registered</option>
-                        <option value="public_anonymous">Anonymous</option>
+                        <option value="just_economy_club">Just Economy Club</option>
+                        <option value="member">Member ($900/yr)</option>
+                        <option value="member_premium">Premium Member</option>
+                        <option value="non_member_org">Institutional/Org</option>
+                        <option value="staff">NCRC Staff</option>
+                        <option value="senior_executive">Senior Executive</option>
+                        <option value="admin">Administrator</option>
                     </select>
                 </div>
-            </div>
-            <div class="table-wrapper" style="position: relative;">
-                <div class="loading-overlay" id="tableLoading">
-                    <div class="loading-spinner" style="width: 40px; height: 40px; border-width: 4px;"></div>
-                </div>
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="checkbox-cell">
-                                <input type="checkbox" class="user-checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" title="Select all non-admin users">
-                            </th>
-                            <th onclick="sortTable('email')">
-                                Email <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th onclick="sortTable('displayName')">
-                                Name <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th onclick="sortTable('userType')">
-                                User Type <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th onclick="sortTable('authMethod')">
-                                Auth <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th onclick="sortTable('organization')">
-                                Organization <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th onclick="sortTable('lastLoginAt')">
-                                Last Login <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th onclick="sortTable('loginCount')">
-                                Logins <i class="fas fa-sort sort-icon"></i>
-                            </th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <tr>
-                            <td colspan="9" style="text-align: center; padding: 40px;">
-                                <div class="loading-spinner"></div>
-                                <p style="margin-top: 10px; color: var(--ncrc-gray);">Loading users...</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
 
-    <!-- Create/Edit User Modal -->
-    <div class="modal-overlay" id="userModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">Create New User</h3>
-                <button class="modal-close" onclick="closeModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <form id="userForm" onsubmit="handleFormSubmit(event)">
-                    <input type="hidden" id="editingUid" value="">
-
-                    <div class="form-group">
-                        <label for="userEmail">Email Address *</label>
-                        <input type="email" id="userEmail" name="email" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="userDisplayName">Display Name</label>
-                        <input type="text" id="userDisplayName" name="displayName">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="userType">User Type *</label>
-                        <select id="userTypeSelect" name="userType" required>
-                            <option value="">Select user type...</option>
-                            <option value="public_anonymous">Public Anonymous</option>
-                            <option value="public_registered">Public Registered</option>
-                            <option value="just_economy_club">Just Economy Club</option>
-                            <option value="member">Member ($900/yr)</option>
-                            <option value="member_premium">Premium Member</option>
-                            <option value="non_member_org">Institutional/Org</option>
-                            <option value="staff">NCRC Staff</option>
-                            <option value="senior_executive">Senior Executive</option>
-                            <option value="admin">Administrator</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="userOrganization">Organization</label>
-                        <input type="text" id="userOrganization" name="organization">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="userJobTitle">Job Title</label>
-                        <input type="text" id="userJobTitle" name="jobTitle">
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
-                        <button type="submit" class="btn-primary" id="submitBtn">
-                            <span id="submitText">Create User</span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-
-    <!-- Delete Confirmation Modal -->
-    <div class="modal-overlay" id="deleteModal">
-        <div class="modal-content">
-            <div class="modal-header" style="background: #fee2e2; border-bottom-color: var(--ncrc-danger);">
-                <h3 style="color: var(--ncrc-danger);"><i class="fas fa-exclamation-triangle"></i> Delete Users</h3>
-                <button class="modal-close" onclick="closeDeleteModal()">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="font-size: 1.1rem; margin-bottom: 15px;">You are about to delete <strong id="deleteCountText">0 user(s)</strong>:</p>
-
-                <div class="delete-user-list" id="deleteUserList">
-                    <!-- Populated by JS -->
-                </div>
-
-                <div class="delete-warning">
-                    <strong><i class="fas fa-exclamation-circle"></i> Warning:</strong> This action cannot be undone. Users will lose access immediately and all their data will be removed.
+                <div class="form-group">
+                    <label for="userOrganization">Organization</label>
+                    <input type="text" id="userOrganization" name="organization">
                 </div>
 
                 <div class="form-group">
-                    <label>Type <strong>DELETE</strong> to confirm:</label>
-                    <input type="text" class="confirm-input" id="deleteConfirmInput" placeholder="DELETE" oninput="checkDeleteConfirmation()">
+                    <label for="userJobTitle">Job Title</label>
+                    <input type="text" id="userJobTitle" name="jobTitle">
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-                    <button type="button" class="btn-danger" id="confirmDeleteBtn" disabled onclick="executeDelete()">
-                        <i class="fas fa-trash-alt"></i> <span id="confirmDeleteText">Delete Users</span>
+                    <button type="button" class="btn-secondary" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" id="submitBtn">
+                        <span id="submitText">Create User</span>
                     </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
+</div>
 
-    <!-- Reset Password Modal -->
-    <div class="modal-overlay" id="resetPasswordModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-key"></i> Reset Password</h3>
-                <button class="modal-close" onclick="closeResetPasswordModal()">
-                    <i class="fas fa-times"></i>
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-content">
+        <div class="modal-header" style="background: #fee2e2; border-bottom-color: #dc3545;">
+            <h3 style="color: #dc3545;"><i class="fas fa-exclamation-triangle"></i> Delete Users</h3>
+            <button class="modal-close" onclick="closeDeleteModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p style="font-size: 1.1rem; margin-bottom: 15px;">You are about to delete <strong id="deleteCountText">0 user(s)</strong>:</p>
+
+            <div class="delete-user-list" id="deleteUserList">
+                <!-- Populated by JS -->
+            </div>
+
+            <div class="delete-warning">
+                <strong><i class="fas fa-exclamation-circle"></i> Warning:</strong> This action cannot be undone. Users will lose access immediately and all their data will be removed.
+            </div>
+
+            <div class="form-group">
+                <label>Type <strong>DELETE</strong> to confirm:</label>
+                <input type="text" class="confirm-input" id="deleteConfirmInput" placeholder="DELETE" oninput="checkDeleteConfirmation()">
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button type="button" class="btn-danger" id="confirmDeleteBtn" disabled onclick="executeDelete()">
+                    <i class="fas fa-trash-alt"></i> <span id="confirmDeleteText">Delete Users</span>
                 </button>
             </div>
-            <div class="modal-body">
-                <input type="hidden" id="resetPasswordUid">
+        </div>
+    </div>
+</div>
 
-                <div class="form-group">
-                    <label>User</label>
-                    <p id="resetPasswordEmail" style="font-size: 1.1rem; font-weight: 600; color: var(--ncrc-primary-blue);"></p>
-                </div>
+<!-- Reset Password Modal -->
+<div class="modal-overlay" id="resetPasswordModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3><i class="fas fa-key"></i> Reset Password</h3>
+            <button class="modal-close" onclick="closeResetPasswordModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <input type="hidden" id="resetPasswordUid">
 
-                <div class="form-group">
-                    <label for="newPasswordInput">New Password</label>
-                    <div class="password-display">
-                        <input type="text" id="newPasswordInput" placeholder="Enter or generate password">
-                        <button type="button" class="copy-btn" onclick="copyPassword()" title="Copy to clipboard">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </div>
+            <div class="form-group">
+                <label>User</label>
+                <p id="resetPasswordEmail" style="font-size: 1.1rem; font-weight: 600; color: var(--ncrc-primary-blue);"></p>
+            </div>
 
-                <div style="margin-bottom: 20px;">
-                    <button type="button" class="generate-btn" onclick="generateRandomPassword()">
-                        <i class="fas fa-random"></i> Generate Random Password
-                    </button>
-                </div>
-
-                <div id="passwordSuccessMessage" style="display: none; background: #d4edda; border: 1px solid #28a745; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                    <strong><i class="fas fa-check-circle"></i> Password Updated!</strong>
-                    <p style="margin: 10px 0 0;">The new password is shown above. Copy it now - it won't be shown again.</p>
-                </div>
-
-                <div class="form-actions">
-                    <button type="button" class="btn-secondary" onclick="closeResetPasswordModal()">Cancel</button>
-                    <button type="button" class="btn-primary" id="resetPasswordBtn" onclick="executeResetPassword()" style="background: var(--ncrc-primary-blue); opacity: 1; pointer-events: auto; cursor: pointer;">
-                        <span id="resetPasswordText">Reset Password</span>
+            <div class="form-group">
+                <label for="newPasswordInput">New Password</label>
+                <div class="password-display">
+                    <input type="text" id="newPasswordInput" placeholder="Enter or generate password">
+                    <button type="button" class="copy-btn" onclick="copyPassword()" title="Copy to clipboard">
+                        <i class="fas fa-copy"></i>
                     </button>
                 </div>
             </div>
+
+            <div style="margin-bottom: 20px;">
+                <button type="button" class="generate-btn" onclick="generateRandomPassword()">
+                    <i class="fas fa-random"></i> Generate Random Password
+                </button>
+            </div>
+
+            <div id="passwordSuccessMessage" style="display: none; background: #d4edda; border: 1px solid #28a745; color: #155724; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <strong><i class="fas fa-check-circle"></i> Password Updated!</strong>
+                <p style="margin: 10px 0 0;">The new password is shown above. Copy it now - it won't be shown again.</p>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="closeResetPasswordModal()">Cancel</button>
+                <button type="button" class="btn-primary" id="resetPasswordBtn" onclick="executeResetPassword()" style="background: var(--ncrc-primary-blue); opacity: 1; pointer-events: auto; cursor: pointer;">
+                    <span id="resetPasswordText">Reset Password</span>
+                </button>
+            </div>
         </div>
     </div>
+</div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+{% endblock %}
 
-    <script src="/static/js/auth.js"></script>
-    <script>
-        // Global state
-        let allUsers = [];
-        let sortColumn = 'createdAt';
-        let sortDirection = 'desc';
+{% block extra_js %}
+<script>
+    // Global state
+    let allUsers = [];
+    let sortColumn = 'createdAt';
+    let sortDirection = 'desc';
 
-        // User type labels
-        const USER_TYPE_LABELS = {
-            'public_anonymous': 'Anonymous',
-            'public_registered': 'Registered',
-            'just_economy_club': 'Economy Club',
-            'member': 'Member',
-            'member_premium': 'Premium',
-            'non_member_org': 'Institutional',
-            'staff': 'Staff',
-            'senior_executive': 'Sr. Executive',
-            'admin': 'Admin'
-        };
+    // User type labels
+    const USER_TYPE_LABELS = {
+        'public_anonymous': 'Anonymous',
+        'public_registered': 'Registered',
+        'just_economy_club': 'Economy Club',
+        'member': 'Member',
+        'member_premium': 'Premium',
+        'non_member_org': 'Institutional',
+        'staff': 'Staff',
+        'senior_executive': 'Sr. Executive',
+        'admin': 'Admin'
+    };
 
-        // Toast notification
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`;
-            toast.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-                ${message}
-            `;
-            container.appendChild(toast);
+    // Toast notification
+    function showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        toast.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            ${message}
+        `;
+        container.appendChild(toast);
 
-            setTimeout(() => {
-                toast.style.animation = 'slideIn 0.3s ease reverse';
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
-        }
+        setTimeout(() => {
+            toast.style.animation = 'slideIn 0.3s ease reverse';
+            setTimeout(() => toast.remove(), 300);
+        }, 4000);
+    }
 
-        // Fetch all users
-        async function fetchUsers() {
-            const tableLoading = document.getElementById('tableLoading');
-            tableLoading.classList.add('active');
+    // Fetch all users
+    async function fetchUsers() {
+        const tableLoading = document.getElementById('tableLoading');
+        tableLoading.classList.add('active');
 
-            try {
-                const response = await fetch('/api/auth/users', {
-                    headers: {
-                        'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch users');
+        try {
+            const response = await fetch('/api/auth/users', {
+                headers: {
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
                 }
-
-                const data = await response.json();
-                allUsers = data.users || [];
-
-                updateStats();
-                filterAndRenderUsers();
-
-            } catch (error) {
-                console.error('Error fetching users:', error);
-                showToast('Failed to load users: ' + error.message, 'error');
-                document.getElementById('usersTableBody').innerHTML = `
-                    <tr>
-                        <td colspan="8" style="text-align: center; padding: 40px; color: var(--ncrc-danger);">
-                            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p>Failed to load users. Please try again.</p>
-                            <button class="btn-secondary" onclick="fetchUsers()" style="margin-top: 10px;">
-                                <i class="fas fa-refresh"></i> Retry
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            } finally {
-                tableLoading.classList.remove('active');
-            }
-        }
-
-        // Update stats
-        function updateStats() {
-            document.getElementById('totalUsers').textContent = allUsers.length;
-            document.getElementById('staffCount').textContent = allUsers.filter(u => u.userType === 'staff' || u.userType === 'admin').length;
-            document.getElementById('memberCount').textContent = allUsers.filter(u => u.userType === 'member' || u.userType === 'member_premium').length;
-            document.getElementById('pendingCount').textContent = allUsers.filter(u => u.pendingActivation).length;
-        }
-
-        // Filter and render users
-        function filterAndRenderUsers() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const typeFilter = document.getElementById('typeFilter').value;
-
-            let filtered = allUsers.filter(user => {
-                const matchesSearch = !searchTerm ||
-                    (user.email && user.email.toLowerCase().includes(searchTerm)) ||
-                    (user.displayName && user.displayName.toLowerCase().includes(searchTerm)) ||
-                    (user.organization && user.organization.toLowerCase().includes(searchTerm));
-
-                const matchesType = !typeFilter || user.userType === typeFilter;
-
-                return matchesSearch && matchesType;
             });
 
-            // Sort
-            filtered.sort((a, b) => {
-                let aVal = a[sortColumn] || '';
-                let bVal = b[sortColumn] || '';
-
-                if (sortColumn === 'loginCount') {
-                    aVal = parseInt(aVal) || 0;
-                    bVal = parseInt(bVal) || 0;
-                }
-
-                if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
-                if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
-                return 0;
-            });
-
-            renderTable(filtered);
-            document.getElementById('tableTitle').textContent = `${filtered.length} User${filtered.length !== 1 ? 's' : ''}`;
-        }
-
-        // Track selected users
-        let selectedUsers = new Set();
-
-        // Render table
-        function renderTable(users) {
-            const tbody = document.getElementById('usersTableBody');
-
-            if (users.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">
-                            <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px;"></i>
-                            <p>No users found</p>
-                        </td>
-                    </tr>
-                `;
-                return;
+            if (!response.ok) {
+                throw new Error('Failed to fetch users');
             }
 
-            tbody.innerHTML = users.map(user => {
-                const isAdmin = user.userType === 'admin';
-                const isGoogleAuth = user.authMethod === 'google' || (user.providerData && user.providerData.includes('google.com'));
-                const authMethodDisplay = isGoogleAuth
-                    ? '<span class="auth-badge google"><i class="fab fa-google"></i> Google</span>'
-                    : '<span class="auth-badge email"><i class="fas fa-envelope"></i> Email</span>';
+            const data = await response.json();
+            allUsers = data.users || [];
 
-                return `
-                <tr data-uid="${user.uid}">
-                    <td class="checkbox-cell">
-                        <input type="checkbox" class="user-checkbox"
-                            ${isAdmin ? 'disabled title="Admins cannot be deleted"' : ''}
-                            onchange="toggleUserSelection('${user.uid}', this.checked)"
-                            ${selectedUsers.has(user.uid) ? 'checked' : ''}>
-                    </td>
-                    <td>
-                        ${user.pendingActivation ? '<span class="status-dot pending" title="Pending Activation"></span>' : '<span class="status-dot active" title="Active"></span>'}
-                        ${user.email || '—'}
-                    </td>
-                    <td>${user.displayName || '—'}</td>
-                    <td>
-                        <select class="type-dropdown" onchange="updateUserType('${user.uid}', this.value, this)" data-original="${user.userType}">
-                            ${Object.entries(USER_TYPE_LABELS).map(([value, label]) =>
-                                `<option value="${value}" ${user.userType === value ? 'selected' : ''}>${label}</option>`
-                            ).join('')}
-                        </select>
-                    </td>
-                    <td>${authMethodDisplay}</td>
-                    <td>${user.organization || '—'}</td>
-                    <td>${formatDate(user.lastLoginAt) || '<span style="color: var(--ncrc-gray);">Never</span>'}</td>
-                    <td style="text-align: center;">${user.loginCount || 0}</td>
-                    <td>
-                        <div class="action-cell">
-                            <button class="btn-icon" onclick="editUser('${user.uid}')" title="Edit Details">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            ${!isGoogleAuth ? `
-                            <button class="btn-icon reset" onclick="openResetPasswordModal('${user.uid}', '${user.email}')" title="Reset Password">
-                                <i class="fas fa-key"></i>
-                            </button>
-                            ` : ''}
-                        </div>
+            updateStats();
+            filterAndRenderUsers();
+
+        } catch (error) {
+            console.error('Error fetching users:', error);
+            showToast('Failed to load users: ' + error.message, 'error');
+            document.getElementById('usersTableBody').innerHTML = `
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 40px; color: #dc3545;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>Failed to load users. Please try again.</p>
+                        <button class="btn-secondary" onclick="fetchUsers()" style="margin-top: 10px;">
+                            <i class="fas fa-refresh"></i> Retry
+                        </button>
                     </td>
                 </tr>
-            `}).join('');
-
-            updateDeleteButton();
+            `;
+        } finally {
+            tableLoading.classList.remove('active');
         }
+    }
 
-        // Format date
-        function formatDate(dateStr) {
-            if (!dateStr) return null;
-            try {
-                const date = new Date(dateStr);
-                return date.toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-            } catch {
-                return dateStr;
+    // Update stats
+    function updateStats() {
+        document.getElementById('totalUsers').textContent = allUsers.length;
+        document.getElementById('staffCount').textContent = allUsers.filter(u => u.userType === 'staff' || u.userType === 'admin').length;
+        document.getElementById('memberCount').textContent = allUsers.filter(u => u.userType === 'member' || u.userType === 'member_premium').length;
+        document.getElementById('pendingCount').textContent = allUsers.filter(u => u.pendingActivation).length;
+    }
+
+    // Filter and render users
+    function filterAndRenderUsers() {
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+        const typeFilter = document.getElementById('typeFilter').value;
+
+        let filtered = allUsers.filter(user => {
+            const matchesSearch = !searchTerm ||
+                (user.email && user.email.toLowerCase().includes(searchTerm)) ||
+                (user.displayName && user.displayName.toLowerCase().includes(searchTerm)) ||
+                (user.organization && user.organization.toLowerCase().includes(searchTerm));
+
+            const matchesType = !typeFilter || user.userType === typeFilter;
+
+            return matchesSearch && matchesType;
+        });
+
+        // Sort
+        filtered.sort((a, b) => {
+            let aVal = a[sortColumn] || '';
+            let bVal = b[sortColumn] || '';
+
+            if (sortColumn === 'loginCount') {
+                aVal = parseInt(aVal) || 0;
+                bVal = parseInt(bVal) || 0;
             }
+
+            if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1;
+            if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        renderTable(filtered);
+        document.getElementById('tableTitle').textContent = `${filtered.length} User${filtered.length !== 1 ? 's' : ''}`;
+    }
+
+    // Track selected users
+    let selectedUsers = new Set();
+
+    // Render table
+    function renderTable(users) {
+        const tbody = document.getElementById('usersTableBody');
+
+        if (users.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="9" style="text-align: center; padding: 40px; color: var(--ncrc-gray);">
+                        <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                        <p>No users found</p>
+                    </td>
+                </tr>
+            `;
+            return;
         }
 
-        // Sort table
-        function sortTable(column) {
-            if (sortColumn === column) {
-                sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortColumn = column;
-                sortDirection = 'asc';
+        tbody.innerHTML = users.map(user => {
+            const isAdmin = user.userType === 'admin';
+            const isGoogleAuth = user.authMethod === 'google' || (user.providerData && user.providerData.includes('google.com'));
+            const authMethodDisplay = isGoogleAuth
+                ? '<span class="auth-badge google"><i class="fab fa-google"></i> Google</span>'
+                : '<span class="auth-badge email"><i class="fas fa-envelope"></i> Email</span>';
+
+            return `
+            <tr data-uid="${user.uid}">
+                <td class="checkbox-cell">
+                    <input type="checkbox" class="user-checkbox"
+                        ${isAdmin ? 'disabled title="Admins cannot be deleted"' : ''}
+                        onchange="toggleUserSelection('${user.uid}', this.checked)"
+                        ${selectedUsers.has(user.uid) ? 'checked' : ''}>
+                </td>
+                <td>
+                    ${user.pendingActivation ? '<span class="status-dot pending" title="Pending Activation"></span>' : '<span class="status-dot active" title="Active"></span>'}
+                    ${user.email || '—'}
+                </td>
+                <td>${user.displayName || '—'}</td>
+                <td>
+                    <select class="type-dropdown" onchange="updateUserType('${user.uid}', this.value, this)" data-original="${user.userType}">
+                        ${Object.entries(USER_TYPE_LABELS).map(([value, label]) =>
+                            `<option value="${value}" ${user.userType === value ? 'selected' : ''}>${label}</option>`
+                        ).join('')}
+                    </select>
+                </td>
+                <td>${authMethodDisplay}</td>
+                <td>${user.organization || '—'}</td>
+                <td>${formatDate(user.lastLoginAt) || '<span style="color: var(--ncrc-gray);">Never</span>'}</td>
+                <td style="text-align: center;">${user.loginCount || 0}</td>
+                <td>
+                    <div class="action-cell">
+                        <button class="btn-icon" onclick="editUser('${user.uid}')" title="Edit Details">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        ${!isGoogleAuth ? `
+                        <button class="btn-icon reset" onclick="openResetPasswordModal('${user.uid}', '${user.email}')" title="Reset Password">
+                            <i class="fas fa-key"></i>
+                        </button>
+                        ` : ''}
+                    </div>
+                </td>
+            </tr>
+        `}).join('');
+
+        updateDeleteButton();
+    }
+
+    // Format date
+    function formatDate(dateStr) {
+        if (!dateStr) return null;
+        try {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        } catch {
+            return dateStr;
+        }
+    }
+
+    // Sort table
+    function sortTable(column) {
+        if (sortColumn === column) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortColumn = column;
+            sortDirection = 'asc';
+        }
+        filterAndRenderUsers();
+    }
+
+    // Update user type inline
+    async function updateUserType(uid, newType, selectElement) {
+        const originalType = selectElement.dataset.original;
+
+        if (newType === originalType) return;
+
+        selectElement.classList.add('saving');
+
+        try {
+            const response = await fetch(`/api/auth/users/${uid}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                },
+                body: JSON.stringify({ userType: newType })
+            });
+
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to update user');
             }
-            filterAndRenderUsers();
+
+            // Update local data
+            const user = allUsers.find(u => u.uid === uid);
+            if (user) user.userType = newType;
+
+            selectElement.dataset.original = newType;
+            updateStats();
+
+            showToast(`User type updated to ${USER_TYPE_LABELS[newType]}`, 'success');
+
+        } catch (error) {
+            console.error('Error updating user type:', error);
+            selectElement.value = originalType;
+            showToast('Failed to update: ' + error.message, 'error');
+        } finally {
+            selectElement.classList.remove('saving');
         }
+    }
 
-        // Update user type inline
-        async function updateUserType(uid, newType, selectElement) {
-            const originalType = selectElement.dataset.original;
+    // Open create modal
+    function openCreateModal() {
+        document.getElementById('modalTitle').textContent = 'Create New User';
+        document.getElementById('submitText').textContent = 'Create User';
+        document.getElementById('editingUid').value = '';
+        document.getElementById('userForm').reset();
+        document.getElementById('userEmail').disabled = false;
+        document.getElementById('userModal').classList.add('active');
+    }
 
-            if (newType === originalType) return;
+    // Edit user
+    function editUser(uid) {
+        const user = allUsers.find(u => u.uid === uid);
+        if (!user) return;
 
-            selectElement.classList.add('saving');
+        document.getElementById('modalTitle').textContent = 'Edit User';
+        document.getElementById('submitText').textContent = 'Save Changes';
+        document.getElementById('editingUid').value = uid;
+        document.getElementById('userEmail').value = user.email || '';
+        document.getElementById('userEmail').disabled = true;
+        document.getElementById('userDisplayName').value = user.displayName || '';
+        document.getElementById('userTypeSelect').value = user.userType || '';
+        document.getElementById('userOrganization').value = user.organization || '';
+        document.getElementById('userJobTitle').value = user.jobTitle || '';
 
-            try {
-                const response = await fetch(`/api/auth/users/${uid}`, {
+        document.getElementById('userModal').classList.add('active');
+    }
+
+    // Close modal
+    function closeModal() {
+        document.getElementById('userModal').classList.remove('active');
+        document.getElementById('userForm').reset();
+    }
+
+    // Handle form submit
+    async function handleFormSubmit(event) {
+        event.preventDefault();
+
+        const submitBtn = document.getElementById('submitBtn');
+        const submitText = document.getElementById('submitText');
+        const editingUid = document.getElementById('editingUid').value;
+
+        const formData = {
+            email: document.getElementById('userEmail').value,
+            displayName: document.getElementById('userDisplayName').value,
+            userType: document.getElementById('userTypeSelect').value,
+            organization: document.getElementById('userOrganization').value || null,
+            jobTitle: document.getElementById('userJobTitle').value || null
+        };
+
+        submitBtn.disabled = true;
+        submitText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></span> Saving...';
+
+        try {
+            let response;
+
+            if (editingUid) {
+                // Update existing user
+                response = await fetch(`/api/auth/users/${editingUid}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
                     },
-                    body: JSON.stringify({ userType: newType })
+                    body: JSON.stringify(formData)
                 });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to update user');
-                }
-
-                // Update local data
-                const user = allUsers.find(u => u.uid === uid);
-                if (user) user.userType = newType;
-
-                selectElement.dataset.original = newType;
-                updateStats();
-
-                showToast(`User type updated to ${USER_TYPE_LABELS[newType]}`, 'success');
-
-            } catch (error) {
-                console.error('Error updating user type:', error);
-                selectElement.value = originalType;
-                showToast('Failed to update: ' + error.message, 'error');
-            } finally {
-                selectElement.classList.remove('saving');
-            }
-        }
-
-        // Open create modal
-        function openCreateModal() {
-            document.getElementById('modalTitle').textContent = 'Create New User';
-            document.getElementById('submitText').textContent = 'Create User';
-            document.getElementById('editingUid').value = '';
-            document.getElementById('userForm').reset();
-            document.getElementById('userEmail').disabled = false;
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        // Edit user
-        function editUser(uid) {
-            const user = allUsers.find(u => u.uid === uid);
-            if (!user) return;
-
-            document.getElementById('modalTitle').textContent = 'Edit User';
-            document.getElementById('submitText').textContent = 'Save Changes';
-            document.getElementById('editingUid').value = uid;
-            document.getElementById('userEmail').value = user.email || '';
-            document.getElementById('userEmail').disabled = true;
-            document.getElementById('userDisplayName').value = user.displayName || '';
-            document.getElementById('userTypeSelect').value = user.userType || '';
-            document.getElementById('userOrganization').value = user.organization || '';
-            document.getElementById('userJobTitle').value = user.jobTitle || '';
-
-            document.getElementById('userModal').classList.add('active');
-        }
-
-        // Close modal
-        function closeModal() {
-            document.getElementById('userModal').classList.remove('active');
-            document.getElementById('userForm').reset();
-        }
-
-        // Handle form submit
-        async function handleFormSubmit(event) {
-            event.preventDefault();
-
-            const submitBtn = document.getElementById('submitBtn');
-            const submitText = document.getElementById('submitText');
-            const editingUid = document.getElementById('editingUid').value;
-
-            const formData = {
-                email: document.getElementById('userEmail').value,
-                displayName: document.getElementById('userDisplayName').value,
-                userType: document.getElementById('userTypeSelect').value,
-                organization: document.getElementById('userOrganization').value || null,
-                jobTitle: document.getElementById('userJobTitle').value || null
-            };
-
-            submitBtn.disabled = true;
-            submitText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></span> Saving...';
-
-            try {
-                let response;
-
-                if (editingUid) {
-                    // Update existing user
-                    response = await fetch(`/api/auth/users/${editingUid}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                        },
-                        body: JSON.stringify(formData)
-                    });
-                } else {
-                    // Create new user
-                    response = await fetch('/api/auth/users', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                        },
-                        body: JSON.stringify(formData)
-                    });
-                }
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Operation failed');
-                }
-
-                showToast(editingUid ? 'User updated successfully' : 'User created successfully', 'success');
-                closeModal();
-                fetchUsers();
-
-            } catch (error) {
-                console.error('Error saving user:', error);
-                showToast('Error: ' + error.message, 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitText.textContent = editingUid ? 'Save Changes' : 'Create User';
-            }
-        }
-
-        // Sync all users
-        async function syncAllUsers() {
-            const syncBtn = document.getElementById('syncBtn');
-            syncBtn.disabled = true;
-            syncBtn.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Syncing...';
-
-            try {
-                const response = await fetch('/api/auth/sync-all', {
+            } else {
+                // Create new user
+                response = await fetch('/api/auth/users', {
                     method: 'POST',
                     headers: {
+                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                    }
+                    },
+                    body: JSON.stringify(formData)
                 });
+            }
 
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Sync failed');
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Operation failed');
+            }
+
+            showToast(editingUid ? 'User updated successfully' : 'User created successfully', 'success');
+            closeModal();
+            fetchUsers();
+
+        } catch (error) {
+            console.error('Error saving user:', error);
+            showToast('Error: ' + error.message, 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitText.textContent = editingUid ? 'Save Changes' : 'Create User';
+        }
+    }
+
+    // Sync all users
+    async function syncAllUsers() {
+        const syncBtn = document.getElementById('syncBtn');
+        syncBtn.disabled = true;
+        syncBtn.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Syncing...';
+
+        try {
+            const response = await fetch('/api/auth/sync-all', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
                 }
+            });
 
-                const result = await response.json();
-
-                showToast(`Sync complete: ${result.summary.created} created, ${result.summary.updated} updated`, 'success');
-                fetchUsers();
-
-            } catch (error) {
-                console.error('Error syncing users:', error);
-                showToast('Sync failed: ' + error.message, 'error');
-            } finally {
-                syncBtn.disabled = false;
-                syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync All Users';
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Sync failed');
             }
+
+            const result = await response.json();
+
+            showToast(`Sync complete: ${result.summary.created} created, ${result.summary.updated} updated`, 'success');
+            fetchUsers();
+
+        } catch (error) {
+            console.error('Error syncing users:', error);
+            showToast('Sync failed: ' + error.message, 'error');
+        } finally {
+            syncBtn.disabled = false;
+            syncBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Sync All Users';
         }
+    }
 
-        // Display current user
-        function displayCurrentUser() {
-            const user = window.JustDataAuth.getCurrentUser();
-            const display = document.getElementById('currentUserDisplay');
-
-            if (user) {
-                display.innerHTML = `
-                    ${user.photoURL ? `<img src="${user.photoURL}" alt="Avatar">` : ''}
-                    <span>${user.email}</span>
-                `;
-            }
+    // Close modal on escape
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeModal();
+            closeDeleteModal();
+            closeResetPasswordModal();
         }
+    });
 
-        // Close modal on escape
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-                closeDeleteModal();
-                closeResetPasswordModal();
-            }
-        });
+    // Close modal when clicking overlay
+    document.getElementById('userModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeModal();
+        }
+    });
 
-        // Close modal when clicking overlay
-        document.getElementById('userModal').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeModal();
-            }
-        });
+    document.getElementById('deleteModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeDeleteModal();
+        }
+    });
 
-        document.getElementById('deleteModal').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeDeleteModal();
-            }
-        });
+    document.getElementById('resetPasswordModal').addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeResetPasswordModal();
+        }
+    });
 
-        document.getElementById('resetPasswordModal').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeResetPasswordModal();
-            }
-        });
+    // ============================================
+    // USER SELECTION & DELETION
+    // ============================================
 
-        // ============================================
-        // USER SELECTION & DELETION
-        // ============================================
+    function toggleUserSelection(uid, isSelected) {
+        if (isSelected) {
+            selectedUsers.add(uid);
+        } else {
+            selectedUsers.delete(uid);
+        }
+        updateDeleteButton();
+        updateSelectAllCheckbox();
+    }
 
-        function toggleUserSelection(uid, isSelected) {
-            if (isSelected) {
+    function toggleSelectAll(checkbox) {
+        const checkboxes = document.querySelectorAll('#usersTableBody .user-checkbox:not(:disabled)');
+        checkboxes.forEach(cb => {
+            cb.checked = checkbox.checked;
+            const uid = cb.closest('tr').dataset.uid;
+            if (checkbox.checked) {
                 selectedUsers.add(uid);
             } else {
                 selectedUsers.delete(uid);
             }
-            updateDeleteButton();
-            updateSelectAllCheckbox();
+        });
+        updateDeleteButton();
+    }
+
+    function updateSelectAllCheckbox() {
+        const checkboxes = document.querySelectorAll('#usersTableBody .user-checkbox:not(:disabled)');
+        const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+        document.getElementById('selectAllCheckbox').checked = allChecked;
+    }
+
+    function updateDeleteButton() {
+        const btn = document.getElementById('deleteSelectedBtn');
+        const count = selectedUsers.size;
+        document.getElementById('selectedCount').textContent = count;
+        btn.disabled = count === 0;
+    }
+
+    function openDeleteModal() {
+        if (selectedUsers.size === 0) return;
+
+        const usersToDelete = allUsers.filter(u => selectedUsers.has(u.uid));
+
+        // Double-check no admins are selected
+        const adminSelected = usersToDelete.some(u => u.userType === 'admin');
+        if (adminSelected) {
+            showToast('Admin users cannot be deleted', 'error');
+            return;
         }
 
-        function toggleSelectAll(checkbox) {
-            const checkboxes = document.querySelectorAll('#usersTableBody .user-checkbox:not(:disabled)');
-            checkboxes.forEach(cb => {
-                cb.checked = checkbox.checked;
-                const uid = cb.closest('tr').dataset.uid;
-                if (checkbox.checked) {
-                    selectedUsers.add(uid);
-                } else {
-                    selectedUsers.delete(uid);
-                }
+        // Check if trying to delete self
+        const currentUser = window.JustDataAuth.getCurrentUser();
+        const selfSelected = usersToDelete.some(u => u.email === currentUser?.email);
+        if (selfSelected) {
+            showToast('You cannot delete your own account', 'error');
+            return;
+        }
+
+        // Populate modal
+        document.getElementById('deleteCountText').textContent = `${usersToDelete.length} user(s)`;
+        document.getElementById('deleteUserList').innerHTML = usersToDelete.map(u => `
+            <div class="delete-user-item">
+                <span>${u.email}</span>
+                <span style="color: var(--ncrc-gray);">${u.displayName || ''}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('deleteConfirmInput').value = '';
+        document.getElementById('confirmDeleteBtn').disabled = true;
+        document.getElementById('deleteModal').classList.add('active');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('active');
+    }
+
+    function checkDeleteConfirmation() {
+        const input = document.getElementById('deleteConfirmInput').value;
+        document.getElementById('confirmDeleteBtn').disabled = input !== 'DELETE';
+    }
+
+    async function executeDelete() {
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        const confirmText = document.getElementById('confirmDeleteText');
+
+        confirmBtn.disabled = true;
+        confirmText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Deleting...';
+
+        try {
+            const uids = Array.from(selectedUsers);
+
+            const response = await fetch('/api/auth/users/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                },
+                body: JSON.stringify({ uids: uids })
             });
-            updateDeleteButton();
-        }
 
-        function updateSelectAllCheckbox() {
-            const checkboxes = document.querySelectorAll('#usersTableBody .user-checkbox:not(:disabled)');
-            const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
-            document.getElementById('selectAllCheckbox').checked = allChecked;
-        }
+            const result = await response.json();
 
-        function updateDeleteButton() {
-            const btn = document.getElementById('deleteSelectedBtn');
-            const count = selectedUsers.size;
-            document.getElementById('selectedCount').textContent = count;
-            btn.disabled = count === 0;
-        }
-
-        function openDeleteModal() {
-            if (selectedUsers.size === 0) return;
-
-            const usersToDelete = allUsers.filter(u => selectedUsers.has(u.uid));
-
-            // Double-check no admins are selected
-            const adminSelected = usersToDelete.some(u => u.userType === 'admin');
-            if (adminSelected) {
-                showToast('Admin users cannot be deleted', 'error');
-                return;
+            if (!response.ok) {
+                throw new Error(result.error || 'Delete failed');
             }
 
-            // Check if trying to delete self
-            const currentUser = window.JustDataAuth.getCurrentUser();
-            const selfSelected = usersToDelete.some(u => u.email === currentUser?.email);
-            if (selfSelected) {
-                showToast('You cannot delete your own account', 'error');
-                return;
+            // Show results
+            const successCount = result.results.filter(r => r.success).length;
+            const failCount = result.results.filter(r => !r.success).length;
+
+            if (failCount > 0) {
+                const failures = result.results.filter(r => !r.success);
+                showToast(`Deleted ${successCount} users. ${failCount} failed.`, 'warning');
+                console.error('Delete failures:', failures);
+            } else {
+                showToast(`Successfully deleted ${successCount} user(s)`, 'success');
             }
 
-            // Populate modal
-            document.getElementById('deleteCountText').textContent = `${usersToDelete.length} user(s)`;
-            document.getElementById('deleteUserList').innerHTML = usersToDelete.map(u => `
-                <div class="delete-user-item">
-                    <span>${u.email}</span>
-                    <span style="color: var(--ncrc-gray);">${u.displayName || ''}</span>
-                </div>
-            `).join('');
+            // Clear selection and refresh
+            selectedUsers.clear();
+            closeDeleteModal();
+            fetchUsers();
 
-            document.getElementById('deleteConfirmInput').value = '';
-            document.getElementById('confirmDeleteBtn').disabled = true;
-            document.getElementById('deleteModal').classList.add('active');
+        } catch (error) {
+            console.error('Delete error:', error);
+            showToast('Delete failed: ' + error.message, 'error');
+        } finally {
+            confirmBtn.disabled = false;
+            confirmText.textContent = 'Delete Users';
+        }
+    }
+
+    // ============================================
+    // RESET PASSWORD
+    // ============================================
+
+    function openResetPasswordModal(uid, email) {
+        document.getElementById('resetPasswordUid').value = uid;
+        document.getElementById('resetPasswordEmail').textContent = email;
+        document.getElementById('newPasswordInput').value = '';
+        document.getElementById('passwordSuccessMessage').style.display = 'none';
+
+        // Explicitly enable the button (both property and attribute)
+        const resetBtn = document.getElementById('resetPasswordBtn');
+        resetBtn.disabled = false;
+        resetBtn.removeAttribute('disabled');
+        resetBtn.style.opacity = '1';
+        resetBtn.style.pointerEvents = 'auto';
+
+        document.getElementById('resetPasswordText').textContent = 'Reset Password';
+        document.getElementById('resetPasswordModal').classList.add('active');
+
+        console.log('Reset password modal opened for:', email, '- Button enabled:', !resetBtn.disabled);
+    }
+
+    function closeResetPasswordModal() {
+        document.getElementById('resetPasswordModal').classList.remove('active');
+    }
+
+    function generateRandomPassword() {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
+        let password = '';
+        // Ensure at least one of each type
+        password += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
+        password += 'abcdefghjkmnpqrstuvwxyz'[Math.floor(Math.random() * 23)];
+        password += '23456789'[Math.floor(Math.random() * 8)];
+        password += '!@#$%'[Math.floor(Math.random() * 5)];
+        // Fill rest
+        for (let i = 0; i < 8; i++) {
+            password += chars[Math.floor(Math.random() * chars.length)];
+        }
+        // Shuffle
+        password = password.split('').sort(() => Math.random() - 0.5).join('');
+        document.getElementById('newPasswordInput').value = password;
+    }
+
+    function copyPassword() {
+        const input = document.getElementById('newPasswordInput');
+        input.select();
+        document.execCommand('copy');
+        showToast('Password copied to clipboard', 'success');
+    }
+
+    async function executeResetPassword() {
+        const uid = document.getElementById('resetPasswordUid').value;
+        const newPassword = document.getElementById('newPasswordInput').value;
+
+        if (!newPassword || newPassword.length < 6) {
+            showToast('Password must be at least 6 characters', 'error');
+            return;
         }
 
-        function closeDeleteModal() {
-            document.getElementById('deleteModal').classList.remove('active');
-        }
+        const resetBtn = document.getElementById('resetPasswordBtn');
+        const resetText = document.getElementById('resetPasswordText');
 
-        function checkDeleteConfirmation() {
-            const input = document.getElementById('deleteConfirmInput').value;
-            document.getElementById('confirmDeleteBtn').disabled = input !== 'DELETE';
-        }
+        // Disable button during API call
+        resetBtn.disabled = true;
+        resetBtn.style.opacity = '0.6';
+        resetBtn.style.pointerEvents = 'none';
+        resetText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Resetting...';
 
-        async function executeDelete() {
-            const confirmBtn = document.getElementById('confirmDeleteBtn');
-            const confirmText = document.getElementById('confirmDeleteText');
+        try {
+            const token = await window.JustDataAuth.getToken();
+            console.log('Calling reset password API for uid:', uid);
 
-            confirmBtn.disabled = true;
-            confirmText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Deleting...';
+            const response = await fetch(`/api/auth/users/${uid}/reset-password`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ password: newPassword })
+            });
 
-            try {
-                const uids = Array.from(selectedUsers);
+            const result = await response.json();
+            console.log('Reset password response:', result);
 
-                const response = await fetch('/api/auth/users/delete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                    },
-                    body: JSON.stringify({ uids: uids })
-                });
-
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Delete failed');
-                }
-
-                // Show results
-                const successCount = result.results.filter(r => r.success).length;
-                const failCount = result.results.filter(r => !r.success).length;
-
-                if (failCount > 0) {
-                    const failures = result.results.filter(r => !r.success);
-                    showToast(`Deleted ${successCount} users. ${failCount} failed.`, 'warning');
-                    console.error('Delete failures:', failures);
-                } else {
-                    showToast(`Successfully deleted ${successCount} user(s)`, 'success');
-                }
-
-                // Clear selection and refresh
-                selectedUsers.clear();
-                closeDeleteModal();
-                fetchUsers();
-
-            } catch (error) {
-                console.error('Delete error:', error);
-                showToast('Delete failed: ' + error.message, 'error');
-            } finally {
-                confirmBtn.disabled = false;
-                confirmText.textContent = 'Delete Users';
+            if (!response.ok) {
+                throw new Error(result.error || 'Password reset failed');
             }
-        }
 
-        // ============================================
-        // RESET PASSWORD
-        // ============================================
+            // Show success - keep button disabled to prevent accidental re-submission
+            document.getElementById('passwordSuccessMessage').style.display = 'block';
+            resetText.textContent = 'Done!';
+            resetBtn.style.opacity = '1';
+            resetBtn.style.background = '#28a745';
+            showToast('Password reset successfully', 'success');
 
-        function openResetPasswordModal(uid, email) {
-            document.getElementById('resetPasswordUid').value = uid;
-            document.getElementById('resetPasswordEmail').textContent = email;
-            document.getElementById('newPasswordInput').value = '';
-            document.getElementById('passwordSuccessMessage').style.display = 'none';
-
-            // Explicitly enable the button (both property and attribute)
-            const resetBtn = document.getElementById('resetPasswordBtn');
+        } catch (error) {
+            console.error('Password reset error:', error);
+            showToast('Reset failed: ' + error.message, 'error');
+            // Re-enable button on error
             resetBtn.disabled = false;
             resetBtn.removeAttribute('disabled');
             resetBtn.style.opacity = '1';
             resetBtn.style.pointerEvents = 'auto';
+            resetBtn.style.background = '';
+            resetText.textContent = 'Reset Password';
+        }
+    }
 
-            document.getElementById('resetPasswordText').textContent = 'Reset Password';
-            document.getElementById('resetPasswordModal').classList.add('active');
+    // ============================================
+    // MEMBER REQUESTS MANAGEMENT
+    // ============================================
 
-            console.log('Reset password modal opened for:', email, '- Button enabled:', !resetBtn.disabled);
+    let memberRequests = [];
+
+    // Show tab
+    function showTab(tabName) {
+        // Update tab buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabName + 'TabBtn').classList.add('active');
+
+        // Update tab content
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(tabName + 'TabContent').classList.add('active');
+
+        // Load requests if switching to requests tab
+        if (tabName === 'requests') {
+            loadMemberRequests();
+        }
+    }
+
+    // Load member requests
+    async function loadMemberRequests() {
+        try {
+            const response = await fetch('/api/auth/admin/member-requests?status=pending', {
+                headers: {
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                }
+            });
+
+            if (!response.ok) throw new Error('Failed to fetch requests');
+
+            const data = await response.json();
+            memberRequests = data.requests || [];
+
+            updateRequestsUI();
+            updateRequestBadge();
+
+        } catch (error) {
+            console.error('Error loading member requests:', error);
+            document.getElementById('requestsList').innerHTML = `
+                <div class="no-requests">
+                    <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                    <p>Failed to load requests. <a href="#" onclick="loadMemberRequests(); return false;">Retry</a></p>
+                </div>
+            `;
+        }
+    }
+
+    // Update requests badge
+    function updateRequestBadge() {
+        const badge = document.getElementById('requestBadge');
+        const statValue = document.getElementById('memberRequestCount');
+        const count = memberRequests.length;
+
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
         }
 
-        function closeResetPasswordModal() {
-            document.getElementById('resetPasswordModal').classList.remove('active');
+        if (statValue) statValue.textContent = count;
+    }
+
+    // Format date
+    function formatRequestDate(dateStr) {
+        if (!dateStr) return 'Unknown';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }
+
+    // Update requests UI
+    function updateRequestsUI() {
+        const container = document.getElementById('requestsList');
+
+        if (memberRequests.length === 0) {
+            container.innerHTML = `
+                <div class="no-requests">
+                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
+                    <p>No pending member requests</p>
+                </div>
+            `;
+            return;
         }
 
-        function generateRandomPassword() {
-            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%';
-            let password = '';
-            // Ensure at least one of each type
-            password += 'ABCDEFGHJKLMNPQRSTUVWXYZ'[Math.floor(Math.random() * 24)];
-            password += 'abcdefghjkmnpqrstuvwxyz'[Math.floor(Math.random() * 23)];
-            password += '23456789'[Math.floor(Math.random() * 8)];
-            password += '!@#$%'[Math.floor(Math.random() * 5)];
-            // Fill rest
-            for (let i = 0; i < 8; i++) {
-                password += chars[Math.floor(Math.random() * chars.length)];
+        let html = '';
+        for (const req of memberRequests) {
+            html += `
+                <div class="request-card" data-id="${req.id}">
+                    <div class="request-header">
+                        <div>
+                            <strong>${escapeHtml(req.user_email)}</strong>
+                            <span class="request-date">${formatRequestDate(req.created_at)}</span>
+                        </div>
+                    </div>
+                    <div class="request-body">
+                        <p><i class="fas fa-user"></i> <strong>Name:</strong> ${escapeHtml(req.user_name || 'Not provided')}</p>
+                        <p><i class="fas fa-building"></i> <strong>Organization:</strong> "${escapeHtml(req.requested_org_name)}"</p>
+                        <p><i class="fas fa-briefcase"></i> <strong>Role:</strong> ${escapeHtml(req.user_role_at_org)}</p>
+                        ${req.request_notes ? `<p><i class="fas fa-comment"></i> <strong>Notes:</strong> ${escapeHtml(req.request_notes)}</p>` : ''}
+                    </div>
+                    <div class="hubspot-search">
+                        <label>Search HubSpot for Organization:</label>
+                        <div style="display: flex; gap: 10px; margin-top: 8px;">
+                            <input type="text" class="hubspot-search-input"
+                                   value="${escapeHtml(req.requested_org_name)}"
+                                   placeholder="Search organization name..."
+                                   id="search_${req.id}">
+                            <button onclick="searchHubSpot('${req.id}')" class="search-btn">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </div>
+                        <div class="hubspot-results" id="results_${req.id}"></div>
+                    </div>
+                    <div class="request-actions">
+                        <button onclick="approveRequest('${req.id}')" class="approve-btn" id="approve_${req.id}" disabled title="Search HubSpot first">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button onclick="denyRequest('${req.id}')" class="deny-btn">
+                            <i class="fas fa-times"></i> Deny
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        container.innerHTML = html;
+    }
+
+    // HTML escape helper
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Search HubSpot
+    async function searchHubSpot(requestId) {
+        const input = document.getElementById('search_' + requestId);
+        const resultsDiv = document.getElementById('results_' + requestId);
+        const searchTerm = input.value.trim();
+
+        if (searchTerm.length < 2) {
+            showToast('Please enter at least 2 characters', 'error');
+            return;
+        }
+
+        resultsDiv.innerHTML = '<p style="color: #888;"><i class="fas fa-spinner fa-spin"></i> Searching HubSpot...</p>';
+
+        try {
+            const response = await fetch(`/api/auth/admin/hubspot/companies/search?q=${encodeURIComponent(searchTerm)}`, {
+                headers: {
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Search failed');
             }
-            // Shuffle
-            password = password.split('').sort(() => Math.random() - 0.5).join('');
-            document.getElementById('newPasswordInput').value = password;
-        }
 
-        function copyPassword() {
-            const input = document.getElementById('newPasswordInput');
-            input.select();
-            document.execCommand('copy');
-            showToast('Password copied to clipboard', 'success');
-        }
-
-        async function executeResetPassword() {
-            const uid = document.getElementById('resetPasswordUid').value;
-            const newPassword = document.getElementById('newPasswordInput').value;
-
-            if (!newPassword || newPassword.length < 6) {
-                showToast('Password must be at least 6 characters', 'error');
+            if (data.results.length === 0) {
+                resultsDiv.innerHTML = '<p style="color: #888; padding: 10px 0;">No matching organizations found in HubSpot</p>';
                 return;
             }
 
-            const resetBtn = document.getElementById('resetPasswordBtn');
-            const resetText = document.getElementById('resetPasswordText');
-
-            // Disable button during API call
-            resetBtn.disabled = true;
-            resetBtn.style.opacity = '0.6';
-            resetBtn.style.pointerEvents = 'none';
-            resetText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px;"></span> Resetting...';
-
-            try {
-                const token = await window.JustDataAuth.getToken();
-                console.log('Calling reset password API for uid:', uid);
-
-                const response = await fetch(`/api/auth/users/${uid}/reset-password`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ password: newPassword })
-                });
-
-                const result = await response.json();
-                console.log('Reset password response:', result);
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Password reset failed');
-                }
-
-                // Show success - keep button disabled to prevent accidental re-submission
-                document.getElementById('passwordSuccessMessage').style.display = 'block';
-                resetText.textContent = 'Done!';
-                resetBtn.style.opacity = '1';
-                resetBtn.style.background = '#28a745';
-                showToast('Password reset successfully', 'success');
-
-            } catch (error) {
-                console.error('Password reset error:', error);
-                showToast('Reset failed: ' + error.message, 'error');
-                // Re-enable button on error
-                resetBtn.disabled = false;
-                resetBtn.removeAttribute('disabled');
-                resetBtn.style.opacity = '1';
-                resetBtn.style.pointerEvents = 'auto';
-                resetBtn.style.background = '';
-                resetText.textContent = 'Reset Password';
+            let html = '<div class="hubspot-matches">';
+            for (const company of data.results) {
+                const statusClass = company.has_access ? (company.is_grace_period ? 'status-grace' : 'status-active') : 'status-inactive';
+                const statusIcon = company.has_access ? '✓' : '✗';
+                html += `
+                    <label class="company-option">
+                        <input type="radio" name="hubspot_company_${requestId}"
+                               value="${company.id}"
+                               data-name="${escapeHtml(company.name)}"
+                               data-status="${escapeHtml(company.membership_status || '')}"
+                               data-access="${company.has_access}"
+                               onchange="enableApprove('${requestId}', this)">
+                        <span class="company-info">
+                            <strong>${escapeHtml(company.name)}</strong>
+                            ${company.city ? `<small>${escapeHtml(company.city)}, ${escapeHtml(company.state)}</small>` : ''}
+                        </span>
+                        <span class="membership-status ${statusClass}">
+                            ${statusIcon} ${company.membership_status || 'No status'}
+                        </span>
+                    </label>
+                `;
             }
+            html += '</div>';
+            resultsDiv.innerHTML = html;
+
+        } catch (error) {
+            console.error('HubSpot search error:', error);
+            resultsDiv.innerHTML = `<p style="color: #dc3545; padding: 10px 0;"><i class="fas fa-exclamation-triangle"></i> ${error.message}</p>`;
+        }
+    }
+
+    // Enable approve button when company selected
+    function enableApprove(requestId, radio) {
+        const approveBtn = document.getElementById('approve_' + requestId);
+        const hasAccess = radio.dataset.access === 'true';
+
+        approveBtn.disabled = !hasAccess;
+        approveBtn.title = hasAccess ? 'Approve this request' : 'Cannot approve - organization is not a current NCRC member';
+    }
+
+    // Approve request
+    async function approveRequest(requestId) {
+        const card = document.querySelector(`.request-card[data-id="${requestId}"]`);
+        const selectedCompany = card.querySelector(`input[name="hubspot_company_${requestId}"]:checked`);
+
+        if (!selectedCompany) {
+            showToast('Please select a HubSpot company first', 'error');
+            return;
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async function() {
-            // Wait for auth to initialize
-            setTimeout(async () => {
-                displayCurrentUser();
-                await fetchUsers();
-            }, 500);
-        });
-    </script>
-</body>
-</html>
+        if (!confirm('Approve this member request? The user will be upgraded to member access.')) return;
+
+        const approveBtn = document.getElementById('approve_' + requestId);
+        approveBtn.disabled = true;
+        approveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Approving...';
+
+        try {
+            const response = await fetch(`/api/auth/admin/member-requests/${requestId}/review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                },
+                body: JSON.stringify({
+                    action: 'approve',
+                    hubspot_company_id: selectedCompany.value,
+                    hubspot_company_name: selectedCompany.dataset.name,
+                    hubspot_membership_status: selectedCompany.dataset.status
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast(result.message, 'success');
+                loadMemberRequests();  // Refresh the list
+            } else {
+                throw new Error(result.error || 'Failed to approve request');
+            }
+        } catch (error) {
+            console.error('Approve error:', error);
+            showToast(error.message, 'error');
+            approveBtn.disabled = false;
+            approveBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
+        }
+    }
+
+    // Deny request
+    async function denyRequest(requestId) {
+        const reason = prompt('Reason for denial:', 'Organization not found in NCRC membership records');
+        if (reason === null) return;  // User cancelled
+
+        const card = document.querySelector(`.request-card[data-id="${requestId}"]`);
+        const denyBtn = card.querySelector('.deny-btn');
+        denyBtn.disabled = true;
+        denyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Denying...';
+
+        try {
+            const response = await fetch(`/api/auth/admin/member-requests/${requestId}/review`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
+                },
+                body: JSON.stringify({
+                    action: 'deny',
+                    denial_reason: reason
+                })
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                showToast('Request denied', 'success');
+                loadMemberRequests();
+            } else {
+                throw new Error(result.error || 'Failed to deny request');
+            }
+        } catch (error) {
+            console.error('Deny error:', error);
+            showToast(error.message, 'error');
+            denyBtn.disabled = false;
+            denyBtn.innerHTML = '<i class="fas fa-times"></i> Deny';
+        }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async function() {
+        // Wait for auth to initialize
+        setTimeout(async () => {
+            await fetchUsers();
+            // Also load member requests count
+            loadMemberRequests();
+        }, 500);
+
+        // Check URL params for tab
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('tab') === 'requests') {
+            showTab('requests');
+        }
+    });
+</script>
+{% endblock %}

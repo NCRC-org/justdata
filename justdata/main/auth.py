@@ -1638,3 +1638,491 @@ def reset_user_password(uid: str):
         return jsonify({'error': 'User not found in Firebase Auth'}), 404
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ========================================
+# Member Access Request System
+# ========================================
+
+# HubSpot membership field configuration
+HUBSPOT_MEMBERSHIP_FIELD = os.environ.get('HUBSPOT_MEMBERSHIP_FIELD', 'membership_status')
+
+# Membership values that grant full member access
+MEMBER_ACCESS_VALUES = ['CURRENT', 'LIFETIME MEMBER', 'NATIONAL PARTNER', 'RECIPROCAL']
+GRACE_PERIOD_VALUES = ['GRACE PERIOD']
+NO_ACCESS_VALUES = ['LAPSED', None, '']
+
+
+def send_slack_member_request_notification(request_data: dict) -> bool:
+    """
+    Send notification to #justdata-new-user-requests Slack channel.
+    Gracefully skips if webhook URL is not configured.
+
+    Args:
+        request_data: Dict with user_email, requested_org_name, user_role_at_org, created_at
+
+    Returns:
+        True if notification sent, False if skipped or failed
+    """
+    import requests as http_requests
+
+    webhook_url = os.environ.get('SLACK_MEMBER_REQUEST_WEBHOOK')
+
+    if not webhook_url:
+        print("Slack webhook not configured, skipping notification")
+        return False
+
+    try:
+        # Format timestamp for Slack
+        created_at = request_data.get('created_at', datetime.utcnow())
+        timestamp = int(created_at.timestamp()) if hasattr(created_at, 'timestamp') else int(datetime.utcnow().timestamp())
+
+        message = {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "🆕 New Member Access Request",
+                        "emoji": True
+                    }
+                },
+                {
+                    "type": "section",
+                    "fields": [
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*User:*\n{request_data.get('user_email', 'Unknown')}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Organization:*\n{request_data.get('requested_org_name', 'Not specified')}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Role:*\n{request_data.get('user_role_at_org', 'Not specified')}"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": f"*Submitted:*\n<!date^{timestamp}^{{date_short_pretty}} at {{time}}|Just now>"
+                        }
+                    ]
+                },
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Review in JustData Admin",
+                                "emoji": True
+                            },
+                            "url": "https://justdata.org/admin/users?tab=requests",
+                            "style": "primary"
+                        }
+                    ]
+                }
+            ]
+        }
+
+        response = http_requests.post(webhook_url, json=message, timeout=10)
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        print(f"Failed to send Slack notification: {e}")
+        return False
+
+
+@auth_bp.route('/member-request', methods=['POST'])
+@login_required
+def submit_member_request():
+    """
+    Submit a request for member access.
+    Creates a pending request in Firestore for admin review.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    org_name = data.get('organization_name', '').strip()
+    user_role = data.get('user_role', '').strip()
+    notes = data.get('notes', '').strip()
+
+    if not org_name or not user_role:
+        return jsonify({'error': 'Organization name and role are required'}), 400
+
+    uid = user.get('uid')
+    email = user.get('email')
+    display_name = user.get('name', email.split('@')[0] if email else 'Unknown')
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        # Check if user already has a pending request
+        existing = db.collection('member_requests').where(
+            'user_id', '==', uid
+        ).where('status', '==', 'pending').limit(1).stream()
+
+        if len(list(existing)) > 0:
+            return jsonify({'error': 'You already have a pending request'}), 400
+
+        # Check if user is already a member or higher
+        user_doc = get_user_doc(uid)
+        if user_doc:
+            current_type = user_doc.get('userType', 'public_registered')
+            if current_type in ['member', 'member_premium', 'non_member_org', 'staff', 'senior_executive', 'admin']:
+                return jsonify({'error': 'You already have member access'}), 400
+
+        now = datetime.utcnow()
+
+        # Create the request
+        request_data = {
+            'user_id': uid,
+            'user_email': email,
+            'user_name': display_name,
+            'requested_org_name': org_name,
+            'user_role_at_org': user_role,
+            'request_notes': notes,
+            'status': 'pending',
+            'created_at': now,
+            'reviewed_at': None,
+            'reviewed_by': None,
+            'hubspot_company_id': None,
+            'hubspot_company_name': None,
+            'hubspot_membership_status': None,
+            'denial_reason': None
+        }
+
+        # Add to Firestore
+        doc_ref = db.collection('member_requests').add(request_data)
+        request_id = doc_ref[1].id
+
+        # Update user document with pending request status
+        db.collection('users').document(uid).update({
+            'memberRequestStatus': 'pending',
+            'memberRequestId': request_id,
+            'memberRequestedAt': now,
+            'hasSeenMemberPrompt': True
+        })
+
+        # Log activity
+        log_activity(uid, email, 'member_request_submitted', metadata={
+            'request_id': request_id,
+            'organization': org_name,
+            'role': user_role
+        })
+
+        # Send Slack notification (gracefully skips if not configured)
+        request_data['created_at'] = now
+        send_slack_member_request_notification(request_data)
+
+        return jsonify({
+            'success': True,
+            'request_id': request_id,
+            'message': 'Request submitted successfully'
+        }), 201
+
+    except Exception as e:
+        print(f"Error submitting member request: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/member-request/dismiss-prompt', methods=['POST'])
+@login_required
+def dismiss_member_prompt():
+    """
+    Mark that user has seen the member prompt and chose to continue as guest.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    uid = user.get('uid')
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        db.collection('users').document(uid).update({
+            'hasSeenMemberPrompt': True
+        })
+
+        return jsonify({
+            'success': True,
+            'message': 'Prompt dismissed'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/member-request/status', methods=['GET'])
+@login_required
+def get_member_request_status():
+    """
+    Get the current user's member request status.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    uid = user.get('uid')
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        user_doc = get_user_doc(uid)
+        if not user_doc:
+            return jsonify({
+                'hasSeenMemberPrompt': False,
+                'memberRequestStatus': None,
+                'membershipStatus': None
+            })
+
+        return jsonify({
+            'hasSeenMemberPrompt': user_doc.get('hasSeenMemberPrompt', False),
+            'memberRequestStatus': user_doc.get('memberRequestStatus'),
+            'memberRequestId': user_doc.get('memberRequestId'),
+            'membershipStatus': user_doc.get('membershipStatus'),
+            'organizationName': user_doc.get('organizationName')
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/admin/member-requests', methods=['GET'])
+@admin_required
+def get_member_requests():
+    """Get all member requests (admin only)."""
+    status_filter = request.args.get('status', 'pending')
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        query = db.collection('member_requests')
+
+        if status_filter != 'all':
+            query = query.where('status', '==', status_filter)
+
+        query = query.order_by('created_at', direction=firestore.Query.DESCENDING)
+
+        requests_list = []
+        for doc in query.stream():
+            req = doc.to_dict()
+            req['id'] = doc.id
+
+            # Convert timestamps to ISO strings
+            if req.get('created_at') and hasattr(req['created_at'], 'isoformat'):
+                req['created_at'] = req['created_at'].isoformat()
+            if req.get('reviewed_at') and hasattr(req['reviewed_at'], 'isoformat'):
+                req['reviewed_at'] = req['reviewed_at'].isoformat()
+
+            requests_list.append(req)
+
+        return jsonify({
+            'requests': requests_list,
+            'count': len(requests_list)
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/admin/hubspot/companies/search', methods=['GET'])
+@admin_required
+def search_hubspot_companies():
+    """Search HubSpot for companies by name (admin only)."""
+    import requests as http_requests
+
+    search_term = request.args.get('q', '').strip()
+
+    if not search_term or len(search_term) < 2:
+        return jsonify({'error': 'Search term must be at least 2 characters'}), 400
+
+    hubspot_token = os.environ.get('HUBSPOT_ACCESS_TOKEN')
+    if not hubspot_token:
+        return jsonify({'error': 'HubSpot API not configured'}), 500
+
+    url = "https://api.hubapi.com/crm/v3/objects/companies/search"
+    headers = {
+        "Authorization": f"Bearer {hubspot_token}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "filterGroups": [{
+            "filters": [{
+                "propertyName": "name",
+                "operator": "CONTAINS_TOKEN",
+                "value": search_term
+            }]
+        }],
+        "properties": [
+            "name",
+            "city",
+            "state",
+            HUBSPOT_MEMBERSHIP_FIELD,
+            "domain"
+        ],
+        "limit": 10
+    }
+
+    try:
+        response = http_requests.post(url, headers=headers, json=payload, timeout=30)
+        response.raise_for_status()
+        results = response.json().get("results", [])
+
+        companies = []
+        for company in results:
+            props = company.get("properties", {})
+            membership_status = props.get(HUBSPOT_MEMBERSHIP_FIELD, "") or ""
+            membership_status_upper = membership_status.upper().strip()
+
+            has_access = membership_status_upper in MEMBER_ACCESS_VALUES or membership_status_upper in GRACE_PERIOD_VALUES
+            is_grace_period = membership_status_upper in GRACE_PERIOD_VALUES
+
+            companies.append({
+                "id": company["id"],
+                "name": props.get("name"),
+                "city": props.get("city"),
+                "state": props.get("state"),
+                "membership_status": membership_status,
+                "has_access": has_access,
+                "is_grace_period": is_grace_period
+            })
+
+        return jsonify({'results': companies})
+
+    except http_requests.exceptions.RequestException as e:
+        return jsonify({'error': f'HubSpot API error: {str(e)}'}), 500
+
+
+@auth_bp.route('/admin/member-requests/<request_id>/review', methods=['POST'])
+@admin_required
+def review_member_request(request_id):
+    """Approve or deny a member request (admin only)."""
+    admin_user = get_current_user()
+    data = request.get_json()
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    action = data.get('action')  # "approve" or "deny"
+
+    if action not in ['approve', 'deny']:
+        return jsonify({'error': "Action must be 'approve' or 'deny'"}), 400
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        # Get the request
+        req_ref = db.collection('member_requests').document(request_id)
+        req_doc = req_ref.get()
+
+        if not req_doc.exists:
+            return jsonify({'error': 'Request not found'}), 404
+
+        req_data = req_doc.to_dict()
+
+        if req_data['status'] != 'pending':
+            return jsonify({'error': 'Request has already been reviewed'}), 400
+
+        now = datetime.utcnow()
+        admin_email = admin_user.get('email') if admin_user else 'unknown'
+
+        if action == 'approve':
+            hubspot_company_id = data.get('hubspot_company_id')
+            hubspot_company_name = data.get('hubspot_company_name')
+            hubspot_membership_status = data.get('hubspot_membership_status')
+
+            if not hubspot_company_id:
+                return jsonify({'error': 'Must select a HubSpot company to approve'}), 400
+
+            # Update the request
+            req_ref.update({
+                'status': 'approved',
+                'reviewed_at': now,
+                'reviewed_by': admin_email,
+                'hubspot_company_id': hubspot_company_id,
+                'hubspot_company_name': hubspot_company_name,
+                'hubspot_membership_status': hubspot_membership_status
+            })
+
+            # Update the user's Firestore document
+            user_ref = db.collection('users').document(req_data['user_id'])
+            user_ref.update({
+                'userType': 'member',
+                'organizationName': hubspot_company_name,
+                'hubspotCompanyId': hubspot_company_id,
+                'membershipStatus': hubspot_membership_status,
+                'memberApprovedAt': now,
+                'memberApprovedBy': admin_email,
+                'memberRequestStatus': 'approved'
+            })
+
+            # Log activity
+            log_activity(
+                uid=admin_user.get('uid') if admin_user else 'unknown',
+                email=admin_email,
+                action='member_request_approved',
+                metadata={
+                    'request_id': request_id,
+                    'user_email': req_data.get('user_email'),
+                    'organization': hubspot_company_name
+                }
+            )
+
+            return jsonify({
+                'success': True,
+                'message': f"Approved. {req_data['user_email']} now has member access."
+            })
+
+        else:  # deny
+            denial_reason = data.get('denial_reason', 'Request denied')
+
+            req_ref.update({
+                'status': 'denied',
+                'reviewed_at': now,
+                'reviewed_by': admin_email,
+                'denial_reason': denial_reason
+            })
+
+            # Update user document
+            user_ref = db.collection('users').document(req_data['user_id'])
+            user_ref.update({
+                'memberRequestStatus': 'denied',
+                'memberRequestDeniedReason': denial_reason
+            })
+
+            # Log activity
+            log_activity(
+                uid=admin_user.get('uid') if admin_user else 'unknown',
+                email=admin_email,
+                action='member_request_denied',
+                metadata={
+                    'request_id': request_id,
+                    'user_email': req_data.get('user_email'),
+                    'reason': denial_reason
+                }
+            )
+
+            return jsonify({
+                'success': True,
+                'message': 'Request denied.'
+            })
+
+    except Exception as e:
+        print(f"Error reviewing member request: {e}")
+        return jsonify({'error': str(e)}), 500

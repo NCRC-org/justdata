@@ -1,0 +1,699 @@
+<!-- Member Access Request Modal and Banners -->
+<!-- Include this in base_app.html after the header -->
+
+<!-- Pending Request Banner (shows for users with pending member requests) -->
+<div id="pendingRequestBanner" class="member-banner pending-banner" style="display: none;">
+    <div class="banner-content">
+        <i class="fas fa-clock"></i>
+        <span>Your member access request is pending review. We'll email you when it's processed.</span>
+        <button onclick="dismissPendingBanner()" class="dismiss-btn" title="Dismiss">&times;</button>
+    </div>
+</div>
+
+<!-- Grace Period Warning Banner (shows for members in grace period) -->
+<div id="gracePeriodBanner" class="member-banner grace-banner" style="display: none;">
+    <div class="banner-content">
+        <i class="fas fa-exclamation-triangle"></i>
+        <span>Your organization's NCRC membership is currently in a grace period. Please contact your account manager to renew your membership.</span>
+        <button onclick="dismissGraceBanner()" class="dismiss-btn" title="Dismiss">&times;</button>
+    </div>
+</div>
+
+<!-- Welcome Modal (shows for first-time users) -->
+<div id="welcomeMemberModal" class="member-modal" style="display: none;">
+    <div class="member-modal-overlay" onclick="closeWelcomeModal()"></div>
+    <div class="member-modal-content">
+        <button class="modal-close-btn" onclick="closeWelcomeModal()">&times;</button>
+
+        <!-- Step 1: Welcome -->
+        <div id="welcomeStep1" class="modal-step">
+            <div class="modal-icon">
+                <i class="fas fa-hand-sparkles"></i>
+            </div>
+            <h2>Welcome to JustData!</h2>
+            <p class="modal-subtitle">You're signed in and can access our free tools.</p>
+
+            <div class="modal-divider"></div>
+
+            <h3>Are you a staff member of an NCRC member organization?</h3>
+            <p class="modal-description">
+                NCRC members get full access to all research tools including
+                BizSight, BranchSight, BranchMapper, and more.
+            </p>
+
+            <div class="modal-buttons">
+                <button onclick="showRequestForm()" class="btn-primary-modal">
+                    <i class="fas fa-id-card"></i>
+                    Yes, Request Member Access
+                </button>
+                <button onclick="continueAsGuest()" class="btn-secondary-modal">
+                    No, Continue as Guest
+                </button>
+            </div>
+
+            <p class="modal-footnote">
+                Not sure? You can request member access anytime from your profile menu.
+            </p>
+        </div>
+
+        <!-- Step 2: Request Form -->
+        <div id="welcomeStep2" class="modal-step" style="display: none;">
+            <div class="modal-icon">
+                <i class="fas fa-building"></i>
+            </div>
+            <h2>Request NCRC Member Access</h2>
+
+            <form id="memberRequestForm" onsubmit="submitMemberRequest(event)">
+                <div class="form-group">
+                    <label for="reqOrgName">Organization Name <span class="required">*</span></label>
+                    <input type="text" id="reqOrgName" name="organization_name" required
+                           placeholder="Enter your organization's name as registered with NCRC">
+                    <span class="form-hint">Enter your organization's name as it appears in NCRC records</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="reqUserRole">Your Role <span class="required">*</span></label>
+                    <input type="text" id="reqUserRole" name="user_role" required
+                           placeholder="e.g., Research Director, Policy Analyst">
+                </div>
+
+                <div class="form-group">
+                    <label for="reqNotes">Additional Notes (optional)</label>
+                    <textarea id="reqNotes" name="notes" rows="3"
+                              placeholder="Any information that might help verify your membership..."></textarea>
+                </div>
+
+                <div class="modal-buttons">
+                    <button type="button" onclick="showStep1()" class="btn-secondary-modal">
+                        <i class="fas fa-arrow-left"></i> Go Back
+                    </button>
+                    <button type="submit" id="submitRequestBtn" class="btn-primary-modal">
+                        <i class="fas fa-paper-plane"></i> Submit Request
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Step 3: Confirmation -->
+        <div id="welcomeStep3" class="modal-step" style="display: none;">
+            <div class="modal-icon success">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <h2>Request Submitted</h2>
+            <p class="modal-subtitle">
+                Thanks! We'll verify your membership and notify you by email.<br>
+                This usually takes 1-2 business days.
+            </p>
+            <p class="modal-description">
+                In the meantime, you have full access to our free tools.
+            </p>
+
+            <div class="modal-buttons single">
+                <button onclick="closeWelcomeModal()" class="btn-primary-modal">
+                    <i class="fas fa-arrow-right"></i> Continue to JustData
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Request Member Access Menu Modal (for later requests) -->
+<div id="requestAccessModal" class="member-modal" style="display: none;">
+    <div class="member-modal-overlay" onclick="closeRequestModal()"></div>
+    <div class="member-modal-content">
+        <button class="modal-close-btn" onclick="closeRequestModal()">&times;</button>
+
+        <div class="modal-icon">
+            <i class="fas fa-building"></i>
+        </div>
+        <h2>Request NCRC Member Access</h2>
+        <p class="modal-subtitle">
+            JustData provides enhanced features for staff of NCRC member organizations.
+        </p>
+
+        <form id="requestAccessForm" onsubmit="submitAccessRequest(event)">
+            <div class="form-group">
+                <label for="accessOrgName">Organization Name <span class="required">*</span></label>
+                <input type="text" id="accessOrgName" name="organization_name" required
+                       placeholder="Enter your organization's name as registered with NCRC">
+            </div>
+
+            <div class="form-group">
+                <label for="accessUserRole">Your Role <span class="required">*</span></label>
+                <input type="text" id="accessUserRole" name="user_role" required
+                       placeholder="e.g., Research Director, Policy Analyst">
+            </div>
+
+            <div class="form-group">
+                <label for="accessNotes">Additional Notes (optional)</label>
+                <textarea id="accessNotes" name="notes" rows="3"
+                          placeholder="Any information that might help verify your membership..."></textarea>
+            </div>
+
+            <div class="modal-buttons">
+                <button type="button" onclick="closeRequestModal()" class="btn-secondary-modal">
+                    Cancel
+                </button>
+                <button type="submit" id="submitAccessBtn" class="btn-primary-modal">
+                    <i class="fas fa-paper-plane"></i> Submit Request
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+/* Member Request Modal Styles */
+.member-banner {
+    padding: 12px 20px;
+    border-bottom: 1px solid;
+}
+
+.member-banner .banner-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.member-banner i {
+    font-size: 1.2rem;
+    flex-shrink: 0;
+}
+
+.member-banner span {
+    flex: 1;
+}
+
+.member-banner .dismiss-btn {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0 5px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.member-banner .dismiss-btn:hover {
+    opacity: 1;
+}
+
+.pending-banner {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+.grace-banner {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+}
+
+/* Modal Styles */
+.member-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10000;
+}
+
+.member-modal-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.member-modal-content {
+    position: relative;
+    background: white;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    margin: 5vh auto;
+    padding: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #666;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+
+.modal-close-btn:hover {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.modal-step {
+    text-align: center;
+}
+
+.modal-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-icon i {
+    font-size: 1.8rem;
+    color: white;
+}
+
+.modal-icon.success {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.member-modal-content h2 {
+    margin: 0 0 10px;
+    font-size: 1.5rem;
+    color: #1e3a5f;
+}
+
+.modal-subtitle {
+    color: #666;
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.modal-divider {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 20px 0;
+}
+
+.member-modal-content h3 {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.modal-description {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 25px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modal-buttons.single {
+    justify-content: center;
+}
+
+.btn-primary-modal {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-primary-modal:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);
+}
+
+.btn-primary-modal:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-secondary-modal {
+    background: #f5f5f5;
+    color: #333;
+    border: 2px solid #e0e0e0;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-secondary-modal:hover {
+    background: #e8e8e8;
+}
+
+.modal-footnote {
+    margin-top: 20px;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+/* Form Styles */
+.member-modal-content .form-group {
+    margin-bottom: 18px;
+    text-align: left;
+}
+
+.member-modal-content label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.95rem;
+}
+
+.member-modal-content .required {
+    color: #dc3545;
+}
+
+.member-modal-content input,
+.member-modal-content textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.member-modal-content input:focus,
+.member-modal-content textarea:focus {
+    border-color: #1e3a5f;
+    outline: none;
+}
+
+.member-modal-content .form-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.85rem;
+    color: #888;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .member-modal-content {
+        padding: 20px;
+        margin: 10px;
+        width: calc(100% - 20px);
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+    }
+
+    .btn-primary-modal,
+    .btn-secondary-modal {
+        width: 100%;
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+// Member Request Modal JavaScript
+
+// Check if user should see the welcome modal after login
+function checkMemberPrompt() {
+    // Only check for authenticated users
+    if (!window.justDataUserType) return;
+
+    // Don't show for members or higher
+    const memberTypes = ['member', 'member_premium', 'non_member_org', 'staff', 'senior_executive', 'admin'];
+    if (memberTypes.includes(window.justDataUserType)) {
+        checkGracePeriodBanner();
+        return;
+    }
+
+    // Check user's member request status from backend
+    fetch('/api/auth/member-request/status')
+        .then(response => response.json())
+        .then(data => {
+            // Show pending banner if request is pending
+            if (data.memberRequestStatus === 'pending') {
+                showPendingBanner();
+                return;
+            }
+
+            // Show welcome modal if user hasn't seen it
+            if (!data.hasSeenMemberPrompt && data.memberRequestStatus !== 'denied') {
+                showWelcomeModal();
+            }
+        })
+        .catch(err => console.error('Error checking member status:', err));
+}
+
+// Show the welcome modal
+function showWelcomeModal() {
+    const modal = document.getElementById('welcomeMemberModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close the welcome modal
+function closeWelcomeModal() {
+    const modal = document.getElementById('welcomeMemberModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+}
+
+// Show the request form (Step 2)
+function showRequestForm() {
+    document.getElementById('welcomeStep1').style.display = 'none';
+    document.getElementById('welcomeStep2').style.display = 'block';
+    document.getElementById('welcomeStep3').style.display = 'none';
+}
+
+// Go back to Step 1
+function showStep1() {
+    document.getElementById('welcomeStep1').style.display = 'block';
+    document.getElementById('welcomeStep2').style.display = 'none';
+    document.getElementById('welcomeStep3').style.display = 'none';
+}
+
+// Continue as guest (dismiss modal)
+function continueAsGuest() {
+    // Mark that user has seen the prompt
+    fetch('/api/auth/member-request/dismiss-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }).catch(err => console.error('Error dismissing prompt:', err));
+
+    closeWelcomeModal();
+}
+
+// Submit member request from welcome modal
+async function submitMemberRequest(event) {
+    event.preventDefault();
+
+    const btn = document.getElementById('submitRequestBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+    const formData = {
+        organization_name: document.getElementById('reqOrgName').value,
+        user_role: document.getElementById('reqUserRole').value,
+        notes: document.getElementById('reqNotes').value
+    };
+
+    try {
+        const response = await fetch('/api/auth/member-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            // Show confirmation step
+            document.getElementById('welcomeStep2').style.display = 'none';
+            document.getElementById('welcomeStep3').style.display = 'block';
+        } else {
+            alert(result.error || 'Failed to submit request. Please try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Request';
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Request';
+    }
+}
+
+// Open request modal from menu
+function openMemberRequestModal() {
+    const modal = document.getElementById('requestAccessModal');
+    if (modal) {
+        modal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    }
+}
+
+// Close request modal
+function closeRequestModal() {
+    const modal = document.getElementById('requestAccessModal');
+    if (modal) {
+        modal.style.display = 'none';
+        document.body.style.overflow = '';
+    }
+    // Reset form
+    const form = document.getElementById('requestAccessForm');
+    if (form) form.reset();
+}
+
+// Submit request from menu modal
+async function submitAccessRequest(event) {
+    event.preventDefault();
+
+    const btn = document.getElementById('submitAccessBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+
+    const formData = {
+        organization_name: document.getElementById('accessOrgName').value,
+        user_role: document.getElementById('accessUserRole').value,
+        notes: document.getElementById('accessNotes').value
+    };
+
+    try {
+        const response = await fetch('/api/auth/member-request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            closeRequestModal();
+            alert('Your request has been submitted! An NCRC administrator will review it within 1-2 business days.');
+            // Show the pending banner
+            showPendingBanner();
+        } else {
+            alert(result.error || 'Failed to submit request. Please try again.');
+        }
+    } catch (error) {
+        alert('An error occurred. Please try again.');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Request';
+    }
+}
+
+// Show pending request banner
+function showPendingBanner() {
+    const banner = document.getElementById('pendingRequestBanner');
+    // Check if already dismissed this session
+    if (sessionStorage.getItem('pendingBannerDismissed')) return;
+    if (banner) banner.style.display = 'block';
+}
+
+// Dismiss pending banner
+function dismissPendingBanner() {
+    const banner = document.getElementById('pendingRequestBanner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem('pendingBannerDismissed', 'true');
+}
+
+// Check and show grace period banner
+function checkGracePeriodBanner() {
+    // This will be called from auth status check
+    fetch('/api/auth/member-request/status')
+        .then(response => response.json())
+        .then(data => {
+            if (data.membershipStatus === 'GRACE PERIOD') {
+                showGracePeriodBanner();
+            }
+        })
+        .catch(err => console.error('Error checking grace period:', err));
+}
+
+// Show grace period banner
+function showGracePeriodBanner() {
+    const banner = document.getElementById('gracePeriodBanner');
+    // Check if already dismissed this session
+    if (sessionStorage.getItem('graceBannerDismissed')) return;
+    if (banner) banner.style.display = 'block';
+}
+
+// Dismiss grace period banner
+function dismissGraceBanner() {
+    const banner = document.getElementById('gracePeriodBanner');
+    if (banner) banner.style.display = 'none';
+    sessionStorage.setItem('graceBannerDismissed', 'true');
+}
+
+// Initialize on auth state change
+if (typeof onAuthStateChanged === 'function') {
+    onAuthStateChanged(function(user) {
+        if (user) {
+            // Delay slightly to ensure user type is set
+            setTimeout(checkMemberPrompt, 500);
+        }
+    });
+} else {
+    // Fallback: check on page load if user appears to be logged in
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            if (window.justDataUserType) {
+                checkMemberPrompt();
+            }
+        }, 1000);
+    });
+}
+</script>

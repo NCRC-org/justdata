@@ -361,6 +361,7 @@ function updateAuthUI(user) {
     const loginBtn = document.getElementById('loginBtn');
     const logoutBtn = document.getElementById('logoutBtn');
     const userInfo = document.getElementById('userInfo');
+    const userMenuContainer = document.getElementById('userMenuContainer');
     const userEmail = document.getElementById('userEmail');
     const userAvatar = document.getElementById('userAvatar');
     const userTypeBadge = document.getElementById('userTypeBadge');
@@ -368,8 +369,18 @@ function updateAuthUI(user) {
     if (user) {
         // User is signed in
         if (loginBtn) loginBtn.style.display = 'none';
-        if (logoutBtn) logoutBtn.style.display = 'inline-flex';
-        if (userInfo) userInfo.style.display = 'flex';
+
+        // Show user menu dropdown (new) or legacy logout button
+        if (userMenuContainer) {
+            userMenuContainer.style.display = 'flex';
+            if (logoutBtn) logoutBtn.style.display = 'none';  // Hide legacy button
+        } else if (logoutBtn) {
+            logoutBtn.style.display = 'inline-flex';
+        }
+
+        // Legacy userInfo (if present on older pages)
+        if (userInfo && !userMenuContainer) userInfo.style.display = 'flex';
+
         if (userEmail) userEmail.textContent = user.email;
         if (userAvatar) {
             if (user.photoURL) {
@@ -383,6 +394,7 @@ function updateAuthUI(user) {
         if (userTypeBadge && window.justDataUserType) {
             const typeLabels = {
                 'admin': 'Administrator',
+                'senior_executive': 'Executive',
                 'staff': 'Staff',
                 'member': 'Member',
                 'member_premium': 'Premium Member',
@@ -393,11 +405,17 @@ function updateAuthUI(user) {
             };
             userTypeBadge.textContent = typeLabels[window.justDataUserType] || window.justDataUserType;
         }
+
+        // Update user menu dropdown visibility based on user type
+        if (typeof updateUserMenuForType === 'function' && window.justDataUserType) {
+            updateUserMenuForType(window.justDataUserType);
+        }
     } else {
         // User is signed out
         if (loginBtn) loginBtn.style.display = 'inline-flex';
         if (logoutBtn) logoutBtn.style.display = 'none';
         if (userInfo) userInfo.style.display = 'none';
+        if (userMenuContainer) userMenuContainer.style.display = 'none';
         if (userEmail) userEmail.textContent = '';
         if (userAvatar) userAvatar.style.display = 'none';
         if (userTypeBadge) userTypeBadge.textContent = '';

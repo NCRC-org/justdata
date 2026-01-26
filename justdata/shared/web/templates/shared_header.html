@@ -165,6 +165,80 @@
     }
 
     /* ============================================
+       USER MENU DROPDOWN
+       ============================================ */
+    .user-menu-container {
+        position: relative;
+    }
+
+    .user-menu-toggle {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: transparent;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 6px 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .user-menu-toggle:hover {
+        background: rgba(255, 255, 255, 0.1);
+        border-color: rgba(255, 255, 255, 0.4);
+    }
+
+    .user-menu-arrow {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 12px;
+        transition: transform 0.2s;
+    }
+
+    .user-menu-toggle.open .user-menu-arrow {
+        transform: rotate(180deg);
+    }
+
+    .user-dropdown-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 8px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        min-width: 220px;
+        overflow: hidden;
+        z-index: 1001;
+    }
+
+    .user-dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        color: #333;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+
+    .user-dropdown-item:hover {
+        background: #f5f5f5;
+    }
+
+    .user-dropdown-item i {
+        width: 18px;
+        text-align: center;
+        color: #666;
+    }
+
+    .user-dropdown-divider {
+        height: 1px;
+        background: #e5e5e5;
+        margin: 4px 0;
+    }
+
+    /* ============================================
        NAV BACKDROP (Semi-transparent overlay)
        ============================================ */
     .nav-backdrop {
@@ -390,7 +464,7 @@
     <a href="/lenderprofile" class="nav-item" data-app="lenderprofile"><i class="fas fa-university" style="color: #be185d;"></i><span>LenderProfile</span></a>
     <a href="/analytics" class="nav-item" data-app="analytics"><i class="fas fa-chart-pie" style="color: #10b981;"></i><span>Analytics</span></a>
     <a href="/electwatch" class="nav-item" data-app="electwatch"><i class="fas fa-landmark" style="color: #4f46e5;"></i><span>ElectWatch</span></a>
-    <a href="/admin" class="nav-item" data-app="admin"><i class="fas fa-cog" style="color: #6b7280;"></i><span>Admin</span></a>
+    <a href="/admin/users" class="nav-item" data-app="admin"><i class="fas fa-cog" style="color: #6b7280;"></i><span>Admin</span></a>
 </nav>
 
 <header class="app-header">
@@ -410,12 +484,27 @@
 
         <!-- RIGHT SECTION: User Info -->
         <div class="header-right">
-            <!-- User Info (shown when logged in) -->
-            <div id="userInfo" class="user-info" style="display: none;">
-                <img id="userAvatar" src="" alt="User avatar" class="user-avatar" style="display: none;">
-                <div class="user-details">
-                    <span id="userEmail" class="user-email"></span>
-                    <span id="userTypeBadge" class="user-role"></span>
+            <!-- User Menu Dropdown (shown when logged in) -->
+            <div id="userMenuContainer" class="user-menu-container" style="display: none;">
+                <button id="userMenuToggle" class="user-menu-toggle" onclick="toggleUserMenu()">
+                    <img id="userAvatar" src="" alt="User avatar" class="user-avatar" style="display: none;">
+                    <div class="user-details">
+                        <span id="userEmail" class="user-email"></span>
+                        <span id="userTypeBadge" class="user-role"></span>
+                    </div>
+                    <i class="fas fa-chevron-down user-menu-arrow"></i>
+                </button>
+                <div id="userDropdownMenu" class="user-dropdown-menu" style="display: none;">
+                    <!-- Request Member Access (shown for public users only) -->
+                    <a href="#" id="requestMemberAccessLink" class="user-dropdown-item" onclick="openMemberRequestModal(); closeUserMenu(); return false;" style="display: none;">
+                        <i class="fas fa-id-card"></i>
+                        <span>Request Member Access</span>
+                    </a>
+                    <div id="dropdownDivider" class="user-dropdown-divider" style="display: none;"></div>
+                    <a href="#" class="user-dropdown-item" onclick="JustDataAuth.signOut(); return false;">
+                        <i class="fas fa-sign-out-alt"></i>
+                        <span>Sign Out</span>
+                    </a>
                 </div>
             </div>
 
@@ -425,7 +514,7 @@
                 <span>Sign In</span>
             </button>
 
-            <!-- Logout Button (shown when logged in) -->
+            <!-- Legacy Logout Button (hidden - using dropdown now) -->
             <button id="logoutBtn" class="sign-out-btn" onclick="JustDataAuth.signOut()" style="display: none;">
                 <i class="fas fa-sign-out-alt"></i>
                 <span>Sign Out</span>
@@ -535,6 +624,48 @@ function toggleNavMenu() {
     } else {
         openNavMenu();
     }
+}
+
+// User Menu Dropdown Functions
+function toggleUserMenu() {
+    const menu = document.getElementById('userDropdownMenu');
+    const toggle = document.getElementById('userMenuToggle');
+    if (menu.style.display === 'none' || menu.style.display === '') {
+        menu.style.display = 'block';
+        toggle.classList.add('open');
+        // Close when clicking outside
+        document.addEventListener('click', closeUserMenuOnClickOutside);
+    } else {
+        closeUserMenu();
+    }
+}
+
+function closeUserMenu() {
+    const menu = document.getElementById('userDropdownMenu');
+    const toggle = document.getElementById('userMenuToggle');
+    if (menu) menu.style.display = 'none';
+    if (toggle) toggle.classList.remove('open');
+    document.removeEventListener('click', closeUserMenuOnClickOutside);
+}
+
+function closeUserMenuOnClickOutside(e) {
+    const container = document.getElementById('userMenuContainer');
+    if (container && !container.contains(e.target)) {
+        closeUserMenu();
+    }
+}
+
+// Update user menu visibility based on user type
+function updateUserMenuForType(userType) {
+    const requestLink = document.getElementById('requestMemberAccessLink');
+    const divider = document.getElementById('dropdownDivider');
+
+    // Show "Request Member Access" only for public users
+    const publicTypes = ['public_registered', 'public_anonymous', 'just_economy_club'];
+    const showRequestLink = publicTypes.includes(userType);
+
+    if (requestLink) requestLink.style.display = showRequestLink ? 'flex' : 'none';
+    if (divider) divider.style.display = showRequestLink ? 'block' : 'none';
 }
 
 // Event listeners
