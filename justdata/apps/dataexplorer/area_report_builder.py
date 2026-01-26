@@ -10,7 +10,9 @@ import pandas as pd
 import numpy as np
 import logging
 import os
+import time
 import requests
+from requests.exceptions import HTTPError, Timeout, RequestException
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 
@@ -343,12 +345,97 @@ def filter_df_by_loan_purpose(df: pd.DataFrame, purpose: str) -> pd.DataFrame:
     if purpose not in purpose_codes:
         logger.warning(f"Unknown loan purpose: {purpose}, returning all data")
         return df.copy()
-    
+
     codes = purpose_codes[purpose]
     # Convert loan_purpose to string for comparison
     filtered = df[df['loan_purpose'].astype(str).isin(codes)].copy()
     logger.info(f"[DEBUG] Filtered DataFrame for {purpose}: {len(filtered)} rows from {len(df)} rows")
     return filtered
+
+
+def _census_api_request_with_retry(
+    url: str,
+    params: dict,
+    max_retries: int = 3,
+    base_delay: float = 1.0,
+    timeout: int = 15,
+    description: str = "Census API"
+) -> Optional[dict]:
+    """
+    Make a Census API request with retry logic and exponential backoff.
+
+    Args:
+        url: The API endpoint URL
+        params: Query parameters for the request
+        max_retries: Maximum number of retry attempts
+        base_delay: Base delay in seconds for exponential backoff
+        timeout: Request timeout in seconds
+        description: Description for logging
+
+    Returns:
+        Parsed JSON response or None if all retries failed
+    """
+    last_error = None
+
+    for attempt in range(max_retries):
+        try:
+            if attempt > 0:
+                # Exponential backoff with jitter
+                delay = base_delay * (2 ** attempt) + (time.time() % 1)
+                logger.info(f"[{description}] Retry {attempt + 1}/{max_retries} after {delay:.1f}s delay...")
+                time.sleep(delay)
+
+            response = requests.get(url, params=params, timeout=timeout)
+
+            # Handle rate limiting (429) and service unavailable (503)
+            if response.status_code == 429:
+                logger.warning(f"[{description}] Rate limited (429), will retry...")
+                last_error = "Rate limited (429)"
+                continue
+
+            if response.status_code == 503:
+                logger.warning(f"[{description}] Service unavailable (503), will retry...")
+                last_error = "Service unavailable (503)"
+                continue
+
+            if response.status_code != 200:
+                logger.warning(f"[{description}] HTTP {response.status_code}: {response.text[:200]}")
+                last_error = f"HTTP {response.status_code}"
+                continue
+
+            # Parse JSON response
+            try:
+                data = response.json()
+                if data and len(data) > 1:
+                    return data
+                else:
+                    logger.warning(f"[{description}] Empty or invalid response")
+                    last_error = "Empty response"
+                    continue
+            except Exception as json_err:
+                logger.warning(f"[{description}] JSON parse error: {json_err}. Response preview: {response.text[:300]}")
+                last_error = f"JSON parse error: {json_err}"
+                continue
+
+        except Timeout:
+            logger.warning(f"[{description}] Request timed out (timeout={timeout}s)")
+            last_error = "Timeout"
+            continue
+        except RequestException as e:
+            logger.warning(f"[{description}] Request failed: {e}")
+            last_error = str(e)
+            continue
+        except Exception as e:
+            logger.warning(f"[{description}] Unexpected error: {e}")
+            last_error = str(e)
+            continue
+
+    logger.error(f"[{description}] All {max_retries} retries failed. Last error: {last_error}")
+    return None
+
+
+# Delay between Census API calls to avoid rate limiting
+_CENSUS_API_DELAY = 0.3  # 300ms between requests
 
 
 def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> Dict[str, Dict[str, Any]]:
@@ -388,8 +475,21 @@ def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> 
         }
     """
     if api_key is None:
-        api_key = os.getenv('CENSUS_API_KEY') or os.getenv('census_api_key')
-    
+        # Use unified_env to ensure .env file is loaded (same as census population functions)
+        try:
+            from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+            ensure_unified_env_loaded(verbose=False)
+            config = get_unified_config(load_env=True, verbose=False)
+            api_key = config.get('CENSUS_API_KEY')
+            if api_key:
+                logger.info(f"[DEBUG] Got CENSUS_API_KEY from unified_env (length: {len(api_key)})")
+        except ImportError:
+            logger.warning("Could not import unified_env, falling back to direct env check")
+
+        # Fallback to direct env check
+        if not api_key:
+            api_key = os.getenv('CENSUS_API_KEY') or os.getenv('census_api_key')
+
     if not api_key:
         logger.error("[CRITICAL] CENSUS_API_KEY not set - cannot fetch housing data")
         return {}
@@ -509,24 +609,22 @@ def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> 
                             'in': f'state:{state_fips}',
                             'key': api_key
                         }
-                        
-                        logger.info(f"[DEBUG] Fetching ACS {attempt_year} housing data for {geoid5} (state={state_fips}, county={county_fips})")
-                        response = requests.get(url, params=params, timeout=10)
-                        if response.status_code == 503:
-                            logger.warning(f"ACS {attempt_year} housing API returned 503 for {geoid5}")
-                            continue
-                        if response.status_code != 200:
-                            logger.error(f"ACS {attempt_year} housing API returned {response.status_code} for {geoid5}: {response.text[:200]}")
-                            continue
-                        response.raise_for_status()
 
-                        # Check if response is valid JSON before parsing
-                        try:
-                            data = response.json()
-                        except Exception as json_err:
-                            logger.error(f"ACS {attempt_year} housing API returned non-JSON for {geoid5}. Response preview: {response.text[:300]}")
-                            continue
-                        
+                        logger.info(f"[DEBUG] Fetching ACS {attempt_year} housing data for {geoid5} (state={state_fips}, county={county_fips})")
+
+                        # Use retry helper for robust API calls
+                        data = _census_api_request_with_retry(
+                            url=url,
+                            params=params,
+                            max_retries=3,
+                            base_delay=1.0,
+                            timeout=15,
+                            description=f"ACS {attempt_year} housing for {geoid5}"
+                        )
+
+                        # Add delay between requests to avoid rate limiting
+                        time.sleep(_CENSUS_API_DELAY)
+
                         if data and len(data) > 1:
                             headers = data[0]
                             row = data[1]
@@ -604,7 +702,7 @@ def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> 
                                 'B25032_010E',  # Total occupied: 3-4 units
                                 'B25032_011E',  # Owner-occupied: 3-4 units
                             ]
-                            
+
                             try:
                                 b25032_url = f"https://api.census.gov/data/{attempt_year}/acs/{attempt_type}"
                                 b25032_params = {
@@ -613,25 +711,34 @@ def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> 
                                     'in': f'state:{state_fips}',
                                     'key': api_key
                                 }
-                                b25032_response = requests.get(b25032_url, params=b25032_params, timeout=10)
-                                if b25032_response.status_code == 200:
-                                    b25032_data = b25032_response.json()
-                                    if b25032_data and len(b25032_data) > 1:
-                                        b25032_headers = b25032_data[0]
-                                        b25032_row = b25032_data[1]
-                                        b25032_record = dict(zip(b25032_headers, b25032_row))
-                                        
-                                        period_data.update({
-                                            'owner_occupied_1_detached': safe_int(b25032_record.get('B25032_002E', 0)),
-                                            'owner_occupied_1_attached': safe_int(b25032_record.get('B25032_005E', 0)),
-                                            'owner_occupied_2': safe_int(b25032_record.get('B25032_008E', 0)),
-                                            'owner_occupied_3_4': safe_int(b25032_record.get('B25032_011E', 0)),
-                                            'occupied_1_detached': safe_int(b25032_record.get('B25032_001E', 0)),
-                                            'occupied_1_attached': safe_int(b25032_record.get('B25032_004E', 0)),
-                                            'occupied_2': safe_int(b25032_record.get('B25032_007E', 0)),
-                                            'occupied_3_4': safe_int(b25032_record.get('B25032_010E', 0)),
-                                        })
-                                        logger.info(f"Successfully fetched B25032 data for {geoid5} ({attempt_year})")
+
+                                # Use retry helper for B25032 data
+                                b25032_data = _census_api_request_with_retry(
+                                    url=b25032_url,
+                                    params=b25032_params,
+                                    max_retries=2,
+                                    base_delay=0.5,
+                                    timeout=15,
+                                    description=f"B25032 for {geoid5} ({attempt_year})"
+                                )
+                                time.sleep(_CENSUS_API_DELAY)
+
+                                if b25032_data and len(b25032_data) > 1:
+                                    b25032_headers = b25032_data[0]
+                                    b25032_row = b25032_data[1]
+                                    b25032_record = dict(zip(b25032_headers, b25032_row))
+
+                                    period_data.update({
+                                        'owner_occupied_1_detached': safe_int(b25032_record.get('B25032_002E', 0)),
+                                        'owner_occupied_1_attached': safe_int(b25032_record.get('B25032_005E', 0)),
+                                        'owner_occupied_2': safe_int(b25032_record.get('B25032_008E', 0)),
+                                        'owner_occupied_3_4': safe_int(b25032_record.get('B25032_011E', 0)),
+                                        'occupied_1_detached': safe_int(b25032_record.get('B25032_001E', 0)),
+                                        'occupied_1_attached': safe_int(b25032_record.get('B25032_004E', 0)),
+                                        'occupied_2': safe_int(b25032_record.get('B25032_007E', 0)),
+                                        'occupied_3_4': safe_int(b25032_record.get('B25032_010E', 0)),
+                                    })
+                                    logger.info(f"Successfully fetched B25032 data for {geoid5} ({attempt_year})")
                             except Exception as e:
                                 logger.warning(f"Could not fetch B25032 data for {geoid5} ({attempt_year}): {e}")
                             
@@ -644,25 +751,34 @@ def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> 
                                     'in': f'state:{state_fips}',
                                     'key': api_key
                                 }
-                                rent_burden_response = requests.get(rent_burden_url, params=rent_burden_params, timeout=10)
-                                if rent_burden_response.status_code == 200:
-                                    rent_burden_data = rent_burden_response.json()
-                                    if rent_burden_data and len(rent_burden_data) > 1:
-                                        rent_burden_headers = rent_burden_data[0]
-                                        rent_burden_row = rent_burden_data[1]
-                                        rent_burden_record = dict(zip(rent_burden_headers, rent_burden_row))
-                                        
-                                        total_renters = safe_int(rent_burden_record.get('B25070_001E', 0))
-                                        burdened_renters = (
-                                            safe_int(rent_burden_record.get('B25070_007E', 0)) +  # 30.0-34.9%
-                                            safe_int(rent_burden_record.get('B25070_008E', 0)) +  # 35.0-39.9%
-                                            safe_int(rent_burden_record.get('B25070_009E', 0)) +  # 40.0-49.9%
-                                            safe_int(rent_burden_record.get('B25070_010E', 0))    # 50.0%+
-                                        )
-                                        
-                                        if total_renters > 0:
-                                            period_data['rental_burden_pct'] = (burdened_renters / total_renters) * 100
-                                        logger.info(f"Calculated rental burden for {geoid5} ({attempt_year}): {period_data['rental_burden_pct']:.1f}%")
+
+                                # Use retry helper for rent burden data
+                                rent_burden_data = _census_api_request_with_retry(
+                                    url=rent_burden_url,
+                                    params=rent_burden_params,
+                                    max_retries=2,
+                                    base_delay=0.5,
+                                    timeout=15,
+                                    description=f"B25070 rent burden for {geoid5} ({attempt_year})"
+                                )
+                                time.sleep(_CENSUS_API_DELAY)
+
+                                if rent_burden_data and len(rent_burden_data) > 1:
+                                    rent_burden_headers = rent_burden_data[0]
+                                    rent_burden_row = rent_burden_data[1]
+                                    rent_burden_record = dict(zip(rent_burden_headers, rent_burden_row))
+
+                                    total_renters = safe_int(rent_burden_record.get('B25070_001E', 0))
+                                    burdened_renters = (
+                                        safe_int(rent_burden_record.get('B25070_007E', 0)) +  # 30.0-34.9%
+                                        safe_int(rent_burden_record.get('B25070_008E', 0)) +  # 35.0-39.9%
+                                        safe_int(rent_burden_record.get('B25070_009E', 0)) +  # 40.0-49.9%
+                                        safe_int(rent_burden_record.get('B25070_010E', 0))    # 50.0%+
+                                    )
+
+                                    if total_renters > 0:
+                                        period_data['rental_burden_pct'] = (burdened_renters / total_renters) * 100
+                                    logger.info(f"Calculated rental burden for {geoid5} ({attempt_year}): {period_data['rental_burden_pct']:.1f}%")
                             except Exception as e:
                                 logger.warning(f"Could not fetch B25070 rent burden data for {geoid5} ({attempt_year}): {e}")
                             
@@ -675,25 +791,34 @@ def fetch_acs_housing_data(geoids: List[str], api_key: Optional[str] = None) -> 
                                     'in': f'state:{state_fips}',
                                     'key': api_key
                                 }
-                                owner_burden_response = requests.get(owner_burden_url, params=owner_burden_params, timeout=10)
-                                if owner_burden_response.status_code == 200:
-                                    owner_burden_data = owner_burden_response.json()
-                                    if owner_burden_data and len(owner_burden_data) > 1:
-                                        owner_burden_headers = owner_burden_data[0]
-                                        owner_burden_row = owner_burden_data[1]
-                                        owner_burden_record = dict(zip(owner_burden_headers, owner_burden_row))
-                                        
-                                        total_owners = safe_int(owner_burden_record.get('B25091_001E', 0))
-                                        burdened_owners = (
-                                            safe_int(owner_burden_record.get('B25091_007E', 0)) +  # 30.0-34.9%
-                                            safe_int(owner_burden_record.get('B25091_008E', 0)) +  # 35.0-39.9%
-                                            safe_int(owner_burden_record.get('B25091_009E', 0)) +  # 40.0-49.9%
-                                            safe_int(owner_burden_record.get('B25091_010E', 0))    # 50.0%+
-                                        )
-                                        
-                                        if total_owners > 0:
-                                            period_data['owner_cost_burden_pct'] = (burdened_owners / total_owners) * 100
-                                        logger.info(f"Calculated owner cost burden for {geoid5} ({attempt_year}): {period_data['owner_cost_burden_pct']:.1f}%")
+
+                                # Use retry helper for owner burden data
+                                owner_burden_data = _census_api_request_with_retry(
+                                    url=owner_burden_url,
+                                    params=owner_burden_params,
+                                    max_retries=2,
+                                    base_delay=0.5,
+                                    timeout=15,
+                                    description=f"B25091 owner burden for {geoid5} ({attempt_year})"
+                                )
+                                time.sleep(_CENSUS_API_DELAY)
+
+                                if owner_burden_data and len(owner_burden_data) > 1:
+                                    owner_burden_headers = owner_burden_data[0]
+                                    owner_burden_row = owner_burden_data[1]
+                                    owner_burden_record = dict(zip(owner_burden_headers, owner_burden_row))
+
+                                    total_owners = safe_int(owner_burden_record.get('B25091_001E', 0))
+                                    burdened_owners = (
+                                        safe_int(owner_burden_record.get('B25091_007E', 0)) +  # 30.0-34.9%
+                                        safe_int(owner_burden_record.get('B25091_008E', 0)) +  # 35.0-39.9%
+                                        safe_int(owner_burden_record.get('B25091_009E', 0)) +  # 40.0-49.9%
+                                        safe_int(owner_burden_record.get('B25091_010E', 0))    # 50.0%+
+                                    )
+
+                                    if total_owners > 0:
+                                        period_data['owner_cost_burden_pct'] = (burdened_owners / total_owners) * 100
+                                    logger.info(f"Calculated owner cost burden for {geoid5} ({attempt_year}): {period_data['owner_cost_burden_pct']:.1f}%")
                             except Exception as e:
                                 logger.warning(f"Could not fetch B25091 owner burden data for {geoid5} ({attempt_year}): {e}")
                             

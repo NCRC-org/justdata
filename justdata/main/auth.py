@@ -53,6 +53,7 @@ SENIOR_EXECUTIVE_EMAILS = [
     'tflynn@ncrc.org',       # Tara Flynn
     'jmatthews@ncrc.org',    # Jacelyn Matthews
     'awiltse@ncrc.org',      # Alyssa Wiltse
+    'testexec@justdata.ncrc.org',  # Test Executive Account
 ]
 
 # User types matching the 9-tier system
@@ -249,6 +250,29 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'hidden',
+        'senior_executive': 'hidden',
+        'admin': 'full'
+    },
+    'workflow': {
+        'public_anonymous': 'hidden',
+        'public_registered': 'hidden',
+        'just_economy_club': 'hidden',
+        'member': 'hidden',
+        'member_premium': 'hidden',
+        'non_member_org': 'hidden',
+        'staff': 'hidden',
+        'senior_executive': 'hidden',
+        'admin': 'full'
+    },
+
+    'redlining': {
+        'public_anonymous': 'hidden',
+        'public_registered': 'hidden',
+        'just_economy_club': 'hidden',
+        'member': 'hidden',
+        'member_premium': 'hidden',
+        'non_member_org': 'hidden',
+        'staff': 'full',
         'senior_executive': 'hidden',
         'admin': 'full'
     },

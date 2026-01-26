@@ -1460,7 +1460,7 @@
                 <a href="/lenderprofile" class="nav-item" data-app="lenderprofile" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-university" style="margin-right: 10px; color: #be185d;"></i>LenderProfile</a>
                 <a href="/analytics" class="nav-item" data-app="analytics" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-pie" style="margin-right: 10px; color: #10b981;"></i>Analytics</a>
                 <a href="/electwatch" class="nav-item" data-app="electwatch" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-landmark" style="margin-right: 10px; color: #4f46e5;"></i>ElectWatch</a>
-                <a href="/admin" class="nav-item" data-app="admin" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-cog" style="margin-right: 10px; color: #6b7280;"></i>Admin</a>
+                <a href="/admin/users" class="nav-item" data-app="admin" style="display: block; padding: 12px 20px; color: #333; text-decoration: none;"><i class="fas fa-cog" style="margin-right: 10px; color: #6b7280;"></i>Admin</a>
             </nav>
 
         </div>
@@ -1693,6 +1693,19 @@
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Redlining Dashboard Card - visible to staff and admin only -->
+                        <div class="app-card" data-app="redlining" id="redliningCard" onclick="window.open('/redlining', '_blank', 'noopener,noreferrer')" style="display: none;">
+                            <h3 class="app-card-title">Redlining Dashboard</h3>
+                            <p class="app-card-description">
+                                Fair lending analysis comparing bank lending in minority census tracts against peers.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/redlining" class="app-card-launch-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </section>
 
@@ -1721,6 +1734,19 @@
                             </p>
                             <div class="app-card-buttons">
                                 <a href="/admin/users" class="app-card-launch-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Workflow Card - visible only to admin -->
+                        <div class="app-card" data-app="workflow" id="workflowCard" onclick="window.open('/workflow', '_blank', 'noopener,noreferrer')">
+                            <h3 class="app-card-title">Workflow</h3>
+                            <p class="app-card-description">
+                                Interactive project task visualization and management.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/workflow" class="app-card-launch-btn" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">
                                     Launch <i class="fas fa-arrow-right"></i>
                                 </a>
                             </div>
@@ -2345,9 +2371,10 @@
             'bizsight': '/bizsight',
             'branchmapper': '/branchmapper',
             'branchseeker': '/branchsight',
-                'dataexplorer': '/dataexplorer',
+            'dataexplorer': '/dataexplorer',
             'mergermeter': '/mergermeter',
-            'lenderprofile': '/lenderprofile'
+            'lenderprofile': '/lenderprofile',
+            'redlining': '/redlining'
         };
 
         // Feature Permissions by User Type (9 types)
@@ -3309,6 +3336,26 @@
                     administrationCard.style.display = 'flex';
                 } else {
                     administrationCard.style.display = 'none';
+                }
+            }
+
+            // Hide Workflow card for non-admin users (only admin can see it)
+            const workflowCard = document.getElementById('workflowCard');
+            if (workflowCard) {
+                if (userType === 'admin') {
+                    workflowCard.style.display = 'flex';
+                } else {
+                    workflowCard.style.display = 'none';
+                }
+            }
+
+            // Hide Redlining card for non-staff/admin users (staff and admin can see it)
+            const redliningCard = document.getElementById('redliningCard');
+            if (redliningCard) {
+                if (userType === 'staff' || userType === 'admin') {
+                    redliningCard.style.display = 'flex';
+                } else {
+                    redliningCard.style.display = 'none';
                 }
             }
 

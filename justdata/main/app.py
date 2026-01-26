@@ -447,3 +447,19 @@ def register_blueprints(app: Flask):
     except ImportError:
         print("[WARN] ElectWatch blueprint not yet created")
 
+    # Workflow - Admin-only project management visualization
+    try:
+        from justdata.apps.workflow.blueprint import workflow_bp
+        app.register_blueprint(workflow_bp, url_prefix='/workflow')
+        print("[INFO] Workflow blueprint registered at /workflow")
+    except ImportError as e:
+        print(f"[WARN] Workflow blueprint not yet created: {e}")
+
+    # Redlining Dashboard - Staff/Admin fair lending analysis
+    try:
+        from justdata.apps.redlining.blueprint import redlining_bp
+        app.register_blueprint(redlining_bp, url_prefix='/redlining')
+        print("[INFO] Redlining blueprint registered at /redlining")
+    except ImportError as e:
+        print(f"[WARN] Redlining blueprint not yet created: {e}")
+
