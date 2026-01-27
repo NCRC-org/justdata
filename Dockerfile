@@ -32,6 +32,12 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy application code
 COPY . .
 
+# Explicitly ensure HUD data directory is present (needed for Population Share calculations)
+# The .dockerignore re-includes justdata/data/hud/ but this ensures it's definitely copied
+RUN mkdir -p /app/justdata/data/hud && \
+    ls -la /app/justdata/data/ 2>/dev/null || true && \
+    ls -la /app/justdata/data/hud/ 2>/dev/null || true
+
 # Copy and make startup script executable
 COPY start.sh /app/start.sh
 RUN chmod +x /app/start.sh

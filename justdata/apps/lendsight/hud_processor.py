@@ -18,6 +18,13 @@ HUD_DATA_DIR.mkdir(parents=True, exist_ok=True)
 # HUD file path
 HUD_FILE = HUD_DATA_DIR / 'ACS-2020-Low-Mod-Local-Gov-All.xlsx'
 
+# Log file status at import time for debugging
+if HUD_FILE.exists():
+    logger.info(f"[HUD] HUD file found at startup: {HUD_FILE}")
+else:
+    logger.warning(f"[HUD WARNING] HUD file NOT found at startup: {HUD_FILE}")
+    logger.warning(f"[HUD WARNING] Population Share columns will be missing in income tables")
+
 # Cache for processed data
 _hud_cache: Optional[Dict[str, Dict[str, float]]] = None
 

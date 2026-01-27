@@ -77,6 +77,8 @@ justdata/data/**
 # Keep HUD data for Area Analysis (needed for Population Share calculations)
 !justdata/data/hud/
 !justdata/data/hud/**
+# Explicit inclusion of the HUD Excel file (belt and suspenders)
+!justdata/data/hud/ACS-2020-Low-Mod-Local-Gov-All.xlsx
 
 # Keep analytics demo data
 !justdata/apps/analytics/static/demo_data/synthetic_events.json
