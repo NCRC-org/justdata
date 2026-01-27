@@ -11,18 +11,24 @@ env:
   PROJECT_ID: hdma1-242116
   REGION: us-east1
   REPOSITORY: justdata-repo
-  SERVICE_NAME: justdata-test
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
-    env:
-      DEPLOY_SERVICE_NAME: justdata-test
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+
+      - name: Set deployment target based on branch
+        run: |
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "DEPLOY_SERVICE_NAME=justdata" >> $GITHUB_ENV
+            echo "🚀 Deploying to PRODUCTION (justdata)"
+          else
+            echo "DEPLOY_SERVICE_NAME=justdata-test" >> $GITHUB_ENV
+            echo "🧪 Deploying to DEV (justdata-test)"
+          fi
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
