@@ -615,6 +615,10 @@
         let incomeLayer = null; // Census tract income layer
         let minorityLayer = null; // Census tract minority layer
         let layerControl = null; // Leaflet layer control
+
+        // AbortControllers for cancelling in-flight requests
+        let incomeLayerAbortController = null;
+        let minorityLayerAbortController = null;
         
         // Color palette for banks (distinct colors)
         const colorPalette = [
@@ -758,21 +762,28 @@
             if (!branchMap) {
                 initMap();
             }
-            
+
+            // Cancel any previous in-flight request
+            if (incomeLayerAbortController) {
+                incomeLayerAbortController.abort();
+            }
+            incomeLayerAbortController = new AbortController();
+            const signal = incomeLayerAbortController.signal;
+
             // Remove existing income layer
             if (incomeLayer) {
                 branchMap.removeLayer(incomeLayer);
                 incomeLayer = null;
             }
-            
+
             try {
                 updateInfoPanel('Loading census tract income data...');
                 console.log('Loading income layer for county:', county);
-                
+
                 const url = `${APP_BASE_URL}/api/census-tracts/${encodeURIComponent(county)}?income=true&minority=false`;
                 console.log('Fetching from URL:', url);
-                
-                const response = await fetch(url);
+
+                const response = await fetch(url, { signal });
                 console.log('Response status:', response.status, response.statusText);
                 
                 if (!response.ok) {
@@ -886,6 +897,11 @@
                 updateInfoPanel(`Loaded income data for ${data.tract_count} census tracts. County median: ${countyIncomeStr}`);
                 
             } catch (error) {
+                // Don't show error for aborted requests (user switched counties)
+                if (error.name === 'AbortError') {
+                    console.log('Income layer request was cancelled');
+                    return;
+                }
                 console.error('Error loading income layer:', error);
                 const errorMessage = error.message || error.toString() || 'Unknown error occurred';
                 console.error('Error details:', {
@@ -897,23 +913,30 @@
                 updateInfoPanel(`Error loading income data: ${errorMessage}`);
             }
         }
-        
+
         // Load and display minority layer
         async function loadMinorityLayer(county) {
             if (!branchMap) {
                 initMap();
             }
-            
+
+            // Cancel any previous in-flight request
+            if (minorityLayerAbortController) {
+                minorityLayerAbortController.abort();
+            }
+            minorityLayerAbortController = new AbortController();
+            const signal = minorityLayerAbortController.signal;
+
             // Remove existing minority layer
             if (minorityLayer) {
                 branchMap.removeLayer(minorityLayer);
                 minorityLayer = null;
             }
-            
+
             try {
                 updateInfoPanel('Loading census tract minority population data...');
-                
-                const response = await fetch(`${APP_BASE_URL}/api/census-tracts/${encodeURIComponent(county)}?income=false&minority=true`);
+
+                const response = await fetch(`${APP_BASE_URL}/api/census-tracts/${encodeURIComponent(county)}?income=false&minority=true`, { signal });
                 
                 if (!response.ok) {
                     let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
@@ -1007,6 +1030,11 @@
                 updateInfoPanel(`Loaded minority data for ${data.tract_count} census tracts. County: ${countyMinorityStr} minority`);
                 
             } catch (error) {
+                // Don't show error for aborted requests (user switched counties)
+                if (error.name === 'AbortError') {
+                    console.log('Minority layer request was cancelled');
+                    return;
+                }
                 console.error('Error loading minority layer:', error);
                 const errorMessage = error.message || error.toString() || 'Unknown error occurred';
                 console.error('Error details:', {
@@ -1018,7 +1046,7 @@
                 updateInfoPanel(`Error loading minority data: ${errorMessage}`);
             }
         }
-        
+
         // Toggle income layer
         function toggleIncomeLayer(county) {
             if (incomeLayer && branchMap.hasLayer(incomeLayer)) {

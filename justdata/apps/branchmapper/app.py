@@ -60,6 +60,7 @@ def index():
     return render_template('branch_mapper_template.html',
                          version=__version__,
                          app_name='BranchMapper',
+                         app_base_url='',  # Standalone app runs at root
                          breadcrumb_items=breadcrumb_items)
 
 
@@ -215,17 +216,27 @@ def api_census_tracts(county):
                 print(f"[OK] Using county median income: ${baseline_income:,.0f} for {county}")
             else:
                 print(f"[ERROR] Failed to fetch county median income for {county}")
-            
-            if baseline_income:
-                tract_income_data = get_tract_income_data(state_fips, county_fips)
-                print(f"Fetched {len(tract_income_data)} tracts with income data")
-                
-                for tract in tract_income_data:
-                    geoid = tract['tract_geoid']
-                    geoid_normalized = str(geoid).zfill(11)
-                    income_lookup[geoid_normalized] = tract
-                    income_lookup[geoid] = tract
-                print(f"Created income lookup with {len(income_lookup)} entries")
+                return jsonify({
+                    'success': False,
+                    'error': f'Could not fetch county median income data from Census API. Please try again.'
+                }), 500
+
+            tract_income_data = get_tract_income_data(state_fips, county_fips)
+            print(f"Fetched {len(tract_income_data)} tracts with income data")
+
+            if not tract_income_data:
+                print(f"[ERROR] No tract income data returned for {county}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Could not fetch tract income data from Census API. Please try again.'
+                }), 500
+
+            for tract in tract_income_data:
+                geoid = tract['tract_geoid']
+                geoid_normalized = str(geoid).zfill(11)
+                income_lookup[geoid_normalized] = tract
+                income_lookup[geoid] = tract
+            print(f"Created income lookup with {len(income_lookup)} entries")
         
         # Get minority data if requested
         county_minority_pct = None
@@ -244,10 +255,21 @@ def api_census_tracts(county):
                 print(f"[OK] Using county minority percentage: {county_minority_pct:.1f}% for {county}")
             else:
                 print(f"[ERROR] Failed to fetch county minority percentage for {county}")
-            
+                return jsonify({
+                    'success': False,
+                    'error': f'Could not fetch county minority data from Census API. Please try again.'
+                }), 500
+
             tract_minority_data = get_tract_minority_data(state_fips, county_fips)
             print(f"Fetched {len(tract_minority_data)} tracts with minority data")
-            
+
+            if not tract_minority_data:
+                print(f"[ERROR] No tract minority data returned for {county}")
+                return jsonify({
+                    'success': False,
+                    'error': f'Could not fetch tract minority data from Census API. Please try again.'
+                }), 500
+
             for tract in tract_minority_data:
                 geoid = tract['tract_geoid']
                 geoid_normalized = str(geoid).zfill(11)

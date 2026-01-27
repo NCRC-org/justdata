@@ -8,6 +8,32 @@ from typing import Dict, List, Optional, Any
 import requests
 import json
 import time
+from functools import lru_cache
+from threading import Lock
+
+# In-memory cache for Census API data
+# Census data only changes annually, so cache aggressively
+_cache = {}
+_cache_lock = Lock()
+_CACHE_TTL_SECONDS = 3600 * 24  # 24 hours - data changes annually
+
+
+def _get_cached(key: str) -> Optional[Any]:
+    """Get value from cache if not expired."""
+    with _cache_lock:
+        if key in _cache:
+            value, timestamp = _cache[key]
+            if time.time() - timestamp < _CACHE_TTL_SECONDS:
+                return value
+            else:
+                del _cache[key]
+    return None
+
+
+def _set_cached(key: str, value: Any) -> None:
+    """Store value in cache with current timestamp."""
+    with _cache_lock:
+        _cache[key] = (value, time.time())
 
 
 def get_census_api_key() -> Optional[str]:
@@ -191,16 +217,24 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
 def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]]:
     """
     Extract state and county FIPS codes from "County, State" format.
-    
+
     Uses BigQuery to look up the geoid5 (5-digit FIPS) from the geo.cbsa_to_county table.
     Tries exact match first, then case-insensitive match.
-    
+    Results are cached for 24 hours.
+
     Args:
         county_state: County name in format "County, State" (e.g., "Hillsborough County, Florida")
-    
+
     Returns:
         Dictionary with 'state_fips', 'county_fips', and 'geoid5', or None if not found
     """
+    # Check cache first
+    cache_key = f"fips_{county_state}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached FIPS for '{county_state}': {cached}")
+        return cached
+
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
         from justdata.apps.branchmapper.config import PROJECT_ID
@@ -227,12 +261,14 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
             county_fips = geoid5[2:]  # Last 3 digits = county
             
             print(f"Found GEOID5: {geoid5} (State: {state_fips}, County: {county_fips}) for {county_state}")
-            return {
+            result = {
                 'state_fips': state_fips,
                 'county_fips': county_fips,
                 'geoid5': geoid5
             }
-        
+            _set_cached(cache_key, result)  # Cache the result
+            return result
+
         # Try case-insensitive match with TRIM
         print(f"No exact match, trying case-insensitive match...")
         query_case_insensitive = f"""
@@ -252,12 +288,14 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
             matched_name = str(results[0].county_state) if results[0].county_state else county_state
             
             print(f"Found GEOID5 with case-insensitive match: {geoid5} (State: {state_fips}, County: {county_fips}) for '{matched_name}' (searched for '{county_state}')")
-            return {
+            result = {
                 'state_fips': state_fips,
                 'county_fips': county_fips,
                 'geoid5': geoid5
             }
-        
+            _set_cached(cache_key, result)  # Cache the result
+            return result
+
         # Try splitting county and state and matching separately
         if ',' in county_state:
             print(f"No match found, trying to match by splitting county and state...")
@@ -287,11 +325,13 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
                         matched_name = str(results[0].county_state) if results[0].county_state else county_state
                         
                         print(f"Found GEOID5 with split match: {geoid5} (State: {state_fips}, County: {county_fips}) for '{matched_name}' (searched for '{county_state}')")
-                        return {
+                        result = {
                             'state_fips': state_fips,
                             'county_fips': county_fips,
                             'geoid5': geoid5
                         }
+                        _set_cached(cache_key, result)  # Cache the result
+                        return result
                 except Exception as split_error:
                     print(f"Split match query failed: {split_error}")
         
@@ -308,27 +348,35 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
 def get_county_median_family_income(state_fips: str, county_fips: str, api_key: Optional[str] = None) -> Optional[float]:
     """
     Get median family income for a county from Census API.
-    
+
     Uses ACS 5-Year Estimates, variable B19113_001E (Median Family Income).
-    
+    Results are cached for 24 hours.
+
     Args:
         state_fips: 2-digit state FIPS code
         county_fips: 3-digit county FIPS code
         api_key: Census API key (if None, tries CENSUS_API_KEY env var)
-    
+
     Returns:
         Median family income in dollars, or None if unavailable
     """
+    # Check cache first
+    cache_key = f"county_income_{state_fips}_{county_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached county median income for {state_fips}-{county_fips}: ${cached:,.0f}")
+        return cached
+
     if api_key is None:
         api_key = get_census_api_key()
-    
+
     if not api_key:
         print("Warning: No Census API key found. Set CENSUS_API_KEY environment variable.")
         return None
-    
+
     try:
         acs_year = "2022"
-        
+
         url = f"https://api.census.gov/data/{acs_year}/acs/acs5"
         params = {
             'get': 'NAME,B19113_001E',
@@ -336,7 +384,7 @@ def get_county_median_family_income(state_fips: str, county_fips: str, api_key: 
             'in': f'state:{state_fips}',
             'key': api_key
         }
-        
+
         print(f"Fetching county median income from Census API: {url}")
         print(f"Parameters: state={state_fips}, county={county_fips}")
         
@@ -353,6 +401,7 @@ def get_county_median_family_income(state_fips: str, county_fips: str, api_key: 
                 try:
                     income = float(income_str)
                     print(f"[OK] Found county median family income: ${income:,.0f} for state FIPS {state_fips}, county FIPS {county_fips}")
+                    _set_cached(cache_key, income)  # Cache the result
                     return income
                 except ValueError as ve:
                     print(f"[ERROR] Could not convert income value '{income_str}' to float: {ve}")
@@ -382,25 +431,32 @@ def get_county_median_family_income(state_fips: str, county_fips: str, api_key: 
 def get_county_minority_percentage(state_fips: str, county_fips: str, api_key: Optional[str] = None) -> Optional[float]:
     """
     Get minority population percentage for a county from Census API.
-    
+
     Minority = Total population - Non-Hispanic White alone
-    Uses ACS 5-Year Estimates.
-    
+    Uses ACS 5-Year Estimates. Results are cached for 24 hours.
+
     Args:
         state_fips: 2-digit state FIPS code
         county_fips: 3-digit county FIPS code
         api_key: Census API key (if None, tries CENSUS_API_KEY env var)
-    
+
     Returns:
         Minority population percentage (0-100), or None if unavailable
     """
+    # Check cache first
+    cache_key = f"county_minority_{state_fips}_{county_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached county minority % for {state_fips}-{county_fips}: {cached:.1f}%")
+        return cached
+
     if api_key is None:
         api_key = get_census_api_key()
-    
+
     if not api_key:
         print("Warning: No Census API key found. Set CENSUS_API_KEY environment variable.")
         return None
-    
+
     try:
         acs_year = "2022"
         
@@ -437,6 +493,7 @@ def get_county_minority_percentage(state_fips: str, county_fips: str, api_key: O
                         minority = total - white
                         percentage = (minority / total) * 100
                         print(f"[OK] Calculated county minority percentage: {percentage:.1f}% (Total: {total:,.0f}, White: {white:,.0f}, Minority: {minority:,.0f})")
+                        _set_cached(cache_key, percentage)  # Cache the result
                         return percentage
                     else:
                         print(f"[ERROR] Total population is 0 or negative: {total}")
@@ -624,25 +681,34 @@ def get_cbsa_median_family_income(cbsa_code: str, api_key: Optional[str] = None)
 def get_tract_income_data(state_fips: str, county_fips: str, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Get median family income for all census tracts in a county from Census API.
-    
+
+    Results are cached for 24 hours.
+
     Args:
         state_fips: 2-digit state FIPS code
         county_fips: 3-digit county FIPS code
         api_key: Census API key (if None, tries CENSUS_API_KEY env var)
-    
+
     Returns:
         List of dictionaries with tract data including:
         - tract_geoid: 11-digit census tract GEOID
         - tract_name: Tract name
         - median_family_income: Median family income in dollars
     """
+    # Check cache first
+    cache_key = f"tract_income_{state_fips}_{county_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached tract income data for {state_fips}-{county_fips} ({len(cached)} tracts)")
+        return cached
+
     if api_key is None:
         api_key = get_census_api_key()
-    
+
     if not api_key:
         print("Warning: No Census API key found. Set CENSUS_API_KEY environment variable.")
         return []
-    
+
     try:
         # Use most recent ACS 5-year estimates (2022 = 2018-2022 data)
         acs_year = "2022"
@@ -712,8 +778,9 @@ def get_tract_income_data(state_fips: str, county_fips: str, api_key: Optional[s
         
         valid_tracts = len(tracts)
         print(f"Fetched income data for {valid_tracts} valid census tracts (invalid/water tracts filtered out)")
+        _set_cached(cache_key, tracts)  # Cache the result
         return tracts
-        
+
     except Exception as e:
         print(f"Error fetching tract income data: {e}")
         import traceback
@@ -842,14 +909,15 @@ def get_cbsa_minority_percentage(cbsa_code: str, api_key: Optional[str] = None) 
 def get_tract_minority_data(state_fips: str, county_fips: str, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
     """
     Get minority population data for all census tracts in a county from Census API.
-    
+
     Minority = Total population - Non-Hispanic White alone
-    
+    Results are cached for 24 hours.
+
     Args:
         state_fips: 2-digit state FIPS code
         county_fips: 3-digit county FIPS code
         api_key: Census API key (if None, tries CENSUS_API_KEY env var)
-    
+
     Returns:
         List of dictionaries with tract data including:
         - tract_geoid: 11-digit census tract GEOID
@@ -858,13 +926,20 @@ def get_tract_minority_data(state_fips: str, county_fips: str, api_key: Optional
         - minority_population: Minority population (non-Hispanic white excluded)
         - minority_percentage: Percentage of minority population
     """
+    # Check cache first
+    cache_key = f"tract_minority_{state_fips}_{county_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached tract minority data for {state_fips}-{county_fips} ({len(cached)} tracts)")
+        return cached
+
     if api_key is None:
         api_key = get_census_api_key()
-    
+
     if not api_key:
         print("Warning: No Census API key found. Set CENSUS_API_KEY environment variable.")
         return []
-    
+
     try:
         acs_year = "2022"
         
@@ -961,8 +1036,9 @@ def get_tract_minority_data(state_fips: str, county_fips: str, api_key: Optional
         
         valid_tracts = len(tracts)
         print(f"Fetched minority data for {valid_tracts} valid census tracts (invalid/water tracts filtered out)")
+        _set_cached(cache_key, tracts)  # Cache the result
         return tracts
-        
+
     except Exception as e:
         print(f"Error fetching tract minority data: {e}")
         import traceback
@@ -1009,21 +1085,29 @@ def categorize_minority_level(tract_minority_pct: Optional[float], cbsa_minority
 def get_tract_boundaries_geojson(state_fips: str, county_fips: str) -> Optional[Dict]:
     """
     Fetch census tract boundaries as GeoJSON from Census TIGER/Line files.
-    
+
     Uses the Census Bureau's TIGERweb service to get tract boundaries.
-    
+    Results are cached for 24 hours since boundary data rarely changes.
+
     Args:
         state_fips: 2-digit state FIPS code
         county_fips: 3-digit county FIPS code
-    
+
     Returns:
         GeoJSON dictionary with tract boundaries, or None if unavailable
     """
+    # Check cache first
+    cache_key = f"boundaries_{state_fips}_{county_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached tract boundaries for {state_fips}-{county_fips} ({len(cached.get('features', []))} features)")
+        return cached
+
     try:
         # Census TIGERweb REST API endpoint
         # This gets 2020 census tract boundaries
         url = f"https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/8/query"
-        
+
         # Create query for specific county
         params = {
             'where': f"STATE='{state_fips}' AND COUNTY='{county_fips}'",
@@ -1031,17 +1115,18 @@ def get_tract_boundaries_geojson(state_fips: str, county_fips: str) -> Optional[
             'f': 'geojson',
             'outSR': '4326'  # WGS84 coordinate system
         }
-        
-        response = make_census_api_request(url, params, timeout=30)
-        
+
+        response = make_census_api_request(url, params, timeout=60)  # Increased timeout for large counties
+
         geojson = response.json()
-        
+
         if 'features' in geojson and len(geojson['features']) > 0:
             print(f"Fetched {len(geojson['features'])} tract boundaries")
+            _set_cached(cache_key, geojson)  # Cache the result
             return geojson
-        
+
         return None
-        
+
     except Exception as e:
         print(f"Error fetching tract boundaries: {e}")
         import traceback

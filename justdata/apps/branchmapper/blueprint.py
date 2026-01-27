@@ -174,14 +174,25 @@ def api_census_tracts(county):
                 }), 500
             
             baseline_income = get_county_median_family_income(state_fips, county_fips)
-            if baseline_income:
-                tract_income_data = get_tract_income_data(state_fips, county_fips)
-                for tract in tract_income_data:
-                    geoid = tract['tract_geoid']
-                    geoid_normalized = str(geoid).zfill(11)
-                    income_lookup[geoid_normalized] = tract
-                    income_lookup[geoid] = tract
-        
+            if not baseline_income:
+                return jsonify({
+                    'success': False,
+                    'error': 'Could not fetch county median income data from Census API. Please try again.'
+                }), 500
+
+            tract_income_data = get_tract_income_data(state_fips, county_fips)
+            if not tract_income_data:
+                return jsonify({
+                    'success': False,
+                    'error': 'Could not fetch tract income data from Census API. Please try again.'
+                }), 500
+
+            for tract in tract_income_data:
+                geoid = tract['tract_geoid']
+                geoid_normalized = str(geoid).zfill(11)
+                income_lookup[geoid_normalized] = tract
+                income_lookup[geoid] = tract
+
         # Get minority data if requested
         county_minority_pct = None
         if include_minority:
@@ -191,10 +202,21 @@ def api_census_tracts(county):
                     'success': False,
                     'error': 'CENSUS_API_KEY environment variable is not set.'
                 }), 500
-            
+
             county_minority_pct = get_county_minority_percentage(state_fips, county_fips)
+            if county_minority_pct is None:
+                return jsonify({
+                    'success': False,
+                    'error': 'Could not fetch county minority data from Census API. Please try again.'
+                }), 500
+
             tract_minority_data = get_tract_minority_data(state_fips, county_fips)
-            
+            if not tract_minority_data:
+                return jsonify({
+                    'success': False,
+                    'error': 'Could not fetch tract minority data from Census API. Please try again.'
+                }), 500
+
             for tract in tract_minority_data:
                 geoid = tract['tract_geoid']
                 geoid_normalized = str(geoid).zfill(11)
