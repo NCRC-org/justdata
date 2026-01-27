@@ -1086,76 +1086,130 @@
             detectUserLocation();
         }
         
-        // Detect user's location from IP address
+        // Detect user's location - try browser geolocation first, fall back to IP
         async function detectUserLocation() {
+            // Try browser geolocation first (more accurate)
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    async (position) => {
+                        console.log('Browser geolocation:', position.coords);
+                        await reverseGeocodeAndSelect(position.coords.latitude, position.coords.longitude);
+                    },
+                    async (error) => {
+                        console.log('Browser geolocation denied/failed:', error.message);
+                        // Fall back to IP-based geolocation
+                        await detectLocationFromIP();
+                    },
+                    { timeout: 5000, enableHighAccuracy: false }
+                );
+            } else {
+                // No browser geolocation, use IP
+                await detectLocationFromIP();
+            }
+        }
+
+        // Reverse geocode lat/long to county using Nominatim
+        async function reverseGeocodeAndSelect(lat, lon) {
             try {
-                // Use a free IP geolocation service
-                // ipapi.co provides free geolocation (1000 requests/day free)
-                const response = await fetch('https://ipapi.co/json/');
-                
+                const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1`;
+                const response = await fetch(url, {
+                    headers: { 'User-Agent': 'JustData-BranchMapper/1.0' }
+                });
+
                 if (response.ok) {
                     const data = await response.json();
-                    console.log('User location detected:', data);
-                    
-                    if (data.region_code && data.region) {
-                        // Try to match the state
-                        const stateSelect = document.getElementById('stateSelect');
-                        const stateName = data.region; // e.g., "Delaware"
-                        const stateCode = data.region_code; // e.g., "DE" - but we need FIPS code
-                        
-                        // Find matching state in dropdown
-                        // Try exact match first, then case-insensitive match
-                        const stateOptions = Array.from(stateSelect.options);
-                        let matchingState = stateOptions.find(opt => {
-                            const optText = opt.textContent.trim();
-                            return optText.toLowerCase() === stateName.toLowerCase();
-                        });
-                        
-                        // If no exact match, try partial match
-                        if (!matchingState) {
-                            matchingState = stateOptions.find(opt => {
-                                const optText = opt.textContent.trim().toLowerCase();
-                                return optText.includes(stateName.toLowerCase()) || 
-                                       stateName.toLowerCase().includes(optText);
-                            });
-                        }
-                        
-                        if (matchingState) {
-                            matchingState.selected = true;
-                            const stateCodeValue = matchingState.value;
-                            console.log('Pre-selected state:', stateName, 'with code:', stateCodeValue);
-                            
-                            // Now try to pre-select county
-                            await populateCountyDropdown(stateCodeValue);
-                            
-                            // Try to find matching county
-                            if (data.county) {
-                                const countySelect = document.getElementById('countySelect');
-                                const countyName = data.county; // e.g., "New Castle County"
-                                
-                                // Wait a bit for counties to load
-                                setTimeout(() => {
-                                    const countyOptions = Array.from(countySelect.options);
-                                    const matchingCounty = countyOptions.find(opt => {
-                                        const optText = opt.textContent.trim();
-                                        // Match if county name appears in the option (e.g., "New Castle County, Delaware")
-                                        return optText.includes(countyName);
-                                    });
-                                    
-                                    if (matchingCounty) {
-                                        matchingCounty.selected = true;
-                                        console.log('Pre-selected county:', matchingCounty.textContent);
-                                        // Trigger change event to load map data and zoom
-                                        matchingCounty.dispatchEvent(new Event('change', { bubbles: true }));
-                                    }
-                                }, 500);
-                            }
-                        }
+                    console.log('Reverse geocode result:', data);
+
+                    const address = data.address || {};
+                    const county = address.county || address.city || '';
+                    const state = address.state || '';
+
+                    if (state && county) {
+                        await selectStateAndCounty(state, county);
                     }
                 }
             } catch (error) {
-                console.log('Could not detect user location:', error.message);
-                // Silently fail - just don't pre-select anything
+                console.log('Reverse geocode failed:', error.message);
+                await detectLocationFromIP();
+            }
+        }
+
+        // IP-based geolocation fallback
+        async function detectLocationFromIP() {
+            try {
+                // ipapi.co provides free geolocation (1000 requests/day free)
+                const response = await fetch('https://ipapi.co/json/');
+
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log('IP location detected:', data);
+
+                    if (data.region && data.county) {
+                        await selectStateAndCounty(data.region, data.county);
+                    } else if (data.region) {
+                        // At least select the state
+                        await selectStateAndCounty(data.region, null);
+                    }
+                }
+            } catch (error) {
+                console.log('Could not detect location from IP:', error.message);
+            }
+        }
+
+        // Helper to select state and county in dropdowns
+        async function selectStateAndCounty(stateName, countyName) {
+            const stateSelect = document.getElementById('stateSelect');
+
+            // Find matching state
+            const stateOptions = Array.from(stateSelect.options);
+            let matchingState = stateOptions.find(opt => {
+                const optText = opt.textContent.trim().toLowerCase();
+                return optText === stateName.toLowerCase();
+            });
+
+            // Try partial match if no exact match
+            if (!matchingState) {
+                matchingState = stateOptions.find(opt => {
+                    const optText = opt.textContent.trim().toLowerCase();
+                    return optText.includes(stateName.toLowerCase()) ||
+                           stateName.toLowerCase().includes(optText);
+                });
+            }
+
+            if (matchingState) {
+                stateSelect.value = matchingState.value;
+                console.log('Pre-selected state:', matchingState.textContent);
+
+                // Populate counties for this state
+                await populateCountyDropdown(matchingState.value);
+
+                // Try to select county if provided
+                if (countyName) {
+                    const countySelect = document.getElementById('countySelect');
+
+                    // Wait for counties to load
+                    setTimeout(() => {
+                        const countyOptions = Array.from(countySelect.options);
+
+                        // Try to find matching county (handle "County" suffix variations)
+                        const normalizedCounty = countyName.replace(/ County$/i, '').toLowerCase();
+
+                        const matchingCounty = countyOptions.find(opt => {
+                            const optText = opt.textContent.trim().toLowerCase();
+                            const normalizedOpt = optText.replace(/ county,.*$/i, '');
+                            return optText.includes(normalizedCounty) ||
+                                   normalizedOpt.includes(normalizedCounty) ||
+                                   normalizedCounty.includes(normalizedOpt);
+                        });
+
+                        if (matchingCounty) {
+                            countySelect.value = matchingCounty.value;
+                            console.log('Pre-selected county:', matchingCounty.textContent);
+                            // Trigger change event on SELECT element (not option) to zoom map
+                            countySelect.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                    }, 600);
+                }
             }
         }
         
