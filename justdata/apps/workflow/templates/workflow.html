@@ -1,0 +1,866 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JustData Workflow</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --bg: #07070a;
+      --bg2: #0c0c10;
+      --bg3: #121216;
+      --bg4: #1a1a1f;
+      --text: #eaeaee;
+      --text2: #9898a0;
+      --text3: #58585f;
+      --border: rgba(255,255,255,0.06);
+      --critical: #ef4444;
+      --high: #f59e0b;
+      --goal: #10b981;
+      --select: #3b82f6;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { height: 100%; overflow: hidden; }
+    body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+    @keyframes pulse-critical {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7), 0 0 30px rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0), 0 0 40px rgba(239, 68, 68, 0.6); }
+    }
+    @keyframes pulse-high {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+    }
+    @keyframes pulse-goal {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.3); }
+      50% { box-shadow: 0 0 0 15px rgba(16, 185, 129, 0), 0 0 60px rgba(16, 185, 129, 0.5); }
+    }
+    @keyframes pulse-collector {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.3); }
+      50% { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+    }
+    @keyframes checkmark { 0% { transform: scale(0); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .check-animation { animation: checkmark 0.3s ease-out; }
+    .done-btn { transition: all 0.15s; }
+    .done-btn:hover { transform: scale(1.02); }
+    .marquee { position: absolute; border: 2px dashed var(--select); background: rgba(59, 130, 246, 0.1); pointer-events: none; z-index: 1000; }
+    .node-selected > div:first-of-type:not([style*="position: absolute"]) { box-shadow: 0 0 0 3px var(--select) !important; }
+    .spinner { width: 24px; height: 24px; border: 3px solid var(--bg3); border-top-color: var(--select); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+{% raw %}
+<script type="text/babel">
+const { useState, useEffect, useCallback, useMemo, useRef } = React;
+
+// API Configuration
+const API_BASE = '/workflow/api';
+
+// API Functions
+async function fetchTasks() {
+  const response = await fetch(`${API_BASE}/tasks`, { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to fetch tasks');
+  const data = await response.json();
+  return data.tasks;
+}
+
+async function createTaskAPI(taskData) {
+  const response = await fetch(`${API_BASE}/tasks`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(taskData)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Failed to create task');
+  }
+  return response.json();
+}
+
+async function deleteTaskAPI(taskId) {
+  const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+    method: 'DELETE',
+    credentials: 'include'
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Failed to delete task');
+  }
+  return response.json();
+}
+
+async function toggleTaskStatusAPI(taskId) {
+  const response = await fetch(`${API_BASE}/tasks/${taskId}/toggle`, {
+    method: 'PUT',
+    credentials: 'include'
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Failed to toggle task');
+  }
+  return response.json();
+}
+
+async function savePositionsAPI(positions) {
+  const response = await fetch(`${API_BASE}/positions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ positions })
+  });
+  if (!response.ok) throw new Error('Failed to save positions');
+  return response.json();
+}
+
+async function refreshCollectorsAPI() {
+  const response = await fetch(`${API_BASE}/collectors/refresh`, {
+    method: 'POST',
+    credentials: 'include'
+  });
+  if (!response.ok) throw new Error('Failed to refresh collectors');
+  return response.json();
+}
+
+const COLORS = {
+  legal: '#ef4444',
+  infrastructure: '#3b82f6',
+  feature: '#22c55e',
+  bug: '#eab308',
+  styling: '#a855f7',
+  content: '#06b6d4',
+  goal: '#10b981',
+  collector: '#6b7280',
+};
+
+const TYPE_LABELS = {
+  legal: 'Legal',
+  infrastructure: 'Infrastructure',
+  feature: 'Features',
+  bug: 'Bugs',
+  styling: 'Styling',
+  content: 'Content',
+  goal: 'Goal',
+  collector: 'Milestone',
+};
+
+const PRIORITY_CONFIG = {
+  critical: { size: 28, ring: 5, ringColor: '#ef4444', glow: true, animation: 'pulse-critical 2s infinite', label: 'CRITICAL', labelColor: '#ef4444', minZoomOpacity: 1 },
+  high: { size: 20, ring: 3, ringColor: '#f59e0b', glow: true, animation: 'pulse-high 2.5s infinite', label: 'HIGH', labelColor: '#f59e0b', minZoomOpacity: 0.9 },
+  medium: { size: 13, ring: 0, ringColor: null, glow: false, animation: 'none', label: 'MEDIUM', labelColor: '#6b7280', minZoomOpacity: 0.4 },
+  low: { size: 9, ring: 0, ringColor: null, glow: false, animation: 'none', label: 'LOW', labelColor: '#4b5563', minZoomOpacity: 0.2 },
+  goal: { size: 50, ring: 6, ringColor: '#10b981', glow: true, animation: 'pulse-goal 3s infinite', label: 'GOAL', labelColor: '#10b981', minZoomOpacity: 1 },
+  collector: { size: 32, ring: 3, ringColor: '#6b7280', glow: true, animation: 'pulse-collector 3s infinite', label: 'MILESTONE', labelColor: '#6b7280', minZoomOpacity: 1 },
+};
+
+const W = 1100, H = 750;
+
+function App() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  const [selected, setSelected] = useState(null);
+  const [hovered, setHovered] = useState(null);
+  const [showDone, setShowDone] = useState(false);
+  const [transform, setTransform] = useState({ s: 1, x: 0, y: 0 });
+  const [panning, setPanning] = useState(false);
+  const [panStart, setPanStart] = useState({ x: 0, y: 0 });
+  const [recentlyToggled, setRecentlyToggled] = useState(null);
+  const [dragging, setDragging] = useState(null);
+  const [positions, setPositions] = useState({});
+
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [marquee, setMarquee] = useState(null);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTask, setNewTask] = useState({ title: '', type: 'feature', priority: 'medium', app: '', notes: '' });
+
+  const canvasRef = useRef(null);
+  const saveTimeoutRef = useRef(null);
+
+  // Load data from API
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setLoading(true);
+        setError(null);
+        const tasks = await fetchTasks();
+        setItems(tasks);
+
+        // Extract positions from tasks
+        const pos = {};
+        tasks.forEach(t => {
+          if (t.x != null && t.y != null) {
+            pos[t.id] = { x: t.x, y: t.y };
+          }
+        });
+        setPositions(pos);
+      } catch (err) {
+        setError(err.message);
+        console.error('Failed to load workflow data:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadData();
+  }, []);
+
+  // Debounced position saving
+  const savePositionsDebounced = useCallback((newPositions) => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        setSaving(true);
+        const posArray = Object.entries(newPositions).map(([task_id, pos]) => ({
+          task_id,
+          x: pos.x,
+          y: pos.y
+        }));
+        await savePositionsAPI(posArray);
+      } catch (err) {
+        console.error('Failed to save positions:', err);
+      } finally {
+        setSaving(false);
+      }
+    }, 1000);
+  }, []);
+
+  const visible = useMemo(() => items.filter(i => showDone || i.status !== 'done'), [items, showDone]);
+  const pos = positions || {};
+
+  const edges = useMemo(() => {
+    const e = [];
+    visible.forEach(item => {
+      (item.dependencies || []).forEach(depId => {
+        if (pos[item.id] && pos[depId] && visible.find(v => v.id === depId)) {
+          e.push({ from: depId, to: item.id, toIsGoal: item.is_goal, toIsCollector: item.is_collector });
+        }
+      });
+    });
+    return e;
+  }, [visible, pos]);
+
+  const active = selected || hovered;
+  const connected = useMemo(() => {
+    if (!active) return null;
+    const ids = new Set([active.id]);
+    (active.dependencies || []).forEach(d => ids.add(d));
+    items.forEach(i => { if ((i.dependencies || []).includes(active.id)) ids.add(i.id); });
+    return ids;
+  }, [active, items]);
+
+  const blockers = active ? (active.dependencies || []).map(id => items.find(i => i.id === id)).filter(Boolean) : [];
+  const dependents = active ? items.filter(i => (i.dependencies || []).includes(active.id)) : [];
+
+  const toggleItem = useCallback(async (id) => {
+    const item = items.find(i => i.id === id);
+    if (item?.is_goal) return;
+
+    try {
+      const result = await toggleTaskStatusAPI(id);
+      setItems(p => p.map(i => i.id === id ? { ...i, status: result.new_status } : i));
+      setRecentlyToggled(id);
+      setTimeout(() => setRecentlyToggled(null), 500);
+      if (selected?.id === id) {
+        setSelected(s => s ? { ...s, status: result.new_status } : null);
+      }
+    } catch (err) {
+      console.error('Failed to toggle task:', err);
+      alert('Failed to update task status: ' + err.message);
+    }
+  }, [items, selected]);
+
+  const getClusterIds = useCallback((nodeId) => {
+    const node = items.find(i => i.id === nodeId);
+    if (!node) return [nodeId];
+    if (node.is_goal) return items.map(i => i.id);
+    if (node.is_collector) return [nodeId, ...(node.dependencies || [])];
+    return [nodeId];
+  }, [items]);
+
+  const screenToCanvas = useCallback((clientX, clientY) => {
+    if (!canvasRef.current) return { x: 0, y: 0 };
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = (clientX - rect.left - rect.width/2 - transform.x) / transform.s + W/2;
+    const y = (clientY - rect.top - rect.height/2 - transform.y) / transform.s + H/2;
+    return { x, y };
+  }, [transform]);
+
+  const onNodeMouseDown = (e, item) => {
+    e.stopPropagation();
+    const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+
+    let idsToMove;
+    if (selectedIds.has(item.id)) {
+      idsToMove = Array.from(selectedIds);
+    } else if (e.shiftKey) {
+      setSelectedIds(prev => new Set([...prev, item.id]));
+      idsToMove = [...Array.from(selectedIds), item.id];
+    } else {
+      setSelectedIds(new Set());
+      idsToMove = getClusterIds(item.id);
+    }
+
+    const startPositions = {};
+    idsToMove.forEach(id => { if (pos[id]) startPositions[id] = { ...pos[id] }; });
+    setDragging({ id: item.id, startX: canvasCoords.x, startY: canvasCoords.y, clusterIds: idsToMove, startPositions });
+  };
+
+  const onMouseMove = (e) => {
+    if (marquee) {
+      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+      setMarquee(prev => ({ ...prev, currentX: canvasCoords.x, currentY: canvasCoords.y }));
+    } else if (dragging && positions) {
+      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+      const dx = canvasCoords.x - dragging.startX, dy = canvasCoords.y - dragging.startY;
+      setPositions(prev => {
+        const updated = { ...prev };
+        dragging.clusterIds.forEach(id => {
+          const start = dragging.startPositions[id];
+          if (start) updated[id] = { x: start.x + dx, y: start.y + dy };
+        });
+        return updated;
+      });
+    } else if (panning) {
+      setTransform(t => ({ ...t, x: e.clientX - panStart.x, y: e.clientY - panStart.y }));
+    }
+  };
+
+  const onMouseUp = (e) => {
+    if (marquee) {
+      const minX = Math.min(marquee.startX, marquee.currentX);
+      const maxX = Math.max(marquee.startX, marquee.currentX);
+      const minY = Math.min(marquee.startY, marquee.currentY);
+      const maxY = Math.max(marquee.startY, marquee.currentY);
+
+      const newSelected = new Set(e.shiftKey ? selectedIds : []);
+      visible.forEach(item => {
+        const p = pos[item.id];
+        if (p && p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY) {
+          newSelected.add(item.id);
+        }
+      });
+      setSelectedIds(newSelected);
+      setMarquee(null);
+    }
+    if (dragging) {
+      // Save positions after drag
+      savePositionsDebounced(positions);
+    }
+    setDragging(null);
+    setPanning(false);
+  };
+
+  const onCanvasMouseDown = (e) => {
+    if (e.target.closest('.panel') || e.target.closest('.node') || e.target.closest('.modal')) return;
+
+    const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+
+    if (e.shiftKey) {
+      setMarquee({ startX: canvasCoords.x, startY: canvasCoords.y, currentX: canvasCoords.x, currentY: canvasCoords.y });
+    } else {
+      setSelectedIds(new Set());
+      setPanning(true);
+      setPanStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
+    }
+  };
+
+  const onWheel = (e) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.min(Math.max(transform.s * delta, 0.3), 3);
+    const rect = e.currentTarget.getBoundingClientRect();
+    const mx = e.clientX - rect.left - rect.width / 2;
+    const my = e.clientY - rect.top - rect.height / 2;
+    setTransform({ s: newScale, x: transform.x - mx * (delta - 1), y: transform.y - my * (delta - 1) });
+  };
+
+  const getZoomOpacity = (priority) => {
+    const cfg = PRIORITY_CONFIG[priority];
+    if (!cfg) return 1;
+    const zoomFactor = Math.min((transform.s - 0.5) / 1.5, 1);
+    return cfg.minZoomOpacity + (1 - cfg.minZoomOpacity) * zoomFactor;
+  };
+
+  const handleCreateTask = async () => {
+    if (!newTask.title.trim()) { alert('Title is required'); return; }
+    try {
+      const result = await createTaskAPI(newTask);
+      setItems(prev => [...prev, result.task]);
+      setPositions(prev => ({
+        ...prev,
+        [result.task.id]: { x: result.task.x, y: result.task.y }
+      }));
+      setShowCreateModal(false);
+      setNewTask({ title: '', type: 'feature', priority: 'medium', app: '', notes: '' });
+
+      if (['bug', 'styling', 'content'].includes(newTask.type)) {
+        await refreshCollectorsAPI();
+        const tasks = await fetchTasks();
+        setItems(tasks);
+      }
+    } catch (err) {
+      alert('Failed to create task: ' + err.message);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!selected) return;
+    if (!confirm(`Delete task ${selected.id}: ${selected.title}?`)) return;
+
+    try {
+      await deleteTaskAPI(selected.id);
+      setItems(prev => prev.filter(i => i.id !== selected.id));
+      setPositions(prev => {
+        const newPos = { ...prev };
+        delete newPos[selected.id];
+        return newPos;
+      });
+
+      if (['bug', 'styling', 'content'].includes(selected.type)) {
+        await refreshCollectorsAPI();
+        const tasks = await fetchTasks();
+        setItems(tasks);
+      }
+      setSelected(null);
+    } catch (err) {
+      alert('Failed to delete task: ' + err.message);
+    }
+  };
+
+  const stats = {
+    total: items.filter(i => i.status !== 'done' && !i.is_goal && !i.is_collector).length,
+    critical: items.filter(i => i.priority === 'critical' && i.status !== 'done').length,
+    high: items.filter(i => i.priority === 'high' && i.status !== 'done').length,
+    done: items.filter(i => i.status === 'done').length,
+  };
+
+  const marqueeBox = marquee ? {
+    left: Math.min(marquee.startX, marquee.currentX),
+    top: Math.min(marquee.startY, marquee.currentY),
+    width: Math.abs(marquee.currentX - marquee.startX),
+    height: Math.abs(marquee.currentY - marquee.startY),
+  } : null;
+
+  // Loading state
+  if (loading) {
+    return (
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', flexDirection: 'column', gap: 16 }}>
+        <div className="spinner"></div>
+        <div style={{ fontSize: 16, color: 'var(--text2)' }}>Loading Workflow...</div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg)', flexDirection: 'column', gap: 16 }}>
+        <div style={{ fontSize: 24, color: 'var(--critical)' }}>Error Loading Workflow</div>
+        <div style={{ color: 'var(--text2)' }}>{error}</div>
+        <button onClick={() => window.location.reload()} style={{ marginTop: 16, padding: '10px 20px', background: 'var(--select)', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 14 }}>
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ height: '100%', display: 'flex', flexDirection: 'column', background: 'var(--bg)' }}>
+      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--bg2)', borderBottom: '1px solid var(--border)', zIndex: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div>
+            <h1 style={{ fontSize: 15, fontWeight: 600 }}>JustData Workflow</h1>
+            <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+              <span style={{ fontSize: 10, color: 'var(--critical)', fontFamily: "'JetBrains Mono'", fontWeight: 600 }}>&#9679; {stats.critical} CRITICAL</span>
+              <span style={{ fontSize: 10, color: 'var(--high)', fontFamily: "'JetBrains Mono'" }}>&#9679; {stats.high} HIGH</span>
+              <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono'" }}>{stats.total} open</span>
+              {saving && <span style={{ fontSize: 10, color: 'var(--select)', fontFamily: "'JetBrains Mono'" }}>Saving...</span>}
+              {selectedIds.size > 0 && <span style={{ fontSize: 10, color: 'var(--select)', fontFamily: "'JetBrains Mono'" }}>&#9679; {selectedIds.size} selected</span>}
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 10, paddingLeft: 16, borderLeft: '1px solid var(--border)' }}>
+            {Object.entries(COLORS).filter(([t]) => !['goal', 'collector'].includes(t)).map(([t, c]) => (
+              <div key={t} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: c }} />
+                <span style={{ fontSize: 9, color: 'var(--text2)' }}>{TYPE_LABELS[t]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono'" }}>Zoom: {Math.round(transform.s * 100)}%</span>
+          <button onClick={() => setShowCreateModal(true)} style={{ padding: '5px 12px', fontSize: 10, background: 'var(--goal)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}>+ Add Task</button>
+          {selectedIds.size > 0 && (
+            <button onClick={() => setSelectedIds(new Set())} style={{ padding: '5px 12px', fontSize: 10, background: 'var(--select)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Clear Selection</button>
+          )}
+          <button onClick={() => setTransform({ s: 1, x: 0, y: 0 })} style={{ padding: '5px 12px', fontSize: 10, background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer' }}>Reset View</button>
+          <a href="/" style={{ padding: '5px 12px', fontSize: 10, background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: 4, cursor: 'pointer', textDecoration: 'none' }}>Back to JustData</a>
+        </div>
+      </header>
+
+      <div ref={canvasRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', cursor: marquee ? 'crosshair' : dragging ? 'grabbing' : panning ? 'grabbing' : 'grab' }}
+           onMouseDown={onCanvasMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp} onWheel={onWheel}
+           onClick={() => { if (!dragging && !marquee) setSelected(null); }}>
+
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
+
+        {transform.s < 0.8 && (
+          <div style={{ position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg3)', padding: '6px 12px', borderRadius: 4, fontSize: 10, color: 'var(--text2)', border: '1px solid var(--border)', zIndex: 5 }}>
+            Scroll to zoom | Shift+drag to box-select | Drag nodes to move
+          </div>
+        )}
+
+        <div className="canvas-inner" style={{ position: 'absolute', width: W, height: H, left: '50%', top: '50%', marginLeft: -W/2, marginTop: -H/2, transform: `translate(${transform.x}px, ${transform.y}px) scale(${transform.s})`, transformOrigin: 'center' }}>
+
+          {marqueeBox && (
+            <div className="marquee" style={{ left: marqueeBox.left, top: marqueeBox.top, width: marqueeBox.width, height: marqueeBox.height }} />
+          )}
+
+          <svg style={{ position: 'absolute', inset: 0, overflow: 'visible', pointerEvents: 'none' }} width={W} height={H}>
+            <defs>
+              <marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="rgba(255,255,255,0.2)" /></marker>
+              <marker id="arr-red" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#ef4444" /></marker>
+              <marker id="arr-green" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#22c55e" /></marker>
+              <marker id="arr-goal" markerWidth="10" markerHeight="10" refX="7" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#10b981" /></marker>
+              <marker id="arr-collector" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#6b7280" /></marker>
+            </defs>
+
+            {edges.map((e, i) => {
+              const from = pos[e.from], to = pos[e.to];
+              if (!from || !to) return null;
+              const isBlocker = active && e.to === active.id;
+              const isDependent = active && e.from === active.id;
+              const isConn = isBlocker || isDependent;
+              const dim = active && !isConn;
+              const isGoalEdge = e.toIsGoal;
+              const isCollectorEdge = e.toIsCollector;
+              const isBeingDragged = dragging && (dragging.clusterIds.includes(e.from) || dragging.clusterIds.includes(e.to));
+
+              const dx = to.x - from.x, dy = to.y - from.y;
+              const len = Math.sqrt(dx*dx + dy*dy) || 1;
+              const targetNode = visible.find(n => n.id === e.to);
+              const offset = (PRIORITY_CONFIG[targetNode?.priority]?.size || 20) + 8;
+              const ex = to.x - (dx/len) * offset, ey = to.y - (dy/len) * offset;
+
+              let stroke = 'rgba(255,255,255,0.08)', marker = 'url(#arr)', width = 1;
+              if (isGoalEdge) { stroke = '#10b981'; marker = 'url(#arr-goal)'; width = 3; }
+              else if (isCollectorEdge) { stroke = '#6b7280'; marker = 'url(#arr-collector)'; width = 2; }
+              else if (isBlocker) { stroke = '#ef4444'; marker = 'url(#arr-red)'; width = 2.5; }
+              else if (isDependent) { stroke = '#22c55e'; marker = 'url(#arr-green)'; width = 2.5; }
+
+              return <line key={i} x1={from.x} y1={from.y} x2={ex} y2={ey} stroke={stroke} strokeWidth={width} strokeDasharray={isBlocker ? '8,4' : 'none'} opacity={dim ? 0.04 : isBeingDragged ? 0.8 : isConn || isGoalEdge || isCollectorEdge ? 1 : 0.4} markerEnd={marker} style={{ transition: dragging ? 'none' : 'opacity 0.15s' }} />;
+            })}
+          </svg>
+
+          {visible.map(item => {
+            const p = pos[item.id];
+            if (!p) return null;
+            const cfg = PRIORITY_CONFIG[item.priority] || PRIORITY_CONFIG.medium;
+            const color = item.is_collector ? COLORS.collector : COLORS[item.type];
+            const isDone = item.status === 'done';
+            const isActive = active?.id === item.id;
+            const isConn = connected?.has(item.id);
+            const dim = active && !isConn;
+            const isGoal = item.is_goal;
+            const isCollector = item.is_collector;
+            const justToggled = recentlyToggled === item.id;
+            const zoomOpacity = getZoomOpacity(item.priority);
+            const isBeingDragged = dragging && dragging.clusterIds.includes(item.id);
+            const isSelected = selectedIds.has(item.id);
+
+            return (
+              <div key={item.id} className={`node ${isSelected ? 'node-selected' : ''}`}
+                style={{
+                  position: 'absolute', left: p.x, top: p.y, transform: 'translate(-50%, -50%)',
+                  zIndex: isBeingDragged ? 1000 : isGoal ? 200 : isCollector ? 150 : isActive ? 100 : isDone ? 1 : cfg.size * 2,
+                  opacity: dim ? 0.06 : isDone ? 0.4 : zoomOpacity,
+                  transition: dragging ? 'none' : 'opacity 0.2s',
+                  cursor: 'grab',
+                }}
+                onMouseEnter={() => !dragging && setHovered(item)}
+                onMouseLeave={() => setHovered(null)}
+                onMouseDown={(e) => onNodeMouseDown(e, item)}
+              >
+                {cfg.ring > 0 && !isDone && (
+                  <div style={{ position: 'absolute', left: '50%', top: '50%', width: cfg.size + cfg.ring * 2 + 6, height: cfg.size + cfg.ring * 2 + 6, transform: 'translate(-50%, -50%)', borderRadius: isCollector ? 10 : '50%', border: `${cfg.ring}px solid ${cfg.ringColor}`, opacity: 0.7, animation: cfg.animation, pointerEvents: 'none' }} />
+                )}
+
+                {isSelected && (
+                  <div style={{ position: 'absolute', left: '50%', top: '50%', width: cfg.size + 14, height: cfg.size + 14, transform: 'translate(-50%, -50%)', borderRadius: isCollector ? 12 : '50%', border: '3px solid var(--select)', pointerEvents: 'none' }} />
+                )}
+
+                <div onClick={(e) => { if (!dragging) { e.stopPropagation(); setSelected(item); }}}
+                  style={{
+                    width: isDone ? cfg.size * 0.5 : cfg.size, height: isDone ? cfg.size * 0.5 : cfg.size,
+                    borderRadius: isCollector ? 8 : '50%',
+                    background: isDone ? 'var(--bg4)' : isGoal ? 'radial-gradient(circle at 30% 30%, #34d399, #10b981)' : isCollector ? 'radial-gradient(circle at 30% 30%, #9ca3af, #6b7280)' : color,
+                    border: isDone ? '2px solid var(--goal)' : isActive ? '3px solid white' : '1px solid rgba(255,255,255,0.2)',
+                    boxShadow: isDone ? 'none' : cfg.glow ? `0 0 ${cfg.size}px ${color}40` : '0 2px 10px rgba(0,0,0,0.5)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: dragging ? 'none' : 'transform 0.12s',
+                  }}
+                >
+                  {isDone && <svg className={justToggled ? 'check-animation' : ''} width={cfg.size * 0.35} height={cfg.size * 0.35} viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="4"><path d="M5 13l4 4L19 7" /></svg>}
+                  {isGoal && !isDone && <svg width={cfg.size * 0.5} height={cfg.size * 0.5} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" fill="white" /></svg>}
+                  {isCollector && !isDone && <svg width={cfg.size * 0.45} height={cfg.size * 0.45} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M9 12l2 2 4-4" /><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>}
+                </div>
+
+                {(isGoal || isCollector) && (
+                  <div style={{ position: 'absolute', left: '50%', top: cfg.size / 2 + (cfg.ring || 0) + 14, transform: 'translateX(-50%)', textAlign: 'center', pointerEvents: 'none' }}>
+                    <div style={{ fontSize: isGoal ? 13 : 11, fontWeight: 700, color: isGoal ? '#10b981' : '#9ca3af', textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
+                      {isGoal ? 'GOAL' : 'MILESTONE'}
+                    </div>
+                    <div style={{ fontSize: isGoal ? 11 : 10, color: 'var(--text)', marginTop: 2, maxWidth: 160, textShadow: '0 2px 10px rgba(0,0,0,0.9)' }}>
+                      {item.title}
+                    </div>
+                  </div>
+                )}
+
+                {!isGoal && !isCollector && !dragging && (isActive || hovered?.id === item.id) && (
+                  <div style={{
+                    position: 'absolute', left: '50%', top: cfg.size / 2 + (cfg.ring || 0) + 10,
+                    transform: 'translateX(-50%)', background: 'rgba(7,7,10,0.95)',
+                    padding: '8px 12px', borderRadius: 5, fontSize: 11, lineHeight: 1.4, maxWidth: 280,
+                    border: '1px solid var(--border)', pointerEvents: 'none', zIndex: 50,
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <span style={{ color, fontFamily: "'JetBrains Mono'", fontWeight: 600, fontSize: 12 }}>{item.id}</span>
+                      <span style={{ fontSize: 9, padding: '2px 5px', background: cfg.ringColor || 'var(--bg3)', color: cfg.ringColor ? 'white' : 'var(--text3)', borderRadius: 3, fontWeight: 600 }}>{cfg.label}</span>
+                      {isDone && <span style={{ fontSize: 9, color: 'var(--goal)' }}>DONE</span>}
+                    </div>
+                    <div style={{ color: 'var(--text)' }}>{item.title}</div>
+                    <div style={{ fontSize: 9, color: 'var(--text3)', marginTop: 6 }}>Click for details | Shift+click to multi-select</div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Detail Panel */}
+        {selected && !dragging && (
+          <div className="panel" onClick={e => e.stopPropagation()} style={{
+            position: 'absolute', right: 16, top: 16, width: 380,
+            maxHeight: 'calc(100% - 32px)', overflowY: 'auto',
+            background: 'var(--bg2)', borderRadius: 10, border: '1px solid var(--border)',
+            boxShadow: '0 12px 48px rgba(0,0,0,0.6)', zIndex: 300,
+          }}>
+            <div style={{ height: 4, background: selected.is_collector ? COLORS.collector : COLORS[selected.type], borderRadius: '10px 10px 0 0' }} />
+
+            <div style={{ padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginBottom: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 13, color: selected.is_collector ? COLORS.collector : COLORS[selected.type], fontFamily: "'JetBrains Mono'", fontWeight: 600 }}>{selected.id}</span>
+                    <span style={{ fontSize: 9, padding: '2px 8px', background: PRIORITY_CONFIG[selected.priority]?.ringColor || 'var(--bg3)', color: PRIORITY_CONFIG[selected.priority]?.ringColor ? 'white' : 'var(--text3)', borderRadius: 3, fontWeight: 600, fontFamily: "'JetBrains Mono'" }}>
+                      {PRIORITY_CONFIG[selected.priority]?.label || 'TASK'}
+                    </span>
+                    {selected.status === 'done' && <span style={{ fontSize: 9, padding: '2px 8px', background: 'var(--goal)', color: 'white', borderRadius: 3, fontWeight: 600 }}>DONE</span>}
+                  </div>
+                  <h3 style={{ fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: 'var(--text)' }}>{selected.title}</h3>
+                </div>
+                <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4, alignSelf: 'flex-start', fontSize: 18, lineHeight: 1 }}>x</button>
+              </div>
+
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
+                <span style={{ padding: '4px 10px', fontSize: 11, background: selected.is_collector ? COLORS.collector : COLORS[selected.type], borderRadius: 4, fontWeight: 500 }}>{TYPE_LABELS[selected.type] || 'Milestone'}</span>
+                {selected.app && <span style={{ padding: '4px 10px', fontSize: 11, background: 'var(--bg3)', color: 'var(--text2)', borderRadius: 4, border: '1px solid var(--border)' }}>{selected.app}</span>}
+              </div>
+
+              {!selected.is_goal && (
+                <button className="done-btn" onClick={() => toggleItem(selected.id)}
+                  style={{
+                    width: '100%', padding: '12px 16px', marginBottom: 14, fontSize: 13, fontWeight: 600,
+                    background: selected.status === 'done' ? 'var(--bg3)' : 'var(--goal)',
+                    color: selected.status === 'done' ? 'var(--text2)' : 'white',
+                    border: selected.status === 'done' ? '1px solid var(--border)' : 'none',
+                    borderRadius: 6, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  {selected.status === 'done' ? 'Mark as Open' : 'Mark as Done'}
+                </button>
+              )}
+
+              {!selected.is_goal && !selected.is_collector && (
+                <button onClick={handleDeleteTask}
+                  style={{
+                    width: '100%', padding: '10px 16px', marginBottom: 14, fontSize: 12,
+                    background: 'transparent', color: 'var(--critical)',
+                    border: '1px solid var(--critical)', borderRadius: 6, cursor: 'pointer',
+                  }}
+                >
+                  Delete Task
+                </button>
+              )}
+
+              {selected.notes && (
+                <div style={{ marginBottom: 14, padding: 12, background: 'var(--bg3)', borderRadius: 6, fontSize: 12, lineHeight: 1.6, color: 'var(--text2)' }}>
+                  {selected.notes}
+                </div>
+              )}
+
+              {blockers.length > 0 && (
+                <div style={{ marginBottom: 12, padding: 12, background: 'rgba(239,68,68,0.08)', borderRadius: 6, border: '1px solid rgba(239,68,68,0.2)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#ef4444', marginBottom: 10, fontFamily: "'JetBrains Mono'" }}>BLOCKED BY ({blockers.length})</div>
+                  {blockers.slice(0, 10).map(b => (
+                    <div key={b.id} onClick={() => setSelected(b)} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0', cursor: 'pointer', borderTop: '1px solid rgba(239,68,68,0.15)' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: b.is_collector ? 2 : '50%', background: b.is_collector ? COLORS.collector : COLORS[b.type], marginTop: 4, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontFamily: "'JetBrains Mono'", color: 'var(--text3)', fontSize: 10 }}>{b.id}</span>
+                        {b.status === 'done' && <span style={{ fontSize: 8, color: 'var(--goal)', marginLeft: 6 }}>DONE</span>}
+                        <div style={{ fontSize: 10, color: 'var(--text2)', lineHeight: 1.3, marginTop: 2 }}>{b.title}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {dependents.length > 0 && (
+                <div style={{ marginBottom: 12, padding: 12, background: 'rgba(34,197,94,0.08)', borderRadius: 6, border: '1px solid rgba(34,197,94,0.2)' }}>
+                  <div style={{ fontSize: 10, fontWeight: 600, color: '#22c55e', marginBottom: 10, fontFamily: "'JetBrains Mono'" }}>ENABLES ({dependents.length})</div>
+                  {dependents.slice(0, 10).map(d => (
+                    <div key={d.id} onClick={() => setSelected(d)} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '6px 0', cursor: 'pointer', borderTop: '1px solid rgba(34,197,94,0.15)' }}>
+                      <div style={{ width: 8, height: 8, borderRadius: d.is_collector || d.is_goal ? 2 : '50%', background: d.is_goal ? COLORS.goal : d.is_collector ? COLORS.collector : COLORS[d.type], marginTop: 4, flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontFamily: "'JetBrains Mono'", color: 'var(--text3)', fontSize: 10 }}>{d.id}</span>
+                        {d.is_goal && <span style={{ fontSize: 8, color: 'var(--goal)', marginLeft: 6 }}>GOAL</span>}
+                        <div style={{ fontSize: 10, color: 'var(--text2)', lineHeight: 1.3, marginTop: 2 }}>{d.title}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Create Task Modal */}
+        {showCreateModal && (
+          <div className="modal" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowCreateModal(false)}>
+            <div style={{ background: 'var(--bg2)', borderRadius: 10, padding: 24, width: 420, border: '1px solid var(--border)' }} onClick={e => e.stopPropagation()}>
+              <h3 style={{ marginBottom: 20, fontSize: 16 }}>Create New Task</h3>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 12, color: 'var(--text2)' }}>Title *</label>
+                <input
+                  type="text"
+                  value={newTask.title}
+                  onChange={e => setNewTask(t => ({ ...t, title: e.target.value }))}
+                  placeholder="Task title..."
+                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 13 }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 16, display: 'flex', gap: 12 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontSize: 12, color: 'var(--text2)' }}>Type</label>
+                  <select
+                    value={newTask.type}
+                    onChange={e => setNewTask(t => ({ ...t, type: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 13 }}
+                  >
+                    <option value="legal">Legal</option>
+                    <option value="infrastructure">Infrastructure</option>
+                    <option value="feature">Feature</option>
+                    <option value="bug">Bug</option>
+                    <option value="styling">Styling</option>
+                    <option value="content">Content</option>
+                  </select>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: 6, fontSize: 12, color: 'var(--text2)' }}>Priority</label>
+                  <select
+                    value={newTask.priority}
+                    onChange={e => setNewTask(t => ({ ...t, priority: e.target.value }))}
+                    style={{ width: '100%', padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 13 }}
+                  >
+                    <option value="critical">Critical</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 12, color: 'var(--text2)' }}>App (optional)</label>
+                <input
+                  type="text"
+                  value={newTask.app}
+                  onChange={e => setNewTask(t => ({ ...t, app: e.target.value }))}
+                  placeholder="e.g., LendSight, DataExplorer..."
+                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 13 }}
+                />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ display: 'block', marginBottom: 6, fontSize: 12, color: 'var(--text2)' }}>Notes</label>
+                <textarea
+                  value={newTask.notes}
+                  onChange={e => setNewTask(t => ({ ...t, notes: e.target.value }))}
+                  placeholder="Additional details..."
+                  style={{ width: '100%', padding: '10px 12px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text)', fontSize: 13, minHeight: 80, resize: 'vertical' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                <button
+                  onClick={() => { setShowCreateModal(false); setNewTask({ title: '', type: 'feature', priority: 'medium', app: '', notes: '' }); }}
+                  style={{ padding: '10px 20px', background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, color: 'var(--text2)', cursor: 'pointer', fontSize: 13 }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleCreateTask}
+                  style={{ padding: '10px 20px', background: 'var(--goal)', border: 'none', borderRadius: 6, color: 'white', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+                >
+                  Create Task
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <footer style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--bg2)', borderTop: '1px solid var(--border)' }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono'" }}>Priority:</span>
+          {Object.entries(PRIORITY_CONFIG).filter(([p]) => !['goal', 'collector'].includes(p)).map(([p, cfg]) => (
+            <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+              <div style={{ position: 'relative', width: cfg.size * 0.55, height: cfg.size * 0.55 }}>
+                {cfg.ring > 0 && <div style={{ position: 'absolute', inset: -cfg.ring * 0.5, borderRadius: '50%', border: `${cfg.ring * 0.5}px solid ${cfg.ringColor}`, opacity: 0.7 }} />}
+                <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: cfg.ringColor || 'var(--text3)' }} />
+              </div>
+              <span style={{ fontSize: 10, color: cfg.labelColor, fontFamily: "'JetBrains Mono'", fontWeight: p === 'critical' ? 600 : 400 }}>{cfg.label}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <span style={{ fontSize: 10, color: 'var(--text3)' }}>Shift+drag to box-select</span>
+          <div onClick={() => setShowDone(!showDone)} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <div style={{ width: 32, height: 16, borderRadius: 8, background: showDone ? '#22c55e' : 'var(--bg3)', position: 'relative', border: '1px solid var(--border)', transition: 'background 0.2s' }}>
+              <div style={{ position: 'absolute', top: 2, left: showDone ? 16 : 2, width: 10, height: 10, borderRadius: '50%', background: 'white', transition: 'left 0.15s' }} />
+            </div>
+            <span style={{ fontSize: 10, color: 'var(--text2)', fontFamily: "'JetBrains Mono'" }}>Show done ({stats.done})</span>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+{% endraw %}
+</body>
+</html>
