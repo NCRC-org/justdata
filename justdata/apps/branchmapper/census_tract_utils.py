@@ -387,10 +387,22 @@ def get_county_median_family_income(state_fips: str, county_fips: str, api_key: 
 
         print(f"Fetching county median income from Census API: {url}")
         print(f"Parameters: state={state_fips}, county={county_fips}")
-        
+
         response = make_census_api_request(url, params, timeout=30)
-        
-        data = response.json()
+
+        # Log response details for debugging
+        print(f"Census API response status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"Census API error response: {response.text[:500]}")
+            return None
+
+        # Try to parse JSON, with error handling
+        try:
+            data = response.json()
+        except Exception as json_err:
+            print(f"[ERROR] Census API returned non-JSON response: {response.text[:500]}")
+            return None
+
         print(f"Census API response: {data}")
         
         if len(data) > 1 and len(data[1]) > 1:
@@ -473,10 +485,22 @@ def get_county_minority_percentage(state_fips: str, county_fips: str, api_key: O
         
         print(f"Fetching county minority data from Census API: {url}")
         print(f"Parameters: state={state_fips}, county={county_fips}")
-        
+
         response = make_census_api_request(url, params, timeout=30)
-        
-        data = response.json()
+
+        # Log response details for debugging
+        print(f"Census API response status: {response.status_code}")
+        if response.status_code != 200:
+            print(f"Census API error response: {response.text[:500]}")
+            return None
+
+        # Try to parse JSON, with error handling
+        try:
+            data = response.json()
+        except Exception as json_err:
+            print(f"[ERROR] Census API returned non-JSON response: {response.text[:500]}")
+            return None
+
         print(f"Census API response: {data}")
         
         if len(data) > 1 and len(data[1]) > 2:
