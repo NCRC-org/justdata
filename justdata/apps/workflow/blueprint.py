@@ -620,6 +620,38 @@ def get_sync_status():
         })
 
 
+@workflow_bp.route('/api/sync/to-monday', methods=['POST'])
+@admin_required
+def sync_all_to_monday():
+    """
+    Push all unlinked BigQuery tasks to Monday.com.
+
+    Creates Monday items for tasks without monday_item_id.
+    """
+    user_email = get_current_user_email()
+    data = request.json or {}
+    group_id = data.get('group_id', 'topics')  # Default to Launch group
+
+    monday_sync = get_monday_sync()
+    if not monday_sync:
+        return jsonify({
+            'error': 'Monday sync module not available.'
+        }), 500
+
+    try:
+        result = monday_sync.sync_bigquery_to_monday(group_id, user_email)
+
+        return jsonify({
+            'success': True,
+            'created': len(result.get('created', [])),
+            'errors': len(result.get('errors', [])),
+            'details': result
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @workflow_bp.route('/api/sync/to-monday/<task_id>', methods=['POST'])
 @admin_required
 def sync_task_to_monday(task_id):

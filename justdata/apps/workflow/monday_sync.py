@@ -414,6 +414,147 @@ def update_monday_item(item_id: str, column_updates: Dict[str, Any]) -> None:
     })
 
 
+def create_monday_item(task: Dict, group_id: str = 'topics') -> Optional[str]:
+    """
+    Create a new item in Monday.com from a BigQuery task.
+
+    Returns the Monday item ID if successful, None otherwise.
+    """
+    mutation = """
+    mutation ($boardId: ID!, $groupId: String!, $itemName: String!, $columnValues: JSON!) {
+        create_item(
+            board_id: $boardId,
+            group_id: $groupId,
+            item_name: $itemName,
+            column_values: $columnValues
+        ) {
+            id
+        }
+    }
+    """
+
+    # Build column values
+    column_values = {
+        MONDAY_COLUMNS['workflow_id']: task['id'],
+        MONDAY_COLUMNS['status']: {"label": STATUS_BQ_TO_MONDAY.get(task.get('status', 'open'), 'Open')},
+        MONDAY_COLUMNS['priority']: {"label": PRIORITY_BQ_TO_MONDAY.get(task.get('priority', 'medium'), 'Medium')},
+    }
+
+    # Add type if present
+    if task.get('type'):
+        type_label = TYPE_BQ_TO_MONDAY.get(task['type'])
+        if type_label:
+            column_values[MONDAY_COLUMNS['type']] = {"labels": [type_label]}
+
+    # Add app if present
+    if task.get('app'):
+        column_values[MONDAY_COLUMNS['app']] = {"labels": [task['app']]}
+
+    # Add notes if present
+    if task.get('notes'):
+        column_values[MONDAY_COLUMNS['notes']] = {"text": task['notes']}
+
+    try:
+        data = monday_query(mutation, {
+            "boardId": MONDAY_BOARD_ID,
+            "groupId": group_id,
+            "itemName": task.get('title', 'Untitled Task'),
+            "columnValues": json.dumps(column_values)
+        })
+
+        return data.get('create_item', {}).get('id')
+    except Exception as e:
+        print(f"Error creating Monday item for {task.get('id')}: {e}")
+        return None
+
+
+def sync_bigquery_to_monday(group_id: str = 'topics', user_email: str = 'bq_sync') -> Dict:
+    """
+    Push unlinked BigQuery tasks to Monday.com.
+
+    Creates Monday items for tasks that don't have a monday_item_id,
+    then updates BigQuery with the new Monday item IDs.
+
+    Args:
+        group_id: Monday group to create items in ('topics' for Launch, 'group_mm00hgb4' for Roadmap)
+        user_email: Email to log as the sync user
+
+    Returns a summary of the sync operation.
+    """
+    results = {
+        'created': [],
+        'skipped': [],
+        'errors': [],
+        'timestamp': datetime.utcnow().isoformat(),
+    }
+
+    client = get_bigquery_client(PROJECT_ID)
+
+    # Get all tasks without monday_item_id (excluding collectors and goal)
+    sql = f"""
+    SELECT id, title, type, priority, status, app, notes, dependencies
+    FROM `{TASKS_TABLE}`
+    WHERE (monday_item_id IS NULL OR monday_item_id = '')
+      AND is_collector = FALSE
+      AND is_goal = FALSE
+    ORDER BY created_at
+    """
+
+    try:
+        rows = list(client.query(sql).result())
+        print(f"Found {len(rows)} tasks to push to Monday")
+
+        for row in rows:
+            task = {
+                'id': row.id,
+                'title': row.title,
+                'type': row.type,
+                'priority': row.priority,
+                'status': row.status,
+                'app': row.app or '',
+                'notes': row.notes or '',
+                'dependencies': list(row.dependencies) if row.dependencies else [],
+            }
+
+            try:
+                # Create item in Monday
+                monday_item_id = create_monday_item(task, group_id)
+
+                if monday_item_id:
+                    # Update BigQuery with the Monday item ID
+                    update_sql = f"""
+                    UPDATE `{TASKS_TABLE}`
+                    SET monday_item_id = '{monday_item_id}',
+                        updated_at = TIMESTAMP('{datetime.utcnow().isoformat()}')
+                    WHERE id = '{task['id']}'
+                    """
+                    client.query(update_sql).result()
+
+                    results['created'].append({
+                        'workflow_id': task['id'],
+                        'monday_item_id': monday_item_id,
+                        'title': task['title']
+                    })
+                    print(f"  Created: {task['id']} -> Monday #{monday_item_id}")
+                else:
+                    results['errors'].append({
+                        'workflow_id': task['id'],
+                        'error': 'Failed to create Monday item'
+                    })
+
+            except Exception as e:
+                results['errors'].append({
+                    'workflow_id': task['id'],
+                    'error': str(e)
+                })
+                print(f"  Error: {task['id']} - {e}")
+
+    except Exception as e:
+        results['errors'].append({'error': str(e), 'type': 'general'})
+
+    return results
+
+
 def sync_monday_to_bigquery(user_email: str = 'monday_sync') -> Dict:
     """
     Sync items from Monday.com to BigQuery.
