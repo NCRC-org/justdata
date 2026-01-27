@@ -1802,18 +1802,6 @@
                             </div>
                         </div>
 
-                        <!-- Workflow Card - visible only to admin -->
-                        <div class="app-card" data-app="workflow" id="workflowCard" onclick="window.location.href='/workflow'">
-                            <h3 class="app-card-title">Workflow</h3>
-                            <p class="app-card-description">
-                                Interactive project task visualization and management.
-                            </p>
-                            <div class="app-card-buttons">
-                                <a href="/workflow" class="app-card-launch-btn" onclick="event.stopPropagation()">
-                                    Launch <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
                     </div>
                 </section>
             </main>
@@ -3610,16 +3598,6 @@
                     administrationCard.style.display = 'flex';
                 } else {
                     administrationCard.style.display = 'none';
-                }
-            }
-
-            // Hide Workflow card for non-admin users (only admin can see it)
-            const workflowCard = document.getElementById('workflowCard');
-            if (workflowCard) {
-                if (userType === 'admin') {
-                    workflowCard.style.display = 'flex';
-                } else {
-                    workflowCard.style.display = 'none';
                 }
             }
 
