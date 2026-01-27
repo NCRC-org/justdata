@@ -419,13 +419,11 @@
         html += '<div style="font-size: 11px; opacity: 0.85; margin-top: 2px;">LMI census tracts + businesses &lt;$1M revenue</div>';
         html += '</div>';
         html += '<div style="padding: 28px 24px; text-align: center;">';
-        html += '<div style="font-size: 11px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Total Increase Over ' + this.agreementLength + ' Years</div>';
-        html += '<div style="font-size: 48px; font-weight: 700; color: #2e7d32; line-height: 1;">' + formatCurrency(sbIncrease) + '</div>';
 
-        // Breakdown section
-        html += '<div style="margin-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; text-align: left; font-size: 12px;">';
-        html += '<div style="background: #e8f5e9; padding: 8px 10px; border-radius: 4px;"><div style="color: #666; font-size: 10px;">LMI Census Tracts</div><div style="color: #2e7d32; font-weight: 600;">+' + formatCurrency(sbLmictIncrease) + '</div></div>';
-        html += '<div style="background: #e8f5e9; padding: 8px 10px; border-radius: 4px;"><div style="color: #666; font-size: 10px;">Businesses &lt;$1M Rev</div><div style="color: #2e7d32; font-weight: 600;">+' + formatCurrency(sbRevIncrease) + '</div></div>';
+        // Category breakdown - primary visual focus
+        html += '<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: center;">';
+        html += '<div style="background: #e8f5e9; padding: 16px 12px; border-radius: 6px;"><div style="color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">LMI Census Tracts</div><div style="color: #2e7d32; font-weight: 700; font-size: 32px;">+' + formatCurrency(sbLmictIncrease) + '</div></div>';
+        html += '<div style="background: #e8f5e9; padding: 16px 12px; border-radius: 6px;"><div style="color: #666; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Businesses &lt;$1M Rev</div><div style="color: #2e7d32; font-weight: 700; font-size: 32px;">+' + formatCurrency(sbRevIncrease) + '</div></div>';
         html += '</div>';
 
         html += '<div style="margin-top: 16px; background: #f5f7fa; border-radius: 4px; padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">';
