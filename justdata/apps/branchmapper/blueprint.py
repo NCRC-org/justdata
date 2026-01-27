@@ -124,7 +124,7 @@ def counties_by_state(state_code):
 def api_census_tracts(county):
     """Return census tract boundaries with income and/or minority data for a county"""
     try:
-        from justdata.apps.branchsight.census_tract_utils import (
+        from justdata.apps.branchmapper.census_tract_utils import (
             extract_fips_from_county_state,
             get_county_median_family_income,
             get_county_minority_percentage,
