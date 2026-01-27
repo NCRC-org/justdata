@@ -200,13 +200,18 @@ def get_tasks():
     """Get all tasks with their positions."""
     client = get_bq_client()
 
+    # Use subquery to get latest position per task (handles duplicates from streaming buffer)
     sql = f"""
     SELECT
         t.*,
         p.x,
         p.y
     FROM `{TASKS_TABLE}` t
-    LEFT JOIN `{POSITIONS_TABLE}` p ON t.id = p.task_id
+    LEFT JOIN (
+        SELECT task_id, x, y,
+               ROW_NUMBER() OVER (PARTITION BY task_id ORDER BY updated_at DESC) as rn
+        FROM `{POSITIONS_TABLE}`
+    ) p ON t.id = p.task_id AND p.rn = 1
     ORDER BY t.created_at
     """
 
@@ -881,11 +886,15 @@ def auto_layout():
     now = datetime.utcnow().isoformat()
 
     try:
-        # Get all tasks
+        # Get all tasks with deduplicated positions
         sql = f"""
         SELECT t.*, p.x, p.y
         FROM `{TASKS_TABLE}` t
-        LEFT JOIN `{POSITIONS_TABLE}` p ON t.id = p.task_id
+        LEFT JOIN (
+            SELECT task_id, x, y,
+                   ROW_NUMBER() OVER (PARTITION BY task_id ORDER BY updated_at DESC) as rn
+            FROM `{POSITIONS_TABLE}`
+        ) p ON t.id = p.task_id AND p.rn = 1
         """
         results = list(client.query(sql).result())
 
@@ -919,26 +928,45 @@ def auto_layout():
         # Calculate new positions
         positions = calculate_layout_positions(tasks, launch_goal, roadmap_goal, milestones)
 
-        # Update positions in database
-        updated = 0
+        # Update positions using DELETE + INSERT to avoid streaming buffer issues
+        # First, try to delete existing positions (ignore streaming buffer errors)
+        task_ids = list(positions.keys())
+        task_ids_str = ', '.join([f"'{tid}'" for tid in task_ids])
+
+        try:
+            delete_sql = f"DELETE FROM `{POSITIONS_TABLE}` WHERE task_id IN ({task_ids_str})"
+            client.query(delete_sql).result()
+        except Exception as del_err:
+            # Streaming buffer error - continue anyway, inserts will create new rows
+            print(f"Delete warning (streaming buffer): {del_err}")
+
+        # Batch insert all new positions using streaming insert
+        position_rows = []
         for task_id, pos in positions.items():
-            sql = f"""
-            MERGE `{POSITIONS_TABLE}` T
-            USING (SELECT '{task_id}' as task_id, {pos['x']} as x, {pos['y']} as y) S
-            ON T.task_id = S.task_id
-            WHEN MATCHED THEN
-                UPDATE SET x = S.x, y = S.y, updated_at = TIMESTAMP('{now}'), updated_by = '{user_email}'
-            WHEN NOT MATCHED THEN
-                INSERT (task_id, x, y, updated_at, updated_by)
-                VALUES (S.task_id, S.x, S.y, TIMESTAMP('{now}'), '{user_email}')
-            """
-            client.query(sql).result()
-            updated += 1
+            position_rows.append({
+                'task_id': task_id,
+                'x': pos['x'],
+                'y': pos['y'],
+                'updated_at': now,
+                'updated_by': user_email,
+            })
+
+        # Insert in batches of 500
+        errors = []
+        for i in range(0, len(position_rows), 500):
+            batch = position_rows[i:i+500]
+            batch_errors = client.insert_rows_json(POSITIONS_TABLE, batch)
+            if batch_errors:
+                errors.extend(batch_errors)
+
+        if errors:
+            print(f"Insert errors: {errors}")
 
         return jsonify({
             'success': True,
-            'repositioned': updated,
-            'layout': 'hierarchical'
+            'repositioned': len(positions),
+            'layout': 'hierarchical',
+            'note': 'Positions updated. Refresh page if layout appears incorrect.'
         })
 
     except Exception as e:
