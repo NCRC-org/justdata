@@ -201,6 +201,18 @@ async function signUpWithEmail(email, password, firstName = null, lastName = nul
     }
 
     try {
+        // Store registration data in session storage BEFORE creating user
+        // (Firebase triggers auth state change immediately on user creation)
+        if (organization) {
+            sessionStorage.setItem('pendingUserOrganization', organization);
+        }
+        if (firstName) {
+            sessionStorage.setItem('pendingUserFirstName', firstName);
+        }
+        if (lastName) {
+            sessionStorage.setItem('pendingUserLastName', lastName);
+        }
+
         const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
         console.log('Email sign-up successful:', result.user.email);
 
@@ -212,17 +224,6 @@ async function signUpWithEmail(email, password, firstName = null, lastName = nul
             await result.user.updateProfile({ displayName: displayName });
         }
 
-        // Store registration data in session storage for backend to pick up during login
-        if (organization) {
-            sessionStorage.setItem('pendingUserOrganization', organization);
-        }
-        if (firstName) {
-            sessionStorage.setItem('pendingUserFirstName', firstName);
-        }
-        if (lastName) {
-            sessionStorage.setItem('pendingUserLastName', lastName);
-        }
-
         // Send verification email
         await sendVerificationEmail(result.user);
         console.log('Verification email sent to:', result.user.email);
@@ -230,6 +231,10 @@ async function signUpWithEmail(email, password, firstName = null, lastName = nul
         return result.user;
     } catch (error) {
         console.error('Email sign-up error:', error);
+        // Clear session storage on error
+        sessionStorage.removeItem('pendingUserOrganization');
+        sessionStorage.removeItem('pendingUserFirstName');
+        sessionStorage.removeItem('pendingUserLastName');
         throw error;
     }
 }
