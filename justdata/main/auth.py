@@ -507,7 +507,8 @@ def get_user_doc(uid: str) -> Optional[dict]:
 
 def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
                                photo_url: str = None, email_verified: bool = False,
-                               auth_provider: str = None) -> dict:
+                               auth_provider: str = None, organization: str = None,
+                               first_name: str = None, last_name: str = None) -> dict:
     """
     Create or update user document in Firestore.
 
@@ -559,6 +560,14 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
             if photo_url:
                 update_data['photoURL'] = photo_url
 
+            # Update organization and name fields if provided (from registration)
+            if organization:
+                update_data['organization'] = organization
+            if first_name:
+                update_data['firstName'] = first_name
+            if last_name:
+                update_data['lastName'] = last_name
+
             # Check if user type should be upgraded (e.g., @ncrc.org verified)
             current_type = user_data.get('userType', 'public_registered')
             # Use stored auth provider if not provided in this call
@@ -579,9 +588,11 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
                 'uid': uid,
                 'email': email,
                 'displayName': display_name or email.split('@')[0],
+                'firstName': first_name,
+                'lastName': last_name,
                 'photoURL': photo_url,
                 'userType': user_type,
-                'organization': None,
+                'organization': organization,
                 'jobTitle': None,
                 'county': None,
                 'emailVerified': email_verified,
@@ -1113,6 +1124,9 @@ def auth_login():
     photo_url = user_data.get('photoURL', decoded.get('picture'))
     email_verified = decoded.get('email_verified', False)
     auth_provider = decoded.get('firebase', {}).get('sign_in_provider', 'unknown')
+    organization = user_data.get('organization')
+    first_name = user_data.get('firstName')
+    last_name = user_data.get('lastName')
 
     firestore_user = create_or_update_user_doc(
         uid=uid,
@@ -1120,7 +1134,10 @@ def auth_login():
         display_name=display_name,
         photo_url=photo_url,
         email_verified=email_verified,
-        auth_provider=auth_provider
+        auth_provider=auth_provider,
+        organization=organization,
+        first_name=first_name,
+        last_name=last_name
     )
 
     # Store user in session

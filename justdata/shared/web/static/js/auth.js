@@ -194,7 +194,7 @@ async function signInWithEmail(email, password) {
  * Sign up with email and password
  * Automatically sends verification email after signup
  */
-async function signUpWithEmail(email, password, displayName = null) {
+async function signUpWithEmail(email, password, firstName = null, lastName = null, organization = null) {
     if (!firebaseAuth) {
         console.error('Firebase not initialized');
         return;
@@ -204,9 +204,23 @@ async function signUpWithEmail(email, password, displayName = null) {
         const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
         console.log('Email sign-up successful:', result.user.email);
 
+        // Combine first and last name for display
+        const displayName = [firstName, lastName].filter(Boolean).join(' ') || null;
+
         // Update display name if provided
         if (displayName) {
             await result.user.updateProfile({ displayName: displayName });
+        }
+
+        // Store registration data in session storage for backend to pick up during login
+        if (organization) {
+            sessionStorage.setItem('pendingUserOrganization', organization);
+        }
+        if (firstName) {
+            sessionStorage.setItem('pendingUserFirstName', firstName);
+        }
+        if (lastName) {
+            sessionStorage.setItem('pendingUserLastName', lastName);
         }
 
         // Send verification email
@@ -371,6 +385,16 @@ function isAuthenticated() {
  */
 async function notifyBackendLogin(idToken, user) {
     try {
+        // Check for pending registration data from session storage
+        const pendingOrganization = sessionStorage.getItem('pendingUserOrganization');
+        const pendingFirstName = sessionStorage.getItem('pendingUserFirstName');
+        const pendingLastName = sessionStorage.getItem('pendingUserLastName');
+
+        // Clear session storage after retrieving
+        sessionStorage.removeItem('pendingUserOrganization');
+        sessionStorage.removeItem('pendingUserFirstName');
+        sessionStorage.removeItem('pendingUserLastName');
+
         const response = await fetch('/api/auth/login', {
             method: 'POST',
             headers: {
@@ -382,7 +406,10 @@ async function notifyBackendLogin(idToken, user) {
                     uid: user.uid,
                     email: user.email,
                     displayName: user.displayName,
-                    photoURL: user.photoURL
+                    photoURL: user.photoURL,
+                    organization: pendingOrganization || null,
+                    firstName: pendingFirstName || null,
+                    lastName: pendingLastName || null
                 }
             })
         });
