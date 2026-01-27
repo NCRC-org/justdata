@@ -2075,6 +2075,8 @@ async function selectLender(lender) {
         
         // Store selected lender with all identifiers
         // LEI is for HMDA data, RSSD is for branch/CBSA data, SB_RESID is for small business loan data
+        console.log('[selectLender] Raw lender object from search:', JSON.stringify(lender, null, 2));
+        console.log('[selectLender] type_name from search:', lender.type_name, '| type:', lender.type);
         const rawRSSD = lender.rssd || lender.rssd_id || lender.respondent_rssd;
         wizardState.data.lender = {
             name: lenderName,
@@ -2112,10 +2114,14 @@ async function selectLender(lender) {
                         console.warn('SB_RESID not found in details. Available keys:', Object.keys(details));
                         console.warn('Details object:', details);
                     }
-                    // Update lender type from API if available
+                    // Update lender type from API if available (overwrite search value which may be empty)
                     if (details.type_name || details.type) {
-                        wizardState.data.lender.type = details.type_name || details.type;
-                        console.log('Set lender type to:', wizardState.data.lender.type);
+                        const apiType = details.type_name || details.type;
+                        wizardState.data.lender.type = apiType;
+                        wizardState.data.lender.type_name = apiType;
+                        console.log('[selectLender] Set lender type from API to:', apiType);
+                    } else {
+                        console.log('[selectLender] API did not return type_name, current type:', wizardState.data.lender.type);
                     }
                 } else {
                     console.warn('No details returned from API');

@@ -881,14 +881,18 @@ def get_lender_details_by_lei(lei: str) -> Optional[Dict[str, Any]]:
         LIMIT 1
         """
         rssd_results = execute_query(client, query_rssd)
-        
-        if not rssd_results or not rssd_results[0].get('rssd'):
-            logger.warning(f"No RSSD found for LEI: {lei}")
+
+        if not rssd_results or len(rssd_results) == 0:
+            logger.warning(f"No lender found for LEI: {lei}")
             return None
-        
+
         result_row = rssd_results[0]
         rssd = result_row.get('rssd')
         type_name = result_row.get('type_name')
+
+        # Log if no RSSD but continue - non-banks won't have RSSD but still need type_name
+        if not rssd:
+            logger.info(f"No RSSD for LEI {lei}, type_name: {type_name} (expected for non-banks)")
         respondent_name = result_row.get('respondent_name')
         respondent_city = result_row.get('respondent_city')
         respondent_state = result_row.get('respondent_state')
