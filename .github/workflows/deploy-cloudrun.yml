@@ -3,6 +3,7 @@ name: Deploy to Cloud Run
 on:
   push:
     branches:
+      - main
       - Jason_TestApps
   workflow_dispatch:  # Allow manual trigger
 
