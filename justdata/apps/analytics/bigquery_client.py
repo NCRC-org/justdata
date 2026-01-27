@@ -1764,3 +1764,163 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
     except Exception as e:
         print(f"BigQuery error in get_user_activity_timeline: {e}")
         return []
+
+
+# =============================================================================
+# COST MONITORING
+# =============================================================================
+
+def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
+    """
+    Get BigQuery cost summary from INFORMATION_SCHEMA.
+    
+    Queries job history to calculate estimated costs by app.
+    Cost calculation: $6.25 per TB processed (BigQuery on-demand pricing).
+    
+    Args:
+        days: Number of days to look back (default 30)
+        project_id: GCP project to query (default from config)
+    
+    Returns:
+        Dictionary with:
+        - total_bytes_processed: Total bytes across all queries
+        - total_tb_processed: Total terabytes processed
+        - estimated_cost_usd: Estimated cost in USD
+        - query_count: Number of queries
+        - cost_by_app: Dict mapping app names to their costs
+        - daily_costs: List of daily cost records
+    """
+    # Check cache first
+    cache_key = _cache_key('get_cost_summary', days=days, project_id=project_id)
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        return cached
+    
+    client = get_bigquery_client()
+    if project_id is None:
+        project_id = config.BIGQUERY_PROJECT
+    
+    # Cost per TB in USD (BigQuery on-demand pricing)
+    COST_PER_TB = 6.25
+    
+    # Query to get cost summary by app
+    cost_by_app_query = f"""
+    SELECT
+        CASE
+            WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' THEN 'LendSight'
+            WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' THEN 'BizSight'
+            WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' THEN 'BranchSight'
+            WHEN LOWER(query) LIKE '%mergermeter%' THEN 'MergerMeter'
+            WHEN LOWER(query) LIKE '%dataexplorer%' THEN 'DataExplorer'
+            WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%events%' OR LOWER(query) LIKE '%backfilled%' THEN 'Analytics'
+            WHEN LOWER(query) LIKE '%lenderprofile%' THEN 'LenderProfile'
+            WHEN LOWER(query) LIKE '%electwatch%' THEN 'ElectWatch'
+            ELSE 'Other'
+        END as app_name,
+        COUNT(*) as query_count,
+        SUM(total_bytes_processed) as total_bytes,
+        SUM(total_bytes_billed) as total_bytes_billed
+    FROM `{project_id}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+    WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        AND job_type = 'QUERY'
+        AND state = 'DONE'
+        AND error_result IS NULL
+    GROUP BY app_name
+    ORDER BY total_bytes DESC
+    """
+    
+    # Query for daily costs
+    daily_costs_query = f"""
+    SELECT
+        DATE(creation_time) as date,
+        COUNT(*) as query_count,
+        SUM(total_bytes_processed) as total_bytes,
+        SUM(total_bytes_billed) as total_bytes_billed
+    FROM `{project_id}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+    WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        AND job_type = 'QUERY'
+        AND state = 'DONE'
+        AND error_result IS NULL
+    GROUP BY date
+    ORDER BY date DESC
+    """
+    
+    try:
+        # Get cost by app
+        app_results = list(client.query(cost_by_app_query).result())
+        cost_by_app = {}
+        total_bytes = 0
+        total_queries = 0
+        
+        for row in app_results:
+            app_name = row.app_name
+            bytes_processed = row.total_bytes or 0
+            bytes_billed = row.total_bytes_billed or 0
+            query_count = row.query_count or 0
+            
+            tb_processed = bytes_processed / (1024 ** 4)
+            tb_billed = bytes_billed / (1024 ** 4)
+            cost_usd = tb_billed * COST_PER_TB
+            
+            cost_by_app[app_name] = {
+                'query_count': query_count,
+                'bytes_processed': bytes_processed,
+                'tb_processed': round(tb_processed, 4),
+                'bytes_billed': bytes_billed,
+                'tb_billed': round(tb_billed, 4),
+                'estimated_cost_usd': round(cost_usd, 2)
+            }
+            
+            total_bytes += bytes_billed
+            total_queries += query_count
+        
+        # Get daily costs
+        daily_results = list(client.query(daily_costs_query).result())
+        daily_costs = []
+        
+        for row in daily_results:
+            bytes_billed = row.total_bytes_billed or 0
+            tb_billed = bytes_billed / (1024 ** 4)
+            cost_usd = tb_billed * COST_PER_TB
+            
+            daily_costs.append({
+                'date': row.date.isoformat() if row.date else None,
+                'query_count': row.query_count or 0,
+                'bytes_processed': row.total_bytes or 0,
+                'bytes_billed': bytes_billed,
+                'tb_billed': round(tb_billed, 4),
+                'estimated_cost_usd': round(cost_usd, 2)
+            })
+        
+        # Calculate totals
+        total_tb = total_bytes / (1024 ** 4)
+        total_cost = total_tb * COST_PER_TB
+        
+        result = {
+            'period_days': days,
+            'total_bytes_processed': total_bytes,
+            'total_tb_processed': round(total_tb, 4),
+            'estimated_cost_usd': round(total_cost, 2),
+            'query_count': total_queries,
+            'cost_per_tb_usd': COST_PER_TB,
+            'cost_by_app': cost_by_app,
+            'daily_costs': daily_costs
+        }
+        
+        _set_cached(cache_key, result)
+        return result
+        
+    except Exception as e:
+        print(f"BigQuery error in get_cost_summary: {e}")
+        import traceback
+        traceback.print_exc()
+        return {
+            'error': str(e),
+            'period_days': days,
+            'total_bytes_processed': 0,
+            'total_tb_processed': 0,
+            'estimated_cost_usd': 0,
+            'query_count': 0,
+            'cost_by_app': {},
+            'daily_costs': []
+        }

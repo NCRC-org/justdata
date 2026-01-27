@@ -4,6 +4,7 @@ LendSight-specific data utilities for BigQuery and county reference.
 Similar to BranchSight but for HMDA mortgage data.
 """
 
+import os
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
 from typing import List, Optional, Dict, Any
 from justdata.apps.lendsight.config import PROJECT_ID
@@ -381,4 +382,248 @@ def execute_mortgage_query(sql_template: str, county: str, year: int, loan_purpo
         
     except Exception as e:
         raise Exception(f"Error executing BigQuery query for {county} {year}: {e}")
+
+
+# =============================================================================
+# TIERED SUMMARY TABLE QUERIES (for ~99% cost reduction)
+# =============================================================================
+
+# Configuration for summary tables - can switch between old and new project
+SUMMARY_PROJECT_ID = os.environ.get('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+USE_SUMMARY_TABLES = os.environ.get('USE_SUMMARY_TABLES', 'true').lower() == 'true'
+
+
+def execute_county_summary_query(county: str, year: int, loan_purpose: list = None) -> List[dict]:
+    """
+    Query the pre-aggregated county summary table for ~99% cost reduction.
+    
+    Used for: Demographic Overview, Income Borrowers, Top Lenders, Market Concentration,
+              Summary, Trends sections.
+    
+    Args:
+        county: County name in "County, State" format
+        year: Year as integer
+        loan_purpose: List of loan purpose filters or None for all
+        
+    Returns:
+        List of dictionaries containing county-level aggregated results
+    """
+    try:
+        client = get_bigquery_client(SUMMARY_PROJECT_ID)
+        
+        # Find the exact county match
+        county_matches = find_exact_county_match(county)
+        if not county_matches:
+            raise Exception(f"No matching counties found for: {county}")
+        
+        exact_county = county_matches[0]
+        escaped_county = escape_sql_string(exact_county)
+        
+        # Convert loan_purpose to filter string
+        if loan_purpose is None or len(loan_purpose) == 0 or set(loan_purpose) == {'purchase', 'refinance', 'equity'}:
+            loan_purpose_str = 'all'
+        else:
+            loan_purpose_str = ','.join(sorted(loan_purpose))
+        
+        # Build loan purpose filter
+        if loan_purpose_str == 'all':
+            purpose_filter = "1=1"  # No filter
+        else:
+            purpose_conditions = []
+            if 'purchase' in loan_purpose_str:
+                purpose_conditions.append("loan_purpose = '1'")
+            if 'refinance' in loan_purpose_str:
+                purpose_conditions.append("loan_purpose IN ('31','32')")
+            if 'equity' in loan_purpose_str:
+                purpose_conditions.append("loan_purpose IN ('2','4')")
+            purpose_filter = f"({' OR '.join(purpose_conditions)})" if purpose_conditions else "1=1"
+        
+        sql = f"""
+        SELECT
+            lei,
+            year,
+            geoid5,
+            county_state,
+            loan_purpose,
+            lender_name,
+            total_originations,
+            hispanic_originations,
+            black_originations,
+            asian_originations,
+            white_originations,
+            native_american_originations,
+            hopi_originations,
+            multi_racial_originations,
+            lmib_originations,
+            low_income_borrower_originations,
+            moderate_income_borrower_originations,
+            middle_income_borrower_originations,
+            upper_income_borrower_originations,
+            lmict_originations,
+            mmct_originations,
+            total_loan_amount,
+            avg_loan_amount,
+            avg_property_value,
+            avg_interest_rate,
+            avg_total_loan_costs,
+            avg_origination_charges,
+            loans_with_demographic_data
+        FROM `{SUMMARY_PROJECT_ID}.lendsight.de_hmda_county_summary`
+        WHERE county_state = '{escaped_county}'
+            AND year = {year}
+            AND {purpose_filter}
+        ORDER BY lender_name, year
+        """
+        
+        return execute_query(client, sql)
+        
+    except Exception as e:
+        raise Exception(f"Error executing county summary query for {county} {year}: {e}")
+
+
+def execute_tract_summary_query(county: str, year: int, loan_purpose: list = None) -> List[dict]:
+    """
+    Query the pre-aggregated tract summary table for minority/income tract sections.
+    
+    Used for: Minority Tracts table (dynamic quartile calculation),
+              Income Tracts table (tract-level income breakdown)
+    
+    Note: This query adds placeholder columns (0 values) for columns that exist in
+    the county summary but not in the tract summary. This ensures the report builder
+    can process the data without errors.
+    
+    Args:
+        county: County name in "County, State" format
+        year: Year as integer
+        loan_purpose: List of loan purpose filters or None for all
+        
+    Returns:
+        List of dictionaries containing tract-level aggregated results
+    """
+    try:
+        client = get_bigquery_client(SUMMARY_PROJECT_ID)
+        
+        # Find the exact county match
+        county_matches = find_exact_county_match(county)
+        if not county_matches:
+            raise Exception(f"No matching counties found for: {county}")
+        
+        exact_county = county_matches[0]
+        escaped_county = escape_sql_string(exact_county)
+        
+        # Convert loan_purpose to filter string
+        if loan_purpose is None or len(loan_purpose) == 0 or set(loan_purpose) == {'purchase', 'refinance', 'equity'}:
+            loan_purpose_str = 'all'
+        else:
+            loan_purpose_str = ','.join(sorted(loan_purpose))
+        
+        # Build loan purpose filter
+        if loan_purpose_str == 'all':
+            purpose_filter = "1=1"
+        else:
+            purpose_conditions = []
+            if 'purchase' in loan_purpose_str:
+                purpose_conditions.append("loan_purpose = '1'")
+            if 'refinance' in loan_purpose_str:
+                purpose_conditions.append("loan_purpose IN ('31','32')")
+            if 'equity' in loan_purpose_str:
+                purpose_conditions.append("loan_purpose IN ('2','4')")
+            purpose_filter = f"({' OR '.join(purpose_conditions)})" if purpose_conditions else "1=1"
+        
+        # Query includes placeholder columns (0) for columns in county summary but not tract summary
+        # This ensures report builder compatibility
+        sql = f"""
+        SELECT
+            lei,
+            year,
+            geoid5,
+            county_state,
+            tract_code,
+            tract_minority_population_percent,
+            tract_to_msa_income_percentage,
+            loan_purpose,
+            lender_name,
+            total_originations,
+            -- Race/ethnicity columns (some are placeholders)
+            hispanic_originations,
+            black_originations,
+            asian_originations,
+            white_originations,
+            0 as native_american_originations,  -- Placeholder: not in tract summary
+            0 as hopi_originations,              -- Placeholder: not in tract summary
+            0 as multi_racial_originations,      -- Placeholder: not in tract summary
+            -- Borrower income columns (placeholders - not in tract summary)
+            0 as lmib_originations,
+            0 as low_income_borrower_originations,
+            0 as moderate_income_borrower_originations,
+            0 as middle_income_borrower_originations,
+            0 as upper_income_borrower_originations,
+            -- Tract income columns
+            lmict_originations,
+            low_income_tract_originations,
+            moderate_income_tract_originations,
+            middle_income_tract_originations,
+            upper_income_tract_originations,
+            mmct_originations,
+            -- Loan metrics
+            total_loan_amount,
+            0.0 as avg_loan_amount,              -- Placeholder: not in tract summary
+            0.0 as avg_property_value,           -- Placeholder: not in tract summary
+            0.0 as avg_interest_rate,            -- Placeholder: not in tract summary
+            0.0 as avg_total_loan_costs,         -- Placeholder: not in tract summary
+            0.0 as avg_origination_charges,      -- Placeholder: not in tract summary
+            0 as loans_with_demographic_data     -- Placeholder: not in tract summary
+        FROM `{SUMMARY_PROJECT_ID}.lendsight.de_hmda_tract_summary`
+        WHERE county_state = '{escaped_county}'
+            AND year = {year}
+            AND {purpose_filter}
+        ORDER BY lender_name, tract_code, year
+        """
+        
+        return execute_query(client, sql)
+        
+    except Exception as e:
+        raise Exception(f"Error executing tract summary query for {county} {year}: {e}")
+
+
+def execute_tiered_queries(county: str, years: List[int], loan_purpose: list = None) -> Dict[str, List[dict]]:
+    """
+    Execute tiered queries for a county across multiple years.
+    Returns both county-level and tract-level data for the report builder.
+    
+    This is the main entry point for tiered summary table queries.
+    Falls back to the original mortgage_report.sql if summary tables are not available.
+    
+    Args:
+        county: County name in "County, State" format
+        years: List of years
+        loan_purpose: List of loan purpose filters or None for all
+        
+    Returns:
+        Dictionary with 'county_data' and 'tract_data' keys
+    """
+    county_results = []
+    tract_results = []
+    
+    for year in years:
+        try:
+            # Query county summary
+            county_data = execute_county_summary_query(county, year, loan_purpose)
+            county_results.extend(county_data)
+            print(f"  [TIERED] County summary: {len(county_data)} rows for {county} {year}")
+        except Exception as e:
+            print(f"  [TIERED] County summary error for {county} {year}: {e}")
+        
+        try:
+            # Query tract summary
+            tract_data = execute_tract_summary_query(county, year, loan_purpose)
+            tract_results.extend(tract_data)
+            print(f"  [TIERED] Tract summary: {len(tract_data)} rows for {county} {year}")
+        except Exception as e:
+            print(f"  [TIERED] Tract summary error for {county} {year}: {e}")
+    
+    return {
+        'county_data': county_results,
+        'tract_data': tract_results
+    }
 

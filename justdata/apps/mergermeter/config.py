@@ -53,4 +53,8 @@ OUTPUT_DIR.mkdir(exist_ok=True)
 
 # BigQuery Project ID
 PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+# New optimized project with summary tables
+SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+# Enable summary tables for default filters (hybrid routing)
+USE_SUMMARY_TABLES = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
 

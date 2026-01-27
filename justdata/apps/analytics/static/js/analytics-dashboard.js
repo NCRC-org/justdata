@@ -289,6 +289,8 @@ function loadSummary() {
     $('#total-users, #total-events, #lenders-count').html('<span class="loading-placeholder">...</span>');
     $('#top-counties, #top-lenders').html('<li class="loading-item">Loading...</li>');
     $('#app-usage').html('<div class="loading-item">Loading...</div>');
+    $('#bq-cost').html('<span class="loading-placeholder">...</span>');
+    $('#bq-queries').html('<span class="loading-placeholder">-- queries</span>');
 
     // Use demo data if in demo mode
     if (demoMode && syntheticData) {
@@ -296,6 +298,9 @@ function loadSummary() {
         if (demoSummary) {
             renderSummary(demoSummary);
             fetchCountyCounts(days);
+            // Show demo cost data
+            $('#bq-cost').text('$12.34');
+            $('#bq-queries').text('1,234 queries');
             return;
         }
     }
@@ -318,6 +323,35 @@ function loadSummary() {
 
     // Also fetch county and coalition counts
     fetchCountyCounts(days);
+    
+    // Fetch BigQuery costs (always 30 days for cost card)
+    fetchCostSummary();
+}
+
+/**
+ * Fetch BigQuery cost summary
+ */
+function fetchCostSummary() {
+    $.ajax({
+        url: '/analytics/api/costs',
+        data: { days: 30 },
+        success: function(response) {
+            if (response.success && response.data) {
+                const cost = response.data.estimated_cost_usd || 0;
+                const queries = response.data.query_count || 0;
+                $('#bq-cost').text('$' + cost.toFixed(2));
+                $('#bq-queries').text(formatNumber(queries) + ' queries');
+            } else {
+                $('#bq-cost').text('N/A');
+                $('#bq-queries').text('Error loading costs');
+            }
+        },
+        error: function(xhr) {
+            console.error('Cost API error:', xhr.responseText);
+            $('#bq-cost').text('N/A');
+            $('#bq-queries').text('Error loading costs');
+        }
+    });
 }
 
 /**

@@ -138,6 +138,9 @@ class BigQueryClient:
         """Initialize BigQuery client."""
         self.client = get_bigquery_client(project_id, credentials_path)
         self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        # New optimized project with summary tables
+        self.summary_project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+        self.use_summary_tables = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
         
         if self.client is None:
             raise RuntimeError("BigQuery client could not be initialized. Check credentials.")
@@ -145,6 +148,59 @@ class BigQueryClient:
     def query(self, sql: str, **kwargs):
         """Execute a BigQuery SQL query and return QueryJob."""
         return self.client.query(sql, **kwargs)
+    
+    def get_sb_county_summary(self, geoid5: str, years: list = None):
+        """
+        Get pre-aggregated SB county summary for ~99% cost reduction.
+        Falls back to regular disclosure query if summary tables are not available.
+        
+        Args:
+            geoid5: Single GEOID5 code (5-digit FIPS) for one county
+            years: Optional list of years to filter
+            
+        Returns:
+            Query job result with county-level aggregated data
+        """
+        if not self.use_summary_tables:
+            logger.info("Summary tables disabled, using original disclosure query")
+            return self.get_disclosure_data(geoid5, years)
+        
+        try:
+            geoid5_padded = str(geoid5).zfill(5)
+            
+            year_filter = ""
+            if years:
+                year_list = ", ".join(str(y) for y in years)
+                year_filter = f"AND year IN ({year_list})"
+            
+            sql = f"""
+            SELECT
+                geoid5,
+                year,
+                lender_name,
+                num_under_100k,
+                num_100k_250k,
+                num_250k_1m,
+                total_loans,
+                amt_under_100k,
+                amt_100k_250k,
+                amt_250k_1m,
+                lmi_tract_loans,
+                low_income_loans,
+                moderate_income_loans,
+                midu_income_loans
+            FROM `{self.summary_project_id}.bizsight.sb_county_summary`
+            WHERE geoid5 = '{geoid5_padded}'
+                {year_filter}
+            ORDER BY year, lender_name
+            """
+            
+            logger.info(f"Using SB county summary table for geoid5={geoid5_padded}")
+            return self.query(sql)
+            
+        except Exception as e:
+            logger.warning(f"SB county summary query failed, falling back to disclosure: {e}")
+            return self.get_disclosure_data(geoid5, years)
     
     def get_aggregate_data_with_census(self, geoid5: str, years: list = None):
         """

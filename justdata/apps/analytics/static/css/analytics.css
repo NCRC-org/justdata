@@ -2405,3 +2405,46 @@ h1, h2, h3, h4 {
 .error-item {
     color: #dc3545;
 }
+
+/* ============================================
+   Cost Monitoring Card
+   ============================================ */
+.summary-card.cost-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-color: #6c757d;
+}
+
+.summary-card.cost-card h3 {
+    color: #495057;
+}
+
+.summary-card.cost-card .summary-value {
+    color: #28a745;
+    font-size: 2.5rem;
+}
+
+.summary-card.cost-card .cost-detail {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 4px;
+}
+
+/* Dark mode support for cost card */
+@media (prefers-color-scheme: dark) {
+    .summary-card.cost-card {
+        background: linear-gradient(135deg, #2d3436 0%, #1e272e 100%);
+        border-color: #4a5568;
+    }
+
+    .summary-card.cost-card h3 {
+        color: #a0aec0;
+    }
+
+    .summary-card.cost-card .summary-value {
+        color: #68d391;
+    }
+
+    .summary-card.cost-card .cost-detail {
+        color: #718096;
+    }
+}

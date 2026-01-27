@@ -37,7 +37,9 @@ CLAUDE_MODEL = "claude-sonnet-4-20250514"
 GPT_MODEL = "gpt-4"
 
 # BigQuery Configuration
-PROJECT_ID = "hdma1-242116"
+# Use environment variable for flexible project switching during migration
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')  # New optimized project
 DATASET_ID = "branches"
 TABLE_ID = "sod"
 

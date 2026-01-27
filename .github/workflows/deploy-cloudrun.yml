@@ -63,6 +63,8 @@ jobs:
             --max-instances 10 \
             --min-instances 0 \
             --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
+            --set-env-vars "JUSTDATA_PROJECT_ID=justdata-ncrc" \
+            --set-env-vars "USE_SUMMARY_TABLES=false" \
             --set-env-vars "PYTHONPATH=/app" \
             --update-secrets "CLAUDE_API_KEY=claude-api-key:latest" \
             --update-secrets "ANTHROPIC_API_KEY=claude-api-key:latest" \

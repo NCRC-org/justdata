@@ -3,15 +3,15 @@
  * Handles Google sign-in, sign-out, and token management
  */
 
-// Firebase configuration
+// Firebase configuration - justdata-ncrc project
 const firebaseConfig = {
-    apiKey: "AIzaSyChXMJz1n9LTdKDxivPbVQpMqA7_3Xtfc0",
-    authDomain: "justdata-f7da7.firebaseapp.com",
-    projectId: "justdata-f7da7",
-    storageBucket: "justdata-f7da7.firebasestorage.app",
-    messagingSenderId: "32461486158",
-    appId: "1:32461486158:web:03fdf89e78dbd69e3e6b1f",
-    measurementId: "G-ZEJ2B1BG7B"
+    apiKey: "AIzaSyAZxZ4t4kBj9aZre9HfTwrtzriZvh0ab9U",
+    authDomain: "justdata-ncrc.firebaseapp.com",
+    projectId: "justdata-ncrc",
+    storageBucket: "justdata-ncrc.firebasestorage.app",
+    messagingSenderId: "854699313651",
+    appId: "1:854699313651:web:a40d91691b353b37476a86",
+    measurementId: "G-DWS9XPNT7J"
 };
 
 // Initialize Firebase

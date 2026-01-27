@@ -127,6 +127,18 @@ def users():
     return render_template('analytics/users.html', **get_context(breadcrumbs))
 
 
+@analytics_bp.route('/costs')
+@login_required
+@staff_required
+def costs():
+    """BigQuery costs monitoring view."""
+    breadcrumbs = [
+        {'name': 'Analytics', 'url': '/analytics'},
+        {'name': 'Costs', 'url': '/analytics/costs'}
+    ]
+    return render_template('analytics/costs.html', **get_context(breadcrumbs))
+
+
 # ============================================
 # API Routes
 # ============================================
@@ -351,6 +363,30 @@ def api_user_types():
 def health():
     """Health check endpoint."""
     return jsonify({'status': 'healthy', 'app': 'analytics'})
+
+
+@analytics_bp.route('/api/costs')
+@login_required
+@staff_required
+def api_costs():
+    """
+    Get BigQuery cost summary for the cost monitoring dashboard.
+    
+    Query params:
+        days: Number of days to look back (default 30)
+    
+    Returns:
+        JSON with cost breakdown by app, daily costs, and totals.
+    """
+    try:
+        from .bigquery_client import get_cost_summary
+        days = request.args.get('days', 30, type=int)
+        data = get_cost_summary(days=days)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @analytics_bp.route('/api/export')

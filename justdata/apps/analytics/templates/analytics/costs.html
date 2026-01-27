@@ -1,0 +1,587 @@
+{% extends "base_app.html" %}
+
+{% block title %}BigQuery Costs | JustData Analytics{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+<style>
+    .costs-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .costs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+    
+    .costs-header h1 {
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    
+    .costs-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+    
+    .cost-stat-card {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border-color, #e5e7eb);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .cost-stat-card.highlight {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border-color: #86efac;
+    }
+    
+    .cost-stat-card h3 {
+        font-size: 0.85rem;
+        color: var(--text-secondary, #666);
+        margin: 0 0 8px 0;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    .cost-stat-card .value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--text-primary, #111);
+    }
+    
+    .cost-stat-card .subtext {
+        font-size: 0.8rem;
+        color: var(--text-secondary, #666);
+        margin-top: 4px;
+    }
+    
+    .costs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+    }
+    
+    @media (max-width: 1024px) {
+        .costs-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    .costs-card {
+        background: var(--card-bg, #fff);
+        border: 1px solid var(--border-color, #e5e7eb);
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .costs-card-header {
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color, #e5e7eb);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .costs-card-header h3 {
+        margin: 0;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .costs-card-content {
+        padding: 20px;
+    }
+    
+    .app-breakdown-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .app-breakdown-table th,
+    .app-breakdown-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color, #e5e7eb);
+    }
+    
+    .app-breakdown-table th {
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--text-secondary, #666);
+    }
+    
+    .app-breakdown-table td.cost {
+        font-family: 'SF Mono', Monaco, monospace;
+        font-weight: 600;
+    }
+    
+    .app-breakdown-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    .app-breakdown-table .app-name {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .app-icon {
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: #fff;
+    }
+    
+    .app-icon.lendsight { background: #3b82f6; }
+    .app-icon.bizsight { background: #10b981; }
+    .app-icon.branchsight { background: #f59e0b; }
+    .app-icon.dataexplorer { background: #8b5cf6; }
+    .app-icon.mergermeter { background: #ef4444; }
+    .app-icon.analytics { background: #06b6d4; }
+    .app-icon.other { background: #6b7280; }
+    
+    .daily-chart {
+        height: 300px;
+        display: flex;
+        align-items: flex-end;
+        gap: 4px;
+        padding-top: 20px;
+    }
+    
+    .chart-bar {
+        flex: 1;
+        background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
+        border-radius: 4px 4px 0 0;
+        min-height: 4px;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s, opacity 0.2s;
+    }
+    
+    .chart-bar:hover {
+        transform: scaleY(1.02);
+        opacity: 0.9;
+    }
+    
+    .chart-bar .tooltip {
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #1f2937;
+        color: #fff;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        z-index: 10;
+    }
+    
+    .chart-bar:hover .tooltip {
+        opacity: 1;
+    }
+    
+    .chart-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: var(--text-secondary, #666);
+    }
+    
+    .time-selector-costs {
+        display: flex;
+        gap: 8px;
+    }
+    
+    .time-selector-costs select {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color, #e5e7eb);
+        border-radius: 8px;
+        background: var(--card-bg, #fff);
+        color: var(--text-primary, #111);
+        font-size: 0.9rem;
+    }
+    
+    .refresh-btn-costs {
+        padding: 8px 16px;
+        background: #3b82f6;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.9rem;
+    }
+    
+    .refresh-btn-costs:hover {
+        background: #2563eb;
+    }
+    
+    .loading-spinner {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border: 2px solid #e5e7eb;
+        border-top-color: #3b82f6;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+    
+    .no-data {
+        text-align: center;
+        padding: 40px;
+        color: var(--text-secondary, #666);
+    }
+    
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+        .cost-stat-card.highlight {
+            background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
+            border-color: #059669;
+        }
+        
+        .chart-bar .tooltip {
+            background: #374151;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="costs-container">
+    <!-- Header -->
+    <div class="costs-header">
+        <h1><i class="fas fa-dollar-sign"></i> BigQuery Cost Monitor</h1>
+        <div class="time-selector-costs">
+            <select id="cost-days" onchange="loadCostData()">
+                <option value="7">Last 7 days</option>
+                <option value="30" selected>Last 30 days</option>
+                <option value="90">Last 90 days</option>
+            </select>
+            <button class="refresh-btn-costs" onclick="loadCostData()">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+    
+    <!-- Navigation Tabs -->
+    <div class="analytics-tabs">
+        <a href="{{ url_for('analytics.dashboard') }}" class="tab">
+            <i class="fas fa-tachometer-alt"></i> Overview
+        </a>
+        <a href="{{ url_for('analytics.user_map') }}" class="tab">
+            <i class="fas fa-map-marked-alt"></i> Report Locations
+        </a>
+        <a href="{{ url_for('analytics.lender_map') }}" class="tab">
+            <i class="fas fa-university"></i> Lender Interest
+        </a>
+        <a href="{{ url_for('analytics.coalitions') }}" class="tab">
+            <i class="fas fa-users-cog"></i> Coalitions
+        </a>
+        <a href="{{ url_for('analytics.users') }}" class="tab">
+            <i class="fas fa-users"></i> Users
+        </a>
+        <a href="{{ url_for('analytics.costs') }}" class="tab active">
+            <i class="fas fa-dollar-sign"></i> Costs
+        </a>
+    </div>
+    
+    <!-- Summary Stats -->
+    <div class="costs-summary" id="costs-summary">
+        <div class="cost-stat-card highlight">
+            <h3>Total Cost</h3>
+            <div class="value" id="total-cost">$--</div>
+            <div class="subtext" id="cost-period">Last 30 days</div>
+        </div>
+        <div class="cost-stat-card">
+            <h3>Total Queries</h3>
+            <div class="value" id="total-queries">--</div>
+            <div class="subtext">BigQuery jobs</div>
+        </div>
+        <div class="cost-stat-card">
+            <h3>Data Processed</h3>
+            <div class="value" id="total-bytes">-- GB</div>
+            <div class="subtext">Billable bytes</div>
+        </div>
+        <div class="cost-stat-card">
+            <h3>Avg Cost/Query</h3>
+            <div class="value" id="avg-cost">$--</div>
+            <div class="subtext">Per query average</div>
+        </div>
+    </div>
+    
+    <!-- Main Grid -->
+    <div class="costs-grid">
+        <!-- Per-App Breakdown -->
+        <div class="costs-card">
+            <div class="costs-card-header">
+                <h3><i class="fas fa-layer-group"></i> Cost by Application</h3>
+            </div>
+            <div class="costs-card-content">
+                <table class="app-breakdown-table" id="app-breakdown">
+                    <thead>
+                        <tr>
+                            <th>Application</th>
+                            <th>Queries</th>
+                            <th>Data (GB)</th>
+                            <th>Cost</th>
+                        </tr>
+                    </thead>
+                    <tbody id="app-breakdown-body">
+                        <tr>
+                            <td colspan="4" class="no-data">
+                                <span class="loading-spinner"></span> Loading...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Daily Trend -->
+        <div class="costs-card">
+            <div class="costs-card-header">
+                <h3><i class="fas fa-chart-bar"></i> Daily Cost Trend</h3>
+            </div>
+            <div class="costs-card-content">
+                <div class="daily-chart" id="daily-chart">
+                    <div class="no-data">
+                        <span class="loading-spinner"></span> Loading...
+                    </div>
+                </div>
+                <div class="chart-labels" id="chart-labels">
+                    <span>--</span>
+                    <span>--</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load cost data on page load
+document.addEventListener('DOMContentLoaded', loadCostData);
+
+async function loadCostData() {
+    const days = document.getElementById('cost-days').value;
+    
+    // Show loading state
+    document.getElementById('total-cost').textContent = '$--';
+    document.getElementById('total-queries').textContent = '--';
+    document.getElementById('total-bytes').textContent = '-- GB';
+    document.getElementById('avg-cost').textContent = '$--';
+    document.getElementById('cost-period').textContent = `Last ${days} days`;
+    document.getElementById('app-breakdown-body').innerHTML = `
+        <tr><td colspan="4" class="no-data"><span class="loading-spinner"></span> Loading...</td></tr>
+    `;
+    document.getElementById('daily-chart').innerHTML = `
+        <div class="no-data"><span class="loading-spinner"></span> Loading...</div>
+    `;
+    
+    try {
+        const response = await fetch(`/analytics/api/costs?days=${days}`);
+        const result = await response.json();
+        
+        if (result.success && result.data) {
+            const data = result.data;
+            
+            // Update summary cards
+            document.getElementById('total-cost').textContent = formatCurrency(data.estimated_cost_usd || 0);
+            document.getElementById('total-queries').textContent = formatNumber(data.query_count || 0);
+            document.getElementById('total-bytes').textContent = formatBytes(data.total_bytes_processed || 0);
+            
+            const avgCost = data.query_count > 0 ? data.estimated_cost_usd / data.query_count : 0;
+            document.getElementById('avg-cost').textContent = formatCurrency(avgCost);
+            
+            // Render app breakdown (API returns dict, convert to array)
+            const appArray = Object.entries(data.cost_by_app || {}).map(([name, stats]) => ({
+                app_name: name,
+                query_count: stats.query_count,
+                bytes_processed: stats.bytes_processed,
+                cost_usd: stats.estimated_cost_usd
+            }));
+            renderAppBreakdown(appArray);
+            
+            // Render daily chart (API uses estimated_cost_usd, map to cost_usd)
+            const dailyData = (data.daily_costs || []).map(d => ({
+                date: d.date,
+                cost_usd: d.estimated_cost_usd
+            })).reverse(); // Reverse to show oldest first
+            renderDailyChart(dailyData);
+        } else {
+            showError('Failed to load cost data');
+        }
+    } catch (error) {
+        console.error('Error loading cost data:', error);
+        showError('Failed to load cost data: ' + error.message);
+    }
+}
+
+function renderAppBreakdown(apps) {
+    const tbody = document.getElementById('app-breakdown-body');
+    
+    if (!apps || apps.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="no-data">No data available</td></tr>';
+        return;
+    }
+    
+    // Sort by cost descending
+    apps.sort((a, b) => (b.cost_usd || 0) - (a.cost_usd || 0));
+    
+    let html = '';
+    apps.forEach(app => {
+        const appName = app.app_name || 'unknown';
+        const iconClass = getAppIconClass(appName);
+        const icon = getAppIcon(appName);
+        
+        html += `
+            <tr>
+                <td>
+                    <div class="app-name">
+                        <span class="app-icon ${iconClass}">${icon}</span>
+                        ${formatAppName(appName)}
+                    </div>
+                </td>
+                <td>${formatNumber(app.query_count || 0)}</td>
+                <td>${formatBytes(app.bytes_processed || 0)}</td>
+                <td class="cost">${formatCurrency(app.cost_usd || 0)}</td>
+            </tr>
+        `;
+    });
+    
+    tbody.innerHTML = html;
+}
+
+function renderDailyChart(days) {
+    const container = document.getElementById('daily-chart');
+    const labels = document.getElementById('chart-labels');
+    
+    if (!days || days.length === 0) {
+        container.innerHTML = '<div class="no-data">No data available</div>';
+        labels.innerHTML = '<span>--</span><span>--</span>';
+        return;
+    }
+    
+    // Find max for scaling
+    const maxCost = Math.max(...days.map(d => d.cost_usd || 0));
+    const maxHeight = 260; // px
+    
+    let html = '';
+    days.forEach(day => {
+        const height = maxCost > 0 ? Math.max(4, (day.cost_usd / maxCost) * maxHeight) : 4;
+        const date = new Date(day.date);
+        const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        
+        html += `
+            <div class="chart-bar" style="height: ${height}px;">
+                <div class="tooltip">${dateStr}: ${formatCurrency(day.cost_usd || 0)}</div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Update labels
+    if (days.length > 0) {
+        const firstDate = new Date(days[0].date);
+        const lastDate = new Date(days[days.length - 1].date);
+        labels.innerHTML = `
+            <span>${firstDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+            <span>${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+        `;
+    }
+}
+
+function formatCurrency(amount) {
+    return '$' + amount.toFixed(2);
+}
+
+function formatNumber(num) {
+    return num.toLocaleString();
+}
+
+function formatBytes(bytes) {
+    const gb = bytes / (1024 * 1024 * 1024);
+    if (gb >= 1000) {
+        return (gb / 1000).toFixed(2) + ' TB';
+    }
+    return gb.toFixed(2) + ' GB';
+}
+
+function formatAppName(name) {
+    const names = {
+        'lendsight': 'LendSight',
+        'bizsight': 'BizSight',
+        'branchsight': 'BranchSight',
+        'dataexplorer': 'DataExplorer',
+        'mergermeter': 'MergerMeter',
+        'analytics': 'Analytics',
+        'lenderprofile': 'LenderProfile'
+    };
+    return names[name.toLowerCase()] || name;
+}
+
+function getAppIconClass(name) {
+    const lower = name.toLowerCase();
+    if (lower.includes('lendsight')) return 'lendsight';
+    if (lower.includes('bizsight')) return 'bizsight';
+    if (lower.includes('branchsight')) return 'branchsight';
+    if (lower.includes('dataexplorer')) return 'dataexplorer';
+    if (lower.includes('mergermeter')) return 'mergermeter';
+    if (lower.includes('analytics')) return 'analytics';
+    return 'other';
+}
+
+function getAppIcon(name) {
+    const lower = name.toLowerCase();
+    if (lower.includes('lendsight')) return 'L';
+    if (lower.includes('bizsight')) return 'B';
+    if (lower.includes('branchsight')) return 'S';
+    if (lower.includes('dataexplorer')) return 'D';
+    if (lower.includes('mergermeter')) return 'M';
+    if (lower.includes('analytics')) return 'A';
+    return '?';
+}
+
+function showError(message) {
+    document.getElementById('app-breakdown-body').innerHTML = `
+        <tr><td colspan="4" class="no-data" style="color: #ef4444;">${message}</td></tr>
+    `;
+    document.getElementById('daily-chart').innerHTML = `
+        <div class="no-data" style="color: #ef4444;">${message}</div>
+    `;
+}
+</script>
+{% endblock %}

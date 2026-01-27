@@ -9,7 +9,13 @@ import pandas as pd
 from typing import Dict, List
 from datetime import datetime
 from justdata.apps.lendsight.config import OUTPUT_DIR, PROJECT_ID
-from justdata.apps.lendsight.data_utils import find_exact_county_match, execute_mortgage_query
+from justdata.apps.lendsight.data_utils import (
+    find_exact_county_match, 
+    execute_mortgage_query,
+    execute_tiered_queries,
+    USE_SUMMARY_TABLES,
+    SUMMARY_PROJECT_ID
+)
 from justdata.apps.lendsight.mortgage_report_builder import build_mortgage_report, save_mortgage_excel_report
 from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
 from justdata.apps.lendsight.version import __version__
@@ -135,52 +141,110 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                 print(f"Error matching county {county}: {e}, using input as-is")
                 clarified_counties.append(county)
         
-        # Load SQL template
+        # Execute BigQuery queries - choose between tiered (cost-optimized) or raw queries
         if progress_tracker:
             progress_tracker.update_progress('connecting_db', 15, 'Connecting to BigQuery... Time to tap into that data goldmine! 💎')
         
-        sql_template = load_sql_template()
-        
-        # Execute BigQuery queries
-        if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 20, 'Fetching mortgage data... Digging deep for insights! ⛏️')
-        
         all_results = []
-        total_queries = len(clarified_counties) * len(years)
-        query_index = 0
         
-        print(f"\n[DEBUG] Starting data fetch: {total_queries} queries ({len(clarified_counties)} counties × {len(years)} years)")
-        
-        for county in clarified_counties:
-            for year in years:
+        if USE_SUMMARY_TABLES:
+            # =================================================================
+            # TIERED QUERIES: Use pre-aggregated summary tables (~99% cost reduction)
+            # =================================================================
+            print(f"\n[DEBUG] Using TIERED QUERIES (cost-optimized) from {SUMMARY_PROJECT_ID}")
+            if progress_tracker:
+                progress_tracker.update_progress('fetching_data', 20, 'Fetching from optimized summary tables... Lightning fast! ⚡')
+            
+            total_counties = len(clarified_counties)
+            for idx, county in enumerate(clarified_counties, 1):
                 try:
-                    print(f"  [DEBUG] Querying {county} for year {year} with loan_purpose={loan_purpose}...")
-                    print(f"  [DEBUG] About to call execute_mortgage_query...")
                     if progress_tracker:
                         progress_tracker.update_progress('fetching_data', 
-                            20 + int((query_index / total_queries) * 25),
-                            f'Fetching data: {county} ({year})... Who\'s lending where? Let\'s find out! 🏦')
+                            20 + int((idx / total_counties) * 25),
+                            f'Fetching data: {county}... ⚡ Using optimized tables!')
                     
-                    print(f"  [DEBUG] Calling execute_mortgage_query now...")
-                    results = execute_mortgage_query(sql_template, county, year, loan_purpose)
-                    print(f"  [DEBUG] execute_mortgage_query returned, got {len(results) if results else 0} results")
-                    all_results.extend(results)
-                    print(f"    [OK] Found {len(results)} records")
+                    print(f"  [TIERED] Querying {county} for years {years}...")
+                    tiered_data = execute_tiered_queries(county, years, loan_purpose)
                     
-                    # Update progress
-                    query_index += 1
-                    if progress_tracker:
-                        progress_tracker.update_query_progress(query_index, total_queries)
+                    # Get both county and tract level data
+                    county_data = tiered_data.get('county_data', [])
+                    tract_data = tiered_data.get('tract_data', [])
+                    
+                    # Add county_code column (alias for geoid5) to match report builder expectations
+                    for row in county_data:
+                        row['county_code'] = row.get('geoid5', '')
+                    for row in tract_data:
+                        row['county_code'] = row.get('geoid5', '')
+                    
+                    # Strategy: Use COUNTY data for most sections (has all demographic/income columns)
+                    # The county summary has all the columns needed for:
+                    # - demographic_overview, income_borrowers, top_lenders, market_concentration
+                    # - summary, trends, by_lender, by_county
+                    # 
+                    # Tract data is needed for: minority_tracts, income_tracts
+                    # But tract summary is missing some borrower demographic columns.
+                    # 
+                    # For now: Use county data primarily for ~99% cost reduction.
+                    # Tract-specific sections will be less detailed but still functional.
+                    # TODO: Add option to fetch tract data for detailed tract analysis
+                    
+                    if county_data:
+                        all_results.extend(county_data)
+                        print(f"    [OK] Found {len(county_data)} county-level records for {county}")
+                    elif tract_data:
+                        # Fallback to tract data if county data unavailable
+                        all_results.extend(tract_data)
+                        print(f"    [OK] Found {len(tract_data)} tract-level records for {county} (fallback)")
+                    else:
+                        print(f"    [WARN] No data found for {county}")
                         
                 except Exception as e:
-                    print(f"    [ERROR] Error querying {county} {year}: {e}")
+                    print(f"    [ERROR] Error with tiered query for {county}: {e}")
                     import traceback
                     traceback.print_exc()
-                    query_index += 1
-                    # Continue with other queries even if one fails
                     continue
-        
-        print(f"[DEBUG] Data fetch complete: {len(all_results)} total records", flush=True)
+            
+            print(f"[DEBUG] Tiered data fetch complete: {len(all_results)} total records", flush=True)
+        else:
+            # =================================================================
+            # RAW QUERIES: Use original mortgage_report.sql (full BigQuery scan)
+            # =================================================================
+            print(f"\n[DEBUG] Using RAW QUERIES (full scan) - set USE_SUMMARY_TABLES=true for 99% cost reduction")
+            sql_template = load_sql_template()
+            
+            if progress_tracker:
+                progress_tracker.update_progress('fetching_data', 20, 'Fetching mortgage data... Digging deep for insights! ⛏️')
+            
+            total_queries = len(clarified_counties) * len(years)
+            query_index = 0
+            
+            print(f"[DEBUG] Starting data fetch: {total_queries} queries ({len(clarified_counties)} counties × {len(years)} years)")
+            
+            for county in clarified_counties:
+                for year in years:
+                    try:
+                        print(f"  [DEBUG] Querying {county} for year {year} with loan_purpose={loan_purpose}...")
+                        if progress_tracker:
+                            progress_tracker.update_progress('fetching_data', 
+                                20 + int((query_index / total_queries) * 25),
+                                f'Fetching data: {county} ({year})... Who\'s lending where? Let\'s find out! 🏦')
+                        
+                        results = execute_mortgage_query(sql_template, county, year, loan_purpose)
+                        all_results.extend(results)
+                        print(f"    [OK] Found {len(results)} records")
+                        
+                        query_index += 1
+                        if progress_tracker:
+                            progress_tracker.update_query_progress(query_index, total_queries)
+                            
+                    except Exception as e:
+                        print(f"    [ERROR] Error querying {county} {year}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                        query_index += 1
+                        continue
+            
+            print(f"[DEBUG] Data fetch complete: {len(all_results)} total records", flush=True)
         
         if not all_results:
             print(f"[ERROR] No data found for the specified parameters", flush=True)

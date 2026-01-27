@@ -107,6 +107,15 @@
                 <span class="loading-placeholder">--</span>
             </div>
         </div>
+        <div class="summary-card cost-card">
+            <h3>BigQuery Cost (30d)</h3>
+            <div class="summary-value" id="bq-cost">
+                <span class="loading-placeholder">--</span>
+            </div>
+            <div class="cost-detail" id="bq-queries" style="font-size: 0.8em; color: #666; margin-top: 4px;">
+                <span class="loading-placeholder">-- queries</span>
+            </div>
+        </div>
     </div>
 
     <!-- Navigation Tabs -->
@@ -125,6 +134,9 @@
         </a>
         <a href="{{ url_for('analytics.users') }}" class="tab">
             <i class="fas fa-users"></i> Users
+        </a>
+        <a href="{{ url_for('analytics.costs') }}" class="tab">
+            <i class="fas fa-dollar-sign"></i> Costs
         </a>
     </div>
 

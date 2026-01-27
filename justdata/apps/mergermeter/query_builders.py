@@ -2,7 +2,65 @@
 Query builders for MergerMeter analysis.
 Generates BigQuery SQL for HMDA and Small Business data (subject and peer).
 Uses 50%-200% volume rule for peer selection.
+
+HYBRID ROUTING:
+When USE_SUMMARY_TABLES is enabled:
+- Default filters (originations, owner-occupied, site-built, no reverse) → Use summary tables
+- Non-default filters (applications, manufactured, etc.) → Use raw tables
 """
+
+import os
+
+# Configuration for hybrid routing
+SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+USE_SUMMARY_TABLES = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
+
+# Default filter values
+DEFAULT_ACTION_TAKEN = '1'
+DEFAULT_OCCUPANCY_TYPE = '1'
+DEFAULT_CONSTRUCTION_METHOD = '1'
+DEFAULT_NOT_REVERSE = '1'
+
+
+def is_using_default_filters(
+    action_taken: str = '1',
+    occupancy_type: str = '1',
+    construction_method: str = '1',
+    not_reverse: str = '1'
+) -> bool:
+    """
+    Check if the query is using default filters.
+    
+    Returns True if all filters match default values (originations, owner-occupied,
+    site-built, no reverse mortgages). In this case, we can use summary tables.
+    """
+    return (
+        action_taken == DEFAULT_ACTION_TAKEN and
+        occupancy_type == DEFAULT_OCCUPANCY_TYPE and
+        construction_method == DEFAULT_CONSTRUCTION_METHOD and
+        not_reverse == DEFAULT_NOT_REVERSE
+    )
+
+
+def get_hmda_data_source(
+    action_taken: str = '1',
+    occupancy_type: str = '1',
+    construction_method: str = '1',
+    not_reverse: str = '1',
+    project_id: str = 'hdma1-242116'
+) -> tuple:
+    """
+    Determine the appropriate data source based on filters.
+    
+    Returns:
+        Tuple of (project_id, table_path, is_summary)
+    """
+    if USE_SUMMARY_TABLES and is_using_default_filters(action_taken, occupancy_type, construction_method, not_reverse):
+        # Use summary tables for default filters (~99% cost reduction)
+        return (SUMMARY_PROJECT_ID, f'{SUMMARY_PROJECT_ID}.lendsight.de_hmda_county_summary', True)
+    else:
+        # Use raw tables for non-default filters (full flexibility)
+        return (project_id, f'{project_id}.justdata.de_hmda', False)
 
 
 def build_hmda_subject_query(
