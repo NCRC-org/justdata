@@ -597,7 +597,7 @@
             • Select a state and county to view 2025 bank branch locations<br>
             • Use the bank selector to filter by specific banks (select up to 3)<br>
             • Click on markers to see branch details<br>
-            • Use the "Report a Problem" button in popups to report data issues
+            • Use the "Get Support" button in popups for help via Slack
         </div>
         </div>
         </div>
@@ -623,7 +623,40 @@
         // AbortControllers for cancelling in-flight requests
         let incomeLayerAbortController = null;
         let minorityLayerAbortController = null;
-        
+
+        // Cached user type for Slack support routing
+        let cachedUserType = null;
+
+        // Fetch user type and open appropriate Slack support channel
+        async function openSlackSupport(event) {
+            event.preventDefault();
+
+            // Fetch user type if not cached
+            if (!cachedUserType) {
+                try {
+                    const response = await fetch('/api/auth/status');
+                    if (response.ok) {
+                        const data = await response.json();
+                        cachedUserType = data.user_type || 'public_anonymous';
+                    } else {
+                        cachedUserType = 'public_anonymous';
+                    }
+                } catch (error) {
+                    console.log('Could not fetch user type, defaulting to public');
+                    cachedUserType = 'public_anonymous';
+                }
+            }
+
+            const isInternalUser = ['staff', 'senior_executive', 'admin'].includes(cachedUserType);
+
+            // Staff channel for internal users, public support channel for everyone else
+            const slackChannelUrl = isInternalUser
+                ? 'https://ncrcgroup.slack.com/app_redirect?channel=C0A0BBWRT36'  // justdata_staff
+                : 'https://ncrcgroup.slack.com/app_redirect?channel=C0AAHCK98A0'; // public support
+
+            window.open(slackChannelUrl, '_blank');
+        }
+
         // Color palette for banks (distinct colors)
         const colorPalette = [
             '#1e3a5f', // Standard Navy
@@ -1863,35 +1896,6 @@
                     return '$' + deposits.toLocaleString('en-US');
                 };
                 
-                // Create email body with branch information
-                const createEmailBody = (branch) => {
-                    const lines = [
-                        'Branch Information:',
-                        '==================',
-                        `Branch Name: ${branch.branch_name || 'N/A'}`,
-                        `Bank: ${bankName}`,
-                        branch.branch_type ? `Branch Type: ${branch.branch_type}` : '',
-                        branch.total_deposits ? `Deposits: ${formatDeposits(branch.total_deposits)}` : '',
-                        `Address: ${branch.address || 'N/A'}`,
-                        `City: ${branch.city || 'N/A'}`,
-                        `State: ${branch.state_abbrv || branch.state || 'N/A'}`,
-                        `ZIP: ${branch.zip || 'N/A'}`,
-                        branch.lmict ? 'LMI: Yes' : 'LMI: No',
-                        branch.mmct ? 'Minority: Yes' : 'Minority: No',
-                        '',
-                        'Issue Description:',
-                        '==================',
-                        '[Please describe the issue with this branch location or data]'
-                    ];
-                    return lines.filter(line => line !== '').join('%0D%0A'); // URL encode line breaks
-                };
-                
-                // Create mailto link
-                const emailSubject = encodeURIComponent('Branch map issue');
-                const emailBody = createEmailBody(branch);
-                const emailTo = 'research@ncrc.org';
-                const mailtoLink = `mailto:${emailTo}?subject=${emailSubject}&body=${emailBody}`;
-                
                 const popupContent = `
                     <div class="popup-content">
                         <div class="bank-name-header">${bankName}</div>
@@ -1903,8 +1907,8 @@
                             ${branch.city || ''}, ${branch.state_abbrv || branch.state || ''} ${branch.zip || ''}
                         </div>
                         ${tags.length > 0 ? `<div class="branch-tags">${tags.join('')}</div>` : ''}
-                        <a href="${mailtoLink}" class="report-problem-btn" target="_blank">
-                            <i class="fas fa-exclamation-triangle"></i> Report a Problem
+                        <a href="#" class="report-problem-btn" onclick="openSlackSupport(event)">
+                            <i class="fab fa-slack"></i> Get Support
                         </a>
                     </div>
                 `;
