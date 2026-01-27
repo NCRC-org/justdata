@@ -46,9 +46,19 @@
     }
     @keyframes checkmark { 0% { transform: scale(0); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    @keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
     .check-animation { animation: checkmark 0.3s ease-out; }
     .done-btn { transition: all 0.15s; }
     .done-btn:hover { transform: scale(1.02); }
+    .copy-btn { transition: all 0.15s; }
+    .copy-btn:hover { background: var(--bg4) !important; }
+    .copy-feedback { animation: fadeOut 0.5s ease-out 1.5s forwards; }
+    @keyframes pulse-link-source {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.8); }
+      50% { box-shadow: 0 0 0 12px rgba(245, 158, 11, 0); }
+    }
+    .link-source { animation: pulse-link-source 1s infinite !important; }
+    .link-target:hover { box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.6) !important; cursor: crosshair !important; }
     .marquee { position: absolute; border: 2px dashed var(--select); background: rgba(59, 130, 246, 0.1); pointer-events: none; z-index: 1000; }
     .node-selected > div:first-of-type:not([style*="position: absolute"]) { box-shadow: 0 0 0 3px var(--select) !important; }
     .spinner { width: 24px; height: 24px; border: 3px solid var(--bg3); border-top-color: var(--select); border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -129,6 +139,20 @@ async function refreshCollectorsAPI() {
   return response.json();
 }
 
+async function updateTaskAPI(taskId, updates) {
+  const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(updates)
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Failed to update task');
+  }
+  return response.json();
+}
+
 const COLORS = {
   legal: '#ef4444',
   infrastructure: '#3b82f6',
@@ -183,6 +207,13 @@ function App() {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', type: 'feature', priority: 'medium', app: '', notes: '' });
+
+  const [copyFeedback, setCopyFeedback] = useState(false);
+
+  // Linking mode state (Shift+Click to link nodes)
+  const [linkingFrom, setLinkingFrom] = useState(null);  // Task being linked FROM (will block the TO task)
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });  // For visual feedback line
+  const [linkFeedback, setLinkFeedback] = useState(null);  // { type: 'success'|'error', message: '...' }
 
   const canvasRef = useRef(null);
   const saveTimeoutRef = useRef(null);
@@ -295,16 +326,69 @@ function App() {
     return { x, y };
   }, [transform]);
 
-  const onNodeMouseDown = (e, item) => {
+  const onNodeMouseDown = async (e, item) => {
     e.stopPropagation();
     const canvasCoords = screenToCanvas(e.clientX, e.clientY);
 
+    // Shift+Click for linking mode
+    if (e.shiftKey) {
+      if (!linkingFrom) {
+        // First Shift+Click - start linking from this node
+        setLinkingFrom(item);
+        setLinkFeedback({ type: 'info', message: `Shift+Click another task to make "${item.id}" block it` });
+        return;
+      } else if (linkingFrom.id !== item.id) {
+        // Second Shift+Click - create the link
+        // linkingFrom BLOCKS item (item depends on linkingFrom)
+        const targetTask = items.find(i => i.id === item.id);
+        if (!targetTask) return;
+
+        // Check if link already exists
+        const existingDeps = targetTask.dependencies || [];
+        if (existingDeps.includes(linkingFrom.id)) {
+          setLinkFeedback({ type: 'error', message: `${linkingFrom.id} already blocks ${item.id}` });
+          setLinkingFrom(null);
+          setTimeout(() => setLinkFeedback(null), 2000);
+          return;
+        }
+
+        // Add the dependency
+        const newDeps = [...existingDeps, linkingFrom.id];
+        try {
+          await updateTaskAPI(item.id, { dependencies: newDeps });
+          // Update local state
+          setItems(prev => prev.map(i => i.id === item.id ? { ...i, dependencies: newDeps } : i));
+          setLinkFeedback({ type: 'success', message: `${linkingFrom.id} now blocks ${item.id}` });
+
+          // Refresh collectors if needed
+          if (['bug', 'styling', 'content'].includes(targetTask.type)) {
+            await refreshCollectorsAPI();
+          }
+        } catch (err) {
+          setLinkFeedback({ type: 'error', message: err.message });
+        }
+
+        setLinkingFrom(null);
+        setTimeout(() => setLinkFeedback(null), 2500);
+        return;
+      } else {
+        // Clicked the same node - cancel linking
+        setLinkingFrom(null);
+        setLinkFeedback(null);
+        return;
+      }
+    }
+
+    // Cancel linking mode if clicking without Shift
+    if (linkingFrom) {
+      setLinkingFrom(null);
+      setLinkFeedback(null);
+    }
+
+    // Normal drag behavior
     let idsToMove;
     if (selectedIds.has(item.id)) {
       idsToMove = Array.from(selectedIds);
-    } else if (e.shiftKey) {
-      setSelectedIds(prev => new Set([...prev, item.id]));
-      idsToMove = [...Array.from(selectedIds), item.id];
     } else {
       setSelectedIds(new Set());
       idsToMove = getClusterIds(item.id);
@@ -316,6 +400,12 @@ function App() {
   };
 
   const onMouseMove = (e) => {
+    // Always track mouse position for linking line
+    if (linkingFrom) {
+      const canvasCoords = screenToCanvas(e.clientX, e.clientY);
+      setMousePos(canvasCoords);
+    }
+
     if (marquee) {
       const canvasCoords = screenToCanvas(e.clientX, e.clientY);
       setMarquee(prev => ({ ...prev, currentX: canvasCoords.x, currentY: canvasCoords.y }));
@@ -363,6 +453,13 @@ function App() {
   const onCanvasMouseDown = (e) => {
     if (e.target.closest('.panel') || e.target.closest('.node') || e.target.closest('.modal')) return;
 
+    // Cancel linking mode if clicking on canvas
+    if (linkingFrom) {
+      setLinkingFrom(null);
+      setLinkFeedback(null);
+      return;
+    }
+
     const canvasCoords = screenToCanvas(e.clientX, e.clientY);
 
     if (e.shiftKey) {
@@ -373,6 +470,18 @@ function App() {
       setPanStart({ x: e.clientX - transform.x, y: e.clientY - transform.y });
     }
   };
+
+  // Escape key to cancel linking mode
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && linkingFrom) {
+        setLinkingFrom(null);
+        setLinkFeedback(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [linkingFrom]);
 
   const onWheel = (e) => {
     e.preventDefault();
@@ -390,6 +499,37 @@ function App() {
     const zoomFactor = Math.min((transform.s - 0.5) / 1.5, 1);
     return cfg.minZoomOpacity + (1 - cfg.minZoomOpacity) * zoomFactor;
   };
+
+  const copyTaskToClipboard = useCallback((task) => {
+    const priorityLabel = PRIORITY_CONFIG[task.priority]?.label || task.priority?.toUpperCase() || 'MEDIUM';
+    const typeLabel = TYPE_LABELS[task.type] || task.type || 'Task';
+    const statusLabel = task.status === 'done' ? 'Done' : 'Open';
+    const appLabel = task.app || 'N/A';
+
+    // Get blockers and dependents
+    const taskBlockers = (task.dependencies || []).map(id => items.find(i => i.id === id)).filter(Boolean);
+    const taskDependents = items.filter(i => (i.dependencies || []).includes(task.id));
+
+    const blockedByStr = taskBlockers.length > 0
+      ? taskBlockers.map(b => b.id).join(', ')
+      : 'None';
+    const enablesStr = taskDependents.length > 0
+      ? taskDependents.map(d => d.id).join(', ')
+      : 'None';
+
+    const text = `${task.id} [${priorityLabel}] - ${task.title}
+Type: ${typeLabel} | App: ${appLabel} | Status: ${statusLabel}
+Description: ${task.notes || 'No description'}
+Blocked By: ${blockedByStr}
+Enables: ${enablesStr}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyFeedback(true);
+      setTimeout(() => setCopyFeedback(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy to clipboard:', err);
+    });
+  }, [items]);
 
   const handleCreateTask = async () => {
     if (!newTask.title.trim()) { alert('Title is required'); return; }
@@ -508,15 +648,69 @@ function App() {
         </div>
       </header>
 
-      <div ref={canvasRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', cursor: marquee ? 'crosshair' : dragging ? 'grabbing' : panning ? 'grabbing' : 'grab' }}
+      <div ref={canvasRef} style={{ flex: 1, position: 'relative', overflow: 'hidden', cursor: linkingFrom ? 'crosshair' : marquee ? 'crosshair' : dragging ? 'grabbing' : panning ? 'grabbing' : 'grab' }}
            onMouseDown={onCanvasMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp} onMouseLeave={onMouseUp} onWheel={onWheel}
            onClick={() => { if (!dragging && !marquee) setSelected(null); }}>
 
         <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(rgba(255,255,255,0.02) 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
 
-        {transform.s < 0.8 && (
+        {transform.s < 0.8 && !linkingFrom && (
           <div style={{ position: 'absolute', bottom: 80, left: '50%', transform: 'translateX(-50%)', background: 'var(--bg3)', padding: '6px 12px', borderRadius: 4, fontSize: 10, color: 'var(--text2)', border: '1px solid var(--border)', zIndex: 5 }}>
-            Scroll to zoom | Shift+drag to box-select | Drag nodes to move
+            Scroll to zoom | Shift+click nodes to link | Drag nodes to move
+          </div>
+        )}
+
+        {/* Link feedback toast */}
+        {linkFeedback && (
+          <div style={{
+            position: 'absolute',
+            top: 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: linkFeedback.type === 'success' ? 'rgba(34, 197, 94, 0.95)' :
+                        linkFeedback.type === 'error' ? 'rgba(239, 68, 68, 0.95)' :
+                        'rgba(245, 158, 11, 0.95)',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            {linkFeedback.type === 'success' && <span>&#10003;</span>}
+            {linkFeedback.type === 'error' && <span>&#10007;</span>}
+            {linkFeedback.type === 'info' && <span>&#8594;</span>}
+            {linkFeedback.message}
+            {linkFeedback.type === 'info' && (
+              <span style={{ marginLeft: 8, opacity: 0.8, fontSize: 10 }}>(ESC to cancel)</span>
+            )}
+          </div>
+        )}
+
+        {/* Linking mode indicator on source node */}
+        {linkingFrom && pos[linkingFrom.id] && (
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            marginLeft: -W/2 + pos[linkingFrom.id].x * transform.s + transform.x,
+            marginTop: -H/2 + pos[linkingFrom.id].y * transform.s + transform.y - 40 * transform.s,
+            transform: 'translate(-50%, -50%)',
+            background: 'rgba(245, 158, 11, 0.95)',
+            color: 'white',
+            padding: '4px 8px',
+            borderRadius: 4,
+            fontSize: 10,
+            fontWeight: 600,
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            zIndex: 1001
+          }}>
+            {linkingFrom.id} will BLOCK...
           </div>
         )}
 
@@ -560,6 +754,22 @@ function App() {
 
               return <line key={i} x1={from.x} y1={from.y} x2={ex} y2={ey} stroke={stroke} strokeWidth={width} strokeDasharray={isBlocker ? '8,4' : 'none'} opacity={dim ? 0.04 : isBeingDragged ? 0.8 : isConn || isGoalEdge || isCollectorEdge ? 1 : 0.4} markerEnd={marker} style={{ transition: dragging ? 'none' : 'opacity 0.15s' }} />;
             })}
+
+            {/* Linking mode - visual feedback line from source node to cursor */}
+            {linkingFrom && pos[linkingFrom.id] && (
+              <line
+                x1={pos[linkingFrom.id].x}
+                y1={pos[linkingFrom.id].y}
+                x2={mousePos.x}
+                y2={mousePos.y}
+                stroke="#f59e0b"
+                strokeWidth={3}
+                strokeDasharray="8,4"
+                opacity={0.8}
+                markerEnd="url(#arr-red)"
+                style={{ pointerEvents: 'none' }}
+              />
+            )}
           </svg>
 
           {visible.map(item => {
@@ -577,15 +787,17 @@ function App() {
             const zoomOpacity = getZoomOpacity(item.priority);
             const isBeingDragged = dragging && dragging.clusterIds.includes(item.id);
             const isSelected = selectedIds.has(item.id);
+            const isLinkSource = linkingFrom?.id === item.id;
+            const isLinkTarget = linkingFrom && linkingFrom.id !== item.id;
 
             return (
-              <div key={item.id} className={`node ${isSelected ? 'node-selected' : ''}`}
+              <div key={item.id} className={`node ${isSelected ? 'node-selected' : ''} ${isLinkSource ? 'link-source' : ''} ${isLinkTarget ? 'link-target' : ''}`}
                 style={{
                   position: 'absolute', left: p.x, top: p.y, transform: 'translate(-50%, -50%)',
                   zIndex: isBeingDragged ? 1000 : isGoal ? 200 : isCollector ? 150 : isActive ? 100 : isDone ? 1 : cfg.size * 2,
                   opacity: dim ? 0.06 : isDone ? 0.4 : zoomOpacity,
                   transition: dragging ? 'none' : 'opacity 0.2s',
-                  cursor: 'grab',
+                  cursor: isLinkTarget ? 'crosshair' : isLinkSource ? 'not-allowed' : 'grab',
                 }}
                 onMouseEnter={() => !dragging && setHovered(item)}
                 onMouseLeave={() => setHovered(null)}
@@ -671,6 +883,29 @@ function App() {
                 </div>
                 <button onClick={() => setSelected(null)} style={{ background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4, alignSelf: 'flex-start', fontSize: 18, lineHeight: 1 }}>x</button>
               </div>
+
+              {/* Copy to Clipboard Button */}
+              <button
+                className="copy-btn"
+                onClick={() => copyTaskToClipboard(selected)}
+                style={{
+                  width: '100%', padding: '8px 12px', marginBottom: 12, fontSize: 11,
+                  background: 'var(--bg3)', color: 'var(--text2)',
+                  border: '1px solid var(--border)', borderRadius: 6, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  position: 'relative',
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                {copyFeedback ? (
+                  <span className="copy-feedback" style={{ color: 'var(--goal)', fontWeight: 600 }}>Copied!</span>
+                ) : (
+                  <span>Copy to Clipboard</span>
+                )}
+              </button>
 
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
                 <span style={{ padding: '4px 10px', fontSize: 11, background: selected.is_collector ? COLORS.collector : COLORS[selected.type], borderRadius: 4, fontWeight: 500 }}>{TYPE_LABELS[selected.type] || 'Milestone'}</span>
