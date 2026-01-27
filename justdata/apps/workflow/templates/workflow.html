@@ -336,8 +336,9 @@ function App() {
   const getClusterIds = useCallback((nodeId) => {
     const node = items.find(i => i.id === nodeId);
     if (!node) return [nodeId];
-    if (node.is_goal) return items.map(i => i.id);
-    if (node.is_collector) return [nodeId, ...(node.dependencies || [])];
+    // Goals and collectors can be moved independently
+    if (node.is_goal) return [nodeId];
+    if (node.is_collector) return [nodeId];
     return [nodeId];
   }, [items]);
 
