@@ -2164,22 +2164,34 @@
                 checkAndShowAssessmentAreas();
             };
 
-            // Check if both banks are selected and show assessment area section
+            // Check if required banks are selected and show assessment area section
             function checkAndShowAssessmentAreas() {
                 const acquirerLei = document.getElementById('acquirer_lei').value;
                 const targetLei = document.getElementById('target_lei').value;
+                const isSingleBankMode = document.getElementById('singleBankMode').checked;
 
-                if (acquirerLei && targetLei) {
-                    // Both banks selected - show assessment area section
+                // In single bank mode, only acquirer is required
+                // In merger mode, both banks are required
+                const shouldShow = isSingleBankMode ? acquirerLei : (acquirerLei && targetLei);
+
+                if (shouldShow) {
+                    // Show assessment area section
                     const assessmentSection = document.getElementById('assessmentAreaSection');
                     if (assessmentSection) {
                         assessmentSection.style.display = 'block';
+                        // In single bank mode, hide Bank B assessment areas
+                        if (isSingleBankMode) {
+                            const bankBAASection = document.getElementById('bankBAASection');
+                            if (bankBAASection) {
+                                bankBAASection.style.display = 'none';
+                            }
+                        }
                         // Smooth scroll to assessment section
                         setTimeout(() => {
                             assessmentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         }, 100);
                     }
-                    console.log('Both banks selected - showing assessment area section');
+                    console.log(isSingleBankMode ? 'Single bank selected - showing assessment area section' : 'Both banks selected - showing assessment area section');
                 }
             }
 
