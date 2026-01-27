@@ -506,7 +506,8 @@ def get_user_doc(uid: str) -> Optional[dict]:
 
 
 def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
-                               photo_url: str = None, email_verified: bool = False) -> dict:
+                               photo_url: str = None, email_verified: bool = False,
+                               auth_provider: str = None) -> dict:
     """
     Create or update user document in Firestore.
 
@@ -516,6 +517,7 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
         display_name: User's display name
         photo_url: User's profile photo URL
         email_verified: Whether email is verified
+        auth_provider: The authentication provider ('google.com', 'password', etc.)
 
     Returns:
         The user document dict
@@ -527,8 +529,9 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
             'uid': uid,
             'email': email,
             'displayName': display_name,
-            'userType': determine_user_type(email, email_verified),
-            'emailVerified': email_verified
+            'userType': determine_user_type(email, email_verified, auth_provider=auth_provider),
+            'emailVerified': email_verified,
+            'authProvider': auth_provider
         }
 
     try:
@@ -546,6 +549,10 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
                 'emailVerified': email_verified
             }
 
+            # Update auth provider if provided
+            if auth_provider:
+                update_data['authProvider'] = auth_provider
+
             # Update display name and photo if provided
             if display_name:
                 update_data['displayName'] = display_name
@@ -554,7 +561,9 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
 
             # Check if user type should be upgraded (e.g., @ncrc.org verified)
             current_type = user_data.get('userType', 'public_registered')
-            new_type = determine_user_type(email, email_verified, current_type)
+            # Use stored auth provider if not provided in this call
+            stored_provider = auth_provider or user_data.get('authProvider')
+            new_type = determine_user_type(email, email_verified, current_type, auth_provider=stored_provider)
             if new_type != current_type:
                 update_data['userType'] = new_type
 
@@ -565,7 +574,7 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
             return user_data
         else:
             # Create new user
-            user_type = determine_user_type(email, email_verified)
+            user_type = determine_user_type(email, email_verified, auth_provider=auth_provider)
             user_data = {
                 'uid': uid,
                 'email': email,
@@ -576,6 +585,7 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
                 'jobTitle': None,
                 'county': None,
                 'emailVerified': email_verified,
+                'authProvider': auth_provider,
                 'createdAt': now,
                 'lastLoginAt': now,
                 'loginCount': 1
@@ -583,7 +593,7 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
             user_ref.set(user_data)
 
             # Log registration activity
-            log_activity(uid, email, 'registration', metadata={'userType': user_type})
+            log_activity(uid, email, 'registration', metadata={'userType': user_type, 'authProvider': auth_provider})
 
             return user_data
 
@@ -594,7 +604,7 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
         print(f"  Traceback: {traceback.format_exc()}")
 
         # Return fallback with correct user type (important for @ncrc.org users)
-        fallback_type = determine_user_type(email, email_verified)
+        fallback_type = determine_user_type(email, email_verified, auth_provider=auth_provider)
         print(f"  Using fallback userType: {fallback_type}")
         return {
             'uid': uid,
@@ -602,12 +612,13 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
             'displayName': display_name,
             'userType': fallback_type,
             'emailVerified': email_verified,
+            'authProvider': auth_provider,
             '_firestore_failed': True  # Flag to indicate Firestore write failed
         }
 
 
 def determine_user_type(email: str, email_verified: bool = False,
-                         current_type: str = None) -> UserType:
+                         current_type: str = None, auth_provider: str = None) -> UserType:
     """
     Determine user type based on email and verification status.
 
@@ -615,6 +626,7 @@ def determine_user_type(email: str, email_verified: bool = False,
         email: User's email address
         email_verified: Whether email is verified
         current_type: Current user type (if upgrading)
+        auth_provider: The authentication provider ('google.com', 'password', etc.)
 
     Returns:
         Appropriate user type
@@ -634,11 +646,14 @@ def determine_user_type(email: str, email_verified: bool = False,
 
     # Check NCRC domain
     if email_lower.endswith('@ncrc.org'):
-        # Verified NCRC emails get staff access
+        # Google sign-in with @ncrc.org domain = trusted, give staff access
+        if auth_provider == 'google.com':
+            return 'staff'
+        # Email/password sign-in requires email verification for staff access
         if email_verified:
             return 'staff'
-        # Unverified NCRC emails still get staff (they signed in with Google)
-        return 'staff'
+        # Unverified @ncrc.org email/password users get public_registered until verified
+        return 'public_registered'
 
     # If current type is set by admin, don't downgrade
     if current_type and current_type in ['member', 'member_premium', 'non_member_org',
@@ -1097,13 +1112,15 @@ def auth_login():
     display_name = user_data.get('displayName', decoded.get('name', ''))
     photo_url = user_data.get('photoURL', decoded.get('picture'))
     email_verified = decoded.get('email_verified', False)
+    auth_provider = decoded.get('firebase', {}).get('sign_in_provider', 'unknown')
 
     firestore_user = create_or_update_user_doc(
         uid=uid,
         email=email,
         display_name=display_name,
         photo_url=photo_url,
-        email_verified=email_verified
+        email_verified=email_verified,
+        auth_provider=auth_provider
     )
 
     # Store user in session
@@ -1113,7 +1130,7 @@ def auth_login():
         'name': display_name or email.split('@')[0],
         'picture': photo_url,
         'email_verified': email_verified,
-        'provider': decoded.get('firebase', {}).get('sign_in_provider', 'unknown')
+        'provider': auth_provider
     }
     set_session_user(user)
 
@@ -1122,13 +1139,21 @@ def auth_login():
     set_user_type(user_type)
 
     # Log login activity
-    log_activity(uid, email, 'login')
+    log_activity(uid, email, 'login', metadata={'authProvider': auth_provider})
+
+    # Check if user needs to verify email (for @ncrc.org email/password users)
+    needs_verification = (
+        email.lower().endswith('@ncrc.org') and
+        auth_provider == 'password' and
+        not email_verified
+    )
 
     return jsonify({
         'success': True,
         'user': user,
         'user_type': user_type,
-        'permissions': get_user_permissions(user_type)
+        'permissions': get_user_permissions(user_type),
+        'needs_email_verification': needs_verification
     })
 
 
@@ -1373,7 +1398,7 @@ def update_user(uid: str):
 def resync_user():
     """
     Resync current user's Firestore document.
-    Useful if document wasn't created during initial login.
+    Useful if document wasn't created during initial login or after email verification.
     """
     user = get_current_user()
     if not user:
@@ -1382,6 +1407,7 @@ def resync_user():
     uid = user.get('uid')
     email = user.get('email')
     email_verified = user.get('email_verified', False)
+    auth_provider = user.get('provider', 'unknown')
 
     if not uid or not email:
         return jsonify({'error': 'Missing user data'}), 400
@@ -1392,7 +1418,8 @@ def resync_user():
         email=email,
         display_name=user.get('name'),
         photo_url=user.get('picture'),
-        email_verified=email_verified
+        email_verified=email_verified,
+        auth_provider=auth_provider
     )
 
     # Check if Firestore write failed
@@ -1407,12 +1434,120 @@ def resync_user():
     user_type = firestore_user.get('userType', 'public_registered')
     set_user_type(user_type)
 
+    # Check if user needs to verify email
+    needs_verification = (
+        email.lower().endswith('@ncrc.org') and
+        auth_provider == 'password' and
+        not email_verified
+    )
+
     return jsonify({
         'success': True,
         'user_type': user_type,
         'permissions': get_user_permissions(user_type),
+        'needs_email_verification': needs_verification,
         'message': 'User document synced successfully'
     })
+
+
+@auth_bp.route('/verification-status', methods=['GET'])
+def get_verification_status():
+    """
+    Get current user's email verification status.
+    Returns whether the user needs to verify their email for full access.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    email = user.get('email', '')
+    email_verified = user.get('email_verified', False)
+    auth_provider = user.get('provider', 'unknown')
+
+    # Determine if user needs verification
+    is_ncrc_email = email.lower().endswith('@ncrc.org')
+    is_email_password = auth_provider == 'password'
+    needs_verification = is_ncrc_email and is_email_password and not email_verified
+
+    # Get current and potential user type
+    current_type = get_user_type()
+    potential_type = 'staff' if is_ncrc_email and email_verified else current_type
+
+    return jsonify({
+        'email': email,
+        'email_verified': email_verified,
+        'auth_provider': auth_provider,
+        'needs_verification': needs_verification,
+        'is_ncrc_email': is_ncrc_email,
+        'current_user_type': current_type,
+        'potential_user_type': potential_type,
+        'message': 'Verify your email to get staff access' if needs_verification else None
+    })
+
+
+@auth_bp.route('/email-verified', methods=['POST'])
+def handle_email_verified():
+    """
+    Called after user verifies their email.
+    Updates their user type if they're @ncrc.org.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    uid = user.get('uid')
+    email = user.get('email', '')
+    auth_provider = user.get('provider', 'unknown')
+
+    if not uid:
+        return jsonify({'error': 'Missing user ID'}), 400
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        # Update user document
+        user_ref = db.collection('users').document(uid)
+        update_data = {
+            'emailVerified': True,
+            'emailVerifiedAt': datetime.utcnow()
+        }
+
+        # If @ncrc.org user, upgrade to staff
+        if email.lower().endswith('@ncrc.org'):
+            new_type = determine_user_type(email, True, auth_provider=auth_provider)
+            update_data['userType'] = new_type
+
+            # Update session
+            set_user_type(new_type)
+
+            # Log the upgrade
+            log_activity(uid, email, 'email_verified_upgrade', metadata={
+                'new_user_type': new_type
+            })
+        else:
+            new_type = get_user_type()
+
+        user_ref.update(update_data)
+
+        # Update session user
+        session_user = session.get('firebase_user', {})
+        session_user['email_verified'] = True
+        set_session_user(session_user)
+
+        return jsonify({
+            'success': True,
+            'user_type': new_type,
+            'permissions': get_user_permissions(new_type),
+            'message': 'Email verified successfully!' + (
+                ' You now have staff access.' if email.lower().endswith('@ncrc.org') else ''
+            )
+        })
+
+    except Exception as e:
+        print(f"Error handling email verification: {e}")
+        return jsonify({'error': str(e)}), 500
 
 
 @auth_bp.route('/sync-all', methods=['POST'])

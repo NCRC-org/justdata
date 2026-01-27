@@ -154,22 +154,48 @@ def create_app():
         """Contact Us page."""
         from jinja2 import Environment, FileSystemLoader, select_autoescape
         from flask import url_for
-        
+
         user_type = get_user_type()
         permissions = get_user_permissions(user_type)
-        
+
         # Create Jinja2 environment with Flask's url_for function
         env = Environment(
             loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
             autoescape=select_autoescape(['html', 'xml'])
         )
-        
+
         # Add Flask's url_for to the template globals
         env.globals['url_for'] = url_for
-        
+
         template = env.get_template('contact.html')
         return template.render(user_type=user_type, permissions=permissions)
-    
+
+    # Email verified landing page
+    @app.route('/email-verified')
+    def email_verified():
+        """
+        Landing page after user clicks email verification link.
+        Firebase handles the actual verification - this page just
+        prompts the user to refresh their session.
+        """
+        from jinja2 import Environment, FileSystemLoader, select_autoescape
+        from flask import url_for
+
+        user_type = get_user_type()
+        permissions = get_user_permissions(user_type)
+
+        # Create Jinja2 environment with Flask's url_for function
+        env = Environment(
+            loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+
+        # Add Flask's url_for to the template globals
+        env.globals['url_for'] = url_for
+
+        template = env.get_template('email_verified.html')
+        return template.render(user_type=user_type, permissions=permissions)
+
     # Register blueprints
     register_blueprints(app)
     

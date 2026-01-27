@@ -192,8 +192,9 @@ async function signInWithEmail(email, password) {
 
 /**
  * Sign up with email and password
+ * Automatically sends verification email after signup
  */
-async function signUpWithEmail(email, password) {
+async function signUpWithEmail(email, password, displayName = null) {
     if (!firebaseAuth) {
         console.error('Firebase not initialized');
         return;
@@ -202,10 +203,107 @@ async function signUpWithEmail(email, password) {
     try {
         const result = await firebaseAuth.createUserWithEmailAndPassword(email, password);
         console.log('Email sign-up successful:', result.user.email);
+
+        // Update display name if provided
+        if (displayName) {
+            await result.user.updateProfile({ displayName: displayName });
+        }
+
+        // Send verification email
+        await sendVerificationEmail(result.user);
+        console.log('Verification email sent to:', result.user.email);
+
         return result.user;
     } catch (error) {
         console.error('Email sign-up error:', error);
         throw error;
+    }
+}
+
+/**
+ * Send email verification to current user or specified user
+ */
+async function sendVerificationEmail(user = null) {
+    const targetUser = user || (firebaseAuth ? firebaseAuth.currentUser : null);
+
+    if (!targetUser) {
+        console.error('No user to send verification email to');
+        throw new Error('No user signed in');
+    }
+
+    if (targetUser.emailVerified) {
+        console.log('Email already verified');
+        return { alreadyVerified: true };
+    }
+
+    try {
+        // Configure action code settings for the verification email
+        const actionCodeSettings = {
+            url: window.location.origin + '/email-verified',
+            handleCodeInApp: false
+        };
+
+        await targetUser.sendEmailVerification(actionCodeSettings);
+        console.log('Verification email sent successfully');
+        return { sent: true };
+    } catch (error) {
+        console.error('Error sending verification email:', error);
+        throw error;
+    }
+}
+
+/**
+ * Check if current user needs email verification for staff access
+ */
+async function checkVerificationNeeded() {
+    try {
+        const response = await fetch('/api/auth/verification-status');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error checking verification status:', error);
+        return { needs_verification: false };
+    }
+}
+
+/**
+ * Refresh user's email verification status
+ * Call this after user clicks verification link
+ */
+async function refreshEmailVerification() {
+    if (!firebaseAuth || !firebaseAuth.currentUser) {
+        return { verified: false };
+    }
+
+    try {
+        // Reload user to get fresh email_verified status
+        await firebaseAuth.currentUser.reload();
+        const isVerified = firebaseAuth.currentUser.emailVerified;
+
+        if (isVerified) {
+            // Notify backend that email is verified
+            const response = await fetch('/api/auth/email-verified', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                // Update local state
+                window.justDataUserType = data.user_type;
+                window.justDataPermissions = data.permissions;
+
+                // Trigger auth state update
+                handleAuthStateChange(firebaseAuth.currentUser);
+            }
+
+            return { verified: true, ...data };
+        }
+
+        return { verified: false };
+    } catch (error) {
+        console.error('Error refreshing verification status:', error);
+        return { verified: false, error: error.message };
     }
 }
 
@@ -483,5 +581,8 @@ window.JustDataAuth = {
     isAuthenticated,
     getAuthStatus,
     authFetch,
-    onAuthStateChanged
+    onAuthStateChanged,
+    sendVerificationEmail,
+    checkVerificationNeeded,
+    refreshEmailVerification
 };

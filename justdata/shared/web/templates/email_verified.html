@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Verified - JustData</title>
+    <meta name="description" content="Email verification confirmation for JustData">
+    <link rel="icon" type="image/jpeg" href="{{ url_for('static', filename='img/ncrc-logo.jpg') }}">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+
+    <style>
+        .verification-container {
+            max-width: 500px;
+            margin: 80px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .verification-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .verification-icon i {
+            font-size: 2.5rem;
+            color: white;
+        }
+
+        .verification-icon.pending {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        }
+
+        .verification-title {
+            font-size: 1.75rem;
+            color: #1a365d;
+            margin-bottom: 12px;
+            font-weight: 700;
+        }
+
+        .verification-subtitle {
+            color: #6b7280;
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .verification-status {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+        }
+
+        .verification-status.success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .verification-status.info {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            background: #f5f5f5;
+            color: #333;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .btn-secondary:hover {
+            background: #e8e8e8;
+        }
+
+        .verification-note {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.9rem;
+            color: #6b7280;
+        }
+
+        #statusMessage {
+            display: none;
+        }
+    </style>
+</head>
+<body style="background: #f3f4f6; min-height: 100vh;">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="header-title-section">
+                    <a href="/" style="text-decoration: none;">
+                        <h1><span class="app-name-part1">JUST</span><span class="app-name-part2">DATA</span></h1>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="verification-container">
+        <div class="verification-icon" id="verificationIcon">
+            <i class="fas fa-spinner fa-spin" id="iconSpinner"></i>
+        </div>
+
+        <h1 class="verification-title" id="verificationTitle">Checking Verification...</h1>
+        <p class="verification-subtitle" id="verificationSubtitle">Please wait while we confirm your email verification status.</p>
+
+        <div id="statusMessage" class="verification-status"></div>
+
+        <div id="actionButtons" style="display: none;">
+            <a href="/" class="btn-primary" id="continueBtn">
+                <i class="fas fa-arrow-right"></i>
+                Continue to JustData
+            </a>
+            <br>
+            <button onclick="resendVerification()" class="btn-secondary" id="resendBtn" style="display: none;">
+                <i class="fas fa-envelope"></i>
+                Resend Verification Email
+            </button>
+        </div>
+
+        <div class="verification-note">
+            <p>Having trouble? <a href="mailto:research@ncrc.org">Contact support</a></p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+    <!-- JustData Auth -->
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+
+    <script>
+        // Check verification status on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Wait for Firebase to initialize
+            setTimeout(checkVerificationStatus, 1500);
+        });
+
+        async function checkVerificationStatus() {
+            const icon = document.getElementById('verificationIcon');
+            const iconSpinner = document.getElementById('iconSpinner');
+            const title = document.getElementById('verificationTitle');
+            const subtitle = document.getElementById('verificationSubtitle');
+            const statusMsg = document.getElementById('statusMessage');
+            const actionButtons = document.getElementById('actionButtons');
+            const resendBtn = document.getElementById('resendBtn');
+
+            try {
+                // Check if user is logged in
+                if (typeof JustDataAuth === 'undefined' || !JustDataAuth.getCurrentUser()) {
+                    // Not logged in - show success message anyway (they just verified)
+                    icon.classList.add('success');
+                    iconSpinner.className = 'fas fa-check-circle';
+                    title.textContent = 'Email Verified!';
+                    subtitle.textContent = 'Your email has been verified. Please sign in to continue with your upgraded access.';
+                    statusMsg.className = 'verification-status success';
+                    statusMsg.innerHTML = '<i class="fas fa-check"></i> Verification complete';
+                    statusMsg.style.display = 'block';
+                    actionButtons.style.display = 'block';
+                    return;
+                }
+
+                // User is logged in - refresh verification status
+                const result = await JustDataAuth.refreshEmailVerification();
+
+                if (result.verified) {
+                    // Success!
+                    icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                    icon.classList.remove('pending');
+                    title.textContent = 'Email Verified!';
+
+                    if (result.user_type === 'staff') {
+                        subtitle.textContent = 'Congratulations! Your email has been verified and you now have full staff access.';
+                        statusMsg.className = 'verification-status success';
+                        statusMsg.innerHTML = '<i class="fas fa-user-shield"></i> Staff access granted';
+                    } else {
+                        subtitle.textContent = 'Your email has been verified successfully.';
+                        statusMsg.className = 'verification-status success';
+                        statusMsg.innerHTML = '<i class="fas fa-check"></i> Verification complete';
+                    }
+                    statusMsg.style.display = 'block';
+                } else {
+                    // Not yet verified
+                    icon.innerHTML = '<i class="fas fa-envelope"></i>';
+                    icon.classList.add('pending');
+                    title.textContent = 'Verification Pending';
+                    subtitle.textContent = 'It looks like your email hasn\'t been verified yet. Please click the link in the verification email we sent you.';
+                    statusMsg.className = 'verification-status info';
+                    statusMsg.innerHTML = '<i class="fas fa-info-circle"></i> Check your inbox and spam folder for the verification email';
+                    statusMsg.style.display = 'block';
+                    resendBtn.style.display = 'inline-flex';
+                }
+
+                actionButtons.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error checking verification:', error);
+                icon.innerHTML = '<i class="fas fa-check-circle"></i>';
+                title.textContent = 'Verification Processing';
+                subtitle.textContent = 'Your verification is being processed. Please sign in to continue.';
+                actionButtons.style.display = 'block';
+            }
+        }
+
+        async function resendVerification() {
+            const btn = document.getElementById('resendBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+
+            try {
+                await JustDataAuth.sendVerificationEmail();
+                alert('Verification email sent! Please check your inbox.');
+            } catch (error) {
+                if (error.code === 'auth/too-many-requests') {
+                    alert('Too many requests. Please wait a few minutes before trying again.');
+                } else {
+                    alert('Failed to send email. Please try again later.');
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-envelope"></i> Resend Verification Email';
+            }
+        }
+    </script>
+</body>
+</html>
