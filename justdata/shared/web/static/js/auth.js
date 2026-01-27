@@ -433,10 +433,85 @@ async function notifyBackendLogin(idToken, user) {
                 switchUserType(data.user_type);
                 console.log('Applied visibility for user type:', data.user_type);
             }
+            
+            // Check if user needs to provide organization (non-NCRC users on first login)
+            if (data.needs_organization) {
+                console.log('User needs to provide organization');
+                showOrganizationPrompt();
+            }
         }
         return data;
     } catch (error) {
         console.error('Backend login notification failed:', error);
+    }
+}
+
+/**
+ * Show organization prompt modal for non-NCRC users on first login
+ */
+function showOrganizationPrompt() {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('organization-prompt-modal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'organization-prompt-modal';
+        modal.innerHTML = `
+            <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10000; display: flex; align-items: center; justify-content: center;">
+                <div style="background: white; padding: 30px; border-radius: 12px; max-width: 450px; width: 90%; box-shadow: 0 4px 20px rgba(0,0,0,0.15);">
+                    <h2 style="margin: 0 0 15px 0; font-size: 1.5rem; color: #1a1a1a;">Welcome to JustData!</h2>
+                    <p style="margin: 0 0 20px 0; color: #666; line-height: 1.5;">Please enter your organization name to complete your profile.</p>
+                    <input type="text" id="org-prompt-input" placeholder="Organization Name" 
+                           style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box;">
+                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                        <button id="org-prompt-skip" style="padding: 10px 20px; background: #f5f5f5; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Skip for now</button>
+                        <button id="org-prompt-submit" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem;">Continue</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+        
+        // Handle submit
+        document.getElementById('org-prompt-submit').addEventListener('click', async () => {
+            const org = document.getElementById('org-prompt-input').value.trim();
+            if (org) {
+                try {
+                    const token = await getToken();
+                    const response = await fetch('/api/auth/set-organization', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ organization: org })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        console.log('Organization set:', org);
+                        modal.remove();
+                    } else {
+                        alert(data.error || 'Failed to save organization');
+                    }
+                } catch (error) {
+                    console.error('Error setting organization:', error);
+                    alert('Failed to save organization. Please try again.');
+                }
+            } else {
+                alert('Please enter your organization name');
+            }
+        });
+        
+        // Handle skip
+        document.getElementById('org-prompt-skip').addEventListener('click', () => {
+            modal.remove();
+        });
+        
+        // Handle enter key
+        document.getElementById('org-prompt-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('org-prompt-submit').click();
+            }
+        });
     }
 }
 

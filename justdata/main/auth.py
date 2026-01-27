@@ -573,6 +573,15 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
         else:
             # Create new user
             user_type = determine_user_type(email, email_verified, auth_provider=auth_provider)
+            
+            # Auto-set organization for @ncrc.org users
+            if email.lower().endswith('@ncrc.org'):
+                final_organization = 'NCRC'
+                needs_organization = False
+            else:
+                final_organization = organization
+                needs_organization = not organization  # True if no organization provided
+            
             user_data = {
                 'uid': uid,
                 'email': email,
@@ -581,7 +590,8 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
                 'lastName': last_name,
                 'photoURL': photo_url,
                 'userType': user_type,
-                'organization': organization,
+                'organization': final_organization,
+                'needsOrganization': needs_organization,
                 'jobTitle': None,
                 'county': None,
                 'emailVerified': email_verified,
@@ -1153,13 +1163,21 @@ def auth_login():
         auth_provider == 'password' and
         not email_verified
     )
+    
+    # Check if user needs to provide organization (non-NCRC users without org)
+    needs_organization = firestore_user.get('needsOrganization', False)
+    # Also check if organization is empty for non-NCRC users
+    if not email.lower().endswith('@ncrc.org') and not firestore_user.get('organization'):
+        needs_organization = True
 
     return jsonify({
         'success': True,
         'user': user,
         'user_type': user_type,
         'permissions': get_user_permissions(user_type),
-        'needs_email_verification': needs_verification
+        'needs_email_verification': needs_verification,
+        'needs_organization': needs_organization,
+        'organization': firestore_user.get('organization')
     })
 
 
@@ -2039,6 +2057,50 @@ def dismiss_member_prompt():
         return jsonify({
             'success': True,
             'message': 'Prompt dismissed'
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@auth_bp.route('/set-organization', methods=['POST'])
+@login_required
+def set_user_organization():
+    """
+    Set the user's organization (for non-NCRC users on first login).
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not authenticated'}), 401
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    organization = data.get('organization', '').strip()
+    if not organization:
+        return jsonify({'error': 'Organization is required'}), 400
+
+    uid = user.get('uid')
+    email = user.get('email', '')
+
+    # Don't allow changing organization for NCRC users
+    if email.lower().endswith('@ncrc.org'):
+        return jsonify({'error': 'NCRC users cannot change organization'}), 400
+
+    db = get_firestore_client()
+    if not db:
+        return jsonify({'error': 'Database not available'}), 500
+
+    try:
+        db.collection('users').document(uid).update({
+            'organization': organization,
+            'needsOrganization': False
+        })
+
+        return jsonify({
+            'success': True,
+            'organization': organization,
+            'message': 'Organization updated successfully'
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
