@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 LendSight-specific AI analysis for HMDA mortgage lending data.
-Similar structure to BranchSeeker but for mortgage origination data.
+Similar structure to BranchSight but for mortgage origination data.
 """
 
 import json

@@ -54,7 +54,7 @@ function setupFormHandler() {
             hasErrors = true;
         }
     } else {
-        // Single-select validation (for LendSight, BizSight, BranchSeeker)
+        // Single-select validation (for LendSight, BizSight, BranchSight)
         const selectedCounty = countySelectEl ? countySelectEl.value : '';
         if (!selectedCounty || selectedCounty === '') {
             showValidationMessage(countySelectEl, 'Please select a county to analyze.', 'error');
@@ -391,7 +391,7 @@ function validateInput(input, type) {
                 input.setCustomValidity('');
             }
         } else {
-            // Single-select validation (for LendSight, BizSight, BranchSeeker)
+            // Single-select validation (for LendSight, BizSight, BranchSight)
             const selectedCounty = countySelectEl ? countySelectEl.value : '';
             if (!selectedCounty || selectedCounty === '') {
                 isValid = false;
@@ -462,7 +462,7 @@ function validateInput(input, type) {
 // Initialize onboarding tour
 function initializeTour() {
     // Check if user has seen the tour before
-    const hasSeenTour = localStorage.getItem('branchseeker_tour_completed');
+    const hasSeenTour = localStorage.getItem('branchsight_tour_completed');
     const startTourBtn = document.getElementById('startTourBtn');
     
     if (!startTourBtn) return;
@@ -476,11 +476,11 @@ function initializeTour() {
     // if (!hasSeenTour) {
     //     // Wait a bit for page to load, then show tour
     //     setTimeout(() => {
-    //         const shouldStart = confirm('Welcome to BranchSeeker! Would you like to take a quick tour to learn how to use the tool?');
+    //         const shouldStart = confirm('Welcome to BranchSight! Would you like to take a quick tour to learn how to use the tool?');
     //         if (shouldStart) {
     //             startTour();
     //         } else {
-    //             localStorage.setItem('branchseeker_tour_completed', 'true');
+    //             localStorage.setItem('branchsight_tour_completed', 'true');
     //         }
     //     }, 1000);
     // }
@@ -519,7 +519,7 @@ function startTour() {
             }
         }, 100);
     }).oncomplete(function() {
-        localStorage.setItem('branchseeker_tour_completed', 'true');
+        localStorage.setItem('branchsight_tour_completed', 'true');
     }).onexit(function() {
         // Don't mark as completed if they exit early
     }).start();

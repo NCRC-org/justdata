@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Unified configuration system for all JustData applications.
-Supports BranchSeeker, BizSight, and LendSight with consistent routing patterns.
+Supports BranchSight, BizSight, and LendSight with consistent routing patterns.
 """
 
 import os
@@ -67,13 +67,13 @@ class AppConfig:
         Get configuration for a specific app.
         
         Args:
-            app_name: Name of the app ('branchseeker', 'bizsight', 'lendsight')
+            app_name: Name of the app ('branchsight', 'bizsight', 'lendsight')
         
         Returns:
             Dictionary of configuration values
         """
         configs = {
-            'branchseeker': BranchSeekerConfig,
+            'branchsight': BranchSightConfig,
             'bizsight': BizSightConfig,
             'lendsight': LendSightConfig
         }
@@ -89,13 +89,13 @@ class AppConfig:
         }
 
 
-class BranchSeekerConfig(AppConfig):
-    """Configuration specific to BranchSeeker (FDIC bank branch analyzer)."""
+class BranchSightConfig(AppConfig):
+    """Configuration specific to BranchSight (FDIC bank branch analyzer)."""
     
-    APP_NAME = "BranchSeeker"
+    APP_NAME = "BranchSight"
     DATASET_ID = "branches"
     TABLE_ID = "sod"
-    OUTPUT_DIR = os.path.join(AppConfig.DATA_DIR, 'reports', 'branchseeker')
+    OUTPUT_DIR = os.path.join(AppConfig.DATA_DIR, 'reports', 'branchsight')
     
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)

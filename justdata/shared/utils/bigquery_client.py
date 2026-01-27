@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BigQuery utilities for data analysis.
-Shared across BranchSeeker, BizSight, and LendSight.
+Shared across BranchSight, BizSight, and LendSight.
 """
 
 import os

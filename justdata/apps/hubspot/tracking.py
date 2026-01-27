@@ -124,7 +124,7 @@ class UserActivityTracker:
         
         Args:
             user_email: User's email
-            tool_name: Name of tool used (branchseeker, lendsight, bizsight)
+            tool_name: Name of tool used (branchsight, lendsight, bizsight)
             action: Action performed (generate_report, run_analysis, etc.)
             details: Additional details about the usage
             

@@ -6,7 +6,7 @@
 -- Stores cache metadata and access statistics
 CREATE TABLE IF NOT EXISTS `hdma1-242116.justdata.analysis_cache` (
   cache_key STRING NOT NULL,              -- Primary key: hash of normalized parameters
-  app_name STRING NOT NULL,               -- 'branchseeker', 'bizsight', 'lendsight', 'mergermeter', 'branchmapper'
+  app_name STRING NOT NULL,               -- 'branchsight', 'bizsight', 'lendsight', 'mergermeter', 'branchmapper'
   job_id STRING NOT NULL,                 -- Original job_id from first analysis
   parameters_hash STRING,                -- SHA256 of normalized parameters (for verification)
   parameters_json JSON,                   -- Full normalized parameters (for debugging/analytics)

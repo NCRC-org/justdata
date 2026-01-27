@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BranchSight-specific data utilities for BigQuery and county reference.
-Adapted from ncrc-test-apps branchseeker.
+Adapted from ncrc-test-apps branchsight.
 """
 
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string

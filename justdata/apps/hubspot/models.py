@@ -95,7 +95,7 @@ class HubSpotDeal(BaseModel):
     contact_ids: Optional[List[str]] = []
     
     # Custom properties
-    analysis_type: Optional[str] = None  # branchseeker, lendsight, bizsight
+    analysis_type: Optional[str] = None  # branchsight, lendsight, bizsight
     report_complexity: Optional[str] = None  # basic, standard, advanced, custom
     
     # Metadata
@@ -108,7 +108,7 @@ class HubSpotDeal(BaseModel):
                 "dealname": "Q4 Banking Analysis Report",
                 "dealstage": "contractsent",
                 "amount": 5000.00,
-                "analysis_type": "branchseeker",
+                "analysis_type": "branchsight",
                 "report_complexity": "advanced"
             }
         }
@@ -136,7 +136,7 @@ class HubSpotEngagement(BaseModel):
         json_schema_extra = {
             "example": {
                 "engagement_type": "EMAIL",
-                "subject": "Your BranchSeeker Analysis Report",
+                "subject": "Your BranchSight Analysis Report",
                 "status": "SENT",
                 "timestamp": "2024-10-15T10:30:00Z"
             }

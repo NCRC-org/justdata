@@ -6,7 +6,7 @@ A comprehensive data analysis platform providing insights across three key finan
 
 JustData is a unified platform that consolidates three specialized financial analysis modules:
 
-- **BranchSeeker** - Banking market intelligence and branch network analysis ✅ **FULLY FUNCTIONAL**
+- **BranchSight** - Banking market intelligence and branch network analysis ✅ **FULLY FUNCTIONAL**
 - **LendSight** - Mortgage lending patterns and market trends 🏗️ *Framework Ready*
 - **BizSight** - Small business lending and economic indicators 🏗️ *Framework Ready*
 
@@ -18,7 +18,7 @@ JustData is a unified platform that consolidates three specialized financial ana
 - **[HUBSPOT_DEVELOPER_PROJECTS.md](HUBSPOT_DEVELOPER_PROJECTS.md)** - HubSpot Developer Projects integration approach
 
 ### App-Specific Documentation
-- **BranchSeeker**: [SERVICE_TYPE_DEFINITIONS.md](justdata/apps/branchseeker/SERVICE_TYPE_DEFINITIONS.md) - Service type reference
+- **BranchSight**: [SERVICE_TYPE_DEFINITIONS.md](justdata/apps/branchsight/SERVICE_TYPE_DEFINITIONS.md) - Service type reference
 - **MergerMeter**: [README.md](justdata/apps/mergermeter/README.md) - App-specific documentation
 - **Shared Utils**: [BIGQUERY_QUERIES.md](justdata/shared/utils/BIGQUERY_QUERIES.md) - BigQuery query reference
 
@@ -53,7 +53,7 @@ python run_justdata.py
 Then open: http://localhost:8000
 
 All applications are accessible from the unified landing page:
-- **BranchSeeker**: http://localhost:8000/branchseeker/
+- **BranchSight**: http://localhost:8000/branchsight/
 - **LendSight**: http://localhost:8000/lendsight/
 - **BizSight**: http://localhost:8000/bizsight/
 - **MergerMeter**: http://localhost:8000/mergermeter/
@@ -84,7 +84,7 @@ justdata/
 │   │   └── web/              #    Templates, CSS, JS
 │   │
 │   ├── apps/                 # ← Individual apps
-│   │   ├── branchseeker/     #    FDIC analyzer (FULL)
+│   │   ├── branchsight/     #    FDIC analyzer (FULL)
 │   │   ├── bizsight/         #    Business (SKELETON)
 │   │   └── lendsight/        #    Lending (SKELETON)
 │   │
@@ -93,12 +93,12 @@ justdata/
 │
 └── data/                     # ← Generated reports go here
     └── reports/
-        ├── branchseeker/
+        ├── branchsight/
         ├── bizsight/
         └── lendsight/
 ```
 
-## 📊 BranchSeeker Features
+## 📊 BranchSight Features
 
 ### Data Analysis
 - **FDIC Summary of Deposits (SOD)** data analysis
@@ -171,7 +171,7 @@ All applications use consistent routing patterns:
 
 ### Running Locally
 ```bash
-# Start BranchSeeker
+# Start BranchSight
 # Start unified JustData platform (all apps)
 python run_justdata.py
 ```
@@ -194,7 +194,7 @@ DEBUG=True
 ## 🚧 Roadmap
 
 ### Completed ✅
-- **BranchSeeker** - Fully functional banking analysis
+- **BranchSight** - Fully functional banking analysis
 - **Shared Infrastructure** - Common utilities and templates
 - **AI Integration** - Claude 4 Sonnet with fallback
 - **Web Interface** - Interactive reports with export options

@@ -1,6 +1,6 @@
 """
 Excel report builder module for creating Excel reports from data.
-Shared across BranchSeeker, BizSight, and LendSight.
+Shared across BranchSight, BizSight, and LendSight.
 """
 
 import pandas as pd

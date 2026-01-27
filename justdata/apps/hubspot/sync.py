@@ -138,7 +138,7 @@ class HubSpotSyncManager:
         self,
         report_id: str,
         recipients: List[Dict[str, str]],
-        report_type: str = "branchseeker"
+        report_type: str = "branchsight"
     ) -> Dict[str, Any]:
         """
         Sync report recipients to HubSpot.

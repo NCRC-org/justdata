@@ -64,7 +64,7 @@ SELECT COUNT(*) FROM `hdma1-242116.justdata.analysis_result_sections`;
 
 The caching system is automatically integrated into all blueprint `analyze()` functions:
 
-- **BranchSeeker**: `/branchseeker/analyze`
+- **BranchSight**: `/branchsight/analyze`
 - **BizSight**: `/bizsight/analyze`
 - **MergerMeter**: `/mergermeter/analyze`
 - **LendSight**: `/lendsight/analyze` (if applicable)

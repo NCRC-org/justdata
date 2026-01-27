@@ -13,7 +13,7 @@ celery_app = Celery(
     broker=settings.redis_url,
     backend=settings.redis_url,
     include=[
-        "apps.branchseeker.tasks",
+        "apps.branchsight.tasks",
         "apps.lendsight.tasks",
         "apps.bizsight.tasks",
     ]
@@ -46,7 +46,7 @@ celery_app.conf.update(
 
 # Task routing
 celery_app.conf.task_routes = {
-    "apps.branchseeker.*": {"queue": "branchseeker"},
+    "apps.branchsight.*": {"queue": "branchsight"},
     "apps.lendsight.*": {"queue": "lendsight"},
     "apps.bizsight.*": {"queue": "bizsight"},
     "shared.services.*": {"queue": "shared"},

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 AI analysis utilities for data analysis using GPT-4 and Claude.
-Shared across BranchSeeker, BizSight, and LendSight.
+Shared across BranchSight, BizSight, and LendSight.
 """
 
 import sys

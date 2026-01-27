@@ -31,7 +31,7 @@ class HubSpotService:
         firstname: Optional[str] = None,
         lastname: Optional[str] = None,
         company_name: Optional[str] = None,
-        report_type: str = "branchseeker"
+        report_type: str = "branchsight"
     ) -> Dict[str, Any]:
         """
         Sync a contact to HubSpot when they receive a report.
@@ -121,7 +121,7 @@ class HubSpotService:
         Args:
             deal_name: Name of the deal
             amount: Deal amount
-            analysis_type: Type of analysis (branchseeker, lendsight, bizsight)
+            analysis_type: Type of analysis (branchsight, lendsight, bizsight)
             company_id: Associated company ID
             contact_id: Associated contact ID
             

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 LendSight Flask web application.
-Uses the same routing patterns as BranchSeeker and BizSight.
+Uses the same routing patterns as BranchSight and BizSight.
 """
 
 from flask import render_template, request, jsonify, session, Response, make_response, send_from_directory

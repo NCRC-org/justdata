@@ -252,7 +252,7 @@ class HubSpotClient:
         
         Args:
             contact_id: HubSpot contact ID
-            report_type: Type of report (branchseeker, lendsight, bizsight)
+            report_type: Type of report (branchsight, lendsight, bizsight)
             report_name: Name of the report
             
         Returns:

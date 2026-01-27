@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BranchSight core analysis logic - FULLY FUNCTIONAL.
-Adapted from ncrc-test-apps branchseeker.
+Adapted from ncrc-test-apps branchsight.
 """
 
 import os
@@ -10,7 +10,7 @@ from typing import Dict, List
 from datetime import datetime
 from .config import OUTPUT_DIR, PROJECT_ID
 from .data_utils import find_exact_county_match, execute_branch_query
-from .analysis import BranchSeekerAnalyzer
+from .analysis import BranchSightAnalyzer
 from justdata.shared.reporting.report_builder import build_report, save_excel_report
 
 
@@ -204,7 +204,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         # Generate AI insights (optional if API key is configured)
         ai_insights = {}
         try:
-            from .analysis import BranchSeekerAnalyzer
+            from .analysis import BranchSightAnalyzer
             from justdata.shared.analysis.ai_provider import convert_numpy_types
 
             # Prepare data for AI analysis
@@ -261,7 +261,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
             print(f"Final year branch count: {final_year_branch_count}")
 
             try:
-                analyzer = BranchSeekerAnalyzer()
+                analyzer = BranchSightAnalyzer()
                 print("AI analyzer initialized successfully")
             except Exception as init_error:
                 print(f"Failed to initialize AI analyzer: {init_error}")

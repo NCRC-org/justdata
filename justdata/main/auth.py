@@ -103,7 +103,7 @@ ACCESS_MATRIX = {
         'senior_executive': 'full',
         'admin': 'full'
     },
-    'branchseeker': {
+    'branchsight': {
         'public_anonymous': 'locked',
         'public_registered': 'locked',
         'just_economy_club': 'limited',

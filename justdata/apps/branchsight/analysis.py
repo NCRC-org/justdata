@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-BranchSeeker-specific AI analysis for FDIC bank branch data.
+BranchSight-specific AI analysis for FDIC bank branch data.
 """
 
 import json
@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
 
 
-class BranchSeekerAnalyzer(AIAnalyzer):
+class BranchSightAnalyzer(AIAnalyzer):
     """AI analyzer specifically for bank branch data."""
 
     def _get_data_source_context(self) -> str:

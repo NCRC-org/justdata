@@ -13,7 +13,7 @@ JUSTDATA_BASE = BASE_DIR.parent.parent
 
 # Template and static directories
 TEMPLATES_DIR = str(BASE_DIR / 'templates')
-# Use shared static folder (same as BranchSeeker and LendSight)
+# Use shared static folder (same as BranchSight and LendSight)
 STATIC_DIR = str(JUSTDATA_BASE / 'shared' / 'web' / 'static')
 
 # Output directory - use temp directory for Cloud Run compatibility

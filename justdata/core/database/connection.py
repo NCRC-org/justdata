@@ -133,7 +133,7 @@ def init_database():
     if engine:
         try:
             # Import all models here to ensure they're registered
-            # from justdata.apps.branchseeker.models import *
+            # from justdata.apps.branchsight.models import *
             # from justdata.apps.lendsight.models import *
             # from justdata.apps.bizsight.models import *
             

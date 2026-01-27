@@ -1,6 +1,6 @@
 """
 Shared utilities for mapping counties to metro/CBSA areas.
-Used by MemberView, BranchSeeker, LendSight, and other apps needing geographic data.
+Used by MemberView, BranchSight, LendSight, and other apps needing geographic data.
 """
 from typing import Dict, List, Optional
 import logging

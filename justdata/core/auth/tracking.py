@@ -86,7 +86,7 @@ async def log_tool_usage(
     
     Args:
         user_email: User's email
-        tool_name: Tool being used (branchseeker, lendsight, bizsight)
+        tool_name: Tool being used (branchsight, lendsight, bizsight)
         action: Action performed (generate_report, run_analysis, etc.)
         details: Optional additional details
         

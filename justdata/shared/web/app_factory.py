@@ -1,6 +1,6 @@
 """
 Flask application factory for creating consistent web apps.
-Shared across BranchSeeker, BizSight, LendSight, MergerMeter, and other JustData apps.
+Shared across BranchSight, BizSight, LendSight, MergerMeter, and other JustData apps.
 """
 
 from flask import Flask, jsonify
@@ -22,7 +22,7 @@ def create_app(app_name: str, template_folder: str = None, static_folder: str = 
     Create a Flask application with consistent configuration.
 
     Args:
-        app_name: Name of the application (e.g., 'branchseeker', 'bizsight', 'lendsight')
+        app_name: Name of the application (e.g., 'branchsight', 'bizsight', 'lendsight')
         template_folder: Path to templates folder
         static_folder: Path to static files folder
         config: Additional configuration dictionary

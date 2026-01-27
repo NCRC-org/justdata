@@ -20,7 +20,7 @@ python run_justdata.py  # All apps at localhost:8000
 
 ### Run Individual Apps
 ```bash
-python justdata/apps/branchseeker/run.py    # Port 8080 - FDIC branch analysis
+python justdata/apps/branchsight/run.py    # Port 8080 - FDIC branch analysis (BranchSight)
 python justdata/apps/lendsight/run.py       # Port 8082 - HMDA mortgage analysis
 python justdata/apps/lenderprofile/run.py   # Port 8086 - Lender corporate analysis
 python justdata/apps/dataexplorer/run.py    # Port 8085 - Data exploration
@@ -37,7 +37,7 @@ gunicorn --bind 0.0.0.0:8082 justdata.apps.lendsight.run:application
 ```bash
 pytest tests/ -v --cov=justdata
 pytest tests/ -m "not slow"              # Skip slow tests
-pytest tests/apps/test_branchseeker/ -v  # Test specific app
+pytest tests/apps/test_branchsight/ -v  # Test BranchSight app
 ```
 
 ### Linting and Formatting
@@ -65,7 +65,7 @@ make deploy-all    # Deploy all services to Cloud Run
 ```
 justdata/
 ├── apps/                    # Flask applications
-│   ├── branchseeker/        # FDIC branch analysis (fully functional)
+│   ├── branchsight/         # BranchSight - FDIC branch analysis (fully functional)
 │   ├── lendsight/           # HMDA mortgage analysis
 │   ├── lenderprofile/       # Lender corporate structure analysis
 │   ├── dataexplorer/        # Data exploration tool
@@ -187,7 +187,7 @@ docker build -f Dockerfile.app .   # Build single app image
 | App | Port | Description |
 |-----|------|-------------|
 | Unified Platform | 8000 | All apps via run_justdata.py |
-| BranchSeeker | 8080 | FDIC branch analysis |
+| BranchSight | 8080 | FDIC branch analysis |
 | BizSight | 8081 | Small business lending |
 | LendSight | 8082 | HMDA mortgage analysis |
 | MergerMeter | 8083 | Bank merger analysis |
@@ -200,7 +200,9 @@ docker build -f Dockerfile.app .   # Build single app image
 When using speech-to-text, these shorthand names may be used:
 - **Mortgage Report** = LendSight
 - **Business Report** = BizSight
-- **Branch Report** = BranchSeeker/BranchSight
+- **Branch Report** = BranchSight
+
+**Note:** BranchSight was formerly called BranchSeeker. The codebase has been fully renamed to BranchSight.
 
 ## Terminal Note
 

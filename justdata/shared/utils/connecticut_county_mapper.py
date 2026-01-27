@@ -224,7 +224,7 @@ def get_tracts_for_connecticut_selection(
     try:
         if bq_client is None:
             from justdata.shared.utils.bigquery_client import get_bigquery_client
-            from apps.branchseeker.config import PROJECT_ID
+            from apps.branchsight.config import PROJECT_ID
             bq_client = get_bigquery_client(PROJECT_ID)
         
         # Build query to get all tracts for these counties

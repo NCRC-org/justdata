@@ -1,5 +1,5 @@
 """
-BranchSeeker Application
+BranchSight Application
 
 Banking market intelligence and branch network analysis module.
 This is the core banking analysis functionality migrated from the existing codebase.

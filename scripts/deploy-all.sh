@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Deploy JustData Applications to Cloud Run
-# This script deploys BranchSeeker, BranchMapper, and LendSight
+# This script deploys BranchSight, BranchMapper, and LendSight
 
 set -e
 
@@ -16,8 +16,8 @@ SERVICE_ACCOUNT="justdata@${PROJECT_ID}.iam.gserviceaccount.com"
 get_service_config() {
     local app_name=$1
     case $app_name in
-        branchseeker)
-            echo "8080:branchseeker"
+        branchsight)
+            echo "8080:branchsight"
             ;;
         lendsight)
             echo "8082:lendsight"
@@ -211,7 +211,7 @@ deploy_all() {
     log "Starting optimized deployment of all services..."
     
     local service_urls=()
-    local apps=("branchseeker" "lendsight" "branchmapper")
+    local apps=("branchsight" "lendsight" "branchmapper")
     local image_uris=()
     
     # Step 1: Build all images first (Cloud Build handles parallelization)
@@ -324,7 +324,7 @@ deploy_one() {
     local config=$(get_service_config $app_name)
     if [ -z "$config" ]; then
         error "Unknown app: ${app_name}"
-        error "Available apps: branchseeker, lendsight, branchmapper"
+        error "Available apps: branchsight, lendsight, branchmapper"
         exit 1
     fi
     

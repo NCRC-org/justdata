@@ -36,7 +36,7 @@ class ContactSyncRequest(BaseModel):
     firstname: Optional[str] = None
     lastname: Optional[str] = None
     company: Optional[str] = None
-    report_type: str = "branchseeker"
+    report_type: str = "branchsight"
 
 
 class BatchContactSyncRequest(BaseModel):
@@ -49,7 +49,7 @@ class ReportRecipientsRequest(BaseModel):
     """Request model for syncing report recipients."""
     report_id: str
     recipients: List[Dict[str, str]]
-    report_type: str = "branchseeker"
+    report_type: str = "branchsight"
 
 
 class EngagementTrackingRequest(BaseModel):

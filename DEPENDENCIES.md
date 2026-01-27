@@ -58,7 +58,7 @@ JustData is a unified platform with multiple subprojects, each with specific dep
 
 ## Subproject Dependencies
 
-### BranchSeeker
+### BranchSight
 
 **Purpose**: Banking market intelligence and branch network analysis
 
@@ -216,7 +216,7 @@ JustData is a unified platform with multiple subprojects, each with specific dep
 **Dependencies**:
 - All shared dependencies
 - Uses Leaflet.js for mapping (via CDN)
-- Shares data utilities with BranchSeeker
+- Shares data utilities with BranchSight
 
 **Configuration**:
 - `GCP_PROJECT_ID` - Google Cloud project ID
@@ -224,7 +224,7 @@ JustData is a unified platform with multiple subprojects, each with specific dep
 
 ## Report Generation Flows
 
-### BranchSeeker Report Flow
+### BranchSight Report Flow
 
 1. **User Input**: County selection, year range, selection type (county/state/metro)
 2. **Data Query**: Query BigQuery for FDIC SOD data

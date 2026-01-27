@@ -77,7 +77,7 @@ def normalize_parameters(app_name: str, params: Dict[str, Any]) -> Dict[str, Any
         'app': app_name.lower(),
     }
     
-    if app_name.lower() == 'branchseeker':
+    if app_name.lower() == 'branchsight':
         counties = params.get('counties', '')
         if isinstance(counties, str):
             counties_list = [c.strip().lower() for c in counties.split(';') if c.strip()]
@@ -167,7 +167,7 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
     sections = []
     display_order = 1
     
-    if app_name.lower() == 'branchseeker':
+    if app_name.lower() == 'branchsight':
         # Data tables
         report_data = result_data.get('report_data', {})
         import pandas as pd
@@ -610,7 +610,7 @@ def get_cached_result(app_name: str, params: Dict[str, Any],
         # Validate that we have enough sections for a complete result
         # LendSight should have at least 5 sections (summary, demographic_overview, etc.)
         # If not, the cache entry is incomplete and should be ignored
-        min_sections = {'lendsight': 5, 'branchseeker': 3, 'bizsight': 3, 'mergermeter': 2}
+        min_sections = {'lendsight': 5, 'branchsight': 3, 'bizsight': 3, 'mergermeter': 2}
         min_count = min_sections.get(app_name.lower(), 2)
         if len(sections_rows) < min_count:
             print(f"[WARNING] Cache entry has only {len(sections_rows)} sections, expected at least {min_count}. Ignoring incomplete cache.")

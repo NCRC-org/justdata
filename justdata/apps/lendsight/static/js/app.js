@@ -92,7 +92,7 @@ function setupFormHandler() {
             hasErrors = true;
         }
     } else {
-        // Single-select validation (for LendSight, BizSight, BranchSeeker)
+        // Single-select validation (for LendSight, BizSight, BranchSight)
         const selectedCounty = countySelectEl ? countySelectEl.value : '';
         if (!selectedCounty || selectedCounty === '') {
             showValidationMessage(countySelectEl, 'Please select a county to analyze.', 'error');
@@ -426,7 +426,7 @@ function validateInput(input, type) {
                 input.setCustomValidity('');
             }
         } else {
-            // Single-select validation (for LendSight, BizSight, BranchSeeker)
+            // Single-select validation (for LendSight, BizSight, BranchSight)
             const selectedCounty = countySelectEl ? countySelectEl.value : '';
             if (!selectedCounty || selectedCounty === '') {
                 isValid = false;
@@ -1245,7 +1245,7 @@ function mapStepToId(stepName) {
     if (stepName.includes('comparison table') || stepName.includes('comparison')) return 'comparison_table';
     if (stepName.includes('top lenders table') || stepName.includes('top lenders')) return 'top_lenders';
     if (stepName.includes('hhi') || stepName.includes('market concentration') || stepName.includes('concentration')) return 'hhi_calculation';
-    // BranchSeeker specific steps
+    // BranchSight specific steps
     if (stepName.includes('branch summary') || (stepName.includes('summary') && stepName.includes('branch'))) return 'branch_summary';
     if (stepName.includes('by institution') || stepName.includes('institution table')) return 'by_institution';
     if (stepName.includes('market concentration') || stepName.includes('hhi')) return 'market_concentration';

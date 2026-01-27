@@ -1,4 +1,4 @@
-.PHONY: help install dev test clean docker-build docker-up docker-down docker-logs lint format deploy-all deploy-main deploy-branchseeker deploy-lendsight deploy-branchmapper
+.PHONY: help install dev test clean docker-build docker-up docker-down docker-logs lint format deploy-all deploy-main deploy-branchsight deploy-lendsight deploy-branchmapper
 
 # Default target
 help:
@@ -31,8 +31,8 @@ help:
 	@echo ""
 	@echo "Cloud Run Deployment:"
 	@echo "  deploy-all          Deploy all configured services"
-	@echo "  deploy-main         Deploy BranchSeeker, BranchMapper, and LendSight"
-	@echo "  deploy-branchseeker Deploy BranchSeeker only"
+	@echo "  deploy-main         Deploy BranchSight, BranchMapper, and LendSight"
+	@echo "  deploy-branchsight Deploy BranchSight only"
 	@echo "  deploy-branchmapper Deploy BranchMapper only"
 	@echo "  deploy-lendsight    Deploy LendSight only"
 
@@ -96,8 +96,8 @@ dev-server:
 	uvicorn justdata.api.main:app --reload --host 0.0.0.0 --port 8000
 
 # Run specific application tests
-test-branchseeker:
-	pytest tests/apps/test_branchseeker/ -v
+test-branchsight:
+	pytest tests/apps/test_branchsight/ -v
 
 test-lendsight:
 	pytest tests/apps/test_lendsight/ -v
@@ -122,13 +122,13 @@ deploy-prod:
 deploy-all:
 	bash scripts/deploy-all.sh all
 
-# Deploy the three main services (BranchSeeker, BranchMapper, LendSight)
+# Deploy the three main services (BranchSight, BranchMapper, LendSight)
 deploy-main:
-	bash scripts/deploy-all.sh branchseeker branchmapper lendsight
+	bash scripts/deploy-all.sh branchsight branchmapper lendsight
 
 # Deploy individual services to Cloud Run
-deploy-branchseeker:
-	bash scripts/deploy-all.sh branchseeker
+deploy-branchsight:
+	bash scripts/deploy-all.sh branchsight
 
 deploy-lendsight:
 	bash scripts/deploy-all.sh lendsight

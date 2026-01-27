@@ -718,7 +718,7 @@
         }
 
         /* Color coding for apps */
-        .app-branchseeker .app-card-icon {
+        .app-branchsight .app-card-icon {
             background: rgba(3, 78, 160, 0.1);
             color: var(--ncrc-dark-blue);
         }
@@ -1453,7 +1453,7 @@
                 <a href="/" class="nav-item" data-app="home" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-home" style="margin-right: 10px; color: var(--ncrc-dark-blue);"></i>Home</a>
                 <a href="/lendsight" class="nav-item" data-app="lendsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-chart-line" style="margin-right: 10px; color: #2563eb;"></i>LendSight</a>
                 <a href="/bizsight" class="nav-item" data-app="bizsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-briefcase" style="margin-right: 10px; color: #059669;"></i>BizSight</a>
-                <a href="/branchsight" class="nav-item" data-app="branchseeker" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px; color: #7c3aed;"></i>BranchSight</a>
+                <a href="/branchsight" class="nav-item" data-app="branchsight" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-building" style="margin-right: 10px; color: #7c3aed;"></i>BranchSight</a>
                 <a href="/branchmapper" class="nav-item" data-app="branchmapper" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-map-marked-alt" style="margin-right: 10px; color: #0891b2;"></i>BranchMapper</a>
                 <a href="/mergermeter" class="nav-item" data-app="mergermeter" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-exchange-alt" style="margin-right: 10px; color: #dc2626;"></i>MergerMeter</a>
                 <a href="/dataexplorer" class="nav-item" data-app="dataexplorer" style="display: block; padding: 12px 20px; color: #333; text-decoration: none; border-bottom: 1px solid #eee;"><i class="fas fa-search" style="margin-right: 10px; color: #ca8a04;"></i>DataExplorer</a>
@@ -1668,7 +1668,7 @@
                     <h2 class="category-header">Branch & Merger</h2>
                     <div class="apps-grid">
                         <!-- BranchSight Card -->
-                        <div class="app-card" data-app="branchseeker" onclick="handleInfoClick('BranchSeeker')">
+                        <div class="app-card" data-app="branchsight" onclick="handleInfoClick('BranchSight')">
                             <h3 class="app-card-title">BranchSight</h3>
                             <p class="app-card-description">
                                 Bank branch location analysis and market concentration using FDIC data.
@@ -1997,7 +1997,7 @@
                             <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
                         </tr>
                         <tr>
-                            <td>BranchSeeker</td>
+                            <td>BranchSight</td>
                             <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
                             <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
                             <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
@@ -2493,7 +2493,7 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'branchseeker': {
+            'branchsight': {
                 public_anonymous: 'locked',
                 public_registered: 'locked',
                 just_economy_club: 'limited',
@@ -2622,7 +2622,7 @@
             'lendsight': '/lendsight',
             'bizsight': '/bizsight',
             'branchmapper': '/branchmapper',
-            'branchseeker': '/branchsight',
+            'branchsight': '/branchsight',
             'dataexplorer': '/dataexplorer',
             'mergermeter': '/mergermeter',
             'lenderprofile': '/lenderprofile',
@@ -2998,7 +2998,7 @@
                         <ul>
                             <li>Up to 3 counties/metro areas analysis</li>
                             <li>Export to Excel, PowerPoint, and PDF</li>
-                            <li>Access to BranchSeeker, BranchMapper, and BizSight</li>
+                            <li>Access to BranchSight, BranchMapper, and BizSight</li>
                         </ul>
                         <p style="margin-top: 10px;"><strong>Or upgrade to Member Plus ($500-750/year add-on) to also unlock DataExplorer with enhanced features!</strong></p>
                     </div>
@@ -3011,7 +3011,7 @@
                         <ul>
                             <li>Up to 3 counties/metro areas analysis</li>
                             <li>Export to Excel, PowerPoint, and PDF</li>
-                            <li>Access to BranchSeeker, BranchMapper, and BizSight</li>
+                            <li>Access to BranchSight, BranchMapper, and BizSight</li>
                         </ul>
                         <p style="margin-top: 10px;"><strong>Or upgrade to Member Plus ($500-750/year add-on) to also unlock DataExplorer with enhanced features!</strong></p>
                     </div>
@@ -3120,8 +3120,8 @@
                     'Fair lending compliance assessment'
                 ]
             },
-            'BranchSeeker': {
-                description: 'BranchSeeker analyzes bank branch locations, closures, and accessibility patterns using FDIC Summary of Deposits data. The tool helps identify branch deserts, assess market concentration, and understand how branch networks have changed over time. BranchSeeker is critical for understanding physical banking access disparities and their impact on communities, particularly in low-income and minority neighborhoods.',
+            'BranchSight': {
+                description: 'BranchSight analyzes bank branch locations, closures, and accessibility patterns using FDIC Summary of Deposits data. The tool helps identify branch deserts, assess market concentration, and understand how branch networks have changed over time. BranchSight is critical for understanding physical banking access disparities and their impact on communities, particularly in low-income and minority neighborhoods.',
                 features: [
                     'Branch location and closure analysis',
                     'Market concentration metrics',
@@ -3372,7 +3372,7 @@
                 'justpolicy': 'justpolicy',
                 'lendsight': 'lendsight',
                 'bizsight': 'bizsight',
-                'branchseeker': 'branchseeker',
+                'branchsight': 'branchsight',
                 'branchmapper': 'branchmapper',
                 'dataexplorer': 'dataexplorer',
                 'mergermeter': 'mergermeter',

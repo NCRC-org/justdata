@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 LendSight core analysis logic - Mortgage lending analysis.
-Similar structure to BranchSeeker but for HMDA mortgage data.
+Similar structure to BranchSight but for HMDA mortgage data.
 """
 
 import os

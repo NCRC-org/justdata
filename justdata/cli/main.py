@@ -104,7 +104,7 @@ def apps():
 def list():
     """List available applications."""
     click.echo("📱 Available Applications:")
-    click.echo("  • BranchSeeker - Banking market intelligence")
+    click.echo("  • BranchSight - Banking market intelligence")
     click.echo("  • LendSight - Mortgage lending patterns")
     click.echo("  • BizSight - Small business insights")
 

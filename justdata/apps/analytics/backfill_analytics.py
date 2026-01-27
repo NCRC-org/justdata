@@ -194,7 +194,7 @@ def map_app_to_event_name(app_name: str) -> str:
     mapping = {
         'lendsight': 'lendsight_report',
         'bizsight': 'bizsight_report',
-        'branchseeker': 'branchsight_report',
+        'branchsight': 'branchsight_report',
         'branchsight': 'branchsight_report',
         'branchmapper': 'branchmapper_report',
         'mergermeter': 'mergermeter_report',
@@ -235,7 +235,7 @@ def backfill_from_usage_log(
         cache_hit
     FROM `{SOURCE_PROJECT}.{SOURCE_DATASET}.usage_log`
     WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days_back} DAY)
-        AND app_name IN ('lendsight', 'bizsight', 'branchseeker', 'branchsight',
+        AND app_name IN ('lendsight', 'bizsight', 'branchsight', 'branchsight',
                          'branchmapper', 'mergermeter', 'dataexplorer', 'lenderprofile')
     ORDER BY timestamp ASC
     """

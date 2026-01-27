@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Configuration settings for BranchSeeker (FDIC bank branch analyzer).
+Configuration settings for BranchSight (FDIC bank branch analyzer).
 """
 
 import os

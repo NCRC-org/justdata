@@ -26,7 +26,7 @@ ORDER BY county_state
 
 **Returns**: 3,247 counties
 **Used in**: 
-- `branchseeker/data_utils.py` - `get_available_counties()`
+- `branchsight/data_utils.py` - `get_available_counties()`
 - Fallback data in `shared/utils/geo_data.py` - `get_fallback_counties()`
 
 ---
@@ -44,7 +44,7 @@ ORDER BY state
 
 **Returns**: 52 states/territories (50 states + DC + PR)
 **Used in**: 
-- `branchseeker/data_utils.py` - `get_available_states()`
+- `branchsight/data_utils.py` - `get_available_states()`
 
 **States**: Alabama, Alaska, Arizona, Arkansas, California, Colorado, Connecticut, Delaware, District of Columbia, Florida, Georgia, Hawaii, Idaho, Illinois, Indiana, Iowa, Kansas, Kentucky, Louisiana, Maine, Maryland, Massachusetts, Michigan, Minnesota, Mississippi, Missouri, Montana, Nebraska, Nevada, New Hampshire, New Jersey, New Mexico, New York, North Carolina, North Dakota, Ohio, Oklahoma, Oregon, Pennsylvania, Puerto Rico, Rhode Island, South Carolina, South Dakota, Tennessee, Texas, Utah, Vermont, Virginia, Washington, West Virginia, Wisconsin, Wyoming
 
@@ -73,7 +73,7 @@ ORDER BY county_state
 ```
 
 **Used in**: 
-- `branchseeker/data_utils.py` - `expand_state_to_counties(state_code)`
+- `branchsight/data_utils.py` - `expand_state_to_counties(state_code)`
 - All apps - `/counties-by-state/<state_code>` endpoint
 
 ---
@@ -92,7 +92,7 @@ ORDER BY cbsa_name
 ```
 
 **Used in**: 
-- `branchseeker/data_utils.py` - `get_available_metro_areas()`
+- `branchsight/data_utils.py` - `get_available_metro_areas()`
 
 ---
 

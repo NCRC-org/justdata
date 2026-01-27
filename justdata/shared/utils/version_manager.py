@@ -77,7 +77,7 @@ def get_app_version(app_name):
     
     # App-specific offsets (can be adjusted if needed)
     app_offsets = {
-        'branchseeker': 0,
+        'branchsight': 0,
         'lendsight': 0,
         'bizsight': 0,
         'branchmapper': 0,

@@ -49,7 +49,7 @@ def configure_template_loader(state):
     NOTE: We do NOT add shared_loader here because the main app already includes
     shared templates. Adding it again would cause shared templates to be searched
     BEFORE other blueprint templates, leading to wrong template being rendered
-    (e.g., BranchSeeker's report_template.html instead of BizSight's).
+    (e.g., BranchSight's report_template.html instead of BizSight's).
     """
     app = state.app
     blueprint_loader = FileSystemLoader(TEMPLATES_DIR_STR)

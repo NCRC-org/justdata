@@ -35,7 +35,7 @@ def test_backend():
     # Test 2: Blueprint Registration
     print("\nTest 2: Blueprint Registration")
     blueprint_names = [bp.name for bp in app.blueprints.values()]
-    expected_blueprints = ['branchseeker', 'lendsight', 'bizsight', 'mergermeter', 'branchmapper', 'dashboard']
+    expected_blueprints = ['branchsight', 'lendsight', 'bizsight', 'mergermeter', 'branchmapper', 'dashboard']
     all_registered = True
     for bp_name in expected_blueprints:
         if bp_name in blueprint_names:
@@ -55,7 +55,7 @@ def test_backend():
             ('landing', '/', {'GET'}),
             ('health', '/health', {'GET'}),
             ('api_access_info', '/api/access-info', {'GET'}),
-            ('branchseeker.index', '/branchseeker/', {'GET'}),
+            ('branchsight.index', '/branchsight/', {'GET'}),
             ('lendsight.index', '/lendsight/', {'GET'}),
             ('bizsight.index', '/bizsight/', {'GET'}),
             ('mergermeter.index', '/mergermeter/', {'GET'}),
@@ -132,7 +132,7 @@ def test_frontend():
         
         # App pages (with session)
         apps_to_test = [
-            ('branchseeker', '/branchseeker/'),
+            ('branchsight', '/branchsight/'),
             ('lendsight', '/lendsight/'),
             ('bizsight', '/bizsight/'),
             ('mergermeter', '/mergermeter/'),

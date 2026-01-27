@@ -237,7 +237,7 @@ def download_excel(report_data, metadata):
         response = send_file(
             tmp_path,
             as_attachment=True,
-            download_name=f'branchseeker_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            download_name=f'branchsight_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
             mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
         )
         
@@ -279,7 +279,7 @@ def download_csv(report_data, metadata):
             output.getvalue(),
             mimetype='text/csv',
             headers={
-                'Content-Disposition': f'attachment; filename=branchseeker_summary_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
+                'Content-Disposition': f'attachment; filename=branchsight_summary_{datetime.now().strftime("%Y%m%d_%H%M%S")}.csv'
             }
         )
     except Exception as e:
@@ -311,7 +311,7 @@ def download_json(report_data, metadata):
             json.dumps(export_data, indent=2),
             mimetype='application/json',
             headers={
-                'Content-Disposition': f'attachment; filename=branchseeker_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
+                'Content-Disposition': f'attachment; filename=branchsight_data_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
             }
         )
     except Exception as e:
@@ -325,7 +325,7 @@ def download_zip(report_data, metadata):
         import os
         
         with tempfile.TemporaryDirectory() as temp_dir:
-            zip_path = os.path.join(temp_dir, 'branchseeker_reports.zip')
+            zip_path = os.path.join(temp_dir, 'branchsight_reports.zip')
             
             with zipfile.ZipFile(zip_path, 'w') as zipf:
                 # Generate and add Excel file
@@ -360,7 +360,7 @@ def download_zip(report_data, metadata):
                 zip_content,
                 mimetype='application/zip',
                 headers={
-                    'Content-Disposition': f'attachment; filename=branchseeker_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+                    'Content-Disposition': f'attachment; filename=branchsight_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
                 }
             )
     except Exception as e:

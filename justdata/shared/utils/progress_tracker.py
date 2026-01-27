@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Progress tracking utility for real-time progress updates during analysis.
-Shared across BranchSeeker, BizSight, and LendSight.
+Shared across BranchSight, BizSight, and LendSight.
 """
 
 from typing import Dict, Any, Optional

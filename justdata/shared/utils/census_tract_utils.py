@@ -1,7 +1,7 @@
 """
 Shared Census Tract Utilities
 Provides census tract data, income levels, minority demographics, and geographic boundaries.
-Used by BranchSeeker, BranchMapper, LendSight, BizSight and other apps.
+Used by BranchSight, BranchMapper, LendSight, BizSight and other apps.
 """
 
 import os

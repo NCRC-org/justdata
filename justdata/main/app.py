@@ -393,7 +393,7 @@ def register_blueprints(app: Flask):
         from justdata.apps.branchsight.blueprint import branchsight_bp
         app.register_blueprint(branchsight_bp, url_prefix='/branchsight')
     except ImportError:
-        print("[WARN] BranchSeeker blueprint not yet created")
+        print("[WARN] BranchSight blueprint not yet created")
     
     try:
         from justdata.apps.bizsight.blueprint import bizsight_bp

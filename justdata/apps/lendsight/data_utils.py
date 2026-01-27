@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 LendSight-specific data utilities for BigQuery and county reference.
-Similar to BranchSeeker but for HMDA mortgage data.
+Similar to BranchSight but for HMDA mortgage data.
 """
 
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query, escape_sql_string
