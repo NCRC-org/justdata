@@ -2183,13 +2183,23 @@ function updateBranchOptionState() {
     const lenderTypeLower = lenderType.toLowerCase();
     const lenderRssd = wizardState.data.lender?.rssd;
 
+    // Check if lender type explicitly indicates NON-BANK (these don't have branch networks)
+    // Non-banks include: mortgage companies, non-depository institutions, credit unions (handled separately)
+    const isNonBankByType = lenderTypeLower.includes('mortgage') ||
+                            lenderTypeLower.includes('non-depository') ||
+                            lenderTypeLower.includes('nondepository') ||
+                            lenderTypeLower.includes('credit union') ||
+                            lenderTypeLower.includes('finance company');
+
     // Check if lender is a bank (contains "bank" or "affiliate" in type name)
-    // OR has an RSSD number (which indicates they have branch data)
     const isBankByType = lenderTypeLower.includes('bank') || lenderTypeLower.includes('affiliate');
     const hasRssd = lenderRssd && lenderRssd.trim() !== '' && lenderRssd !== '0000000000';
-    const canUseBranchOption = isBankByType || hasRssd;
 
-    console.log('[updateBranchOptionState] lenderType:', lenderType, 'rssd:', lenderRssd, 'isBankByType:', isBankByType, 'hasRssd:', hasRssd, 'canUseBranchOption:', canUseBranchOption);
+    // Non-banks explicitly disabled, even if they have RSSD (which may be from parent/affiliate)
+    // Banks enabled by type, or by having RSSD (for edge cases where type is unknown)
+    const canUseBranchOption = !isNonBankByType && (isBankByType || hasRssd);
+
+    console.log('[updateBranchOptionState] lenderType:', lenderType, 'rssd:', lenderRssd, 'isNonBankByType:', isNonBankByType, 'isBankByType:', isBankByType, 'hasRssd:', hasRssd, 'canUseBranchOption:', canUseBranchOption);
 
     const branchOption = document.querySelector('input[name="geoScope"][value="branch_cbsas"]');
     const branchLabel = branchOption?.closest('label');
@@ -2219,7 +2229,7 @@ function updateBranchOptionState() {
         if (!canUseBranchOption) {
             branchLabel.style.opacity = '0.5';
             branchLabel.style.cursor = 'not-allowed';
-            branchLabel.title = 'Branch data is only available for banks with RSSD';
+            branchLabel.title = 'Branch data is only available for banks (not mortgage companies or credit unions)';
         } else {
             branchLabel.style.opacity = '1';
             branchLabel.style.cursor = 'pointer';

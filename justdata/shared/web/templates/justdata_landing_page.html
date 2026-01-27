@@ -1692,25 +1692,12 @@
                                 </a>
                             </div>
                         </div>
-
-                        <!-- MergerMeter Card -->
-                        <div class="app-card" data-app="mergermeter" onclick="handleInfoClick('MergerMeter')">
-                            <h3 class="app-card-title">MergerMeter</h3>
-                            <p class="app-card-description">
-                                Bank merger impact analysis on market concentration and community lending.
-                            </p>
-                            <div class="app-card-buttons">
-                                <a href="/mergermeter" class="app-card-launch-btn" onclick="event.stopPropagation()">
-                                    Launch <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
                     </div>
                 </section>
 
-                <!-- POLITICAL INFLUENCE Category -->
-                <section class="category-section">
-                    <h2 class="category-header">Political Influence</h2>
+                <!-- INTERNAL TOOLS Category - Staff & above -->
+                <section class="category-section" id="internalToolsSection" style="display: none;">
+                    <h2 class="category-header">Internal Tools <span class="category-note">Staff & above</span></h2>
                     <div class="apps-grid">
                         <!-- ElectWatch Card -->
                         <div class="app-card" data-app="electwatch" onclick="handleInfoClick('ElectWatch')">
@@ -1737,28 +1724,22 @@
                                 </a>
                             </div>
                         </div>
-                    </div>
-                </section>
 
-                <!-- TOOLS Category (Coming Soon) -->
-                <section class="category-section">
-                    <h2 class="category-header">Tools</h2>
-                    <div class="apps-grid">
-                        <!-- CommentMaker Card -->
-                        <div class="app-card coming-soon" data-app="commentmaker" onclick="handleInfoClick('CommentMaker')">
-                            <h3 class="app-card-title">CommentMaker</h3>
+                        <!-- MergerMeter Card -->
+                        <div class="app-card" data-app="mergermeter" onclick="handleInfoClick('MergerMeter')">
+                            <h3 class="app-card-title">MergerMeter</h3>
                             <p class="app-card-description">
-                                Generate public comments for federal rulemakings with AI assistance.
+                                Bank merger impact analysis on market concentration and community lending.
                             </p>
                             <div class="app-card-buttons">
-                                <button class="app-card-launch-btn" onclick="event.stopPropagation();">
-                                    <i class="fas fa-clock"></i> Coming Soon
-                                </button>
+                                <a href="/mergermeter" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
                             </div>
                         </div>
 
-                        <!-- Redlining Dashboard Card - visible to staff and admin only -->
-                        <div class="app-card" data-app="redlining" id="redliningCard" onclick="window.location.href='/redlining'" style="display: none;">
+                        <!-- Redlining Dashboard Card -->
+                        <div class="app-card" data-app="redlining" id="redliningCard" onclick="window.location.href='/redlining'">
                             <h3 class="app-card-title">Redlining Dashboard</h3>
                             <p class="app-card-description">
                                 Fair lending analysis comparing bank lending in minority census tracts against peers.
@@ -1772,9 +1753,28 @@
                     </div>
                 </section>
 
+                <!-- PUBLIC Category -->
+                <section class="category-section">
+                    <h2 class="category-header">Public</h2>
+                    <div class="apps-grid">
+                        <!-- CommentMaker Card -->
+                        <div class="app-card coming-soon" data-app="commentmaker" onclick="handleInfoClick('CommentMaker')">
+                            <h3 class="app-card-title">CommentMaker</h3>
+                            <p class="app-card-description">
+                                Generate public comments for federal rulemakings with AI assistance.
+                            </p>
+                            <div class="app-card-buttons">
+                                <button class="app-card-launch-btn" onclick="event.stopPropagation();">
+                                    <i class="fas fa-clock"></i> Coming Soon
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- ADMIN Category -->
                 <section class="category-section" id="adminSection" style="display: none;">
-                    <h2 class="category-header">Admin <span class="category-note">Staff & above</span></h2>
+                    <h2 class="category-header">Admin <span class="category-note">Senior Executive & above</span></h2>
                     <div class="apps-grid">
                         <!-- Analytics Card - visible to staff, senior_executive, admin -->
                         <div class="app-card" data-app="analytics" onclick="handleInfoClick('Analytics')">
@@ -3583,10 +3583,20 @@
                 console.log('Stats fetch failed:', error);
             }
 
-            // Show admin section for staff/senior_executive/admin users
+            // Show Internal Tools section for staff/senior_executive/admin users
+            const internalToolsSection = document.getElementById('internalToolsSection');
+            if (internalToolsSection) {
+                if (userType === 'staff' || userType === 'senior_executive' || userType === 'admin') {
+                    internalToolsSection.style.display = 'block';
+                } else {
+                    internalToolsSection.style.display = 'none';
+                }
+            }
+
+            // Show admin section for senior_executive/admin users only (Analytics hidden from staff)
             const adminSection = document.getElementById('adminSection');
             if (adminSection) {
-                if (userType === 'staff' || userType === 'senior_executive' || userType === 'admin') {
+                if (userType === 'senior_executive' || userType === 'admin') {
                     adminSection.style.display = 'block';
                 } else {
                     adminSection.style.display = 'none';
@@ -3610,16 +3620,6 @@
                     workflowCard.style.display = 'flex';
                 } else {
                     workflowCard.style.display = 'none';
-                }
-            }
-
-            // Hide Redlining card for non-staff/admin users (staff and admin can see it)
-            const redliningCard = document.getElementById('redliningCard');
-            if (redliningCard) {
-                if (userType === 'staff' || userType === 'admin') {
-                    redliningCard.style.display = 'flex';
-                } else {
-                    redliningCard.style.display = 'none';
                 }
             }
 

@@ -228,7 +228,7 @@ ACCESS_MATRIX = {
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
-        'staff': 'full',
+        'staff': 'hidden',
         'senior_executive': 'full',
         'admin': 'full'
     },
@@ -274,7 +274,7 @@ ACCESS_MATRIX = {
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
         'staff': 'full',
-        'senior_executive': 'hidden',
+        'senior_executive': 'full',
         'admin': 'full'
     },
 
