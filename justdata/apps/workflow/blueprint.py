@@ -1,8 +1,10 @@
 """
 Workflow Blueprint - Project management visualization for JustData.
 Admin-only access. Tasks stored in BigQuery.
+Two-way sync with Monday.com board.
 """
 import os
+import uuid
 from datetime import datetime
 from pathlib import Path
 from flask import Blueprint, render_template, request, jsonify, g
@@ -10,6 +12,21 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 
 from justdata.main.auth import admin_required, get_current_user
 from justdata.shared.utils.bigquery_client import get_bigquery_client as get_shared_bq_client
+
+# Monday sync functions (lazy import to avoid circular deps)
+_monday_sync = None
+
+def get_monday_sync():
+    """Lazy import of monday_sync module."""
+    global _monday_sync
+    if _monday_sync is None:
+        try:
+            from justdata.apps.workflow import monday_sync
+            _monday_sync = monday_sync
+        except ImportError as e:
+            print(f"Warning: Could not import monday_sync: {e}")
+            _monday_sync = False
+    return _monday_sync if _monday_sync else None
 
 # Directory configuration
 BLUEPRINT_DIR = Path(__file__).parent
@@ -84,6 +101,7 @@ def row_to_dict(row):
         'completed_at': row.completed_at.isoformat() if row.completed_at else None,
         'x': getattr(row, 'x', None),
         'y': getattr(row, 'y', None),
+        'monday_item_id': getattr(row, 'monday_item_id', None),
     }
 
 
@@ -230,19 +248,23 @@ def create_task():
 @workflow_bp.route('/api/tasks/<task_id>', methods=['PUT'])
 @admin_required
 def update_task(task_id):
-    """Update a task's fields (not status - use toggle for that)."""
+    """Update a task's fields (not status - use toggle for that). Syncs dependencies to Monday.com."""
     client = get_bq_client()
     data = request.json
 
     # Build SET clause dynamically based on provided fields
     allowed_fields = ['title', 'type', 'priority', 'app', 'notes', 'dependencies']
     set_clauses = []
+    deps_updated = False
+    new_deps = []
 
     for field in allowed_fields:
         if field in data:
             if field == 'dependencies':
                 # Handle array field - escape each value
                 deps = data[field] if data[field] else []
+                new_deps = deps
+                deps_updated = True
                 deps_str = ', '.join([f'"{d}"' for d in deps])
                 set_clauses.append(f"dependencies = [{deps_str}]")
             else:
@@ -263,7 +285,18 @@ def update_task(task_id):
 
     try:
         client.query(sql).result()
-        return jsonify({'success': True})
+
+        # Sync dependencies to Monday.com if they were updated
+        monday_synced = False
+        if deps_updated:
+            monday_sync = get_monday_sync()
+            if monday_sync:
+                try:
+                    monday_synced = monday_sync.sync_dependencies_to_monday(task_id, new_deps)
+                except Exception as e:
+                    print(f"Warning: Failed to sync dependencies to Monday: {e}")
+
+        return jsonify({'success': True, 'monday_synced': monday_synced})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
@@ -300,7 +333,7 @@ def delete_task(task_id):
 @workflow_bp.route('/api/tasks/<task_id>/toggle', methods=['PUT'])
 @admin_required
 def toggle_task(task_id):
-    """Toggle a task's status between open and done."""
+    """Toggle a task's status between open and done. Syncs to Monday.com."""
     client = get_bq_client()
     user_email = get_current_user_email()
     now = datetime.utcnow()
@@ -340,7 +373,20 @@ def toggle_task(task_id):
 
         client.query(sql).result()
 
-        return jsonify({'success': True, 'new_status': new_status})
+        # Sync status change to Monday.com
+        monday_synced = False
+        monday_sync = get_monday_sync()
+        if monday_sync:
+            try:
+                monday_synced = monday_sync.sync_task_status_to_monday(task_id, new_status)
+            except Exception as e:
+                print(f"Warning: Failed to sync status to Monday: {e}")
+
+        return jsonify({
+            'success': True,
+            'new_status': new_status,
+            'monday_synced': monday_synced
+        })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
@@ -458,6 +504,169 @@ def get_stats():
             'critical': row.critical,
             'high': row.high
         })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================
+# Monday.com Sync API Routes
+# ============================================================
+
+@workflow_bp.route('/api/sync/from-monday', methods=['POST'])
+@admin_required
+def sync_from_monday():
+    """
+    Sync tasks from Monday.com to BigQuery.
+
+    Fetches all items from the Monday board, creates new tasks in BigQuery
+    for items without a workflow_id, and updates existing tasks.
+    """
+    user_email = get_current_user_email()
+
+    monday_sync = get_monday_sync()
+    if not monday_sync:
+        return jsonify({
+            'error': 'Monday sync module not available. Check MONDAY_API_KEY.'
+        }), 500
+
+    try:
+        result = monday_sync.sync_monday_to_bigquery(user_email)
+
+        # Log the sync
+        client = get_bq_client()
+        sync_id = str(uuid.uuid4())
+        errors_json = str(result.get('errors', []))[:1000]  # Truncate for storage
+
+        try:
+            log_sql = f"""
+            INSERT INTO `{PROJECT_ID}.{DATASET}.workflow_sync_log`
+            (sync_id, sync_time, direction, items_created, items_updated, items_skipped, user_email, details)
+            VALUES (
+                '{sync_id}',
+                CURRENT_TIMESTAMP(),
+                'monday_to_bq',
+                {len(result.get('created', []))},
+                {len(result.get('updated', []))},
+                {len(result.get('skipped', []))},
+                '{user_email}',
+                '{errors_json.replace("'", "''")}'
+            )
+            """
+            client.query(log_sql).result()
+        except Exception as log_error:
+            print(f"Warning: Failed to log sync: {log_error}")
+
+        return jsonify({
+            'success': True,
+            'sync_id': sync_id,
+            'created': len(result.get('created', [])),
+            'updated': len(result.get('updated', [])),
+            'skipped': len(result.get('skipped', [])),
+            'errors': len(result.get('errors', [])),
+            'details': result
+        })
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@workflow_bp.route('/api/sync/status', methods=['GET'])
+@admin_required
+def get_sync_status():
+    """Get the status of the last sync operation."""
+    client = get_bq_client()
+
+    try:
+        sql = f"""
+        SELECT
+            sync_id,
+            sync_time,
+            direction,
+            items_created,
+            items_updated,
+            items_skipped,
+            user_email
+        FROM `{PROJECT_ID}.{DATASET}.workflow_sync_log`
+        ORDER BY sync_time DESC
+        LIMIT 5
+        """
+
+        results = list(client.query(sql).result())
+
+        syncs = [{
+            'sync_id': row.sync_id,
+            'sync_time': row.sync_time.isoformat() if row.sync_time else None,
+            'direction': row.direction,
+            'items_created': row.items_created,
+            'items_updated': row.items_updated,
+            'items_skipped': row.items_skipped,
+            'user_email': row.user_email,
+        } for row in results]
+
+        return jsonify({
+            'syncs': syncs,
+            'last_sync': syncs[0] if syncs else None,
+            'monday_configured': bool(get_monday_sync())
+        })
+
+    except Exception as e:
+        # Table might not exist yet
+        return jsonify({
+            'syncs': [],
+            'last_sync': None,
+            'monday_configured': bool(get_monday_sync()),
+            'note': 'Sync log table may not exist yet. Run migration first.'
+        })
+
+
+@workflow_bp.route('/api/sync/to-monday/<task_id>', methods=['POST'])
+@admin_required
+def sync_task_to_monday(task_id):
+    """
+    Manually sync a specific task to Monday.com.
+
+    Useful for syncing tasks that were created in the workflow UI.
+    """
+    monday_sync = get_monday_sync()
+    if not monday_sync:
+        return jsonify({
+            'error': 'Monday sync module not available.'
+        }), 500
+
+    try:
+        # Get the task
+        client = get_bq_client()
+        sql = f"SELECT * FROM `{TASKS_TABLE}` WHERE id = '{task_id}'"
+        results = list(client.query(sql).result())
+
+        if not results:
+            return jsonify({'error': 'Task not found'}), 404
+
+        task = results[0]
+
+        if task.monday_item_id:
+            # Task already linked to Monday, just sync status and deps
+            status_synced = monday_sync.sync_task_status_to_monday(
+                task_id,
+                task.status
+            )
+            deps = list(task.dependencies) if task.dependencies else []
+            deps_synced = monday_sync.sync_dependencies_to_monday(task_id, deps)
+
+            return jsonify({
+                'success': True,
+                'status_synced': status_synced,
+                'deps_synced': deps_synced,
+                'monday_item_id': task.monday_item_id
+            })
+        else:
+            # Task not linked to Monday - would need to create in Monday
+            # For now, return info that task isn't linked
+            return jsonify({
+                'success': False,
+                'error': 'Task not linked to Monday.com. Sync from Monday first to link items.'
+            }), 400
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

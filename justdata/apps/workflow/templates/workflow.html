@@ -139,6 +139,24 @@ async function refreshCollectorsAPI() {
   return response.json();
 }
 
+async function syncFromMondayAPI() {
+  const response = await fetch(`${API_BASE}/sync/from-monday`, {
+    method: 'POST',
+    credentials: 'include'
+  });
+  if (!response.ok) {
+    const err = await response.json();
+    throw new Error(err.error || 'Failed to sync from Monday');
+  }
+  return response.json();
+}
+
+async function getSyncStatusAPI() {
+  const response = await fetch(`${API_BASE}/sync/status`, { credentials: 'include' });
+  if (!response.ok) throw new Error('Failed to get sync status');
+  return response.json();
+}
+
 async function updateTaskAPI(taskId, updates) {
   const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
     method: 'PUT',
@@ -214,6 +232,11 @@ function App() {
   const [linkingFrom, setLinkingFrom] = useState(null);  // Task being linked FROM (will block the TO task)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });  // For visual feedback line
   const [linkFeedback, setLinkFeedback] = useState(null);  // { type: 'success'|'error', message: '...' }
+
+  // Monday sync state
+  const [syncing, setSyncing] = useState(false);
+  const [lastSync, setLastSync] = useState(null);
+  const [syncFeedback, setSyncFeedback] = useState(null);  // { type: 'success'|'error', message: '...' }
 
   const canvasRef = useRef(null);
   const saveTimeoutRef = useRef(null);
@@ -577,6 +600,56 @@ Enables: ${enablesStr}`;
     }
   };
 
+  // Monday Sync Handler
+  const handleSyncFromMonday = async () => {
+    if (syncing) return;
+
+    setSyncing(true);
+    setSyncFeedback({ type: 'info', message: 'Syncing from Monday.com...' });
+
+    try {
+      const result = await syncFromMondayAPI();
+
+      // Reload tasks after sync
+      const tasks = await fetchTasks();
+      setItems(tasks);
+
+      // Extract positions
+      const pos = {};
+      tasks.forEach(t => {
+        if (t.x != null && t.y != null) {
+          pos[t.id] = { x: t.x, y: t.y };
+        }
+      });
+      setPositions(pos);
+
+      // Show success feedback
+      const msg = `Synced: ${result.created} created, ${result.updated} updated`;
+      setSyncFeedback({ type: 'success', message: msg });
+      setLastSync(new Date().toISOString());
+
+      // Clear feedback after delay
+      setTimeout(() => setSyncFeedback(null), 4000);
+
+    } catch (err) {
+      setSyncFeedback({ type: 'error', message: err.message });
+      setTimeout(() => setSyncFeedback(null), 5000);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  // Load sync status on mount
+  useEffect(() => {
+    getSyncStatusAPI()
+      .then(data => {
+        if (data.last_sync) {
+          setLastSync(data.last_sync.sync_time);
+        }
+      })
+      .catch(() => {}); // Ignore errors
+  }, []);
+
   const stats = {
     total: items.filter(i => i.status !== 'done' && !i.is_goal && !i.is_collector).length,
     critical: items.filter(i => i.priority === 'critical' && i.status !== 'done').length,
@@ -639,6 +712,42 @@ Enables: ${enablesStr}`;
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontSize: 10, color: 'var(--text3)', fontFamily: "'JetBrains Mono'" }}>Zoom: {Math.round(transform.s * 100)}%</span>
+          <button
+            onClick={handleSyncFromMonday}
+            disabled={syncing}
+            style={{
+              padding: '5px 12px',
+              fontSize: 10,
+              background: syncing ? 'var(--bg3)' : '#0073ea',
+              color: syncing ? 'var(--text3)' : 'white',
+              border: 'none',
+              borderRadius: 4,
+              cursor: syncing ? 'not-allowed' : 'pointer',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6
+            }}
+          >
+            {syncing ? (
+              <>
+                <span style={{ display: 'inline-block', width: 10, height: 10, border: '2px solid var(--text3)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></span>
+                Syncing...
+              </>
+            ) : (
+              <>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+                </svg>
+                Sync Monday
+              </>
+            )}
+          </button>
+          {lastSync && (
+            <span style={{ fontSize: 9, color: 'var(--text3)', fontFamily: "'JetBrains Mono'" }}>
+              Last: {new Date(lastSync).toLocaleTimeString()}
+            </span>
+          )}
           <button onClick={() => setShowCreateModal(true)} style={{ padding: '5px 12px', fontSize: 10, background: 'var(--goal)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}>+ Add Task</button>
           {selectedIds.size > 0 && (
             <button onClick={() => setSelectedIds(new Set())} style={{ padding: '5px 12px', fontSize: 10, background: 'var(--select)', color: 'white', border: 'none', borderRadius: 4, cursor: 'pointer' }}>Clear Selection</button>
@@ -688,6 +797,36 @@ Enables: ${enablesStr}`;
             {linkFeedback.type === 'info' && (
               <span style={{ marginLeft: 8, opacity: 0.8, fontSize: 10 }}>(ESC to cancel)</span>
             )}
+          </div>
+        )}
+
+        {/* Monday Sync feedback toast */}
+        {syncFeedback && (
+          <div style={{
+            position: 'absolute',
+            top: linkFeedback ? 70 : 20,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: syncFeedback.type === 'success' ? 'rgba(0, 115, 234, 0.95)' :
+                        syncFeedback.type === 'error' ? 'rgba(239, 68, 68, 0.95)' :
+                        'rgba(0, 115, 234, 0.85)',
+            color: 'white',
+            padding: '10px 20px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            zIndex: 1000,
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8
+          }}>
+            {syncFeedback.type === 'success' && <span>&#10003;</span>}
+            {syncFeedback.type === 'error' && <span>&#10007;</span>}
+            {syncFeedback.type === 'info' && (
+              <span style={{ display: 'inline-block', width: 12, height: 12, border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></span>
+            )}
+            {syncFeedback.message}
           </div>
         )}
 
