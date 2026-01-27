@@ -10,15 +10,28 @@ let firebaseAnalytics = null;
  * Initialize Firebase Analytics
  */
 function initAnalytics() {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:initAnalytics',message:'initAnalytics called',data:{alreadyInit:!!firebaseAnalytics,firebaseDefined:typeof firebase!=='undefined'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'A,B'})}).catch(()=>{});
+    // #endregion
     if (firebaseAnalytics) return;
 
     try {
         // Firebase should already be initialized by auth.js
         if (typeof firebase !== 'undefined' && firebase.app) {
             firebaseAnalytics = firebase.analytics();
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:initAnalytics:success',message:'Firebase Analytics initialized OK',data:{hasAnalytics:!!firebaseAnalytics},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
             console.log('Firebase Analytics initialized');
+        } else {
+            // #region agent log
+            fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:initAnalytics:noFirebase',message:'Firebase not defined or no app',data:{firebaseDefined:typeof firebase!=='undefined',hasApp:typeof firebase!=='undefined'&&!!firebase.app},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+            // #endregion
         }
     } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:initAnalytics:error',message:'Analytics init error',data:{error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
         console.warn('Firebase Analytics initialization error:', error);
     }
 }
@@ -29,11 +42,17 @@ function initAnalytics() {
  * @param {Object} params - Event parameters
  */
 function logAnalyticsEvent(eventName, params = {}) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:logAnalyticsEvent',message:'logAnalyticsEvent called',data:{eventName:eventName,hasAnalytics:!!firebaseAnalytics,params:JSON.stringify(params).substring(0,200)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     if (!firebaseAnalytics) {
         initAnalytics();
     }
 
     if (!firebaseAnalytics) {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:logAnalyticsEvent:noAnalytics',message:'Analytics not available after init attempt',data:{eventName:eventName},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         console.warn('Firebase Analytics not available, event not logged:', eventName);
         return;
     }
@@ -53,8 +72,14 @@ function logAnalyticsEvent(eventName, params = {}) {
         }
 
         firebaseAnalytics.logEvent(eventName, enrichedParams);
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:logAnalyticsEvent:success',message:'Event logged to Firebase',data:{eventName:eventName},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         console.log('Analytics event logged:', eventName, enrichedParams);
     } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-events.js:logAnalyticsEvent:error',message:'Error logging event',data:{eventName:eventName,error:error.message},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+        // #endregion
         console.error('Error logging analytics event:', error);
     }
 }

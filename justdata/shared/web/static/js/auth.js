@@ -22,6 +22,9 @@ let authStateCallbacks = [];   // Callbacks for auth state changes
 let lastKnownUser = null;      // Track last known user for new callback registrations
 
 function initFirebase() {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.js:initFirebase',message:'initFirebase called',data:{alreadyInit:!!firebaseApp,path:window.location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E,F'})}).catch(()=>{});
+    // #endregion
     if (firebaseApp) return;
 
     try {
@@ -31,6 +34,9 @@ function initFirebase() {
         // Set persistence to LOCAL - auth state persists across browser sessions
         firebaseAuth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
             .then(() => {
+                // #region agent log
+                fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.js:initFirebase:persistenceSet',message:'Persistence set to LOCAL',data:{path:window.location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D'})}).catch(()=>{});
+                // #endregion
                 console.log('Firebase persistence set to LOCAL');
             })
             .catch((error) => {
@@ -40,8 +46,14 @@ function initFirebase() {
         // Listen for auth state changes
         firebaseAuth.onAuthStateChanged(handleAuthStateChange);
 
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.js:initFirebase:success',message:'Firebase initialized OK',data:{path:window.location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         console.log('Firebase initialized successfully');
     } catch (error) {
+        // #region agent log
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.js:initFirebase:error',message:'Firebase init error',data:{error:error.message,path:window.location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'E'})}).catch(()=>{});
+        // #endregion
         console.error('Firebase initialization error:', error);
     }
 }
@@ -50,6 +62,9 @@ function initFirebase() {
  * Handle authentication state changes
  */
 async function handleAuthStateChange(user) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.js:handleAuthStateChange',message:'Auth state changed',data:{hasUser:!!user,email:user?user.email:'none',path:window.location.pathname},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'D,E'})}).catch(()=>{});
+    // #endregion
     // Store user with additional info for callbacks
     let userWithType = null;
 
