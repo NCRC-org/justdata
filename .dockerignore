@@ -72,13 +72,13 @@ cloudbuild.yaml
 /data/
 datasets/
 
-# Exclude most of justdata/data but keep specific directories
-justdata/data/**
-# Keep HUD data for Area Analysis (needed for Population Share calculations)
-!justdata/data/hud/
-!justdata/data/hud/**
-# Explicit inclusion of the HUD Excel file (belt and suspenders)
-!justdata/data/hud/ACS-2020-Low-Mod-Local-Gov-All.xlsx
+# Exclude specific subdirectories of justdata/data (NOT using ** wildcard)
+# This approach avoids Docker's issues with negation patterns
+justdata/data/cache/
+justdata/data/reports/
+justdata/data/downloads/
+justdata/data/temp/
+# Do NOT exclude justdata/data/hud/ - needed for Population Share calculations
 
 # Keep analytics demo data
 !justdata/apps/analytics/static/demo_data/synthetic_events.json
