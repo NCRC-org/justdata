@@ -111,6 +111,8 @@ cursor_backup/
 _ul*
 *.csv
 *.xlsx
+# Keep HUD data file for Area Analysis Population Share columns
+!justdata/data/hud/ACS-2020-Low-Mod-Local-Gov-All.xlsx
 *.pdf
 tmpclaude-*
 nul
