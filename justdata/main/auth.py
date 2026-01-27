@@ -1390,6 +1390,11 @@ def update_user(uid: str):
     try:
         user_ref = db.collection('users').document(uid)
 
+        # Verify document exists first
+        doc = user_ref.get()
+        if not doc.exists:
+            return jsonify({'error': f'User document not found for uid: {uid}'}), 404
+
         # Build update data (only allow certain fields)
         update_data = {}
         allowed_fields = ['userType', 'organization', 'jobTitle', 'county']
@@ -1401,13 +1406,23 @@ def update_user(uid: str):
             return jsonify({'error': 'No valid fields to update'}), 400
 
         update_data['updatedAt'] = datetime.utcnow()
+
+        # Log what we're updating for debugging
+        print(f"[update_user] Updating user {uid}: {update_data}")
+
         user_ref.update(update_data)
+
+        # Read back to verify the update worked
+        updated_doc = user_ref.get()
+        updated_data = updated_doc.to_dict() if updated_doc.exists else {}
 
         return jsonify({
             'success': True,
-            'updated_fields': list(update_data.keys())
+            'updated_fields': list(update_data.keys()),
+            'current_values': {field: updated_data.get(field) for field in allowed_fields}
         })
     except Exception as e:
+        print(f"[update_user] Error updating user {uid}: {e}")
         return jsonify({'error': str(e)}), 500
 
 

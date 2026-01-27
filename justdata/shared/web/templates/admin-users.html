@@ -1469,6 +1469,8 @@
         selectElement.classList.add('saving');
 
         try {
+            console.log(`[updateUserType] Updating user ${uid} from ${originalType} to ${newType}`);
+
             const response = await fetch(`/api/auth/users/${uid}`, {
                 method: 'PUT',
                 headers: {
@@ -1478,9 +1480,17 @@
                 body: JSON.stringify({ userType: newType })
             });
 
+            const result = await response.json();
+            console.log('[updateUserType] Response:', result);
+
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Failed to update user');
+                throw new Error(result.error || 'Failed to update user');
+            }
+
+            // Verify the update worked by checking returned values
+            if (result.current_values && result.current_values.userType !== newType) {
+                console.warn('[updateUserType] Mismatch! Expected:', newType, 'Got:', result.current_values.userType);
+                throw new Error('Update verification failed - type did not change');
             }
 
             // Update local data
@@ -1551,6 +1561,8 @@
             jobTitle: document.getElementById('userJobTitle').value || null
         };
 
+        console.log('[handleFormSubmit] Submitting:', editingUid ? 'update' : 'create', formData);
+
         submitBtn.disabled = true;
         submitText.innerHTML = '<span class="loading-spinner" style="width: 16px; height: 16px; border-width: 2px;"></span> Saving...';
 
@@ -1579,9 +1591,16 @@
                 });
             }
 
+            const result = await response.json();
+            console.log('[handleFormSubmit] Response:', result);
+
             if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || 'Operation failed');
+                throw new Error(result.error || 'Operation failed');
+            }
+
+            // Verify update worked if editing
+            if (editingUid && result.current_values) {
+                console.log('[handleFormSubmit] Verified values:', result.current_values);
             }
 
             showToast(editingUid ? 'User updated successfully' : 'User created successfully', 'success');
