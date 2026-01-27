@@ -105,24 +105,72 @@ def row_to_dict(row):
     }
 
 
-def generate_task_id():
-    """Generate the next task ID (T-001, T-002, etc.)."""
+# Type prefix mapping for ID generation
+TYPE_PREFIX_MAP = {
+    'content': 'C',
+    'styling': 'S',
+    'infrastructure': 'I',
+    'bug': 'B',
+    'feature': 'F',
+    'legal': 'L',
+}
+
+
+def generate_task_id(task_type: str = 'feature'):
+    """
+    Generate the next task ID with type prefix.
+
+    Format: X## where X is the type prefix:
+    - C## for Content
+    - S## for Styling
+    - I## for Infrastructure
+    - B## for Bug
+    - F## for Feature
+    - L## for Legal
+    """
     client = get_bq_client()
+
+    # Get the type prefix
+    prefix = TYPE_PREFIX_MAP.get(task_type.lower(), 'F')
+    counter_name = f'task_id_{prefix.lower()}'
+
+    # Ensure counter exists for this type
+    check_sql = f"""
+    SELECT current_value FROM `{COUNTER_TABLE}`
+    WHERE counter_name = '{counter_name}'
+    """
+    result = list(client.query(check_sql).result())
+
+    if not result:
+        # Initialize counter for this type - find max existing ID
+        max_sql = f"""
+        SELECT COALESCE(MAX(CAST(SUBSTR(id, 2) AS INT64)), 0) as max_id
+        FROM `{TASKS_TABLE}`
+        WHERE id LIKE '{prefix}%'
+        """
+        max_result = list(client.query(max_sql).result())
+        start_value = max_result[0].max_id if max_result else 0
+
+        insert_sql = f"""
+        INSERT INTO `{COUNTER_TABLE}` (counter_name, current_value)
+        VALUES ('{counter_name}', {start_value})
+        """
+        client.query(insert_sql).result()
 
     # Atomically increment and get the new value
     sql = f"""
     UPDATE `{COUNTER_TABLE}`
     SET current_value = current_value + 1
-    WHERE counter_name = 'task_id'
+    WHERE counter_name = '{counter_name}'
     """
     client.query(sql).result()
 
     # Get the new value
-    sql = f"SELECT current_value FROM `{COUNTER_TABLE}` WHERE counter_name = 'task_id'"
+    sql = f"SELECT current_value FROM `{COUNTER_TABLE}` WHERE counter_name = '{counter_name}'"
     result = list(client.query(sql).result())
     new_value = result[0].current_value
 
-    return f"T{new_value}"
+    return f"{prefix}{new_value}"
 
 
 # ============================================================
@@ -194,8 +242,8 @@ def create_task():
     if data['priority'] not in valid_priorities:
         return jsonify({'error': f'Invalid priority. Must be one of: {valid_priorities}'}), 400
 
-    # Generate ID
-    task_id = generate_task_id()
+    # Generate ID with type prefix
+    task_id = generate_task_id(data['type'])
     now = datetime.utcnow()
     user_email = get_current_user_email()
 
@@ -699,6 +747,199 @@ def sync_task_to_monday(task_id):
                 'success': False,
                 'error': 'Task not linked to Monday.com. Sync from Monday first to link items.'
             }), 400
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================
+# Auto-Layout API Routes
+# ============================================================
+
+# Canvas dimensions
+CANVAS_WIDTH = 1800
+CANVAS_HEIGHT = 1000
+
+# Work area order (left to right)
+WORK_AREA_ORDER = ['legal', 'infrastructure', 'feature', 'bug', 'styling', 'content']
+
+# Priority order (top to bottom within cluster)
+PRIORITY_ORDER = ['critical', 'high', 'medium', 'low']
+
+
+def calculate_layout_positions(tasks: list, launch_goal: dict, roadmap_goal: dict, milestones: list) -> dict:
+    """
+    Calculate x,y positions for all workflow items using hierarchical clustering.
+
+    Layout rules:
+    1. Launch Goal at top-left region, Roadmap Goal at top-right
+    2. Milestones in row below their respective goal
+    3. Tasks clustered under their milestone by work area
+    4. Tasks within cluster arranged by priority (Critical at top)
+    """
+    positions = {}
+
+    # Layout constants
+    LAUNCH_GOAL_X = 500
+    ROADMAP_GOAL_X = 1400
+    GOAL_Y = 80
+    MILESTONE_Y = 250
+    TASK_START_Y = 420
+    CLUSTER_WIDTH = 160
+    TASK_VERTICAL_SPACING = 70
+    TASK_HORIZONTAL_OFFSET = 25
+
+    # Separate tasks by goal association
+    launch_tasks = []
+    roadmap_tasks = []
+
+    # Determine which goal each task belongs to based on dependencies
+    launch_milestone_ids = {'LEGAL_COMPLETE', 'INFRA_COMPLETE', 'FEATURE_COMPLETE',
+                           'BUG_COMPLETE', 'STYLE_COMPLETE', 'CONTENT_COMPLETE'}
+
+    for task in tasks:
+        if task.get('is_goal') or task.get('is_collector'):
+            continue
+        # Check if task is linked to roadmap (has ROADMAP_GOAL in path)
+        deps = task.get('dependencies', [])
+        if 'ROADMAP_GOAL' in deps or any('ROADMAP' in str(d) for d in deps):
+            roadmap_tasks.append(task)
+        else:
+            launch_tasks.append(task)
+
+    # Position goals
+    if launch_goal:
+        positions[launch_goal['id']] = {'x': LAUNCH_GOAL_X, 'y': GOAL_Y}
+    if roadmap_goal:
+        positions[roadmap_goal['id']] = {'x': ROADMAP_GOAL_X, 'y': GOAL_Y}
+
+    # Position launch milestones (6 across)
+    milestone_x_positions = {}
+    launch_start_x = 100
+    for i, work_area in enumerate(WORK_AREA_ORDER):
+        milestone_id = f"{work_area.upper()}_COMPLETE"
+        x = launch_start_x + (i * CLUSTER_WIDTH)
+
+        # Find the milestone
+        milestone = next((m for m in milestones if m['id'] == milestone_id), None)
+        if milestone:
+            positions[milestone_id] = {'x': x, 'y': MILESTONE_Y}
+            milestone_x_positions[work_area] = x
+
+    # Group launch tasks by work area
+    tasks_by_area = {area: [] for area in WORK_AREA_ORDER}
+    for task in launch_tasks:
+        area = task.get('type', 'feature').lower()
+        if area in tasks_by_area:
+            tasks_by_area[area].append(task)
+        else:
+            tasks_by_area['feature'].append(task)
+
+    # Sort tasks within each area by priority
+    for area, area_tasks in tasks_by_area.items():
+        area_tasks.sort(key=lambda t: (
+            PRIORITY_ORDER.index(t.get('priority', 'medium').lower())
+            if t.get('priority', 'medium').lower() in PRIORITY_ORDER else 99,
+            t.get('id', '')
+        ))
+
+    # Position launch tasks under their milestone
+    for area, area_tasks in tasks_by_area.items():
+        base_x = milestone_x_positions.get(area, 600)
+
+        for i, task in enumerate(area_tasks):
+            # Stagger horizontally to avoid overlap
+            col = i % 2
+            row = i // 2
+            x_offset = (col - 0.5) * TASK_HORIZONTAL_OFFSET * 2
+            y_offset = row * TASK_VERTICAL_SPACING
+
+            positions[task['id']] = {
+                'x': base_x + x_offset,
+                'y': TASK_START_Y + y_offset
+            }
+
+    # Position roadmap tasks in a vertical column
+    roadmap_start_y = MILESTONE_Y + 50
+    for i, task in enumerate(roadmap_tasks):
+        col = i % 2
+        row = i // 2
+        positions[task['id']] = {
+            'x': ROADMAP_GOAL_X + (col - 0.5) * 80,
+            'y': roadmap_start_y + row * TASK_VERTICAL_SPACING
+        }
+
+    return positions
+
+
+@workflow_bp.route('/api/layout/auto', methods=['POST'])
+@admin_required
+def auto_layout():
+    """Recalculate all positions using the hierarchical layout algorithm."""
+    client = get_bq_client()
+    user_email = get_current_user_email()
+    now = datetime.utcnow().isoformat()
+
+    try:
+        # Get all tasks
+        sql = f"""
+        SELECT t.*, p.x, p.y
+        FROM `{TASKS_TABLE}` t
+        LEFT JOIN `{POSITIONS_TABLE}` p ON t.id = p.task_id
+        """
+        results = list(client.query(sql).result())
+
+        tasks = []
+        launch_goal = None
+        roadmap_goal = None
+        milestones = []
+
+        for row in results:
+            task = {
+                'id': row.id,
+                'title': row.title,
+                'type': row.type,
+                'priority': row.priority,
+                'status': row.status,
+                'is_goal': row.is_goal,
+                'is_collector': row.is_collector,
+                'dependencies': list(row.dependencies) if row.dependencies else [],
+            }
+
+            if row.is_goal:
+                if row.id == 'ROADMAP_GOAL':
+                    roadmap_goal = task
+                else:
+                    launch_goal = task
+            elif row.is_collector:
+                milestones.append(task)
+            else:
+                tasks.append(task)
+
+        # Calculate new positions
+        positions = calculate_layout_positions(tasks, launch_goal, roadmap_goal, milestones)
+
+        # Update positions in database
+        updated = 0
+        for task_id, pos in positions.items():
+            sql = f"""
+            MERGE `{POSITIONS_TABLE}` T
+            USING (SELECT '{task_id}' as task_id, {pos['x']} as x, {pos['y']} as y) S
+            ON T.task_id = S.task_id
+            WHEN MATCHED THEN
+                UPDATE SET x = S.x, y = S.y, updated_at = TIMESTAMP('{now}'), updated_by = '{user_email}'
+            WHEN NOT MATCHED THEN
+                INSERT (task_id, x, y, updated_at, updated_by)
+                VALUES (S.task_id, S.x, S.y, TIMESTAMP('{now}'), '{user_email}')
+            """
+            client.query(sql).result()
+            updated += 1
+
+        return jsonify({
+            'success': True,
+            'repositioned': updated,
+            'layout': 'hierarchical'
+        })
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500

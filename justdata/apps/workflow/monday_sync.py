@@ -270,31 +270,81 @@ def get_bq_task_by_id(task_id: str) -> Optional[Dict]:
     return None
 
 
-def generate_next_task_id() -> str:
-    """Generate the next task ID (T-001, T-002, etc.)."""
+# Type prefix mapping for ID generation
+TYPE_PREFIX_MAP = {
+    'content': 'C',
+    'styling': 'S',
+    'infrastructure': 'I',
+    'bug': 'B',
+    'feature': 'F',
+    'legal': 'L',
+}
+
+
+def generate_next_task_id(task_type: str = 'feature') -> str:
+    """
+    Generate the next task ID with type prefix.
+
+    Format: X## where X is the type prefix:
+    - C## for Content
+    - S## for Styling
+    - I## for Infrastructure
+    - B## for Bug
+    - F## for Feature
+    - L## for Legal
+    """
     client = get_bigquery_client(PROJECT_ID)
+
+    # Get the type prefix
+    prefix = TYPE_PREFIX_MAP.get(task_type.lower(), 'F')
+    counter_name = f'task_id_{prefix.lower()}'
+
+    # Ensure counter exists for this type
+    check_sql = f"""
+    SELECT current_value FROM `{COUNTER_TABLE}`
+    WHERE counter_name = '{counter_name}'
+    """
+    result = list(client.query(check_sql).result())
+
+    if not result:
+        # Initialize counter for this type - find max existing ID
+        max_sql = f"""
+        SELECT COALESCE(MAX(CAST(SUBSTR(id, 2) AS INT64)), 0) as max_id
+        FROM `{TASKS_TABLE}`
+        WHERE id LIKE '{prefix}%'
+        """
+        max_result = list(client.query(max_sql).result())
+        start_value = max_result[0].max_id if max_result else 0
+
+        insert_sql = f"""
+        INSERT INTO `{COUNTER_TABLE}` (counter_name, current_value)
+        VALUES ('{counter_name}', {start_value})
+        """
+        client.query(insert_sql).result()
 
     # Atomically increment
     sql = f"""
     UPDATE `{COUNTER_TABLE}`
     SET current_value = current_value + 1
-    WHERE counter_name = 'task_id'
+    WHERE counter_name = '{counter_name}'
     """
     client.query(sql).result()
 
     # Get new value
-    sql = f"SELECT current_value FROM `{COUNTER_TABLE}` WHERE counter_name = 'task_id'"
+    sql = f"SELECT current_value FROM `{COUNTER_TABLE}` WHERE counter_name = '{counter_name}'"
     result = list(client.query(sql).result())
     new_value = result[0].current_value
 
-    return f"T{new_value}"
+    return f"{prefix}{new_value}"
 
 
 def create_bq_task(task_data: Dict, user_email: str = 'monday_sync') -> str:
     """Create a new task in BigQuery. Returns the task ID."""
     client = get_bigquery_client(PROJECT_ID)
 
-    task_id = generate_next_task_id()
+    # Generate ID with type prefix
+    task_type = task_data.get('type', 'feature')
+    task_id = generate_next_task_id(task_type)
     now = datetime.utcnow()
 
     task_row = {
@@ -438,6 +488,7 @@ def create_monday_item(task: Dict, group_id: str = 'topics') -> Optional[str]:
         MONDAY_COLUMNS['workflow_id']: task['id'],
         MONDAY_COLUMNS['status']: {"label": STATUS_BQ_TO_MONDAY.get(task.get('status', 'open'), 'Open')},
         MONDAY_COLUMNS['priority']: {"label": PRIORITY_BQ_TO_MONDAY.get(task.get('priority', 'medium'), 'Medium')},
+        MONDAY_COLUMNS['created_date']: {"date": datetime.utcnow().strftime('%Y-%m-%d')},
     }
 
     # Add type if present
@@ -445,6 +496,10 @@ def create_monday_item(task: Dict, group_id: str = 'topics') -> Optional[str]:
         type_label = TYPE_BQ_TO_MONDAY.get(task['type'])
         if type_label:
             column_values[MONDAY_COLUMNS['type']] = {"labels": [type_label]}
+
+    # Set completed date if task is already done
+    if task.get('status') == 'done':
+        column_values[MONDAY_COLUMNS['completed_date']] = {"date": datetime.utcnow().strftime('%Y-%m-%d')}
 
     # Add app if present
     if task.get('app'):

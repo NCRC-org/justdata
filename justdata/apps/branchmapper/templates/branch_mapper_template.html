@@ -357,16 +357,20 @@
             font-size: 0.9rem;
             line-height: 1.6;
         }
-        
-        .popup-content strong {
-            color: var(--ncrc-primary-blue);
-            font-size: 1rem;
-            display: block;
-            margin-bottom: 8px;
+
+        .popup-content .bank-name-header {
+            color: #000;
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 10px;
         }
-        
+
         .popup-content .branch-info {
             margin: 5px 0;
+        }
+
+        .popup-content .branch-info strong {
+            color: var(--ncrc-primary-blue);
         }
         
         .popup-content .branch-tags {
@@ -1890,9 +1894,9 @@
                 
                 const popupContent = `
                     <div class="popup-content">
-                        <strong>${branch.branch_name || 'Branch'}</strong>
+                        <div class="bank-name-header">${bankName}</div>
                         <div class="branch-info">
-                            <strong>Bank:</strong> ${bankName}<br>
+                            <strong>Branch:</strong> ${branch.branch_name || 'Branch'}<br>
                             ${branch.branch_type ? `<strong>Branch Type:</strong> ${branch.branch_type}<br>` : ''}
                             ${branch.total_deposits ? `<strong>Deposits:</strong> ${formatDeposits(branch.total_deposits)}<br>` : ''}
                             <strong>Address:</strong> ${branch.address || ''}<br>

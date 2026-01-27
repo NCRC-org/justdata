@@ -124,9 +124,9 @@ TASKS = [
 ]
 
 COLLECTORS = [
-    {'id': 'BUG_COMPLETE', 'title': 'All Bug Fixes Complete', 'type': 'collector', 'priority': 'collector', 'notes': 'Milestone: All bug fixes resolved and verified.', 'dependencies': [], 'is_collector': True, 'collector_for': 'bug', 'status': 'open'},
-    {'id': 'STYLE_COMPLETE', 'title': 'All Styling Complete', 'type': 'collector', 'priority': 'collector', 'notes': 'Milestone: All UI/styling improvements implemented.', 'dependencies': [], 'is_collector': True, 'collector_for': 'styling', 'status': 'open'},
-    {'id': 'CONTENT_COMPLETE', 'title': 'All Content Complete', 'type': 'collector', 'priority': 'collector', 'notes': 'Milestone: All documentation, videos, and training materials ready.', 'dependencies': [], 'is_collector': True, 'collector_for': 'content', 'status': 'open'},
+    {'id': 'BUG_COMPLETE', 'title': 'Bug', 'type': 'collector', 'priority': 'collector', 'notes': 'Milestone: All bug fixes resolved and verified.', 'dependencies': [], 'is_collector': True, 'collector_for': 'bug', 'status': 'open'},
+    {'id': 'STYLE_COMPLETE', 'title': 'Styling', 'type': 'collector', 'priority': 'collector', 'notes': 'Milestone: All UI/styling improvements implemented.', 'dependencies': [], 'is_collector': True, 'collector_for': 'styling', 'status': 'open'},
+    {'id': 'CONTENT_COMPLETE', 'title': 'Content', 'type': 'collector', 'priority': 'collector', 'notes': 'Milestone: All documentation, videos, and training materials ready.', 'dependencies': [], 'is_collector': True, 'collector_for': 'content', 'status': 'open'},
 ]
 
 GOAL = {
