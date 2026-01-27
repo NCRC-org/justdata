@@ -301,13 +301,14 @@ def load_all_lenders18() -> List[Dict[str, Any]]:
         # Join with lender_names_gleif to get cleaned/display names
         # Order by LAR count descending, then by name
         query = f"""
-        SELECT 
+        SELECT
             COALESCE(g.display_name, g.cleaned_name, UPPER(l.respondent_name)) as lender_name,
             l.lei as lender_id,
             l.respondent_rssd,
+            l.type_name,
             COALESCE(g.headquarters_city, l.respondent_city) as respondent_city,
             COALESCE(
-                CASE 
+                CASE
                     WHEN g.headquarters_state LIKE 'US-%%' THEN SUBSTR(g.headquarters_state, 4)
                     ELSE g.headquarters_state
                 END,
@@ -321,10 +322,11 @@ def load_all_lenders18() -> List[Dict[str, Any]]:
             ON l.lei = h.lei
         WHERE l.respondent_name IS NOT NULL
           AND l.lei IS NOT NULL
-        GROUP BY 
+        GROUP BY
             lender_name,
             lender_id,
             l.respondent_rssd,
+            l.type_name,
             respondent_city,
             respondent_state
         ORDER BY lar_count DESC, lender_name, lender_id
@@ -349,7 +351,9 @@ def load_all_lenders18() -> List[Dict[str, Any]]:
                 'respondent_city': row.get('respondent_city', ''),
                 'state': row.get('respondent_state', ''),
                 'respondent_state': row.get('respondent_state', ''),
-                'lar_count': row.get('lar_count', 0)  # Include LAR count in response
+                'type_name': row.get('type_name'),
+                'type': row.get('type_name'),  # Also as 'type' for compatibility
+                'lar_count': row.get('lar_count', 0)
             })
         
         # Cache the results
