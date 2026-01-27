@@ -391,11 +391,13 @@ def api_load_bank_names():
         data = request.get_json()
         acquirer = data.get('acquirer', {})
         target = data.get('target', {})
-        
+        single_bank_mode = data.get('single_bank_mode', False)
+
         result = {
             'success': True,
             'acquirer_name': None,
-            'target_name': None
+            'target_name': None,
+            'single_bank_mode': single_bank_mode
         }
         
         client = get_bigquery_client(PROJECT_ID)
@@ -433,12 +435,21 @@ def api_load_bank_names():
                         'error': f'Could not find bank name for LEI: {target_lei}. Please verify the LEI number is correct.'
                     }), 404
         
-        # Validate that at least one bank name was found
-        if not result['acquirer_name'] and not result['target_name']:
-            return jsonify({
-                'success': False,
-                'error': 'Please provide LEI numbers for both banks. Bank names are looked up using the LEI number.'
-            }), 400
+        # Validate that required bank names were found
+        # In single bank mode, only acquirer is required
+        # In merger mode, both acquirer and target are required
+        if single_bank_mode:
+            if not result['acquirer_name']:
+                return jsonify({
+                    'success': False,
+                    'error': 'Please provide a valid LEI number for the bank. Bank name is looked up using the LEI number.'
+                }), 400
+        else:
+            if not result['acquirer_name'] or not result['target_name']:
+                return jsonify({
+                    'success': False,
+                    'error': 'Please provide LEI numbers for both banks. Bank names are looked up using the LEI number.'
+                }), 400
         
         return jsonify(result)
     except Exception as e:

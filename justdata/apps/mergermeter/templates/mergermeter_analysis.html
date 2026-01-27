@@ -1220,6 +1220,9 @@
                     sb_respondent_id: targetResID
                 };
                 
+                // Check if single bank mode is enabled
+                const isSingleBankMode = $('#singleBankMode').is(':checked');
+
                 // Validate LEI number is provided (required for bank name lookup)
                 // Clean LEI and check it's exactly 20 characters
                 if (!acquirerData.lei || acquirerData.lei.length !== 20) {
@@ -1227,8 +1230,9 @@
                     btn.prop('disabled', false).html(originalText);
                     return;
                 }
-                
-                if (!targetData.lei || targetData.lei.length !== 20) {
+
+                // Only validate Bank B LEI if NOT in single bank mode
+                if (!isSingleBankMode && (!targetData.lei || targetData.lei.length !== 20)) {
                     alert('Please enter a valid LEI number (20 characters) for Bank B (Target). The system uses the LEI number to look up the bank name.\n\nCurrent value: "' + $('#target_lei').val() + '" (length: ' + targetData.lei.length + ')');
                     btn.prop('disabled', false).html(originalText);
                     return;
@@ -1237,15 +1241,20 @@
                 try {
                     // Fetch bank names from backend
                     const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    const requestBody = {
+                        acquirer: acquirerData,
+                        single_bank_mode: isSingleBankMode
+                    };
+                    // Only include target data if not in single bank mode
+                    if (!isSingleBankMode) {
+                        requestBody.target = targetData;
+                    }
                     const response = await fetch(`${baseUrl}/api/load-bank-names`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
-                        body: JSON.stringify({
-                            acquirer: acquirerData,
-                            target: targetData
-                        })
+                        body: JSON.stringify(requestBody)
                     });
                     
                     const result = await response.json();
@@ -1266,8 +1275,16 @@
                             $('#analysisForm').data('target_name', result.target_name);
                         }
                         
-                        // Show success message
-                        if (result.acquirer_name && result.target_name) {
+                        // Show success message and assessment area section
+                        // In single bank mode, only require acquirer name
+                        // In merger mode, require both names
+                        if (isSingleBankMode && result.acquirer_name) {
+                            alert(`Bank name confirmed:\n\nBank A: ${result.acquirer_name}\n\n(Single Bank Analysis Mode)`);
+                            // Show assessment area section after bank is loaded
+                            $('#assessmentAreaSection').slideDown(300);
+                            // Ensure Bank B AA section stays hidden
+                            $('#bankBAASection').hide();
+                        } else if (result.acquirer_name && result.target_name) {
                             alert(`Bank names confirmed:\n\nBank A (Acquirer): ${result.acquirer_name}\nBank B (Target): ${result.target_name}`);
                             // Show assessment area section after banks are loaded
                             $('#assessmentAreaSection').slideDown(300);
