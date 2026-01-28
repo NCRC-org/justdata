@@ -196,13 +196,20 @@ function initMap(elementId, options = {}) {
  * @param {string} sourceId - Source ID to remove
  */
 function clearGeoJSONLayer(map, sourceId) {
-    // Remove layers first
-    if (map.getLayer(sourceId + '-circles')) {
-        map.removeLayer(sourceId + '-circles');
-    }
-    if (map.getLayer(sourceId + '-circles-stroke')) {
-        map.removeLayer(sourceId + '-circles-stroke');
-    }
+    // Remove all possible layers (including cluster layers)
+    const layerIds = [
+        sourceId + '-circles',
+        sourceId + '-circles-stroke',
+        sourceId + '-clusters',
+        sourceId + '-cluster-count'
+    ];
+    
+    layerIds.forEach(layerId => {
+        if (map.getLayer(layerId)) {
+            map.removeLayer(layerId);
+        }
+    });
+    
     // Then remove source
     if (map.getSource(sourceId)) {
         map.removeSource(sourceId);
@@ -241,10 +248,10 @@ function createCircleMarkerElement(radius, color) {
 }
 
 /**
- * Add GeoJSON circle layer for locations (high performance)
+ * Add GeoJSON circle layer for locations with optional clustering (high performance)
  * @param {mapboxgl.Map} map - Mapbox map instance
  * @param {Array} data - Location data array
- * @param {object} options - Layer options
+ * @param {object} options - Layer options including clustering
  * @param {function} popupGenerator - Function to generate popup HTML
  * @param {function} onClickHandler - Optional click handler for detail panel
  */
@@ -254,6 +261,9 @@ function addGeoJSONCircleLayer(map, data, options = {}, popupGenerator, onClickH
     const minRadius = options.minRadius || 6;
     const maxRadius = options.maxRadius || 35;
     const radiusMultiplier = options.radiusMultiplier || 4;
+    const enableClustering = options.cluster !== false; // Enable clustering by default
+    const clusterRadius = options.clusterRadius || 50;
+    const clusterMaxZoom = options.clusterMaxZoom || 14;
     
     // Clear existing layer
     clearGeoJSONLayer(map, sourceId);
@@ -303,41 +313,147 @@ function addGeoJSONCircleLayer(map, data, options = {}, popupGenerator, onClickH
         return;
     }
     
-    // Add GeoJSON source
-    map.addSource(sourceId, {
+    // Add GeoJSON source with optional clustering
+    const sourceConfig = {
         type: 'geojson',
         data: {
             type: 'FeatureCollection',
             features: features
         }
-    });
+    };
     
-    // Add circle stroke layer (border)
-    map.addLayer({
-        id: sourceId + '-circles-stroke',
-        type: 'circle',
-        source: sourceId,
-        paint: {
-            'circle-radius': ['get', 'radius'],
-            'circle-color': 'transparent',
-            'circle-stroke-width': 2,
-            'circle-stroke-color': '#1a1a1a'
-        }
-    });
+    if (enableClustering) {
+        sourceConfig.cluster = true;
+        sourceConfig.clusterMaxZoom = clusterMaxZoom;
+        sourceConfig.clusterRadius = clusterRadius;
+        sourceConfig.clusterProperties = {
+            totalEvents: ['+', ['get', 'events']]
+        };
+    }
     
-    // Add circle fill layer
-    map.addLayer({
-        id: sourceId + '-circles',
-        type: 'circle',
-        source: sourceId,
-        paint: {
-            'circle-radius': ['get', 'radius'],
-            'circle-color': color,
-            'circle-opacity': 0.85
-        }
-    });
+    map.addSource(sourceId, sourceConfig);
     
-    // Change cursor on hover
+    if (enableClustering) {
+        // Cluster circle layer
+        map.addLayer({
+            id: sourceId + '-clusters',
+            type: 'circle',
+            source: sourceId,
+            filter: ['has', 'point_count'],
+            paint: {
+                'circle-color': [
+                    'step', ['get', 'point_count'],
+                    color,      // Default color
+                    10, darkenColor(color, 10),   // 10+ points
+                    50, darkenColor(color, 20),   // 50+ points
+                    100, darkenColor(color, 30)   // 100+ points
+                ],
+                'circle-radius': [
+                    'step', ['get', 'point_count'],
+                    18,    // Default radius
+                    10, 24,
+                    50, 32,
+                    100, 40
+                ],
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#1a1a1a',
+                'circle-opacity': 0.9
+            }
+        });
+        
+        // Cluster count label
+        map.addLayer({
+            id: sourceId + '-cluster-count',
+            type: 'symbol',
+            source: sourceId,
+            filter: ['has', 'point_count'],
+            layout: {
+                'text-field': '{point_count_abbreviated}',
+                'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12,
+                'text-allow-overlap': true
+            },
+            paint: {
+                'text-color': '#ffffff'
+            }
+        });
+        
+        // Unclustered points stroke
+        map.addLayer({
+            id: sourceId + '-circles-stroke',
+            type: 'circle',
+            source: sourceId,
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+                'circle-radius': ['get', 'radius'],
+                'circle-color': 'transparent',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#1a1a1a'
+            }
+        });
+        
+        // Unclustered points fill
+        map.addLayer({
+            id: sourceId + '-circles',
+            type: 'circle',
+            source: sourceId,
+            filter: ['!', ['has', 'point_count']],
+            paint: {
+                'circle-radius': ['get', 'radius'],
+                'circle-color': color,
+                'circle-opacity': 0.85
+            }
+        });
+        
+        // Click on cluster to zoom in
+        map.on('click', sourceId + '-clusters', function(e) {
+            const features = map.queryRenderedFeatures(e.point, { layers: [sourceId + '-clusters'] });
+            if (!features.length) return;
+            
+            const clusterId = features[0].properties.cluster_id;
+            map.getSource(sourceId).getClusterExpansionZoom(clusterId, function(err, zoom) {
+                if (err) return;
+                map.easeTo({
+                    center: features[0].geometry.coordinates,
+                    zoom: zoom
+                });
+            });
+        });
+        
+        // Cursor for clusters
+        map.on('mouseenter', sourceId + '-clusters', function() {
+            map.getCanvas().style.cursor = 'pointer';
+        });
+        map.on('mouseleave', sourceId + '-clusters', function() {
+            map.getCanvas().style.cursor = '';
+        });
+    } else {
+        // Non-clustered: just add circle layers
+        map.addLayer({
+            id: sourceId + '-circles-stroke',
+            type: 'circle',
+            source: sourceId,
+            paint: {
+                'circle-radius': ['get', 'radius'],
+                'circle-color': 'transparent',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#1a1a1a'
+            }
+        });
+        
+        map.addLayer({
+            id: sourceId + '-circles',
+            type: 'circle',
+            source: sourceId,
+            paint: {
+                'circle-radius': ['get', 'radius'],
+                'circle-color': color,
+                'circle-opacity': 0.85
+            }
+        });
+    }
+    
+    // Change cursor on hover for individual points
     map.on('mouseenter', sourceId + '-circles', function() {
         map.getCanvas().style.cursor = 'pointer';
     });
@@ -346,7 +462,7 @@ function addGeoJSONCircleLayer(map, data, options = {}, popupGenerator, onClickH
         map.getCanvas().style.cursor = '';
     });
     
-    // Handle clicks
+    // Handle clicks on individual points
     map.on('click', sourceId + '-circles', function(e) {
         if (!e.features || e.features.length === 0) return;
         
@@ -384,6 +500,18 @@ function addGeoJSONCircleLayer(map, data, options = {}, popupGenerator, onClickH
     }
     
     return features.length;
+}
+
+/**
+ * Darken a hex color by a percentage
+ */
+function darkenColor(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.max(0, (num >> 16) - amt);
+    const G = Math.max(0, ((num >> 8) & 0x00FF) - amt);
+    const B = Math.max(0, (num & 0x0000FF) - amt);
+    return '#' + (0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1);
 }
 
 /**

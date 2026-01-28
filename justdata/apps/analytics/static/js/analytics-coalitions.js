@@ -489,34 +489,58 @@ function setView(view) {
 }
 
 /**
- * Initialize the coalition map
+ * Initialize the coalition map using Mapbox GL JS
  */
 function initCoalitionMap() {
     if (coalitionMap) return;
 
-    // Use initMap from analytics-maps.js
+    // Use initMap from analytics-maps.js (Mapbox GL JS)
     coalitionMap = initMap('coalition-map', {
         center: US_CENTER,
         zoom: US_ZOOM
     });
 
-    // Initialize empty markers layer
-    mapMarkersLayer = L.layerGroup().addTo(coalitionMap);
+    // Wait for map to load before adding layers
+    coalitionMap.on('load', function() {
+        // Re-render markers after map loads
+        if (coalitionData && coalitionData.length > 0) {
+            renderMapMarkers(coalitionData);
+        }
+    });
 
     // Fix map rendering after container is shown
     setTimeout(function() {
-        coalitionMap.invalidateSize();
+        coalitionMap.resize();
     }, 100);
 }
 
 /**
- * Render map markers for coalition data
+ * Clear coalition map layers
+ */
+function clearCoalitionLayers() {
+    if (!coalitionMap) return;
+    
+    // Clear GeoJSON layers for both counties and lenders
+    clearGeoJSONLayer(coalitionMap, 'coalition-counties');
+    clearGeoJSONLayer(coalitionMap, 'coalition-lenders');
+}
+
+/**
+ * Render map markers for coalition data using Mapbox GL JS GeoJSON layers
  */
 function renderMapMarkers(data) {
-    if (!coalitionMap || !mapMarkersLayer) return;
+    if (!coalitionMap) return;
+    
+    // Make sure map is loaded
+    if (!coalitionMap.isStyleLoaded()) {
+        coalitionMap.once('style.load', function() {
+            renderMapMarkers(data);
+        });
+        return;
+    }
 
-    // Clear existing markers
-    mapMarkersLayer.clearLayers();
+    // Clear existing layers
+    clearCoalitionLayers();
 
     if (!data || data.length === 0) return;
 
@@ -524,52 +548,243 @@ function renderMapMarkers(data) {
     const counties = data.filter(d => d.entity_type === 'county');
     const lenders = data.filter(d => d.entity_type === 'lender');
 
-    // Add county markers (need coordinates from BigQuery centroids or state centers)
-    counties.forEach(function(item) {
-        addCoalitionMarker(item, 'county');
+    // Build GeoJSON features for counties
+    const countyFeatures = [];
+    const lenderFeatures = [];
+    const bounds = new mapboxgl.LngLatBounds();
+    
+    // Store data for click handlers
+    const coalitionDataMap = {};
+
+    // Process county data
+    counties.forEach(function(item, index) {
+        const coords = getCoalitionCoordinates(item, 'county');
+        if (!coords) return;
+        
+        const users = item.unique_users || 1;
+        const radius = Math.min(Math.max(Math.sqrt(users) * 6, 10), 35);
+        const featureId = 'county_' + index;
+        coalitionDataMap[featureId] = item;
+        
+        countyFeatures.push({
+            type: 'Feature',
+            id: index,
+            properties: {
+                featureId: featureId,
+                radius: radius,
+                users: users,
+                name: item.entity_name || item.entity_id || 'Unknown',
+                type: 'county'
+            },
+            geometry: {
+                type: 'Point',
+                coordinates: [coords.lng, coords.lat]
+            }
+        });
+        
+        bounds.extend([coords.lng, coords.lat]);
     });
 
-    // Add lender markers (grouped by researcher states)
-    lenders.forEach(function(item) {
-        addCoalitionMarker(item, 'lender');
+    // Process lender data
+    lenders.forEach(function(item, index) {
+        const coords = getCoalitionCoordinates(item, 'lender');
+        if (!coords) return;
+        
+        const users = item.unique_users || 1;
+        const radius = Math.min(Math.max(Math.sqrt(users) * 6, 10), 35);
+        const featureId = 'lender_' + index;
+        coalitionDataMap[featureId] = item;
+        
+        lenderFeatures.push({
+            type: 'Feature',
+            id: index,
+            properties: {
+                featureId: featureId,
+                radius: radius,
+                users: users,
+                name: item.entity_name || item.entity_id || 'Unknown',
+                type: 'lender'
+            },
+            geometry: {
+                type: 'Point',
+                coordinates: [coords.lng, coords.lat]
+            }
+        });
+        
+        bounds.extend([coords.lng, coords.lat]);
     });
 
-    // Fit bounds if we have markers
-    if (mapMarkersLayer.getLayers().length > 0) {
-        const bounds = mapMarkersLayer.getBounds();
-        if (bounds.isValid()) {
-            coalitionMap.fitBounds(bounds, { padding: [50, 50] });
-        }
+    // Add county features layer with clustering
+    if (countyFeatures.length > 0) {
+        addCoalitionGeoJSONLayer(coalitionMap, 'coalition-counties', countyFeatures, '#0077B6', coalitionDataMap);
+    }
+
+    // Add lender features layer with clustering
+    if (lenderFeatures.length > 0) {
+        addCoalitionGeoJSONLayer(coalitionMap, 'coalition-lenders', lenderFeatures, '#2a9d8f', coalitionDataMap);
+    }
+
+    // Fit bounds if we have data
+    if (!bounds.isEmpty()) {
+        coalitionMap.fitBounds(bounds, { padding: 50, maxZoom: 10 });
     }
 }
 
 /**
- * Add a coalition marker to the map
+ * Add GeoJSON layer with clustering for coalition data
  */
-function addCoalitionMarker(item, type) {
+function addCoalitionGeoJSONLayer(map, sourceId, features, color, dataMap) {
+    // Add source with clustering
+    map.addSource(sourceId, {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: features
+        },
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+        clusterProperties: {
+            totalUsers: ['+', ['get', 'users']]
+        }
+    });
+
+    // Cluster layer
+    map.addLayer({
+        id: sourceId + '-clusters',
+        type: 'circle',
+        source: sourceId,
+        filter: ['has', 'point_count'],
+        paint: {
+            'circle-color': color,
+            'circle-radius': [
+                'step', ['get', 'point_count'],
+                18, 10, 24, 50, 32, 100, 40
+            ],
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#1a1a1a',
+            'circle-opacity': 0.9
+        }
+    });
+
+    // Cluster count label
+    map.addLayer({
+        id: sourceId + '-cluster-count',
+        type: 'symbol',
+        source: sourceId,
+        filter: ['has', 'point_count'],
+        layout: {
+            'text-field': '{point_count_abbreviated}',
+            'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+            'text-size': 12,
+            'text-allow-overlap': true
+        },
+        paint: {
+            'text-color': '#ffffff'
+        }
+    });
+
+    // Individual point stroke
+    map.addLayer({
+        id: sourceId + '-circles-stroke',
+        type: 'circle',
+        source: sourceId,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': 'transparent',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#1a1a1a'
+        }
+    });
+
+    // Individual point fill
+    map.addLayer({
+        id: sourceId + '-circles',
+        type: 'circle',
+        source: sourceId,
+        filter: ['!', ['has', 'point_count']],
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': color,
+            'circle-opacity': 0.85
+        }
+    });
+
+    // Click on cluster to zoom
+    map.on('click', sourceId + '-clusters', function(e) {
+        const features = map.queryRenderedFeatures(e.point, { layers: [sourceId + '-clusters'] });
+        if (!features.length) return;
+        
+        const clusterId = features[0].properties.cluster_id;
+        map.getSource(sourceId).getClusterExpansionZoom(clusterId, function(err, zoom) {
+            if (err) return;
+            map.easeTo({
+                center: features[0].geometry.coordinates,
+                zoom: zoom
+            });
+        });
+    });
+
+    // Click on individual point
+    map.on('click', sourceId + '-circles', function(e) {
+        if (!e.features || e.features.length === 0) return;
+        
+        const feature = e.features[0];
+        const featureId = feature.properties.featureId;
+        const item = dataMap[featureId];
+        
+        if (!item) return;
+        
+        // Generate popup
+        const popupContent = generateCoalitionPopup(item, item.entity_type);
+        
+        new mapboxgl.Popup({ maxWidth: '280px' })
+            .setLngLat(e.lngLat)
+            .setHTML(popupContent)
+            .addTo(map);
+        
+        // Show detail panel
+        showEntityDetail(item);
+    });
+
+    // Cursor changes
+    map.on('mouseenter', sourceId + '-clusters', function() {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', sourceId + '-clusters', function() {
+        map.getCanvas().style.cursor = '';
+    });
+    map.on('mouseenter', sourceId + '-circles', function() {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', sourceId + '-circles', function() {
+        map.getCanvas().style.cursor = '';
+    });
+}
+
+/**
+ * Get coordinates for coalition entity
+ */
+function getCoalitionCoordinates(item, type) {
     let lat, lng;
 
     if (type === 'county') {
-        // Try to get county centroid from the data
         if (item.latitude && item.longitude) {
             lat = item.latitude;
             lng = item.longitude;
         } else if (item.entity_id) {
-            // Use FIPS-based lookup (state from first 2 digits)
             const stateCode = item.entity_id.substring(0, 2);
             const stateName = getStateNameFromFips(stateCode);
             if (stateName && STATE_CENTERS[stateName]) {
                 const center = STATE_CENTERS[stateName];
-                // Add slight offset to prevent overlapping
                 lat = center.lat + (Math.random() - 0.5) * 1.5;
                 lng = center.lng + (Math.random() - 0.5) * 1.5;
             }
         }
     } else if (type === 'lender') {
-        // For lenders, use researcher states to place marker
         const states = item.researcher_states || [];
         if (states.length > 0) {
-            // Use the most common state or first state
             const primaryState = states[0];
             const stateName = STATE_NAMES[primaryState] || primaryState;
             if (STATE_CENTERS[stateName]) {
@@ -580,37 +795,8 @@ function addCoalitionMarker(item, type) {
         }
     }
 
-    if (!lat || !lng) return;
-
-    // Calculate marker radius based on number of users
-    const users = item.unique_users || 1;
-    const radius = Math.min(Math.max(Math.sqrt(users) * 6, 10), 35);
-
-    // Create marker with appropriate color
-    const color = type === 'county' ? '#0077B6' : '#2a9d8f';
-
-    const marker = L.circleMarker([lat, lng], {
-        radius: radius,
-        fillColor: color,
-        color: '#1a1a1a',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.85
-    });
-
-    // Add popup
-    const popupContent = generateCoalitionPopup(item, type);
-    marker.bindPopup(popupContent, {
-        maxWidth: 280,
-        className: 'coalition-popup-container'
-    });
-
-    // Add click handler to show detail panel
-    marker.on('click', function() {
-        showEntityDetail(item);
-    });
-
-    mapMarkersLayer.addLayer(marker);
+    if (!lat || !lng) return null;
+    return { lat: lat, lng: lng };
 }
 
 /**

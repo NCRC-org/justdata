@@ -1,26 +1,29 @@
 /**
  * Research Activity Map JavaScript
+ * Uses Mapbox GL JS with GeoJSON layers and clustering
  */
 
 let map;
-let markersLayer;
 let countyData = [];
 
 /**
  * Initialize on page load
  */
 $(document).ready(function() {
-    // Initialize map
+    // Initialize Mapbox GL JS map
     map = initMap('research-map');
 
-    // Populate state filter
-    populateStateFilter('state-filter');
+    // Wait for map to load before adding layers
+    map.on('load', function() {
+        // Populate state filter
+        populateStateFilter('state-filter');
 
-    // Load initial data
-    loadData();
+        // Load initial data
+        loadData();
 
-    // Handle filter changes
-    $('#time-period, #state-filter, #app-filter').on('change', loadData);
+        // Handle filter changes
+        $('#time-period, #state-filter, #app-filter').on('change', loadData);
+    });
 });
 
 /**
@@ -58,25 +61,34 @@ function loadData() {
 }
 
 /**
- * Render markers on map
+ * Render markers on map using GeoJSON layers with clustering
  */
 function renderMap(data) {
-    // Clear existing markers
-    if (markersLayer) {
-        map.removeLayer(markersLayer);
-    }
+    // Use the shared addCountyMarkers which now uses GeoJSON layers with clustering
+    addCountyMarkers(
+        map,
+        data,
+        generateResearchPopup,  // popup generator function
+        null                     // no detail panel click handler
+    );
+}
 
-    // Add new markers
-    markersLayer = addCountyMarkers(map, data);
-
-    // Fit bounds if we have data
-    if (data.length > 0 && markersLayer.getLayers().length > 0) {
-        try {
-            map.fitBounds(markersLayer.getBounds().pad(0.1));
-        } catch (e) {
-            map.setView(US_CENTER, US_ZOOM);
-        }
-    }
+/**
+ * Generate popup HTML for research activity
+ */
+function generateResearchPopup(location) {
+    const name = location.county_name || location.city || 'Unknown';
+    const state = location.state || '';
+    const reports = location.report_count || location.total_events || 0;
+    const users = location.unique_users || 0;
+    
+    return '<div class="aggregated-popup">' +
+        '<div class="popup-title">' + escapeHtml(name) + (state ? ', ' + state : '') + '</div>' +
+        '<div class="popup-stats">' +
+        '<div><span class="stat-value">' + formatNumber(reports) + '</span> reports</div>' +
+        (users > 0 ? '<div><span class="stat-value">' + formatNumber(users) + '</span> users</div>' : '') +
+        '</div>' +
+        '</div>';
 }
 
 /**

@@ -254,27 +254,54 @@ function renderTable(data) {
     });
 }
 
-// Store active lender markers for cleanup
-let lenderMarkers = [];
+// Store aggregated data for popup generation
+let lenderCountyDataMap = {};
+let lenderStateDataMap = {};
+let currentLenderPopup = null;
 
 /**
- * Render researcher locations on map - showing county-level markers
+ * Clear lender map layers (including cluster layers)
+ */
+function clearLenderLayers() {
+    ['lender-counties', 'lender-states'].forEach(sourceId => {
+        // Remove all possible layers including cluster layers
+        const layerIds = [
+            sourceId + '-circles',
+            sourceId + '-circles-stroke',
+            sourceId + '-clusters',
+            sourceId + '-cluster-count'
+        ];
+        layerIds.forEach(layerId => {
+            if (map.getLayer(layerId)) {
+                map.removeLayer(layerId);
+            }
+        });
+        if (map.getSource(sourceId)) {
+            map.removeSource(sourceId);
+        }
+    });
+    if (currentLenderPopup) {
+        currentLenderPopup.remove();
+        currentLenderPopup = null;
+    }
+    lenderCountyDataMap = {};
+    lenderStateDataMap = {};
+}
+
+/**
+ * Render researcher locations on map using GeoJSON layers (high performance)
  */
 function renderMap(data) {
-    // Clear existing markers
-    lenderMarkers.forEach(marker => marker.remove());
-    lenderMarkers = [];
+    clearLenderLayers();
 
     // Aggregate by county (using coordinates from API) with lender details
     const countyData = {};
-    // Also aggregate by state for items without county coordinates
     const stateData = {};
 
     data.forEach(function(item) {
         const state = item.researcher_state;
         if (!state) return;
 
-        // If we have county-level coordinates, use them
         if (item.latitude && item.longitude && item.researcher_city) {
             const countyKey = item.researcher_county_fips || (item.researcher_city + '_' + state);
 
@@ -292,7 +319,6 @@ function renderMap(data) {
 
             countyData[countyKey].count += item.unique_users || 1;
 
-            // Track which lenders are being researched from this county
             if (item.lender_id) {
                 if (!countyData[countyKey].lenders[item.lender_id]) {
                     countyData[countyKey].lenders[item.lender_id] = {
@@ -303,7 +329,6 @@ function renderMap(data) {
                 countyData[countyKey].lenders[item.lender_id].count += item.event_count || 1;
             }
         } else {
-            // Fall back to state-level aggregation for items without coordinates
             if (!stateData[state]) {
                 stateData[state] = {
                     state: state,
@@ -331,67 +356,164 @@ function renderMap(data) {
         }
     });
 
-    // Add markers for each county with research activity
-    Object.values(countyData).forEach(function(info) {
-        const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
-
-        // Create circle marker element
-        const el = document.createElement('div');
-        el.className = 'mapbox-circle-marker';
-        el.style.width = (radius * 2) + 'px';
-        el.style.height = (radius * 2) + 'px';
-        el.style.backgroundColor = '#6a1b9a';  // Darker purple
-        el.style.border = '2px solid #1a1a1a';
-        el.style.borderRadius = '50%';
-        el.style.opacity = '0.85';
-        el.style.cursor = 'pointer';
-
-        const popup = new mapboxgl.Popup({
-            offset: 25,
-            maxWidth: '320px',
-            className: 'lender-map-popup'
-        }).setHTML(generateCountyMapPopup(info));
-
-        const marker = new mapboxgl.Marker(el)
-            .setLngLat([info.longitude, info.latitude])
-            .setPopup(popup)
-            .addTo(map);
+    // Build county GeoJSON features
+    const countyFeatures = [];
+    Object.entries(countyData).forEach(function([key, info], index) {
+        const featureId = 'county_' + index;
+        lenderCountyDataMap[featureId] = info;
         
-        lenderMarkers.push(marker);
+        const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
+        countyFeatures.push({
+            type: 'Feature',
+            id: index,
+            properties: { featureId: featureId, radius: radius, count: info.count },
+            geometry: { type: 'Point', coordinates: [info.longitude, info.latitude] }
+        });
     });
 
-    // Add markers for state-level fallback data (lighter color to distinguish)
-    Object.values(stateData).forEach(function(info) {
-        const stateAbbr = info.state;
+    // Build state GeoJSON features
+    const stateFeatures = [];
+    Object.entries(stateData).forEach(function([stateAbbr, info], index) {
         const stateName = STATE_NAMES[stateAbbr] || stateAbbr;
         const center = STATE_CENTERS[stateName];
         if (!center) return;
 
-        const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
-
-        // Create circle marker element
-        const el = document.createElement('div');
-        el.className = 'mapbox-circle-marker';
-        el.style.width = (radius * 2) + 'px';
-        el.style.height = (radius * 2) + 'px';
-        el.style.backgroundColor = '#9c27b0';  // Lighter purple for state-level
-        el.style.border = '2px solid #1a1a1a';
-        el.style.borderRadius = '50%';
-        el.style.opacity = '0.7';
-        el.style.cursor = 'pointer';
-
-        const popup = new mapboxgl.Popup({
-            offset: 25,
-            maxWidth: '320px',
-            className: 'lender-map-popup'
-        }).setHTML(generateLenderMapPopup(info));
-
-        const marker = new mapboxgl.Marker(el)
-            .setLngLat([center.lng, center.lat])
-            .setPopup(popup)
-            .addTo(map);
+        const featureId = 'state_' + index;
+        lenderStateDataMap[featureId] = info;
+        stateDataCache[info.state] = info;
         
-        lenderMarkers.push(marker);
+        const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
+        stateFeatures.push({
+            type: 'Feature',
+            id: index + 1000,
+            properties: { featureId: featureId, radius: radius, count: info.count },
+            geometry: { type: 'Point', coordinates: [center.lng, center.lat] }
+        });
+    });
+
+    // Add county source with clustering (darker purple)
+    if (countyFeatures.length > 0) {
+        map.addSource('lender-counties', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: countyFeatures },
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 50,
+            clusterProperties: { totalCount: ['+', ['get', 'count']] }
+        });
+        
+        // Cluster circles
+        map.addLayer({
+            id: 'lender-counties-clusters',
+            type: 'circle',
+            source: 'lender-counties',
+            filter: ['has', 'point_count'],
+            paint: {
+                'circle-color': ['step', ['get', 'point_count'], '#6a1b9a', 10, '#5c1690', 50, '#4e1186'],
+                'circle-radius': ['step', ['get', 'point_count'], 18, 10, 24, 50, 32],
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#1a1a1a',
+                'circle-opacity': 0.9
+            }
+        });
+        
+        // Cluster count labels
+        map.addLayer({
+            id: 'lender-counties-cluster-count',
+            type: 'symbol',
+            source: 'lender-counties',
+            filter: ['has', 'point_count'],
+            layout: {
+                'text-field': '{point_count_abbreviated}',
+                'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+                'text-size': 12,
+                'text-allow-overlap': true
+            },
+            paint: { 'text-color': '#ffffff' }
+        });
+        
+        // Unclustered county points
+        map.addLayer({
+            id: 'lender-counties-circles-stroke',
+            type: 'circle',
+            source: 'lender-counties',
+            filter: ['!', ['has', 'point_count']],
+            paint: { 'circle-radius': ['get', 'radius'], 'circle-color': 'transparent', 'circle-stroke-width': 2, 'circle-stroke-color': '#1a1a1a' }
+        });
+        map.addLayer({
+            id: 'lender-counties-circles',
+            type: 'circle',
+            source: 'lender-counties',
+            filter: ['!', ['has', 'point_count']],
+            paint: { 'circle-radius': ['get', 'radius'], 'circle-color': '#6a1b9a', 'circle-opacity': 0.85 }
+        });
+        
+        // Click on cluster to zoom
+        map.on('click', 'lender-counties-clusters', function(e) {
+            const features = map.queryRenderedFeatures(e.point, { layers: ['lender-counties-clusters'] });
+            if (!features.length) return;
+            const clusterId = features[0].properties.cluster_id;
+            map.getSource('lender-counties').getClusterExpansionZoom(clusterId, function(err, zoom) {
+                if (err) return;
+                map.easeTo({ center: features[0].geometry.coordinates, zoom: zoom });
+            });
+        });
+        
+        map.on('mouseenter', 'lender-counties-clusters', () => map.getCanvas().style.cursor = 'pointer');
+        map.on('mouseleave', 'lender-counties-clusters', () => map.getCanvas().style.cursor = '');
+    }
+
+    // Add state source and layers (lighter purple, no clustering - few points)
+    if (stateFeatures.length > 0) {
+        map.addSource('lender-states', {
+            type: 'geojson',
+            data: { type: 'FeatureCollection', features: stateFeatures }
+        });
+        map.addLayer({
+            id: 'lender-states-circles-stroke',
+            type: 'circle',
+            source: 'lender-states',
+            paint: { 'circle-radius': ['get', 'radius'], 'circle-color': 'transparent', 'circle-stroke-width': 2, 'circle-stroke-color': '#1a1a1a' }
+        });
+        map.addLayer({
+            id: 'lender-states-circles',
+            type: 'circle',
+            source: 'lender-states',
+            paint: { 'circle-radius': ['get', 'radius'], 'circle-color': '#9c27b0', 'circle-opacity': 0.7 }
+        });
+    }
+
+    // Click handlers for counties
+    map.on('click', 'lender-counties-circles', function(e) {
+        if (!e.features || !e.features[0]) return;
+        const info = lenderCountyDataMap[e.features[0].properties.featureId];
+        if (!info) return;
+        if (currentLenderPopup) currentLenderPopup.remove();
+        currentLenderPopup = new mapboxgl.Popup({ maxWidth: '320px', className: 'lender-map-popup' })
+            .setLngLat(e.lngLat)
+            .setHTML(generateCountyMapPopup(info))
+            .addTo(map);
+    });
+
+    // Click handlers for states
+    map.on('click', 'lender-states-circles', function(e) {
+        if (!e.features || !e.features[0]) return;
+        const info = lenderStateDataMap[e.features[0].properties.featureId];
+        if (!info) return;
+        if (currentLenderPopup) currentLenderPopup.remove();
+        currentLenderPopup = new mapboxgl.Popup({ maxWidth: '320px', className: 'lender-map-popup' })
+            .setLngLat(e.lngLat)
+            .setHTML(generateLenderMapPopup(info))
+            .addTo(map);
+        showStateDetail(info);
+    });
+
+    // Cursor changes
+    ['lender-counties-circles', 'lender-states-circles'].forEach(layerId => {
+        if (map.getLayer(layerId)) {
+            map.on('mouseenter', layerId, () => map.getCanvas().style.cursor = 'pointer');
+            map.on('mouseleave', layerId, () => map.getCanvas().style.cursor = '');
+        }
     });
 }
 

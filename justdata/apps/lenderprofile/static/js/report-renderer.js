@@ -1102,45 +1102,181 @@ class ReportRenderer {
             return;
         }
         
-        // Initialize map centered on US
-        const map = L.map('branch-map').setView([39.8283, -98.5795], 4);
+        // Get Mapbox config from window or use defaults
+        const MAPBOX_TOKEN = (window.MAPBOX_CONFIG && window.MAPBOX_CONFIG.token) || 'pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg';
+        const MAPBOX_STYLE = (window.MAPBOX_CONFIG && window.MAPBOX_CONFIG.style) || 'mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3';
         
-        // Add Mapbox tile layer
-        const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2xxeTBib3pyMGsxcTJpbXQ3bmo4YXU0ZiJ9.wvqlBMQSxTHgvAh6l9OXXw';
-        L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + MAPBOX_TOKEN, {
-            attribution: '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-            tileSize: 256,
-            maxZoom: 19
-        }).addTo(map);
+        // Initialize Mapbox GL JS map
+        mapboxgl.accessToken = MAPBOX_TOKEN;
+        const map = new mapboxgl.Map({
+            container: 'branch-map',
+            style: MAPBOX_STYLE,
+            center: [-98.5795, 39.8283], // [lng, lat] for Mapbox
+            zoom: 3.5
+        });
         
-        // Add markers for each CBSA
-        let bounds = [];
-        for (const [cbsaName, data] of Object.entries(cbsaCoordinates)) {
-            if (data.lat && data.lon) {
-                const count = byCbsa[cbsaName] || data.count || 1;
-                const radius = Math.min(Math.max(count / 10, 5), 30);
-                const marker = L.circleMarker([data.lat, data.lon], {
-                    radius: radius,
-                    fillColor: '#552d87',
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.6
-                }).addTo(map);
-                
-                marker.bindPopup(`
-                    <strong>${this.escapeHtml(cbsaName)}</strong><br>
-                    ${count} branch${count !== 1 ? 'es' : ''}
-                `);
-                
-                bounds.push([data.lat, data.lon]);
+        // Add navigation controls
+        map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+        
+        const self = this;
+        
+        map.on('load', function() {
+            // Build GeoJSON features
+            const features = [];
+            const bounds = new mapboxgl.LngLatBounds();
+            
+            for (const [cbsaName, data] of Object.entries(cbsaCoordinates)) {
+                if (data.lat && data.lon) {
+                    const count = byCbsa[cbsaName] || data.count || 1;
+                    const radius = Math.min(Math.max(count / 10, 5), 30);
+                    
+                    features.push({
+                        type: 'Feature',
+                        properties: {
+                            name: cbsaName,
+                            count: count,
+                            radius: radius
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [data.lon, data.lat] // [lng, lat] for GeoJSON
+                        }
+                    });
+                    
+                    bounds.extend([data.lon, data.lat]);
+                }
             }
-        }
-        
-        // Fit map to show all markers
-        if (bounds.length > 0) {
-            map.fitBounds(bounds, { padding: [50, 50] });
-        }
+            
+            if (features.length === 0) return;
+            
+            // Add GeoJSON source with clustering
+            map.addSource('branches', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: features
+                },
+                cluster: true,
+                clusterMaxZoom: 14,
+                clusterRadius: 50,
+                clusterProperties: {
+                    totalBranches: ['+', ['get', 'count']]
+                }
+            });
+            
+            // Cluster layer
+            map.addLayer({
+                id: 'branch-clusters',
+                type: 'circle',
+                source: 'branches',
+                filter: ['has', 'point_count'],
+                paint: {
+                    'circle-color': '#552d87',
+                    'circle-radius': [
+                        'step', ['get', 'point_count'],
+                        18, 10, 24, 50, 32, 100, 40
+                    ],
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff',
+                    'circle-opacity': 0.8
+                }
+            });
+            
+            // Cluster count label
+            map.addLayer({
+                id: 'branch-cluster-count',
+                type: 'symbol',
+                source: 'branches',
+                filter: ['has', 'point_count'],
+                layout: {
+                    'text-field': '{point_count_abbreviated}',
+                    'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
+                    'text-size': 12,
+                    'text-allow-overlap': true
+                },
+                paint: {
+                    'text-color': '#ffffff'
+                }
+            });
+            
+            // Individual point stroke
+            map.addLayer({
+                id: 'branch-circles-stroke',
+                type: 'circle',
+                source: 'branches',
+                filter: ['!', ['has', 'point_count']],
+                paint: {
+                    'circle-radius': ['get', 'radius'],
+                    'circle-color': 'transparent',
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#ffffff'
+                }
+            });
+            
+            // Individual point fill
+            map.addLayer({
+                id: 'branch-circles',
+                type: 'circle',
+                source: 'branches',
+                filter: ['!', ['has', 'point_count']],
+                paint: {
+                    'circle-radius': ['get', 'radius'],
+                    'circle-color': '#552d87',
+                    'circle-opacity': 0.7
+                }
+            });
+            
+            // Click on cluster to zoom
+            map.on('click', 'branch-clusters', function(e) {
+                const features = map.queryRenderedFeatures(e.point, { layers: ['branch-clusters'] });
+                if (!features.length) return;
+                
+                const clusterId = features[0].properties.cluster_id;
+                map.getSource('branches').getClusterExpansionZoom(clusterId, function(err, zoom) {
+                    if (err) return;
+                    map.easeTo({
+                        center: features[0].geometry.coordinates,
+                        zoom: zoom
+                    });
+                });
+            });
+            
+            // Click on individual point to show popup
+            map.on('click', 'branch-circles', function(e) {
+                if (!e.features || e.features.length === 0) return;
+                
+                const feature = e.features[0];
+                const name = feature.properties.name;
+                const count = feature.properties.count;
+                
+                new mapboxgl.Popup({ maxWidth: '250px' })
+                    .setLngLat(e.lngLat)
+                    .setHTML(`
+                        <strong>${self.escapeHtml(name)}</strong><br>
+                        ${count} branch${count !== 1 ? 'es' : ''}
+                    `)
+                    .addTo(map);
+            });
+            
+            // Cursor changes
+            map.on('mouseenter', 'branch-clusters', function() {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'branch-clusters', function() {
+                map.getCanvas().style.cursor = '';
+            });
+            map.on('mouseenter', 'branch-circles', function() {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'branch-circles', function() {
+                map.getCanvas().style.cursor = '';
+            });
+            
+            // Fit bounds
+            if (!bounds.isEmpty()) {
+                map.fitBounds(bounds, { padding: 50, maxZoom: 10 });
+            }
+        });
     }
     
     renderBranchTrends(trends) {
