@@ -587,9 +587,6 @@ const AI_APPS = ['LendSight', 'BizSight', 'BranchSight', 'MergerMeter', 'LenderP
 const APP_ORDER = ['LendSight', 'BizSight', 'BranchSight', 'DataExplorer', 'MergerMeter', 'Analytics', 'LenderProfile', 'ElectWatch', 'Other'];
 
 function renderDailyChart(days) {
-    // #region agent log
-    console.log('[DEBUG H1] renderDailyChart called', {daysCount:days?days.length:0,hasData:!!(days&&days.length>0)});
-    // #endregion
     const container = document.getElementById('daily-chart');
     const labels = document.getElementById('chart-labels');
     const legend = document.getElementById('chart-legend');
@@ -661,7 +658,7 @@ function renderDailyChart(days) {
         }
         
         html += `
-            <div class="chart-bar" data-tooltip="${encodeURIComponent(tooltipHtml)}" style="height: ${totalHeight}px; display: flex; flex-direction: column-reverse;">
+            <div class="chart-bar" data-tip-content="${encodeURIComponent(tooltipHtml)}" style="height: ${totalHeight}px; display: flex; flex-direction: column-reverse;">
                 ${segmentsHtml}
             </div>
         `;
@@ -679,26 +676,17 @@ function renderDailyChart(days) {
         document.body.appendChild(globalTooltip);
     }
     
-    // #region agent log
-    const barsCreated = container.querySelectorAll('.chart-bar').length;
-    console.log('[DEBUG] Chart rendered', {barsCreated, globalTooltipExists: !!globalTooltip});
-    // #endregion
-    
     // Add tooltip event listeners to bars
     container.querySelectorAll('.chart-bar').forEach(bar => {
         bar.addEventListener('mouseenter', function(e) {
             const rect = bar.getBoundingClientRect();
-            const tooltipContent = decodeURIComponent(bar.dataset.tooltip);
+            const tooltipContent = decodeURIComponent(bar.dataset.tipContent);
             
             globalTooltip.innerHTML = tooltipContent;
             globalTooltip.style.left = (rect.left + rect.width / 2) + 'px';
             globalTooltip.style.top = (rect.top - 10) + 'px';
             globalTooltip.style.transform = 'translate(-50%, -100%)';
             globalTooltip.style.display = 'block';
-            
-            // #region agent log
-            console.log('[DEBUG] Tooltip shown', {left: globalTooltip.style.left, top: globalTooltip.style.top});
-            // #endregion
             
             // Prevent overflow on edges
             requestAnimationFrame(() => {
