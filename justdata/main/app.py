@@ -3,13 +3,25 @@ Main Flask application for JustData.
 Serves as the central entry point with all sub-apps as blueprints.
 """
 
-from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect
+from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect, make_response
 from justdata.main.auth import (
     get_user_type, set_user_type, get_app_access, get_user_permissions,
-    auth_bp, init_firebase, get_current_user, is_authenticated
+    auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user
 )
 from justdata.main.config import MainConfig
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 import os
+
+
+# Paths that don't require privileged access
+EXEMPT_PATHS = [
+    '/health',
+    '/favicon.ico',
+    '/static/',
+    '/shared/',
+    '/api/auth/',  # Auth routes for login/logout
+    '/api/set-user-type',  # Allow setting user type for testing/auth flow
+]
 
 
 def create_app():
@@ -78,6 +90,42 @@ def create_app():
             except Exception as e:
                 # Don't let analytics check failures affect the request
                 pass
+
+    # Access restriction for non-privileged users
+    @app.before_request
+    def check_privileged_access():
+        """
+        Check if user has privileged access (staff, senior_executive, or admin).
+        Non-privileged users see a restricted view with only header, footer, and NCRC logo.
+        """
+        # Skip check for exempt paths (static files, health check, auth routes)
+        path = request.path
+        for exempt in EXEMPT_PATHS:
+            if path.startswith(exempt):
+                return None
+
+        # Check if user is privileged
+        if not is_privileged_user():
+            # For API requests, return 403 JSON response
+            if request.is_json or path.startswith('/api/'):
+                return jsonify({
+                    'error': 'Access restricted',
+                    'message': 'This application is currently restricted to authorized staff only.',
+                    'user_type': get_user_type()
+                }), 403
+
+            # For regular requests, render the restricted access page
+            from flask import url_for
+            env = Environment(
+                loader=FileSystemLoader(MainConfig.TEMPLATES_DIR),
+                autoescape=select_autoescape(['html', 'xml'])
+            )
+            env.globals['url_for'] = url_for
+
+            template = env.get_template('access_restricted.html')
+            return make_response(template.render(user_type=get_user_type())), 200
+
+        return None
 
     # Favicon route
     @app.route('/favicon.ico')

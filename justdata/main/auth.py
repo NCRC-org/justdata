@@ -86,6 +86,10 @@ VALID_USER_TYPES = [
     'admin'
 ]
 
+# Privileged roles that have full access to the platform
+# Only these roles can see app content; all others see a restricted view
+PRIVILEGED_ROLES = ['staff', 'senior_executive', 'admin']
+
 # Access matrix matching the User Access Matrix
 # Format: app_name: {user_type: access_level}
 ACCESS_MATRIX = {
@@ -956,6 +960,22 @@ def set_user_type(user_type: UserType):
         session.permanent = True
     else:
         raise ValueError(f"Invalid user type: {user_type}. Valid types: {VALID_USER_TYPES}")
+
+
+def is_privileged_user(user_type: Optional[UserType] = None) -> bool:
+    """
+    Check if user has a privileged role (staff, senior_executive, or admin).
+    Only privileged users can access the full application.
+
+    Args:
+        user_type: User type to check (defaults to current session user type)
+
+    Returns:
+        True if user has a privileged role, False otherwise
+    """
+    if user_type is None:
+        user_type = get_user_type()
+    return user_type in PRIVILEGED_ROLES
 
 
 # ========================================
