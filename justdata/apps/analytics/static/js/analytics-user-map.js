@@ -231,68 +231,26 @@ function loadData() {
 }
 
 /**
- * Render markers on map with click handlers (Mapbox GL JS version)
+ * Render markers on map using GeoJSON layer (high performance)
  */
 function renderMap(data) {
-    // Clear existing markers using shared function
-    clearMarkers();
-
-    // Aggregate data by county
-    const aggregatedData = aggregateByCounty(data);
+    // Store location data globally for access in callbacks
+    locationData = data;
     
-    // Track bounds for fitting
-    const bounds = new mapboxgl.LngLatBounds();
-    let hasValidMarkers = false;
-
-    aggregatedData.forEach(function(location) {
-        // Get validated coordinates with fallback to state center
-        const coords = getValidCoordinates(location);
-        if (!coords) {
-            console.warn('Skipping location with no valid coordinates:', location.county_name || location.city, location.state);
-            return;
-        }
-
-        // Calculate marker size
-        const events = location.total_events || 1;
-        const radius = Math.min(Math.max(Math.sqrt(events) * 4, 6), 35);
-
-        // Create marker element using shared function
-        const el = createCircleMarkerElement(radius, '#0d4a7c');
-        
-        // Create popup with custom content
-        const popupContent = generateClickablePopup(location);
-        const popup = new mapboxgl.Popup({
-            offset: 25,
-            maxWidth: '320px',
-            className: 'aggregated-popup-container'
-        }).setHTML(popupContent);
-
-        // Create Mapbox marker
-        const marker = new mapboxgl.Marker(el)
-            .setLngLat([coords.lng, coords.lat])
-            .setPopup(popup)
-            .addTo(map);
-        
-        // Store location data on marker for click handlers
-        marker._locationData = location;
-        
-        // Add click handler to marker element
-        el.addEventListener('click', function() {
-            showLocationDetail(location);
-        });
-        
-        // Add to bounds
-        bounds.extend([coords.lng, coords.lat]);
-        hasValidMarkers = true;
-        
-        // Track marker for cleanup
-        activeMarkers.push(marker);
-    });
-
-    // Fit bounds if we have data
-    if (hasValidMarkers && !bounds.isEmpty()) {
-        map.fitBounds(bounds, { padding: 50, maxZoom: 10 });
-    }
+    // Use the GeoJSON circle layer for high performance
+    addGeoJSONCircleLayer(
+        map, 
+        data, 
+        {
+            sourceId: 'user-locations',
+            color: '#0d4a7c',
+            minRadius: 6,
+            maxRadius: 35,
+            radiusMultiplier: 4
+        },
+        generateClickablePopup,  // popup generator
+        showLocationDetail       // click handler for detail panel
+    );
 }
 
 /**

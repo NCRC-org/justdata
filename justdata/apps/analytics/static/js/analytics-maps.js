@@ -160,6 +160,12 @@ const STATE_CENTERS = {
     'District of Columbia': { lat: 38.897438, lng: -77.026817 }
 };
 
+// Store current popup reference
+let currentPopup = null;
+
+// Store location data for click handlers
+let locationDataMap = {};
+
 /**
  * Initialize a Mapbox GL JS map
  * @param {string} elementId - DOM element ID for the map
@@ -185,7 +191,33 @@ function initMap(elementId, options = {}) {
 }
 
 /**
- * Clear all markers from the map
+ * Clear GeoJSON layers and sources from map
+ * @param {mapboxgl.Map} map - Mapbox map instance
+ * @param {string} sourceId - Source ID to remove
+ */
+function clearGeoJSONLayer(map, sourceId) {
+    // Remove layers first
+    if (map.getLayer(sourceId + '-circles')) {
+        map.removeLayer(sourceId + '-circles');
+    }
+    if (map.getLayer(sourceId + '-circles-stroke')) {
+        map.removeLayer(sourceId + '-circles-stroke');
+    }
+    // Then remove source
+    if (map.getSource(sourceId)) {
+        map.removeSource(sourceId);
+    }
+    // Close any open popup
+    if (currentPopup) {
+        currentPopup.remove();
+        currentPopup = null;
+    }
+    // Clear location data
+    locationDataMap = {};
+}
+
+/**
+ * Legacy: Clear all HTML markers from the map
  */
 function clearMarkers() {
     activeMarkers.forEach(marker => marker.remove());
@@ -193,10 +225,7 @@ function clearMarkers() {
 }
 
 /**
- * Create a circle marker element for Mapbox
- * @param {number} radius - Marker radius in pixels
- * @param {string} color - Fill color
- * @returns {HTMLElement} Marker element
+ * Legacy: Create a circle marker element for Mapbox (kept for backward compatibility)
  */
 function createCircleMarkerElement(radius, color) {
     const el = document.createElement('div');
@@ -212,99 +241,182 @@ function createCircleMarkerElement(radius, color) {
 }
 
 /**
- * Add circle markers for user locations
+ * Add GeoJSON circle layer for locations (high performance)
  * @param {mapboxgl.Map} map - Mapbox map instance
  * @param {Array} data - Location data array
- * @param {object} options - Marker options
- * @returns {Array} Array of markers
+ * @param {object} options - Layer options
+ * @param {function} popupGenerator - Function to generate popup HTML
+ * @param {function} onClickHandler - Optional click handler for detail panel
  */
-function addUserMarkers(map, data, options = {}) {
-    clearMarkers();
+function addGeoJSONCircleLayer(map, data, options = {}, popupGenerator, onClickHandler) {
+    const sourceId = options.sourceId || 'locations';
+    const color = options.color || '#0d4a7c';
+    const minRadius = options.minRadius || 6;
+    const maxRadius = options.maxRadius || 35;
+    const radiusMultiplier = options.radiusMultiplier || 4;
     
+    // Clear existing layer
+    clearGeoJSONLayer(map, sourceId);
+    
+    // Aggregate data
     const aggregatedData = aggregateByCounty(data);
-
-    aggregatedData.forEach(function(location) {
+    
+    // Build GeoJSON features
+    const features = [];
+    const bounds = new mapboxgl.LngLatBounds();
+    
+    aggregatedData.forEach(function(location, index) {
         const coords = getValidCoordinates(location);
         if (!coords) {
             console.warn('Skipping location with no valid coordinates:', location.county_name || location.city, location.state);
             return;
         }
-
-        const events = location.total_events || 1;
-        const radius = Math.min(Math.max(Math.sqrt(events) * 4, 6), 35);
-        const color = options.color || '#0d4a7c';
-
-        const el = createCircleMarkerElement(radius, color);
         
-        const popup = new mapboxgl.Popup({
-            offset: 25,
+        const events = location.total_events || 1;
+        const radius = Math.min(Math.max(Math.sqrt(events) * radiusMultiplier, minRadius), maxRadius);
+        
+        // Store location data with unique ID
+        const featureId = 'loc_' + index;
+        locationDataMap[featureId] = location;
+        
+        features.push({
+            type: 'Feature',
+            id: index,
+            properties: {
+                featureId: featureId,
+                radius: radius,
+                events: events,
+                name: location.county_name || location.city || 'Unknown',
+                state: location.state || ''
+            },
+            geometry: {
+                type: 'Point',
+                coordinates: [coords.lng, coords.lat]
+            }
+        });
+        
+        bounds.extend([coords.lng, coords.lat]);
+    });
+    
+    if (features.length === 0) {
+        console.warn('No valid features to display');
+        return;
+    }
+    
+    // Add GeoJSON source
+    map.addSource(sourceId, {
+        type: 'geojson',
+        data: {
+            type: 'FeatureCollection',
+            features: features
+        }
+    });
+    
+    // Add circle stroke layer (border)
+    map.addLayer({
+        id: sourceId + '-circles-stroke',
+        type: 'circle',
+        source: sourceId,
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': 'transparent',
+            'circle-stroke-width': 2,
+            'circle-stroke-color': '#1a1a1a'
+        }
+    });
+    
+    // Add circle fill layer
+    map.addLayer({
+        id: sourceId + '-circles',
+        type: 'circle',
+        source: sourceId,
+        paint: {
+            'circle-radius': ['get', 'radius'],
+            'circle-color': color,
+            'circle-opacity': 0.85
+        }
+    });
+    
+    // Change cursor on hover
+    map.on('mouseenter', sourceId + '-circles', function() {
+        map.getCanvas().style.cursor = 'pointer';
+    });
+    
+    map.on('mouseleave', sourceId + '-circles', function() {
+        map.getCanvas().style.cursor = '';
+    });
+    
+    // Handle clicks
+    map.on('click', sourceId + '-circles', function(e) {
+        if (!e.features || e.features.length === 0) return;
+        
+        const feature = e.features[0];
+        const featureId = feature.properties.featureId;
+        const location = locationDataMap[featureId];
+        
+        if (!location) return;
+        
+        // Close existing popup
+        if (currentPopup) {
+            currentPopup.remove();
+        }
+        
+        // Create popup
+        const popupHTML = popupGenerator ? popupGenerator(location) : generateAggregatedPopup(location);
+        
+        currentPopup = new mapboxgl.Popup({
             maxWidth: '320px',
             className: 'aggregated-popup-container'
-        }).setHTML(generateAggregatedPopup(location));
-
-        const marker = new mapboxgl.Marker(el)
-            .setLngLat([coords.lng, coords.lat])
-            .setPopup(popup)
+        })
+            .setLngLat(e.lngLat)
+            .setHTML(popupHTML)
             .addTo(map);
         
-        // Store location data on marker for click handlers
-        marker._locationData = location;
-        
-        activeMarkers.push(marker);
+        // Call optional click handler (for detail panel)
+        if (onClickHandler) {
+            onClickHandler(location);
+        }
     });
-
-    return activeMarkers;
+    
+    // Fit bounds
+    if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: 50, maxZoom: 10 });
+    }
+    
+    return features.length;
 }
 
 /**
- * Add circle markers for county research activity
+ * Add circle markers for user locations (GeoJSON version - high performance)
+ * @param {mapboxgl.Map} map - Mapbox map instance
+ * @param {Array} data - Location data array
+ * @param {object} options - Marker options
+ * @param {function} popupGenerator - Optional custom popup generator
+ * @param {function} onClickHandler - Optional click handler
+ */
+function addUserMarkers(map, data, options = {}, popupGenerator, onClickHandler) {
+    return addGeoJSONCircleLayer(map, data, {
+        sourceId: 'user-locations',
+        color: options.color || '#0d4a7c',
+        ...options
+    }, popupGenerator, onClickHandler);
+}
+
+/**
+ * Add circle markers for county research activity (GeoJSON version)
  * @param {mapboxgl.Map} map - Mapbox map instance
  * @param {Array} data - County research data
- * @returns {Array} Array of markers
+ * @param {function} popupGenerator - Optional custom popup generator
+ * @param {function} onClickHandler - Optional click handler
  */
-function addCountyMarkers(map, data) {
-    clearMarkers();
-    
-    const aggregatedData = aggregateByCounty(data);
-
-    function getColor(count) {
-        return count > 50 ? '#023858' :
-               count > 20 ? '#045a8d' :
-               count > 10 ? '#0570b0' :
-               count > 5  ? '#3690c0' :
-               count > 1  ? '#74a9cf' :
-                           '#a6bddb';
-    }
-
-    aggregatedData.forEach(function(county) {
-        const coords = getValidCoordinates(county);
-        if (!coords) {
-            console.warn('Skipping county with no valid coordinates:', county.county_name, county.state);
-            return;
-        }
-
-        const count = county.total_events || county.report_count || 0;
-        const radius = Math.min(Math.max(Math.sqrt(count) * 3.5, 7), 30);
-
-        const el = createCircleMarkerElement(radius, getColor(count));
-        
-        const popup = new mapboxgl.Popup({
-            offset: 25,
-            maxWidth: '320px',
-            className: 'aggregated-popup-container'
-        }).setHTML(generateAggregatedPopup(county));
-
-        const marker = new mapboxgl.Marker(el)
-            .setLngLat([coords.lng, coords.lat])
-            .setPopup(popup)
-            .addTo(map);
-        
-        marker._locationData = county;
-        
-        activeMarkers.push(marker);
-    });
-
-    return activeMarkers;
+function addCountyMarkers(map, data, popupGenerator, onClickHandler) {
+    return addGeoJSONCircleLayer(map, data, {
+        sourceId: 'county-locations',
+        color: '#0570b0',
+        radiusMultiplier: 3.5,
+        minRadius: 7,
+        maxRadius: 30
+    }, popupGenerator, onClickHandler);
 }
 
 /**
