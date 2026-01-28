@@ -306,6 +306,8 @@ function loadSummary() {
     $('#app-usage').html('<div class="loading-item">Loading...</div>');
     $('#bq-cost').html('<span class="loading-placeholder">...</span>');
     $('#bq-queries').html('<span class="loading-placeholder">-- queries</span>');
+    $('#ai-cost').html('<span class="loading-placeholder">...</span>');
+    $('#ai-requests').html('<span class="loading-placeholder">-- requests</span>');
 
     // Use demo data if in demo mode
     if (demoMode && syntheticData) {
@@ -316,6 +318,8 @@ function loadSummary() {
             // Show demo cost data
             $('#bq-cost').text('$12.34');
             $('#bq-queries').text('1,234 queries');
+            $('#ai-cost').text('$8.76');
+            $('#ai-requests').text('543 requests');
             return;
         }
     }
@@ -344,9 +348,10 @@ function loadSummary() {
 }
 
 /**
- * Fetch BigQuery cost summary
+ * Fetch BigQuery and AI cost summaries
  */
 function fetchCostSummary() {
+    // Fetch BigQuery costs
     $.ajax({
         url: '/analytics/api/costs',
         data: { days: 30 },
@@ -365,6 +370,28 @@ function fetchCostSummary() {
             console.error('Cost API error:', xhr.responseText);
             $('#bq-cost').text('N/A');
             $('#bq-queries').text('Error loading costs');
+        }
+    });
+    
+    // Fetch AI costs
+    $.ajax({
+        url: '/analytics/api/ai-costs',
+        data: { days: 30 },
+        success: function(response) {
+            if (response.success && response.data) {
+                const cost = response.data.total_cost_usd || 0;
+                const requests = response.data.total_requests || 0;
+                $('#ai-cost').text(formatCostDisplay(cost));
+                $('#ai-requests').text(formatNumber(requests) + ' requests');
+            } else {
+                $('#ai-cost').text('$0.00');
+                $('#ai-requests').text('No data yet');
+            }
+        },
+        error: function(xhr) {
+            console.error('AI Cost API error:', xhr.responseText);
+            $('#ai-cost').text('$0.00');
+            $('#ai-requests').text('Error loading');
         }
     });
 }

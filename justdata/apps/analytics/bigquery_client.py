@@ -1894,10 +1894,22 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
     ORDER BY total_bytes DESC
     """
     
-    # Query for daily costs (filtered to JustData service accounts)
-    daily_costs_query = f"""
+    # Query for daily costs by app (filtered to JustData service accounts)
+    daily_costs_by_app_query = f"""
     SELECT
         DATE(creation_time) as date,
+        CASE
+            WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' OR user_email LIKE 'lendsight@%' THEN 'LendSight'
+            WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' OR user_email LIKE 'bizsight@%' THEN 'BizSight'
+            WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' OR user_email LIKE 'branchsight@%' THEN 'BranchSight'
+            WHEN LOWER(query) LIKE '%mergermeter%' OR user_email LIKE 'mergermeter@%' THEN 'MergerMeter'
+            WHEN LOWER(query) LIKE '%dataexplorer%' OR user_email LIKE 'dataexplorer@%' THEN 'DataExplorer'
+            WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%events%' OR LOWER(query) LIKE '%backfilled%' OR user_email LIKE 'analytics@%' THEN 'Analytics'
+            WHEN LOWER(query) LIKE '%lenderprofile%' OR user_email LIKE 'lenderprofile@%' THEN 'LenderProfile'
+            WHEN LOWER(query) LIKE '%electwatch%' OR user_email LIKE 'electwatch@%' THEN 'ElectWatch'
+            WHEN user_email LIKE 'branchmapper@%' THEN 'BranchMapper'
+            ELSE 'Other'
+        END as app_name,
         COUNT(*) as query_count,
         SUM(total_bytes_processed) as total_bytes,
         SUM(total_bytes_billed) as total_bytes_billed
@@ -1907,8 +1919,8 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
         AND state = 'DONE'
         AND error_result IS NULL
         AND user_email IN ('{service_accounts_str}')
-    GROUP BY date
-    ORDER BY date DESC
+    GROUP BY date, app_name
+    ORDER BY date DESC, total_bytes_billed DESC
     """
     
     try:
@@ -1940,23 +1952,46 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
             total_bytes += bytes_billed
             total_queries += query_count
         
-        # Get daily costs
-        daily_results = list(client.query(daily_costs_query).result())
-        daily_costs = []
+        # Get daily costs by app
+        daily_results = list(client.query(daily_costs_by_app_query).result())
         
+        # Aggregate daily costs by date with app breakdown
+        daily_by_date = {}
         for row in daily_results:
+            date_str = row.date.isoformat() if row.date else None
+            if not date_str:
+                continue
+            
             bytes_billed = row.total_bytes_billed or 0
             tb_billed = bytes_billed / (1024 ** 4)
             cost_usd = tb_billed * COST_PER_TB
+            app_name = row.app_name or 'Other'
             
-            daily_costs.append({
-                'date': row.date.isoformat() if row.date else None,
-                'query_count': row.query_count or 0,
-                'bytes_processed': row.total_bytes or 0,
-                'bytes_billed': bytes_billed,
-                'tb_billed': round(tb_billed, 4),
-                'estimated_cost_usd': round(cost_usd, 2)
-            })
+            if date_str not in daily_by_date:
+                daily_by_date[date_str] = {
+                    'date': date_str,
+                    'query_count': 0,
+                    'bytes_processed': 0,
+                    'bytes_billed': 0,
+                    'tb_billed': 0,
+                    'estimated_cost_usd': 0,
+                    'by_app': {}
+                }
+            
+            daily_by_date[date_str]['query_count'] += row.query_count or 0
+            daily_by_date[date_str]['bytes_processed'] += row.total_bytes or 0
+            daily_by_date[date_str]['bytes_billed'] += bytes_billed
+            daily_by_date[date_str]['tb_billed'] += tb_billed
+            daily_by_date[date_str]['estimated_cost_usd'] += cost_usd
+            daily_by_date[date_str]['by_app'][app_name] = round(cost_usd, 4)
+        
+        # Convert to list and round values
+        daily_costs = []
+        for date_str in sorted(daily_by_date.keys(), reverse=True):
+            day = daily_by_date[date_str]
+            day['tb_billed'] = round(day['tb_billed'], 4)
+            day['estimated_cost_usd'] = round(day['estimated_cost_usd'], 4)
+            daily_costs.append(day)
         
         # Calculate totals
         total_tb = total_bytes / (1024 ** 4)

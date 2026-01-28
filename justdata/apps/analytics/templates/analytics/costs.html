@@ -40,9 +40,26 @@
         text-align: center;
     }
     
-    .cost-stat-card.highlight {
+    .cost-stat-card.bq-cost {
         background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
         border-color: #86efac;
+    }
+    
+    .cost-stat-card.bq-cost h3,
+    .cost-stat-card.bq-cost .value,
+    .cost-stat-card.bq-cost .subtext {
+        color: #166534;
+    }
+    
+    .cost-stat-card.ai-cost {
+        background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+        border-color: #a78bfa;
+    }
+    
+    .cost-stat-card.ai-cost h3,
+    .cost-stat-card.ai-cost .value,
+    .cost-stat-card.ai-cost .subtext {
+        color: #5b21b6;
     }
     
     .cost-stat-card h3 {
@@ -188,7 +205,7 @@
         transform: translateX(-50%);
         background: #1f2937;
         color: #fff;
-        padding: 6px 10px;
+        padding: 8px 12px;
         border-radius: 6px;
         font-size: 0.75rem;
         white-space: nowrap;
@@ -196,10 +213,85 @@
         pointer-events: none;
         transition: opacity 0.2s;
         z-index: 10;
+        min-width: 120px;
     }
     
     .chart-bar:hover .tooltip {
         opacity: 1;
+    }
+    
+    .tooltip-header {
+        font-weight: 600;
+        margin-bottom: 4px;
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        padding-bottom: 4px;
+    }
+    
+    .tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        margin-top: 2px;
+    }
+    
+    .tooltip-row .app-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 4px;
+    }
+    
+    .tooltip-ai {
+        margin-top: 6px;
+        padding-top: 4px;
+        border-top: 1px solid rgba(255,255,255,0.2);
+        color: #c4b5fd;
+        font-size: 0.7rem;
+    }
+    
+    /* Stacked bar segments */
+    .bar-segment {
+        width: 100%;
+        transition: opacity 0.2s;
+    }
+    
+    .bar-segment:hover {
+        opacity: 0.8;
+    }
+    
+    /* App colors */
+    .bar-segment.lendsight, .app-dot.lendsight { background-color: #3b82f6; }
+    .bar-segment.bizsight, .app-dot.bizsight { background-color: #10b981; }
+    .bar-segment.branchsight, .app-dot.branchsight { background-color: #f59e0b; }
+    .bar-segment.dataexplorer, .app-dot.dataexplorer { background-color: #8b5cf6; }
+    .bar-segment.mergermeter, .app-dot.mergermeter { background-color: #ef4444; }
+    .bar-segment.analytics, .app-dot.analytics { background-color: #06b6d4; }
+    .bar-segment.lenderprofile, .app-dot.lenderprofile { background-color: #ec4899; }
+    .bar-segment.electwatch, .app-dot.electwatch { background-color: #6366f1; }
+    .bar-segment.other, .app-dot.other { background-color: #9ca3af; }
+    
+    .chart-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 16px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border-color, #e5e7eb);
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: var(--text-secondary, #666);
+    }
+    
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 3px;
     }
     
     .chart-labels {
@@ -320,12 +412,12 @@
     
     <!-- Summary Stats -->
     <div class="costs-summary" id="costs-summary">
-        <div class="cost-stat-card highlight">
+        <div class="cost-stat-card bq-cost">
             <h3>BigQuery Cost</h3>
             <div class="value" id="total-cost">$--</div>
             <div class="subtext" id="cost-period">Last 30 days</div>
         </div>
-        <div class="cost-stat-card highlight" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+        <div class="cost-stat-card ai-cost">
             <h3>AI Cost</h3>
             <div class="value" id="ai-total-cost">$--</div>
             <div class="subtext" id="ai-requests">-- requests</div>
@@ -373,7 +465,7 @@
         <!-- Daily Trend -->
         <div class="costs-card">
             <div class="costs-card-header">
-                <h3><i class="fas fa-chart-bar"></i> Daily Cost Trend</h3>
+                <h3><i class="fas fa-chart-bar"></i> Daily Cost Trend by App</h3>
             </div>
             <div class="costs-card-content">
                 <div class="daily-chart" id="daily-chart">
@@ -385,6 +477,7 @@
                     <span>--</span>
                     <span>--</span>
                 </div>
+                <div class="chart-legend" id="chart-legend"></div>
             </div>
         </div>
     </div>
@@ -393,6 +486,9 @@
 <script>
 // Load cost data on page load
 document.addEventListener('DOMContentLoaded', loadCostData);
+
+// Store AI costs by app for tooltips
+let aiCostsByApp = {};
 
 async function loadCostData() {
     const days = document.getElementById('cost-days').value;
@@ -410,6 +506,7 @@ async function loadCostData() {
     document.getElementById('daily-chart').innerHTML = `
         <div class="no-data"><span class="loading-spinner"></span> Loading...</div>
     `;
+    document.getElementById('chart-legend').innerHTML = '';
     
     // Fetch both BigQuery and AI costs in parallel
     try {
@@ -420,6 +517,12 @@ async function loadCostData() {
         
         const bqResult = await bqResponse.json();
         const aiResult = await aiResponse.json();
+        
+        // Store AI costs by app for tooltips
+        aiCostsByApp = {};
+        if (aiResult.success && aiResult.data && aiResult.data.by_app) {
+            aiCostsByApp = aiResult.data.by_app;
+        }
         
         // Update BigQuery costs
         if (bqResult.success && bqResult.data) {
@@ -439,11 +542,8 @@ async function loadCostData() {
             }));
             renderAppBreakdown(appArray);
             
-            // Render daily chart (API uses estimated_cost_usd, map to cost_usd)
-            const dailyData = (data.daily_costs || []).map(d => ({
-                date: d.date,
-                cost_usd: d.estimated_cost_usd
-            })).reverse(); // Reverse to show oldest first
+            // Render daily chart with app breakdown
+            const dailyData = (data.daily_costs || []).reverse(); // Show oldest first
             renderDailyChart(dailyData);
         } else {
             showError('Failed to load BigQuery cost data');
@@ -501,29 +601,87 @@ function renderAppBreakdown(apps) {
     tbody.innerHTML = html;
 }
 
+// Apps that use AI (for tooltip display)
+const AI_APPS = ['LendSight', 'BizSight', 'BranchSight', 'MergerMeter', 'LenderProfile', 'DataExplorer'];
+
+// Consistent app order for stacking
+const APP_ORDER = ['LendSight', 'BizSight', 'BranchSight', 'DataExplorer', 'MergerMeter', 'Analytics', 'LenderProfile', 'ElectWatch', 'Other'];
+
 function renderDailyChart(days) {
     const container = document.getElementById('daily-chart');
     const labels = document.getElementById('chart-labels');
+    const legend = document.getElementById('chart-legend');
     
     if (!days || days.length === 0) {
         container.innerHTML = '<div class="no-data">No data available</div>';
         labels.innerHTML = '<span>--</span><span>--</span>';
+        legend.innerHTML = '';
         return;
     }
     
     // Find max for scaling
-    const maxCost = Math.max(...days.map(d => d.cost_usd || 0));
+    const maxCost = Math.max(...days.map(d => d.estimated_cost_usd || 0));
     const maxHeight = 260; // px
+    
+    // Collect all apps that appear in the data
+    const appsInData = new Set();
+    days.forEach(day => {
+        if (day.by_app) {
+            Object.keys(day.by_app).forEach(app => appsInData.add(app));
+        }
+    });
     
     let html = '';
     days.forEach(day => {
-        const height = maxCost > 0 ? Math.max(4, (day.cost_usd / maxCost) * maxHeight) : 4;
+        const totalCost = day.estimated_cost_usd || 0;
+        const totalHeight = maxCost > 0 ? Math.max(4, (totalCost / maxCost) * maxHeight) : 4;
         const date = new Date(day.date);
         const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         
+        // Build stacked segments
+        let segmentsHtml = '';
+        const byApp = day.by_app || {};
+        
+        // Sort apps by cost for consistent stacking
+        const sortedApps = APP_ORDER.filter(app => byApp[app] > 0);
+        
+        sortedApps.forEach(app => {
+            const appCost = byApp[app] || 0;
+            if (appCost > 0) {
+                const segmentHeight = totalCost > 0 ? (appCost / totalCost) * 100 : 0;
+                const appClass = getAppClass(app);
+                segmentsHtml += `<div class="bar-segment ${appClass}" style="height: ${segmentHeight}%;"></div>`;
+            }
+        });
+        
+        // Build tooltip content
+        let tooltipHtml = `<div class="tooltip-header">${dateStr} - ${formatCurrency(totalCost)}</div>`;
+        
+        // Add app breakdown
+        sortedApps.forEach(app => {
+            const appCost = byApp[app] || 0;
+            if (appCost > 0) {
+                const appClass = getAppClass(app);
+                tooltipHtml += `<div class="tooltip-row"><span><span class="app-dot ${appClass}"></span>${app}</span><span>${formatCurrency(appCost)}</span></div>`;
+            }
+        });
+        
+        // Add AI cost note for apps that use AI
+        const aiAppsInDay = sortedApps.filter(app => AI_APPS.includes(app));
+        if (aiAppsInDay.length > 0) {
+            const aiAppsWithCost = aiAppsInDay.filter(app => aiCostsByApp[app.toLowerCase()] && aiCostsByApp[app.toLowerCase()].cost_usd > 0);
+            if (aiAppsWithCost.length > 0) {
+                let aiTotal = aiAppsWithCost.reduce((sum, app) => sum + (aiCostsByApp[app.toLowerCase()]?.cost_usd || 0), 0);
+                tooltipHtml += `<div class="tooltip-ai"><i class="fas fa-robot"></i> AI costs: ${formatCurrency(aiTotal)} (period total)</div>`;
+            } else {
+                tooltipHtml += `<div class="tooltip-ai"><i class="fas fa-robot"></i> Apps use AI (cost tracking started)</div>`;
+            }
+        }
+        
         html += `
-            <div class="chart-bar" style="height: ${height}px;">
-                <div class="tooltip">${dateStr}: ${formatCurrency(day.cost_usd || 0)}</div>
+            <div class="chart-bar" style="height: ${totalHeight}px; display: flex; flex-direction: column-reverse;">
+                ${segmentsHtml}
+                <div class="tooltip">${tooltipHtml}</div>
             </div>
         `;
     });
@@ -539,6 +697,27 @@ function renderDailyChart(days) {
             <span>${lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
         `;
     }
+    
+    // Render legend
+    let legendHtml = '';
+    APP_ORDER.filter(app => appsInData.has(app)).forEach(app => {
+        const appClass = getAppClass(app);
+        legendHtml += `<div class="legend-item"><span class="legend-dot bar-segment ${appClass}"></span>${app}</div>`;
+    });
+    legend.innerHTML = legendHtml;
+}
+
+function getAppClass(name) {
+    const lower = name.toLowerCase();
+    if (lower === 'lendsight') return 'lendsight';
+    if (lower === 'bizsight') return 'bizsight';
+    if (lower === 'branchsight') return 'branchsight';
+    if (lower === 'dataexplorer') return 'dataexplorer';
+    if (lower === 'mergermeter') return 'mergermeter';
+    if (lower === 'analytics') return 'analytics';
+    if (lower === 'lenderprofile') return 'lenderprofile';
+    if (lower === 'electwatch') return 'electwatch';
+    return 'other';
 }
 
 function formatCurrency(amount) {

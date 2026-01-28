@@ -2429,6 +2429,27 @@ h1, h2, h3, h4 {
     margin-top: 4px;
 }
 
+/* AI Cost card styling */
+.summary-card.ai-cost-card {
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+    border-color: #a78bfa;
+}
+
+.summary-card.ai-cost-card h3 {
+    color: #6d28d9;
+}
+
+.summary-card.ai-cost-card .summary-value {
+    color: #7c3aed;
+    font-size: 2.5rem;
+}
+
+.summary-card.ai-cost-card .cost-detail {
+    font-size: 0.8rem;
+    color: #8b5cf6;
+    margin-top: 4px;
+}
+
 /* Dark mode support for cost card */
 @media (prefers-color-scheme: dark) {
     .summary-card.cost-card {
@@ -2446,5 +2467,22 @@ h1, h2, h3, h4 {
 
     .summary-card.cost-card .cost-detail {
         color: #718096;
+    }
+    
+    .summary-card.ai-cost-card {
+        background: linear-gradient(135deg, #2e1065 0%, #3b0764 100%);
+        border-color: #7c3aed;
+    }
+
+    .summary-card.ai-cost-card h3 {
+        color: #c4b5fd;
+    }
+
+    .summary-card.ai-cost-card .summary-value {
+        color: #a78bfa;
+    }
+
+    .summary-card.ai-cost-card .cost-detail {
+        color: #8b5cf6;
     }
 }
