@@ -1294,7 +1294,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     # Build date filter
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
-    # Total users and events (filtered to target apps only)
+    # Define all queries
     totals_query = f"""
         SELECT
             COUNT(DISTINCT user_id) AS total_users,
@@ -1306,23 +1306,6 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             {date_filter}
     """
 
-    try:
-        totals_result = list(client.query(totals_query).result())
-        if totals_result:
-            total_users = totals_result[0].get('total_users', 0)
-            total_events = totals_result[0].get('total_events', 0)
-            total_lenders = totals_result[0].get('total_lenders', 0)
-        else:
-            total_users = 0
-            total_events = 0
-            total_lenders = 0
-    except Exception as e:
-        print(f"BigQuery error getting totals: {e}")
-        total_users = 0
-        total_events = 0
-        total_lenders = 0
-
-    # Top researched counties (filtered to target apps)
     top_counties_query = f"""
         SELECT
             county_fips,
@@ -1338,17 +1321,6 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         LIMIT 5
     """
 
-    try:
-        top_counties = [dict(row) for row in client.query(top_counties_query).result()]
-        # Enrich with county names if missing
-        data_needing_names = [d for d in top_counties if d.get('county_fips') and not d.get('county_name')]
-        if data_needing_names:
-            top_counties = _enrich_with_county_names(client, top_counties)
-    except Exception as e:
-        print(f"BigQuery error getting top counties: {e}")
-        top_counties = []
-
-    # Top researched lenders (from lender-tracking apps)
     top_lenders_query = f"""
         SELECT
             lender_id,
@@ -1363,13 +1335,6 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         LIMIT 5
     """
 
-    try:
-        top_lenders = [dict(row) for row in client.query(top_lenders_query).result()]
-    except Exception as e:
-        print(f"BigQuery error getting top lenders: {e}")
-        top_lenders = []
-
-    # App usage breakdown (target apps only)
     app_usage_query = f"""
         SELECT
             event_name,
@@ -1382,11 +1347,57 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
         ORDER BY event_count DESC
     """
 
-    try:
-        app_usage = [dict(row) for row in client.query(app_usage_query).result()]
-    except Exception as e:
-        print(f"BigQuery error getting app usage: {e}")
-        app_usage = []
+    # Run all 4 queries in PARALLEL using ThreadPoolExecutor
+    # This reduces total time from sum(query_times) to max(query_times)
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    def run_query(query_name, query):
+        """Execute a single BigQuery query and return results."""
+        try:
+            results = list(client.query(query).result())
+            return query_name, results, None
+        except Exception as e:
+            return query_name, None, str(e)
+
+    queries = {
+        'totals': totals_query,
+        'top_counties': top_counties_query,
+        'top_lenders': top_lenders_query,
+        'app_usage': app_usage_query
+    }
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {executor.submit(run_query, name, q): name for name, q in queries.items()}
+        for future in as_completed(futures):
+            query_name, data, error = future.result()
+            if error:
+                print(f"BigQuery error in {query_name}: {error}")
+                results[query_name] = []
+            else:
+                results[query_name] = data
+
+    # Process totals
+    total_users = 0
+    total_events = 0
+    total_lenders = 0
+    if results.get('totals'):
+        row = results['totals'][0] if results['totals'] else {}
+        total_users = row.get('total_users', 0) or 0
+        total_events = row.get('total_events', 0) or 0
+        total_lenders = row.get('total_lenders', 0) or 0
+
+    # Process top counties
+    top_counties = [dict(row) for row in results.get('top_counties', [])]
+    data_needing_names = [d for d in top_counties if d.get('county_fips') and not d.get('county_name')]
+    if data_needing_names:
+        top_counties = _enrich_with_county_names(client, top_counties)
+
+    # Process top lenders
+    top_lenders = [dict(row) for row in results.get('top_lenders', [])]
+
+    # Process app usage
+    app_usage = [dict(row) for row in results.get('app_usage', [])]
 
     result = {
         'total_users': total_users,
@@ -1924,8 +1935,19 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
     """
     
     try:
-        # Get cost by app
-        app_results = list(client.query(cost_by_app_query).result())
+        # Run both queries in PARALLEL for faster loading
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
+        def run_query(query):
+            return list(client.query(query).result())
+        
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            app_future = executor.submit(run_query, cost_by_app_query)
+            daily_future = executor.submit(run_query, daily_costs_by_app_query)
+            app_results = app_future.result()
+            daily_results = daily_future.result()
+        
+        # Process cost by app results
         cost_by_app = {}
         total_bytes = 0
         total_queries = 0
@@ -1951,9 +1973,6 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
             
             total_bytes += bytes_billed
             total_queries += query_count
-        
-        # Get daily costs by app
-        daily_results = list(client.query(daily_costs_by_app_query).result())
         
         # Aggregate daily costs by date with app breakdown
         daily_by_date = {}
