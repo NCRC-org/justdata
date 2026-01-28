@@ -708,9 +708,6 @@ function renderDailyChart(days) {
         // #endregion
         
         bar.addEventListener('mouseenter', function(e) {
-            // #region agent log
-            console.log('[DEBUG] Mouseenter - showing tooltip');
-            // #endregion
             const rect = bar.getBoundingClientRect();
             // Position tooltip above the bar, centered
             tooltip.style.left = (rect.left + rect.width / 2) + 'px';
@@ -719,6 +716,11 @@ function renderDailyChart(days) {
             
             // Show tooltip via class (more reliable than CSS :hover)
             tooltip.classList.add('visible');
+            
+            // #region agent log
+            const cs = window.getComputedStyle(tooltip);
+            console.log('[DEBUG] Mouseenter', {hasVisibleClass: tooltip.classList.contains('visible'), opacity: cs.opacity, visibility: cs.visibility, left: tooltip.style.left, top: tooltip.style.top});
+            // #endregion
             
             // Prevent overflow on edges
             requestAnimationFrame(() => {
@@ -737,10 +739,10 @@ function renderDailyChart(days) {
         });
         
         bar.addEventListener('mouseleave', function(e) {
-            // #region agent log
-            console.log('[DEBUG] Mouseleave - hiding tooltip');
-            // #endregion
             tooltip.classList.remove('visible');
+            // #region agent log
+            console.log('[DEBUG] Mouseleave', {hasVisibleClass: tooltip.classList.contains('visible')});
+            // #endregion
         });
     });
     
