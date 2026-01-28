@@ -6,9 +6,33 @@
 <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
 <style>
-    .mapboxgl-popup-content { padding: 0; }
-    .mapbox-circle-marker { transition: transform 0.2s; }
-    .mapbox-circle-marker:hover { transform: scale(1.1); }
+    /* Mapbox popup styling */
+    .mapboxgl-popup {
+        max-width: 320px !important;
+    }
+    .mapboxgl-popup-content {
+        padding: 14px 16px;
+        border-radius: 8px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        font-family: var(--font-sans, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+    }
+    .mapboxgl-popup-close-button {
+        font-size: 18px;
+        padding: 4px 8px;
+        color: #666;
+    }
+    .mapboxgl-popup-close-button:hover {
+        background: #f0f0f0;
+        color: #333;
+    }
+    /* Circle markers - no transition for performance */
+    .mapbox-circle-marker {
+        pointer-events: auto;
+        cursor: pointer;
+    }
+    .mapbox-circle-marker:hover {
+        filter: brightness(1.1);
+    }
 </style>
 {% endblock %}
 

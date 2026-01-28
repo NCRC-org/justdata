@@ -1284,7 +1284,33 @@ h1, h2, h3, h4 {
     border-top-color: white;
 }
 
-/* Aggregated County Popup Styles */
+/* Mapbox Popup Styles */
+.mapboxgl-popup {
+    z-index: 1000;
+}
+
+.mapboxgl-popup-content {
+    padding: 14px 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    border: 1px solid var(--analytics-border);
+    font-family: var(--font-sans);
+}
+
+.mapboxgl-popup-close-button {
+    font-size: 18px;
+    padding: 4px 8px;
+    color: var(--analytics-text-muted);
+    right: 4px;
+    top: 4px;
+}
+
+.mapboxgl-popup-close-button:hover {
+    background: var(--analytics-bg-alt);
+    color: var(--analytics-text);
+}
+
+/* Legacy Leaflet styles - keep for backward compatibility */
 .aggregated-popup-container .leaflet-popup-content-wrapper {
     border-radius: 6px;
     box-shadow: 0 3px 14px rgba(0, 0, 0, 0.15);
