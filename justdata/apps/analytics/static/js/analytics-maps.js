@@ -17,10 +17,6 @@ const USE_CLUSTERING = true;
 // Store active markers for cleanup
 let activeMarkers = [];
 
-// #region agent log
-fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:load',message:'Mapbox GL JS module loaded',data:{hasToken:!!MAPBOX_TOKEN,tokenLen:MAPBOX_TOKEN.length,style:MAPBOX_STYLE},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-// #endregion
-
 /**
  * Validate that coordinates are within reasonable US bounds
  * @param {number} lat - Latitude
@@ -171,10 +167,6 @@ const STATE_CENTERS = {
  * @returns {mapboxgl.Map} Mapbox map instance
  */
 function initMap(elementId, options = {}) {
-    // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:initMap',message:'initMap called with Mapbox GL',data:{elementId:elementId,hasMapboxgl:typeof mapboxgl !== 'undefined'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-    // #endregion
-    
     // Set access token
     mapboxgl.accessToken = MAPBOX_TOKEN;
     
@@ -188,15 +180,6 @@ function initMap(elementId, options = {}) {
     
     // Add navigation controls
     map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-    
-    // #region agent log
-    map.on('load', function() {
-        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:mapload',message:'Map loaded successfully',data:{center:map.getCenter(),zoom:map.getZoom()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-    });
-    map.on('error', function(e) {
-        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:maperror',message:'Map error',data:{error:e.error?e.error.message:'unknown'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
-    });
-    // #endregion
     
     return map;
 }

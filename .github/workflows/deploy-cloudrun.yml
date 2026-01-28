@@ -73,6 +73,8 @@ jobs:
             --set-env-vars "JUSTDATA_PROJECT_ID=justdata-ncrc" \
             --set-env-vars "USE_SUMMARY_TABLES=false" \
             --set-env-vars "PYTHONPATH=/app" \
+            --set-env-vars "MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3yrODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg" \
+            --set-env-vars "MAPBOX_STYLE=mapbox://styles/jedlebi/cku2skjsw2o5817r19li2o5y1" \
             --update-secrets "CLAUDE_API_KEY=claude-api-key:latest" \
             --update-secrets "ANTHROPIC_API_KEY=claude-api-key:latest" \
             --update-secrets "CENSUS_API_KEY=census-api-key:latest" \
