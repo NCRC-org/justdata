@@ -231,47 +231,18 @@ function loadData() {
 }
 
 /**
- * Render markers on map with click handlers and clustering
+ * Render markers on map with click handlers (Mapbox GL JS version)
  */
 function renderMap(data) {
-    // Clear existing markers
-    if (markersLayer) {
-        map.removeLayer(markersLayer);
-    }
+    // Clear existing markers using shared function
+    clearMarkers();
 
     // Aggregate data by county
     const aggregatedData = aggregateByCounty(data);
-
-    // Check if clustering is enabled and available
-    const useClustering = typeof USE_CLUSTERING !== 'undefined' && USE_CLUSTERING && typeof L.markerClusterGroup !== 'undefined';
-
-    // Create markers layer (clustered or regular)
-    if (useClustering) {
-        markersLayer = L.markerClusterGroup({
-            maxClusterRadius: 50,
-            spiderfyOnMaxZoom: true,
-            showCoverageOnHover: false,
-            zoomToBoundsOnClick: true,
-            disableClusteringAtZoom: 10,
-            iconCreateFunction: function(cluster) {
-                var count = cluster.getChildCount();
-                var size = 'small';
-                if (count >= 50) {
-                    size = 'large';
-                } else if (count >= 10) {
-                    size = 'medium';
-                }
-
-                return L.divIcon({
-                    html: '<div><span>' + count + '</span></div>',
-                    className: 'marker-cluster marker-cluster-' + size,
-                    iconSize: L.point(40, 40)
-                });
-            }
-        });
-    } else {
-        markersLayer = L.layerGroup();
-    }
+    
+    // Track bounds for fitting
+    const bounds = new mapboxgl.LngLatBounds();
+    let hasValidMarkers = false;
 
     aggregatedData.forEach(function(location) {
         // Get validated coordinates with fallback to state center
@@ -281,49 +252,46 @@ function renderMap(data) {
             return;
         }
 
-        // Calculate marker size - use smaller base for clustering
+        // Calculate marker size
         const events = location.total_events || 1;
-        const baseRadius = useClustering ? 3 : 4;
-        const maxRadius = useClustering ? 20 : 35;
-        const radius = Math.min(Math.max(Math.sqrt(events) * baseRadius, 5), maxRadius);
+        const radius = Math.min(Math.max(Math.sqrt(events) * 4, 6), 35);
 
-        // Create marker
-        const marker = L.circleMarker([coords.lat, coords.lng], {
-            radius: radius,
-            fillColor: '#0d4a7c',
-            color: '#1a1a1a',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.85
-        });
+        // Create marker element using shared function
+        const el = createCircleMarkerElement(radius, '#0d4a7c');
+        
+        // Create popup with custom content
+        const popupContent = generateClickablePopup(location);
+        const popup = new mapboxgl.Popup({
+            offset: 25,
+            maxWidth: '320px',
+            className: 'aggregated-popup-container'
+        }).setHTML(popupContent);
 
-        // Store location data on marker
-        marker.locationData = location;
-
-        // Add click handler to show detail panel
-        marker.on('click', function() {
+        // Create Mapbox marker
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([coords.lng, coords.lat])
+            .setPopup(popup)
+            .addTo(map);
+        
+        // Store location data on marker for click handlers
+        marker._locationData = location;
+        
+        // Add click handler to marker element
+        el.addEventListener('click', function() {
             showLocationDetail(location);
         });
-
-        // Add popup with summary and "View Researchers" button
-        const popupContent = generateClickablePopup(location);
-        marker.bindPopup(popupContent, {
-            maxWidth: 320,
-            className: 'aggregated-popup-container'
-        });
-
-        markersLayer.addLayer(marker);
+        
+        // Add to bounds
+        bounds.extend([coords.lng, coords.lat]);
+        hasValidMarkers = true;
+        
+        // Track marker for cleanup
+        activeMarkers.push(marker);
     });
 
-    markersLayer.addTo(map);
-
     // Fit bounds if we have data
-    if (data.length > 0 && markersLayer.getLayers().length > 0) {
-        try {
-            map.fitBounds(markersLayer.getBounds().pad(0.1));
-        } catch (e) {
-            map.setView(US_CENTER, US_ZOOM);
-        }
+    if (hasValidMarkers && !bounds.isEmpty()) {
+        map.fitBounds(bounds, { padding: 50, maxZoom: 10 });
     }
 }
 
