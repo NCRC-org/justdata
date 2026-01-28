@@ -13,8 +13,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Mapbox GL JS CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
     
     <!-- Export Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -349,8 +349,14 @@
         }
         
         /* Custom marker popup styles */
-        .leaflet-popup-content {
+        .mapboxgl-popup-content {
             min-width: 200px;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .mapboxgl-popup-close-button {
+            font-size: 18px;
+            padding: 4px 8px;
         }
         
         .popup-content {
@@ -605,20 +611,24 @@
         <!-- Right Info Sidebar -->
     </div>
     
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
     
     <script>
         // Base URL for API calls (handles blueprint prefix)
         const APP_BASE_URL = '{{ app_base_url|default("/branchmapper") }}';
 
+        // Mapbox configuration
+        const MAPBOX_TOKEN = '{{ mapbox_token|default("pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg", true) }}';
+        const MAPBOX_STYLE = '{{ mapbox_style|default("mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3", true) }}';
+
         let branchMap = null;
         let currentMarkers = [];
         let allBranches = [];
         let bankColors = {};
-        let incomeLayer = null; // Census tract income layer
-        let minorityLayer = null; // Census tract minority layer
-        let layerControl = null; // Leaflet layer control
+        let incomeLayerVisible = false;
+        let minorityLayerVisible = false;
+        let currentPopup = null;
 
         // AbortControllers for cancelling in-flight requests
         let incomeLayerAbortController = null;
@@ -691,42 +701,48 @@
             '53': { lat: 47.400902, lng: -121.490494, zoom: 7 }  // Washington
         };
         
-        // Initialize map
+        // Initialize map using Mapbox GL JS
         function initMap() {
             if (branchMap) {
                 branchMap.remove();
             }
             
-            // Default center: US center
-            branchMap = L.map('branchMap').setView([39.8283, -98.5795], 4);
+            // Set access token
+            mapboxgl.accessToken = MAPBOX_TOKEN;
             
-            // Add Mapbox tile layer
-            const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2xxeTBib3pyMGsxcTJpbXQ3bmo4YXU0ZiJ9.wvqlBMQSxTHgvAh6l9OXXw';
-            L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + MAPBOX_TOKEN, {
-                attribution: '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                tileSize: 256,
-                maxZoom: 19
-            }).addTo(branchMap);
+            // Create Mapbox GL JS map
+            branchMap = new mapboxgl.Map({
+                container: 'branchMap',
+                style: MAPBOX_STYLE,
+                center: [-98.5795, 39.8283], // [lng, lat] for Mapbox
+                zoom: 4
+            });
             
-            // Add layer control for census tract layers
-            setupLayerControl();
+            // Add navigation controls
+            branchMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+            
+            // Wait for map to load before adding any layers
+            branchMap.on('load', function() {
+                console.log('Mapbox GL JS map loaded');
+            });
         }
         
-        // Setup layer control for toggling census tract layers
-        function setupLayerControl() {
+        // Helper function to remove a source and its layers
+        function removeSourceAndLayers(sourceId) {
             if (!branchMap) return;
             
-            // Create base layers (just the map)
-            const baseLayers = {};
+            // Remove layers first
+            const layerIds = [sourceId + '-fill', sourceId + '-outline'];
+            layerIds.forEach(function(layerId) {
+                if (branchMap.getLayer(layerId)) {
+                    branchMap.removeLayer(layerId);
+                }
+            });
             
-            // Create overlay layers (census tract layers) - start empty, will be added when layer is created
-            const overlays = {};
-            
-            // Add layer control
-            layerControl = L.control.layers(baseLayers, overlays, {
-                collapsed: true,
-                position: 'topright'
-            }).addTo(branchMap);
+            // Then remove source
+            if (branchMap.getSource(sourceId)) {
+                branchMap.removeSource(sourceId);
+            }
         }
         
         // Get gray shade for income category (darker = lower income)
@@ -772,34 +788,42 @@
             }
         }
         
-        // Style function for income layer
-        function styleIncomeLayer(feature) {
-            const category = feature.properties.income_category || 'Unknown';
-            return {
-                fillColor: getIncomeColor(category),
-                fillOpacity: 0.5,  // 50% opacity to see branch markers and map
-                color: '#666',
-                weight: 1,
-                opacity: 0.6
-            };
+        // Get fill color expression for income layer (Mapbox GL JS style)
+        function getIncomeColorExpression() {
+            return [
+                'match',
+                ['get', 'income_category'],
+                'Low', '#333333',
+                'Moderate', '#666666',
+                'Middle', '#999999',
+                'Upper', '#cccccc',
+                '#e0e0e0' // default
+            ];
         }
         
-        // Style function for minority layer
-        function styleMinorityLayer(feature) {
-            const category = feature.properties.minority_category || 'Unknown';
-            return {
-                fillColor: getMinorityColor(category),
-                fillOpacity: 0.5,  // 50% opacity to see branch markers and map
-                color: '#666',
-                weight: 1,
-                opacity: 0.6
-            };
+        // Get fill color expression for minority layer (Mapbox GL JS style)
+        function getMinorityColorExpression() {
+            return [
+                'match',
+                ['get', 'minority_category'],
+                'Q4 (Highest 25%)', '#1a1a1a',
+                'Q3 (50-75%)', '#666666',
+                'Q2 (25-50%)', '#999999',
+                'Q1 (Lowest 25%)', '#cccccc',
+                'Very High', '#1a1a1a',
+                'High', '#333333',
+                'Above Average', '#666666',
+                'Average', '#999999',
+                'Below Average', '#cccccc',
+                '#e0e0e0' // default
+            ];
         }
         
-        // Load and display income layer
+        // Load and display income layer using Mapbox GL JS
         async function loadIncomeLayer(county) {
             if (!branchMap) {
                 initMap();
+                return;
             }
 
             // Cancel any previous in-flight request
@@ -810,10 +834,8 @@
             const signal = incomeLayerAbortController.signal;
 
             // Remove existing income layer
-            if (incomeLayer) {
-                branchMap.removeLayer(incomeLayer);
-                incomeLayer = null;
-            }
+            removeSourceAndLayers('income-tracts');
+            incomeLayerVisible = false;
 
             try {
                 updateInfoPanel('Loading census tract income data...');
@@ -865,71 +887,107 @@
                 
                 console.log('Creating GeoJSON layer with', data.geojson.features.length, 'features');
                 
-                // Create GeoJSON layer
-                incomeLayer = L.geoJSON(data.geojson, {
-                    style: styleIncomeLayer,
-                    onEachFeature: function(feature, layer) {
-                        const props = feature.properties;
-                        const income = props.median_family_income;
-                        const category = props.income_category || 'Unknown';
-                        // Use baseline_median_income (works for both CBSA and state fallback)
-                        const baselineIncome = props.baseline_median_income || props.cbsa_median_income;
-                        // Check baseline_type property - default to 'cbsa' if not set
-                        const baselineType = props.baseline_type;
-                        console.log('Tract income popup - baseline_type:', baselineType, 'props:', props);
-                        const ratio = props.income_ratio;
-                        
-                        // Format income with commas
-                        const formatIncome = (val) => {
-                            if (!val) return 'N/A';
-                            return '$' + Math.round(val).toLocaleString('en-US');
-                        };
-                        
-                        // Determine baseline label
-                        // Use county baseline (baseline_type should be 'county')
-                        let baselineLabel = 'County Median'; // Default to county
-                        if (baselineType === 'state') {
-                            baselineLabel = 'State Median';
-                        } else if (baselineType === 'cbsa') {
-                            baselineLabel = 'Metro Area Median'; // Legacy support
-                        }
-                        
-                        // Create popup content
-                        const popupContent = `
-                            <div style="min-width: 200px;">
-                                <strong>${props.NAME || 'Census Tract'}</strong><br>
-                                <hr style="margin: 8px 0;">
-                                <strong>Income Category:</strong> ${category}<br>
-                                <strong>Tract Median Family Income:</strong> ${formatIncome(income)}<br>
-                                <strong>${baselineLabel}:</strong> ${formatIncome(baselineIncome)}<br>
-                                ${ratio ? `<strong>Ratio:</strong> ${ratio.toFixed(2)}x county average<br>` : ''}
-                                <hr style="margin: 8px 0;">
-                                <small style="color: #666;">
-                                    Categories: Low (≤50%), Moderate (≤80%), Middle (≤120%), Upper (>120%)
-                                </small>
-                            </div>
-                        `;
-                        
-                        layer.bindPopup(popupContent);
-                    }
-                }).addTo(branchMap);
+                // Add GeoJSON source
+                branchMap.addSource('income-tracts', {
+                    type: 'geojson',
+                    data: data.geojson
+                });
                 
-                console.log('Income layer added to map. Layer bounds:', incomeLayer.getBounds());
-                console.log('Map bounds before fit:', branchMap.getBounds());
+                // Add fill layer
+                branchMap.addLayer({
+                    id: 'income-tracts-fill',
+                    type: 'fill',
+                    source: 'income-tracts',
+                    paint: {
+                        'fill-color': getIncomeColorExpression(),
+                        'fill-opacity': 0.5
+                    }
+                }, 'branch-markers'); // Add below branch markers if they exist
+                
+                // Add outline layer
+                branchMap.addLayer({
+                    id: 'income-tracts-outline',
+                    type: 'line',
+                    source: 'income-tracts',
+                    paint: {
+                        'line-color': '#666666',
+                        'line-width': 1,
+                        'line-opacity': 0.6
+                    }
+                }, 'branch-markers');
+                
+                incomeLayerVisible = true;
+                
+                // Add click handler for popups
+                branchMap.on('click', 'income-tracts-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    
+                    const props = e.features[0].properties;
+                    const income = props.median_family_income;
+                    const category = props.income_category || 'Unknown';
+                    const baselineIncome = props.baseline_median_income || props.cbsa_median_income;
+                    const baselineType = props.baseline_type;
+                    const ratio = props.income_ratio;
+                    
+                    const formatIncome = (val) => {
+                        if (!val) return 'N/A';
+                        return '$' + Math.round(parseFloat(val)).toLocaleString('en-US');
+                    };
+                    
+                    let baselineLabel = 'County Median';
+                    if (baselineType === 'state') baselineLabel = 'State Median';
+                    else if (baselineType === 'cbsa') baselineLabel = 'Metro Area Median';
+                    
+                    const popupContent = `
+                        <div style="min-width: 200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br>
+                            <hr style="margin: 8px 0;">
+                            <strong>Income Category:</strong> ${category}<br>
+                            <strong>Tract Median Family Income:</strong> ${formatIncome(income)}<br>
+                            <strong>${baselineLabel}:</strong> ${formatIncome(baselineIncome)}<br>
+                            ${ratio ? `<strong>Ratio:</strong> ${parseFloat(ratio).toFixed(2)}x county average<br>` : ''}
+                            <hr style="margin: 8px 0;">
+                            <small style="color: #666;">
+                                Categories: Low (≤50%), Moderate (≤80%), Middle (≤120%), Upper (>120%)
+                            </small>
+                        </div>
+                    `;
+                    
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(popupContent)
+                        .addTo(branchMap);
+                });
+                
+                // Change cursor on hover
+                branchMap.on('mouseenter', 'income-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = 'pointer';
+                });
+                branchMap.on('mouseleave', 'income-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = '';
+                });
                 
                 // Fit map to show all tracts
-                branchMap.fitBounds(incomeLayer.getBounds().pad(0.1));
+                const bounds = new mapboxgl.LngLatBounds();
+                data.geojson.features.forEach(function(feature) {
+                    if (feature.geometry.type === 'Polygon') {
+                        feature.geometry.coordinates[0].forEach(function(coord) {
+                            bounds.extend(coord);
+                        });
+                    } else if (feature.geometry.type === 'MultiPolygon') {
+                        feature.geometry.coordinates.forEach(function(polygon) {
+                            polygon[0].forEach(function(coord) {
+                                bounds.extend(coord);
+                            });
+                        });
+                    }
+                });
                 
-                console.log('Map bounds after fit:', branchMap.getBounds());
-                console.log('Income layer is on map:', branchMap.hasLayer(incomeLayer));
-                
-                // Update layer control to include income layer
-                if (layerControl) {
-                    layerControl.addOverlay(incomeLayer, 'Income Levels');
-                    console.log('Added income layer to layer control');
-                } else {
-                    console.warn('Layer control not available');
+                if (!bounds.isEmpty()) {
+                    branchMap.fitBounds(bounds, { padding: 50 });
                 }
+                
+                console.log('Income layer added to map');
                 
                 const countyIncome = data.baseline_median_family_income;
                 const countyIncomeStr = (countyIncome !== null && countyIncome !== undefined) ? '$' + Math.round(countyIncome).toLocaleString() : 'N/A';
@@ -953,10 +1011,11 @@
             }
         }
 
-        // Load and display minority layer
+        // Load and display minority layer using Mapbox GL JS
         async function loadMinorityLayer(county) {
             if (!branchMap) {
                 initMap();
+                return;
             }
 
             // Cancel any previous in-flight request
@@ -967,10 +1026,8 @@
             const signal = minorityLayerAbortController.signal;
 
             // Remove existing minority layer
-            if (minorityLayer) {
-                branchMap.removeLayer(minorityLayer);
-                minorityLayer = null;
-            }
+            removeSourceAndLayers('minority-tracts');
+            minorityLayerVisible = false;
 
             try {
                 updateInfoPanel('Loading census tract minority population data...');
@@ -1005,63 +1062,114 @@
                     throw new Error(data.error || data.message || 'Failed to load census tract data');
                 }
                 
-                // Create GeoJSON layer
-                minorityLayer = L.geoJSON(data.geojson, {
-                    style: styleMinorityLayer,
-                    onEachFeature: function(feature, layer) {
-                        const props = feature.properties;
-                        const minorityPct = props.minority_percentage;
-                        const category = props.minority_category || 'Unknown';
-                        const countyMinorityPct = props.county_minority_percentage;
-                        const ratio = props.minority_ratio;
-                        const totalPop = props.total_population;
-                        const minorityPop = props.minority_population;
-                        
-                        // Format numbers
-                        const formatNumber = (val) => {
-                            if (!val && val !== 0) return 'N/A';
-                            return Math.round(val).toLocaleString('en-US');
-                        };
-                        
-                        const formatPercent = (val) => {
-                            if (val === null || val === undefined || (val !== 0 && !val)) return 'N/A';
-                            try {
-                                return parseFloat(val).toFixed(1) + '%';
-                            } catch (e) {
-                                return 'N/A';
-                            }
-                        };
-                        
-                        // Create popup content
-                        const popupContent = `
-                            <div style="min-width: 200px;">
-                                <strong>${props.NAME || 'Census Tract'}</strong><br>
-                                <hr style="margin: 8px 0;">
-                                <strong>Minority Category:</strong> ${category}<br>
-                                <strong>Tract Minority %:</strong> ${formatPercent(minorityPct)}<br>
-                                <strong>County Minority %:</strong> ${formatPercent(countyMinorityPct)}<br>
-                                ${ratio !== null && ratio !== undefined ? `<strong>Ratio:</strong> ${parseFloat(ratio).toFixed(2)}x county average<br>` : ''}
-                                <hr style="margin: 8px 0;">
-                                <strong>Total Population:</strong> ${formatNumber(totalPop)}<br>
-                                <strong>Minority Population:</strong> ${formatNumber(minorityPop)}<br>
-                                <hr style="margin: 8px 0;">
-                                <small style="color: #666;">
-                                    Minority = Non-Hispanic White excluded<br>
-                                    ${category.startsWith('Q') ? 'Categories based on quartiles of minority % within county' : 'Categories based on ratio to county average'}
-                                </small>
-                            </div>
-                        `;
-                        
-                        layer.bindPopup(popupContent);
+                // Add GeoJSON source
+                branchMap.addSource('minority-tracts', {
+                    type: 'geojson',
+                    data: data.geojson
+                });
+                
+                // Add fill layer
+                branchMap.addLayer({
+                    id: 'minority-tracts-fill',
+                    type: 'fill',
+                    source: 'minority-tracts',
+                    paint: {
+                        'fill-color': getMinorityColorExpression(),
+                        'fill-opacity': 0.5
                     }
-                }).addTo(branchMap);
+                }, 'branch-markers');
+                
+                // Add outline layer
+                branchMap.addLayer({
+                    id: 'minority-tracts-outline',
+                    type: 'line',
+                    source: 'minority-tracts',
+                    paint: {
+                        'line-color': '#666666',
+                        'line-width': 1,
+                        'line-opacity': 0.6
+                    }
+                }, 'branch-markers');
+                
+                minorityLayerVisible = true;
+                
+                // Add click handler for popups
+                branchMap.on('click', 'minority-tracts-fill', function(e) {
+                    if (!e.features || e.features.length === 0) return;
+                    
+                    const props = e.features[0].properties;
+                    const minorityPct = props.minority_percentage;
+                    const category = props.minority_category || 'Unknown';
+                    const countyMinorityPct = props.county_minority_percentage;
+                    const ratio = props.minority_ratio;
+                    const totalPop = props.total_population;
+                    const minorityPop = props.minority_population;
+                    
+                    const formatNumber = (val) => {
+                        if (!val && val !== 0) return 'N/A';
+                        return Math.round(parseFloat(val)).toLocaleString('en-US');
+                    };
+                    
+                    const formatPercent = (val) => {
+                        if (val === null || val === undefined || (val !== 0 && !val)) return 'N/A';
+                        try {
+                            return parseFloat(val).toFixed(1) + '%';
+                        } catch (e) {
+                            return 'N/A';
+                        }
+                    };
+                    
+                    const popupContent = `
+                        <div style="min-width: 200px;">
+                            <strong>${props.NAME || 'Census Tract'}</strong><br>
+                            <hr style="margin: 8px 0;">
+                            <strong>Minority Category:</strong> ${category}<br>
+                            <strong>Tract Minority %:</strong> ${formatPercent(minorityPct)}<br>
+                            <strong>County Minority %:</strong> ${formatPercent(countyMinorityPct)}<br>
+                            ${ratio !== null && ratio !== undefined ? `<strong>Ratio:</strong> ${parseFloat(ratio).toFixed(2)}x county average<br>` : ''}
+                            <hr style="margin: 8px 0;">
+                            <strong>Total Population:</strong> ${formatNumber(totalPop)}<br>
+                            <strong>Minority Population:</strong> ${formatNumber(minorityPop)}<br>
+                            <hr style="margin: 8px 0;">
+                            <small style="color: #666;">
+                                Minority = Non-Hispanic White excluded<br>
+                                ${category.startsWith('Q') ? 'Categories based on quartiles of minority % within county' : 'Categories based on ratio to county average'}
+                            </small>
+                        </div>
+                    `;
+                    
+                    new mapboxgl.Popup({ maxWidth: '280px' })
+                        .setLngLat(e.lngLat)
+                        .setHTML(popupContent)
+                        .addTo(branchMap);
+                });
+                
+                // Change cursor on hover
+                branchMap.on('mouseenter', 'minority-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = 'pointer';
+                });
+                branchMap.on('mouseleave', 'minority-tracts-fill', function() {
+                    branchMap.getCanvas().style.cursor = '';
+                });
                 
                 // Fit map to show all tracts
-                branchMap.fitBounds(minorityLayer.getBounds().pad(0.1));
+                const bounds = new mapboxgl.LngLatBounds();
+                data.geojson.features.forEach(function(feature) {
+                    if (feature.geometry.type === 'Polygon') {
+                        feature.geometry.coordinates[0].forEach(function(coord) {
+                            bounds.extend(coord);
+                        });
+                    } else if (feature.geometry.type === 'MultiPolygon') {
+                        feature.geometry.coordinates.forEach(function(polygon) {
+                            polygon[0].forEach(function(coord) {
+                                bounds.extend(coord);
+                            });
+                        });
+                    }
+                });
                 
-                // Update layer control to include minority layer
-                if (layerControl) {
-                    layerControl.addOverlay(minorityLayer, 'Minority Population');
+                if (!bounds.isEmpty()) {
+                    branchMap.fitBounds(bounds, { padding: 50 });
                 }
                 
                 const countyMinorityPct = data.county_minority_percentage;
@@ -1086,32 +1194,43 @@
             }
         }
 
-        // Toggle income layer
+        // Toggle income layer visibility
         function toggleIncomeLayer(county) {
-            if (incomeLayer && branchMap.hasLayer(incomeLayer)) {
-                branchMap.removeLayer(incomeLayer);
+            if (incomeLayerVisible && branchMap.getLayer('income-tracts-fill')) {
+                branchMap.setLayoutProperty('income-tracts-fill', 'visibility', 'none');
+                branchMap.setLayoutProperty('income-tracts-outline', 'visibility', 'none');
+                incomeLayerVisible = false;
                 updateInfoPanel('Income layer hidden');
-            } else if (incomeLayer) {
-                branchMap.addLayer(incomeLayer);
+            } else if (branchMap.getLayer('income-tracts-fill')) {
+                branchMap.setLayoutProperty('income-tracts-fill', 'visibility', 'visible');
+                branchMap.setLayoutProperty('income-tracts-outline', 'visibility', 'visible');
+                incomeLayerVisible = true;
                 updateInfoPanel('Income layer shown');
             } else if (county) {
                 loadIncomeLayer(county);
             }
         }
         
-        // Zoom map to state
+        // Zoom map to state using Mapbox GL JS
         function zoomToState(stateCode) {
             if (!branchMap) {
                 initMap();
+                return;
             }
             
             if (stateCenters[stateCode]) {
                 const center = stateCenters[stateCode];
-                branchMap.setView([center.lat, center.lng], center.zoom);
+                branchMap.flyTo({
+                    center: [center.lng, center.lat], // [lng, lat] for Mapbox
+                    zoom: center.zoom
+                });
                 console.log('Zoomed to state:', stateCode, center);
             } else {
                 // Default to US center if state not found
-                branchMap.setView([39.8283, -98.5795], 4);
+                branchMap.flyTo({
+                    center: [-98.5795, 39.8283],
+                    zoom: 4
+                });
             }
         }
         
@@ -1315,7 +1434,10 @@
                     countySelect.innerHTML = '<option value="">Select a state first</option>';
                     // Reset to US view
                     if (branchMap) {
-                        branchMap.setView([39.8283, -98.5795], 4);
+                        branchMap.flyTo({
+                            center: [-98.5795, 39.8283],
+                            zoom: 4
+                        });
                     }
                 }
             }, { once: false }); // Allow multiple calls
@@ -1827,9 +1949,9 @@
             updateInfoPanel(`Displaying ${branchesToShow.length} branches from ${selectedBanks === 'all' ? 'all banks' : selectedBanks.length + ' selected bank(s)'}`);
         }
         
-        // Add markers to map
+        // Add markers to map using Mapbox GL JS
         function addMarkersToMap(branches) {
-            const markers = [];
+            const bounds = new mapboxgl.LngLatBounds();
             
             branches.forEach(branch => {
                 // Parse coordinates - ensure they're numbers
@@ -1858,41 +1980,30 @@
                 
                 // Get color for this bank
                 const bankName = branch.bank_name || 'Unknown';
-                // If no color assigned (All Banks selected), use black
-                // If color assigned, use that color
                 const markerColor = bankColors[bankName] || '#000000'; // Default to black
                 
-                // Create custom colored icon
-                const markerIcon = L.divIcon({
-                    className: 'custom-marker',
-                    html: `<div style="
-                        background: ${markerColor};
-                        width: 24px;
-                        height: 24px;
-                        border-radius: 50%;
-                        border: 3px solid white;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                    ">
-                        <div style="
-                            width: 10px;
-                            height: 10px;
-                            background: white;
-                            border-radius: 50%;
-                        "></div>
-                    </div>`,
-                    iconSize: [24, 24],
-                    iconAnchor: [12, 12]
-                });
+                // Create marker element
+                const el = document.createElement('div');
+                el.className = 'branch-marker';
+                el.style.cssText = `
+                    background: ${markerColor};
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    border: 3px solid white;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                `;
+                el.innerHTML = `<div style="width: 10px; height: 10px; background: white; border-radius: 50%;"></div>`;
                 
                 // Create popup content
                 const tags = [];
                 if (branch.lmict) tags.push('<span class="tag lmi">LMI</span>');
                 if (branch.mmct) tags.push('<span class="tag minority">Minority</span>');
                 
-                // Format deposits with commas
                 const formatDeposits = (deposits) => {
                     if (!deposits) return 'N/A';
                     return '$' + deposits.toLocaleString('en-US');
@@ -1915,24 +2026,26 @@
                     </div>
                 `;
                 
-                // Create marker with custom icon
-                // Leaflet uses [latitude, longitude] format
-                const marker = L.marker([lat, lng], { icon: markerIcon })
-                    .bindPopup(popupContent)
+                // Create popup
+                const popup = new mapboxgl.Popup({
+                    offset: 12,
+                    maxWidth: '300px'
+                }).setHTML(popupContent);
+                
+                // Create marker - Mapbox uses [lng, lat]
+                const marker = new mapboxgl.Marker(el)
+                    .setLngLat([lng, lat])
+                    .setPopup(popup)
                     .addTo(branchMap);
                 
-                // Log coordinates for debugging (can be removed in production)
-                console.log(`Branch: ${branch.branch_name}, Coordinates: [${lat}, ${lng}]`);
-                
-                markers.push(marker);
                 currentMarkers.push(marker);
+                bounds.extend([lng, lat]);
             });
             
-            // Fit map to show all markers (this automatically zooms to the county)
-            if (markers.length > 0) {
-                const group = new L.featureGroup(markers);
-                branchMap.fitBounds(group.getBounds().pad(0.1));
-                console.log('Map zoomed to fit', markers.length, 'markers');
+            // Fit map to show all markers
+            if (currentMarkers.length > 0 && !bounds.isEmpty()) {
+                branchMap.fitBounds(bounds, { padding: 50 });
+                console.log('Map zoomed to fit', currentMarkers.length, 'markers');
             } else {
                 console.warn('No markers to zoom to');
             }
@@ -1941,7 +2054,7 @@
         // Clear markers
         function clearMarkers() {
             currentMarkers.forEach(marker => {
-                branchMap.removeLayer(marker);
+                marker.remove();
             });
             currentMarkers = [];
         }
@@ -1958,14 +2071,10 @@
             const column2MinorityLegend = document.getElementById('column2MinorityLegend');
             
             // Remove any existing layers
-            if (incomeLayer && branchMap.hasLayer(incomeLayer)) {
-                branchMap.removeLayer(incomeLayer);
-                incomeLayer = null;
-            }
-            if (minorityLayer && branchMap.hasLayer(minorityLayer)) {
-                branchMap.removeLayer(minorityLayer);
-                minorityLayer = null;
-            }
+            removeSourceAndLayers('income-tracts');
+            removeSourceAndLayers('minority-tracts');
+            incomeLayerVisible = false;
+            minorityLayerVisible = false;
             
             // Hide column 2 legend by default
             column2Legend.style.display = 'none';
@@ -2006,15 +2115,13 @@
             updateSelectedBanksDisplay();
             document.getElementById('bankLegend').classList.remove('active');
             
-            // Remove layers
-            if (incomeLayer && branchMap) {
-                branchMap.removeLayer(incomeLayer);
+            // Remove census tract layers
+            if (branchMap) {
+                removeSourceAndLayers('income-tracts');
+                removeSourceAndLayers('minority-tracts');
             }
-            if (minorityLayer && branchMap) {
-                branchMap.removeLayer(minorityLayer);
-            }
-            incomeLayer = null;
-            minorityLayer = null;
+            incomeLayerVisible = false;
+            minorityLayerVisible = false;
             
             // Reset dropdown and hide legend
             const censusLayerSelect = document.getElementById('censusLayerSelect');
@@ -2035,7 +2142,10 @@
             }
             
             if (branchMap) {
-                branchMap.setView([39.8283, -98.5795], 4);
+                branchMap.flyTo({
+                    center: [-98.5795, 39.8283],
+                    zoom: 4
+                });
             }
             updateInfoPanel('Map cleared. Select a county to load 2025 branch data.');
         }
@@ -2229,10 +2339,11 @@
             return null;
         }
         
-        // Zoom map to county
+        // Zoom map to county using Mapbox GL JS
         async function zoomToCounty(countyName) {
             if (!branchMap) {
                 initMap();
+                return;
             }
             
             console.log('Zooming to county:', countyName);
@@ -2240,8 +2351,11 @@
             // Try to geocode the county
             const coords = await geocodeCounty(countyName);
             if (coords) {
-                // Zoom to county center with appropriate zoom level
-                branchMap.setView([coords.lat, coords.lon], 11);
+                // Zoom to county center with appropriate zoom level - Mapbox uses [lng, lat]
+                branchMap.flyTo({
+                    center: [coords.lon, coords.lat],
+                    zoom: 11
+                });
                 console.log('Zoomed to county:', countyName);
             } else {
                 console.warn('Could not geocode county, keeping current view');
@@ -2281,12 +2395,13 @@
                     }
                     
                     // Remove layers
-                    if (incomeLayer && branchMap) {
-                        branchMap.removeLayer(incomeLayer);
+                    if (branchMap) {
+                        removeSourceAndLayers('income-tracts');
+                        removeSourceAndLayers('minority-tracts');
                     }
-                    if (minorityLayer && branchMap) {
-                        branchMap.removeLayer(minorityLayer);
-                    }
+                    incomeLayerVisible = false;
+                    minorityLayerVisible = false;
+                    
                     const incomeToggle = document.getElementById('incomeLayerToggle');
                     if (incomeToggle) {
                         incomeToggle.checked = false;

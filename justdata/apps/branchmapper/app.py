@@ -57,11 +57,18 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 def index():
     """Main page with the interactive branch map"""
     breadcrumb_items = [{'name': 'BranchMapper', 'url': '/branchmapper'}]
+    
+    # Get Mapbox configuration
+    mapbox_token = os.environ.get('MAPBOX_ACCESS_TOKEN', 'pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg')
+    mapbox_style = os.environ.get('MAPBOX_STYLE', 'mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3')
+    
     return render_template('branch_mapper_template.html',
                          version=__version__,
                          app_name='BranchMapper',
                          app_base_url='',  # Standalone app runs at root
-                         breadcrumb_items=breadcrumb_items)
+                         breadcrumb_items=breadcrumb_items,
+                         mapbox_token=mapbox_token,
+                         mapbox_style=mapbox_style)
 
 
 @app.route('/counties')

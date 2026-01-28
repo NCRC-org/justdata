@@ -3,7 +3,7 @@ BranchMapper Blueprint for main JustData app.
 Converts the standalone BranchMapper app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, url_for
+from flask import Blueprint, render_template, request, jsonify, url_for, current_app
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import numpy as np
@@ -11,6 +11,7 @@ import re
 from pathlib import Path
 
 from justdata.main.auth import require_access, get_user_permissions, login_required
+from justdata.shared.utils.unified_env import get_unified_config
 from .config import TEMPLATES_DIR, STATIC_DIR
 from .version import __version__
 
@@ -64,12 +65,20 @@ def index():
     user_permissions = get_user_permissions()
     app_base_url = url_for('branchmapper.index').rstrip('/')
     breadcrumb_items = [{'name': 'BranchMapper', 'url': '/branchmapper'}]
+    
+    # Get Mapbox configuration
+    config = get_unified_config()
+    mapbox_token = config.get('mapbox_token', os.environ.get('MAPBOX_ACCESS_TOKEN', ''))
+    mapbox_style = config.get('mapbox_style', os.environ.get('MAPBOX_STYLE', 'mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3'))
+    
     return render_template('branch_mapper_template.html',
                          version=__version__,
                          permissions=user_permissions,
                          app_base_url=app_base_url,
                          app_name='BranchMapper',
-                         breadcrumb_items=breadcrumb_items)
+                         breadcrumb_items=breadcrumb_items,
+                         mapbox_token=mapbox_token,
+                         mapbox_style=mapbox_style)
 
 
 @branchmapper_bp.route('/counties')
