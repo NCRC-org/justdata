@@ -209,18 +209,12 @@
         border-radius: 8px;
         font-size: 0.8rem;
         white-space: nowrap;
-        opacity: 0;
-        visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.15s, visibility 0.15s;
         z-index: 99999;
         min-width: 140px;
         box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-    }
-    
-    .chart-bar .tooltip.visible {
-        opacity: 1 !important;
-        visibility: visible !important;
+        /* Initial state set via JS */
+        display: none;
     }
     
     .tooltip-header {
@@ -709,28 +703,23 @@ function renderDailyChart(days) {
         
         bar.addEventListener('mouseenter', function(e) {
             const rect = bar.getBoundingClientRect();
-            // Position tooltip above the bar, centered
+            // Position and show tooltip using inline styles (bypasses CSS issues)
             tooltip.style.left = (rect.left + rect.width / 2) + 'px';
             tooltip.style.top = (rect.top - 10) + 'px';
             tooltip.style.transform = 'translate(-50%, -100%)';
-            
-            // Show tooltip via class (more reliable than CSS :hover)
-            tooltip.classList.add('visible');
+            tooltip.style.display = 'block';
             
             // #region agent log
-            const cs = window.getComputedStyle(tooltip);
-            console.log('[DEBUG] Mouseenter', {hasVisibleClass: tooltip.classList.contains('visible'), opacity: cs.opacity, visibility: cs.visibility, left: tooltip.style.left, top: tooltip.style.top});
+            console.log('[DEBUG] Mouseenter - tooltip shown', {display: tooltip.style.display, left: tooltip.style.left, top: tooltip.style.top});
             // #endregion
             
             // Prevent overflow on edges
             requestAnimationFrame(() => {
                 const tooltipRect = tooltip.getBoundingClientRect();
-                // Check left edge
                 if (tooltipRect.left < 10) {
                     tooltip.style.left = '10px';
                     tooltip.style.transform = 'translate(0, -100%)';
                 }
-                // Check right edge
                 if (tooltipRect.right > window.innerWidth - 10) {
                     tooltip.style.left = (window.innerWidth - 10) + 'px';
                     tooltip.style.transform = 'translate(-100%, -100%)';
@@ -739,9 +728,9 @@ function renderDailyChart(days) {
         });
         
         bar.addEventListener('mouseleave', function(e) {
-            tooltip.classList.remove('visible');
+            tooltip.style.display = 'none';
             // #region agent log
-            console.log('[DEBUG] Mouseleave', {hasVisibleClass: tooltip.classList.contains('visible')});
+            console.log('[DEBUG] Mouseleave - tooltip hidden');
             // #endregion
         });
     });
