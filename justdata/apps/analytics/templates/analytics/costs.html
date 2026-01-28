@@ -194,32 +194,33 @@
         min-height: 4px;
         position: relative;
         cursor: pointer;
-        transition: transform 0.2s, opacity 0.2s;
+        transition: filter 0.2s;
     }
     
     .chart-bar:hover {
-        transform: scaleY(1.02);
-        opacity: 0.9;
+        filter: brightness(1.1);
     }
     
     .chart-bar .tooltip {
         position: fixed;
         background: #1f2937;
         color: #fff;
-        padding: 8px 12px;
-        border-radius: 6px;
-        font-size: 0.75rem;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 0.8rem;
         white-space: nowrap;
         opacity: 0;
+        visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.2s;
-        z-index: 9999;
-        min-width: 120px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: opacity 0.15s, visibility 0.15s;
+        z-index: 99999;
+        min-width: 140px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
     }
     
     .chart-bar:hover .tooltip {
         opacity: 1;
+        visibility: visible;
     }
     
     .tooltip-header {
