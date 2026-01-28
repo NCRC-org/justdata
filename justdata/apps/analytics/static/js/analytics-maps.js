@@ -160,8 +160,11 @@ const STATE_CENTERS = {
     'District of Columbia': { lat: 38.897438, lng: -77.026817 }
 };
 
+// Mapbox access token
+const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2xxeTBib3pyMGsxcTJpbXQ3bmo4YXU0ZiJ9.wvqlBMQSxTHgvAh6l9OXXw';
+
 /**
- * Initialize a Leaflet map
+ * Initialize a Leaflet map with Mapbox tiles
  * @param {string} elementId - DOM element ID for the map
  * @param {object} options - Optional map options
  * @returns {L.Map} Leaflet map instance
@@ -174,10 +177,10 @@ function initMap(elementId, options = {}) {
         ...options
     });
 
-    // Add CartoDB Positron tiles (minimal light gray style for county-level visualization)
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-        subdomains: 'abcd',
+    // Add Mapbox light-v11 tiles
+    L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + MAPBOX_TOKEN, {
+        attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        tileSize: 256,
         maxZoom: 19
     }).addTo(map);
 
