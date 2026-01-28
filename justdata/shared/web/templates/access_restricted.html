@@ -5,23 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JustData - NCRC Data Analysis Platform</title>
     <meta name="description" content="JustData - NCRC Data Analysis Platform">
-    <meta name="theme-color" content="#1a8fc9">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
+    <meta name="theme-color" content="#1E3D5C">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --ncrc-primary-blue: #552d87;
-            --ncrc-secondary-blue: #2fade3;
-            --ncrc-justdata-blue: #1a8fc9;
-            --ncrc-dark-blue: #1a8fc9;
-            --ncrc-gray-light: #F5F5F5;
-            --ncrc-gray-dark: #333333;
-            --ncrc-white: #FFFFFF;
+            --color-header: #1E3D5C;
+            --color-primary: #0077B6;
+            --color-text: #1a1a1a;
+            --color-background: #f8f8f8;
+            --ncrc-dark-blue: #1E3D5C;
         }
 
         * {
@@ -35,21 +33,20 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--ncrc-gray-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--color-background);
             min-height: 100vh;
-            color: var(--ncrc-gray-dark);
+            color: var(--color-text);
             display: flex;
             flex-direction: column;
         }
 
         /* Header */
         .header {
-            background: var(--ncrc-dark-blue);
-            text-align: left;
-            padding: 15px 20px;
+            background: var(--color-header);
+            padding: 0 24px;
             color: white;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
             flex-shrink: 0;
         }
 
@@ -62,37 +59,20 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            height: 64px;
             width: 100%;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            flex-shrink: 0;
+            gap: 12px;
+            text-decoration: none;
         }
 
         .logo img {
-            max-height: 80px;
+            height: 48px;
             width: auto;
-        }
-
-        .header-title-section {
-            text-align: center;
-            flex: 1;
-        }
-
-        .header-title-section h1 {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: white;
-            margin: 0;
-        }
-
-        .just-data-subtitle {
-            font-size: 1.2rem;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.95);
-            margin: 5px 0 0 0;
         }
 
         /* Main Content - Centered Logo */
@@ -117,67 +97,89 @@
 
         /* Footer */
         .footer {
-            background: var(--ncrc-gray-dark);
+            background: var(--color-header);
             color: white;
-            padding: 30px 20px 20px;
             flex-shrink: 0;
         }
 
         .footer-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             max-width: 1200px;
             margin: 0 auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 30px;
+            padding: 24px;
         }
 
-        .footer-col h4 {
-            font-size: 1rem;
-            margin-bottom: 15px;
-            color: var(--ncrc-secondary-blue);
-        }
-
-        .footer-col p {
-            font-size: 0.9rem;
-            line-height: 1.6;
-            color: rgba(255, 255, 255, 0.8);
-        }
-
-        .footer-col a {
-            color: rgba(255, 255, 255, 0.8);
+        .footer a {
+            color: #8bb8ff;
             text-decoration: none;
         }
 
-        .footer-col a:hover {
-            color: var(--ncrc-secondary-blue);
+        .footer a:hover {
+            text-decoration: underline;
         }
 
-        .footer-bottom {
-            text-align: center;
-            padding-top: 20px;
-            margin-top: 20px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            font-size: 0.85rem;
-            color: rgba(255, 255, 255, 0.6);
+        /* Login Button */
+        #loginBtn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: white;
+            color: var(--ncrc-dark-blue);
+            border: none;
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
         }
 
-        .footer-bottom em {
-            color: var(--ncrc-secondary-blue);
-            font-style: italic;
+        #loginBtn:hover {
+            background: #f0f0f0;
+        }
+
+        /* User Info (shown when logged in) */
+        #userInfo {
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        #logoutBtn {
+            display: none;
+            align-items: center;
+            gap: 6px;
+            background: rgba(255,255,255,0.15);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 6px;
+            padding: 8px 14px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        #logoutBtn:hover {
+            background: rgba(255,255,255,0.25);
         }
 
         /* Responsive */
         @media (max-width: 768px) {
-            .header-title-section h1 {
-                font-size: 1.8rem;
-            }
-
             .logo img {
-                max-height: 60px;
+                height: 36px;
             }
 
             .logo-container img {
                 max-width: 280px;
+            }
+
+            .footer-container {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
             }
         }
     </style>
@@ -187,14 +189,34 @@
     <header class="header">
         <div class="header-content">
             <div class="header-layout">
-                <div class="logo">
-                    <img src="{{ url_for('static', filename='img/justdata-logo.png') }}" alt="JustData Logo" onerror="this.style.display='none';">
+                <!-- Left side: Logo -->
+                <a href="/" class="logo">
+                    <img src="/static/img/justdata-logo-white.png" alt="JustData" onerror="this.style.display='none';">
+                </a>
+
+                <!-- Right side: Auth -->
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <!-- User Info (shown when logged in) -->
+                    <div id="userInfo">
+                        <img id="userAvatar" src="" alt="User" style="width: 32px; height: 32px; border-radius: 50%; display: none;">
+                        <div style="display: flex; flex-direction: column; align-items: flex-start;">
+                            <span id="userEmail" style="color: white; font-size: 13px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+                            <span id="userTypeBadge" style="color: #90EE90; font-size: 10px; text-transform: uppercase; font-weight: 600;"></span>
+                        </div>
+                    </div>
+
+                    <!-- Login Button -->
+                    <button id="loginBtn" onclick="openLoginModal()">
+                        <i class="fas fa-sign-in-alt" style="font-size: 14px;"></i>
+                        <span>Sign In</span>
+                    </button>
+
+                    <!-- Logout Button -->
+                    <button id="logoutBtn" onclick="JustDataAuth.signOut()">
+                        <i class="fas fa-sign-out-alt" style="font-size: 14px;"></i>
+                        <span>Sign Out</span>
+                    </button>
                 </div>
-                <div class="header-title-section">
-                    <h1>JustData</h1>
-                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
-                </div>
-                <div style="width: 80px;"></div> <!-- Spacer for balance -->
             </div>
         </div>
     </header>
@@ -202,35 +224,337 @@
     <!-- Main Content - NCRC Logo -->
     <main class="main-content">
         <div class="logo-container">
-            <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC - National Community Reinvestment Coalition" onerror="this.src='{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}';">
+            <img src="/static/img/ncrc-logo.png" alt="NCRC - National Community Reinvestment Coalition" onerror="this.src='/static/img/ncrc-invert-final@2x.png';">
         </div>
     </main>
 
     <!-- Footer -->
     <footer class="footer">
         <div class="footer-container">
-            <div class="footer-col">
-                <h4>JustData</h4>
-                <p>Comprehensive data analysis platform</p>
-                <p>National Community Reinvestment Coalition</p>
+            <div style="text-align: left;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <div style="display: flex; gap: 16px; font-size: 13px; flex-wrap: wrap;">
+                    <a href="mailto:research@ncrc.org">research@ncrc.org</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="tel:+12024644600">(202) 464-4600</a>
+                </div>
             </div>
-            <div class="footer-col">
-                <h4>Data Sources</h4>
-                <p>FDIC Summary of Deposits</p>
-                <p>HMDA Mortgage Data</p>
-                <p>U.S. Census Bureau</p>
+            <div style="flex-shrink: 0;">
+                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; width: auto; opacity: 0.9;" onerror="this.style.display='none';">
             </div>
-            <div class="footer-col">
-                <h4>Powered By</h4>
-                <p>Google Cloud BigQuery</p>
-                <p>AI Analysis (Claude/GPT)</p>
-                <p>Flask Web Framework</p>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            &copy; 2025 JustData - National Community Reinvestment Coalition. All rights reserved.<br>
-            Data drives the <em>movement</em>
         </div>
     </footer>
+
+    <!-- Login/Register Modal -->
+    <div id="loginModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100000; justify-content: center; align-items: center;">
+        <div style="background: white; border-radius: 12px; padding: 32px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); position: relative; max-height: 90vh; overflow-y: auto;">
+            <!-- Close button -->
+            <button onclick="closeLoginModal()" style="position: absolute; top: 12px; right: 12px; background: none; border: none; font-size: 24px; cursor: pointer; color: #666; line-height: 1;">&times;</button>
+
+            <!-- Tab Selector -->
+            <div id="authTabs" style="display: flex; margin-bottom: 24px; border-bottom: 2px solid #e5e7eb;">
+                <button id="signInTab" onclick="switchAuthTab('signin')" style="flex: 1; padding: 12px 16px; background: none; border: none; font-size: 15px; font-weight: 600; color: #1a365d; border-bottom: 2px solid #1a365d; margin-bottom: -2px; cursor: pointer;">
+                    Sign In
+                </button>
+                <button id="registerTab" onclick="switchAuthTab('register')" style="flex: 1; padding: 12px 16px; background: none; border: none; font-size: 15px; font-weight: 500; color: #6b7280; cursor: pointer;">
+                    Create Account
+                </button>
+            </div>
+
+            <!-- Sign In View -->
+            <div id="signInView">
+                <form id="emailLoginForm" onsubmit="handleEmailLogin(event)" style="margin-bottom: 20px;">
+                    <div style="margin-bottom: 16px;">
+                        <label for="loginEmail" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Email</label>
+                        <input type="email" id="loginEmail" placeholder="Enter your email" required autocomplete="email" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label for="loginPassword" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                    </div>
+                    <div id="loginError" style="display: none; background: #fee2e2; color: #dc2626; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
+                    <button type="submit" id="emailLoginBtn" style="width: 100%; padding: 12px; background: #1a365d; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+                        <span id="emailLoginText">Sign In</span>
+                        <span id="emailLoginSpinner" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Signing in...</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Register View -->
+            <div id="registerView" style="display: none;">
+                <form id="emailRegisterForm" onsubmit="handleEmailRegister(event)" style="margin-bottom: 20px;">
+                    <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                        <div style="flex: 1;">
+                            <label for="registerFirstName" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">First Name <span style="color: #dc2626;">*</span></label>
+                            <input type="text" id="registerFirstName" placeholder="First name" required autocomplete="given-name" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="registerLastName" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Last Name <span style="color: #dc2626;">*</span></label>
+                            <input type="text" id="registerLastName" placeholder="Last name" required autocomplete="family-name" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label for="registerEmail" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Email <span style="color: #dc2626;">*</span></label>
+                        <input type="email" id="registerEmail" placeholder="Enter your email" required autocomplete="email" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                        <p style="margin: 6px 0 0; font-size: 12px; color: #6b7280;">
+                            <i class="fas fa-info-circle"></i> NCRC staff: Use your @ncrc.org email for automatic staff access after verification
+                        </p>
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label for="registerOrganization" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Organization <span style="color: #dc2626;">*</span></label>
+                        <input type="text" id="registerOrganization" placeholder="Your organization or company" required autocomplete="organization" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 16px;">
+                        <label for="registerPassword" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Password <span style="color: #dc2626;">*</span></label>
+                        <input type="password" id="registerPassword" placeholder="Create a password (min 6 characters)" required autocomplete="new-password" minlength="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                    </div>
+                    <div style="margin-bottom: 20px;">
+                        <label for="registerPasswordConfirm" style="display: block; margin-bottom: 6px; font-weight: 500; color: #333; font-size: 14px;">Confirm Password</label>
+                        <input type="password" id="registerPasswordConfirm" placeholder="Confirm your password" required autocomplete="new-password" minlength="6" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; box-sizing: border-box;">
+                    </div>
+                    <div id="registerError" style="display: none; background: #fee2e2; color: #dc2626; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
+                    <div id="registerSuccess" style="display: none; background: #dcfce7; color: #166534; padding: 10px 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"></div>
+                    <button type="submit" id="emailRegisterBtn" style="width: 100%; padding: 12px; background: #1a365d; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;">
+                        <span id="emailRegisterText">Create Account</span>
+                        <span id="emailRegisterSpinner" style="display: none;"><i class="fas fa-spinner fa-spin"></i> Creating account...</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Divider -->
+            <div style="display: flex; align-items: center; margin: 24px 0;">
+                <div style="flex: 1; height: 1px; background: #ddd;"></div>
+                <span style="padding: 0 16px; color: #999; font-size: 13px; font-weight: 500;">OR</span>
+                <div style="flex: 1; height: 1px; background: #ddd;"></div>
+            </div>
+
+            <!-- Google Sign In -->
+            <button onclick="handleGoogleLogin()" id="googleLoginBtn" style="width: 100%; padding: 12px; background: white; color: #333; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; font-weight: 500; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+                <span id="googleLoginText">Continue with Google</span>
+                <span id="googleLoginSpinner" style="display: none;"><i class="fas fa-spinner fa-spin"></i></span>
+            </button>
+
+            <!-- Footer note -->
+            <p style="margin: 20px 0 0; text-align: center; color: #999; font-size: 12px;">
+                By signing in, you agree to NCRC's Terms of Service
+            </p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+
+    <!-- JustData Auth -->
+    <script src="/static/js/auth.js"></script>
+
+    <script>
+        // Login Modal Functions
+        function openLoginModal(tab = 'signin') {
+            document.getElementById('loginModal').style.display = 'flex';
+            switchAuthTab(tab);
+            if (tab === 'signin') {
+                document.getElementById('loginEmail').focus();
+            }
+            document.getElementById('loginError').style.display = 'none';
+            const registerError = document.getElementById('registerError');
+            const registerSuccess = document.getElementById('registerSuccess');
+            if (registerError) registerError.style.display = 'none';
+            if (registerSuccess) registerSuccess.style.display = 'none';
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('loginEmail').value = '';
+            document.getElementById('loginPassword').value = '';
+            const registerFirstName = document.getElementById('registerFirstName');
+            const registerLastName = document.getElementById('registerLastName');
+            const registerEmail = document.getElementById('registerEmail');
+            const registerOrganization = document.getElementById('registerOrganization');
+            const registerPassword = document.getElementById('registerPassword');
+            const registerPasswordConfirm = document.getElementById('registerPasswordConfirm');
+            if (registerFirstName) registerFirstName.value = '';
+            if (registerLastName) registerLastName.value = '';
+            if (registerEmail) registerEmail.value = '';
+            if (registerOrganization) registerOrganization.value = '';
+            if (registerPassword) registerPassword.value = '';
+            if (registerPasswordConfirm) registerPasswordConfirm.value = '';
+        }
+
+        function switchAuthTab(tab) {
+            const signInTab = document.getElementById('signInTab');
+            const registerTab = document.getElementById('registerTab');
+            const signInView = document.getElementById('signInView');
+            const registerView = document.getElementById('registerView');
+
+            if (tab === 'signin') {
+                signInTab.style.color = '#1a365d';
+                signInTab.style.fontWeight = '600';
+                signInTab.style.borderBottom = '2px solid #1a365d';
+                registerTab.style.color = '#6b7280';
+                registerTab.style.fontWeight = '500';
+                registerTab.style.borderBottom = 'none';
+                signInView.style.display = 'block';
+                registerView.style.display = 'none';
+            } else {
+                registerTab.style.color = '#1a365d';
+                registerTab.style.fontWeight = '600';
+                registerTab.style.borderBottom = '2px solid #1a365d';
+                signInTab.style.color = '#6b7280';
+                signInTab.style.fontWeight = '500';
+                signInTab.style.borderBottom = 'none';
+                registerView.style.display = 'block';
+                signInView.style.display = 'none';
+            }
+        }
+
+        // Close modal on background click
+        document.getElementById('loginModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeLoginModal();
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('loginModal').style.display === 'flex') {
+                closeLoginModal();
+            }
+        });
+
+        // Handle email/password login
+        async function handleEmailLogin(event) {
+            event.preventDefault();
+            const email = document.getElementById('loginEmail').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            const errorDiv = document.getElementById('loginError');
+            const loginText = document.getElementById('emailLoginText');
+            const loginSpinner = document.getElementById('emailLoginSpinner');
+            const loginBtn = document.getElementById('emailLoginBtn');
+
+            loginText.style.display = 'none';
+            loginSpinner.style.display = 'inline';
+            loginBtn.disabled = true;
+            errorDiv.style.display = 'none';
+
+            try {
+                await JustDataAuth.signInWithEmail(email, password);
+                closeLoginModal();
+                window.location.reload();
+            } catch (error) {
+                let errorMessage = 'Sign in failed. Please try again.';
+                switch (error.code) {
+                    case 'auth/user-not-found':
+                        errorMessage = 'No account found with this email address.';
+                        break;
+                    case 'auth/wrong-password':
+                        errorMessage = 'Incorrect password. Please try again.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Please enter a valid email address.';
+                        break;
+                    case 'auth/invalid-credential':
+                        errorMessage = 'Invalid email or password. Please check and try again.';
+                        break;
+                }
+                errorDiv.textContent = errorMessage;
+                errorDiv.style.display = 'block';
+            } finally {
+                loginText.style.display = 'inline';
+                loginSpinner.style.display = 'none';
+                loginBtn.disabled = false;
+            }
+        }
+
+        // Handle Google login
+        async function handleGoogleLogin() {
+            const loginText = document.getElementById('googleLoginText');
+            const loginSpinner = document.getElementById('googleLoginSpinner');
+            const loginBtn = document.getElementById('googleLoginBtn');
+            const errorDiv = document.getElementById('loginError');
+
+            loginText.style.display = 'none';
+            loginSpinner.style.display = 'inline';
+            loginBtn.disabled = true;
+            errorDiv.style.display = 'none';
+
+            try {
+                await JustDataAuth.signInWithGoogle();
+                closeLoginModal();
+                window.location.reload();
+            } catch (error) {
+                if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+                    errorDiv.textContent = 'Google sign-in failed. Please try again.';
+                    errorDiv.style.display = 'block';
+                }
+            } finally {
+                loginText.style.display = 'inline';
+                loginSpinner.style.display = 'none';
+                loginBtn.disabled = false;
+            }
+        }
+
+        // Handle registration
+        async function handleEmailRegister(event) {
+            event.preventDefault();
+            const firstName = document.getElementById('registerFirstName').value.trim();
+            const lastName = document.getElementById('registerLastName').value.trim();
+            const email = document.getElementById('registerEmail').value.trim();
+            const organization = document.getElementById('registerOrganization').value.trim();
+            const password = document.getElementById('registerPassword').value;
+            const passwordConfirm = document.getElementById('registerPasswordConfirm').value;
+            const errorDiv = document.getElementById('registerError');
+            const successDiv = document.getElementById('registerSuccess');
+            const registerText = document.getElementById('emailRegisterText');
+            const registerSpinner = document.getElementById('emailRegisterSpinner');
+            const registerBtn = document.getElementById('emailRegisterBtn');
+
+            if (password !== passwordConfirm) {
+                errorDiv.textContent = 'Passwords do not match.';
+                errorDiv.style.display = 'block';
+                successDiv.style.display = 'none';
+                return;
+            }
+
+            registerText.style.display = 'none';
+            registerSpinner.style.display = 'inline';
+            registerBtn.disabled = true;
+            errorDiv.style.display = 'none';
+            successDiv.style.display = 'none';
+
+            try {
+                await JustDataAuth.signUpWithEmail(email, password, firstName, lastName, organization);
+                const isNcrcEmail = email.toLowerCase().endsWith('@ncrc.org');
+                if (isNcrcEmail) {
+                    successDiv.innerHTML = '<i class="fas fa-check-circle"></i> Account created! Check your email for a verification link to activate your staff access.';
+                } else {
+                    successDiv.innerHTML = '<i class="fas fa-check-circle"></i> Account created! Check your email to verify your account.';
+                }
+                successDiv.style.display = 'block';
+                setTimeout(() => {
+                    closeLoginModal();
+                    window.location.reload();
+                }, 2000);
+            } catch (error) {
+                let errorMessage = 'Registration failed. Please try again.';
+                switch (error.code) {
+                    case 'auth/email-already-in-use':
+                        errorMessage = 'An account with this email already exists. Try signing in instead.';
+                        break;
+                    case 'auth/invalid-email':
+                        errorMessage = 'Please enter a valid email address.';
+                        break;
+                    case 'auth/weak-password':
+                        errorMessage = 'Password is too weak. Please use at least 6 characters.';
+                        break;
+                }
+                errorDiv.textContent = errorMessage;
+                errorDiv.style.display = 'block';
+            } finally {
+                registerText.style.display = 'inline';
+                registerSpinner.style.display = 'none';
+                registerBtn.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
