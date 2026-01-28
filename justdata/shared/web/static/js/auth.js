@@ -59,6 +59,16 @@ async function handleAuthStateChange(user) {
         // User is signed in
         console.log('User signed in:', user.email);
 
+        // Set Firebase Analytics user ID for event tracking
+        try {
+            if (typeof firebase !== 'undefined' && firebase.analytics) {
+                firebase.analytics().setUserId(user.uid);
+                console.log('[Auth] Analytics user ID set:', user.uid);
+            }
+        } catch (e) {
+            console.warn('[Auth] Could not set analytics user ID:', e);
+        }
+
         // Get ID token and notify backend
         const idToken = await user.getIdToken();
         const backendResponse = await notifyBackendLogin(idToken, user);

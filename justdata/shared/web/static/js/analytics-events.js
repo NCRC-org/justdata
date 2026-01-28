@@ -55,6 +55,16 @@ function logAnalyticsEvent(eventName, params = {}) {
         if (window.justDataUserType) {
             enrichedParams.user_type = window.justDataUserType;
         }
+        
+        // Add Firebase Auth user ID if signed in
+        try {
+            const currentUser = firebase.auth && firebase.auth().currentUser;
+            if (currentUser) {
+                enrichedParams.firebase_uid = currentUser.uid;
+            }
+        } catch (e) {
+            // Ignore - user might not be signed in
+        }
 
         firebaseAnalytics.logEvent(eventName, enrichedParams);
         console.log('[DEBUG] Analytics event logged successfully:', eventName, enrichedParams);

@@ -401,6 +401,12 @@ function loadLocationResearchers(location) {
     const days = parseInt($('#time-period').val()) || 90;
     const countyFips = location.county_fips;
 
+    // Check if we have a valid county FIPS before making API call
+    if (!countyFips) {
+        $('#location-users-list').html('<div class="no-data-item">County FIPS not available for this location</div>');
+        return;
+    }
+
     // Use demo data if in demo mode
     if (demoMode && syntheticData) {
         const researchers = getDemoLocationResearchers(countyFips, days);
@@ -423,7 +429,7 @@ function loadLocationResearchers(location) {
                 $('#location-users-list').html('<div class="error-item">Failed to load researchers</div>');
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
             $('#location-users-list').html('<div class="error-item">Failed to connect to API</div>');
         }
     });
@@ -436,7 +442,8 @@ function renderLocationResearchers(researchers, location) {
     const container = $('#location-users-list').empty();
 
     if (!researchers || researchers.length === 0) {
-        container.html('<div class="no-data-item">No researcher details available</div>');
+        // Historical events may not have user tracking enabled
+        container.html('<div class="no-data-item">No researcher details available<br><small style="color:#888">Historical events may not have user tracking</small></div>');
         return;
     }
 

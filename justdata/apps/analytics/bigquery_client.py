@@ -50,6 +50,58 @@ from google.oauth2 import service_account
 from .config import config
 
 
+# State name to abbreviation mapping for coordinate lookups
+STATE_NAME_TO_ABBREV = {
+    'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR',
+    'California': 'CA', 'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE',
+    'Florida': 'FL', 'Georgia': 'GA', 'Hawaii': 'HI', 'Idaho': 'ID',
+    'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA', 'Kansas': 'KS',
+    'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+    'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS',
+    'Missouri': 'MO', 'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV',
+    'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY',
+    'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH', 'Oklahoma': 'OK',
+    'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+    'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT',
+    'Vermont': 'VT', 'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV',
+    'Wisconsin': 'WI', 'Wyoming': 'WY', 'District of Columbia': 'DC'
+}
+
+# State FIPS codes to 2-letter abbreviation
+STATE_FIPS_TO_ABBREV = {
+    '01': 'AL', '02': 'AK', '04': 'AZ', '05': 'AR', '06': 'CA', '08': 'CO',
+    '09': 'CT', '10': 'DE', '11': 'DC', '12': 'FL', '13': 'GA', '15': 'HI',
+    '16': 'ID', '17': 'IL', '18': 'IN', '19': 'IA', '20': 'KS', '21': 'KY',
+    '22': 'LA', '23': 'ME', '24': 'MD', '25': 'MA', '26': 'MI', '27': 'MN',
+    '28': 'MS', '29': 'MO', '30': 'MT', '31': 'NE', '32': 'NV', '33': 'NH',
+    '34': 'NJ', '35': 'NM', '36': 'NY', '37': 'NC', '38': 'ND', '39': 'OH',
+    '40': 'OK', '41': 'OR', '42': 'PA', '44': 'RI', '45': 'SC', '46': 'SD',
+    '47': 'TN', '48': 'TX', '49': 'UT', '50': 'VT', '51': 'VA', '53': 'WA',
+    '54': 'WV', '55': 'WI', '56': 'WY'
+}
+
+
+def _normalize_state_to_code(state: str) -> str:
+    """Convert full state name, FIPS code, or abbreviation to 2-letter code."""
+    if not state:
+        return state
+    state = str(state).strip()
+    # Already a 2-letter code
+    if len(state) == 2 and state.upper() in [v for v in STATE_NAME_TO_ABBREV.values()]:
+        return state.upper()
+    # State FIPS code (2 digits)
+    if len(state) == 2 and state in STATE_FIPS_TO_ABBREV:
+        return STATE_FIPS_TO_ABBREV[state]
+    # Try exact name match
+    if state in STATE_NAME_TO_ABBREV:
+        return STATE_NAME_TO_ABBREV[state]
+    # Try case-insensitive match
+    for name, code in STATE_NAME_TO_ABBREV.items():
+        if name.lower() == state.lower():
+            return code
+    return state
+
+
 # Initialize BigQuery client
 _client = None
 
@@ -265,21 +317,14 @@ def sync_new_events() -> dict:
 
 # Analytics data source configuration
 #
-# IMPORTANT: The unified view in justdata-f7da7.justdata_analytics.all_events
-# requires the service account to have BigQuery Data Viewer permission on that dataset.
-# Until that's granted, we fall back to querying backfilled_events directly.
+# The unified view combines data from:
+# 1. Backfilled historical events (pre-Firebase)
+# 2. Firebase Analytics export (Jan 22-26, 2026 from justdata-f7da7)
+# 3. GA4 BigQuery export (Jan 27+ from justdata-ncrc)
 #
-# To enable the unified view (includes live Firebase data):
-# 1. Go to GCP Console > justdata-f7da7 > BigQuery > justdata_analytics dataset
-# 2. Grant "BigQuery Data Viewer" to: apiclient@hdma1-242116.iam.gserviceaccount.com
-# 3. Change EVENTS_TABLE below to use the unified view
-#
-# Unified view (requires permission):
-# EVENTS_TABLE = 'justdata-f7da7.justdata_analytics.all_events'
-#
-# Backfilled data only (current - works without additional permissions):
-ANALYTICS_DATASET = 'justdata_analytics'
-EVENTS_TABLE = 'hdma1-242116.justdata_analytics.backfilled_events'
+# All data flows into justdata-ncrc.firebase_analytics.all_events
+ANALYTICS_DATASET = 'firebase_analytics'
+EVENTS_TABLE = 'justdata-ncrc.firebase_analytics.all_events'
 
 # Project where we run queries (where service account has bigquery.jobs.create permission)
 # This is different from ANALYTICS_VIEW_PROJECT - we can query cross-project data
@@ -762,12 +807,15 @@ def _enrich_with_coordinates(data: List[Dict], fips_field: str = 'county_fips') 
         fips = item.get(fips_field)
         county_name = item.get('county_name') or item.get('city')
         state = item.get('state')
+        
+        # Normalize state to 2-letter code (centroids table uses codes)
+        state_code = _normalize_state_to_code(state) if state else None
 
         # Try lookup by FIPS first, then by name+state
         centroid = lookup_county_centroid(
             county_fips=fips,
             county_name=county_name,
-            state=state
+            state=state_code
         )
 
         if centroid:
@@ -813,11 +861,14 @@ def _enrich_lender_interest_with_coordinates(data: List[Dict]) -> List[Dict]:
         fips = item.get('researcher_county_fips')
         county_name = item.get('researcher_city')
         state = item.get('researcher_state')
+        
+        # Normalize state to 2-letter code
+        state_code = _normalize_state_to_code(state) if state else None
 
         centroid = lookup_county_centroid(
             county_fips=fips,
             county_name=county_name,
-            state=state
+            state=state_code
         )
 
         if centroid:
@@ -1571,16 +1622,15 @@ def get_entity_users(
 
     query = f"""
         SELECT
-            user_id,
+            COALESCE(user_id, 'test_user') AS user_id,
             COUNT(*) AS report_count,
             MAX(event_timestamp) AS last_activity,
             MIN(event_timestamp) AS first_activity
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
-            AND user_id IS NOT NULL
             {entity_filter}
             {date_filter}
-        GROUP BY user_id
+        GROUP BY COALESCE(user_id, 'test_user')
         ORDER BY report_count DESC
         LIMIT 50
     """
@@ -1803,18 +1853,35 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
     # Cost per TB in USD (BigQuery on-demand pricing)
     COST_PER_TB = 6.25
     
-    # Query to get cost summary by app
+    # JustData service accounts to track (justdata-ncrc project)
+    SERVICE_ACCOUNTS = [
+        'analytics@justdata-ncrc.iam.gserviceaccount.com',
+        'bizsight@justdata-ncrc.iam.gserviceaccount.com',
+        'branchmapper@justdata-ncrc.iam.gserviceaccount.com',
+        'branchsight@justdata-ncrc.iam.gserviceaccount.com',
+        'dataexplorer@justdata-ncrc.iam.gserviceaccount.com',
+        'electwatch@justdata-ncrc.iam.gserviceaccount.com',
+        'firebase-admin@justdata-ncrc.iam.gserviceaccount.com',
+        'lenderprofile@justdata-ncrc.iam.gserviceaccount.com',
+        'lendsight@justdata-ncrc.iam.gserviceaccount.com',
+        'mergermeter@justdata-ncrc.iam.gserviceaccount.com',
+    ]
+    service_accounts_str = "', '".join(SERVICE_ACCOUNTS)
+    
+    # Query to get cost summary by app (filtered to JustData service accounts)
     cost_by_app_query = f"""
     SELECT
         CASE
-            WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' THEN 'LendSight'
-            WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' THEN 'BizSight'
-            WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' THEN 'BranchSight'
-            WHEN LOWER(query) LIKE '%mergermeter%' THEN 'MergerMeter'
-            WHEN LOWER(query) LIKE '%dataexplorer%' THEN 'DataExplorer'
-            WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%events%' OR LOWER(query) LIKE '%backfilled%' THEN 'Analytics'
-            WHEN LOWER(query) LIKE '%lenderprofile%' THEN 'LenderProfile'
-            WHEN LOWER(query) LIKE '%electwatch%' THEN 'ElectWatch'
+            WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' OR user_email LIKE 'lendsight@%' THEN 'LendSight'
+            WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' OR user_email LIKE 'bizsight@%' THEN 'BizSight'
+            WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' OR user_email LIKE 'branchsight@%' THEN 'BranchSight'
+            WHEN LOWER(query) LIKE '%mergermeter%' OR user_email LIKE 'mergermeter@%' THEN 'MergerMeter'
+            WHEN LOWER(query) LIKE '%dataexplorer%' OR user_email LIKE 'dataexplorer@%' THEN 'DataExplorer'
+            WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%events%' OR LOWER(query) LIKE '%backfilled%' OR user_email LIKE 'analytics@%' THEN 'Analytics'
+            WHEN LOWER(query) LIKE '%lenderprofile%' OR user_email LIKE 'lenderprofile@%' THEN 'LenderProfile'
+            WHEN LOWER(query) LIKE '%electwatch%' OR user_email LIKE 'electwatch@%' THEN 'ElectWatch'
+            WHEN user_email LIKE 'branchmapper@%' THEN 'BranchMapper'
+            WHEN user_email LIKE 'firebase-admin@%' THEN 'Firebase'
             ELSE 'Other'
         END as app_name,
         COUNT(*) as query_count,
@@ -1825,11 +1892,12 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
         AND job_type = 'QUERY'
         AND state = 'DONE'
         AND error_result IS NULL
+        AND user_email IN ('{service_accounts_str}')
     GROUP BY app_name
     ORDER BY total_bytes DESC
     """
     
-    # Query for daily costs
+    # Query for daily costs (filtered to JustData service accounts)
     daily_costs_query = f"""
     SELECT
         DATE(creation_time) as date,
@@ -1841,6 +1909,7 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
         AND job_type = 'QUERY'
         AND state = 'DONE'
         AND error_result IS NULL
+        AND user_email IN ('{service_accounts_str}')
     GROUP BY date
     ORDER BY date DESC
     """

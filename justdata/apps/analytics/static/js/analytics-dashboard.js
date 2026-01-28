@@ -15,8 +15,17 @@ let syntheticData = null;
  * Initialize dashboard on page load
  */
 $(document).ready(function() {
-    // Check for demo mode in localStorage
-    demoMode = localStorage.getItem('analyticsDemo') === 'true';
+    // Show demo toggle only for admin users
+    if (window.justDataUserType === 'admin') {
+        $('#demo-toggle-container').show();
+    } else {
+        // Non-admins can't use demo mode - force it off
+        localStorage.removeItem('analyticsDemo');
+        demoMode = false;
+    }
+    
+    // Check for demo mode in localStorage (admin only)
+    demoMode = localStorage.getItem('analyticsDemo') === 'true' && window.justDataUserType === 'admin';
     if (demoMode) {
         $('#demo-mode-toggle').prop('checked', true);
         $('#demo-mode-banner').show();
@@ -51,9 +60,15 @@ $(document).ready(function() {
 });
 
 /**
- * Toggle demo mode on/off
+ * Toggle demo mode on/off (admin only)
  */
 function toggleDemoMode() {
+    // Only admins can use demo mode
+    if (window.justDataUserType !== 'admin') {
+        console.warn('Demo mode is admin-only');
+        return;
+    }
+    
     demoMode = !demoMode;
     localStorage.setItem('analyticsDemo', demoMode);
     $('#demo-mode-toggle').prop('checked', demoMode);
@@ -339,7 +354,7 @@ function fetchCostSummary() {
             if (response.success && response.data) {
                 const cost = response.data.estimated_cost_usd || 0;
                 const queries = response.data.query_count || 0;
-                $('#bq-cost').text('$' + cost.toFixed(2));
+                $('#bq-cost').text(formatCostDisplay(cost));
                 $('#bq-queries').text(formatNumber(queries) + ' queries');
             } else {
                 $('#bq-cost').text('N/A');
@@ -352,6 +367,17 @@ function fetchCostSummary() {
             $('#bq-queries').text('Error loading costs');
         }
     });
+}
+
+/**
+ * Format cost display - show cents for amounts < $0.01
+ */
+function formatCostDisplay(amount) {
+    if (amount > 0 && amount < 0.01) {
+        const cents = amount * 100;
+        return cents.toFixed(2) + '¢';
+    }
+    return '$' + amount.toFixed(2);
 }
 
 /**

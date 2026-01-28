@@ -525,6 +525,11 @@ function renderDailyChart(days) {
 }
 
 function formatCurrency(amount) {
+    // Show cents for amounts less than $0.01
+    if (amount > 0 && amount < 0.01) {
+        const cents = amount * 100;
+        return cents.toFixed(2) + '¢';
+    }
     return '$' + amount.toFixed(2);
 }
 

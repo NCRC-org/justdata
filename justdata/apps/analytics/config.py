@@ -13,12 +13,12 @@ class AnalyticsConfig:
     APP_DESCRIPTION = "Internal analytics dashboard for JustData usage patterns"
 
     # BigQuery configuration
-    BIGQUERY_PROJECT = os.environ.get('GCP_PROJECT_ID', 'justdata-f7da7')
-    ANALYTICS_DATASET = 'analytics'
+    BIGQUERY_PROJECT = os.environ.get('GCP_PROJECT_ID', 'hdma1-242116')
+    ANALYTICS_DATASET = 'firebase_analytics'
 
     # Firebase configuration
-    FIREBASE_PROJECT = 'justdata-f7da7'
-    MEASUREMENT_ID = 'G-ZEJ2B1BG7B'
+    FIREBASE_PROJECT = 'justdata-ncrc'
+    MEASUREMENT_ID = 'G-DWS9XPNT7J'
 
     # Default query parameters
     DEFAULT_DAYS = 90

@@ -58,7 +58,8 @@
             <button id="export-btn" class="btn-export-data" onclick="exportAnalyticsData()">
                 <i class="fas fa-file-excel"></i> Export
             </button>
-            <div class="demo-toggle">
+            <!-- Demo toggle - admin only -->
+            <div class="demo-toggle" id="demo-toggle-container" style="display: none;">
                 <label class="toggle-switch">
                     <input type="checkbox" id="demo-mode-toggle" onchange="toggleDemoMode()">
                     <span class="toggle-slider"></span>
