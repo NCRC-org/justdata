@@ -8,7 +8,8 @@
     
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Mapbox GL JS CSS -->
+    <link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
     
     <style>
         /* NCRC Brand Colors */
@@ -534,7 +535,8 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Mapbox GL JS -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
     <script>
         // Mock user data
         const mockUsers = [
@@ -650,56 +652,137 @@
         ];
 
         let map;
-        let markers = [];
+        let currentPopup = null;
         let currentUserRole = 'developer'; // Change to 'staff' to see limited access
+        
+        // Mapbox configuration
+        const MAPBOX_TOKEN = 'pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg';
+        const MAPBOX_STYLE = 'mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3';
 
-        // Initialize map
+        // Initialize map using Mapbox GL JS
         function initMap() {
-            map = L.map('userMap').setView([39.8283, -98.5795], 4);
-
-            const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2xxeTBib3pyMGsxcTJpbXQ3bmo4YXU0ZiJ9.wvqlBMQSxTHgvAh6l9OXXw';
-            L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + MAPBOX_TOKEN, {
-                attribution: '&copy; <a href="https://www.mapbox.com/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                tileSize: 256,
-                maxZoom: 19
-            }).addTo(map);
-
-            // Add user markers
-            updateMapMarkers();
+            mapboxgl.accessToken = MAPBOX_TOKEN;
+            
+            map = new mapboxgl.Map({
+                container: 'userMap',
+                style: MAPBOX_STYLE,
+                center: [-98.5795, 39.8283], // [lng, lat] for Mapbox
+                zoom: 3
+            });
+            
+            // Add navigation controls
+            map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+            
+            // Wait for map to load before adding markers
+            map.on('load', function() {
+                updateMapMarkers();
+            });
         }
 
-        // Update map markers based on filters
+        // Update map markers based on filters using GeoJSON layer
         function updateMapMarkers() {
-            // Clear existing markers
-            markers.forEach(marker => map.removeLayer(marker));
-            markers = [];
+            if (!map.isStyleLoaded()) {
+                map.once('styledata', updateMapMarkers);
+                return;
+            }
+            
+            // Remove existing source and layers
+            if (map.getLayer('users-circles')) map.removeLayer('users-circles');
+            if (map.getLayer('users-stroke')) map.removeLayer('users-stroke');
+            if (map.getSource('users')) map.removeSource('users');
 
             const filteredUsers = getFilteredUsers();
-
-            filteredUsers.forEach(user => {
-                const marker = L.circleMarker([user.location.lat, user.location.lng], {
-                    radius: 8,
-                    fillColor: getUserTypeColor(user.userType),
-                    color: '#fff',
-                    weight: 2,
-                    opacity: 1,
-                    fillOpacity: 0.8
-                }).addTo(map);
-
-                marker.bindPopup(`
-                    <strong>${user.name}</strong><br>
-                    ${user.organization || 'Individual'}<br>
-                    <small>${user.location.city}</small>
-                `);
-
-                marker.on('click', () => showUserDetail(user));
-                markers.push(marker);
+            
+            // Build GeoJSON features
+            const features = filteredUsers.map(user => ({
+                type: 'Feature',
+                properties: {
+                    id: user.id,
+                    name: user.name,
+                    organization: user.organization || 'Individual',
+                    city: user.location.city,
+                    userType: user.userType,
+                    color: getUserTypeColor(user.userType)
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: [user.location.lng, user.location.lat]
+                }
+            }));
+            
+            // Add GeoJSON source
+            map.addSource('users', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: features
+                }
+            });
+            
+            // Add stroke layer (white outline)
+            map.addLayer({
+                id: 'users-stroke',
+                type: 'circle',
+                source: 'users',
+                paint: {
+                    'circle-radius': 10,
+                    'circle-color': '#ffffff',
+                    'circle-opacity': 1
+                }
+            });
+            
+            // Add circle layer with user type colors
+            map.addLayer({
+                id: 'users-circles',
+                type: 'circle',
+                source: 'users',
+                paint: {
+                    'circle-radius': 8,
+                    'circle-color': ['get', 'color'],
+                    'circle-opacity': 0.8
+                }
+            });
+            
+            // Add click handler for popups
+            map.on('click', 'users-circles', function(e) {
+                if (!e.features || e.features.length === 0) return;
+                
+                const props = e.features[0].properties;
+                const coords = e.features[0].geometry.coordinates.slice();
+                
+                // Close existing popup
+                if (currentPopup) currentPopup.remove();
+                
+                // Create popup
+                currentPopup = new mapboxgl.Popup({ maxWidth: '250px' })
+                    .setLngLat(coords)
+                    .setHTML(`
+                        <strong>${props.name}</strong><br>
+                        ${props.organization}<br>
+                        <small>${props.city}</small>
+                    `)
+                    .addTo(map);
+                
+                // Show user detail
+                const user = mockUsers.find(u => u.id === props.id);
+                if (user) showUserDetail(user);
+            });
+            
+            // Change cursor on hover
+            map.on('mouseenter', 'users-circles', function() {
+                map.getCanvas().style.cursor = 'pointer';
+            });
+            map.on('mouseleave', 'users-circles', function() {
+                map.getCanvas().style.cursor = '';
             });
 
-            // Fit map to show all markers
+            // Fit map to show all users
             if (filteredUsers.length > 0) {
-                const group = new L.featureGroup(markers);
-                map.fitBounds(group.getBounds().pad(0.1));
+                const bounds = new mapboxgl.LngLatBounds();
+                filteredUsers.forEach(user => {
+                    bounds.extend([user.location.lng, user.location.lat]);
+                });
+                map.fitBounds(bounds, { padding: 50, maxZoom: 10 });
             }
         }
 
