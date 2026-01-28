@@ -56,11 +56,18 @@ function logAnalyticsEvent(eventName, params = {}) {
             enrichedParams.user_type = window.justDataUserType;
         }
         
-        // Add Firebase Auth user ID if signed in
+        // Add Firebase Auth user info if signed in
         try {
             const currentUser = firebase.auth && firebase.auth().currentUser;
             if (currentUser) {
                 enrichedParams.firebase_uid = currentUser.uid;
+                // Add email for user identification (hashed for privacy in analytics)
+                if (currentUser.email) {
+                    enrichedParams.user_email = currentUser.email;
+                }
+                if (currentUser.displayName) {
+                    enrichedParams.user_display_name = currentUser.displayName;
+                }
             }
         } catch (e) {
             // Ignore - user might not be signed in

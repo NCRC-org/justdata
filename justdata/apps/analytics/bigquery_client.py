@@ -1853,20 +1853,17 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
     # Cost per TB in USD (BigQuery on-demand pricing)
     COST_PER_TB = 6.25
     
-    # JustData service accounts to track (justdata-ncrc project)
+    # JustData service accounts to track
+    # Currently using hdma1-242116 service accounts (apps use GOOGLE_APPLICATION_CREDENTIALS_JSON)
+    # Future: migrate to justdata-ncrc service accounts
     SERVICE_ACCOUNTS = [
-        'analytics@justdata-ncrc.iam.gserviceaccount.com',
-        'bizsight@justdata-ncrc.iam.gserviceaccount.com',
-        'branchmapper@justdata-ncrc.iam.gserviceaccount.com',
-        'branchsight@justdata-ncrc.iam.gserviceaccount.com',
-        'dataexplorer@justdata-ncrc.iam.gserviceaccount.com',
-        'electwatch@justdata-ncrc.iam.gserviceaccount.com',
-        'firebase-admin@justdata-ncrc.iam.gserviceaccount.com',
-        'lenderprofile@justdata-ncrc.iam.gserviceaccount.com',
-        'lendsight@justdata-ncrc.iam.gserviceaccount.com',
-        'mergermeter@justdata-ncrc.iam.gserviceaccount.com',
+        'apiclient@hdma1-242116.iam.gserviceaccount.com',  # Main BigQuery credential
+        'justdata@hdma1-242116.iam.gserviceaccount.com',   # Cloud Run service account
     ]
     service_accounts_str = "', '".join(SERVICE_ACCOUNTS)
+    
+    # Query against hdma1-242116 where the jobs actually run
+    query_project = 'hdma1-242116'
     
     # Query to get cost summary by app (filtered to JustData service accounts)
     cost_by_app_query = f"""
@@ -1887,7 +1884,7 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
         COUNT(*) as query_count,
         SUM(total_bytes_processed) as total_bytes,
         SUM(total_bytes_billed) as total_bytes_billed
-    FROM `{project_id}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+    FROM `{query_project}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
     WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
         AND job_type = 'QUERY'
         AND state = 'DONE'
@@ -1904,7 +1901,7 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
         COUNT(*) as query_count,
         SUM(total_bytes_processed) as total_bytes,
         SUM(total_bytes_billed) as total_bytes_billed
-    FROM `{project_id}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+    FROM `{query_project}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
     WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
         AND job_type = 'QUERY'
         AND state = 'DONE'
