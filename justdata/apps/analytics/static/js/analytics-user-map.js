@@ -36,7 +36,7 @@ $(document).ready(function() {
 
     // Close detail panel when clicking outside
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('#location-detail-panel, .location-item, .leaflet-popup').length) {
+        if (!$(e.target).closest('#location-detail-panel, .location-item, .mapboxgl-popup, .mapbox-circle-marker').length) {
             closeLocationDetail();
         }
     });

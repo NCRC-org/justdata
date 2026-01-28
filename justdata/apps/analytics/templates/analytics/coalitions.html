@@ -3,7 +3,7 @@
 {% block title %}Coalition Opportunities | Analytics | JustData{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
 <style>
     /* View toggle buttons */
@@ -320,7 +320,14 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+<!-- Mapbox configuration from server -->
+<script>
+    window.MAPBOX_CONFIG = {
+        token: '{{ mapbox_token }}',
+        style: '{{ mapbox_style }}'
+    };
+</script>
 <!-- auth.js already loaded by base_app.html -->
 <script src="{{ url_for('analytics.static', filename='js/analytics-tables.js') }}"></script>
 <script src="{{ url_for('analytics.static', filename='js/analytics-maps.js') }}"></script>

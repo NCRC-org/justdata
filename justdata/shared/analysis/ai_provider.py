@@ -109,6 +109,27 @@ def _flush_ai_usage_to_bigquery():
         # Create table if it doesn't exist
         table_id = 'justdata-ncrc.firebase_analytics.ai_usage'
         
+        try:
+            client.get_table(table_id)
+        except Exception:
+            # Table doesn't exist, create it
+            schema = [
+                bigquery.SchemaField("timestamp", "STRING"),
+                bigquery.SchemaField("provider", "STRING"),
+                bigquery.SchemaField("model", "STRING"),
+                bigquery.SchemaField("input_tokens", "INTEGER"),
+                bigquery.SchemaField("output_tokens", "INTEGER"),
+                bigquery.SchemaField("total_tokens", "INTEGER"),
+                bigquery.SchemaField("input_cost_usd", "FLOAT"),
+                bigquery.SchemaField("output_cost_usd", "FLOAT"),
+                bigquery.SchemaField("total_cost_usd", "FLOAT"),
+                bigquery.SchemaField("app_name", "STRING"),
+                bigquery.SchemaField("report_type", "STRING"),
+            ]
+            table = bigquery.Table(table_id, schema=schema)
+            client.create_table(table)
+            print(f"[AI Usage] Created table {table_id}")
+        
         # Insert rows
         rows_to_insert = _ai_usage_buffer.copy()
         errors = client.insert_rows_json(table_id, rows_to_insert)

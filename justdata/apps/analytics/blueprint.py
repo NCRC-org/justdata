@@ -8,6 +8,7 @@ research activity maps, and coalition-building opportunities.
 from flask import Blueprint, jsonify, request, render_template, Response
 from justdata.main.auth import login_required, admin_required, staff_required
 import io
+import os
 from datetime import datetime
 
 from .bigquery_client import (
@@ -30,6 +31,10 @@ analytics_bp = Blueprint(
     static_url_path='/static'
 )
 
+# Mapbox configuration from environment
+MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', '')
+MAPBOX_STYLE = os.environ.get('MAPBOX_STYLE', 'mapbox://styles/jedlebi/cku2skjsw2o5817r19li2o5y1')
+
 # Base template context
 BASE_CONTEXT = {
     'app_name': 'Analytics',
@@ -43,6 +48,9 @@ def get_context(breadcrumb_items=None):
     ctx = BASE_CONTEXT.copy()
     if breadcrumb_items:
         ctx['breadcrumb_items'] = breadcrumb_items
+    # Add Mapbox configuration for map pages
+    ctx['mapbox_token'] = MAPBOX_ACCESS_TOKEN
+    ctx['mapbox_style'] = MAPBOX_STYLE
     return ctx
 
 

@@ -33,7 +33,7 @@ $(document).ready(function() {
 
     // Close detail panel when clicking outside
     $(document).on('click', function(e) {
-        if (!$(e.target).closest('#state-detail-panel, .leaflet-popup, .btn-view-researchers').length) {
+        if (!$(e.target).closest('#state-detail-panel, .mapboxgl-popup, .mapbox-circle-marker, .btn-view-researchers').length) {
             closeStateDetail();
         }
     });
@@ -254,16 +254,16 @@ function renderTable(data) {
     });
 }
 
+// Store active lender markers for cleanup
+let lenderMarkers = [];
+
 /**
  * Render researcher locations on map - showing county-level markers
  */
 function renderMap(data) {
-    // Clear existing layers
-    map.eachLayer(function(layer) {
-        if (layer instanceof L.CircleMarker) {
-            map.removeLayer(layer);
-        }
-    });
+    // Clear existing markers
+    lenderMarkers.forEach(marker => marker.remove());
+    lenderMarkers = [];
 
     // Aggregate by county (using coordinates from API) with lender details
     const countyData = {};
@@ -335,20 +335,29 @@ function renderMap(data) {
     Object.values(countyData).forEach(function(info) {
         const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
 
-        // Purple markers for county-level data
-        L.circleMarker([info.latitude, info.longitude], {
-            radius: radius,
-            fillColor: '#6a1b9a',  // Darker purple
-            color: '#1a1a1a',      // Dark border for contrast
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.85
-        })
-        .bindPopup(generateCountyMapPopup(info), {
-            maxWidth: 320,
+        // Create circle marker element
+        const el = document.createElement('div');
+        el.className = 'mapbox-circle-marker';
+        el.style.width = (radius * 2) + 'px';
+        el.style.height = (radius * 2) + 'px';
+        el.style.backgroundColor = '#6a1b9a';  // Darker purple
+        el.style.border = '2px solid #1a1a1a';
+        el.style.borderRadius = '50%';
+        el.style.opacity = '0.85';
+        el.style.cursor = 'pointer';
+
+        const popup = new mapboxgl.Popup({
+            offset: 25,
+            maxWidth: '320px',
             className: 'lender-map-popup'
-        })
-        .addTo(map);
+        }).setHTML(generateCountyMapPopup(info));
+
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([info.longitude, info.latitude])
+            .setPopup(popup)
+            .addTo(map);
+        
+        lenderMarkers.push(marker);
     });
 
     // Add markers for state-level fallback data (lighter color to distinguish)
@@ -360,20 +369,29 @@ function renderMap(data) {
 
         const radius = Math.min(Math.max(Math.sqrt(info.count) * 3.5, 8), 35);
 
-        // Lighter purple for state-level aggregates
-        L.circleMarker([center.lat, center.lng], {
-            radius: radius,
-            fillColor: '#9c27b0',  // Lighter purple for state-level
-            color: '#1a1a1a',
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.7
-        })
-        .bindPopup(generateLenderMapPopup(info), {
-            maxWidth: 320,
+        // Create circle marker element
+        const el = document.createElement('div');
+        el.className = 'mapbox-circle-marker';
+        el.style.width = (radius * 2) + 'px';
+        el.style.height = (radius * 2) + 'px';
+        el.style.backgroundColor = '#9c27b0';  // Lighter purple for state-level
+        el.style.border = '2px solid #1a1a1a';
+        el.style.borderRadius = '50%';
+        el.style.opacity = '0.7';
+        el.style.cursor = 'pointer';
+
+        const popup = new mapboxgl.Popup({
+            offset: 25,
+            maxWidth: '320px',
             className: 'lender-map-popup'
-        })
-        .addTo(map);
+        }).setHTML(generateLenderMapPopup(info));
+
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([center.lng, center.lat])
+            .setPopup(popup)
+            .addTo(map);
+        
+        lenderMarkers.push(marker);
     });
 }
 

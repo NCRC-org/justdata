@@ -1,14 +1,25 @@
 /**
  * Analytics Maps JavaScript
- * Shared map utilities for analytics views
+ * Shared map utilities for analytics views using Mapbox GL JS
  */
 
-// US center coordinates
-const US_CENTER = [39.8283, -98.5795];
-const US_ZOOM = 4;
+// Mapbox configuration - read from server-provided config
+const MAPBOX_TOKEN = (window.MAPBOX_CONFIG && window.MAPBOX_CONFIG.token) || '';
+const MAPBOX_STYLE = (window.MAPBOX_CONFIG && window.MAPBOX_CONFIG.style) || 'mapbox://styles/mapbox/light-v11';
+
+// US center coordinates [lng, lat] for Mapbox
+const US_CENTER = [-98.5795, 39.8283];
+const US_ZOOM = 3.5;
 
 // Enable clustering by default
 const USE_CLUSTERING = true;
+
+// Store active markers for cleanup
+let activeMarkers = [];
+
+// #region agent log
+fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:load',message:'Mapbox GL JS module loaded',data:{hasToken:!!MAPBOX_TOKEN,tokenLen:MAPBOX_TOKEN.length,style:MAPBOX_STYLE},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+// #endregion
 
 /**
  * Validate that coordinates are within reasonable US bounds
@@ -17,12 +28,10 @@ const USE_CLUSTERING = true;
  * @returns {object} Validation result with 'valid' boolean and optional 'reason'
  */
 function validateCoordinates(lat, lng) {
-    // Basic range check
     if (lat === null || lat === undefined || lng === null || lng === undefined) {
         return { valid: false, reason: 'Missing coordinates' };
     }
 
-    // Convert to numbers
     lat = parseFloat(lat);
     lng = parseFloat(lng);
 
@@ -38,12 +47,10 @@ function validateCoordinates(lat, lng) {
         return { valid: false, reason: 'Longitude out of range (-180 to 180)' };
     }
 
-    // Check for null island (0, 0)
     if (lat === 0 && lng === 0) {
         return { valid: false, reason: 'Coordinates are (0, 0) - null island' };
     }
 
-    // US bounds check (including Alaska, Hawaii, Puerto Rico)
     const inMainland = lat >= 24.0 && lat <= 49.5 && lng >= -125.0 && lng <= -66.0;
     const inAlaska = lat >= 51.0 && lat <= 72.0 && lng >= -180.0 && lng <= -129.0;
     const inHawaii = lat >= 18.0 && lat <= 23.0 && lng >= -161.0 && lng <= -154.0;
@@ -62,7 +69,6 @@ function validateCoordinates(lat, lng) {
  * @returns {object|null} {lat, lng} or null if no valid coordinates
  */
 function getValidCoordinates(location) {
-    // Try location's coordinates first
     if (location.latitude && location.longitude) {
         const validation = validateCoordinates(location.latitude, location.longitude);
         if (validation.valid) {
@@ -72,12 +78,10 @@ function getValidCoordinates(location) {
         }
     }
 
-    // Fall back to state center with small random offset
     const state = location.state;
     if (state) {
         const stateCenter = STATE_CENTERS[state] || STATE_CENTERS[STATE_NAMES[state]];
         if (stateCenter) {
-            // Add small random offset so multiple locations in same state don't stack
             return {
                 lat: stateCenter.lat + (Math.random() - 0.5) * 2,
                 lng: stateCenter.lng + (Math.random() - 0.5) * 2
@@ -105,7 +109,7 @@ const STATE_NAMES = {
     'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
 };
 
-// State center coordinates for approximate city placement
+// State center coordinates
 const STATE_CENTERS = {
     'Alabama': { lat: 32.806671, lng: -86.791130 },
     'Alaska': { lat: 61.370716, lng: -152.404419 },
@@ -160,183 +164,136 @@ const STATE_CENTERS = {
     'District of Columbia': { lat: 38.897438, lng: -77.026817 }
 };
 
-// Mapbox access token
-const MAPBOX_TOKEN = 'pk.eyJ1IjoiZXhhbXBsZXMiLCJhIjoiY2xxeTBib3pyMGsxcTJpbXQ3bmo4YXU0ZiJ9.wvqlBMQSxTHgvAh6l9OXXw';
-
 /**
- * Initialize a Leaflet map with Mapbox tiles
+ * Initialize a Mapbox GL JS map
  * @param {string} elementId - DOM element ID for the map
  * @param {object} options - Optional map options
- * @returns {L.Map} Leaflet map instance
+ * @returns {mapboxgl.Map} Mapbox map instance
  */
 function initMap(elementId, options = {}) {
-    const map = L.map(elementId, {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:initMap',message:'initMap called with Mapbox GL',data:{elementId:elementId,hasMapboxgl:typeof mapboxgl !== 'undefined'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
+    // Set access token
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+    
+    // Create map
+    const map = new mapboxgl.Map({
+        container: elementId,
+        style: MAPBOX_STYLE,
         center: options.center || US_CENTER,
-        zoom: options.zoom || US_ZOOM,
-        scrollWheelZoom: true,
-        ...options
+        zoom: options.zoom || US_ZOOM
     });
-
-    // Add Mapbox light-v11 tiles
-    L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/256/{z}/{x}/{y}@2x?access_token=' + MAPBOX_TOKEN, {
-        attribution: '&copy; <a href="https://www.mapbox.com/about/maps/">Mapbox</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        tileSize: 256,
-        maxZoom: 19
-    }).addTo(map);
-
+    
+    // Add navigation controls
+    map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+    
+    // #region agent log
+    map.on('load', function() {
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:mapload',message:'Map loaded successfully',data:{center:map.getCenter(),zoom:map.getZoom()},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    });
+    map.on('error', function(e) {
+        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'analytics-maps.js:maperror',message:'Map error',data:{error:e.error?e.error.message:'unknown'},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'C'})}).catch(()=>{});
+    });
+    // #endregion
+    
     return map;
 }
 
 /**
- * Generate user profile popup HTML
- * Shows user info with HubSpot integration placeholder
- * @param {object} user - User data object
- * @returns {string} HTML for popup
+ * Clear all markers from the map
  */
-function generateUserProfilePopup(user) {
-    const name = user.display_name || user.name || user.email || 'Unknown User';
-    const email = user.email || '';
-    const organization = user.organization || user.company_name || '';
-    const userType = user.user_type || '';
-    const city = user.city || '';
-    const state = user.state || '';
-    const location = city && state ? city + ', ' + state : (city || state || '');
-    const eventCount = user.total_events || user.event_count || 0;
-    const lastActivity = user.last_activity ? formatDate(user.last_activity) : '';
+function clearMarkers() {
+    activeMarkers.forEach(marker => marker.remove());
+    activeMarkers = [];
+}
 
-    // HubSpot integration status
-    const hubspotLinked = user.hubspot_contact_id ? true : false;
-
-    let html = '<div class="user-profile-popup">';
-
-    // User header
-    html += '<div class="popup-header">';
-    html += '<div class="popup-avatar"><i class="fas fa-user"></i></div>';
-    html += '<div class="popup-name">';
-    html += '<strong>' + escapeHtml(name) + '</strong>';
-    if (userType) {
-        html += '<span class="popup-badge">' + escapeHtml(userType) + '</span>';
-    }
-    html += '</div>';
-    html += '</div>';
-
-    // User details
-    html += '<div class="popup-details">';
-    if (email) {
-        html += '<div class="popup-row"><i class="fas fa-envelope"></i> ' + escapeHtml(email) + '</div>';
-    }
-    if (organization) {
-        html += '<div class="popup-row"><i class="fas fa-building"></i> ' + escapeHtml(organization) + '</div>';
-    }
-    if (location) {
-        html += '<div class="popup-row"><i class="fas fa-map-marker-alt"></i> ' + escapeHtml(location) + '</div>';
-    }
-    if (eventCount > 0) {
-        html += '<div class="popup-row"><i class="fas fa-chart-bar"></i> ' + formatNumber(eventCount) + ' events</div>';
-    }
-    if (lastActivity) {
-        html += '<div class="popup-row"><i class="fas fa-clock"></i> Last active: ' + lastActivity + '</div>';
-    }
-    html += '</div>';
-
-    // HubSpot integration section
-    html += '<div class="popup-hubspot">';
-    html += '<div class="popup-hubspot-header">';
-    html += '<i class="fab fa-hubspot"></i> HubSpot Integration';
-    html += '</div>';
-    if (hubspotLinked) {
-        html += '<div class="popup-hubspot-linked">';
-        html += '<i class="fas fa-check-circle"></i> Linked';
-        if (user.hubspot_company_name) {
-            html += '<br><small>' + escapeHtml(user.hubspot_company_name) + '</small>';
-        }
-        html += '</div>';
-    } else {
-        html += '<div class="popup-hubspot-pending">';
-        html += '<i class="fas fa-link"></i> Link coming soon';
-        html += '<br><small style="color: #888;">Organization data will appear here</small>';
-        html += '</div>';
-    }
-    html += '</div>';
-
-    html += '</div>';
-    return html;
+/**
+ * Create a circle marker element for Mapbox
+ * @param {number} radius - Marker radius in pixels
+ * @param {string} color - Fill color
+ * @returns {HTMLElement} Marker element
+ */
+function createCircleMarkerElement(radius, color) {
+    const el = document.createElement('div');
+    el.className = 'mapbox-circle-marker';
+    el.style.width = (radius * 2) + 'px';
+    el.style.height = (radius * 2) + 'px';
+    el.style.backgroundColor = color;
+    el.style.border = '2px solid #1a1a1a';
+    el.style.borderRadius = '50%';
+    el.style.opacity = '0.85';
+    el.style.cursor = 'pointer';
+    return el;
 }
 
 /**
  * Add circle markers for user locations
- * @param {L.Map} map - Leaflet map instance
+ * @param {mapboxgl.Map} map - Mapbox map instance
  * @param {Array} data - Location data array
  * @param {object} options - Marker options
- * @returns {L.LayerGroup} Layer group containing markers
+ * @returns {Array} Array of markers
  */
 function addUserMarkers(map, data, options = {}) {
-    const markers = L.layerGroup();
-
-    // Aggregate data by county_fips to handle multiple reports at same location
+    clearMarkers();
+    
     const aggregatedData = aggregateByCounty(data);
 
     aggregatedData.forEach(function(location) {
-        // Get validated coordinates with fallback to state center
         const coords = getValidCoordinates(location);
         if (!coords) {
             console.warn('Skipping location with no valid coordinates:', location.county_name || location.city, location.state);
             return;
         }
 
-        // Calculate marker size based on total event count
         const events = location.total_events || 1;
         const radius = Math.min(Math.max(Math.sqrt(events) * 4, 6), 35);
+        const color = options.color || '#0d4a7c';
 
-        // High contrast marker styles
-        const marker = L.circleMarker([coords.lat, coords.lng], {
-            radius: radius,
-            fillColor: options.color || '#0d4a7c',  // Darker blue
-            color: '#1a1a1a',  // Dark border for contrast
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.85  // Higher opacity
-        });
-
-        // Add enhanced popup with aggregated data
-        const popupContent = generateAggregatedPopup(location);
-
-        marker.bindPopup(popupContent, {
-            maxWidth: 320,
+        const el = createCircleMarkerElement(radius, color);
+        
+        const popup = new mapboxgl.Popup({
+            offset: 25,
+            maxWidth: '320px',
             className: 'aggregated-popup-container'
-        });
+        }).setHTML(generateAggregatedPopup(location));
 
-        markers.addLayer(marker);
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([coords.lng, coords.lat])
+            .setPopup(popup)
+            .addTo(map);
+        
+        // Store location data on marker for click handlers
+        marker._locationData = location;
+        
+        activeMarkers.push(marker);
     });
 
-    markers.addTo(map);
-    return markers;
+    return activeMarkers;
 }
 
 /**
  * Add circle markers for county research activity
- * @param {L.Map} map - Leaflet map instance
+ * @param {mapboxgl.Map} map - Mapbox map instance
  * @param {Array} data - County research data
- * @returns {L.LayerGroup} Layer group containing markers
+ * @returns {Array} Array of markers
  */
 function addCountyMarkers(map, data) {
-    const markers = L.layerGroup();
-
-    // Aggregate data by county
+    clearMarkers();
+    
     const aggregatedData = aggregateByCounty(data);
 
-    // High contrast color scale for report counts
     function getColor(count) {
-        return count > 50 ? '#023858' :  // Very dark blue
-               count > 20 ? '#045a8d' :  // Dark blue
-               count > 10 ? '#0570b0' :  // Medium-dark blue
-               count > 5  ? '#3690c0' :  // Medium blue
-               count > 1  ? '#74a9cf' :  // Light-medium blue
-                           '#a6bddb';    // Light blue
+        return count > 50 ? '#023858' :
+               count > 20 ? '#045a8d' :
+               count > 10 ? '#0570b0' :
+               count > 5  ? '#3690c0' :
+               count > 1  ? '#74a9cf' :
+                           '#a6bddb';
     }
 
     aggregatedData.forEach(function(county) {
-        // Get validated coordinates with fallback to state center
         const coords = getValidCoordinates(county);
         if (!coords) {
             console.warn('Skipping county with no valid coordinates:', county.county_name, county.state);
@@ -346,28 +303,25 @@ function addCountyMarkers(map, data) {
         const count = county.total_events || county.report_count || 0;
         const radius = Math.min(Math.max(Math.sqrt(count) * 3.5, 7), 30);
 
-        // High contrast marker with dark border
-        const marker = L.circleMarker([coords.lat, coords.lng], {
-            radius: radius,
-            fillColor: getColor(count),
-            color: '#1a1a1a',  // Dark border for contrast
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.9
-        });
-
-        // Use aggregated popup with breakdown
-        const popupContent = generateAggregatedPopup(county);
-        marker.bindPopup(popupContent, {
-            maxWidth: 320,
+        const el = createCircleMarkerElement(radius, getColor(count));
+        
+        const popup = new mapboxgl.Popup({
+            offset: 25,
+            maxWidth: '320px',
             className: 'aggregated-popup-container'
-        });
+        }).setHTML(generateAggregatedPopup(county));
 
-        markers.addLayer(marker);
+        const marker = new mapboxgl.Marker(el)
+            .setLngLat([coords.lng, coords.lat])
+            .setPopup(popup)
+            .addTo(map);
+        
+        marker._locationData = county;
+        
+        activeMarkers.push(marker);
     });
 
-    markers.addTo(map);
-    return markers;
+    return activeMarkers;
 }
 
 /**
@@ -376,8 +330,6 @@ function addCountyMarkers(map, data) {
  */
 function populateStateFilter(selectId) {
     const select = $('#' + selectId);
-
-    // Sort states by name
     const sortedStates = Object.entries(STATE_NAMES)
         .sort((a, b) => a[1].localeCompare(b[1]));
 
@@ -428,9 +380,6 @@ function formatDate(dateStr) {
 
 /**
  * Aggregate data by county FIPS code
- * Combines multiple records at the same location into one with breakdown
- * @param {Array} data - Array of location records
- * @returns {Array} Aggregated data with app breakdown
  */
 function aggregateByCounty(data) {
     const countyMap = {};
@@ -460,11 +409,9 @@ function aggregateByCounty(data) {
         agg.unique_users += (item.unique_users || 1);
         agg.total_events += (item.total_events || item.report_count || 1);
 
-        // Track app breakdown
         const appName = item.app_name || item.event_name || 'Report';
         agg.apps[appName] = (agg.apps[appName] || 0) + (item.report_count || item.total_events || 1);
 
-        // Keep latest activity
         if (item.last_activity) {
             if (!agg.last_activity || new Date(item.last_activity) > new Date(agg.last_activity)) {
                 agg.last_activity = item.last_activity;
@@ -476,23 +423,18 @@ function aggregateByCounty(data) {
 }
 
 /**
- * Format county name with state, avoiding duplicates
- * @param {string} countyName - County name (may already include state)
- * @param {string} state - State abbreviation
- * @returns {string} Formatted location string
+ * Format county name with state
  */
 function formatCountyName(countyName, state) {
     if (!countyName) return state || 'Unknown';
 
-    // Check if county name already contains state abbreviation
     const statePattern = new RegExp(',\\s*' + state + '$', 'i');
     if (state && statePattern.test(countyName)) {
-        return countyName;  // Already has state
+        return countyName;
     }
 
-    // Also check for common patterns like "County, ST"
     if (countyName.includes(', ') && countyName.match(/, [A-Z]{2}$/)) {
-        return countyName;  // Already has state abbreviation
+        return countyName;
     }
 
     return state ? countyName + ', ' + state : countyName;
@@ -500,8 +442,6 @@ function formatCountyName(countyName, state) {
 
 /**
  * Generate popup content for aggregated county data
- * @param {object} location - Aggregated location data
- * @returns {string} HTML popup content
  */
 function generateAggregatedPopup(location) {
     const name = formatCountyName(location.county_name || location.city, location.state);
@@ -517,7 +457,6 @@ function generateAggregatedPopup(location) {
     html += '<div>' + formatNumber(uniqueUsers) + ' unique researchers</div>';
     html += '</div>';
 
-    // App breakdown
     if (Object.keys(apps).length > 0) {
         html += '<div class="popup-breakdown">';
         html += '<div class="breakdown-header">Report Breakdown:</div>';
@@ -541,6 +480,53 @@ function generateAggregatedPopup(location) {
 
     html += '<div class="popup-note"><em>Researcher details coming soon</em></div>';
     html += '</div>';
+
+    return html;
+}
+
+/**
+ * Generate user profile popup HTML
+ */
+function generateUserProfilePopup(user) {
+    const name = user.display_name || user.name || user.email || 'Unknown User';
+    const email = user.email || '';
+    const organization = user.organization || user.company_name || '';
+    const userType = user.user_type || '';
+    const city = user.city || '';
+    const state = user.state || '';
+    const location = city && state ? city + ', ' + state : (city || state || '');
+    const eventCount = user.total_events || user.event_count || 0;
+    const lastActivity = user.last_activity ? formatDate(user.last_activity) : '';
+    const hubspotLinked = user.hubspot_contact_id ? true : false;
+
+    let html = '<div class="user-profile-popup">';
+    html += '<div class="popup-header">';
+    html += '<div class="popup-avatar"><i class="fas fa-user"></i></div>';
+    html += '<div class="popup-name">';
+    html += '<strong>' + escapeHtml(name) + '</strong>';
+    if (userType) {
+        html += '<span class="popup-badge">' + escapeHtml(userType) + '</span>';
+    }
+    html += '</div></div>';
+
+    html += '<div class="popup-details">';
+    if (email) html += '<div class="popup-row"><i class="fas fa-envelope"></i> ' + escapeHtml(email) + '</div>';
+    if (organization) html += '<div class="popup-row"><i class="fas fa-building"></i> ' + escapeHtml(organization) + '</div>';
+    if (location) html += '<div class="popup-row"><i class="fas fa-map-marker-alt"></i> ' + escapeHtml(location) + '</div>';
+    if (eventCount > 0) html += '<div class="popup-row"><i class="fas fa-chart-bar"></i> ' + formatNumber(eventCount) + ' events</div>';
+    if (lastActivity) html += '<div class="popup-row"><i class="fas fa-clock"></i> Last active: ' + lastActivity + '</div>';
+    html += '</div>';
+
+    html += '<div class="popup-hubspot">';
+    html += '<div class="popup-hubspot-header"><i class="fab fa-hubspot"></i> HubSpot Integration</div>';
+    if (hubspotLinked) {
+        html += '<div class="popup-hubspot-linked"><i class="fas fa-check-circle"></i> Linked';
+        if (user.hubspot_company_name) html += '<br><small>' + escapeHtml(user.hubspot_company_name) + '</small>';
+        html += '</div>';
+    } else {
+        html += '<div class="popup-hubspot-pending"><i class="fas fa-link"></i> Link coming soon<br><small style="color: #888;">Organization data will appear here</small></div>';
+    }
+    html += '</div></div>';
 
     return html;
 }

@@ -3,10 +3,13 @@
 {% block title %}Report Locations | Analytics | JustData{% endblock %}
 
 {% block extra_css %}
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
 <link rel="stylesheet" href="{{ url_for('analytics.static', filename='css/analytics.css') }}">
+<style>
+    .mapboxgl-popup-content { padding: 0; }
+    .mapbox-circle-marker { transition: transform 0.2s; }
+    .mapbox-circle-marker:hover { transform: scale(1.1); }
+</style>
 {% endblock %}
 
 {% block extra_head %}
@@ -112,14 +115,17 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-<!-- auth.js already loaded by base_app.html -->
-<script src="{{ url_for('analytics.static', filename='js/analytics-maps.js') }}"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+<!-- Mapbox configuration from server -->
 <script>
+    window.MAPBOX_CONFIG = {
+        token: '{{ mapbox_token }}',
+        style: '{{ mapbox_style }}'
+    };
     const MAP_TYPE = 'user_locations';
     const API_ENDPOINT = '/analytics/api/user-locations';
-    // USE_CLUSTERING is defined in analytics-maps.js
 </script>
+<!-- auth.js already loaded by base_app.html -->
+<script src="{{ url_for('analytics.static', filename='js/analytics-maps.js') }}"></script>
 <script src="{{ url_for('analytics.static', filename='js/analytics-user-map.js') }}"></script>
 {% endblock %}
