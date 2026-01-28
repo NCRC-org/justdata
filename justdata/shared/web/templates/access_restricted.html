@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JustData - NCRC Data Analysis Platform</title>
+    <meta name="description" content="JustData - NCRC Data Analysis Platform">
+    <meta name="theme-color" content="#1a8fc9">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.png') }}">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-justdata-blue: #1a8fc9;
+            --ncrc-dark-blue: #1a8fc9;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --ncrc-white: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ncrc-gray-light);
+            min-height: 100vh;
+            color: var(--ncrc-gray-dark);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: var(--ncrc-dark-blue);
+            text-align: left;
+            padding: 15px 20px;
+            color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header-layout {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .logo img {
+            max-height: 80px;
+            width: auto;
+        }
+
+        .header-title-section {
+            text-align: center;
+            flex: 1;
+        }
+
+        .header-title-section h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin: 0;
+        }
+
+        .just-data-subtitle {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.95);
+            margin: 5px 0 0 0;
+        }
+
+        /* Main Content - Centered Logo */
+        .main-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .logo-container {
+            text-align: center;
+        }
+
+        .logo-container img {
+            max-width: 400px;
+            width: 100%;
+            height: auto;
+            opacity: 0.9;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--ncrc-gray-dark);
+            color: white;
+            padding: 30px 20px 20px;
+            flex-shrink: 0;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+
+        .footer-col h4 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--ncrc-secondary-blue);
+        }
+
+        .footer-col p {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-col a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+        }
+
+        .footer-col a:hover {
+            color: var(--ncrc-secondary-blue);
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .footer-bottom em {
+            color: var(--ncrc-secondary-blue);
+            font-style: italic;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-title-section h1 {
+                font-size: 1.8rem;
+            }
+
+            .logo img {
+                max-height: 60px;
+            }
+
+            .logo-container img {
+                max-width: 280px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-layout">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='img/justdata-logo.png') }}" alt="JustData Logo" onerror="this.style.display='none';">
+                </div>
+                <div class="header-title-section">
+                    <h1>JustData</h1>
+                    <p class="just-data-subtitle">A Just Data Tool by NCRC</p>
+                </div>
+                <div style="width: 80px;"></div> <!-- Spacer for balance -->
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content - NCRC Logo -->
+    <main class="main-content">
+        <div class="logo-container">
+            <img src="{{ url_for('static', filename='img/ncrc-logo.png') }}" alt="NCRC - National Community Reinvestment Coalition" onerror="this.src='{{ url_for('static', filename='img/ncrc-invert-final@2x.png') }}';">
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-col">
+                <h4>JustData</h4>
+                <p>Comprehensive data analysis platform</p>
+                <p>National Community Reinvestment Coalition</p>
+            </div>
+            <div class="footer-col">
+                <h4>Data Sources</h4>
+                <p>FDIC Summary of Deposits</p>
+                <p>HMDA Mortgage Data</p>
+                <p>U.S. Census Bureau</p>
+            </div>
+            <div class="footer-col">
+                <h4>Powered By</h4>
+                <p>Google Cloud BigQuery</p>
+                <p>AI Analysis (Claude/GPT)</p>
+                <p>Flask Web Framework</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2025 JustData - National Community Reinvestment Coalition. All rights reserved.<br>
+            Data drives the <em>movement</em>
+        </div>
+    </footer>
+</body>
+</html>
