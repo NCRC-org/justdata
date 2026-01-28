@@ -201,37 +201,22 @@
         filter: brightness(1.1);
     }
     
-    .chart-bar .tooltip {
-        position: fixed;
-        background: #1f2937;
-        color: #fff;
-        padding: 10px 14px;
-        border-radius: 8px;
-        font-size: 0.8rem;
-        white-space: nowrap;
-        pointer-events: none;
-        z-index: 99999;
-        min-width: 140px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-        /* Initial state set via JS */
-        display: none;
-    }
-    
-    .tooltip-header {
+    /* Global tooltip styles */
+    .chart-tooltip .tooltip-header {
         font-weight: 600;
         margin-bottom: 4px;
         border-bottom: 1px solid rgba(255,255,255,0.2);
         padding-bottom: 4px;
     }
     
-    .tooltip-row {
+    .chart-tooltip .tooltip-row {
         display: flex;
         justify-content: space-between;
         gap: 12px;
         margin-top: 2px;
     }
     
-    .tooltip-row .app-dot {
+    .chart-tooltip .tooltip-row .app-dot {
         width: 8px;
         height: 8px;
         border-radius: 50%;
@@ -239,13 +224,14 @@
         margin-right: 4px;
     }
     
-    .tooltip-ai {
+    .chart-tooltip .tooltip-ai {
         margin-top: 6px;
         padding-top: 4px;
         border-top: 1px solid rgba(255,255,255,0.2);
         color: #c4b5fd;
         font-size: 0.7rem;
     }
+    
     
     /* Stacked bar segments */
     .bar-segment {
@@ -355,10 +341,6 @@
         .cost-stat-card.highlight {
             background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
             border-color: #059669;
-        }
-        
-        .chart-bar .tooltip {
-            background: #374151;
         }
     }
 </style>
@@ -679,59 +661,61 @@ function renderDailyChart(days) {
         }
         
         html += `
-            <div class="chart-bar" style="height: ${totalHeight}px; display: flex; flex-direction: column-reverse;">
+            <div class="chart-bar" data-tooltip="${encodeURIComponent(tooltipHtml)}" style="height: ${totalHeight}px; display: flex; flex-direction: column-reverse;">
                 ${segmentsHtml}
-                <div class="tooltip">${tooltipHtml}</div>
             </div>
         `;
     });
     
     container.innerHTML = html;
     
+    // Create or get global tooltip element (outside chart structure)
+    let globalTooltip = document.getElementById('chart-global-tooltip');
+    if (!globalTooltip) {
+        globalTooltip = document.createElement('div');
+        globalTooltip.id = 'chart-global-tooltip';
+        globalTooltip.className = 'chart-tooltip';
+        globalTooltip.style.cssText = 'position:fixed;background:#1f2937;color:#fff;padding:10px 14px;border-radius:8px;font-size:0.8rem;pointer-events:none;z-index:99999;min-width:140px;box-shadow:0 4px 16px rgba(0,0,0,0.4);display:none;';
+        document.body.appendChild(globalTooltip);
+    }
+    
     // #region agent log
     const barsCreated = container.querySelectorAll('.chart-bar').length;
-    const tooltipsCreated = container.querySelectorAll('.tooltip').length;
-    console.log('[DEBUG H2] Chart rendered', {barsCreated,tooltipsCreated});
+    console.log('[DEBUG] Chart rendered', {barsCreated, globalTooltipExists: !!globalTooltip});
     // #endregion
     
-    // Add tooltip positioning event listeners
+    // Add tooltip event listeners to bars
     container.querySelectorAll('.chart-bar').forEach(bar => {
-        const tooltip = bar.querySelector('.tooltip');
-        // #region agent log
-        console.log('[DEBUG H3] Attaching mouseenter', {hasTooltip:!!tooltip});
-        // #endregion
-        
         bar.addEventListener('mouseenter', function(e) {
             const rect = bar.getBoundingClientRect();
-            // Position and show tooltip using inline styles (bypasses CSS issues)
-            tooltip.style.left = (rect.left + rect.width / 2) + 'px';
-            tooltip.style.top = (rect.top - 10) + 'px';
-            tooltip.style.transform = 'translate(-50%, -100%)';
-            tooltip.style.display = 'block';
+            const tooltipContent = decodeURIComponent(bar.dataset.tooltip);
+            
+            globalTooltip.innerHTML = tooltipContent;
+            globalTooltip.style.left = (rect.left + rect.width / 2) + 'px';
+            globalTooltip.style.top = (rect.top - 10) + 'px';
+            globalTooltip.style.transform = 'translate(-50%, -100%)';
+            globalTooltip.style.display = 'block';
             
             // #region agent log
-            console.log('[DEBUG] Mouseenter - tooltip shown', {display: tooltip.style.display, left: tooltip.style.left, top: tooltip.style.top});
+            console.log('[DEBUG] Tooltip shown', {left: globalTooltip.style.left, top: globalTooltip.style.top});
             // #endregion
             
             // Prevent overflow on edges
             requestAnimationFrame(() => {
-                const tooltipRect = tooltip.getBoundingClientRect();
+                const tooltipRect = globalTooltip.getBoundingClientRect();
                 if (tooltipRect.left < 10) {
-                    tooltip.style.left = '10px';
-                    tooltip.style.transform = 'translate(0, -100%)';
+                    globalTooltip.style.left = '10px';
+                    globalTooltip.style.transform = 'translate(0, -100%)';
                 }
                 if (tooltipRect.right > window.innerWidth - 10) {
-                    tooltip.style.left = (window.innerWidth - 10) + 'px';
-                    tooltip.style.transform = 'translate(-100%, -100%)';
+                    globalTooltip.style.left = (window.innerWidth - 10) + 'px';
+                    globalTooltip.style.transform = 'translate(-100%, -100%)';
                 }
             });
         });
         
         bar.addEventListener('mouseleave', function(e) {
-            tooltip.style.display = 'none';
-            // #region agent log
-            console.log('[DEBUG] Mouseleave - tooltip hidden');
-            // #endregion
+            globalTooltip.style.display = 'none';
         });
     });
     
