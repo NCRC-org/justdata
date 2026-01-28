@@ -612,7 +612,7 @@ const APP_ORDER = ['LendSight', 'BizSight', 'BranchSight', 'DataExplorer', 'Merg
 
 function renderDailyChart(days) {
     // #region agent log
-    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'costs.html:renderDailyChart',message:'renderDailyChart called',data:{daysCount:days?days.length:0,hasData:!!(days&&days.length>0)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H1'})}).catch(()=>{});
+    console.log('[DEBUG H1] renderDailyChart called', {daysCount:days?days.length:0,hasData:!!(days&&days.length>0)});
     // #endregion
     const container = document.getElementById('daily-chart');
     const labels = document.getElementById('chart-labels');
@@ -697,20 +697,20 @@ function renderDailyChart(days) {
     // #region agent log
     const barsCreated = container.querySelectorAll('.chart-bar').length;
     const tooltipsCreated = container.querySelectorAll('.tooltip').length;
-    fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'costs.html:afterRender',message:'Chart rendered',data:{barsCreated,tooltipsCreated,containerHTML:container.innerHTML.substring(0,500)},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H2'})}).catch(()=>{});
+    console.log('[DEBUG H2] Chart rendered', {barsCreated,tooltipsCreated});
     // #endregion
     
     // Add tooltip positioning event listeners
     container.querySelectorAll('.chart-bar').forEach(bar => {
         const tooltip = bar.querySelector('.tooltip');
         // #region agent log
-        fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'costs.html:eventAttach',message:'Attaching mouseenter',data:{hasTooltip:!!tooltip},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3'})}).catch(()=>{});
+        console.log('[DEBUG H3] Attaching mouseenter', {hasTooltip:!!tooltip});
         // #endregion
         
         bar.addEventListener('mouseenter', function(e) {
             // #region agent log
             const computedStyle = tooltip ? window.getComputedStyle(tooltip) : null;
-            fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'costs.html:mouseenter',message:'Mouseenter fired',data:{tooltipExists:!!tooltip,opacity:computedStyle?.opacity,visibility:computedStyle?.visibility,display:computedStyle?.display,zIndex:computedStyle?.zIndex},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H3-H4'})}).catch(()=>{});
+            console.log('[DEBUG H3-H4] Mouseenter fired', {tooltipExists:!!tooltip,opacity:computedStyle?.opacity,visibility:computedStyle?.visibility,display:computedStyle?.display,zIndex:computedStyle?.zIndex,position:computedStyle?.position});
             // #endregion
             const rect = bar.getBoundingClientRect();
             // Position tooltip above the bar, centered
@@ -723,7 +723,7 @@ function renderDailyChart(days) {
                 const tooltipRect = tooltip.getBoundingClientRect();
                 // #region agent log
                 const afterStyle = window.getComputedStyle(tooltip);
-                fetch('http://127.0.0.1:7243/ingest/49846568-3a47-434f-af1f-d48b592f8068',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'costs.html:afterPosition',message:'After positioning',data:{left:tooltip.style.left,top:tooltip.style.top,tooltipRect:{left:tooltipRect.left,top:tooltipRect.top,width:tooltipRect.width,height:tooltipRect.height},computedOpacity:afterStyle.opacity,computedVisibility:afterStyle.visibility,computedPosition:afterStyle.position},timestamp:Date.now(),sessionId:'debug-session',hypothesisId:'H4'})}).catch(()=>{});
+                console.log('[DEBUG H4] After positioning', {left:tooltip.style.left,top:tooltip.style.top,tooltipRect:{left:tooltipRect.left,top:tooltipRect.top,width:tooltipRect.width,height:tooltipRect.height},computedOpacity:afterStyle.opacity,computedVisibility:afterStyle.visibility});
                 // #endregion
                 // Check left edge
                 if (tooltipRect.left < 10) {
