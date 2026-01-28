@@ -321,9 +321,14 @@
     <!-- Summary Stats -->
     <div class="costs-summary" id="costs-summary">
         <div class="cost-stat-card highlight">
-            <h3>Total Cost</h3>
+            <h3>BigQuery Cost</h3>
             <div class="value" id="total-cost">$--</div>
             <div class="subtext" id="cost-period">Last 30 days</div>
+        </div>
+        <div class="cost-stat-card highlight" style="background: linear-gradient(135deg, #8b5cf6, #6d28d9);">
+            <h3>AI Cost</h3>
+            <div class="value" id="ai-total-cost">$--</div>
+            <div class="subtext" id="ai-requests">-- requests</div>
         </div>
         <div class="cost-stat-card">
             <h3>Total Queries</h3>
@@ -334,11 +339,6 @@
             <h3>Data Processed</h3>
             <div class="value" id="total-bytes">-- GB</div>
             <div class="subtext">Billable bytes</div>
-        </div>
-        <div class="cost-stat-card">
-            <h3>Avg Cost/Query</h3>
-            <div class="value" id="avg-cost">$--</div>
-            <div class="subtext">Per query average</div>
         </div>
     </div>
     
@@ -401,7 +401,8 @@ async function loadCostData() {
     document.getElementById('total-cost').textContent = '$--';
     document.getElementById('total-queries').textContent = '--';
     document.getElementById('total-bytes').textContent = '-- GB';
-    document.getElementById('avg-cost').textContent = '$--';
+    document.getElementById('ai-total-cost').textContent = '$--';
+    document.getElementById('ai-requests').textContent = '-- requests';
     document.getElementById('cost-period').textContent = `Last ${days} days`;
     document.getElementById('app-breakdown-body').innerHTML = `
         <tr><td colspan="4" class="no-data"><span class="loading-spinner"></span> Loading...</td></tr>
@@ -410,20 +411,24 @@ async function loadCostData() {
         <div class="no-data"><span class="loading-spinner"></span> Loading...</div>
     `;
     
+    // Fetch both BigQuery and AI costs in parallel
     try {
-        const response = await fetch(`/analytics/api/costs?days=${days}`);
-        const result = await response.json();
+        const [bqResponse, aiResponse] = await Promise.all([
+            fetch(`/analytics/api/costs?days=${days}`),
+            fetch(`/analytics/api/ai-costs?days=${days}`)
+        ]);
         
-        if (result.success && result.data) {
-            const data = result.data;
+        const bqResult = await bqResponse.json();
+        const aiResult = await aiResponse.json();
+        
+        // Update BigQuery costs
+        if (bqResult.success && bqResult.data) {
+            const data = bqResult.data;
             
             // Update summary cards
             document.getElementById('total-cost').textContent = formatCurrency(data.estimated_cost_usd || 0);
             document.getElementById('total-queries').textContent = formatNumber(data.query_count || 0);
             document.getElementById('total-bytes').textContent = formatBytes(data.total_bytes_processed || 0);
-            
-            const avgCost = data.query_count > 0 ? data.estimated_cost_usd / data.query_count : 0;
-            document.getElementById('avg-cost').textContent = formatCurrency(avgCost);
             
             // Render app breakdown (API returns dict, convert to array)
             const appArray = Object.entries(data.cost_by_app || {}).map(([name, stats]) => ({
@@ -441,8 +446,20 @@ async function loadCostData() {
             })).reverse(); // Reverse to show oldest first
             renderDailyChart(dailyData);
         } else {
-            showError('Failed to load cost data');
+            showError('Failed to load BigQuery cost data');
         }
+        
+        // Update AI costs
+        if (aiResult.success && aiResult.data) {
+            const aiData = aiResult.data;
+            document.getElementById('ai-total-cost').textContent = formatCurrency(aiData.total_cost_usd || 0);
+            document.getElementById('ai-requests').textContent = formatNumber(aiData.total_requests || 0) + ' requests';
+        } else {
+            // AI costs might not be available yet
+            document.getElementById('ai-total-cost').textContent = '$0.00';
+            document.getElementById('ai-requests').textContent = 'No data yet';
+        }
+        
     } catch (error) {
         console.error('Error loading cost data:', error);
         showError('Failed to load cost data: ' + error.message);

@@ -399,11 +399,40 @@ function showLocationDetail(location) {
  */
 function loadLocationResearchers(location) {
     const days = parseInt($('#time-period').val()) || 90;
-    const countyFips = location.county_fips;
+    let countyFips = location.county_fips;
+
+    // Try to look up county_fips if missing but we have county name
+    if (!countyFips && location.county_name && location.state) {
+        // Try to look up FIPS from name via API
+        $.ajax({
+            url: '/analytics/api/lookup-county-fips',
+            data: {
+                county_name: location.county_name,
+                state: location.state
+            },
+            async: false, // Block to get FIPS before continuing
+            success: function(response) {
+                if (response.success && response.county_fips) {
+                    countyFips = response.county_fips;
+                    console.log('[Analytics] Looked up county FIPS:', countyFips);
+                }
+            },
+            error: function() {
+                console.log('[Analytics] Could not look up county FIPS');
+            }
+        });
+    }
 
     // Check if we have a valid county FIPS before making API call
     if (!countyFips) {
-        $('#location-users-list').html('<div class="no-data-item">County FIPS not available for this location</div>');
+        const name = formatCountyName(location.county_name || location.city, location.state);
+        $('#location-users-list').html(
+            '<div class="no-data-item">' +
+            '<strong>Researcher details unavailable</strong><br>' +
+            '<small style="color:#888">This location\'s reports were logged without county identification.<br>' +
+            'Report statistics (' + formatNumber(location.total_events || 0) + ' reports) are still tracked.</small>' +
+            '</div>'
+        );
         return;
     }
 

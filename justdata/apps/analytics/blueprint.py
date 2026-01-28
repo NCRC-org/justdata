@@ -389,6 +389,79 @@ def api_costs():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@analytics_bp.route('/api/ai-costs')
+@login_required
+@staff_required
+def api_ai_costs():
+    """
+    Get AI API cost summary (Claude/OpenAI usage).
+    
+    Query params:
+        days: Number of days to look back (default 30)
+    
+    Returns:
+        JSON with AI cost breakdown by app, model, and totals.
+    """
+    try:
+        from justdata.shared.analysis.ai_provider import get_ai_usage_summary
+        days = request.args.get('days', 30, type=int)
+        data = get_ai_usage_summary(days=days)
+        return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@analytics_bp.route('/api/lookup-county-fips')
+@login_required
+@staff_required
+def api_lookup_county_fips():
+    """
+    Look up county FIPS code from county name and state.
+    
+    Query params:
+        county_name: County name (e.g., "O'Brien County")
+        state: State name (e.g., "Iowa")
+    
+    Returns:
+        JSON with county_fips if found.
+    """
+    try:
+        from .bigquery_client import get_county_centroids
+        
+        county_name = request.args.get('county_name', '').strip()
+        state = request.args.get('state', '').strip()
+        
+        if not county_name or not state:
+            return jsonify({'success': False, 'error': 'county_name and state required'}), 400
+        
+        # Get centroids which include name -> FIPS mapping
+        centroids = get_county_centroids()
+        by_name = centroids.get('by_name', {})
+        
+        # Try exact match first
+        lookup_key = f"{county_name}, {state}".lower()
+        if lookup_key in by_name:
+            return jsonify({'success': True, 'county_fips': by_name[lookup_key]})
+        
+        # Try without "County" suffix
+        county_name_clean = county_name.replace(' County', '').replace(' county', '')
+        lookup_key = f"{county_name_clean}, {state}".lower()
+        if lookup_key in by_name:
+            return jsonify({'success': True, 'county_fips': by_name[lookup_key]})
+        
+        # Try partial match
+        for key, fips in by_name.items():
+            if county_name_clean.lower() in key and state.lower() in key:
+                return jsonify({'success': True, 'county_fips': fips})
+        
+        return jsonify({'success': False, 'error': 'County not found'})
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 @analytics_bp.route('/api/export')
 @login_required
 @staff_required

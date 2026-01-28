@@ -8,7 +8,186 @@ import sys
 import os
 import json
 import numpy as np
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
+from datetime import datetime
+
+# =============================================================================
+# AI USAGE TRACKING
+# =============================================================================
+# Pricing per 1M tokens (as of Jan 2026)
+AI_PRICING = {
+    'claude-sonnet-4-20250514': {'input': 3.00, 'output': 15.00},
+    'claude-3-5-sonnet-20241022': {'input': 3.00, 'output': 15.00},
+    'claude-3-opus-20240229': {'input': 15.00, 'output': 75.00},
+    'claude-3-haiku-20240307': {'input': 0.25, 'output': 1.25},
+    'gpt-4': {'input': 30.00, 'output': 60.00},
+    'gpt-4-turbo': {'input': 10.00, 'output': 30.00},
+    'gpt-4o': {'input': 2.50, 'output': 10.00},
+    'gpt-4o-mini': {'input': 0.15, 'output': 0.60},
+}
+
+# In-memory usage accumulator (flushed to BigQuery periodically)
+_ai_usage_buffer = []
+_last_flush_time = None
+
+
+def log_ai_usage(
+    provider: str,
+    model: str,
+    input_tokens: int,
+    output_tokens: int,
+    app_name: str = None,
+    report_type: str = None
+) -> dict:
+    """
+    Log AI API usage for cost tracking.
+    
+    Args:
+        provider: 'claude' or 'openai'
+        model: Model name used
+        input_tokens: Number of input/prompt tokens
+        output_tokens: Number of output/completion tokens
+        app_name: Application that made the call (e.g., 'lendsight', 'bizsight')
+        report_type: Type of report being generated
+    
+    Returns:
+        dict with usage details and estimated cost
+    """
+    # Calculate cost
+    pricing = AI_PRICING.get(model, {'input': 10.0, 'output': 30.0})  # Default to GPT-4 pricing
+    input_cost = (input_tokens / 1_000_000) * pricing['input']
+    output_cost = (output_tokens / 1_000_000) * pricing['output']
+    total_cost = input_cost + output_cost
+    
+    usage_record = {
+        'timestamp': datetime.utcnow().isoformat(),
+        'provider': provider,
+        'model': model,
+        'input_tokens': input_tokens,
+        'output_tokens': output_tokens,
+        'total_tokens': input_tokens + output_tokens,
+        'input_cost_usd': round(input_cost, 6),
+        'output_cost_usd': round(output_cost, 6),
+        'total_cost_usd': round(total_cost, 6),
+        'app_name': app_name or 'unknown',
+        'report_type': report_type or 'unknown'
+    }
+    
+    # Add to buffer
+    _ai_usage_buffer.append(usage_record)
+    
+    # Log to console for debugging
+    print(f"[AI Usage] {provider}/{model}: {input_tokens}+{output_tokens} tokens = ${total_cost:.4f}")
+    
+    # Try to flush to BigQuery if buffer is large enough
+    if len(_ai_usage_buffer) >= 10:
+        _flush_ai_usage_to_bigquery()
+    
+    return usage_record
+
+
+def _flush_ai_usage_to_bigquery():
+    """Flush accumulated AI usage to BigQuery."""
+    global _ai_usage_buffer, _last_flush_time
+    
+    if not _ai_usage_buffer:
+        return
+    
+    try:
+        from google.cloud import bigquery
+        from google.oauth2 import service_account
+        
+        # Get credentials
+        creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+        if creds_json:
+            creds_dict = json.loads(creds_json)
+            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+            client = bigquery.Client(project='justdata-ncrc', credentials=credentials)
+        else:
+            client = bigquery.Client(project='justdata-ncrc')
+        
+        # Create table if it doesn't exist
+        table_id = 'justdata-ncrc.firebase_analytics.ai_usage'
+        
+        # Insert rows
+        rows_to_insert = _ai_usage_buffer.copy()
+        errors = client.insert_rows_json(table_id, rows_to_insert)
+        
+        if errors:
+            print(f"[AI Usage] BigQuery insert errors: {errors}")
+        else:
+            print(f"[AI Usage] Flushed {len(rows_to_insert)} records to BigQuery")
+            _ai_usage_buffer = []
+            _last_flush_time = datetime.utcnow()
+            
+    except Exception as e:
+        # Don't fail the main operation if logging fails
+        print(f"[AI Usage] Failed to flush to BigQuery: {e}")
+
+
+def get_ai_usage_summary(days: int = 30) -> dict:
+    """Get AI usage summary from BigQuery."""
+    try:
+        from google.cloud import bigquery
+        from google.oauth2 import service_account
+        
+        creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+        if creds_json:
+            creds_dict = json.loads(creds_json)
+            credentials = service_account.Credentials.from_service_account_info(creds_dict)
+            client = bigquery.Client(project='justdata-ncrc', credentials=credentials)
+        else:
+            client = bigquery.Client(project='justdata-ncrc')
+        
+        query = f"""
+        SELECT
+            provider,
+            model,
+            app_name,
+            COUNT(*) as request_count,
+            SUM(input_tokens) as total_input_tokens,
+            SUM(output_tokens) as total_output_tokens,
+            SUM(total_cost_usd) as total_cost_usd
+        FROM `justdata-ncrc.firebase_analytics.ai_usage`
+        WHERE TIMESTAMP(timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        GROUP BY provider, model, app_name
+        ORDER BY total_cost_usd DESC
+        """
+        
+        results = list(client.query(query).result())
+        
+        total_cost = sum(r.total_cost_usd or 0 for r in results)
+        total_requests = sum(r.request_count or 0 for r in results)
+        total_tokens = sum((r.total_input_tokens or 0) + (r.total_output_tokens or 0) for r in results)
+        
+        by_app = {}
+        for r in results:
+            app = r.app_name or 'unknown'
+            if app not in by_app:
+                by_app[app] = {'requests': 0, 'tokens': 0, 'cost_usd': 0}
+            by_app[app]['requests'] += r.request_count or 0
+            by_app[app]['tokens'] += (r.total_input_tokens or 0) + (r.total_output_tokens or 0)
+            by_app[app]['cost_usd'] += r.total_cost_usd or 0
+        
+        return {
+            'period_days': days,
+            'total_requests': total_requests,
+            'total_tokens': total_tokens,
+            'total_cost_usd': round(total_cost, 2),
+            'by_app': by_app,
+            'by_model': [dict(r) for r in results]
+        }
+    except Exception as e:
+        print(f"[AI Usage] Error getting summary: {e}")
+        return {
+            'period_days': days,
+            'total_requests': 0,
+            'total_tokens': 0,
+            'total_cost_usd': 0,
+            'by_app': {},
+            'by_model': [],
+            'error': str(e)
+        }
 
 def convert_numpy_types(obj):
     """Convert numpy types to native Python types for JSON serialization."""
@@ -57,8 +236,28 @@ def convert_numpy_types(obj):
             pass
         return obj
 
-def ask_ai(prompt: str, ai_provider: str = "claude", model: str = None, api_key: str = None) -> str:
-    """Send a prompt to the configured AI provider and return the response."""
+def ask_ai(
+    prompt: str, 
+    ai_provider: str = "claude", 
+    model: str = None, 
+    api_key: str = None,
+    app_name: str = None,
+    report_type: str = None
+) -> str:
+    """
+    Send a prompt to the configured AI provider and return the response.
+    
+    Args:
+        prompt: The prompt to send
+        ai_provider: 'claude' or 'openai'
+        model: Specific model to use (optional)
+        api_key: API key (optional, defaults to env var)
+        app_name: Application name for usage tracking
+        report_type: Report type for usage tracking
+    
+    Returns:
+        The AI response text
+    """
     if not api_key:
         # Check both CLAUDE_API_KEY and ANTHROPIC_API_KEY for compatibility
         if ai_provider == "claude":
@@ -83,7 +282,20 @@ def ask_ai(prompt: str, ai_provider: str = "claude", model: str = None, api_key:
                 model=model,
                 messages=[{"role": "user", "content": prompt}]
             )
+            
+            # Log usage
+            if hasattr(response, 'usage') and response.usage:
+                log_ai_usage(
+                    provider='openai',
+                    model=model,
+                    input_tokens=response.usage.prompt_tokens or 0,
+                    output_tokens=response.usage.completion_tokens or 0,
+                    app_name=app_name,
+                    report_type=report_type
+                )
+            
             return response.choices[0].message.content
+            
         elif ai_provider == "claude":
             try:
                 import anthropic
@@ -97,6 +309,18 @@ def ask_ai(prompt: str, ai_provider: str = "claude", model: str = None, api_key:
                 max_tokens=4000,
                 messages=[{"role": "user", "content": prompt}]
             )
+            
+            # Log usage
+            if hasattr(response, 'usage') and response.usage:
+                log_ai_usage(
+                    provider='claude',
+                    model=model,
+                    input_tokens=response.usage.input_tokens or 0,
+                    output_tokens=response.usage.output_tokens or 0,
+                    app_name=app_name,
+                    report_type=report_type
+                )
+            
             return response.content[0].text
         else:
             raise Exception(f"Unsupported AI provider: {ai_provider}")
@@ -127,8 +351,9 @@ class AIAnalyzer:
         if not self.model:
             self.model = "claude-sonnet-4-20250514" if ai_provider == "claude" else "gpt-4"
         
-    def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3) -> str:
-        """Make a call to the configured AI provider."""
+    def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3, 
+                  app_name: str = None, report_type: str = None) -> str:
+        """Make a call to the configured AI provider with usage tracking."""
         try:
             if self.provider == "openai":
                 from openai import OpenAI
@@ -139,7 +364,20 @@ class AIAnalyzer:
                     max_tokens=max_tokens,
                     temperature=temperature
                 )
+                
+                # Log usage
+                if hasattr(response, 'usage') and response.usage:
+                    log_ai_usage(
+                        provider='openai',
+                        model=self.model,
+                        input_tokens=response.usage.prompt_tokens or 0,
+                        output_tokens=response.usage.completion_tokens or 0,
+                        app_name=app_name or getattr(self, 'app_name', None),
+                        report_type=report_type
+                    )
+                
                 return response.choices[0].message.content.strip()
+                
             elif self.provider == "claude":
                 try:
                     import anthropic
@@ -152,6 +390,18 @@ class AIAnalyzer:
                     temperature=temperature,
                     messages=[{"role": "user", "content": prompt}]
                 )
+                
+                # Log usage
+                if hasattr(response, 'usage') and response.usage:
+                    log_ai_usage(
+                        provider='claude',
+                        model=self.model,
+                        input_tokens=response.usage.input_tokens or 0,
+                        output_tokens=response.usage.output_tokens or 0,
+                        app_name=app_name or getattr(self, 'app_name', None),
+                        report_type=report_type
+                    )
+                
                 return response.content[0].text.strip()
         except Exception as e:
             error_msg = f"Error calling {self.provider} API: {e}"
