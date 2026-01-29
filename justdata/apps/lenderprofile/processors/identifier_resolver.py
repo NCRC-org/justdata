@@ -59,45 +59,75 @@ class IdentifierResolver:
                     return True
             return False
         
-        # Search BigQuery Lenders18 first (has city/state)
-        # NOTE: We do NOT make external API calls here to keep search fast
-        # FDIC cert and other enrichment happens after user selects a candidate
+        # Search using GLEIF-verified lender names table (same approach as MergerMeter)
+        # This uses pre-verified GLEIF data for fast, reliable results
         try:
-            from justdata.apps.dataexplorer.data_utils import search_lenders18
-            logger.info(f"Searching BigQuery Lenders18 for candidates: '{name}'")
-            bq_results = search_lenders18(name, limit=limit, include_verification=False)
+            from justdata.shared.utils.bigquery_client import get_bigquery_client
+            from google.cloud import bigquery
 
-            if bq_results:
-                for lender in bq_results:
-                    lei = lender.get('lei') or lender.get('lender_id')
-                    rssd_id = lender.get('rssd_id') or lender.get('rssd')
+            PROJECT_ID = 'hdma1-242116'
+            client = get_bigquery_client(PROJECT_ID)
 
-                    # Skip excluded lenders
-                    if is_excluded(lei=lei, rssd_id=rssd_id):
-                        continue
+            # Query pattern matching MergerMeter - uses lender_names_gleif for GLEIF-verified data
+            # Joins with lenders18 for RSSD and sb.lenders for small business IDs
+            sql = """
+            SELECT DISTINCT
+                g.display_name AS name,
+                g.headquarters_city AS city,
+                g.headquarters_state AS state,
+                l.lei AS lei,
+                CAST(l.respondent_rssd AS STRING) AS rssd_id,
+                sb.sb_resid AS sb_res_id,
+                SAFE_CAST(l.assets AS INT64) AS assets,
+                l.type_name AS type
+            FROM `hdma1-242116.hmda.lender_names_gleif` g
+            JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
+            LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
+            WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
+            ORDER BY assets DESC NULLS LAST
+            LIMIT @limit
+            """
 
-                    # Use data directly from BigQuery - no external API calls during search
-                    city = lender.get('city', lender.get('respondent_city', ''))
-                    state = lender.get('state', lender.get('respondent_state', ''))
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter('search_pattern', 'STRING', f'%{name}%'),
+                    bigquery.ScalarQueryParameter('limit', 'INT64', limit)
+                ]
+            )
 
-                    candidate = {
-                        'name': lender.get('name', lender.get('lender_name', '')),
-                        'lei': lei,
-                        'rssd_id': rssd_id,
-                        'fdic_cert': None,  # Will be resolved when candidate is selected
-                        'city': city,
-                        'state': state,
-                        'type': lender.get('type', lender.get('type_name', '')),
-                        'confidence': 0.9  # High confidence from BigQuery
-                    }
+            logger.info(f"Searching GLEIF-verified lenders for: '{name}'")
+            query_job = client.query(sql, job_config=job_config)
+            results = query_job.result()
 
-                    # Avoid duplicates
-                    if not any(c.get('lei') == lei and c.get('rssd_id') == rssd_id for c in candidates):
-                        candidates.append(candidate)
+            for row in results:
+                lei = row.lei
+                rssd_id = row.rssd_id
 
-                logger.info(f"Found {len(candidates)} candidates from BigQuery in fast search")
+                # Skip excluded lenders
+                if is_excluded(lei=lei, rssd_id=rssd_id):
+                    continue
+
+                candidate = {
+                    'name': row.name or '',
+                    'lei': lei,
+                    'rssd_id': rssd_id,
+                    'sb_res_id': row.sb_res_id,  # Small business respondent ID
+                    'fdic_cert': None,  # Will be resolved when candidate is selected
+                    'city': row.city or '',
+                    'state': row.state or '',
+                    'type': row.type or '',
+                    'assets': row.assets,
+                    'confidence': 0.95,  # High confidence from GLEIF-verified data
+                    'gleif_verified': True  # Flag indicating GLEIF verification
+                }
+
+                # Avoid duplicates
+                if not any(c.get('lei') == lei and c.get('rssd_id') == rssd_id for c in candidates):
+                    candidates.append(candidate)
+
+            logger.info(f"Found {len(candidates)} GLEIF-verified candidates for '{name}'")
         except Exception as e:
-            logger.warning(f"BigQuery search failed: {e}")
+            logger.warning(f"GLEIF-verified search failed: {e}", exc_info=True)
         
         # If we don't have enough candidates AND BigQuery failed, try FDIC search
         # Skip FDIC search if we already have good results from BigQuery to keep search fast
@@ -264,12 +294,40 @@ class IdentifierResolver:
             else:
                 logger.warning(f"GLEIF match below threshold. Best: {best_match.get('legal_name', 'N/A') if best_match else 'None'} (score: {best_score:.2f})")
         
-        # Fallback to BigQuery Lenders18 table (like DataExplorer)
+        # Fallback to GLEIF-verified BigQuery table (same approach as MergerMeter)
         try:
-            from justdata.apps.dataexplorer.data_utils import search_lenders18
-            logger.info(f"Searching BigQuery Lenders18 for: '{name}'")
-            bq_results = search_lenders18(name, limit=5, include_verification=False)
-            logger.info(f"BigQuery search returned {len(bq_results) if bq_results else 0} results")
+            from justdata.shared.utils.bigquery_client import get_bigquery_client
+            from google.cloud import bigquery as bq_module
+
+            PROJECT_ID = 'hdma1-242116'
+            client = get_bigquery_client(PROJECT_ID)
+
+            # Use GLEIF-verified lender names table for reliable LEI data
+            sql = """
+            SELECT DISTINCT
+                g.display_name AS name,
+                g.headquarters_city AS city,
+                g.headquarters_state AS state,
+                l.lei AS lei,
+                CAST(l.respondent_rssd AS STRING) AS rssd_id,
+                l.type_name AS type_name
+            FROM `hdma1-242116.hmda.lender_names_gleif` g
+            JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
+            WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
+            ORDER BY l.assets DESC NULLS LAST
+            LIMIT 5
+            """
+
+            job_config = bq_module.QueryJobConfig(
+                query_parameters=[
+                    bq_module.ScalarQueryParameter('search_pattern', 'STRING', f'%{name}%')
+                ]
+            )
+
+            logger.info(f"Searching GLEIF-verified table for: '{name}'")
+            query_job = client.query(sql, job_config=job_config)
+            bq_results = [dict(row) for row in query_job.result()]
+            logger.info(f"GLEIF-verified search returned {len(bq_results)} results")
             
             if bq_results:
                 # Find first match that's not excluded
@@ -282,12 +340,13 @@ class IdentifierResolver:
                         break
                 
                 if best_match:
-                    # Extract identifiers
+                    # Extract identifiers from GLEIF-verified data
                     result['lei'] = best_match.get('lei')
                     result['rssd_id'] = best_match.get('rssd_id') or best_match.get('rssd')
                     result['name'] = best_match.get('name', name)
-                    result['type'] = best_match.get('type_name') or best_match.get('type')  # Lender type from BigQuery
-                    result['confidence'] = 0.9  # High confidence for BigQuery matches
+                    result['type'] = best_match.get('type_name') or best_match.get('type')
+                    result['confidence'] = 0.95  # High confidence from GLEIF-verified data
+                    result['gleif_verified'] = True
                     
                     # Try to get tax_id from GLEIF using the LEI
                     if result['lei']:
