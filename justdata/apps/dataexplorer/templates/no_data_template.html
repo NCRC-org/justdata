@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No Data Found - DataExplorer</title>
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --ncrc-dark-blue: #1e3a5f;
+            --ncrc-primary-blue: #0066cc;
+            --ncrc-light-blue: #e8f4fd;
+            --ncrc-info-blue: #17a2b8;
+            --ncrc-gray-light: #f5f7fa;
+            --ncrc-gray: #6c757d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .info-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 50px 40px;
+            max-width: 650px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .logo-container {
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            max-height: 100px;
+            width: auto;
+            margin: 0 auto;
+            display: block;
+        }
+
+        .info-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--ncrc-light-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px auto;
+        }
+
+        .info-icon i {
+            font-size: 36px;
+            color: var(--ncrc-info-blue);
+        }
+
+        h1 {
+            color: var(--ncrc-dark-blue);
+            font-size: 26px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .info-message {
+            color: #495057;
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 28px;
+            padding: 24px;
+            background: var(--ncrc-gray-light);
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            border-left: 4px solid var(--ncrc-info-blue);
+            text-align: left;
+        }
+
+        .lender-name {
+            font-weight: 600;
+            color: var(--ncrc-dark-blue);
+        }
+
+        .suggestions {
+            text-align: left;
+            margin-bottom: 32px;
+            padding: 0 20px;
+        }
+
+        .suggestions h3 {
+            color: var(--ncrc-dark-blue);
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .suggestions ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .suggestions li {
+            color: #495057;
+            font-size: 15px;
+            padding: 8px 0;
+            padding-left: 28px;
+            position: relative;
+        }
+
+        .suggestions li::before {
+            content: "\f0a4";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--ncrc-primary-blue);
+        }
+
+        .support-text {
+            color: var(--ncrc-gray);
+            font-size: 14px;
+            margin-bottom: 28px;
+        }
+
+        .support-text a {
+            color: var(--ncrc-primary-blue);
+            text-decoration: none;
+        }
+
+        .support-text a:hover {
+            text-decoration: underline;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-primary {
+            background: var(--ncrc-dark-blue);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2a4f7d;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 58, 95, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--ncrc-dark-blue);
+            border: 2px solid var(--ncrc-dark-blue);
+        }
+
+        .btn-secondary:hover {
+            background: var(--ncrc-dark-blue);
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            .info-container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 22px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="info-container">
+        <div class="logo-container">
+            <img src="{{ url_for('.static', filename='img/ncrc-logo.png') }}"
+                 alt="NCRC Logo"
+                 class="logo"
+                 onerror="this.style.display='none';">
+        </div>
+
+        <div class="info-icon">
+            <i class="fas fa-info-circle"></i>
+        </div>
+
+        <h1>No Lending Activity Found</h1>
+
+        <div class="info-message">
+            <span class="lender-name">{{ lender_name }}</span> did not originate any loans in your selected geography{% if county_count and county_count != '0' %} ({{ county_count }} counties){% endif %}{% if year_range %} during {{ year_range }}{% endif %}.
+        </div>
+
+        <div class="suggestions">
+            <h3>Suggestions:</h3>
+            <ul>
+                <li>Expand your geography to include additional markets</li>
+                <li>Select a different year or date range</li>
+                <li>Verify the lender selection is correct</li>
+            </ul>
+        </div>
+
+        <p class="support-text">
+            If you believe this is an error or have questions, please contact support using the Slack link on the <a href="/dataexplorer">home page</a>.
+        </p>
+
+        <div class="button-group">
+            <a href="javascript:history.back()" class="btn btn-primary">
+                <i class="fas fa-search"></i> Modify Search
+            </a>
+            <a href="/dataexplorer" class="btn btn-secondary">
+                <i class="fas fa-home"></i> Return Home
+            </a>
+        </div>
+    </div>
+</body>
+</html>
