@@ -1105,13 +1105,21 @@ def auth_status():
     user_type = get_user_type()
     permissions = get_user_permissions(user_type)
 
+    # Get loginCount from Firestore for first-time user detection
+    login_count = None
+    if user and user.get('uid'):
+        user_doc = get_user_doc(user.get('uid'))
+        if user_doc:
+            login_count = user_doc.get('loginCount', 0)
+
     return jsonify({
         'authenticated': user is not None,
         'user': user,
         'user_type': user_type,
         'permissions': permissions,
         'visible_apps': get_visible_apps(user_type),
-        'tier_info': get_tier_info(user_type)
+        'tier_info': get_tier_info(user_type),
+        'login_count': login_count
     })
 
 

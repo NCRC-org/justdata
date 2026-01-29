@@ -3178,14 +3178,29 @@
             switchUserType(userType);
 
             // Update welcome greeting with user's name
+            // First-time users (login_count <= 1) see "Welcome to JustData!!"
+            // Returning users see "Welcome back, [Name]"
             const welcomeGreeting = document.getElementById('welcomeGreeting');
             if (welcomeGreeting && authData) {
-                if (authData.authenticated && authData.user && authData.user.name) {
-                    // Extract first name from display name
+                const isFirstLogin = authData.login_count !== null && authData.login_count <= 1;
+
+                if (authData.authenticated && isFirstLogin) {
+                    // First-time user
+                    if (authData.user && authData.user.name) {
+                        const firstName = authData.user.name.split(' ')[0];
+                        welcomeGreeting.textContent = 'Welcome to JustData, ' + firstName + '!';
+                    } else if (authData.user && authData.user.email) {
+                        const emailName = authData.user.email.split('@')[0];
+                        welcomeGreeting.textContent = 'Welcome to JustData, ' + emailName + '!';
+                    } else {
+                        welcomeGreeting.textContent = 'Welcome to JustData!';
+                    }
+                } else if (authData.authenticated && authData.user && authData.user.name) {
+                    // Returning user with name
                     const firstName = authData.user.name.split(' ')[0];
                     welcomeGreeting.textContent = 'Welcome back, ' + firstName;
                 } else if (authData.authenticated && authData.user && authData.user.email) {
-                    // Use email username as fallback
+                    // Returning user with email only
                     const emailName = authData.user.email.split('@')[0];
                     welcomeGreeting.textContent = 'Welcome back, ' + emailName;
                 } else if (authData.authenticated) {
