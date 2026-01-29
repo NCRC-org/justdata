@@ -52,7 +52,7 @@ def get_all_branches_for_bank(
     
     query = f"""
     WITH
-    -- CBSA crosswalk to get CBSA codes and names from GEOID5 (exclude rural areas with code 99999)
+    -- CBSA crosswalk to get CBSA codes and names from GEOID5 (include all areas for the lookup)
     cbsa_crosswalk AS (
         SELECT
             CAST(geoid5 AS STRING) as geoid5,
@@ -62,12 +62,11 @@ def get_all_branches_for_bank(
             State as state_name,
             CONCAT(County, ', ', State) as county_state
         FROM `{PROJECT_ID}.geo.cbsa_to_county`
-        WHERE CAST(cbsa_code AS STRING) != '99999'
     ),
-    
+
     -- Get all branches for the bank
     bank_branches AS (
-        SELECT 
+        SELECT
             CAST(b.rssd AS STRING) as rssd,
             CAST(b.geoid5 AS STRING) as geoid5,
             b.uninumbr
@@ -76,10 +75,10 @@ def get_all_branches_for_bank(
             AND CAST(b.rssd AS STRING) = '{rssd}'
             AND b.geoid5 IS NOT NULL
     ),
-    
+
     -- Deduplicate branches (use uninumbr as unique identifier)
     deduplicated_branches AS (
-        SELECT 
+        SELECT
             geoid5
         FROM (
             SELECT *,
@@ -88,28 +87,34 @@ def get_all_branches_for_bank(
         )
         WHERE rn = 1
     ),
-    
+
     -- Join with CBSA crosswalk and aggregate by county/CBSA
     branch_counties AS (
-        SELECT 
+        SELECT
             db.geoid5,
             COALESCE(c.county_state, 'Unknown') as county_state,
-            COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
-            COALESCE(c.cbsa_name, 'Non-Metro Area') as cbsa_name,
+            COALESCE(c.county_name, 'Unknown') as county_name,
+            COALESCE(c.state_name, 'Unknown') as state_name,
+            -- For CBSA code, treat 99999 (rural) as N/A
+            CASE WHEN COALESCE(c.cbsa_code, 'N/A') = '99999' THEN 'N/A' ELSE COALESCE(c.cbsa_code, 'N/A') END as cbsa_code,
+            CASE WHEN COALESCE(c.cbsa_code, 'N/A') = '99999' THEN 'Non-Metro Area' ELSE COALESCE(c.cbsa_name, 'Non-Metro Area') END as cbsa_name,
             COUNT(*) as branch_count
         FROM deduplicated_branches db
         LEFT JOIN cbsa_crosswalk c
             ON db.geoid5 = c.geoid5
-        GROUP BY db.geoid5, c.county_state, c.cbsa_code, c.cbsa_name
+        GROUP BY db.geoid5, c.county_state, c.county_name, c.state_name, c.cbsa_code, c.cbsa_name
     )
-    
-    SELECT 
+
+    SELECT
         geoid5,
         county_state,
+        county_name,
+        state_name,
         cbsa_code,
         cbsa_name,
         branch_count
     FROM branch_counties
+    WHERE cbsa_code != '99999'
     ORDER BY cbsa_code, county_state
     """
     
@@ -266,8 +271,8 @@ def _get_assessment_areas_from_branch_counties(branch_df: pd.DataFrame, client) 
 
     Args:
         branch_df: DataFrame from get_all_branches_for_bank() with columns:
-                   geoid5, county_state, cbsa_code, cbsa_name, branch_count
-        client: BigQuery client
+                   geoid5, county_state, county_name, state_name, cbsa_code, cbsa_name, branch_count
+        client: BigQuery client (not used - kept for API compatibility)
 
     Returns:
         List of assessment area dictionaries
@@ -275,40 +280,16 @@ def _get_assessment_areas_from_branch_counties(branch_df: pd.DataFrame, client) 
     if branch_df.empty:
         return []
 
-    assessment_areas = []
+    # The branch_df now contains all the data we need - no second query required
+    # This fixes the timeout issue for large banks like JPMorgan Chase
 
-    # Get county details for all branch counties
-    branch_geoids = branch_df['geoid5'].unique().tolist()
-    if not branch_geoids:
-        return []
-
-    # Build a query to get county names for all branch counties
-    geoid_list = "', '".join([str(g) for g in branch_geoids])
-    query = f"""
-    SELECT DISTINCT
-        CAST(geoid5 AS STRING) as geoid5,
-        County as county_name,
-        State as state_name,
-        CAST(cbsa_code AS STRING) as cbsa_code,
-        CBSA as cbsa_name,
-        CONCAT(County, ', ', State) as county_state
-    FROM `{PROJECT_ID}.geo.cbsa_to_county`
-    WHERE CAST(geoid5 AS STRING) IN ('{geoid_list}')
-    ORDER BY cbsa_code, State, County
-    """
-
-    county_results = execute_query(client, query)
-
-    if not county_results:
-        print(f"  Warning: No county details found for branch locations")
-        return []
-
-    # Group counties by CBSA
+    # Group counties by CBSA directly from the DataFrame
     cbsa_counties = {}
-    for row in county_results:
+    for _, row in branch_df.iterrows():
         geoid5 = str(row.get('geoid5', '')).zfill(5)
         cbsa_code = str(row.get('cbsa_code', 'N/A'))
         state_name = row.get('state_name', '')
+        county_name = row.get('county_name', '')
 
         # Handle non-metro areas (N/A or 99999 cbsa_code)
         if cbsa_code in ('N/A', '99999', '', None):
@@ -327,15 +308,21 @@ def _get_assessment_areas_from_branch_counties(branch_df: pd.DataFrame, client) 
         if len(geoid5) == 5:
             state_code = geoid5[:2]
             county_code = geoid5[2:]
-            cbsa_counties[cbsa_key]['counties'].append({
+            # Avoid duplicates (same county might appear multiple times if multiple branches)
+            county_entry = {
                 'state_code': state_code,
                 'county_code': county_code,
-                'county_name': row.get('county_name', ''),
+                'county_name': county_name,
                 'state_name': state_name,
                 'geoid5': geoid5
-            })
+            }
+            # Check if this county is already in the list
+            existing_geoids = [c['geoid5'] for c in cbsa_counties[cbsa_key]['counties']]
+            if geoid5 not in existing_geoids:
+                cbsa_counties[cbsa_key]['counties'].append(county_entry)
 
     # Convert to list format
+    assessment_areas = []
     for cbsa_key, cbsa_data in cbsa_counties.items():
         if cbsa_data['counties']:
             assessment_areas.append(cbsa_data)

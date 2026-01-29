@@ -997,6 +997,9 @@
                     bankBSection.slideDown(300);
                     bankBAASection.slideDown(300);
                 }
+
+                // Re-check if assessment areas should be shown (single bank mode only needs Bank A)
+                checkAndShowAssessmentAreas();
             });
 
             // Initialize Select2 for multi-select HMDA filters
