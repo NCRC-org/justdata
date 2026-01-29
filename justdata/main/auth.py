@@ -3,10 +3,9 @@ Access control system for JustData applications.
 Implements user type-based access control based on the access matrix.
 Integrates Firebase Authentication and Firestore for user management.
 
-User Types (9 tiers):
+User Types (8 tiers):
 - public_anonymous: No account, not logged in
 - public_registered: Google sign-in, basic access
-- just_economy_club: Free tier with limited features
 - member: NCRC Member ($900/yr)
 - member_premium: Member Plus tier
 - non_member_org: Institutional/organizational access
@@ -57,11 +56,10 @@ SENIOR_EXECUTIVE_EMAILS = [
     'testsenior@justdata.ncrc.org',  # Test Senior Executive (working login)
 ]
 
-# User types matching the 9-tier system
+# User types matching the 8-tier system
 UserType = Literal[
     'public_anonymous',
     'public_registered',
-    'just_economy_club',
     'member',
     'member_premium',
     'non_member_org',
@@ -77,7 +75,6 @@ AccessLevel = Literal['full', 'limited', 'locked', 'hidden']
 VALID_USER_TYPES = [
     'public_anonymous',
     'public_registered',
-    'just_economy_club',
     'member',
     'member_premium',
     'non_member_org',
@@ -99,7 +96,6 @@ ACCESS_MATRIX = {
     'lendsight': {
         'public_anonymous': 'locked',
         'public_registered': 'limited',
-        'just_economy_club': 'limited',
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -110,7 +106,6 @@ ACCESS_MATRIX = {
     'branchsight': {
         'public_anonymous': 'locked',
         'public_registered': 'locked',
-        'just_economy_club': 'limited',
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -121,7 +116,6 @@ ACCESS_MATRIX = {
     'branchsight': {
         'public_anonymous': 'locked',
         'public_registered': 'locked',
-        'just_economy_club': 'limited',
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -132,7 +126,6 @@ ACCESS_MATRIX = {
     'bizsight': {
         'public_anonymous': 'locked',
         'public_registered': 'locked',
-        'just_economy_club': 'limited',
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -143,7 +136,6 @@ ACCESS_MATRIX = {
     'commentmaker': {
         'public_anonymous': 'full',
         'public_registered': 'full',
-        'just_economy_club': 'full',
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -154,7 +146,6 @@ ACCESS_MATRIX = {
     'justpolicy': {
         'public_anonymous': 'full',
         'public_registered': 'full',
-        'just_economy_club': 'full',
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -165,7 +156,6 @@ ACCESS_MATRIX = {
     'lenderprofile': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -176,7 +166,6 @@ ACCESS_MATRIX = {
     'mergermeter': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -187,7 +176,6 @@ ACCESS_MATRIX = {
     'electwatch': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -202,7 +190,6 @@ ACCESS_MATRIX = {
     'branchmapper': {
         'public_anonymous': 'locked',
         'public_registered': 'locked',
-        'just_economy_club': 'locked',
         'member': 'full',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -213,7 +200,6 @@ ACCESS_MATRIX = {
     'dataexplorer': {
         'public_anonymous': 'locked',
         'public_registered': 'locked',
-        'just_economy_club': 'locked',
         'member': 'locked',
         'member_premium': 'full',
         'non_member_org': 'full',
@@ -228,7 +214,6 @@ ACCESS_MATRIX = {
     'analytics': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -239,7 +224,6 @@ ACCESS_MATRIX = {
     'admin': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -250,7 +234,6 @@ ACCESS_MATRIX = {
     'administration': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -262,7 +245,6 @@ ACCESS_MATRIX = {
     'redlining': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -277,7 +259,6 @@ ACCESS_MATRIX = {
     'loantrends': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -288,7 +269,6 @@ ACCESS_MATRIX = {
     'memberview': {
         'public_anonymous': 'hidden',
         'public_registered': 'hidden',
-        'just_economy_club': 'hidden',
         'member': 'hidden',
         'member_premium': 'hidden',
         'non_member_org': 'hidden',
@@ -315,14 +295,6 @@ FEATURE_PERMISSIONS = {
         'export_formats': [],
         'ai_reports': False,
         'description': 'Registered user - limited to own county'
-    },
-    'just_economy_club': {
-        'geographic_limit': 'own_county_only',
-        'max_counties': 1,
-        'can_export': False,
-        'export_formats': [],
-        'ai_reports': False,
-        'description': 'Just Economy Club - free tier with limited access'
     },
     'member': {
         'geographic_limit': 'multiple_counties',
@@ -389,7 +361,6 @@ FEATURE_PERMISSIONS = {
 TIER_PRICING = {
     'public_anonymous': {'price': 0, 'billing': 'free', 'label': 'Guest'},
     'public_registered': {'price': 0, 'billing': 'free', 'label': 'Registered'},
-    'just_economy_club': {'price': 0, 'billing': 'free', 'label': 'Just Economy Club'},
     'member': {'price': 900, 'billing': 'yearly', 'label': 'Member'},
     'member_premium': {'price_range': (500, 750), 'billing': 'yearly', 'label': 'Member Premium', 'addon': True},
     'non_member_org': {'price_range': (5000, 15000), 'billing': 'yearly', 'label': 'Institutional'},
@@ -671,7 +642,7 @@ def determine_user_type(email: str, email_verified: bool = False,
 
     # If current type is set by admin, don't downgrade
     if current_type and current_type in ['member', 'member_premium', 'non_member_org',
-                                          'just_economy_club', 'staff', 'senior_executive', 'admin']:
+                                          'staff', 'senior_executive', 'admin']:
         return current_type
 
     # Default to public_registered for authenticated users

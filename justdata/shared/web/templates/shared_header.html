@@ -729,7 +729,7 @@ function updateUserMenuForType(userType) {
     const divider = document.getElementById('dropdownDivider');
 
     // Show "Request Member Access" only for public users
-    const publicTypes = ['public_registered', 'public_anonymous', 'just_economy_club'];
+    const publicTypes = ['public_registered', 'public_anonymous'];
     const showRequestLink = publicTypes.includes(userType);
 
     if (requestLink) requestLink.style.display = showRequestLink ? 'flex' : 'none';
@@ -1056,17 +1056,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // App Access Configuration
 const sharedHeaderAppAccessConfig = {
-    'lendsight': { public_anonymous: 'locked', public_registered: 'limited', just_economy_club: 'limited', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'branchsight': { public_anonymous: 'locked', public_registered: 'locked', just_economy_club: 'limited', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'branchmapper': { public_anonymous: 'locked', public_registered: 'locked', just_economy_club: 'locked', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'bizsight': { public_anonymous: 'locked', public_registered: 'locked', just_economy_club: 'limited', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'dataexplorer': { public_anonymous: 'locked', public_registered: 'locked', just_economy_club: 'locked', member: 'locked', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'mergermeter': { public_anonymous: 'hidden', public_registered: 'hidden', just_economy_club: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'lenderprofile': { public_anonymous: 'hidden', public_registered: 'hidden', just_economy_club: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'analytics': { public_anonymous: 'hidden', public_registered: 'hidden', just_economy_club: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'admin': { public_anonymous: 'hidden', public_registered: 'hidden', just_economy_club: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'hidden', senior_executive: 'hidden', admin: 'full' },
-    'electwatch': { public_anonymous: 'hidden', public_registered: 'hidden', just_economy_club: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
-    'redlining': { public_anonymous: 'hidden', public_registered: 'hidden', just_economy_club: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'hidden', admin: 'full' }
+    'lendsight': { public_anonymous: 'locked', public_registered: 'limited', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'branchsight': { public_anonymous: 'locked', public_registered: 'locked', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'branchmapper': { public_anonymous: 'locked', public_registered: 'locked', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'bizsight': { public_anonymous: 'locked', public_registered: 'locked', member: 'full', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'dataexplorer': { public_anonymous: 'locked', public_registered: 'locked', member: 'locked', member_premium: 'full', non_member_org: 'full', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'mergermeter': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'lenderprofile': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'analytics': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'admin': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'hidden', senior_executive: 'hidden', admin: 'full' },
+    'electwatch': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'full', admin: 'full' },
+    'redlining': { public_anonymous: 'hidden', public_registered: 'hidden', member: 'hidden', member_premium: 'hidden', non_member_org: 'hidden', staff: 'full', senior_executive: 'hidden', admin: 'full' }
 };
 
 // Filter nav menu by user access

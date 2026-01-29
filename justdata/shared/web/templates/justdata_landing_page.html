@@ -1421,23 +1421,10 @@
                     </a>
                 </div>
 
-                <!-- Executive/Admin Buttons (only visible to senior_executive and admin) -->
-                <div id="adminButtonsContainer" style="display: none; flex-direction: row; align-items: center; gap: 8px;">
-                    <button class="header-btn" onclick="openUserTypesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
-                        <i class="fas fa-users-cog"></i>
-                        <span>User Types</span>
-                    </button>
-                    <button class="header-btn" onclick="openIncomeSourcesModal()" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 12px; border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px; font-size: 0.8rem;">
-                        <i class="fas fa-dollar-sign"></i>
-                        <span>Income Sources</span>
-                    </button>
-                </div>
-
                 <!-- Hidden user type selector -->
                 <select id="userTypeSelect" onchange="switchUserType(this.value)" style="display: none;">
                     <option value="public_anonymous">Guest</option>
                     <option value="public_registered">Registered</option>
-                    <option value="just_economy_club">Just Economy Club</option>
                     <option value="member">Member</option>
                     <option value="member_premium">Member Premium</option>
                     <option value="non_member_org">Institutional</option>
@@ -1881,267 +1868,6 @@
         </div>
     </div>
 
-    <!-- Expected Income & Sources Modal -->
-    <div class="modal-overlay" id="incomeSourcesModal" role="dialog" aria-labelledby="incomeModalTitle" aria-modal="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="incomeModalTitle">
-                    <i class="fas fa-dollar-sign" aria-hidden="true"></i>
-                    Expected Income & Funding Sources
-                </h3>
-                <button class="modal-close" onclick="closeIncomeSourcesModal()" aria-label="Close income sources modal">
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="feature-detail-section">
-                    <h4><i class="fas fa-chart-line"></i> Revenue Projections</h4>
-                    <p><strong>Annual Revenue Targets:</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
-                        <li><strong>Member Plus Add-ons:</strong> $500-750/year per member (premium features)</li>
-                        <li><strong>Institutional Subscriptions:</strong> $5,000-15,000/year per organization</li>
-                        <li><strong>Projected Year 2 Revenue:</strong> $50,000 - $100,000</li>
-                        <li><strong>Projected Year 3 Revenue:</strong> $150,000 - $250,000</li>
-                    </ul>
-                </div>
-
-                <div class="feature-detail-section">
-                    <h4><i class="fas fa-hand-holding-usd"></i> Primary Funding Sources</h4>
-                    <p><strong>Revenue Streams:</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
-                        <li><strong>NCRC Membership Integration:</strong> JustData access included with $900/year NCRC organizational membership</li>
-                        <li><strong>Premium Tier Subscriptions:</strong> Member Plus ($500-750/year) and Institutional ($5K-15K/year) add-on subscriptions</li>
-                        <li><strong>Grant Funding:</strong> Foundation grants supporting data transparency and community reinvestment initiatives</li>
-                        <li><strong>Corporate Sponsorships:</strong> Financial institution partnerships and corporate social responsibility programs</li>
-                        <li><strong>Federal/State Contracts:</strong> Government contracts for data analysis and reporting services</li>
-                    </ul>
-                </div>
-
-                <div class="feature-detail-section">
-                    <h4><i class="fas fa-building"></i> Institutional Partnerships</h4>
-                    <p><strong>Target Markets:</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
-                        <li><strong>Community Development Organizations:</strong> CDFIs, housing counseling agencies, and advocacy groups</li>
-                        <li><strong>Financial Institutions:</strong> Banks, credit unions, and fintech companies seeking market analysis</li>
-                        <li><strong>Consulting Firms:</strong> Fair lending consultants and compliance advisors</li>
-                        <li><strong>Academic Institutions:</strong> Universities and research organizations</li>
-                        <li><strong>Government Agencies:</strong> Federal and state regulatory agencies</li>
-                    </ul>
-                </div>
-
-                <div class="feature-detail-section">
-                    <h4><i class="fas fa-seedling"></i> Growth Strategy</h4>
-                    <p><strong>Expansion Plans:</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
-                        <li><strong>Year 1:</strong> Focus on NCRC member base conversion and platform stabilization (target: 50-100 active users)</li>
-                        <li><strong>Year 2:</strong> Expand to non-member organizations and institutional clients (target: 10-20 institutional subscriptions)</li>
-                        <li><strong>Year 3:</strong> Scale premium features and add new data sources (target: 200-300 total users)</li>
-                        <li><strong>Long-term:</strong> Develop API access, white-label solutions, and custom enterprise packages</li>
-                    </ul>
-                </div>
-
-                <div class="feature-detail-section">
-                    <h4><i class="fas fa-code-branch"></i> Applications in Development</h4>
-                    <p><strong>AI-Driven Reports (Coming Soon):</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px; color: var(--ncrc-gray-dark);">
-                        <li><strong>CommentMaker:</strong> Free tool for writing and submitting public comments to federal regulatory agencies. Will be available to all users when released.</li>
-                        <li><strong>JustPolicy:</strong> AI-driven interactive tool that asks questions about your mission and service area to provide personalized policy overviews scaled to your niche, with plain-language explanations and supporting data. Will be available to all users when released.</li>
-                    </ul>
-                    <p class="feature-note">These applications are currently in development and will be released in future updates. Check back for availability announcements.</p>
-                </div>
-
-                <div class="upgrade-notice">
-                    <h4><i class="fas fa-info-circle"></i> Sustainability Model</h4>
-                    <p>JustData is designed to be self-sustaining through subscription revenue while maintaining free access to core tools like CommentMaker and JustPolicy (coming soon). Premium features and advanced analytics support the platform's development and maintenance costs.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- User Types Modal -->
-    <div class="modal-overlay" id="userTypesModal" role="dialog" aria-labelledby="modalTitle" aria-modal="true">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">
-                    <i class="fas fa-users-cog" aria-hidden="true"></i>
-                    User Access Matrix
-                </h3>
-                <button class="modal-close" onclick="closeUserTypesModal()" aria-label="Close user types modal">
-                    <i class="fas fa-times" aria-hidden="true"></i>
-                </button>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 20px; color: var(--ncrc-gray);">
-                    This table shows which applications are accessible to each user type. 
-                    <strong>✅ Full Access</strong> means the user can use the application with all features (multiple counties/metro areas, exports). 
-                    <strong>⚠️ Partial Access</strong> means the user can view reports but cannot export and is limited to their own county or single counties. 
-                    <strong>🔒 Visible (Locked)</strong> means the app is visible but requires membership. 
-                    <strong>❌ Hidden</strong> means the app is not visible to that user type.
-                </p>
-                <table class="access-matrix-table">
-                    <thead>
-                        <tr>
-                            <th>Application</th>
-                            <th>Public<br><small>(Free)</small></th>
-                            <th>Just Economy Club<br><small>(Free)</small></th>
-                            <th>Member<br><small>($900/yr*)</small></th>
-                            <th>Member Plus<br><small>($500-750/yr)</small></th>
-                            <th>Institutional<br><small>($5K-15K/yr)</small></th>
-                            <th>Staff<br><small>(Free)</small></th>
-                            <th>Admin<br><small>(Free)</small></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>AI-Driven Reports</strong></td>
-                            <td colspan="7" style="text-align: center; background: var(--ncrc-light-blue); font-weight: 600; color: var(--ncrc-primary-blue);">AI-Driven Reports</td>
-                        </tr>
-                        <tr>
-                            <td>LendSight</td>
-                            <td><span class="access-status access-partial"><i class="fas fa-check-circle access-icon" aria-hidden="true"></i>Limited</span></td>
-                            <td><span class="access-status access-partial"><i class="fas fa-check-circle access-icon" aria-hidden="true"></i>Limited</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>BranchSight</td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>BizSight</td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>CommentMaker <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin-left: 8px;">In Development</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>JustPolicy <span style="background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.7rem; font-weight: 600; margin-left: 8px;">In Development</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>LenderProfile</td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>MergerMeter</td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>ElectWatch</td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Interactive Tools</strong></td>
-                            <td colspan="7" style="text-align: center; background: var(--ncrc-light-blue); font-weight: 600; color: var(--ncrc-primary-blue);">Interactive Tools</td>
-                        </tr>
-                        <tr>
-                            <td>BranchMapper</td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>DataExplorer</td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-locked"><i class="fas fa-lock access-icon" aria-hidden="true"></i>Locked</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full**</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td><strong>Administrative</strong></td>
-                            <td colspan="7" style="text-align: center; background: var(--ncrc-light-blue); font-weight: 600; color: var(--ncrc-primary-blue);">Administrative</td>
-                        </tr>
-                        <tr>
-                            <td>Analytics</td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                        <tr>
-                            <td>Administration</td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-hidden"><i class="fas fa-eye-slash access-icon" aria-hidden="true"></i>Hidden</span></td>
-                            <td><span class="access-status access-full"><i class="fas fa-check access-icon" aria-hidden="true"></i>Full</span></td>
-                        </tr>
-                    </tbody>
-                </table>
-                <div style="margin-top: 20px; padding: 15px; background: var(--ncrc-light-blue); border-radius: 8px; font-size: 0.9rem; color: var(--ncrc-gray);">
-                    <p style="margin: 0 0 10px 0;"><strong>Pricing Notes:</strong></p>
-                    <ul style="margin: 10px 0; padding-left: 20px;">
-                        <li><strong>Public & Just Economy Club (Free):</strong> Limited access to LendSight (own county only, view-only, no exports). CommentMaker (AI-Driven Reports, in development) will be available to all users with full access when released.</li>
-                        <li><strong>Member ($900/yr*):</strong> Included with NCRC membership. Full access to all apps except DataExplorer. Up to 3 counties/metro areas. Exports: Excel, PDF, PowerPoint. Access to CommentMaker (AI-Driven Reports, in development) when released.</li>
-                        <li><strong>Member Plus ($500-750/yr):</strong> Add-on to Member tier. Unlocks DataExplorer with enhanced features. 5+ counties or unlimited geography.</li>
-                        <li><strong>Institutional ($5K-15K/yr):</strong> Base tier ($5K) includes standard DataExplorer. Premium tier ($10K-15K) includes enhanced DataExplorer features. Unlimited geography. CSV exports included.</li>
-                        <li><strong>Staff & Admin (Free):</strong> Included with NCRC employment. Full access to all features and formats.</li>
-                    </ul>
-                    <p style="margin: 10px 0 0 0;"><strong>*</strong> Member tier price: Included with $900/year NCRC membership (no additional cost)</p>
-                    <p style="margin: 10px 0 0 0;"><strong>**</strong> Member Plus DataExplorer includes enhanced features: advanced filtering, bulk exports, custom reports, historical data, priority support</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
         // Toggle hamburger navigation menu
         function toggleNavMenu() {
@@ -2491,13 +2217,12 @@
         setTimeout(checkVerificationBannerOnLoad, 1500);
 
         // User Access Configuration (9 user types)
-        // Tiers: 1=anonymous, 2=public, 3=just_economy, 4=member, 5=member_plus, 6=institutional, 7=staff, 8=senior_exec, 9=admin
+        // Tiers: 1=anonymous, 2=public, 3=member, 4=member_plus, 5=institutional, 6=staff, 7=senior_exec, 8=admin
         const appAccessConfig = {
             // REPORTS SECTION
             'lendsight': {  // Min tier 2 (public)
                 public_anonymous: 'locked',
                 public_registered: 'limited',
-                just_economy_club: 'limited',
                 member: 'full',
                 member_premium: 'full',
                 non_member_org: 'full',
@@ -2505,10 +2230,9 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'bizsight': {  // Min tier 4 (member)
+            'bizsight': {  // Min tier 3 (member)
                 public_anonymous: 'locked',
                 public_registered: 'locked',
-                just_economy_club: 'locked',
                 member: 'full',
                 member_premium: 'full',
                 non_member_org: 'full',
@@ -2516,10 +2240,9 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'branchsight': {  // Min tier 4 (member)
+            'branchsight': {  // Min tier 3 (member)
                 public_anonymous: 'locked',
                 public_registered: 'locked',
-                just_economy_club: 'locked',
                 member: 'full',
                 member_premium: 'full',
                 non_member_org: 'full',
@@ -2530,7 +2253,6 @@
             'commentmaker': {  // Min tier 2 (public) - Coming Soon
                 public_anonymous: 'full',
                 public_registered: 'full',
-                just_economy_club: 'full',
                 member: 'full',
                 member_premium: 'full',
                 non_member_org: 'full',
@@ -2539,10 +2261,9 @@
                 admin: 'full'
             },
             // DATA TOOLS SECTION
-            'dataexplorer': {  // Min tier 5 (member_plus)
+            'dataexplorer': {  // Min tier 4 (member_plus)
                 public_anonymous: 'locked',
                 public_registered: 'locked',
-                just_economy_club: 'locked',
                 member: 'locked',
                 member_premium: 'full',
                 non_member_org: 'full',
@@ -2550,10 +2271,9 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'branchmapper': {  // Min tier 5 (member_plus)
+            'branchmapper': {  // Min tier 4 (member_plus)
                 public_anonymous: 'locked',
                 public_registered: 'locked',
-                just_economy_club: 'locked',
                 member: 'locked',
                 member_premium: 'full',
                 non_member_org: 'full',
@@ -2562,10 +2282,9 @@
                 admin: 'full'
             },
             // INTERNAL TOOLS SECTION
-            'mergermeter': {  // Min tier 7 (staff)
+            'mergermeter': {  // Min tier 6 (staff)
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
-                just_economy_club: 'hidden',
                 member: 'hidden',
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
@@ -2573,10 +2292,9 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'electwatch': {  // Min tier 7 (staff) - Coming Soon
+            'electwatch': {  // Min tier 6 (staff) - Coming Soon
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
-                just_economy_club: 'hidden',
                 member: 'hidden',
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
@@ -2584,10 +2302,9 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'lenderprofile': {  // Min tier 7 (staff) - Coming Soon
+            'lenderprofile': {  // Min tier 6 (staff) - Coming Soon
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
-                just_economy_club: 'hidden',
                 member: 'hidden',
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
@@ -2595,10 +2312,9 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'redlining': {  // Min tier 7 (staff) - Coming Soon
+            'redlining': {  // Min tier 6 (staff) - Coming Soon
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
-                just_economy_club: 'hidden',
                 member: 'hidden',
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
@@ -2607,10 +2323,9 @@
                 admin: 'full'
             },
             // ADMIN SECTION
-            'analytics': {  // Min tier 8 (senior_executive)
+            'analytics': {  // Min tier 7 (senior_executive)
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
-                just_economy_club: 'hidden',
                 member: 'hidden',
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
@@ -2618,10 +2333,9 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'admin': {  // Min tier 9 (administrator)
+            'admin': {  // Min tier 8 (administrator)
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
-                just_economy_club: 'hidden',
                 member: 'hidden',
                 member_premium: 'hidden',
                 non_member_org: 'hidden',
@@ -2644,7 +2358,7 @@
             'redlining': '/redlining'
         };
 
-        // Feature Permissions by User Type (9 types)
+        // Feature Permissions by User Type (8 types)
         const featurePermissions = {
             'public_anonymous': {
                 geographicLimit: 'none',
@@ -2657,12 +2371,6 @@
                 canExport: false,
                 exportFormats: [],
                 price: 'Free (Registered)'
-            },
-            'just_economy_club': {
-                geographicLimit: 'own_county_only',
-                canExport: false,
-                exportFormats: [],
-                price: 'Free'
             },
             'member': {
                 geographicLimit: 'up_to_3_counties',
@@ -3311,66 +3019,13 @@
             }, 1000);
         });
 
-        // User Types Modal Functions
-        function openUserTypesModal() {
-            const modal = document.getElementById('userTypesModal');
-            modal.classList.add('active');
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-            
-            // Focus on close button for accessibility
-            setTimeout(() => {
-                modal.querySelector('.modal-close').focus();
-            }, 100);
-        }
-
-        function closeUserTypesModal() {
-            const modal = document.getElementById('userTypesModal');
-            modal.classList.remove('active');
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = ''; // Restore scrolling
-            
-            // Return focus to button that opened modal
-            // Focus restored
-        }
-
-        // Expected Income & Sources Modal Functions
-        function openIncomeSourcesModal() {
-            const modal = document.getElementById('incomeSourcesModal');
-            modal.classList.add('active');
-            modal.setAttribute('aria-hidden', 'false');
-            document.body.style.overflow = 'hidden';
-            
-            // Focus on close button for accessibility
-            setTimeout(() => {
-                modal.querySelector('.modal-close').focus();
-            }, 100);
-        }
-
-        function closeIncomeSourcesModal() {
-            const modal = document.getElementById('incomeSourcesModal');
-            modal.classList.remove('active');
-            modal.setAttribute('aria-hidden', 'true');
-            document.body.style.overflow = '';
-            
-            // Focus restored
-        }
-
         // Close modal on Escape key
         document.addEventListener('keydown', function(event) {
             if (event.key === 'Escape') {
-                const userTypesModal = document.getElementById('userTypesModal');
                 const launchModal = document.getElementById('launchModal');
-                const incomeSourcesModal = document.getElementById('incomeSourcesModal');
                 const appInfoModal = document.getElementById('appInfoModal');
-                if (userTypesModal.classList.contains('active')) {
-                    closeUserTypesModal();
-                }
                 if (launchModal.classList.contains('active')) {
                     closeLaunchModal();
-                }
-                if (incomeSourcesModal.classList.contains('active')) {
-                    closeIncomeSourcesModal();
                 }
                 if (appInfoModal.classList.contains('active')) {
                     closeAppInfoModal();
@@ -3379,21 +3034,9 @@
         });
 
         // Close modal when clicking overlay (but not modal content)
-        document.getElementById('userTypesModal').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeUserTypesModal();
-            }
-        });
-
         document.getElementById('launchModal').addEventListener('click', function(event) {
             if (event.target === this) {
                 closeLaunchModal();
-            }
-        });
-
-        document.getElementById('incomeSourcesModal').addEventListener('click', function(event) {
-            if (event.target === this) {
-                closeIncomeSourcesModal();
             }
         });
 
