@@ -612,6 +612,15 @@
                         </div>
                     </div>
 
+                    <!-- Force Refresh Option -->
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer; width: 18px; height: 18px; accent-color: #ff9800;">
+                        <label for="forceRefreshCheckbox" style="cursor: pointer; font-size: 0.85rem; color: #666;">
+                            <i class="fas fa-sync-alt" style="color: #ff9800;"></i>
+                            Force refresh (bypass cache)
+                        </label>
+                    </div>
+
                     <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your merger analysis. Make sure you've entered bank information and uploaded the required files.">
                         <i class="fas fa-magic"></i>
                         <span>Generate Merger Analysis</span>
@@ -2162,10 +2171,17 @@
                 }
                 formData.set('sb_years', sbYears.join(','));
                 
+                // Check if force refresh is requested
+                const forceRefreshCheckbox = document.getElementById('forceRefreshCheckbox');
+                if (forceRefreshCheckbox && forceRefreshCheckbox.checked) {
+                    formData.append('force_refresh', '1');
+                    console.log('[MergerMeter] Force refresh requested - bypassing cache');
+                }
+
                 // Generate job ID
                 const jobId = 'job_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 formData.append('job_id', jobId);
-                
+
                 // Show progress
                 $('#progressSection').show();
                 $('#resultsSection').hide();

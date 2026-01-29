@@ -204,10 +204,17 @@ def analyze():
         # For cache key, normalize the year ranges
         cache_params = form_data.copy()
         # Cache key includes all year parameters (analysis + baseline)
-        
-        # Check cache first
-        cached_result = get_cached_result('mergermeter', cache_params, user_type)
-        
+
+        # Check for force_refresh parameter to bypass cache
+        force_refresh = request.form.get('force_refresh', '0') == '1'
+
+        # Check cache first (unless force_refresh is True)
+        cached_result = None
+        if not force_refresh:
+            cached_result = get_cached_result('mergermeter', cache_params, user_type)
+        else:
+            print(f"[INFO] Force refresh requested - bypassing cache")
+
         if cached_result:
             # Cache hit - use cached result
             job_id = cached_result['job_id']
