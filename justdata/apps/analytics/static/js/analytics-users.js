@@ -162,6 +162,7 @@ function getDemoUsers(days, search) {
                 total_reports: 0,
                 counties: new Set(),
                 lenders: new Set(),
+                apps: new Set(),
                 last_activity: e.event_timestamp,
                 first_activity: e.event_timestamp
             };
@@ -169,6 +170,7 @@ function getDemoUsers(days, search) {
         users[e.user_id].total_reports++;
         if (e.county_fips) users[e.user_id].counties.add(e.county_fips);
         if (e.lender_id) users[e.user_id].lenders.add(e.lender_id);
+        if (e.event_name) users[e.user_id].apps.add(e.event_name);
         if (new Date(e.event_timestamp) > new Date(users[e.user_id].last_activity)) {
             users[e.user_id].last_activity = e.event_timestamp;
         }
@@ -187,6 +189,7 @@ function getDemoUsers(days, search) {
             total_reports: u.total_reports,
             counties_researched: u.counties.size,
             lenders_researched: u.lenders.size,
+            apps_used: Array.from(u.apps || new Set()),
             last_activity: u.last_activity,
             first_activity: u.first_activity
         };
@@ -501,6 +504,48 @@ function loadUsers() {
 }
 
 /**
+ * Format apps_used array into compact display (LS, BS, MM, DE, etc.)
+ */
+function formatAppsUsed(apps) {
+    if (!apps || apps.length === 0) return '-';
+
+    const appAbbreviations = {
+        'lendsight_report': 'LS',
+        'bizsight_report': 'BS',
+        'branchsight_report': 'BR',
+        'mergermeter_report': 'MM',
+        'dataexplorer_area_report': 'DE',
+        'dataexplorer_lender_report': 'DE'
+    };
+
+    const appFullNames = {
+        'lendsight_report': 'LendSight',
+        'bizsight_report': 'BizSight',
+        'branchsight_report': 'BranchSight',
+        'mergermeter_report': 'MergerMeter',
+        'dataexplorer_area_report': 'DataExplorer',
+        'dataexplorer_lender_report': 'DataExplorer'
+    };
+
+    // Get unique abbreviations (DE appears twice but should show once)
+    const seen = new Set();
+    const abbrevs = [];
+    const fullNames = [];
+
+    apps.forEach(function(app) {
+        const abbr = appAbbreviations[app] || app.substring(0, 2).toUpperCase();
+        if (!seen.has(abbr)) {
+            seen.add(abbr);
+            abbrevs.push(abbr);
+            fullNames.push(appFullNames[app] || app);
+        }
+    });
+
+    const tooltip = fullNames.join(', ');
+    return '<span class="apps-used" title="' + escapeHtml(tooltip) + '">' + abbrevs.join(' | ') + '</span>';
+}
+
+/**
  * Render users table
  */
 function renderUsersTable(data) {
@@ -514,25 +559,21 @@ function renderUsersTable(data) {
 
     data.forEach(function(user) {
         const userId = user.user_id || 'Unknown';
-        const displayId = user.user_email || (userId.length > 20 ? userId.substring(0, 20) + '...' : userId);
+        const email = user.user_email || (userId.length > 25 ? userId.substring(0, 22) + '...' : userId);
         const userType = user.user_type || '-';
-        const org = user.organization_name || '';
+        const org = user.organization_name || '-';
         const reports = user.total_reports || 0;
-        const counties = user.counties_researched || 0;
-        const lenders = user.lenders_researched || 0;
+        const appsUsed = formatAppsUsed(user.apps_used);
         const lastActivity = formatDate(user.last_activity);
 
         const row = $('<tr class="clickable-row">')
             .attr('data-user-id', userId)
             .addClass(selectedUserId === userId ? 'selected' : '')
-            .append('<td title="' + escapeHtml(userId) + '">' +
-                    '<div class="user-name">' + escapeHtml(displayId) + '</div>' +
-                    (org ? '<div class="user-org-small">' + escapeHtml(org) + '</div>' : '') +
-                    '</td>')
+            .append('<td title="' + escapeHtml(userId) + '"><div class="user-email">' + escapeHtml(email) + '</div></td>')
+            .append('<td class="org-cell">' + escapeHtml(org) + '</td>')
             .append('<td>' + (userType !== '-' ? '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>' : '-') + '</td>')
             .append('<td><strong>' + formatNumber(reports) + '</strong></td>')
-            .append('<td>' + formatNumber(counties) + '</td>')
-            .append('<td>' + formatNumber(lenders) + '</td>')
+            .append('<td>' + appsUsed + '</td>')
             .append('<td>' + lastActivity + '</td>');
 
         tbody.append(row);

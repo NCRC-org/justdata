@@ -1446,13 +1446,12 @@ def get_users(
     query = f"""
         SELECT
             user_id,
-            MAX(state) AS last_state,
-            MAX(county_name) AS last_county,
             COUNT(*) AS total_reports,
             COUNT(DISTINCT county_fips) AS counties_researched,
             COUNT(DISTINCT lender_id) AS lenders_researched,
             MAX(event_timestamp) AS last_activity,
-            MIN(event_timestamp) AS first_activity
+            MIN(event_timestamp) AS first_activity,
+            ARRAY_AGG(DISTINCT event_name ORDER BY event_name) AS apps_used
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
             AND user_id IS NOT NULL
