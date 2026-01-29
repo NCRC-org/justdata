@@ -1020,13 +1020,13 @@
             display: flex;
         }
 
-        /* Modal Content */
+        /* Modal Content - Compact centered design for app info */
         .modal-content {
             background: white;
             border-radius: 12px;
-            max-width: 1400px;
-            width: 100%;
-            max-height: 90vh;
+            max-width: 480px;
+            width: 90%;
+            max-height: 80vh;
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             position: relative;
@@ -1045,8 +1045,8 @@
         }
 
         .modal-header {
-            padding: 25px 30px;
-            border-bottom: 2px solid var(--ncrc-light-blue);
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--color-border, #e0e0e0);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1059,11 +1059,12 @@
 
         .modal-header h3 {
             margin: 0;
-            font-size: 1.5rem;
-            color: var(--ncrc-primary-blue);
+            font-size: 1.25rem;
+            color: var(--color-text, #1a1a1a);
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: 600;
         }
 
         .modal-close {
@@ -1089,7 +1090,7 @@
         }
 
         .modal-body {
-            padding: 30px;
+            padding: 20px 24px 24px;
         }
         
         /* Wider modal for mockup displays (Analytics and Administration) */

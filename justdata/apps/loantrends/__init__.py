@@ -7,7 +7,7 @@ Uses CFPB Quarterly Data Graph API to analyze national mortgage lending trends.
 try:
     from justdata.apps.loantrends.version import __version__
 except ImportError:
-    __version__ = "0.9.0"  # Fallback
+    __version__ = "1.0.0"  # Fallback
 
 
 
