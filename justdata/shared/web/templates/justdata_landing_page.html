@@ -332,6 +332,13 @@
             letter-spacing: normal;
         }
 
+        .category-subtitle {
+            font-size: 14px;
+            color: var(--color-text-secondary, #666);
+            margin: -8px 0 var(--spacing-md) 0;
+            font-weight: normal;
+        }
+
         .apps-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -1632,15 +1639,16 @@
             </section>
 
             <main class="main-content" id="main-content" role="main">
-                <!-- LENDING ANALYSIS Category -->
-                <section class="category-section">
-                    <h2 class="category-header">Lending Analysis</h2>
+                <!-- REPORTS Section - AI-powered reports for novices -->
+                <section class="category-section" id="reportsSection">
+                    <h2 class="category-header">Reports</h2>
+                    <p class="category-subtitle">AI-powered reports with plain-language analysis. No data expertise required.</p>
                     <div class="apps-grid">
                         <!-- LendSight Card -->
                         <div class="app-card" data-app="lendsight" onclick="handleInfoClick('LendSight')">
                             <h3 class="app-card-title">LendSight</h3>
                             <p class="app-card-description">
-                                County-level mortgage lending analysis with disparity metrics and AI-generated narratives.
+                                Mortgage lending analysis with AI-generated narratives identifying disparities and compliance concerns.
                             </p>
                             <div class="app-card-buttons">
                                 <a href="/lendsight" class="app-card-launch-btn" onclick="event.stopPropagation()">
@@ -1653,7 +1661,7 @@
                         <div class="app-card" data-app="bizsight" onclick="handleInfoClick('BizSight')">
                             <h3 class="app-card-title">BizSight</h3>
                             <p class="app-card-description">
-                                Small business lending patterns and CRA analysis across communities.
+                                Small business lending patterns using CRA data with AI-powered gap analysis.
                             </p>
                             <div class="app-card-buttons">
                                 <a href="/bizsight" class="app-card-launch-btn" onclick="event.stopPropagation()">
@@ -1662,30 +1670,11 @@
                             </div>
                         </div>
 
-                        <!-- DataExplorer Card -->
-                        <div class="app-card" data-app="dataexplorer" onclick="handleInfoClick('DataExplorer')">
-                            <h3 class="app-card-title">DataExplorer</h3>
-                            <p class="app-card-description">
-                                Full HMDA dataset exploration with custom filtering and comprehensive analysis.
-                            </p>
-                            <div class="app-card-buttons">
-                                <a href="/dataexplorer" class="app-card-launch-btn" onclick="event.stopPropagation()">
-                                    Launch <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- BRANCH & MERGER Category -->
-                <section class="category-section">
-                    <h2 class="category-header">Branch & Merger</h2>
-                    <div class="apps-grid">
                         <!-- BranchSight Card -->
                         <div class="app-card" data-app="branchsight" onclick="handleInfoClick('BranchSight')">
                             <h3 class="app-card-title">BranchSight</h3>
                             <p class="app-card-description">
-                                Bank branch location analysis and market concentration using FDIC data.
+                                Bank branch network analysis tracking openings, closings, and market concentration.
                             </p>
                             <div class="app-card-buttons">
                                 <a href="/branchsight" class="app-card-launch-btn" onclick="event.stopPropagation()">
@@ -1694,78 +1683,7 @@
                             </div>
                         </div>
 
-                        <!-- BranchMapper Card -->
-                        <div class="app-card" data-app="branchmapper" onclick="handleInfoClick('BranchMapper')">
-                            <h3 class="app-card-title">BranchMapper</h3>
-                            <p class="app-card-description">
-                                Interactive branch network mapping with demographic overlays.
-                            </p>
-                            <div class="app-card-buttons">
-                                <a href="/branchmapper" class="app-card-launch-btn" onclick="event.stopPropagation()">
-                                    Launch <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- INTERNAL TOOLS Category - Staff & above -->
-                <section class="category-section" id="internalToolsSection" style="display: none;">
-                    <h2 class="category-header">Internal Tools <span class="category-note">Staff & above</span></h2>
-                    <div class="apps-grid">
-                        <!-- ElectWatch Card - Coming Soon -->
-                        <div class="app-card coming-soon" data-app="electwatch" onclick="handleInfoClick('ElectWatch')">
-                            <h3 class="app-card-title">ElectWatch</h3>
-                            <p class="app-card-description">
-                                Congressional financial relationships and voting records on financial legislation.
-                            </p>
-                            <div class="app-card-buttons">
-                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
-                            </div>
-                        </div>
-
-                        <!-- LenderProfile Card - Coming Soon -->
-                        <div class="app-card coming-soon" data-app="lenderprofile" onclick="handleInfoClick('LenderProfile')">
-                            <h3 class="app-card-title">LenderProfile</h3>
-                            <p class="app-card-description">
-                                Comprehensive lender intelligence combining corporate structure, compliance, and market position.
-                            </p>
-                            <div class="app-card-buttons">
-                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
-                            </div>
-                        </div>
-
-                        <!-- MergerMeter Card -->
-                        <div class="app-card" data-app="mergermeter" onclick="handleInfoClick('MergerMeter')">
-                            <h3 class="app-card-title">MergerMeter</h3>
-                            <p class="app-card-description">
-                                Bank merger impact analysis on market concentration and community lending.
-                            </p>
-                            <div class="app-card-buttons">
-                                <a href="/mergermeter" class="app-card-launch-btn" onclick="event.stopPropagation()">
-                                    Launch <i class="fas fa-arrow-right"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Redlining Dashboard Card - Coming Soon -->
-                        <div class="app-card coming-soon" data-app="redlining" id="redliningCard" onclick="handleInfoClick('Redlining Dashboard')">
-                            <h3 class="app-card-title">Redlining Dashboard</h3>
-                            <p class="app-card-description">
-                                Fair lending analysis comparing bank lending in minority census tracts against peers.
-                            </p>
-                            <div class="app-card-buttons">
-                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- PUBLIC Category -->
-                <section class="category-section">
-                    <h2 class="category-header">Public</h2>
-                    <div class="apps-grid">
-                        <!-- CommentMaker Card - Coming Soon -->
+                        <!-- CommentMaker Card - Coming Soon (far right) -->
                         <div class="app-card coming-soon" data-app="commentmaker" onclick="handleInfoClick('CommentMaker')">
                             <h3 class="app-card-title">CommentMaker</h3>
                             <p class="app-card-description">
@@ -1778,15 +1696,102 @@
                     </div>
                 </section>
 
-                <!-- ADMIN Category -->
+                <!-- DATA TOOLS Section - For researchers and analysts -->
+                <section class="category-section" id="dataToolsSection">
+                    <h2 class="category-header">Data Tools</h2>
+                    <p class="category-subtitle">Interactive dashboards and query tools for researchers and analysts.</p>
+                    <div class="apps-grid">
+                        <!-- DataExplorer Card -->
+                        <div class="app-card" data-app="dataexplorer" onclick="handleInfoClick('DataExplorer')">
+                            <h3 class="app-card-title">DataExplorer</h3>
+                            <p class="app-card-description">
+                                Query the full HMDA dataset with custom filters. Export raw data for your own analysis.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/dataexplorer" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- BranchMapper Card -->
+                        <div class="app-card" data-app="branchmapper" onclick="handleInfoClick('BranchMapper')">
+                            <h3 class="app-card-title">BranchMapper</h3>
+                            <p class="app-card-description">
+                                Interactive map of branch locations with demographic overlays and filters.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/branchmapper" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- INTERNAL TOOLS Section - Staff & above -->
+                <section class="category-section" id="internalToolsSection" style="display: none;">
+                    <h2 class="category-header">Internal Tools <span class="category-note">Staff & above</span></h2>
+                    <p class="category-subtitle">Advanced analysis tools for NCRC staff research and advocacy.</p>
+                    <div class="apps-grid">
+                        <!-- MergerMeter Card (Active - first) -->
+                        <div class="app-card" data-app="mergermeter" onclick="handleInfoClick('MergerMeter')">
+                            <h3 class="app-card-title">MergerMeter</h3>
+                            <p class="app-card-description">
+                                Bank merger impact analysis with CBA goal recommendations and peer comparisons.
+                            </p>
+                            <div class="app-card-buttons">
+                                <a href="/mergermeter" class="app-card-launch-btn" onclick="event.stopPropagation()">
+                                    Launch <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- ElectWatch Card - Coming Soon -->
+                        <div class="app-card coming-soon" data-app="electwatch" onclick="handleInfoClick('ElectWatch')">
+                            <h3 class="app-card-title">ElectWatch</h3>
+                            <p class="app-card-description">
+                                Track campaign contributions from financial institutions to Congress.
+                            </p>
+                            <div class="app-card-buttons">
+                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
+                            </div>
+                        </div>
+
+                        <!-- LenderProfile Card - Coming Soon -->
+                        <div class="app-card coming-soon" data-app="lenderprofile" onclick="handleInfoClick('LenderProfile')">
+                            <h3 class="app-card-title">LenderProfile</h3>
+                            <p class="app-card-description">
+                                Comprehensive lender intelligence combining corporate structure and CRA ratings.
+                            </p>
+                            <div class="app-card-buttons">
+                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
+                            </div>
+                        </div>
+
+                        <!-- Redlining Dashboard Card - Coming Soon -->
+                        <div class="app-card coming-soon" data-app="redlining" id="redliningCard" onclick="handleInfoClick('Redlining Dashboard')">
+                            <h3 class="app-card-title">Redlining Dashboard</h3>
+                            <p class="app-card-description">
+                                Compare bank lending in minority tracts against peer institutions.
+                            </p>
+                            <div class="app-card-buttons">
+                                <span class="coming-soon-badge"><i class="fas fa-clock"></i> Coming Soon</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ADMIN Section - Senior Executive & above -->
                 <section class="category-section" id="adminSection" style="display: none;">
                     <h2 class="category-header">Admin <span class="category-note">Senior Executive & above</span></h2>
+                    <p class="category-subtitle">Platform monitoring and user management tools.</p>
                     <div class="apps-grid">
-                        <!-- Analytics Card - visible to staff, senior_executive, admin -->
+                        <!-- Analytics Card -->
                         <div class="app-card" data-app="analytics" onclick="handleInfoClick('Analytics')">
                             <h3 class="app-card-title">Analytics</h3>
                             <p class="app-card-description">
-                                User activity monitoring and application usage dashboards.
+                                Monitor platform usage, report generation, and feature adoption.
                             </p>
                             <div class="app-card-buttons">
                                 <a href="/analytics" class="app-card-launch-btn" onclick="event.stopPropagation()">
@@ -1795,11 +1800,11 @@
                             </div>
                         </div>
 
-                        <!-- Administration Card - visible only to admin -->
+                        <!-- Administration Card -->
                         <div class="app-card" data-app="admin" id="administrationCard" onclick="window.location.href='/admin/users'">
                             <h3 class="app-card-title">Administration</h3>
                             <p class="app-card-description">
-                                User management, accounts, and system integrations.
+                                Manage user accounts, permissions, and system integrations.
                             </p>
                             <div class="app-card-buttons">
                                 <a href="/admin/users" class="app-card-launch-btn" onclick="event.stopPropagation()">
@@ -1807,7 +1812,6 @@
                                 </a>
                             </div>
                         </div>
-
                     </div>
                 </section>
             </main>
@@ -2487,8 +2491,10 @@
         setTimeout(checkVerificationBannerOnLoad, 1500);
 
         // User Access Configuration (9 user types)
+        // Tiers: 1=anonymous, 2=public, 3=just_economy, 4=member, 5=member_plus, 6=institutional, 7=staff, 8=senior_exec, 9=admin
         const appAccessConfig = {
-            'lendsight': {
+            // REPORTS SECTION
+            'lendsight': {  // Min tier 2 (public)
                 public_anonymous: 'locked',
                 public_registered: 'limited',
                 just_economy_club: 'limited',
@@ -2499,18 +2505,7 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'branchsight': {
-                public_anonymous: 'locked',
-                public_registered: 'locked',
-                just_economy_club: 'limited',
-                member: 'full',
-                member_premium: 'full',
-                non_member_org: 'full',
-                staff: 'full',
-                senior_executive: 'full',
-                admin: 'full'
-            },
-            'branchmapper': {
+            'bizsight': {  // Min tier 4 (member)
                 public_anonymous: 'locked',
                 public_registered: 'locked',
                 just_economy_club: 'locked',
@@ -2521,10 +2516,10 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'bizsight': {
+            'branchsight': {  // Min tier 4 (member)
                 public_anonymous: 'locked',
                 public_registered: 'locked',
-                just_economy_club: 'limited',
+                just_economy_club: 'locked',
                 member: 'full',
                 member_premium: 'full',
                 non_member_org: 'full',
@@ -2532,7 +2527,7 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'commentmaker': {
+            'commentmaker': {  // Min tier 2 (public) - Coming Soon
                 public_anonymous: 'full',
                 public_registered: 'full',
                 just_economy_club: 'full',
@@ -2543,18 +2538,8 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'justpolicy': {
-                public_anonymous: 'full',
-                public_registered: 'full',
-                just_economy_club: 'full',
-                member: 'full',
-                member_premium: 'full',
-                non_member_org: 'full',
-                staff: 'full',
-                senior_executive: 'full',
-                admin: 'full'
-            },
-            'dataexplorer': {
+            // DATA TOOLS SECTION
+            'dataexplorer': {  // Min tier 5 (member_plus)
                 public_anonymous: 'locked',
                 public_registered: 'locked',
                 just_economy_club: 'locked',
@@ -2565,7 +2550,19 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'mergermeter': {
+            'branchmapper': {  // Min tier 5 (member_plus)
+                public_anonymous: 'locked',
+                public_registered: 'locked',
+                just_economy_club: 'locked',
+                member: 'locked',
+                member_premium: 'full',
+                non_member_org: 'full',
+                staff: 'full',
+                senior_executive: 'full',
+                admin: 'full'
+            },
+            // INTERNAL TOOLS SECTION
+            'mergermeter': {  // Min tier 7 (staff)
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
                 just_economy_club: 'hidden',
@@ -2576,7 +2573,7 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'lenderprofile': {
+            'electwatch': {  // Min tier 7 (staff) - Coming Soon
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
                 just_economy_club: 'hidden',
@@ -2587,7 +2584,7 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'analytics': {
+            'lenderprofile': {  // Min tier 7 (staff) - Coming Soon
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
                 just_economy_club: 'hidden',
@@ -2598,7 +2595,30 @@
                 senior_executive: 'full',
                 admin: 'full'
             },
-            'admin': {
+            'redlining': {  // Min tier 7 (staff) - Coming Soon
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                just_economy_club: 'hidden',
+                member: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
+                staff: 'full',
+                senior_executive: 'full',
+                admin: 'full'
+            },
+            // ADMIN SECTION
+            'analytics': {  // Min tier 8 (senior_executive)
+                public_anonymous: 'hidden',
+                public_registered: 'hidden',
+                just_economy_club: 'hidden',
+                member: 'hidden',
+                member_premium: 'hidden',
+                non_member_org: 'hidden',
+                staff: 'hidden',
+                senior_executive: 'full',
+                admin: 'full'
+            },
+            'admin': {  // Min tier 9 (administrator)
                 public_anonymous: 'hidden',
                 public_registered: 'hidden',
                 just_economy_club: 'hidden',
@@ -2607,17 +2627,6 @@
                 non_member_org: 'hidden',
                 staff: 'hidden',
                 senior_executive: 'hidden',
-                admin: 'full'
-            },
-            'electwatch': {
-                public_anonymous: 'hidden',
-                public_registered: 'hidden',
-                just_economy_club: 'hidden',
-                member: 'hidden',
-                member_premium: 'hidden',
-                non_member_org: 'hidden',
-                staff: 'full',
-                senior_executive: 'full',
                 admin: 'full'
             }
         };
