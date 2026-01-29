@@ -1658,6 +1658,22 @@ def get_entity_users(
         return []
 
 
+def _is_ga4_client_id(user_id: str) -> bool:
+    """
+    Check if a user_id is a GA4 client ID (format: number.number) vs Firebase Auth UID.
+    GA4 client IDs look like: 2106917405.1769129344
+    Firebase Auth UIDs are alphanumeric without periods.
+    """
+    if not user_id:
+        return False
+    # GA4 client IDs contain a period and are numeric on both sides
+    if '.' in user_id:
+        parts = user_id.split('.')
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            return True
+    return False
+
+
 def _enrich_users_from_firestore(users: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Enrich user records with profile data from Firestore.
@@ -1678,6 +1694,11 @@ def _enrich_users_from_firestore(users: List[Dict[str, Any]]) -> List[Dict[str, 
     for user in users:
         user_id = user.get('user_id')
         if not user_id:
+            continue
+
+        # Skip GA4 client IDs - they won't have Firestore profiles
+        # GA4 client IDs look like: 2106917405.1769129344
+        if _is_ga4_client_id(user_id):
             continue
 
         try:
