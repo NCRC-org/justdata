@@ -547,7 +547,7 @@ def _create_mortgage_goals_sheet(wb: Workbook, mortgage_goals_data: Dict, years_
             # Get values from grand_totals
             hp_val = grand_totals.get(f'{metric}_hp', grand_totals.get('home_purchase', {}).get(metric, 0))
             refi_val = grand_totals.get(f'{metric}_refi', grand_totals.get('refinance', {}).get(metric, 0))
-            hi_val = grand_totals.get(f'{metric}_hi', grand_totals.get('home_improvement', {}).get(metric, 0))
+            hi_val = grand_totals.get(f'{metric}_hi', grand_totals.get('home_equity', {}).get(metric, 0))
 
             ws.cell(row, 3, hp_val)  # Home Purchase
             ws.cell(row, 4, refi_val)  # Refinance
@@ -587,7 +587,7 @@ def _create_mortgage_goals_sheet(wb: Workbook, mortgage_goals_data: Dict, years_
 
                 hp_val = state_data.get(f'{metric}_hp', state_data.get('home_purchase', {}).get(metric, 0))
                 refi_val = state_data.get(f'{metric}_refi', state_data.get('refinance', {}).get(metric, 0))
-                hi_val = state_data.get(f'{metric}_hi', state_data.get('home_improvement', {}).get(metric, 0))
+                hi_val = state_data.get(f'{metric}_hi', state_data.get('home_equity', {}).get(metric, 0))
 
                 ws.cell(row, 3, hp_val)
                 ws.cell(row, 4, refi_val)
