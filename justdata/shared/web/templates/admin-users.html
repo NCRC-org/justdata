@@ -735,14 +735,12 @@
                 </div>
                 <select class="filter-select" id="typeFilter" onchange="filterAndRenderUsers()">
                     <option value="">All User Types</option>
-                    <option value="admin">Admin</option>
+                    <option value="admin">Administrator</option>
                     <option value="senior_executive">Senior Executive</option>
                     <option value="staff">Staff</option>
                     <option value="member">Member</option>
-                    <option value="member_premium">Premium Member</option>
-                    <option value="non_member_org">Institutional</option>
-                    <option value="public_registered">Public Registered</option>
-                    <option value="public_anonymous">Anonymous</option>
+                    <option value="member_premium">Member Plus</option>
+                    <option value="public_registered">Registered</option>
                 </select>
             </div>
         </div>
@@ -821,12 +819,10 @@
                     <label for="userType">User Type *</label>
                     <select id="userTypeSelect" name="userType" required>
                         <option value="">Select user type...</option>
-                        <option value="public_anonymous">Public Anonymous</option>
-                        <option value="public_registered">Public Registered</option>
-                        <option value="member">Member ($900/yr)</option>
-                        <option value="member_premium">Premium Member</option>
-                        <option value="non_member_org">Institutional/Org</option>
-                        <option value="staff">NCRC Staff</option>
+                        <option value="public_registered">Registered</option>
+                        <option value="member">Member</option>
+                        <option value="member_premium">Member Plus</option>
+                        <option value="staff">Staff</option>
                         <option value="senior_executive">Senior Executive</option>
                         <option value="admin">Administrator</option>
                     </select>
@@ -952,11 +948,11 @@
         'public_anonymous': 'Anonymous',
         'public_registered': 'Registered',
         'member': 'Member',
-        'member_premium': 'Premium',
+        'member_premium': 'Member Plus',
         'non_member_org': 'Institutional',
         'staff': 'Staff',
-        'senior_executive': 'Sr. Executive',
-        'admin': 'Admin'
+        'senior_executive': 'Senior Executive',
+        'admin': 'Administrator'
     };
 
     // Toast notification
