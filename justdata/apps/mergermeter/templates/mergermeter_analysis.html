@@ -2168,7 +2168,8 @@
             };
 
             // Check if required banks are selected and show assessment area section
-            function checkAndShowAssessmentAreas() {
+            // Make globally accessible so jQuery handler can call it
+            window.checkAndShowAssessmentAreas = function() {
                 const acquirerLei = document.getElementById('acquirer_lei').value;
                 const targetLei = document.getElementById('target_lei').value;
                 const isSingleBankMode = document.getElementById('singleBankMode').checked;
