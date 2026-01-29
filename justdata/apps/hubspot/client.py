@@ -184,17 +184,17 @@ class HubSpotClient:
             raise Exception(f"Failed to create company: {e}")
     
     async def update_company(
-        self, 
-        company_id: str, 
+        self,
+        company_id: str,
         properties: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Update an existing company.
-        
+
         Args:
             company_id: HubSpot company ID
             properties: Dictionary of properties to update
-            
+
         Returns:
             Updated company data
         """
@@ -206,6 +206,39 @@ class HubSpotClient:
             return api_response.to_dict()
         except CompaniesApiException as e:
             raise Exception(f"Failed to update company {company_id}: {e}")
+
+    async def search_companies(
+        self,
+        filters: List[Dict[str, Any]],
+        properties: Optional[List[str]] = None,
+        limit: int = 100
+    ) -> List[Dict[str, Any]]:
+        """
+        Search companies with filters.
+
+        Args:
+            filters: List of filter dictionaries (e.g., [{"propertyName": "domain", "operator": "EQ", "value": "example.com"}])
+            properties: List of property names to return (optional)
+            limit: Maximum number of results
+
+        Returns:
+            List of matching companies
+        """
+        search_request = {
+            "filterGroups": [{"filters": filters}],
+            "limit": limit
+        }
+
+        if properties:
+            search_request["properties"] = properties
+
+        try:
+            api_response = self.client.crm.companies.search_api.do_search(
+                public_object_search_request=search_request
+            )
+            return [result.to_dict() for result in api_response.results]
+        except CompaniesApiException as e:
+            raise Exception(f"Failed to search companies: {e}")
     
     # =========================================================================
     # ASSOCIATIONS
