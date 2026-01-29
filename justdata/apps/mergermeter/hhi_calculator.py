@@ -91,8 +91,8 @@ def get_county_deposit_data(
             CAST(b.rssd AS STRING) as rssd,
             b.bank_name,
             SUM(b.deposits_000s * 1000) as total_deposits  -- Convert from thousands to actual amount
-        FROM `hdma1-242116.branches.sod25` b
-        LEFT JOIN `hdma1-242116.geo.cbsa_to_county` c
+        FROM `justdata-ncrc.branchsight.sod` b
+        LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
             ON CAST(b.geoid5 AS STRING) = CAST(c.geoid5 AS STRING)
         WHERE CAST(b.year AS STRING) = '{year}'
             AND CAST(b.geoid5 AS STRING) IN ({geoid5_str})

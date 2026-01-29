@@ -22,7 +22,7 @@ class BigQueryCreditUnionBranchClient:
         Args:
             project_id: GCP project ID (defaults to environment variable)
         """
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         self.client = None
     
     def _get_client(self):
@@ -80,8 +80,8 @@ class BigQueryCreditUnionBranchClient:
                     b.rssd,
                     COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
                     COALESCE(c.cbsa_name, CONCAT(c.state_name, ' Non-MSA')) as cbsa_name
-                FROM `{self.project_id}.justdata.credit_union_branches` b
-                LEFT JOIN `{self.project_id}.geo.cbsa_to_county` c
+                FROM `justdata-ncrc.lenderprofile.cu_branches` b
+                LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
                     ON CAST(b.county AS STRING) = CAST(c.county_name AS STRING)
                     AND CAST(b.state AS STRING) = CAST(c.state_name AS STRING)
                 WHERE {' AND '.join(where_conditions)}

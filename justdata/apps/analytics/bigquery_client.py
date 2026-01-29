@@ -329,11 +329,11 @@ EVENTS_TABLE = 'justdata-ncrc.firebase_analytics.all_events'
 # Project where we run queries (where service account has bigquery.jobs.create permission)
 # This is different from ANALYTICS_VIEW_PROJECT - we can query cross-project data
 # using fully-qualified table names while running jobs in our home project
-QUERY_PROJECT = 'hdma1-242116'
+QUERY_PROJECT = 'justdata-ncrc'
 
 # Backfill source (for sync_new_events function - syncs from usage_log to backfilled_events)
-BACKFILL_PROJECT = 'hdma1-242116'
-BACKFILL_DATASET = 'justdata_analytics'
+BACKFILL_PROJECT = 'justdata-ncrc'
+BACKFILL_DATASET = 'firebase_analytics'
 
 # Target apps for main analytics counts
 TARGET_APPS = [
@@ -426,8 +426,8 @@ _county_centroids = None
 _cbsa_centroids = None
 
 # BigQuery tables for centroids (created by Jay after CSV upload)
-COUNTY_CENTROIDS_TABLE = 'hdma1-242116.justdata_analytics.county_centroids'
-CBSA_CENTROIDS_TABLE = 'hdma1-242116.justdata_analytics.cbsa_centroids'
+COUNTY_CENTROIDS_TABLE = 'justdata-ncrc.shared.county_centroids'
+CBSA_CENTROIDS_TABLE = 'justdata-ncrc.shared.cbsa_centroids'
 
 # Local CSV fallback paths (for development/testing before BigQuery upload)
 import os
@@ -1060,7 +1060,7 @@ def _enrich_with_county_names(client, data: List[Dict]) -> List[Dict]:
     fips_str = "', '".join(fips_list)
     query = f"""
         SELECT DISTINCT geoid5 AS county_fips, County AS county_name
-        FROM `hdma1-242116.geo.cbsa_to_county`
+        FROM `justdata-ncrc.shared.cbsa_to_county`
         WHERE geoid5 IN ('{fips_str}')
     """
 
@@ -1893,8 +1893,8 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
     ]
     service_accounts_str = "', '".join(SERVICE_ACCOUNTS)
     
-    # Query against hdma1-242116 where the jobs actually run
-    query_project = 'hdma1-242116'
+    # Query against justdata-ncrc where the jobs actually run
+    query_project = 'justdata-ncrc'
     
     # Query to get cost summary by app (filtered to JustData service accounts)
     cost_by_app_query = f"""

@@ -11,7 +11,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PROJECT_ID = "hdma1-242116"
+DEFAULT_PROJECT_ID = "justdata-ncrc"
 DEFAULT_ACS_YEAR = "2022"
 
 

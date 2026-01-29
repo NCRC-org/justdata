@@ -236,7 +236,7 @@ def get_tracts_for_connecticut_selection(
         SELECT DISTINCT
             LPAD(CAST(geoid AS STRING), 11, '0') as geoid11,
             SUBSTR(LPAD(CAST(geoid AS STRING), 11, '0'), 1, 5) as geoid5
-        FROM `hdma1-242116.geo.census`
+        FROM `justdata-ncrc.shared.census`
         WHERE SUBSTR(LPAD(CAST(geoid AS STRING), 11, '0'), 1, 5) IN ('{county_fips_str}')
         ORDER BY geoid11
         """

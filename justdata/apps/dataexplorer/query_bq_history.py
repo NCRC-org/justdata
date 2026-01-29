@@ -33,7 +33,7 @@ def find_tableau_queries(lei: str = "WWB2V0FCW3A0EE3ZJN75", lender_name: str = "
         print("ERROR: BigQuery client not available")
         return
     
-    project_id = config.get('GCP_PROJECT_ID', 'hdma1-242116')
+    project_id = config.get('GCP_PROJECT_ID', 'justdata-ncrc')
     
     print(f"Searching for queries in the last {hours_back} hours...")
     print(f"Looking for LEI: {lei}")

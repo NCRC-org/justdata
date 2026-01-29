@@ -17,7 +17,7 @@ def get_bigquery_client(project_id: str):
         return None
 
 
-def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "hdma1-242116") -> Optional[Dict[str, str]]:
+def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "justdata-ncrc") -> Optional[Dict[str, str]]:
     """
     Get CBSA code and name for a county.
     
@@ -69,7 +69,7 @@ def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "hd
         return None
 
 
-def get_metros_by_state(state_name: str, project_id: str = "hdma1-242116") -> List[Dict[str, str]]:
+def get_metros_by_state(state_name: str, project_id: str = "justdata-ncrc") -> List[Dict[str, str]]:
     """
     Get all metro areas (CBSAs) for a state.
     
@@ -120,7 +120,7 @@ def get_metros_by_state(state_name: str, project_id: str = "hdma1-242116") -> Li
         return []
 
 
-def get_counties_by_metro(cbsa_code: str, project_id: str = "hdma1-242116") -> List[str]:
+def get_counties_by_metro(cbsa_code: str, project_id: str = "justdata-ncrc") -> List[str]:
     """
     Get all counties in a metro area.
     

@@ -256,7 +256,7 @@ def get_lender_target_counties(
         query = f"""
         SELECT DISTINCT
             geoid5 as geoid
-        FROM `{PROJECT_ID}.branches.sod25`
+        FROM `{PROJECT_ID}.branchsight.sod`
         WHERE (rssd = '{escaped_rssd_unpadded}' OR rssd = '{escaped_rssd_padded}')
           AND CAST(year AS STRING) = '{validated_year}'
         ORDER BY geoid5
@@ -315,10 +315,10 @@ def load_all_lenders18() -> List[Dict[str, Any]]:
                 l.respondent_state
             ) as respondent_state,
             COUNT(h.lei) as lar_count
-        FROM `{PROJECT_ID}.hmda.lenders18` l
-        LEFT JOIN `{PROJECT_ID}.hmda.lender_names_gleif` g
+        FROM `{PROJECT_ID}.lendsight.lenders18` l
+        LEFT JOIN `{PROJECT_ID}.shared.lender_names_gleif` g
             ON l.lei = g.lei
-        LEFT JOIN `{PROJECT_ID}.hmda.hmda` h
+        LEFT JOIN `{PROJECT_ID}.shared.de_hmda` h
             ON l.lei = h.lei
         WHERE l.respondent_name IS NOT NULL
           AND l.lei IS NOT NULL
@@ -399,7 +399,7 @@ def search_lenders18(lender_name: str, limit: int = 20, include_verification: bo
             respondent_city,
             respondent_state,
             type_name
-        FROM `{PROJECT_ID}.hmda.lenders18`
+        FROM `{PROJECT_ID}.lendsight.lenders18`
         WHERE LOWER(respondent_name) LIKE LOWER('%{escaped_name}%')
           AND respondent_name IS NOT NULL
           AND lei IS NOT NULL
@@ -416,7 +416,7 @@ def search_lenders18(lender_name: str, limit: int = 20, include_verification: bo
             
             if len(results) == 0:
                 # Try a test query to see if table has any data
-                test_query = f"SELECT COUNT(*) as cnt FROM `{PROJECT_ID}.hmda.lenders18` LIMIT 1"
+                test_query = f"SELECT COUNT(*) as cnt FROM `{PROJECT_ID}.lendsight.lenders18` LIMIT 1"
                 test_results = execute_query(client, test_query)
                 if test_results:
                     logger.warning(f"Table exists but search returned 0 results. Table has {test_results[0].get('cnt', 'unknown')} total rows")
@@ -581,7 +581,7 @@ def get_lender_from_bigquery_tables(lei: str = None, rssd: str = None) -> Option
                 lender_name,
                 rssd_id,
                 'HMDA' as source
-            FROM `{PROJECT_ID}.hmda.lenders`
+            FROM `{PROJECT_ID}.lendsight.lenders18`
             WHERE lei = '{escape_sql_string(lei)}'
             ORDER BY lender_name
             LIMIT 1
@@ -594,7 +594,7 @@ def get_lender_from_bigquery_tables(lei: str = None, rssd: str = None) -> Option
                 lender_name,
                 rssd_id,
                 'HMDA' as source
-            FROM `{PROJECT_ID}.hmda.lenders18`
+            FROM `{PROJECT_ID}.lendsight.lenders18`
             WHERE rssd_id = '{escape_sql_string(rssd)}'
             ORDER BY lender_name
             LIMIT 1
@@ -796,7 +796,7 @@ def get_gleif_data_by_lei(lei: str) -> Optional[Dict[str, Any]]:
             ultimate_parent_name,
             direct_children,
             ultimate_children
-        FROM `{PROJECT_ID}.hmda.lender_names_gleif`
+        FROM `{PROJECT_ID}.shared.lender_names_gleif`
         WHERE lei = '{escape_sql_string(lei.upper())}'
         LIMIT 1
         """
@@ -880,7 +880,7 @@ def get_lender_details_by_lei(lei: str) -> Optional[Dict[str, Any]]:
             respondent_name,
             respondent_city,
             respondent_state
-        FROM `{PROJECT_ID}.hmda.lenders18`
+        FROM `{PROJECT_ID}.lendsight.lenders18`
         WHERE lei = '{escape_sql_string(lei)}'
         LIMIT 1
         """
@@ -915,7 +915,7 @@ def get_lender_details_by_lei(lei: str) -> Optional[Dict[str, Any]]:
                 query_sb_resid = f"""
                 SELECT DISTINCT
                     sb_resid
-                FROM `{PROJECT_ID}.sb.lenders`
+                FROM `{PROJECT_ID}.bizsight.sb_lenders`
                 WHERE sb_rssd = '{escape_sql_string(rssd_unpadded)}'
                    OR sb_rssd = '{escape_sql_string(rssd_padded)}'
                 LIMIT 1
@@ -999,8 +999,8 @@ def get_peer_lenders(
                 COALESCE(l.respondent_name, h.lei) as lender_name,
                 SUM(h.loan_amount) as total_volume,
                 COUNT(*) as loan_count
-            FROM `{PROJECT_ID}.hmda.hmda` h
-            LEFT JOIN `{PROJECT_ID}.hmda.lenders18` l
+            FROM `{PROJECT_ID}.shared.de_hmda` h
+            LEFT JOIN `{PROJECT_ID}.lendsight.lenders18` l
                 ON h.lei = l.lei
             WHERE h.lei != '{escaped_lender_id}'
               AND h.action_taken = '1'
@@ -1018,8 +1018,8 @@ def get_peer_lenders(
                 COALESCE(l.respondent_name, s.lei) as lender_name,
                 SUM(s.loan_amount) as total_volume,
                 SUM(s.number_of_loans) as loan_count
-            FROM `{PROJECT_ID}.sb.disclosure` s
-            LEFT JOIN `{PROJECT_ID}.hmda.lenders18` l
+            FROM `{PROJECT_ID}.bizsight.sb_county_summary` s
+            LEFT JOIN `{PROJECT_ID}.lendsight.lenders18` l
                 ON s.lei = l.lei
             WHERE s.lei != '{escaped_lender_id}'
             GROUP BY s.lei, l.respondent_name
@@ -1065,7 +1065,7 @@ def get_county_names_from_geoids(geoids: List[str]) -> List[str]:
             LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid,
             County as county_name,
             State as state_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoids_str}')
           AND County IS NOT NULL
           AND State IS NOT NULL
@@ -1238,7 +1238,7 @@ def get_states() -> List[Dict[str, Any]]:
         SELECT DISTINCT
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as code,
             State as name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE geoid5 IS NOT NULL
           AND State IS NOT NULL
         ORDER BY State
@@ -1277,7 +1277,7 @@ def get_metros() -> List[Dict[str, Any]]:
                 COUNTIF(CAST(geoid5 AS STRING) LIKE '091%'
                        AND CAST(geoid5 AS STRING) >= '09110'
                        AND CAST(geoid5 AS STRING) <= '09190') as ct_planning_region_count
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
             WHERE cbsa_code IS NOT NULL
               AND CBSA IS NOT NULL
               AND TRIM(CBSA) != ''
@@ -1340,7 +1340,7 @@ def get_counties_for_state(state_fips: str) -> List[Dict[str, Any]]:
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as fips,
             CAST(cbsa_code AS STRING) as cbsa,
             CBSA as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{escaped_state}'
           AND geoid5 IS NOT NULL
           AND County IS NOT NULL
@@ -1387,7 +1387,7 @@ def get_counties_for_metro(cbsa_code: str) -> List[Dict[str, Any]]:
             State as state_name,
             CAST(cbsa_code AS STRING) as cbsa,
             CBSA as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{escaped_cbsa}'
           AND geoid5 IS NOT NULL
           AND County IS NOT NULL

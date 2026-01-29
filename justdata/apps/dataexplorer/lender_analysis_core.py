@@ -52,7 +52,7 @@ def _format_all_metros_for_excel(metros_df: pd.DataFrame, years: List[int], PROJ
                     CAST(c.cbsa_code AS STRING) as cbsa_code,
                     c.CBSA as cbsa_name,
                     CAST(c.geoid5 AS STRING) as geoid5
-                FROM `{PROJECT_ID}.geo.cbsa_to_county` c
+                FROM `{PROJECT_ID}.shared.cbsa_to_county` c
                 WHERE CAST(c.geoid5 AS STRING) IN ('{counties_str}')
                   AND c.cbsa_code IS NOT NULL
                   AND c.CBSA IS NOT NULL
@@ -195,14 +195,14 @@ def _generate_peer_data_sheet_for_excel(
             MAX(l.respondent_name) as lender_name,
             h.lei,
             COUNT(*) as applications
-        FROM `{PROJECT_ID}.hmda.hmda` h
+        FROM `{PROJECT_ID}.shared.de_hmda` h
         -- For 2022-2023 Connecticut data, join to geo.census to get planning region from tract
-        LEFT JOIN `{PROJECT_ID}.geo.census` ct_tract
+        LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
             ON CAST(h.county_code AS STRING) LIKE '09%'
             AND CAST(h.county_code AS STRING) NOT LIKE '091%'
             AND h.census_tract IS NOT NULL
             AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
-        LEFT JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+        LEFT JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
             ON COALESCE(
                 -- For 2022-2023: Use planning region from tract
                 CASE 
@@ -215,7 +215,7 @@ def _generate_peer_data_sheet_for_excel(
                 -- For 2024: Use planning region code directly from county_code
                 CAST(h.county_code AS STRING)
             ) = CAST(c.geoid5 AS STRING)
-        LEFT JOIN `{PROJECT_ID}.hmda.lenders18` l
+        LEFT JOIN `{PROJECT_ID}.lendsight.lenders18` l
             ON h.lei = l.lei
         WHERE CAST(c.geoid5 AS STRING) IN ('{counties_list}')
           AND h.lei IN ('{peer_leis_str}')
@@ -564,7 +564,7 @@ def check_lender_has_data(
             # COUNT query for custom geography
             count_query = f"""
             SELECT COUNT(*) as loan_count
-            FROM `{PROJECT_ID}.hmda.hmda` h
+            FROM `{PROJECT_ID}.shared.de_hmda` h
             WHERE h.lei = '{escape_sql_string(subject_lei)}'
               AND h.activity_year IN ('{years_str}')
               AND CAST(h.county_code AS STRING) IN ('{geoids_str}')
@@ -581,7 +581,7 @@ def check_lender_has_data(
             # The geography is determined by where the lender has loans, so we just check if they have ANY loans
             count_query = f"""
             SELECT COUNT(*) as loan_count, COUNT(DISTINCT county_code) as county_count
-            FROM `{PROJECT_ID}.hmda.hmda` h
+            FROM `{PROJECT_ID}.shared.de_hmda` h
             WHERE h.lei = '{escape_sql_string(subject_lei)}'
               AND h.activity_year IN ('{years_str}')
               AND {action_taken_clause}
@@ -812,8 +812,8 @@ def run_lender_analysis(
                     -- For 2024 planning region codes or if tract join fails, use county_code as-is
                     CAST(h.county_code AS STRING)
                 ) as geoid5
-            FROM `{PROJECT_ID}.hmda.hmda` h
-            LEFT JOIN `{PROJECT_ID}.geo.census` ct_tract
+            FROM `{PROJECT_ID}.shared.de_hmda` h
+            LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
                 ON CAST(h.county_code AS STRING) LIKE '09%'
                 AND CAST(h.county_code AS STRING) NOT LIKE '091%'
                 AND h.census_tract IS NOT NULL
@@ -843,7 +843,7 @@ def run_lender_analysis(
                     SELECT DISTINCT
                         CAST(c.geoid5 AS STRING) as geoid5,
                         c.county_state
-                    FROM `{PROJECT_ID}.geo.cbsa_to_county` c
+                    FROM `{PROJECT_ID}.shared.cbsa_to_county` c
                     WHERE CAST(c.geoid5 AS STRING) IN ('{counties_str}')
                       AND c.county_state IS NOT NULL
                     """
@@ -875,7 +875,7 @@ def run_lender_analysis(
             # First, find what years are available in SOD25
             available_years_query = f"""
             SELECT DISTINCT CAST(year AS STRING) as year_str
-            FROM `{PROJECT_ID}.branches.sod25`
+            FROM `{PROJECT_ID}.branchsight.sod`
             ORDER BY CAST(year AS STRING) DESC
             LIMIT 1
             """
@@ -913,7 +913,7 @@ def run_lender_analysis(
             # Step 1: First check what RSSD formats exist in the table (sample query)
             sample_rssd_query = f"""
             SELECT DISTINCT rssd, COUNT(*) as branch_count
-            FROM `{PROJECT_ID}.branches.sod25`
+            FROM `{PROJECT_ID}.branchsight.sod`
             WHERE rssd LIKE '%{rssd_unpadded[-6:]}%'  -- Last 6 digits to find similar RSSDs
             GROUP BY rssd
             ORDER BY branch_count DESC
@@ -931,7 +931,7 @@ def run_lender_analysis(
                    MIN(CAST(year AS STRING)) as min_year,
                    MAX(CAST(year AS STRING)) as max_year,
                    COUNT(DISTINCT CAST(year AS STRING)) as distinct_years
-            FROM `{PROJECT_ID}.branches.sod25`
+            FROM `{PROJECT_ID}.branchsight.sod`
             WHERE rssd = '{escaped_rssd_unpadded}' OR rssd = '{escaped_rssd_padded}'
             """
             logger.info(f"Running debug query (unpadded/padded): {debug_query[:200]}...")
@@ -945,7 +945,7 @@ def run_lender_analysis(
                         SELECT COUNT(*) as total_branches, 
                                MIN(CAST(year AS STRING)) as min_year,
                                MAX(CAST(year AS STRING)) as max_year
-                        FROM `{PROJECT_ID}.branches.sod25`
+                        FROM `{PROJECT_ID}.branchsight.sod`
                         WHERE rssd = '{escape_sql_string(rssd_original)}'
                         """
                         logger.info(f"Running debug query (original format): {debug_query2[:200]}...")
@@ -959,7 +959,7 @@ def run_lender_analysis(
             # Use the branch_year from SOD25 (not HMDA years)
             total_branches_query = f"""
             SELECT COUNT(*) as total_branches
-            FROM `{PROJECT_ID}.branches.sod25`
+            FROM `{PROJECT_ID}.branchsight.sod`
             WHERE (rssd = '{escaped_rssd_unpadded}' OR rssd = '{escaped_rssd_padded}' OR rssd = '{escape_sql_string(rssd_original)}')
               AND CAST(year AS STRING) = '{branch_year}'
             """
@@ -985,7 +985,7 @@ def run_lender_analysis(
                     # Check if any branches exist at all (without year filter)
                     any_branches_query = f"""
                     SELECT COUNT(*) as total
-                    FROM `{PROJECT_ID}.branches.sod25`
+                    FROM `{PROJECT_ID}.branchsight.sod`
                     WHERE rssd = '{escaped_rssd_unpadded}' OR rssd = '{escaped_rssd_padded}' OR rssd = '{escape_sql_string(rssd_original)}'
                     """
                     any_result = execute_query(client, any_branches_query)
@@ -994,7 +994,7 @@ def run_lender_analysis(
                         # Get available years
                         years_query = f"""
                         SELECT DISTINCT CAST(year AS STRING) as year_str
-                        FROM `{PROJECT_ID}.branches.sod25`
+                        FROM `{PROJECT_ID}.branchsight.sod`
                         WHERE rssd = '{escaped_rssd_unpadded}' OR rssd = '{escaped_rssd_padded}' OR rssd = '{escape_sql_string(rssd_original)}'
                         ORDER BY year_str
                         """
@@ -1026,8 +1026,8 @@ def run_lender_analysis(
             SELECT 
                 CAST(c.cbsa_code AS STRING) as cbsa_code,
                 COUNT(*) as branch_count
-            FROM `{PROJECT_ID}.branches.sod25` b
-            LEFT JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+            FROM `{PROJECT_ID}.branchsight.sod` b
+            LEFT JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
                 ON CAST(b.geoid5 AS STRING) = CAST(c.geoid5 AS STRING)
             WHERE (b.rssd = '{escaped_rssd_unpadded}' OR b.rssd = '{escaped_rssd_padded}' OR b.rssd = '{escape_sql_string(rssd_original)}')
               AND CAST(b.year AS STRING) = '{branch_year}'
@@ -1051,7 +1051,7 @@ def run_lender_analysis(
             counties_in_cbsas_query = f"""
             SELECT DISTINCT
                 CAST(geoid5 AS STRING) as geoid5
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
             WHERE CAST(cbsa_code AS STRING) IN ('{cbsa_codes_str}')
               AND geoid5 IS NOT NULL
             """
@@ -1134,13 +1134,13 @@ def run_lender_analysis(
             SELECT
                 CAST(c.cbsa_code AS STRING) as cbsa_code,
                 COUNT(*) as lender_loans
-            FROM `{PROJECT_ID}.hmda.hmda` h
-            LEFT JOIN `{PROJECT_ID}.geo.census` ct_tract
+            FROM `{PROJECT_ID}.shared.de_hmda` h
+            LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
                 ON CAST(h.county_code AS STRING) LIKE '09%'
                 AND CAST(h.county_code AS STRING) NOT LIKE '091%'
                 AND h.census_tract IS NOT NULL
                 AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
-            LEFT JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+            LEFT JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
                 ON COALESCE(
                     -- For 2022-2023 Connecticut: Use planning region from tract
                     CASE
@@ -1255,7 +1255,7 @@ def run_lender_analysis(
             cbsa_codes_str = "', '".join([escape_sql_string(c) for c in target_cbsa_codes])
             counties_in_cbsas_query = f"""
             SELECT DISTINCT CAST(geoid5 AS STRING) as geoid5
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
             WHERE CAST(cbsa_code AS STRING) IN ('{cbsa_codes_str}')
               AND geoid5 IS NOT NULL
             """
@@ -1297,7 +1297,7 @@ def run_lender_analysis(
                 SELECT DISTINCT
                     CAST(geoid5 AS STRING) as geoid5,
                     county_state
-                FROM `{PROJECT_ID}.geo.cbsa_to_county`
+                FROM `{PROJECT_ID}.shared.cbsa_to_county`
                 WHERE CAST(geoid5 AS STRING) IN ('{geoids_batch}')
                   AND county_state IS NOT NULL
                 """
@@ -1331,8 +1331,8 @@ def run_lender_analysis(
                             CAST(h.county_code AS STRING)
                         ) as geoid5,
                         h.county_state
-                    FROM `{PROJECT_ID}.hmda.hmda` h
-                    LEFT JOIN `{PROJECT_ID}.geo.census` ct_tract
+                    FROM `{PROJECT_ID}.shared.de_hmda` h
+                    LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
                         ON CAST(h.county_code AS STRING) LIKE '09%'
                         AND CAST(h.county_code AS STRING) NOT LIKE '091%'
                         AND h.census_tract IS NOT NULL
@@ -1481,13 +1481,13 @@ def run_lender_analysis(
                 h.lei,
                 SUM(h.loan_amount) as total_volume,
                 l.type_name
-            FROM `{PROJECT_ID}.hmda.hmda` h
-            LEFT JOIN `{PROJECT_ID}.geo.census` ct_tract
+            FROM `{PROJECT_ID}.shared.de_hmda` h
+            LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
                 ON CAST(h.county_code AS STRING) LIKE '09%'
                 AND CAST(h.county_code AS STRING) NOT LIKE '091%'
                 AND h.census_tract IS NOT NULL
                 AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
-            LEFT JOIN `{PROJECT_ID}.hmda.lenders18` l
+            LEFT JOIN `{PROJECT_ID}.lendsight.lenders18` l
                 ON h.lei = l.lei
             WHERE COALESCE(
                     -- For 2022-2023: Use planning region from tract

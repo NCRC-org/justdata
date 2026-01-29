@@ -655,9 +655,9 @@ def api_search_banks():
             CAST(l.respondent_rssd AS STRING) AS rssd,
             sb.sb_resid AS res_id,
             SAFE_CAST(l.assets AS INT64) AS assets
-        FROM `hdma1-242116.hmda.lender_names_gleif` g
-        JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
-        LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
+        FROM `justdata-ncrc.shared.lender_names_gleif` g
+        JOIN `justdata-ncrc.lendsight.lenders18` l ON g.lei = l.lei
+        LEFT JOIN `justdata-ncrc.bizsight.sb_lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
         WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
         ORDER BY assets DESC NULLS LAST
         LIMIT @limit

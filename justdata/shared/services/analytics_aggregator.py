@@ -38,7 +38,7 @@ def ensure_aggregates_table_exists():
         if not client:
             return False
 
-        table_id = "hdma1-242116.justdata_analytics.daily_aggregates"
+        table_id = "justdata-ncrc.cache.daily_aggregates"
 
         # Check if table exists
         try:
@@ -240,7 +240,7 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
                 COUNT(*) as total_events,
                 COUNT(DISTINCT user_id) as unique_users,
                 COUNT(CASE WHEN event_name LIKE '%_report' THEN 1 END) as reports_generated
-            FROM `hdma1-242116.justdata_analytics.all_events`
+            FROM `justdata-ncrc.firebase_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
         """
@@ -257,7 +257,7 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
             SELECT
                 event_name,
                 COUNT(*) as count
-            FROM `hdma1-242116.justdata_analytics.all_events`
+            FROM `justdata-ncrc.firebase_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
               AND event_name LIKE '%_report'
@@ -275,7 +275,7 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
             SELECT
                 state,
                 COUNT(*) as count
-            FROM `hdma1-242116.justdata_analytics.all_events`
+            FROM `justdata-ncrc.firebase_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
               AND event_name LIKE '%_report'
@@ -296,7 +296,7 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
                 lender_name,
                 COUNT(*) as count,
                 COUNT(DISTINCT user_id) as unique_users
-            FROM `hdma1-242116.justdata_analytics.all_events`
+            FROM `justdata-ncrc.firebase_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
               AND lender_id IS NOT NULL
@@ -322,7 +322,7 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
                 state,
                 COUNT(*) as count,
                 COUNT(DISTINCT user_id) as unique_users
-            FROM `hdma1-242116.justdata_analytics.all_events`
+            FROM `justdata-ncrc.firebase_analytics.all_events`
             WHERE event_timestamp >= TIMESTAMP('{start_str}')
               AND event_timestamp < TIMESTAMP('{end_str}')
               AND county_fips IS NOT NULL
@@ -360,7 +360,7 @@ def _store_aggregated_metrics(date, metrics: dict):
             return
 
         # Store in daily_aggregates table
-        table_id = "hdma1-242116.justdata_analytics.daily_aggregates"
+        table_id = "justdata-ncrc.cache.daily_aggregates"
 
         row = {
             'date': date.isoformat(),

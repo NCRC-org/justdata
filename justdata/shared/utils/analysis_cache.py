@@ -15,8 +15,8 @@ from google.cloud import bigquery
 from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 # Project and dataset
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
-DATASET_ID = 'justdata'
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+DATASET_ID = 'cache'
 
 # Table names
 CACHE_TABLE = f'{PROJECT_ID}.{DATASET_ID}.analysis_cache'

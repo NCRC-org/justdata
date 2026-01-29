@@ -36,7 +36,7 @@ class ElectWatchConfig:
     OUTPUT_DIR_STR = str(OUTPUT_DIR)
 
     # BigQuery Configuration
-    GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+    GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
     DATASET_ID = 'elected_officials'
 
     # FEC API Configuration

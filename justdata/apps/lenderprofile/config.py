@@ -22,7 +22,7 @@ APP_NAME = "LenderProfile"
 APP_PORT = int(os.getenv('PORT', 8086))
 
 # BigQuery Configuration (if needed)
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 
 # Cache Configuration
 CACHE_ENABLED = True

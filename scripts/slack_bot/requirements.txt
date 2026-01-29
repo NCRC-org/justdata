@@ -1,0 +1,9 @@
+# JustData Slack Bot Dependencies
+flask>=2.3.0
+gunicorn>=21.0.0
+slack-bolt>=1.18.0
+slack-sdk>=3.21.0
+google-cloud-bigquery>=3.11.0
+google-cloud-pubsub>=2.18.0
+requests>=2.31.0
+python-dotenv>=1.0.0

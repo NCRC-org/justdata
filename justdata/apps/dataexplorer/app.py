@@ -1769,7 +1769,7 @@ def get_bigquery_job_history():
         
         # Query the INFORMATION_SCHEMA for query history
         # This is more reliable than listing jobs
-        project_id = config.get('GCP_PROJECT_ID', 'hdma1-242116')
+        project_id = config.get('GCP_PROJECT_ID', 'justdata-ncrc')
         
         # Query job history from INFORMATION_SCHEMA
         query = f"""

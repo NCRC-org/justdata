@@ -5,11 +5,11 @@ Populates analytics data from existing JustData usage logs and analysis results.
 This allows analytics to show historical data before Firebase Analytics was enabled.
 
 DATA SOURCES:
-  - hdma1-242116.justdata.usage_log - Every API request with app, params, user_type
-  - hdma1-242116.justdata.analysis_results - Completed jobs with county/lender details
+  - justdata-ncrc.cache.usage_log - Every API request with app, params, user_type
+  - justdata-ncrc.cache.analysis_results - Completed jobs with county/lender details
 
 TARGET:
-  - justdata-f7da7.justdata_analytics.backfilled_events - Historical events table
+  - justdata-ncrc.firebase_analytics.backfilled_events - Historical events table
 
 USAGE:
   python -m justdata.apps.analytics.backfill_analytics
@@ -45,13 +45,13 @@ from typing import List, Dict, Any, Optional
 from google.cloud import bigquery
 
 # Source project (JustData app data)
-SOURCE_PROJECT = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+SOURCE_PROJECT = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 SOURCE_DATASET = 'justdata'
 
 # Target project/dataset for backfilled analytics
 # Using same project as source since credentials work there
 # Firebase Analytics live data will be in justdata-f7da7, but backfill goes here
-TARGET_PROJECT = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+TARGET_PROJECT = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 TARGET_DATASET = 'justdata_analytics'
 
 
@@ -398,7 +398,7 @@ def main():
     print("=" * 60)
     print()
 
-    print("Source: hdma1-242116.justdata.usage_log")
+    print(f"Source: {SOURCE_PROJECT}.{SOURCE_DATASET}.usage_log")
     print(f"Target: {TARGET_PROJECT}.{TARGET_DATASET}.backfilled_events")
     print()
 

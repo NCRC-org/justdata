@@ -13,7 +13,7 @@ sys.path.insert(0, str(project_root))
 
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 
-PROJECT_ID = "hdma1-242116"
+PROJECT_ID = "justdata-ncrc"
 
 def main():
     """Run the multiracial analysis query."""

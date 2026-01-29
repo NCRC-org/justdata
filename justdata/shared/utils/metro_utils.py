@@ -8,7 +8,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def get_bigquery_client(project_id: str = "hdma1-242116"):
+def get_bigquery_client(project_id: str = "justdata-ncrc"):
     """Get BigQuery client."""
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client as _get_client
@@ -18,7 +18,7 @@ def get_bigquery_client(project_id: str = "hdma1-242116"):
         return None
 
 
-def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "hdma1-242116") -> Optional[Dict[str, str]]:
+def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "justdata-ncrc") -> Optional[Dict[str, str]]:
     """
     Get CBSA code and name for a county.
 
@@ -70,7 +70,7 @@ def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "hd
         return None
 
 
-def get_cbsa_for_geoid5(geoid5: str, project_id: str = "hdma1-242116") -> Optional[Dict[str, str]]:
+def get_cbsa_for_geoid5(geoid5: str, project_id: str = "justdata-ncrc") -> Optional[Dict[str, str]]:
     """
     Get CBSA code and name for a county using GEOID5 (state+county FIPS).
 
@@ -121,7 +121,7 @@ def get_cbsa_for_geoid5(geoid5: str, project_id: str = "hdma1-242116") -> Option
         return None
 
 
-def get_metros_by_state(state_name: str, project_id: str = "hdma1-242116") -> List[Dict[str, str]]:
+def get_metros_by_state(state_name: str, project_id: str = "justdata-ncrc") -> List[Dict[str, str]]:
     """
     Get all metro areas (CBSAs) for a state.
 
@@ -172,7 +172,7 @@ def get_metros_by_state(state_name: str, project_id: str = "hdma1-242116") -> Li
         return []
 
 
-def get_counties_by_metro(cbsa_code: str, project_id: str = "hdma1-242116") -> List[str]:
+def get_counties_by_metro(cbsa_code: str, project_id: str = "justdata-ncrc") -> List[str]:
     """
     Get all counties in a metro area.
 
@@ -205,7 +205,7 @@ def get_counties_by_metro(cbsa_code: str, project_id: str = "hdma1-242116") -> L
         return []
 
 
-def get_all_states(project_id: str = "hdma1-242116") -> List[str]:
+def get_all_states(project_id: str = "justdata-ncrc") -> List[str]:
     """
     Get list of all US states from the geo data.
 
@@ -237,7 +237,7 @@ def get_all_states(project_id: str = "hdma1-242116") -> List[str]:
         return []
 
 
-def get_counties_by_state(state_name: str, project_id: str = "hdma1-242116") -> List[Dict[str, str]]:
+def get_counties_by_state(state_name: str, project_id: str = "justdata-ncrc") -> List[Dict[str, str]]:
     """
     Get all counties for a state with their FIPS codes.
 

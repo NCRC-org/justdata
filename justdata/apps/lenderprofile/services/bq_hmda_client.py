@@ -29,7 +29,7 @@ class BigQueryHMDAClient:
         Args:
             project_id: GCP project ID (defaults to environment variable)
         """
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         self.client = None
 
     def _get_client(self):
@@ -101,7 +101,7 @@ class BigQueryHMDAClient:
                 SELECT DISTINCT
                     CAST(cbsa_code AS STRING) as cbsa_code,
                     CBSA as cbsa_name
-                FROM `{self.project_id}.geo.cbsa_to_county`
+                FROM `justdata-ncrc.shared.cbsa_to_county`
                 WHERE cbsa_code IS NOT NULL
             )
             SELECT
@@ -486,7 +486,7 @@ class BigQueryHMDAClient:
             # Search for matching lender in lenders18 table
             query = f"""
             SELECT lei, respondent_name
-            FROM `{self.project_id}.hmda.lenders18`
+            FROM `justdata-ncrc.lendsight.lenders18`
             WHERE LOWER(respondent_name) LIKE '%{name_escaped}%'
             ORDER BY respondent_name
             LIMIT 5

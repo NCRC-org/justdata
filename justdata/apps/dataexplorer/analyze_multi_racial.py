@@ -13,7 +13,7 @@ from justdata.shared.utils.bigquery_client import get_bigquery_client
 import json
 
 def main():
-    client = get_bigquery_client('hdma1-242116')
+    client = get_bigquery_client('justdata-ncrc')
     
     # Read the SQL query
     script_dir = os.path.dirname(os.path.abspath(__file__))

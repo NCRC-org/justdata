@@ -23,7 +23,7 @@ class BigQueryBranchClient:
         Args:
             project_id: GCP project ID (defaults to environment variable)
         """
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         self.client = None
     
     def _get_client(self):
@@ -91,7 +91,7 @@ class BigQueryBranchClient:
                     COALESCE(CAST(c.cbsa_code AS STRING), 'N/A') as cbsa_code,
                     COALESCE(c.CBSA, CONCAT(c.State, ' Non-MSA')) as cbsa_name
                 FROM `{self.project_id}.justdata.sod_branches_optimized` b
-                LEFT JOIN `{self.project_id}.geo.cbsa_to_county` c
+                LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
                     ON CAST(b.geoid5 AS STRING) = CAST(c.geoid5 AS STRING)
                 WHERE (b.rssd = '{escaped_rssd_unpadded}' OR b.rssd = '{escaped_rssd_padded}')
                     AND b.year = '{year}'

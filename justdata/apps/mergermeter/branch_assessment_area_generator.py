@@ -14,7 +14,7 @@ import os
 
 # Get PROJECT_ID - handle both relative and absolute imports
 # PROJECT_ID is also available via environment variable
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 # Try to import from config if available (for consistency with other modules)
 try:
     import sys
@@ -61,7 +61,7 @@ def get_all_branches_for_bank(
             County as county_name,
             State as state_name,
             CONCAT(County, ', ', State) as county_state
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
     ),
 
     -- Get all branches for the bank
@@ -70,7 +70,7 @@ def get_all_branches_for_bank(
             CAST(b.rssd AS STRING) as rssd,
             CAST(b.geoid5 AS STRING) as geoid5,
             b.uninumbr
-        FROM `{PROJECT_ID}.branches.sod25` b
+        FROM `{PROJECT_ID}.branchsight.sod` b
         WHERE CAST(b.year AS STRING) = '{year}'
             AND CAST(b.rssd AS STRING) = '{rssd}'
             AND b.geoid5 IS NOT NULL
@@ -162,7 +162,7 @@ def get_cbsa_deposit_shares(
             CAST(geoid5 AS STRING) as geoid5,
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) != '99999'
     ),
     
@@ -171,7 +171,7 @@ def get_cbsa_deposit_shares(
         SELECT 
             CAST(b.geoid5 AS STRING) as geoid5,
             SUM(b.deposits_000s * 1000) as bank_deposits  -- Convert from thousands to actual amount
-        FROM `{PROJECT_ID}.branches.sod25` b
+        FROM `{PROJECT_ID}.branchsight.sod` b
         WHERE CAST(b.year AS STRING) = '{year}'
             AND CAST(b.rssd AS STRING) = '{rssd}'
             AND b.geoid5 IS NOT NULL
@@ -191,7 +191,7 @@ def get_cbsa_deposit_shares(
         SELECT
             CAST(geoid5 AS STRING) as geoid5,
             State as state_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
     ),
     
     -- Aggregate bank deposits by CBSA (for metro areas) and by State (for non-metro)
@@ -359,7 +359,7 @@ def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any
                 County as county_name,
                 State as state_name,
                 CONCAT(County, ', ', State) as county_state
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
             WHERE (cbsa_code IS NULL OR CAST(cbsa_code AS STRING) = 'N/A')
                 AND State = '{escape_sql_string(state_name)}'
             ORDER BY County
@@ -397,7 +397,7 @@ def _get_counties_for_cbsas(cbsa_codes: List[str], client) -> List[Dict[str, any
             State as state_name,
             CBSA as cbsa_name,
             CONCAT(County, ', ', State) as county_state
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
             AND CAST(cbsa_code AS STRING) != '99999'
         ORDER BY State, County
@@ -557,7 +557,7 @@ def generate_assessment_areas_from_branches(
                     CAST(cbsa_code AS STRING) as cbsa_code,
                     CBSA as cbsa_name,
                     State as state_name
-                FROM `{PROJECT_ID}.geo.cbsa_to_county`
+                FROM `{PROJECT_ID}.shared.cbsa_to_county`
                 WHERE CAST(cbsa_code AS STRING) != '99999'
             ),
             
@@ -567,7 +567,7 @@ def generate_assessment_areas_from_branches(
                 SELECT 
                     LPAD(CAST(h.county_code AS STRING), 5, '0') as geoid5,
                     COUNT(*) as loan_count
-                FROM `{PROJECT_ID}.hmda.hmda` h
+                FROM `{PROJECT_ID}.shared.de_hmda` h
                 WHERE CAST(h.activity_year AS STRING) = '{year}'
                     AND CAST(h.lei AS STRING) = '{lei}'
                     AND h.county_code IS NOT NULL

@@ -170,7 +170,7 @@ def get_unified_config(load_env: bool = True, verbose: bool = False) -> Dict[str
     # Build unified config
     config = {
         # BigQuery / GCP
-        'GCP_PROJECT_ID': os.getenv('GCP_PROJECT_ID', 'hdma1-242116'),
+        'GCP_PROJECT_ID': os.getenv('GCP_PROJECT_ID', 'justdata-ncrc'),
         'GOOGLE_APPLICATION_CREDENTIALS_JSON': bq_creds_json,
 
         # Google Cloud Storage

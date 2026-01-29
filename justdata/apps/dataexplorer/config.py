@@ -19,7 +19,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # BigQuery Configuration
 # Use environment variable for flexible project switching during migration
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')  # New optimized project
 USE_SUMMARY_TABLES = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
 HMDA_DATASET = "hmda"

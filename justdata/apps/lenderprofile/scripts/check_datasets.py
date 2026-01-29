@@ -19,7 +19,7 @@ print("=" * 80)
 # Check GLEIF names
 print("\n1. GLEIF Names:")
 try:
-    query = "SELECT COUNT(*) as cnt FROM `hdma1-242116.hmda.lender_names_gleif`"
+    query = "SELECT COUNT(*) as cnt FROM `justdata-ncrc.shared.lender_names_gleif`"
     results = execute_query(client, query)
     count = results[0].get('cnt') if results else 0
     print(f"   Location: hmda.lender_names_gleif")
@@ -30,7 +30,7 @@ except Exception as e:
 # Check credit union branches
 print("\n2. Credit Union Branches:")
 try:
-    query = "SELECT COUNT(*) as cnt FROM `hdma1-242116.credit_unions.cu_branches`"
+    query = "SELECT COUNT(*) as cnt FROM `justdata-ncrc.lenderprofile.cu_branches`"
     results = execute_query(client, query)
     count = results[0].get('cnt') if results else 0
     print(f"   Location: credit_unions.cu_branches")
@@ -41,7 +41,7 @@ except Exception as e:
 # Check credit union call reports
 print("\n3. Credit Union Call Reports:")
 try:
-    query = "SELECT COUNT(*) as cnt FROM `hdma1-242116.credit_unions.cu_call_reports`"
+    query = "SELECT COUNT(*) as cnt FROM `justdata-ncrc.lenderprofile.cu_call_reports`"
     results = execute_query(client, query)
     count = results[0].get('cnt') if results else 0
     print(f"   Location: credit_unions.cu_call_reports")

@@ -24,7 +24,7 @@ OUTPUT_DIR = os.path.join(DATA_DIR, 'reports', 'branchmapper')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # BigQuery Configuration
-PROJECT_ID = "hdma1-242116"
+PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 DATASET_ID = "branches"
 TABLE_ID = "sod"
 

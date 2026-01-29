@@ -40,7 +40,7 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
         logger.debug("Could not import unified_env, continuing with local config")
 
     if not project_id:
-        project_id = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        project_id = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 
     # Check for JSON credentials in environment variable (preferred method)
     creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
@@ -137,7 +137,7 @@ class BigQueryClient:
     def __init__(self, project_id: str = None, credentials_path: str = None):
         """Initialize BigQuery client."""
         self.client = get_bigquery_client(project_id, credentials_path)
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         # New optimized project with summary tables
         self.summary_project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         self.use_summary_tables = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'

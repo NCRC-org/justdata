@@ -346,7 +346,7 @@ def create_app():
                         SELECT
                             COUNT(*) as total_records,
                             COUNT(DISTINCT lei) as unique_leis
-                        FROM `hdma1-242116.hmda.hmda`
+                        FROM `justdata-ncrc.shared.de_hmda`
                         WHERE activity_year >= '2018'
                     """
                     result = client.query(query).result()
@@ -361,7 +361,7 @@ def create_app():
                 try:
                     query = """
                         SELECT COUNT(*) as total
-                        FROM `hdma1-242116.justdata_analytics.all_events`
+                        FROM `justdata-ncrc.firebase_analytics.all_events`
                         WHERE event_name IN (
                             'lendsight_report', 'bizsight_report', 'branchsight_report',
                             'branchmapper_report', 'mergermeter_report',

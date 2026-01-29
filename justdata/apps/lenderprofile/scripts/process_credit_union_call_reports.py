@@ -41,7 +41,7 @@ class CreditUnionCallReportProcessor:
         Args:
             project_id: GCP project ID (defaults to environment variable)
         """
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         self.client = get_bigquery_client(self.project_id)
         self.dataset_id = 'credit_unions'
         self.table_id = 'call_reports'

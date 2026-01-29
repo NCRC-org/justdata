@@ -21,7 +21,7 @@ try:
         MIN(year) as min_year,
         MAX(year) as max_year,
         COUNT(DISTINCT cu_number) as total_cus
-    FROM `hdma1-242116.credit_unions.cu_branches`
+    FROM `justdata-ncrc.lenderprofile.cu_branches`
     """
     results = execute_query(client, query)
     print("=" * 80)
@@ -39,7 +39,7 @@ try:
         year,
         COUNT(*) as branches,
         COUNT(DISTINCT cu_number) as cus
-    FROM `hdma1-242116.credit_unions.cu_branches`
+    FROM `justdata-ncrc.lenderprofile.cu_branches`
     GROUP BY year
     ORDER BY year
     """
@@ -60,7 +60,7 @@ try:
         MIN(year) as min_year,
         MAX(year) as max_year,
         COUNT(DISTINCT cu_number) as total_cus
-    FROM `hdma1-242116.credit_unions.cu_call_reports`
+    FROM `justdata-ncrc.lenderprofile.cu_call_reports`
     """
     results3 = execute_query(client, query3)
     print("\n" + "=" * 80)

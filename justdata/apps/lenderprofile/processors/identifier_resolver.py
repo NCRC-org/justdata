@@ -65,7 +65,7 @@ class IdentifierResolver:
             from justdata.shared.utils.bigquery_client import get_bigquery_client
             from google.cloud import bigquery
 
-            PROJECT_ID = 'hdma1-242116'
+            PROJECT_ID = 'justdata-ncrc'
             client = get_bigquery_client(PROJECT_ID)
 
             # Query pattern matching MergerMeter - uses lender_names_gleif for GLEIF-verified data
@@ -80,9 +80,9 @@ class IdentifierResolver:
                 sb.sb_resid AS sb_res_id,
                 SAFE_CAST(l.assets AS INT64) AS assets,
                 l.type_name AS type
-            FROM `hdma1-242116.hmda.lender_names_gleif` g
-            JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
-            LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
+            FROM `justdata-ncrc.shared.lender_names_gleif` g
+            JOIN `justdata-ncrc.lendsight.lenders18` l ON g.lei = l.lei
+            LEFT JOIN `justdata-ncrc.bizsight.sb_lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
             WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
             ORDER BY assets DESC NULLS LAST
             LIMIT @limit
@@ -299,7 +299,7 @@ class IdentifierResolver:
             from justdata.shared.utils.bigquery_client import get_bigquery_client
             from google.cloud import bigquery as bq_module
 
-            PROJECT_ID = 'hdma1-242116'
+            PROJECT_ID = 'justdata-ncrc'
             client = get_bigquery_client(PROJECT_ID)
 
             # Use GLEIF-verified lender names table for reliable LEI data
@@ -311,8 +311,8 @@ class IdentifierResolver:
                 l.lei AS lei,
                 CAST(l.respondent_rssd AS STRING) AS rssd_id,
                 l.type_name AS type_name
-            FROM `hdma1-242116.hmda.lender_names_gleif` g
-            JOIN `hdma1-242116.hmda.lenders18` l ON g.lei = l.lei
+            FROM `justdata-ncrc.shared.lender_names_gleif` g
+            JOIN `justdata-ncrc.lendsight.lenders18` l ON g.lei = l.lei
             WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
             ORDER BY l.assets DESC NULLS LAST
             LIMIT 5

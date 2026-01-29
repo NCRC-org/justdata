@@ -1783,7 +1783,7 @@ class DataCollector:
                 try:
                     from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
                     import os
-                    project_id = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+                    project_id = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
                     client = get_bigquery_client(project_id)
                     
                     # Get LAR counts by year from BigQuery HMDA data

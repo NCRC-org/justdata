@@ -62,7 +62,7 @@ def print_result(success: bool, message: str, data: Any = None):
 def get_gleif_from_bigquery(lender_name: str):
     """Get GLEIF data from BigQuery by name."""
     try:
-        project_id = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        project_id = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         client = get_bigquery_client(project_id)
         
         # Search for lender in BigQuery GLEIF table

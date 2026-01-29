@@ -108,7 +108,7 @@ def main():
     # Required: GCP Project ID
     print("1. Google Cloud Project ID (Required)")
     print("   This is your GCP project ID where BigQuery data is stored.")
-    print("   Example: hdma1-242116")
+    print("   Example: justdata-ncrc")
     gcp_project_id = get_input("   GCP Project ID", required=True)
     
     while not validate_project_id(gcp_project_id):

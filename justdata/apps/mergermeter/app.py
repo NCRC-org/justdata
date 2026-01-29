@@ -569,7 +569,7 @@ def _perform_analysis(job_id, form_data):
             # Query all US county GEOIDs from the cbsa_to_county table
             all_counties_query = """
             SELECT DISTINCT CAST(geoid5 AS STRING) as geoid5
-            FROM `hdma1-242116.geo.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE geoid5 IS NOT NULL
             ORDER BY geoid5
             """
@@ -884,7 +884,7 @@ def _perform_analysis(job_id, form_data):
             SELECT DISTINCT 
                 LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
                 State as state_name
-            FROM `hdma1-242116.geo.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
             """
             state_results = execute_query(client, state_query)
@@ -973,7 +973,7 @@ def _perform_analysis(job_id, form_data):
                         SELECT DISTINCT
                             LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
                             State as state_name
-                        FROM `hdma1-242116.geo.cbsa_to_county`
+                        FROM `justdata-ncrc.shared.cbsa_to_county`
                         WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
                     ),
                     filtered_hmda AS (
@@ -1069,7 +1069,7 @@ def _perform_analysis(job_id, form_data):
                                          THEN h.applicant_race_5 ELSE NULL END
                                 ) IN ('4','41','42','43','44')
                                 THEN 1 ELSE 0 END as is_hopi
-                        FROM `hdma1-242116.hmda.hmda` h
+                        FROM `justdata-ncrc.shared.de_hmda` h
                         WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
                             AND CAST(h.lei AS STRING) = '{lei}'
                             AND LPAD(CAST(h.county_code AS STRING), 5, '0') IN ('{geoid5_list}')
@@ -1163,7 +1163,7 @@ def _perform_analysis(job_id, form_data):
             SELECT DISTINCT 
                 LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
                 State as state_name
-            FROM `hdma1-242116.geo.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
             """
             state_results = execute_query(client, state_query)
@@ -1187,7 +1187,7 @@ def _perform_analysis(job_id, form_data):
                     SELECT DISTINCT
                         LPAD(CAST(geoid5 AS STRING), 5, '0') as geoid5,
                         State as state_name
-                    FROM `hdma1-242116.geo.cbsa_to_county`
+                    FROM `justdata-ncrc.shared.cbsa_to_county`
                     WHERE LPAD(CAST(geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
                 ),
                 filtered_sb_data AS (
@@ -1210,8 +1210,8 @@ def _perform_analysis(job_id, form_data):
                         END as lmict_loans_amount,
                         d.numsbrev_under_1m as loans_rev_under_1m,
                         d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
-                    FROM `hdma1-242116.sb.disclosure` d
-                    INNER JOIN `hdma1-242116.sb.lenders` l
+                    FROM `justdata-ncrc.bizsight.sb_county_summary` d
+                    INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
                         ON d.respondent_id = l.sb_resid
                     WHERE CAST(d.year AS STRING) IN ('{years_list}')
                         AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
@@ -1627,7 +1627,7 @@ def get_bank_name_from_lei(client, lei: str) -> str:
         query = f"""
         SELECT DISTINCT
             respondent_name
-        FROM `{PROJECT_ID}.hmda.lenders18`
+        FROM `{PROJECT_ID}.lendsight.lenders18`
         WHERE lei = '{lei}'
         LIMIT 1
         """
@@ -2102,7 +2102,7 @@ def get_counties_by_msa_codes(msa_codes: List[str]) -> Dict[str, List[str]]:
             CAST(cbsa_code AS STRING) as msa_code,
             cbsa as msa_name,
             county_state
-        FROM `hdma1-242116.geo.cbsa_to_county`
+                        FROM `justdata-ncrc.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) IN ({msa_code_list})
         ORDER BY msa_code, county_state
         """

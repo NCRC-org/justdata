@@ -25,7 +25,7 @@ CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # BigQuery Configuration
-PROJECT_ID = os.getenv("GCP_PROJECT_ID", "hdma1-242116")
+PROJECT_ID = os.getenv("GCP_PROJECT_ID", "justdata-ncrc")
 
 # Load environment variables from .env if available
 try:

@@ -743,7 +743,7 @@ def counties_by_state(state_code):
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{LendSightConfig.PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{LendSightConfig.PROJECT_ID}.shared.cbsa_to_county`
             WHERE geoid5 IS NOT NULL
                 AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
                 AND county_state IS NOT NULL
@@ -760,7 +760,7 @@ def counties_by_state(state_code):
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{LendSightConfig.PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{LendSightConfig.PROJECT_ID}.shared.cbsa_to_county`
             WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state_code}')
                 AND county_state IS NOT NULL
                 AND TRIM(county_state) != ''
@@ -823,7 +823,7 @@ def years():
         # Query HMDA table for available years (using activity_year field)
         query = """
         SELECT DISTINCT CAST(activity_year AS INT64) as year
-        FROM `hdma1-242116.hmda.hmda`
+        FROM `justdata-ncrc.shared.de_hmda`
         WHERE activity_year IS NOT NULL
         ORDER BY year ASC
         """

@@ -26,7 +26,7 @@ class BigQueryCRAClient:
 
     def __init__(self, project_id: str = None):
         """Initialize BigQuery CRA client."""
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         self.client = self._get_client()
 
     def _get_client(self):
@@ -94,7 +94,7 @@ class BigQueryCRAClient:
             # Try exact match first
             sql = f"""
             SELECT sb_resid, sb_lender, sb_rssd
-            FROM `{self.project_id}.sb.lenders`
+            FROM `justdata-ncrc.bizsight.sb_lenders`
             WHERE UPPER(sb_lender) = '{clean_name}'
             LIMIT 1
             """
@@ -118,7 +118,7 @@ class BigQueryCRAClient:
 
             sql = f"""
             SELECT sb_resid, sb_lender, sb_rssd
-            FROM `{self.project_id}.sb.lenders`
+            FROM `justdata-ncrc.bizsight.sb_lenders`
             WHERE UPPER(sb_lender) LIKE '%{base_name}%'
                OR UPPER(sb_lender) LIKE '%{base_name.replace(" BANK", "")}%'
                OR UPPER(sb_lender) = '{base_name}'
@@ -250,7 +250,7 @@ class BigQueryCRAClient:
             ROUND(100.0 * lt.loan_count / NULLIF(t.total, 0), 1) as percentage
         FROM lender_totals lt
         CROSS JOIN total_loans t
-        LEFT JOIN `{self.project_id}.geo.cbsa_to_county` g
+        LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` g
             ON lt.state_fips = SUBSTR(LPAD(CAST(g.geoid5 AS STRING), 5, '0'), 1, 2)
         GROUP BY lt.state_fips, g.state, lt.loan_count, t.total
         ORDER BY loan_count DESC
@@ -299,7 +299,7 @@ class BigQueryCRAClient:
             SELECT DISTINCT
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 state as state_abbr
-            FROM `{self.project_id}.geo.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE state IS NOT NULL
         )
         SELECT
@@ -344,7 +344,7 @@ class BigQueryCRAClient:
 
         sql = f"""
         SELECT *
-        FROM `{self.project_id}.sb.lenders`
+        FROM `justdata-ncrc.bizsight.sb_lenders`
         WHERE sb_resid = '{respondent_id}'
         LIMIT 1
         """

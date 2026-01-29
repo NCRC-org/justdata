@@ -24,7 +24,7 @@ class BaseAppConfig(BaseSettings):
     log_level: str = Field(default="INFO", env="LOG_LEVEL")
 
     # BigQuery
-    gcp_project_id: str = Field(default="hdma1-242116", env="GCP_PROJECT_ID")
+    gcp_project_id: str = Field(default="justdata-ncrc", env="GCP_PROJECT_ID")
     google_credentials_json: Optional[str] = Field(default=None, env="GOOGLE_APPLICATION_CREDENTIALS_JSON")
 
     # AI Services

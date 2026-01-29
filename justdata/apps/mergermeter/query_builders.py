@@ -47,7 +47,7 @@ def get_hmda_data_source(
     occupancy_type: str = '1',
     construction_method: str = '1',
     not_reverse: str = '1',
-    project_id: str = 'hdma1-242116'
+    project_id: str = 'justdata-ncrc'
 ) -> tuple:
     """
     Determine the appropriate data source based on filters.
@@ -60,7 +60,7 @@ def get_hmda_data_source(
         return (SUMMARY_PROJECT_ID, f'{SUMMARY_PROJECT_ID}.lendsight.de_hmda_county_summary', True)
     else:
         # Use raw tables for non-default filters (full flexibility)
-        return (project_id, f'{project_id}.justdata.de_hmda', False)
+        return (project_id, f'{project_id}.shared.de_hmda', False)
 
 
 def build_hmda_subject_query(
@@ -194,7 +194,7 @@ WITH cbsa_crosswalk AS (
         -- Treat NULL/empty cbsa_code as '99999' for rural areas
         COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
         COALESCE(cbsa, 'Rural Area') as cbsa_name
-    FROM `hdma1-242116.geo.cbsa_to_county`
+    FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 -- Filter HMDA data to user-selected assessment area counties
 filtered_hmda AS (
@@ -324,7 +324,7 @@ filtered_hmda AS (
                 ) IN ('4','41','42','43','44')
             THEN 1 ELSE 0 
         END as is_hopi
-    FROM `hdma1-242116.hmda.hmda` h
+    FROM `justdata-ncrc.shared.de_hmda` h
     LEFT JOIN cbsa_crosswalk c
         ON LPAD(CAST(h.county_code AS STRING), 5, '0') = c.county_code
     WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
@@ -536,7 +536,7 @@ WITH cbsa_crosswalk AS (
         -- Treat NULL/empty cbsa_code as '99999' for rural areas
         COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
         COALESCE(cbsa, 'Rural Area') as cbsa_name
-    FROM `hdma1-242116.geo.cbsa_to_county`
+    FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 -- Filter HMDA data to user-selected assessment area counties (includes all lenders for peer comparison)
 filtered_hmda AS (
@@ -667,7 +667,7 @@ filtered_hmda AS (
                 ) IN ('4','41','42','43','44')
             THEN 1 ELSE 0 
         END as is_hopi
-    FROM `hdma1-242116.hmda.hmda` h
+    FROM `justdata-ncrc.shared.de_hmda` h
     LEFT JOIN cbsa_crosswalk c
         ON LPAD(CAST(h.county_code AS STRING), 5, '0') = c.county_code
     WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
@@ -810,7 +810,7 @@ WITH cbsa_crosswalk AS (
         State as state_name,
         -- Extract state FIPS code from geoid5 (first 2 digits) for Goals Calculator state tabs
         LPAD(SUBSTR(CAST(geoid5 AS STRING), 1, 2), 2, '0') as state_code
-    FROM `hdma1-242116.geo.cbsa_to_county`
+    FROM `justdata-ncrc.shared.cbsa_to_county`
     WHERE CAST(geoid5 AS STRING) IN ('{geoid5_list}')
 ),
 filtered_sb_data AS (
@@ -841,8 +841,8 @@ filtered_sb_data AS (
         END as lmict_loans_amount,
         d.numsbrev_under_1m as loans_rev_under_1m,
         d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
-    FROM `hdma1-242116.sb.disclosure` d
-    INNER JOIN `hdma1-242116.sb.lenders` l
+    FROM `justdata-ncrc.bizsight.sb_county_summary` d
+    INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
         ON d.respondent_id = l.sb_resid
     LEFT JOIN cbsa_crosswalk c
         ON CAST(d.geoid5 AS STRING) = c.geoid5
@@ -916,7 +916,7 @@ cbsa_crosswalk AS (
         County as county_name,
         State as state_name,
         CONCAT(County, ', ', State) as county_state
-    FROM `hdma1-242116.geo.cbsa_to_county`
+    FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 
 -- Filter branches to assessment area counties and year
@@ -934,7 +934,7 @@ filtered_branches AS (
         b.br_lmi,
         b.br_minority as cr_minority,
         b.uninumbr
-    FROM `hdma1-242116.branches.sod25` b
+    FROM `justdata-ncrc.branchsight.sod` b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
@@ -1039,7 +1039,7 @@ cbsa_crosswalk AS (
         County as county_name,
         State as state_name,
         CONCAT(County, ', ', State) as county_state
-    FROM `hdma1-242116.geo.cbsa_to_county`
+    FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 
 -- Filter branches to assessment area counties and year, EXCLUDING subject bank
@@ -1057,7 +1057,7 @@ filtered_branches AS (
         b.br_lmi,
         b.br_minority as cr_minority,
         b.uninumbr
-    FROM `hdma1-242116.branches.sod25` b
+    FROM `justdata-ncrc.branchsight.sod` b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
@@ -1161,7 +1161,7 @@ cbsa_crosswalk AS (
         County as county_name,
         State as state_name,
         CONCAT(County, ', ', State) as county_state
-    FROM `hdma1-242116.geo.cbsa_to_county`
+    FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 
 -- Get individual branch details
@@ -1181,7 +1181,7 @@ filtered_branches AS (
         CAST(b.geoid5 AS STRING) as geoid5,
         c.county_state,
         b.uninumbr
-    FROM `hdma1-242116.branches.sod25` b
+    FROM `justdata-ncrc.branchsight.sod` b
     LEFT JOIN cbsa_crosswalk c
         ON CAST(b.geoid5 AS STRING) = c.county_code
     WHERE CAST(b.year AS STRING) = '{year}'
@@ -1263,7 +1263,7 @@ WITH cbsa_crosswalk AS (
         CAST(cbsa_code AS STRING) as cbsa_code,
         CBSA as cbsa_name,
         State as state_name
-    FROM `hdma1-242116.geo.cbsa_to_county`
+    FROM `justdata-ncrc.shared.cbsa_to_county`
     WHERE CAST(geoid5 AS STRING) IN ('{geoid5_list}')
 ),
 filtered_sb_data AS (
@@ -1294,8 +1294,8 @@ filtered_sb_data AS (
         END as lmict_loans_amount,
         d.numsbrev_under_1m as loans_rev_under_1m,
         d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
-    FROM `hdma1-242116.sb.disclosure` d
-    INNER JOIN `hdma1-242116.sb.lenders` l
+    FROM `justdata-ncrc.bizsight.sb_county_summary` d
+    INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
         ON d.respondent_id = l.sb_resid
     LEFT JOIN cbsa_crosswalk c
         ON CAST(d.geoid5 AS STRING) = c.geoid5

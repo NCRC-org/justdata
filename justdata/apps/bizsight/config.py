@@ -70,7 +70,7 @@ class BizSightConfig:
     CREDENTIALS_DIR = CREDENTIALS_DIR_STR
     
     # BigQuery Configuration
-    GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'hdma1-242116')
+    GCP_PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
     DATASET_ID = 'sb'  # Small Business dataset
     AGGREGATE_TABLE = 'aggregate'  # Tract-level data
     DISCLOSURE_TABLE = 'disclosure'  # Lender-level data (county level)

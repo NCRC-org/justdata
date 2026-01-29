@@ -33,7 +33,7 @@ def test_simple_count():
     SELECT
         h.activity_year as year,
         COUNT(*) as total_loans
-    FROM `hdma1-242116.hmda.hmda` h
+    FROM `justdata-ncrc.shared.de_hmda` h
     WHERE h.lei = '{lei}'
         AND h.activity_year IN ('2022', '2023', '2024')
         AND h.action_taken = '1'  -- Originations
