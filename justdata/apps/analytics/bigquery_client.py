@@ -1446,13 +1446,12 @@ def get_users(
     query = f"""
         SELECT
             user_id,
-            MAX(state) AS last_state,
-            MAX(county_name) AS last_county,
             COUNT(*) AS total_reports,
             COUNT(DISTINCT county_fips) AS counties_researched,
             COUNT(DISTINCT lender_id) AS lenders_researched,
             MAX(event_timestamp) AS last_activity,
-            MIN(event_timestamp) AS first_activity
+            MIN(event_timestamp) AS first_activity,
+            ARRAY_AGG(DISTINCT event_name ORDER BY event_name) AS apps_used
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
             AND user_id IS NOT NULL
@@ -1659,6 +1658,22 @@ def get_entity_users(
         return []
 
 
+def _is_ga4_client_id(user_id: str) -> bool:
+    """
+    Check if a user_id is a GA4 client ID (format: number.number) vs Firebase Auth UID.
+    GA4 client IDs look like: 2106917405.1769129344
+    Firebase Auth UIDs are alphanumeric without periods.
+    """
+    if not user_id:
+        return False
+    # GA4 client IDs contain a period and are numeric on both sides
+    if '.' in user_id:
+        parts = user_id.split('.')
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            return True
+    return False
+
+
 def _enrich_users_from_firestore(users: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     """
     Enrich user records with profile data from Firestore.
@@ -1679,6 +1694,11 @@ def _enrich_users_from_firestore(users: List[Dict[str, Any]]) -> List[Dict[str, 
     for user in users:
         user_id = user.get('user_id')
         if not user_id:
+            continue
+
+        # Skip GA4 client IDs - they won't have Firestore profiles
+        # GA4 client IDs look like: 2106917405.1769129344
+        if _is_ga4_client_id(user_id):
             continue
 
         try:

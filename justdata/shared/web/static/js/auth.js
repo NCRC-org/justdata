@@ -616,7 +616,6 @@ function updateAuthUI(user) {
                 'member': 'Member',
                 'member_premium': 'Premium Member',
                 'non_member_org': 'Institutional',
-                'just_economy_club': 'Economy Club',
                 'public_registered': 'Registered',
                 'public_anonymous': 'Guest'
             };

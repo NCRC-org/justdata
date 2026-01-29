@@ -1668,6 +1668,38 @@ h1, h2, h3, h4 {
     margin-top: 2px;
 }
 
+/* User email in table */
+.user-email {
+    font-weight: 500;
+    color: var(--analytics-text);
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Organization cell */
+.org-cell {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--analytics-text-muted);
+    font-size: 0.9rem;
+}
+
+/* Apps used badges */
+.apps-used {
+    font-family: 'Roboto Mono', 'Courier New', monospace;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--analytics-accent);
+    background: #e3f2fd;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+}
+
 .users-table tbody tr {
     cursor: pointer;
 }

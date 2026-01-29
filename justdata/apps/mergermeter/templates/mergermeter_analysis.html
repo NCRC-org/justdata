@@ -997,6 +997,9 @@
                     bankBSection.slideDown(300);
                     bankBAASection.slideDown(300);
                 }
+
+                // Re-check if assessment areas should be shown (single bank mode only needs Bank A)
+                checkAndShowAssessmentAreas();
             });
 
             // Initialize Select2 for multi-select HMDA filters
@@ -1249,11 +1252,10 @@
                     if (!isSingleBankMode) {
                         requestBody.target = targetData;
                     }
-                    const response = await fetch(`${baseUrl}/api/load-bank-names`, {
+                    // Use authFetch to include Firebase token in Authorization header
+                    const response = await window.JustDataAuth.authFetch(`${baseUrl}/api/load-bank-names`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        credentials: 'include',
                         body: JSON.stringify(requestBody)
                     });
                     
@@ -1362,11 +1364,10 @@
                 
                 try {
                     const baseUrl = window.APP_BASE_URL || '/mergermeter';
-                    const response = await fetch(`${baseUrl}/api/generate-assessment-areas-from-branches`, {
+                    // Use authFetch to include Firebase token in Authorization header
+                    const response = await window.JustDataAuth.authFetch(`${baseUrl}/api/generate-assessment-areas-from-branches`, {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
+                        credentials: 'include',
                         body: JSON.stringify({
                             rssd: rssd,
                             bank_type: bankType,
@@ -1525,8 +1526,16 @@
                 
                 try {
                     const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    // Get Firebase token for Authorization header
+                    const token = await window.JustDataAuth.getToken();
+                    const headers = {};
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
                     const response = await fetch(`${baseUrl}/api/upload-assessment-areas`, {
                         method: 'POST',
+                        headers: headers,
+                        credentials: 'include',
                         body: formData
                     });
                     
@@ -1850,8 +1859,16 @@
                 
                 try {
                     const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                    // Get Firebase token for Authorization header
+                    const token = await window.JustDataAuth.getToken();
+                    const headers = {};
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    }
                     const response = await fetch(`${baseUrl}/analyze`, {
                         method: 'POST',
+                        headers: headers,
+                        credentials: 'include',
                         body: formData
                     });
                     
@@ -2078,7 +2095,11 @@
                     resultsDiv.style.display = 'block';
 
                     const baseUrl = window.APP_BASE_URL || '/mergermeter';
-                    const response = await fetch(`${baseUrl}/api/search-banks?q=${encodeURIComponent(query)}&limit=15`);
+                    // Use authFetch to include Firebase token in Authorization header
+                    const response = await window.JustDataAuth.authFetch(`${baseUrl}/api/search-banks?q=${encodeURIComponent(query)}&limit=15`, {
+                        method: 'GET',
+                        credentials: 'include'
+                    });
                     const data = await response.json();
 
                     if (!data.success) {
@@ -2165,7 +2186,8 @@
             };
 
             // Check if required banks are selected and show assessment area section
-            function checkAndShowAssessmentAreas() {
+            // Make globally accessible so jQuery handler can call it
+            window.checkAndShowAssessmentAreas = function() {
                 const acquirerLei = document.getElementById('acquirer_lei').value;
                 const targetLei = document.getElementById('target_lei').value;
                 const isSingleBankMode = document.getElementById('singleBankMode').checked;

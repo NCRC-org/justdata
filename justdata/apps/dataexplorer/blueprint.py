@@ -417,7 +417,7 @@ def api_generate_lender_report():
     import uuid
     import threading
     from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
-    from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis
+    from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis, check_lender_has_data
 
     try:
         data = request.get_json()
@@ -429,6 +429,28 @@ def api_generate_lender_report():
         lender = data.get('lender', {})
         if not lender.get('lei'):
             return jsonify({'success': False, 'error': 'Lender LEI is required'}), 400
+
+        # EARLY DATA CHECK: Before starting async job, verify lender has data
+        # This provides a better UX than showing progress then an error
+        try:
+            data_check = check_lender_has_data(data)
+            logger.info(f"Lender data check result: {data_check}")
+
+            # If we definitively know there's no data, return early with no_data response
+            if data_check.get('has_data') is False and data_check.get('error') is None:
+                logger.info(f"No HMDA data found for {data_check.get('lender_name')} - returning no_data response")
+                return jsonify({
+                    'success': True,
+                    'no_data': True,
+                    'lender_name': data_check.get('lender_name', 'Unknown'),
+                    'county_count': data_check.get('county_count', 0),
+                    'year_range': data_check.get('year_range', ''),
+                    'message': f"No lending activity found for {data_check.get('lender_name', 'the selected lender')} in the selected geography."
+                })
+        except Exception as e:
+            # If the early check fails, log it but proceed with normal flow
+            # The detailed analysis might still work or provide a better error
+            logger.warning(f"Early data check failed, proceeding with normal flow: {e}")
 
         # Create job ID
         job_id = str(uuid.uuid4())
@@ -651,6 +673,28 @@ def show_report(job_id):
             <a href="/">Return to Home</a>
         </body></html>
         """, 500
+
+
+@dataexplorer_bp.route('/no-data')
+@require_access('dataexplorer', 'full')
+def show_no_data():
+    """Display the no data found info page."""
+    lender_name = request.args.get('lender_name', 'the selected lender')
+    county_count = request.args.get('county_count', '0')
+    year_range = request.args.get('year_range', '')
+
+    breadcrumb_items = [
+        {'name': 'DataExplorer', 'url': '/dataexplorer'},
+        {'name': 'No Data Found', 'url': '#'}
+    ]
+
+    return render_template('no_data_template.html',
+                           lender_name=lender_name,
+                           county_count=county_count,
+                           year_range=year_range,
+                           version=__version__,
+                           app_name='DataExplorer',
+                           breadcrumb_items=breadcrumb_items)
 
 
 @dataexplorer_bp.route('/health')

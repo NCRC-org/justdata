@@ -250,7 +250,6 @@
 
     .badge-public_anonymous { background: #f8f9fa; color: #6c757d; }
     .badge-public_registered { background: #e3f2fd; color: #1976d2; }
-    .badge-just_economy_club { background: #fff3e0; color: #f57c00; }
     .badge-member { background: #e8f5e9; color: #388e3c; }
     .badge-member_premium { background: #e1f5fe; color: #0288d1; }
     .badge-non_member_org { background: #fce4ec; color: #c2185b; }
@@ -651,282 +650,6 @@
         display: flex;
     }
 
-    /* ============================================
-       ADMIN TABS
-       ============================================ */
-    .admin-tabs {
-        display: flex;
-        gap: 4px;
-        margin-bottom: 25px;
-        border-bottom: 2px solid #e0e0e0;
-        padding-bottom: 0;
-    }
-
-    .tab-btn {
-        background: transparent;
-        border: none;
-        padding: 12px 20px;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #666;
-        cursor: pointer;
-        border-bottom: 3px solid transparent;
-        margin-bottom: -2px;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .tab-btn:hover {
-        color: var(--ncrc-primary-blue);
-        background: rgba(30, 58, 95, 0.05);
-    }
-
-    .tab-btn.active {
-        color: var(--ncrc-primary-blue);
-        border-bottom-color: var(--ncrc-primary-blue);
-    }
-
-    .tab-btn .badge {
-        background: #ff6b6b;
-        color: white;
-        font-size: 0.75rem;
-        padding: 2px 8px;
-        border-radius: 10px;
-        font-weight: 700;
-    }
-
-    .tab-btn.active .badge {
-        background: var(--ncrc-primary-blue);
-    }
-
-    .tab-content {
-        display: none;
-    }
-
-    .tab-content.active {
-        display: block;
-    }
-
-    /* ============================================
-       MEMBER REQUESTS UI
-       ============================================ */
-    .request-card {
-        background: white;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        margin-bottom: 16px;
-        overflow: hidden;
-    }
-
-    .request-header {
-        padding: 16px 20px;
-        background: var(--ncrc-light-blue);
-        border-bottom: 1px solid #e0e0e0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .request-header strong {
-        font-size: 1.05rem;
-        color: var(--ncrc-primary-blue);
-    }
-
-    .request-date {
-        font-size: 0.85rem;
-        color: #888;
-        margin-left: 12px;
-    }
-
-    .request-body {
-        padding: 16px 20px;
-    }
-
-    .request-body p {
-        margin: 8px 0;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .request-body i {
-        width: 18px;
-        color: #888;
-    }
-
-    .hubspot-search {
-        padding: 16px 20px;
-        background: #f8f9fa;
-        border-top: 1px solid #e0e0e0;
-    }
-
-    .hubspot-search label {
-        font-weight: 600;
-        margin-bottom: 8px;
-        display: block;
-    }
-
-    .hubspot-search-input {
-        flex: 1;
-        padding: 10px 14px;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        font-size: 0.95rem;
-    }
-
-    .hubspot-search-input:focus {
-        border-color: var(--ncrc-primary-blue);
-        outline: none;
-    }
-
-    .search-btn {
-        padding: 10px 16px;
-        background: var(--ncrc-primary-blue);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .search-btn:hover {
-        background: var(--ncrc-secondary-blue);
-    }
-
-    .hubspot-results {
-        margin-top: 12px;
-    }
-
-    .hubspot-matches {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .company-option {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        background: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .company-option:hover {
-        border-color: var(--ncrc-primary-blue);
-        background: #f8f9ff;
-    }
-
-    .company-option input[type="radio"] {
-        width: 18px;
-        height: 18px;
-    }
-
-    .company-option input[type="radio"]:checked + .company-info {
-        font-weight: 600;
-    }
-
-    .company-info {
-        flex: 1;
-    }
-
-    .company-info strong {
-        display: block;
-    }
-
-    .company-info small {
-        color: #888;
-    }
-
-    .membership-status {
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .status-active {
-        background: #e8f5e9;
-        color: #388e3c;
-    }
-
-    .status-inactive {
-        background: #ffebee;
-        color: #c62828;
-    }
-
-    .status-grace {
-        background: #fff3e0;
-        color: #f57c00;
-    }
-
-    .request-actions {
-        padding: 16px 20px;
-        border-top: 1px solid #e0e0e0;
-        display: flex;
-        gap: 12px;
-        justify-content: flex-end;
-    }
-
-    .approve-btn {
-        padding: 10px 20px;
-        background: #28a745;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .approve-btn:hover:not(:disabled) {
-        background: #218838;
-    }
-
-    .approve-btn:disabled {
-        background: #c3e6cb;
-        cursor: not-allowed;
-    }
-
-    .deny-btn {
-        padding: 10px 20px;
-        background: #dc3545;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        font-weight: 600;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .deny-btn:hover {
-        background: #c82333;
-    }
-
-    .no-requests {
-        text-align: center;
-        padding: 60px 20px;
-        color: #888;
-    }
-
-    .no-requests i {
-        font-size: 3rem;
-        margin-bottom: 15px;
-        color: #ddd;
-    }
-
     /* Responsive */
     @media (max-width: 768px) {
         .dashboard-container {
@@ -981,24 +704,9 @@
             <div class="stat-value" id="pendingCount">-</div>
             <div class="stat-label">Pending Activation</div>
         </div>
-        <div class="stat-card" style="cursor: pointer;" onclick="showTab('requests')">
-            <div class="stat-value" id="memberRequestCount" style="color: #ff6b6b;">-</div>
-            <div class="stat-label">Member Requests</div>
-        </div>
     </div>
 
-    <!-- Admin Tabs -->
-    <div class="admin-tabs">
-        <button class="tab-btn active" onclick="showTab('users')" id="usersTabBtn">
-            <i class="fas fa-users"></i> All Users
-        </button>
-        <button class="tab-btn" onclick="showTab('requests')" id="requestsTabBtn">
-            <i class="fas fa-user-clock"></i> Member Requests <span class="badge" id="requestBadge" style="display: none;">0</span>
-        </button>
-    </div>
-
-    <!-- Users Tab Content -->
-    <div id="usersTabContent" class="tab-content active">
+    <!-- Users Content -->
 
     <!-- Action Bar -->
     <div class="action-bar">
@@ -1027,15 +735,12 @@
                 </div>
                 <select class="filter-select" id="typeFilter" onchange="filterAndRenderUsers()">
                     <option value="">All User Types</option>
-                    <option value="admin">Admin</option>
+                    <option value="admin">Administrator</option>
                     <option value="senior_executive">Senior Executive</option>
                     <option value="staff">Staff</option>
                     <option value="member">Member</option>
-                    <option value="member_premium">Premium Member</option>
-                    <option value="non_member_org">Institutional</option>
-                    <option value="just_economy_club">Just Economy Club</option>
-                    <option value="public_registered">Public Registered</option>
-                    <option value="public_anonymous">Anonymous</option>
+                    <option value="member_premium">Member Plus</option>
+                    <option value="public_registered">Registered</option>
                 </select>
             </div>
         </div>
@@ -1085,17 +790,6 @@
         </div>
     </div>
     </div>
-    <!-- End Users Tab Content -->
-
-    <!-- Member Requests Tab Content -->
-    <div id="requestsTabContent" class="tab-content">
-        <div id="requestsList">
-            <div class="no-requests">
-                <i class="fas fa-spinner fa-spin"></i>
-                <p>Loading member requests...</p>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Create/Edit User Modal -->
@@ -1125,13 +819,10 @@
                     <label for="userType">User Type *</label>
                     <select id="userTypeSelect" name="userType" required>
                         <option value="">Select user type...</option>
-                        <option value="public_anonymous">Public Anonymous</option>
-                        <option value="public_registered">Public Registered</option>
-                        <option value="just_economy_club">Just Economy Club</option>
-                        <option value="member">Member ($900/yr)</option>
-                        <option value="member_premium">Premium Member</option>
-                        <option value="non_member_org">Institutional/Org</option>
-                        <option value="staff">NCRC Staff</option>
+                        <option value="public_registered">Registered</option>
+                        <option value="member">Member</option>
+                        <option value="member_premium">Member Plus</option>
+                        <option value="staff">Staff</option>
                         <option value="senior_executive">Senior Executive</option>
                         <option value="admin">Administrator</option>
                     </select>
@@ -1256,13 +947,12 @@
     const USER_TYPE_LABELS = {
         'public_anonymous': 'Anonymous',
         'public_registered': 'Registered',
-        'just_economy_club': 'Economy Club',
         'member': 'Member',
-        'member_premium': 'Premium',
+        'member_premium': 'Member Plus',
         'non_member_org': 'Institutional',
         'staff': 'Staff',
-        'senior_executive': 'Sr. Executive',
-        'admin': 'Admin'
+        'senior_executive': 'Senior Executive',
+        'admin': 'Administrator'
     };
 
     // Toast notification
@@ -1921,322 +1611,12 @@
         }
     }
 
-    // ============================================
-    // MEMBER REQUESTS MANAGEMENT
-    // ============================================
-
-    let memberRequests = [];
-
-    // Show tab
-    function showTab(tabName) {
-        // Update tab buttons
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(tabName + 'TabBtn').classList.add('active');
-
-        // Update tab content
-        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-        document.getElementById(tabName + 'TabContent').classList.add('active');
-
-        // Load requests if switching to requests tab
-        if (tabName === 'requests') {
-            loadMemberRequests();
-        }
-    }
-
-    // Load member requests
-    async function loadMemberRequests() {
-        try {
-            const response = await fetch('/api/auth/admin/member-requests?status=pending', {
-                headers: {
-                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to fetch requests');
-
-            const data = await response.json();
-            memberRequests = data.requests || [];
-
-            updateRequestsUI();
-            updateRequestBadge();
-
-        } catch (error) {
-            console.error('Error loading member requests:', error);
-            document.getElementById('requestsList').innerHTML = `
-                <div class="no-requests">
-                    <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
-                    <p>Failed to load requests. <a href="#" onclick="loadMemberRequests(); return false;">Retry</a></p>
-                </div>
-            `;
-        }
-    }
-
-    // Update requests badge
-    function updateRequestBadge() {
-        const badge = document.getElementById('requestBadge');
-        const statValue = document.getElementById('memberRequestCount');
-        const count = memberRequests.length;
-
-        if (count > 0) {
-            badge.textContent = count;
-            badge.style.display = 'inline';
-        } else {
-            badge.style.display = 'none';
-        }
-
-        if (statValue) statValue.textContent = count;
-    }
-
-    // Format date
-    function formatRequestDate(dateStr) {
-        if (!dateStr) return 'Unknown';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
-
-    // Update requests UI
-    function updateRequestsUI() {
-        const container = document.getElementById('requestsList');
-
-        if (memberRequests.length === 0) {
-            container.innerHTML = `
-                <div class="no-requests">
-                    <i class="fas fa-check-circle" style="color: #28a745;"></i>
-                    <p>No pending member requests</p>
-                </div>
-            `;
-            return;
-        }
-
-        let html = '';
-        for (const req of memberRequests) {
-            html += `
-                <div class="request-card" data-id="${req.id}">
-                    <div class="request-header">
-                        <div>
-                            <strong>${escapeHtml(req.user_email)}</strong>
-                            <span class="request-date">${formatRequestDate(req.created_at)}</span>
-                        </div>
-                    </div>
-                    <div class="request-body">
-                        <p><i class="fas fa-user"></i> <strong>Name:</strong> ${escapeHtml(req.user_name || 'Not provided')}</p>
-                        <p><i class="fas fa-building"></i> <strong>Organization:</strong> "${escapeHtml(req.requested_org_name)}"</p>
-                        <p><i class="fas fa-briefcase"></i> <strong>Role:</strong> ${escapeHtml(req.user_role_at_org)}</p>
-                        ${req.request_notes ? `<p><i class="fas fa-comment"></i> <strong>Notes:</strong> ${escapeHtml(req.request_notes)}</p>` : ''}
-                    </div>
-                    <div class="hubspot-search">
-                        <label>Search HubSpot for Organization:</label>
-                        <div style="display: flex; gap: 10px; margin-top: 8px;">
-                            <input type="text" class="hubspot-search-input"
-                                   value="${escapeHtml(req.requested_org_name)}"
-                                   placeholder="Search organization name..."
-                                   id="search_${req.id}">
-                            <button onclick="searchHubSpot('${req.id}')" class="search-btn">
-                                <i class="fas fa-search"></i> Search
-                            </button>
-                        </div>
-                        <div class="hubspot-results" id="results_${req.id}"></div>
-                    </div>
-                    <div class="request-actions">
-                        <button onclick="approveRequest('${req.id}')" class="approve-btn" id="approve_${req.id}" disabled title="Search HubSpot first">
-                            <i class="fas fa-check"></i> Approve
-                        </button>
-                        <button onclick="denyRequest('${req.id}')" class="deny-btn">
-                            <i class="fas fa-times"></i> Deny
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        container.innerHTML = html;
-    }
-
-    // HTML escape helper
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-
-    // Search HubSpot
-    async function searchHubSpot(requestId) {
-        const input = document.getElementById('search_' + requestId);
-        const resultsDiv = document.getElementById('results_' + requestId);
-        const searchTerm = input.value.trim();
-
-        if (searchTerm.length < 2) {
-            showToast('Please enter at least 2 characters', 'error');
-            return;
-        }
-
-        resultsDiv.innerHTML = '<p style="color: #888;"><i class="fas fa-spinner fa-spin"></i> Searching HubSpot...</p>';
-
-        try {
-            const response = await fetch(`/api/auth/admin/hubspot/companies/search?q=${encodeURIComponent(searchTerm)}`, {
-                headers: {
-                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                }
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Search failed');
-            }
-
-            if (data.results.length === 0) {
-                resultsDiv.innerHTML = '<p style="color: #888; padding: 10px 0;">No matching organizations found in HubSpot</p>';
-                return;
-            }
-
-            let html = '<div class="hubspot-matches">';
-            for (const company of data.results) {
-                const statusClass = company.has_access ? (company.is_grace_period ? 'status-grace' : 'status-active') : 'status-inactive';
-                const statusIcon = company.has_access ? '✓' : '✗';
-                html += `
-                    <label class="company-option">
-                        <input type="radio" name="hubspot_company_${requestId}"
-                               value="${company.id}"
-                               data-name="${escapeHtml(company.name)}"
-                               data-status="${escapeHtml(company.membership_status || '')}"
-                               data-access="${company.has_access}"
-                               onchange="enableApprove('${requestId}', this)">
-                        <span class="company-info">
-                            <strong>${escapeHtml(company.name)}</strong>
-                            ${company.city ? `<small>${escapeHtml(company.city)}, ${escapeHtml(company.state)}</small>` : ''}
-                        </span>
-                        <span class="membership-status ${statusClass}">
-                            ${statusIcon} ${company.membership_status || 'No status'}
-                        </span>
-                    </label>
-                `;
-            }
-            html += '</div>';
-            resultsDiv.innerHTML = html;
-
-        } catch (error) {
-            console.error('HubSpot search error:', error);
-            resultsDiv.innerHTML = `<p style="color: #dc3545; padding: 10px 0;"><i class="fas fa-exclamation-triangle"></i> ${error.message}</p>`;
-        }
-    }
-
-    // Enable approve button when company selected
-    function enableApprove(requestId, radio) {
-        const approveBtn = document.getElementById('approve_' + requestId);
-        const hasAccess = radio.dataset.access === 'true';
-
-        approveBtn.disabled = !hasAccess;
-        approveBtn.title = hasAccess ? 'Approve this request' : 'Cannot approve - organization is not a current NCRC member';
-    }
-
-    // Approve request
-    async function approveRequest(requestId) {
-        const card = document.querySelector(`.request-card[data-id="${requestId}"]`);
-        const selectedCompany = card.querySelector(`input[name="hubspot_company_${requestId}"]:checked`);
-
-        if (!selectedCompany) {
-            showToast('Please select a HubSpot company first', 'error');
-            return;
-        }
-
-        if (!confirm('Approve this member request? The user will be upgraded to member access.')) return;
-
-        const approveBtn = document.getElementById('approve_' + requestId);
-        approveBtn.disabled = true;
-        approveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Approving...';
-
-        try {
-            const response = await fetch(`/api/auth/admin/member-requests/${requestId}/review`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                },
-                body: JSON.stringify({
-                    action: 'approve',
-                    hubspot_company_id: selectedCompany.value,
-                    hubspot_company_name: selectedCompany.dataset.name,
-                    hubspot_membership_status: selectedCompany.dataset.status
-                })
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                showToast(result.message, 'success');
-                loadMemberRequests();  // Refresh the list
-            } else {
-                throw new Error(result.error || 'Failed to approve request');
-            }
-        } catch (error) {
-            console.error('Approve error:', error);
-            showToast(error.message, 'error');
-            approveBtn.disabled = false;
-            approveBtn.innerHTML = '<i class="fas fa-check"></i> Approve';
-        }
-    }
-
-    // Deny request
-    async function denyRequest(requestId) {
-        const reason = prompt('Reason for denial:', 'Organization not found in NCRC membership records');
-        if (reason === null) return;  // User cancelled
-
-        const card = document.querySelector(`.request-card[data-id="${requestId}"]`);
-        const denyBtn = card.querySelector('.deny-btn');
-        denyBtn.disabled = true;
-        denyBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Denying...';
-
-        try {
-            const response = await fetch(`/api/auth/admin/member-requests/${requestId}/review`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${await window.JustDataAuth.getToken()}`
-                },
-                body: JSON.stringify({
-                    action: 'deny',
-                    denial_reason: reason
-                })
-            });
-
-            const result = await response.json();
-
-            if (response.ok) {
-                showToast('Request denied', 'success');
-                loadMemberRequests();
-            } else {
-                throw new Error(result.error || 'Failed to deny request');
-            }
-        } catch (error) {
-            console.error('Deny error:', error);
-            showToast(error.message, 'error');
-            denyBtn.disabled = false;
-            denyBtn.innerHTML = '<i class="fas fa-times"></i> Deny';
-        }
-    }
-
     // Initialize
     document.addEventListener('DOMContentLoaded', async function() {
         // Wait for auth to initialize
         setTimeout(async () => {
             await fetchUsers();
-            // Also load member requests count
-            loadMemberRequests();
         }, 500);
-
-        // Check URL params for tab
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('tab') === 'requests') {
-            showTab('requests');
-        }
     });
 </script>
 {% endblock %}

@@ -3555,9 +3555,9 @@ async function generateReport() {
         showError('Please accept the disclaimer to continue');
         return;
     }
-    
+
     showLoading('Generating your report...');
-    
+
     try {
         let result;
         if (wizardState.data.analysisType === 'area') {
@@ -3565,7 +3565,19 @@ async function generateReport() {
         } else {
             result = await apiClient.generateLenderReport(wizardState.data);
         }
-        
+
+        // Check for no_data response (lender has no HMDA data in selected geography)
+        if (result.no_data === true) {
+            // Redirect to no-data info page instead of progress page
+            const params = new URLSearchParams({
+                lender_name: result.lender_name || wizardState.data.lender?.name || 'the selected lender',
+                county_count: result.county_count || '0',
+                year_range: result.year_range || ''
+            });
+            window.location.href = `/dataexplorer/no-data?${params.toString()}`;
+            return;
+        }
+
         // Log analytics event
         if (window.JustDataAnalytics) {
             if (wizardState.data.analysisType === 'area') {

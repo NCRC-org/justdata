@@ -6,5 +6,5 @@ This version follows semantic versioning:
 - 1.0.0 for first production release
 """
 
-__version__ = "0.9.7"
-__version_info__ = (0, 9, 7)
+__version__ = "1.0.0"
+__version_info__ = (1, 0, 0)
