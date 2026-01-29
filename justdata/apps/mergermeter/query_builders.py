@@ -205,10 +205,11 @@ filtered_hmda AS (
         -- State code for Goals Calculator state tabs
         h.state_code,
         -- Loan purpose category for HP/Refi/HI breakdown
-        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Other, 5=N/A
+        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Home Equity, 5=N/A
+        -- NCRC methodology: Home Equity = loan purposes 2 (Home Improvement) + 4 (Other/Home Equity)
         CASE
             WHEN h.loan_purpose = '1' THEN 'hp'
-            WHEN h.loan_purpose = '2' THEN 'hi'
+            WHEN h.loan_purpose IN ('2', '4') THEN 'hi'
             WHEN h.loan_purpose IN ('31', '32') THEN 'refi'
             ELSE 'other'
         END as loan_purpose_cat,
@@ -546,10 +547,11 @@ filtered_hmda AS (
         -- State code for Goals Calculator state tabs
         h.state_code,
         -- Loan purpose category for HP/Refi/HI breakdown
-        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Other, 5=N/A
+        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Home Equity, 5=N/A
+        -- NCRC methodology: Home Equity = loan purposes 2 (Home Improvement) + 4 (Other/Home Equity)
         CASE
             WHEN h.loan_purpose = '1' THEN 'hp'
-            WHEN h.loan_purpose = '2' THEN 'hi'
+            WHEN h.loan_purpose IN ('2', '4') THEN 'hi'
             WHEN h.loan_purpose IN ('31', '32') THEN 'refi'
             ELSE 'other'
         END as loan_purpose_cat,

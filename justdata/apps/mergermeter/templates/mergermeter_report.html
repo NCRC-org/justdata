@@ -575,10 +575,10 @@
                 // Build loan purpose description
                 const loanPurposeMap = {
                     '1': 'Home Purchase',
-                    '2': 'Home Improvement',
+                    '2': 'Home Equity',
                     '3': 'Refinance',
                     '31': 'Refinance',
-                    '4': 'Other Purpose'
+                    '4': 'Home Equity'
                 };
                 const loanPurpose = metadata.loan_purpose || '';
                 const loanPurposeLabels = loanPurpose.split(',').map(p => loanPurposeMap[p.trim()] || `Code ${p.trim()}`).filter(Boolean);
@@ -922,8 +922,7 @@
                         <ul>
                             <li><strong>Home Purchase:</strong> Loans for purchasing a home (loan purpose = 1)</li>
                             <li><strong>Refinance:</strong> Loans for refinancing existing mortgages (loan purposes = 31, 32)</li>
-                            <li><strong>Home Improvement:</strong> Loans for home improvement (loan purpose = 2)</li>
-                            <li><strong>Home Equity:</strong> Home equity lines of credit (loan purpose = 4)</li>
+                            <li><strong>Home Equity:</strong> Home improvement loans and home equity lines of credit (loan purposes = 2, 4)</li>
                         </ul>
                         
                         <h4>Key Metrics Calculated</h4>

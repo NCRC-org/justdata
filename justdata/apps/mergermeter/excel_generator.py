@@ -127,7 +127,7 @@ def _transform_mortgage_goals_data(mortgage_goals_data: Optional[Dict]) -> Optio
         'home_purchase': 'home_purchase',
         'refinance': 'refinance',
         'home_improvement': 'home_improvement',
-        'home_equity': 'home_improvement'  # Map home_equity to home_improvement
+        'home_equity': 'home_equity'  # Keep home_equity as home_equity (codes 2+4)
     }
 
     by_state = {}
