@@ -33,9 +33,31 @@ jobs:
 
       - name: Build and push container image
         run: |
-          gcloud builds submit scripts/slack_bot \
+          # Submit build asynchronously and capture build ID
+          BUILD_OUTPUT=$(gcloud builds submit scripts/slack_bot \
             --tag gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} \
-            --tag gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest
+            --tag gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest \
+            --async \
+            --format='value(id)')
+          
+          echo "Build ID: $BUILD_OUTPUT"
+          
+          # Poll for build completion
+          echo "Waiting for build to complete..."
+          while true; do
+            STATUS=$(gcloud builds describe $BUILD_OUTPUT --format='value(status)')
+            echo "Build status: $STATUS"
+            
+            if [ "$STATUS" = "SUCCESS" ]; then
+              echo "Build completed successfully!"
+              break
+            elif [ "$STATUS" = "FAILURE" ] || [ "$STATUS" = "CANCELLED" ] || [ "$STATUS" = "TIMEOUT" ]; then
+              echo "Build failed with status: $STATUS"
+              exit 1
+            fi
+            
+            sleep 10
+          done
 
       - name: Deploy to Cloud Run
         run: |
