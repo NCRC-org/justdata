@@ -147,7 +147,7 @@ def _flush_ai_usage_to_bigquery():
 
 
 def get_ai_usage_summary(days: int = 30) -> dict:
-    """Get AI usage summary from BigQuery ai_usage table."""
+    """Get AI usage summary from BigQuery - tries ai_usage table first, falls back to usage_log estimates."""
     # #region agent log
     print(f"[AI Usage Summary] ENTRY days={days}")
     # #endregion
@@ -156,9 +156,6 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         from google.oauth2 import service_account
         
         creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-        # #region agent log
-        print(f"[AI Usage Summary] CREDS_CHECK has_creds={creds_json is not None} len={len(creds_json) if creds_json else 0}")
-        # #endregion
         if creds_json:
             creds_dict = json.loads(creds_json)
             credentials = service_account.Credentials.from_service_account_info(creds_dict)
@@ -166,36 +163,88 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         else:
             client = bigquery.Client(project='justdata-ncrc')
         
-        # Query the actual ai_usage table where log_ai_usage() writes to
-        query = f"""
-        SELECT
-            app_name,
-            model,
-            provider,
-            COUNT(*) as request_count,
-            SUM(input_tokens) as total_input_tokens,
-            SUM(output_tokens) as total_output_tokens,
-            SUM(total_tokens) as total_tokens,
-            SUM(total_cost_usd) as total_cost_usd
-        FROM `justdata-ncrc.firebase_analytics.ai_usage`
-        WHERE TIMESTAMP(timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
-        GROUP BY app_name, model, provider
-        ORDER BY total_cost_usd DESC
-        """
-        
-        results = list(client.query(query).result())
-        # #region agent log
-        print(f"[AI Usage Summary] QUERY_RESULTS count={len(results)} first={dict(results[0]) if results else None}")
-        # Check total count in table (all time)
+        # First try the detailed ai_usage table
+        results = []
+        source = 'ai_usage'
         try:
-            count_query = "SELECT COUNT(*) as total FROM `justdata-ncrc.firebase_analytics.ai_usage`"
-            count_result = list(client.query(count_query).result())
-            total_all_time = count_result[0].total if count_result else 0
-            print(f"[AI Usage Summary] TABLE_TOTAL_ROWS all_time={total_all_time}")
-        except Exception as ce:
-            print(f"[AI Usage Summary] TABLE_COUNT_ERROR {ce}")
-        # #endregion
+            query = f"""
+            SELECT
+                app_name,
+                model,
+                provider,
+                COUNT(*) as request_count,
+                SUM(input_tokens) as total_input_tokens,
+                SUM(output_tokens) as total_output_tokens,
+                SUM(total_tokens) as total_tokens,
+                SUM(total_cost_usd) as total_cost_usd
+            FROM `justdata-ncrc.firebase_analytics.ai_usage`
+            WHERE TIMESTAMP(timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            GROUP BY app_name, model, provider
+            ORDER BY total_cost_usd DESC
+            """
+            results = list(client.query(query).result())
+            # #region agent log
+            print(f"[AI Usage Summary] ai_usage query returned {len(results)} rows")
+            # #endregion
+        except Exception as e:
+            # #region agent log
+            print(f"[AI Usage Summary] ai_usage query failed: {e}")
+            # #endregion
+            pass
         
+        # If ai_usage is empty, fall back to estimated costs from usage_log
+        if not results:
+            source = 'usage_log_estimates'
+            # #region agent log
+            print(f"[AI Usage Summary] Falling back to usage_log estimates")
+            # #endregion
+            try:
+                fallback_query = f"""
+                SELECT
+                    app_name,
+                    COUNT(*) as request_count,
+                    SUM(ai_cost_usd) as total_cost_usd
+                FROM `justdata-ncrc.cache.usage_log`
+                WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+                    AND ai_cost_usd IS NOT NULL
+                    AND ai_cost_usd > 0
+                GROUP BY app_name
+                ORDER BY total_cost_usd DESC
+                """
+                fallback_results = list(client.query(fallback_query).result())
+                # #region agent log
+                print(f"[AI Usage Summary] usage_log fallback returned {len(fallback_results)} rows")
+                # #endregion
+                
+                # Convert to expected format
+                total_cost = sum(r.total_cost_usd or 0 for r in fallback_results)
+                total_requests = sum(r.request_count or 0 for r in fallback_results)
+                
+                by_app = {}
+                for r in fallback_results:
+                    app = r.app_name or 'unknown'
+                    by_app[app] = {
+                        'requests': r.request_count or 0,
+                        'tokens': 0,  # Not tracked in usage_log
+                        'cost_usd': r.total_cost_usd or 0
+                    }
+                
+                return {
+                    'period_days': days,
+                    'total_requests': total_requests,
+                    'total_tokens': 0,
+                    'total_cost_usd': round(total_cost, 4),
+                    'by_app': by_app,
+                    'by_model': [],  # Not tracked in usage_log
+                    '_source': source
+                }
+            except Exception as fe:
+                # #region agent log
+                print(f"[AI Usage Summary] usage_log fallback also failed: {fe}")
+                # #endregion
+                pass
+        
+        # Process ai_usage results
         total_cost = sum(r.total_cost_usd or 0 for r in results)
         total_requests = sum(r.request_count or 0 for r in results)
         total_tokens = sum(r.total_tokens or 0 for r in results)
@@ -218,20 +267,7 @@ def get_ai_usage_summary(days: int = 30) -> dict:
             by_model[model]['tokens'] += r.total_tokens or 0
             by_model[model]['cost_usd'] += r.total_cost_usd or 0
         
-        # Convert by_model dict to list for frontend
-        by_model_list = [
-            {'model': k, **v} for k, v in by_model.items()
-        ]
-        
-        # #region agent log - diagnostic: check total rows in table
-        total_all_time = 0
-        try:
-            count_query = "SELECT COUNT(*) as total FROM `justdata-ncrc.firebase_analytics.ai_usage`"
-            count_result = list(client.query(count_query).result())
-            total_all_time = count_result[0].total if count_result else 0
-        except:
-            pass
-        # #endregion
+        by_model_list = [{'model': k, **v} for k, v in by_model.items()]
         
         return {
             'period_days': days,
@@ -240,7 +276,7 @@ def get_ai_usage_summary(days: int = 30) -> dict:
             'total_cost_usd': round(total_cost, 4),
             'by_app': by_app,
             'by_model': by_model_list,
-            '_debug_table_total_rows': total_all_time  # diagnostic
+            '_source': source
         }
     except Exception as e:
         import traceback as _tb
