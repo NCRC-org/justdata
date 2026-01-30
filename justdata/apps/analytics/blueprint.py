@@ -18,7 +18,8 @@ from .bigquery_client import (
     get_coalition_opportunities,
     get_summary,
     get_user_activity_timeline,
-    sync_new_events
+    sync_new_events,
+    force_full_sync
 )
 
 # Create blueprint
@@ -379,17 +380,18 @@ def health():
 def api_costs():
     """
     Get BigQuery cost summary for the cost monitoring dashboard.
-    
+
     Query params:
         days: Number of days to look back (default 30)
-    
+
     Returns:
         JSON with cost breakdown by app, daily costs, and totals.
     """
     try:
         from .bigquery_client import get_cost_summary
         days = request.args.get('days', 30, type=int)
-        data = get_cost_summary(days=days)
+        skip_cache = request.args.get('refresh', '').strip() == '1'
+        data = get_cost_summary(days=days, skip_cache=skip_cache)
         return jsonify({'success': True, 'data': data})
     except Exception as e:
         import traceback
@@ -415,6 +417,37 @@ def api_ai_costs():
         days = request.args.get('days', 30, type=int)
         data = get_ai_usage_summary(days=days)
         return jsonify({'success': True, 'data': data})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@analytics_bp.route('/api/force-sync', methods=['POST'])
+@login_required
+@admin_required
+def api_force_sync():
+    """
+    Force a full sync of usage_log data to analytics events table.
+    
+    Admin only. Use this to populate the analytics maps (Report Locations, 
+    Lender Interest) with historical data from usage_log.
+    
+    POST /analytics/api/force-sync
+    
+    Returns:
+        JSON with synced_count and status
+    """
+    try:
+        result = force_full_sync()
+        if 'error' in result:
+            return jsonify({'success': False, 'error': result['error']}), 500
+        return jsonify({
+            'success': True,
+            'synced_count': result.get('synced_count', 0),
+            'last_sync': result.get('last_sync'),
+            'message': f"Synced {result.get('synced_count', 0)} events from usage_log"
+        })
     except Exception as e:
         import traceback
         traceback.print_exc()

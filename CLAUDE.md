@@ -142,12 +142,23 @@ Required (set in `.env` for local dev, or Cloud Run environment for production):
 - `GCP_PROJECT_ID` - Google Cloud project (default: hdma1-242116)
 - `GOOGLE_APPLICATION_CREDENTIALS_JSON` - BigQuery credentials as JSON string
 - `CENSUS_API_KEY` - US Census API key
+- **Firebase Auth (Google sign-in):** `FIREBASE_CREDENTIALS_JSON` (service account JSON string) or `FIREBASE_CREDENTIALS` (path to JSON file). Get from Firebase Console → Project settings → Service accounts → Generate new private key. If unset, backend returns 503 and login fails with "Firebase credentials not set."
 
 Optional:
 - `OPENAI_API_KEY` - OpenAI API key (fallback)
 - `DEBUG` / `FLASK_DEBUG` - Debug mode
 - `SECRET_KEY` - Flask session secret
 - `PORT` - Server port (defaults vary by app)
+
+### Firebase Auth (Google sign-in)
+Google sign-in requires the app’s domain to be **authorized** in Firebase:
+1. [Firebase Console](https://console.firebase.google.com) → project **justdata-ncrc**
+2. **Authentication** → **Settings** → **Authorized domains**
+3. **Add domain** with the **hostname only** (no `https://` or port), e.g.:
+   - `localhost` (for http://localhost:8000)
+   - `127.0.0.1` (for http://127.0.0.1:8000)
+   - `justdata.org` (for production)
+If the domain is missing, users see "Domain not authorized" or "The requested action is invalid."
 
 ## Data Sources
 

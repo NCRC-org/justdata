@@ -41,6 +41,15 @@ function initFirebase() {
         // Listen for auth state changes
         firebaseAuth.onAuthStateChanged(handleAuthStateChange);
 
+        // Consume redirect result when user returns from signInWithRedirect (e.g. after popup-blocked fallback)
+        firebaseAuth.getRedirectResult().then(function(result) {
+            if (result && result.user) {
+                console.log('[Auth] Redirect sign-in completed:', result.user.email);
+            }
+        }).catch(function(err) {
+            console.error('[Auth] Redirect result error:', err.code, err.message);
+        });
+
         console.log('[DEBUG] Firebase initialized successfully');
     } catch (error) {
         console.error('[DEBUG] Firebase initialization error:', error);
@@ -167,15 +176,37 @@ async function signInWithGoogle() {
         console.error('Google sign-in error code:', error.code);
         console.error('Google sign-in error message:', error.message);
 
-        // Handle specific errors
+        // Popup failed: blocked, "requested action is invalid", or storage unsupported. Fallback to redirect (same-tab sign-in).
+        var useRedirectFallback = error.code === 'auth/popup-blocked' ||
+            (error.message && error.message.indexOf('requested action is invalid') !== -1) ||
+            (error.code === 'auth/internal' || error.code === 'auth/web-storage-unsupported');
+        if (useRedirectFallback) {
+            console.log('[Auth] Popup failed (' + error.code + '), trying redirect sign-in...');
+            if (window.location.hostname === '127.0.0.1') {
+                console.warn('[Auth] On 127.0.0.1: add it in Firebase Console → Authentication → Authorized domains, or use http://localhost:8000');
+            }
+            try {
+                await firebaseAuth.signInWithRedirect(provider);
+                return; // Page will navigate away
+            } catch (redirectErr) {
+                console.error('[Auth] Redirect sign-in failed:', redirectErr);
+                if (error.code === 'auth/popup-blocked') {
+                    alert('Popup was blocked. Sign-in will use this tab instead—click Sign in with Google again.');
+                } else {
+                    alert('Sign-in failed. Try allowing popups for this site, or use a different browser.');
+                }
+                throw redirectErr;
+            }
+        }
+
+        // Handle specific errors (no redirect fallback)
         if (error.code === 'auth/popup-closed-by-user') {
             console.log('Sign-in popup was closed by user');
-        } else if (error.code === 'auth/popup-blocked') {
-            alert('Popup was blocked by your browser.\n\nPlease allow popups for this site and try again.');
         } else if (error.code === 'auth/cancelled-popup-request') {
             console.log('Previous popup request cancelled');
         } else if (error.code === 'auth/unauthorized-domain') {
-            alert('Domain not authorized: ' + window.location.origin);
+            var host = window.location.hostname;
+            alert('Domain not authorized for Google sign-in.\n\nAdd this in Firebase:\n1. Open Firebase Console → your project (justdata-ncrc)\n2. Authentication → Settings → Authorized domains\n3. Click "Add domain" and add: ' + host + '\n\n(Use the domain only, no https:// or port.)');
         } else {
             alert('Sign-in failed: ' + error.message);
         }
@@ -449,6 +480,9 @@ async function notifyBackendLogin(idToken, user) {
                 console.log('User needs to provide organization');
                 showOrganizationPrompt();
             }
+        } else if (data.code === 'firebase_not_configured') {
+            console.error('[Auth] Backend: Firebase credentials not set.', data.hint || data.error);
+            alert('Sign-in could not complete: server is missing Firebase credentials.\n\n' + (data.hint || data.error));
         }
         return data;
     } catch (error) {

@@ -1428,6 +1428,7 @@ h1, h2, h3, h4 {
 
 .lender-popup {
     min-width: 220px;
+    max-width: 300px;
     font-family: var(--font-sans);
 }
 
@@ -1454,6 +1455,8 @@ h1, h2, h3, h4 {
     padding: 10px 12px;
     border-radius: 4px;
     margin-bottom: 10px;
+    max-height: 180px;
+    overflow-y: auto;
 }
 
 .lender-popup .lenders-header {
@@ -1504,6 +1507,29 @@ h1, h2, h3, h4 {
 .lender-popup .lender-link:hover {
     color: #4a148c;
     text-decoration: underline;
+}
+
+/* Location Pills in Lender Table */
+.location-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    margin: 2px 3px 2px 0;
+    background: #e3f2fd;
+    color: #1565c0;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.location-pill.location-more {
+    background: #f5f5f5;
+    color: #757575;
+    font-style: italic;
+}
+
+.locations-cell {
+    max-width: 280px;
 }
 
 /* State Researchers Panel Styles */
@@ -1671,11 +1697,24 @@ h1, h2, h3, h4 {
 /* User email in table */
 .user-email {
     font-weight: 500;
-    color: var(--analytics-text);
+    color: #1a1a1a !important;
     max-width: 200px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* Anonymous user display - higher contrast and distinct styling */
+.user-email.anonymous-user {
+    color: #495057 !important;
+    font-style: italic;
+    font-weight: 400;
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    display: inline-block;
+    border: 1px solid #dee2e6;
 }
 
 /* Organization cell */

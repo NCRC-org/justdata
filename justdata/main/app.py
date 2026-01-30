@@ -21,6 +21,7 @@ EXEMPT_PATHS = [
     '/shared/',
     '/api/auth/',  # Auth routes for login/logout
     '/api/set-user-type',  # Allow setting user type for testing/auth flow
+    '/api/platform-stats',  # Public homepage stats (no auth; avoids 127.0.0.1 vs localhost cookie mismatch)
 ]
 
 
@@ -319,15 +320,17 @@ def create_app():
         from datetime import datetime, timedelta
         import time
 
-        # Check cache (1 hour TTL)
+        # Check cache (1 hour TTL); skip if ?refresh=1
         cache_ttl = 3600  # 1 hour in seconds
         now = time.time()
+        skip_cache = request.args.get('refresh', '').strip() == '1'
 
-        if (_stats_cache['data'] is not None and
+        if not skip_cache and (_stats_cache['data'] is not None and
             _stats_cache['timestamp'] is not None and
             now - _stats_cache['timestamp'] < cache_ttl):
             return jsonify(_stats_cache['data'])
 
+        include_debug = request.args.get('debug', '').strip() == '1'
         stats = {
             'mortgage_records': 0,
             'lenders_tracked': 0,
@@ -335,10 +338,14 @@ def create_app():
             'active_researchers': 0,
             'cached_at': datetime.utcnow().isoformat()
         }
+        if include_debug:
+            stats['_debug'] = {'client_ok': False, 'hmda_error': None, 'reports_error': None, 'firestore_error': None}
 
         try:
             from justdata.shared.utils.bigquery_client import get_bigquery_client
             client = get_bigquery_client()
+            if include_debug:
+                stats['_debug']['client_ok'] = client is not None
             if client:
                 # Get mortgage records and lenders count from HMDA (2018+)
                 try:
@@ -347,7 +354,7 @@ def create_app():
                             COUNT(*) as total_records,
                             COUNT(DISTINCT lei) as unique_leis
                         FROM `justdata-ncrc.shared.de_hmda`
-                        WHERE activity_year >= '2018'
+                        WHERE activity_year >= 2018
                     """
                     result = client.query(query).result()
                     for row in result:
@@ -356,6 +363,8 @@ def create_app():
                         break
                 except Exception as e:
                     print(f"[WARN] Failed to get HMDA stats: {e}")
+                    if include_debug:
+                        stats['_debug']['hmda_error'] = str(e)
 
                 # Get reports count from analytics
                 try:
@@ -374,6 +383,8 @@ def create_app():
                         break
                 except Exception as e:
                     print(f"[WARN] Failed to get report count: {e}")
+                    if include_debug:
+                        stats['_debug']['reports_error'] = str(e)
 
                 # Get unique researchers from Firestore (users who have logged in)
                 try:
@@ -381,18 +392,23 @@ def create_app():
                     db = get_firestore_client()
                     if db:
                         users_ref = db.collection('users')
-                        # Count users with loginCount > 0
                         users = users_ref.stream()
                         active_count = sum(1 for u in users if u.to_dict().get('loginCount', 0) > 0)
                         stats['active_researchers'] = active_count
                 except Exception as e:
                     print(f"[WARN] Failed to get active users from Firestore: {e}")
+                    if include_debug:
+                        stats['_debug']['firestore_error'] = str(e)
 
         except Exception as e:
             print(f"[WARN] Failed to connect to BigQuery: {e}")
+            if include_debug:
+                stats['_debug']['client_ok'] = False
+                stats['_debug']['hmda_error'] = stats['_debug'].get('hmda_error') or str(e)
 
-        # Update cache
-        _stats_cache['data'] = stats
+        # Update cache (don't cache debug payload)
+        cache_payload = {k: v for k, v in stats.items() if k != '_debug'}
+        _stats_cache['data'] = cache_payload
         _stats_cache['timestamp'] = now
 
         return jsonify(stats)

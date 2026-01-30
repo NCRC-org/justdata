@@ -477,8 +477,12 @@ function checkMemberPrompt() {
 
     // Check user's member request status from backend
     fetch('/api/auth/member-request/status')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) return;
+            return response.json();
+        })
         .then(data => {
+            if (!data) return;
             // Show pending banner if request is pending
             if (data.memberRequestStatus === 'pending') {
                 showPendingBanner();
@@ -654,9 +658,12 @@ function dismissPendingBanner() {
 function checkGracePeriodBanner() {
     // This will be called from auth status check
     fetch('/api/auth/member-request/status')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) return null;
+            return response.json();
+        })
         .then(data => {
-            if (data.membershipStatus === 'GRACE PERIOD') {
+            if (data && data.membershipStatus === 'GRACE PERIOD') {
                 showGracePeriodBanner();
             }
         })

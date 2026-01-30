@@ -833,6 +833,17 @@ def get_current_user() -> Optional[dict]:
     # Fall back to session-stored user
     if not user and 'firebase_user' in session:
         user = session['firebase_user']
+        # Validate session user has required fields
+        if user and not user.get('uid') and not user.get('email'):
+            print(f"[AUTH WARN] Session user missing uid and email: {list(user.keys()) if user else 'None'}")
+
+    # Log when no user found for non-static requests (helps debug auth issues)
+    if not user and request.endpoint and not request.path.startswith('/static'):
+        # Only log for app routes that might need auth
+        if any(app in request.path for app in ['/analyze', '/report', '/api/']):
+            print(f"[AUTH DEBUG] No user found for {request.method} {request.path}")
+            print(f"[AUTH DEBUG] Has Authorization header: {bool(auth_header)}")
+            print(f"[AUTH DEBUG] Has firebase_user in session: {'firebase_user' in session}")
 
     g.current_user = user
     return user
@@ -1172,7 +1183,13 @@ def auth_login():
     if not id_token:
         return jsonify({'error': 'No ID token provided'}), 400
 
-    # Verify the token
+    # Verify the token (requires Firebase Admin credentials in env)
+    if not get_firebase_app():
+        return jsonify({
+            'error': 'Server configuration error: Firebase credentials not set.',
+            'code': 'firebase_not_configured',
+            'hint': 'Set FIREBASE_CREDENTIALS_JSON or FIREBASE_CREDENTIALS in .env (Firebase Console → Project settings → Service accounts → Generate new private key).'
+        }), 503
     decoded = verify_firebase_token(id_token)
     if not decoded:
         return jsonify({'error': 'Invalid or expired token'}), 401
@@ -1988,3 +2005,77 @@ def get_membership_status():
         })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ========================================
+# Member Request Status (modal-compatible)
+# ========================================
+
+@auth_bp.route('/member-request/status', methods=['GET'])
+def get_member_request_status():
+    """
+    Return member-request status in the shape expected by member_request_modal.html.
+    Prevents 404 and HTML-vs-JSON parse errors. Maps from membership-status logic.
+    """
+    user = get_current_user()
+    if not user:
+        return jsonify({
+            'memberRequestStatus': 'anonymous',
+            'hasSeenMemberPrompt': True,
+            'membershipStatus': None
+        })
+
+    uid = user.get('uid')
+    db = get_firestore_client()
+    if not db:
+        return jsonify({
+            'memberRequestStatus': 'unknown',
+            'hasSeenMemberPrompt': True,
+            'membershipStatus': None
+        })
+
+    try:
+        user_doc = get_user_doc(uid)
+        if not user_doc:
+            return jsonify({
+                'memberRequestStatus': 'unknown',
+                'hasSeenMemberPrompt': True,
+                'membershipStatus': None
+            })
+
+        user_type = user_doc.get('userType') or ''
+        member_types = ['member', 'member_premium', 'non_member_org', 'staff', 'senior_executive', 'admin']
+        is_member = user_type in member_types
+        hubspot_status = (user_doc.get('hubspot_membership_status') or '').strip().upper()
+        has_seen = user_doc.get('hasSeenMemberPrompt', True)
+
+        if is_member:
+            member_request_status = 'member'
+        elif hubspot_status == 'PENDING':
+            member_request_status = 'pending'
+        elif hubspot_status in ('DENIED', 'EXPIRED'):
+            member_request_status = 'denied'
+        else:
+            member_request_status = 'unknown'
+
+        membership_status = user_doc.get('hubspot_membership_status') or None
+        if membership_status and isinstance(membership_status, str):
+            membership_status = membership_status.strip() or None
+
+        return jsonify({
+            'memberRequestStatus': member_request_status,
+            'hasSeenMemberPrompt': bool(has_seen),
+            'membershipStatus': membership_status
+        })
+    except Exception as e:
+        return jsonify({
+            'memberRequestStatus': 'unknown',
+            'hasSeenMemberPrompt': True,
+            'membershipStatus': None
+        })
+
+
+@auth_bp.route('/member-request/dismiss-prompt', methods=['POST'])
+def dismiss_member_prompt():
+    """No-op for 'Continue as guest'; prevents 404 when modal dismisses."""
+    return jsonify({'ok': True})

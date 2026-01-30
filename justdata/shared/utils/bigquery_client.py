@@ -324,9 +324,11 @@ def get_bigquery_client(project_id: str = None):
                     client = bigquery.Client(credentials=credentials, project=project_id)
                     return client
                 else:
-                    # Invalid path in env var - log warning but continue to fallback
+                    # Invalid path in env var - unset so default client and other libs don't try to load it
                     print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}", flush=True)
                     sys.stdout.flush()
+                    if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ:
+                        del os.environ['GOOGLE_APPLICATION_CREDENTIALS']
             else:
                 # Not a valid file path (might be a hash or other invalid value)
                 print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS contains invalid value (not a file path): {env_cred_str[:50]}...")
@@ -388,10 +390,11 @@ def get_bigquery_client(project_id: str = None):
             client = bigquery.Client(credentials=credentials, project=project_id)
             return client
         
-        # If we get here, no credentials found - show warning about env var if it was set
+        # If we get here, no credentials found - unset bad path so default client doesn't fail
         if env_cred_path and not env_cred_path.exists():
-            print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS points to non-existent file: {env_cred_path}")
-            print(f"[WARNING] No credentials file found in common locations either")
+            if 'GOOGLE_APPLICATION_CREDENTIALS' in os.environ:
+                del os.environ['GOOGLE_APPLICATION_CREDENTIALS']
+            print(f"[WARNING] GOOGLE_APPLICATION_CREDENTIALS pointed to missing file; unset. Set GOOGLE_APPLICATION_CREDENTIALS_JSON (JSON string) in .env for BigQuery.")
         
         # Fallback: try default service account (for cloud deployments)
         print("[INFO] No credentials file found, trying default service account...")

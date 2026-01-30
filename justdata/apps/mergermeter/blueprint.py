@@ -16,7 +16,7 @@ import json
 from typing import List, Dict
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from .config import TEMPLATES_DIR, STATIC_DIR, OUTPUT_DIR, PROJECT_ID
@@ -155,6 +155,7 @@ def progress_handler(job_id):
 
 
 @mergermeter_bp.route('/analyze', methods=['POST'])
+@login_required
 @require_access('mergermeter', 'full')
 def analyze():
     """Handle analysis request with caching - returns immediately, runs analysis in background thread"""
@@ -198,8 +199,26 @@ def analyze():
         print(f"[DEBUG] Form received - acquirer_sb_id: '{form_data.get('acquirer_sb_id', 'NOT SET')}'")
         print(f"[DEBUG] Form received - target_sb_id: '{form_data.get('target_sb_id', 'NOT SET')}'")
         
-        # Get user type for logging
+        # Get user type and identity for logging
         user_type = get_user_type()
+        current_user = get_current_user()
+        user_id = current_user.get('uid') if current_user else None
+        user_email = current_user.get('email') if current_user else None
+        
+        # Fallback: Try to get from session directly if get_current_user() returned None
+        if not user_id and not user_email and 'firebase_user' in session:
+            fb_user = session.get('firebase_user', {})
+            user_id = fb_user.get('uid') or user_id
+            user_email = fb_user.get('email') or user_email
+        
+        # Log warning if still no user identity (shouldn't happen with @login_required)
+        if not user_id and not user_email:
+            print(f"[WARN] MergerMeter analyze: No user identity captured despite @login_required")
+            print(f"[WARN] Session keys: {list(session.keys())}")
+        
+        # Capture IP and user agent before thread (request context not available in thread)
+        client_ip = request.remote_addr
+        client_user_agent = request.headers.get('User-Agent')
         
         # For cache key, normalize the year ranges
         cache_params = form_data.copy()
@@ -241,7 +260,11 @@ def analyze():
                 job_id=job_id,
                 response_time_ms=response_time_ms,
                 costs={'bigquery': 0.01, 'ai': 0.0, 'total': 0.01},
-                request_id=request_id
+                request_id=request_id,
+                user_id=user_id,
+                user_email=user_email,
+                ip_address=client_ip,
+                user_agent=client_user_agent
             )
             
             return jsonify({
@@ -291,7 +314,11 @@ def analyze():
                     job_id=job_id,
                     response_time_ms=response_time_ms,
                     costs={'bigquery': 3.0, 'ai': 0.5, 'total': 3.5},  # Estimated costs
-                    request_id=request_id
+                    request_id=request_id,
+                    user_id=user_id,
+                    user_email=user_email,
+                    ip_address=client_ip,
+                    user_agent=client_user_agent
                 )
                 
             except Exception as e:
@@ -312,7 +339,11 @@ def analyze():
                     job_id=job_id,
                     response_time_ms=response_time_ms,
                     error_message=error_msg,
-                    request_id=request_id
+                    request_id=request_id,
+                    user_id=user_id,
+                    user_email=user_email,
+                    ip_address=client_ip,
+                    user_agent=client_user_agent
                 )
         
         thread = threading.Thread(target=run_analysis, daemon=True)
@@ -325,6 +356,11 @@ def analyze():
         traceback.print_exc()
         # Log error
         try:
+            _user = get_current_user() if 'user_id' not in locals() else None
+            _user_id = user_id if 'user_id' in locals() else (_user.get('uid') if _user else None)
+            _user_email = user_email if 'user_email' in locals() else (_user.get('email') if _user else None)
+            _ip = client_ip if 'client_ip' in locals() else request.remote_addr
+            _ua = client_user_agent if 'client_user_agent' in locals() else request.headers.get('User-Agent')
             response_time_ms = int((time_module.time() - start_time) * 1000)
             log_usage(
                 user_type=get_user_type(),
@@ -335,7 +371,11 @@ def analyze():
                 job_id=job_id if 'job_id' in locals() else str(uuid.uuid4()),
                 response_time_ms=response_time_ms,
                 error_message=str(e),
-                request_id=request_id
+                request_id=request_id,
+                user_id=_user_id,
+                user_email=_user_email,
+                ip_address=_ip,
+                user_agent=_ua
             )
         except:
             pass

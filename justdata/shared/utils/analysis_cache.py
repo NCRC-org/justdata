@@ -1089,9 +1089,29 @@ def log_usage(user_type: str, app_name: str, params: Dict[str, Any],
              response_time_ms: int = 0,
              costs: Optional[Dict[str, float]] = None,
              error_message: Optional[str] = None,
-             request_id: Optional[str] = None) -> None:
+             request_id: Optional[str] = None,
+             user_id: Optional[str] = None,
+             user_email: Optional[str] = None,
+             ip_address: Optional[str] = None,
+             user_agent: Optional[str] = None) -> None:
     """
     Log usage to BigQuery usage_log table.
+    
+    Args:
+        user_type: Type of user (admin, staff, member, etc.)
+        app_name: Name of the app (lendsight, bizsight, etc.)
+        params: Analysis parameters
+        cache_key: Cache key for the request
+        cache_hit: Whether the result was served from cache
+        job_id: Unique job identifier
+        response_time_ms: Response time in milliseconds
+        costs: Dict with 'bigquery', 'ai', 'total' costs
+        error_message: Error message if request failed
+        request_id: Unique request identifier
+        user_id: Firebase Auth UID (for analytics tracking)
+        user_email: User's email address (for analytics tracking)
+        ip_address: Client IP address (for geolocation)
+        user_agent: Client user agent string
     """
     if request_id is None:
         request_id = str(uuid.uuid4())
@@ -1104,11 +1124,13 @@ def log_usage(user_type: str, app_name: str, params: Dict[str, Any],
     INSERT INTO `{USAGE_TABLE}`
     (request_id, timestamp, user_type, app_name, parameters_json,
      cache_key, cache_hit, job_id, response_time_ms,
-     bigquery_cost_usd, ai_cost_usd, total_cost_usd, error_message)
+     bigquery_cost_usd, ai_cost_usd, total_cost_usd, error_message,
+     user_id, user_email, ip_address, user_agent)
     VALUES
     (@request_id, CURRENT_TIMESTAMP(), @user_type, @app_name, PARSE_JSON(@params_json),
      @cache_key, @cache_hit, @job_id, @response_time,
-     @bq_cost, @ai_cost, @total_cost, @error)
+     @bq_cost, @ai_cost, @total_cost, @error,
+     @user_id, @user_email, @ip_address, @user_agent)
     """
     
     job_config = bigquery.QueryJobConfig(
@@ -1125,6 +1147,10 @@ def log_usage(user_type: str, app_name: str, params: Dict[str, Any],
             bigquery.ScalarQueryParameter("ai_cost", "FLOAT64", costs.get('ai', 0.0)),
             bigquery.ScalarQueryParameter("total_cost", "FLOAT64", costs.get('total', 0.0)),
             bigquery.ScalarQueryParameter("error", "STRING", error_message),
+            bigquery.ScalarQueryParameter("user_id", "STRING", user_id),
+            bigquery.ScalarQueryParameter("user_email", "STRING", user_email),
+            bigquery.ScalarQueryParameter("ip_address", "STRING", ip_address),
+            bigquery.ScalarQueryParameter("user_agent", "STRING", user_agent),
         ]
     )
     

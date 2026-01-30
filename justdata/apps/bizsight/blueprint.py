@@ -14,7 +14,7 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.apps.bizsight.config import BizSightConfig, TEMPLATES_DIR_STR, STATIC_DIR_STR
@@ -122,6 +122,7 @@ def progress_handler(job_id):
 
 
 @bizsight_bp.route('/analyze', methods=['POST'])
+@login_required
 @require_access('bizsight', 'partial')
 def analyze():
     """Handle analysis request with caching."""
@@ -186,8 +187,21 @@ def analyze():
             years = list(range(start_year, end_year + 1))
             years_str = ','.join(map(str, years))
         
-        # Get user type for logging
+        # Get user type and identity for logging
         user_type = get_user_type()
+        current_user = get_current_user()
+        user_id = current_user.get('uid') if current_user else None
+        user_email = current_user.get('email') if current_user else None
+        
+        # Fallback: Try to get from session directly if get_current_user() returned None
+        if not user_id and not user_email and 'firebase_user' in session:
+            fb_user = session.get('firebase_user', {})
+            user_id = fb_user.get('uid') or user_id
+            user_email = fb_user.get('email') or user_email
+        
+        # Log warning if still no user identity
+        if not user_id and not user_email:
+            print(f"[WARN] BizSight analyze: No user identity captured despite @login_required")
 
         # Check for force_refresh parameter to bypass cache
         force_refresh = data.get('force_refresh', False)
@@ -238,7 +252,9 @@ def analyze():
                 job_id=job_id,
                 response_time_ms=response_time_ms,
                 costs={'bigquery': 0.01, 'ai': 0.0, 'total': 0.01},
-                request_id=request_id
+                request_id=request_id,
+                user_id=user_id,
+                user_email=user_email
             )
             
             return jsonify({
@@ -283,7 +299,9 @@ def analyze():
                         job_id=job_id,
                         response_time_ms=response_time_ms,
                         error_message=error_msg,
-                        request_id=request_id
+                        request_id=request_id,
+                        user_id=user_id,
+                        user_email=user_email
                     )
                     return
                 
@@ -327,7 +345,9 @@ def analyze():
                         job_id=job_id,
                         response_time_ms=response_time_ms,
                         error_message=f"Storage failed: {str(cache_error)}",
-                        request_id=request_id
+                        request_id=request_id,
+                        user_id=user_id,
+                        user_email=user_email
                     )
                     return
 
@@ -348,7 +368,9 @@ def analyze():
                     job_id=job_id,
                     response_time_ms=response_time_ms,
                     costs={'bigquery': 2.0, 'ai': 0.3, 'total': 2.3},  # Estimated costs
-                    request_id=request_id
+                    request_id=request_id,
+                    user_id=user_id,
+                    user_email=user_email
                 )
                 
             except Exception as e:
@@ -367,7 +389,9 @@ def analyze():
                     job_id=job_id,
                     response_time_ms=response_time_ms,
                     error_message=error_msg,
-                    request_id=request_id
+                    request_id=request_id,
+                    user_id=user_id,
+                    user_email=user_email
                 )
         
         # Start background job
@@ -379,6 +403,9 @@ def analyze():
         # Log error
         response_time_ms = int((time_module.time() - start_time) * 1000)
         try:
+            _user = get_current_user() if 'user_id' not in locals() else None
+            _user_id = user_id if 'user_id' in locals() else (_user.get('uid') if _user else None)
+            _user_email = user_email if 'user_email' in locals() else (_user.get('email') if _user else None)
             log_usage(
                 user_type=get_user_type(),
                 app_name='bizsight',
@@ -388,7 +415,9 @@ def analyze():
                 job_id=job_id if 'job_id' in locals() else str(uuid.uuid4()),
                 response_time_ms=response_time_ms,
                 error_message=str(e),
-                request_id=request_id
+                request_id=request_id,
+                user_id=_user_id,
+                user_email=_user_email
             )
         except:
             pass

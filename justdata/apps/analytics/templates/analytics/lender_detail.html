@@ -208,9 +208,34 @@
         color: #c2185b;
     }
 
+    .report-type-badge.mergermeter {
+        background: #ede7f6;
+        color: #7b1fa2;
+    }
+
     .report-type-badge.default {
         background: var(--analytics-bg-alt);
         color: var(--analytics-text-secondary);
+    }
+
+    /* Merger role pill */
+    .merger-role {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+
+    .merger-role.acquirer {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    .merger-role.target {
+        background: #fff3e0;
+        color: #e65100;
     }
 
     /* Filter bar */
@@ -335,23 +360,16 @@
                 </div>
                 <div class="filter-bar" style="padding: 12px 16px; border-bottom: 1px solid var(--analytics-border);">
                     <div class="filter-group">
-                        <label for="report-type-filter">Type:</label>
-                        <select id="report-type-filter" class="form-select">
-                            <option value="">All Types</option>
-                            <option value="lendsight_report">LendSight</option>
-                            <option value="bizsight_report">BizSight</option>
-                            <option value="dataexplorer_lender_report">DataExplorer</option>
-                        </select>
-                    </div>
-                    <div class="filter-group">
-                        <label for="state-filter">State:</label>
-                        <select id="state-filter" class="form-select">
-                            <option value="">All States</option>
+                        <label for="role-filter">Role:</label>
+                        <select id="role-filter" class="form-select">
+                            <option value="">All Roles</option>
+                            <option value="acquirer">Acquirer</option>
+                            <option value="target">Target</option>
                         </select>
                     </div>
                     <div class="filter-group">
                         <label for="search-filter">Search:</label>
-                        <input type="text" id="search-filter" class="form-control" placeholder="County name...">
+                        <input type="text" id="search-filter" class="form-control" placeholder="Partner name...">
                     </div>
                 </div>
                 <div class="table-wrapper scrollable-table">
@@ -360,8 +378,8 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Report Type</th>
-                                <th>County</th>
-                                <th>State</th>
+                                <th>Role</th>
+                                <th>Merger Partner</th>
                                 <th>Researcher</th>
                             </tr>
                         </thead>
@@ -407,7 +425,8 @@
         'bizsight_report': 'BizSight',
         'branchsight_report': 'BranchSight',
         'dataexplorer_area_report': 'DataExplorer (Area)',
-        'dataexplorer_lender_report': 'DataExplorer (Lender)'
+        'dataexplorer_lender_report': 'DataExplorer (Lender)',
+        'mergermeter': 'MergerMeter'
     };
 
     // Initialize on page load
@@ -416,7 +435,7 @@
 
         // Handle filter changes
         $('#time-period').on('change', loadLenderDetail);
-        $('#report-type-filter, #state-filter').on('change', filterReports);
+        $('#role-filter').on('change', filterReports);
         $('#search-filter').on('input', debounce(filterReports, 300));
     });
 
@@ -446,7 +465,6 @@
                     allResearchers = lenderData.researchers || [];
 
                     renderLenderHeader(lenderData.lender);
-                    populateStateFilter();
                     renderReports(allReports);
                     renderResearchers(allResearchers);
                 } else {
@@ -494,47 +512,27 @@
     }
 
     /**
-     * Populate state filter dropdown from reports data
-     */
-    function populateStateFilter() {
-        const states = new Set();
-        allReports.forEach(function(report) {
-            if (report.state) {
-                states.add(report.state);
-            }
-        });
-
-        const select = $('#state-filter');
-        select.find('option:not(:first)').remove();
-
-        Array.from(states).sort().forEach(function(state) {
-            select.append($('<option>').val(state).text(state));
-        });
-    }
-
-    /**
      * Filter reports based on current filter values
      */
     function filterReports() {
-        const typeFilter = $('#report-type-filter').val();
-        const stateFilter = $('#state-filter').val();
+        const roleFilter = $('#role-filter').val();
         const searchFilter = $('#search-filter').val().toLowerCase();
 
         const filtered = allReports.filter(function(report) {
-            // Type filter
-            if (typeFilter && report.report_type !== typeFilter) {
+            // Role filter
+            if (roleFilter === 'acquirer' && report.acquirer_lei !== LENDER_ID) {
+                return false;
+            }
+            if (roleFilter === 'target' && report.target_lei !== LENDER_ID) {
                 return false;
             }
 
-            // State filter
-            if (stateFilter && report.state !== stateFilter) {
-                return false;
-            }
-
-            // Search filter (county name)
+            // Search filter (partner name)
             if (searchFilter) {
-                const countyName = (report.county_name || '').toLowerCase();
-                if (!countyName.includes(searchFilter)) {
+                const partnerName = report.acquirer_lei === LENDER_ID
+                    ? (report.target_name || report.target_lei || '').toLowerCase()
+                    : (report.acquirer_name || report.acquirer_lei || '').toLowerCase();
+                if (!partnerName.includes(searchFilter)) {
                     return false;
                 }
             }
@@ -563,11 +561,23 @@
             const badgeClass = getBadgeClass(reportType);
             const researcherDisplay = getResearcherDisplay(report.user_id);
 
+            // Determine role and partner for MergerMeter reports
+            let roleDisplay = 'N/A';
+            let partnerDisplay = 'N/A';
+            
+            if (report.acquirer_lei === LENDER_ID) {
+                roleDisplay = '<span class="merger-role acquirer">Acquirer</span>';
+                partnerDisplay = escapeHtml(report.target_name || report.target_lei || 'N/A');
+            } else if (report.target_lei === LENDER_ID) {
+                roleDisplay = '<span class="merger-role target">Target</span>';
+                partnerDisplay = escapeHtml(report.acquirer_name || report.acquirer_lei || 'N/A');
+            }
+
             const row = $('<tr>')
                 .append('<td>' + formatDate(report.event_timestamp) + '</td>')
                 .append('<td><span class="report-type-badge ' + badgeClass + '">' + escapeHtml(displayName) + '</span></td>')
-                .append('<td>' + escapeHtml(report.county_name || 'N/A') + '</td>')
-                .append('<td>' + escapeHtml(report.state || 'N/A') + '</td>')
+                .append('<td>' + roleDisplay + '</td>')
+                .append('<td>' + partnerDisplay + '</td>')
                 .append('<td>' + researcherDisplay + '</td>');
 
             tbody.append(row);
@@ -582,6 +592,7 @@
         if (reportType.includes('bizsight')) return 'bizsight';
         if (reportType.includes('dataexplorer')) return 'dataexplorer';
         if (reportType.includes('branchsight')) return 'branchsight';
+        if (reportType.includes('mergermeter')) return 'mergermeter';
         return 'default';
     }
 

@@ -79,9 +79,8 @@ def log_ai_usage(
     # Log to console for debugging
     print(f"[AI Usage] {provider}/{model}: {input_tokens}+{output_tokens} tokens = ${total_cost:.4f}")
     
-    # Try to flush to BigQuery if buffer is large enough
-    if len(_ai_usage_buffer) >= 10:
-        _flush_ai_usage_to_bigquery()
+    # Flush to BigQuery immediately (was 10, but data was lost on app restart)
+    _flush_ai_usage_to_bigquery()
     
     return usage_record
 
@@ -132,12 +131,13 @@ def _flush_ai_usage_to_bigquery():
         
         # Insert rows
         rows_to_insert = _ai_usage_buffer.copy()
+        print(f"[AI Usage] Attempting to insert {len(rows_to_insert)} rows to {table_id}")
         errors = client.insert_rows_json(table_id, rows_to_insert)
         
         if errors:
             print(f"[AI Usage] BigQuery insert errors: {errors}")
         else:
-            print(f"[AI Usage] Flushed {len(rows_to_insert)} records to BigQuery")
+            print(f"[AI Usage] SUCCESS: Flushed {len(rows_to_insert)} records to BigQuery")
             _ai_usage_buffer = []
             _last_flush_time = datetime.utcnow()
             
@@ -160,26 +160,26 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         else:
             client = bigquery.Client(project='justdata-ncrc')
         
+        # Query justdata-ncrc.cache.usage_log for AI costs
+        # Schema: timestamp, app_name, ai_cost_usd, total_cost_usd, etc.
         query = f"""
         SELECT
-            provider,
-            model,
             app_name,
             COUNT(*) as request_count,
-            SUM(input_tokens) as total_input_tokens,
-            SUM(output_tokens) as total_output_tokens,
+            SUM(ai_cost_usd) as total_ai_cost_usd,
             SUM(total_cost_usd) as total_cost_usd
-        FROM `justdata-ncrc.firebase_analytics.ai_usage`
-        WHERE TIMESTAMP(timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
-        GROUP BY provider, model, app_name
-        ORDER BY total_cost_usd DESC
+        FROM `justdata-ncrc.cache.usage_log`
+        WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            AND ai_cost_usd IS NOT NULL
+            AND ai_cost_usd > 0
+        GROUP BY app_name
+        ORDER BY total_ai_cost_usd DESC
         """
         
         results = list(client.query(query).result())
         
-        total_cost = sum(r.total_cost_usd or 0 for r in results)
+        total_cost = sum(r.total_ai_cost_usd or 0 for r in results)
         total_requests = sum(r.request_count or 0 for r in results)
-        total_tokens = sum((r.total_input_tokens or 0) + (r.total_output_tokens or 0) for r in results)
         
         by_app = {}
         for r in results:
@@ -187,19 +187,18 @@ def get_ai_usage_summary(days: int = 30) -> dict:
             if app not in by_app:
                 by_app[app] = {'requests': 0, 'tokens': 0, 'cost_usd': 0}
             by_app[app]['requests'] += r.request_count or 0
-            by_app[app]['tokens'] += (r.total_input_tokens or 0) + (r.total_output_tokens or 0)
-            by_app[app]['cost_usd'] += r.total_cost_usd or 0
+            by_app[app]['cost_usd'] += r.total_ai_cost_usd or 0
         
         return {
             'period_days': days,
             'total_requests': total_requests,
-            'total_tokens': total_tokens,
+            'total_tokens': 0,  # Not tracked in this table
             'total_cost_usd': round(total_cost, 2),
             'by_app': by_app,
-            'by_model': [dict(r) for r in results]
+            'by_model': []  # Not tracked in this table
         }
     except Exception as e:
-        print(f"[AI Usage] Error getting summary: {e}")
+        print(f"[AI Usage] Error: {str(e)[:100]}")
         return {
             'period_days': days,
             'total_requests': 0,

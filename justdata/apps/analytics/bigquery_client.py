@@ -42,12 +42,57 @@ Queries Firebase Analytics data exported to BigQuery for:
 import os
 import json
 import hashlib
+import requests
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
 from .config import config
+
+# IP Geocoding cache to avoid repeated API calls
+_ip_geo_cache: Dict[str, Dict] = {}
+
+def geocode_ip(ip_address: str) -> Optional[Dict[str, Any]]:
+    """
+    Convert IP address to geographic location using ip-api.com (free tier).
+    
+    Args:
+        ip_address: IP address to geocode
+        
+    Returns:
+        Dict with 'state', 'city', 'lat', 'lng' or None if failed
+    """
+    if not ip_address or ip_address in ('127.0.0.1', 'localhost', '::1'):
+        return None
+    
+    # Check cache first
+    if ip_address in _ip_geo_cache:
+        return _ip_geo_cache[ip_address]
+    
+    try:
+        # ip-api.com free tier: 45 requests/minute, no API key needed
+        response = requests.get(
+            f'http://ip-api.com/json/{ip_address}',
+            params={'fields': 'status,regionName,city,lat,lon'},
+            timeout=2
+        )
+        if response.status_code == 200:
+            data = response.json()
+            if data.get('status') == 'success':
+                result = {
+                    'state': data.get('regionName'),
+                    'city': data.get('city'),
+                    'lat': data.get('lat'),
+                    'lng': data.get('lon')
+                }
+                _ip_geo_cache[ip_address] = result
+                return result
+    except Exception as e:
+        print(f"[WARN] IP geocoding failed for {ip_address}: {e}")
+    
+    _ip_geo_cache[ip_address] = None
+    return None
 
 
 # State name to abbreviation mapping for coordinate lookups
@@ -148,6 +193,11 @@ def sync_new_events() -> dict:
     sync timestamp, transforms them to match the backfilled_events schema,
     and inserts them. Called on dashboard load with rate limiting.
 
+    The usage_log table has these columns:
+    - app_name: 'lendsight', 'bizsight', 'branchsight', etc.
+    - parameters_json: JSON with app-specific params
+    - user_type, user_id, user_email, timestamp, etc.
+
     Returns:
         dict with 'synced_count', 'last_sync', 'skipped' (if rate limited)
     """
@@ -186,47 +236,85 @@ def sync_new_events() -> dict:
                 ts_str = str(last_sync_ts)
             timestamp_filter = f"AND timestamp > TIMESTAMP('{ts_str}')"
         else:
-            # First sync - get last 7 days of data
-            seven_days_ago = (now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
-            timestamp_filter = f"AND timestamp > TIMESTAMP('{seven_days_ago}')"
+            # First sync - get all historical data (no time limit)
+            timestamp_filter = ""
 
         # Query usage_log for new entries with report events
-        # Map event names to standard format
+        # The actual usage_log schema uses:
+        # - app_name (not action): 'lendsight', 'bizsight', 'branchsight', etc.
+        # - parameters_json (not details): JSON with app-specific params
+        # - user_type, user_id, user_email columns
+        #
+        # Extract county/lender data from parameters_json based on app:
+        # - bizsight: county_data.geoid5, county_data.name, county_data.state_name
+        # - lendsight: counties (semicolon-separated), state_code
+        # - branchsight: counties, state_code
+        # - mergermeter: acquirer_lei, target_lei
         sync_query = f"""
             WITH new_events AS (
                 SELECT
                     GENERATE_UUID() as event_id,
                     timestamp as event_timestamp,
-                    CASE
-                        WHEN action = 'lendsight_report_generated' THEN 'lendsight_report'
-                        WHEN action = 'bizsight_report_generated' THEN 'bizsight_report'
-                        WHEN action = 'branchsight_report_generated' THEN 'branchsight_report'
-                        WHEN action = 'dataexplorer_area_report' THEN 'dataexplorer_area_report'
-                        WHEN action = 'dataexplorer_lender_report' THEN 'dataexplorer_lender_report'
-                        ELSE action
+                    CASE app_name
+                        WHEN 'lendsight' THEN 'lendsight_report'
+                        WHEN 'bizsight' THEN 'bizsight_report'
+                        WHEN 'branchsight' THEN 'branchsight_report'
+                        WHEN 'mergermeter' THEN 'mergermeter_report'
+                        WHEN 'dataexplorer' THEN 'dataexplorer_report'
+                        ELSE CONCAT(app_name, '_report')
                     END as event_name,
                     user_id,
-                    CAST(NULL AS STRING) as user_email,
-                    CAST(NULL AS STRING) as user_type,
+                    user_email,
+                    user_type,
                     CAST(NULL AS STRING) as organization_name,
-                    JSON_VALUE(details, '$.county_fips') as county_fips,
-                    JSON_VALUE(details, '$.county_name') as county_name,
-                    JSON_VALUE(details, '$.state') as state,
-                    JSON_VALUE(details, '$.lender_id') as lender_id,
-                    JSON_VALUE(details, '$.lender_name') as lender_name,
-                    JSON_VALUE(details, '$.lei') as lender_id_alt,
-                    JSON_VALUE(details, '$.respondent_name') as lender_name_alt,
+                    -- Extract county_fips based on app type
+                    CASE 
+                        WHEN app_name = 'bizsight' THEN 
+                            COALESCE(
+                                JSON_VALUE(parameters_json, '$.county_data.geoid5'),
+                                JSON_VALUE(parameters_json, '$.county_data.GEOID5')
+                            )
+                        WHEN app_name IN ('lendsight', 'branchsight') THEN
+                            -- For lendsight/branchsight, counties is a string like "County, State; County2, State"
+                            -- We can't easily extract FIPS from this, so leave NULL for now
+                            -- The coordinates will be looked up by county name instead
+                            CAST(NULL AS STRING)
+                        ELSE CAST(NULL AS STRING)
+                    END as county_fips,
+                    -- Extract county_name based on app type
+                    CASE 
+                        WHEN app_name = 'bizsight' THEN 
+                            JSON_VALUE(parameters_json, '$.county_data.name')
+                        WHEN app_name IN ('lendsight', 'branchsight') THEN
+                            -- Extract first county name from semicolon-separated list
+                            SPLIT(JSON_VALUE(parameters_json, '$.counties'), ';')[SAFE_OFFSET(0)]
+                        ELSE CAST(NULL AS STRING)
+                    END as county_name,
+                    -- Extract state based on app type
+                    CASE 
+                        WHEN app_name = 'bizsight' THEN 
+                            JSON_VALUE(parameters_json, '$.county_data.state_name')
+                        WHEN app_name IN ('lendsight', 'branchsight') THEN
+                            JSON_VALUE(parameters_json, '$.state_code')
+                        ELSE CAST(NULL AS STRING)
+                    END as state,
+                    -- Extract lender_id (for mergermeter)
+                    CASE 
+                        WHEN app_name = 'mergermeter' THEN 
+                            COALESCE(
+                                JSON_VALUE(parameters_json, '$.acquirer_lei'),
+                                JSON_VALUE(parameters_json, '$.target_lei')
+                            )
+                        ELSE CAST(NULL AS STRING)
+                    END as lender_id,
+                    -- Extract lender_name (typically not in params, leave NULL)
+                    CAST(NULL AS STRING) as lender_name,
                     CAST(NULL AS STRING) as hubspot_contact_id,
                     CAST(NULL AS STRING) as hubspot_company_id
                 FROM `{BACKFILL_PROJECT}.{BACKFILL_DATASET}.usage_log`
-                WHERE action IN (
-                    'lendsight_report_generated',
-                    'bizsight_report_generated',
-                    'branchsight_report_generated',
-                    'dataexplorer_area_report',
-                    'dataexplorer_lender_report'
-                )
-                {timestamp_filter}
+                WHERE app_name IN ('lendsight', 'bizsight', 'branchsight', 'mergermeter', 'dataexplorer')
+                    AND error_message IS NULL  -- Only successful reports
+                    {timestamp_filter}
             )
             SELECT
                 event_id,
@@ -239,8 +327,8 @@ def sync_new_events() -> dict:
                 county_fips,
                 county_name,
                 state,
-                COALESCE(lender_id, lender_id_alt) as lender_id,
-                COALESCE(lender_name, lender_name_alt) as lender_name,
+                lender_id,
+                lender_name,
                 hubspot_contact_id,
                 hubspot_company_id
             FROM new_events
@@ -250,14 +338,9 @@ def sync_new_events() -> dict:
         count_query = f"""
             SELECT COUNT(*) as cnt
             FROM `{BACKFILL_PROJECT}.{BACKFILL_DATASET}.usage_log`
-            WHERE action IN (
-                'lendsight_report_generated',
-                'bizsight_report_generated',
-                'branchsight_report_generated',
-                'dataexplorer_area_report',
-                'dataexplorer_lender_report'
-            )
-            {timestamp_filter}
+            WHERE app_name IN ('lendsight', 'bizsight', 'branchsight', 'mergermeter', 'dataexplorer')
+                AND error_message IS NULL
+                {timestamp_filter}
         """
 
         count_result = list(client.query(count_query).result())
@@ -278,12 +361,19 @@ def sync_new_events() -> dict:
             return {'synced_count': 0, 'last_sync': now.isoformat()}
 
         # Insert new events into backfilled_events
+        # Target is firebase_analytics.backfilled_events which feeds the all_events view
         insert_query = f"""
-            INSERT INTO `{BACKFILL_PROJECT}.{BACKFILL_DATASET}.backfilled_events`
+            INSERT INTO `{BACKFILL_PROJECT}.{BACKFILL_TARGET_DATASET}.backfilled_events`
             (event_id, event_timestamp, event_name, user_id, user_email, user_type,
              organization_name, county_fips, county_name, state, lender_id, lender_name,
-             hubspot_contact_id, hubspot_company_id)
-            {sync_query}
+             hubspot_contact_id, hubspot_company_id, source, backfill_timestamp)
+            SELECT 
+                event_id, event_timestamp, event_name, user_id, user_email, user_type,
+                organization_name, county_fips, county_name, state, lender_id, lender_name,
+                hubspot_contact_id, hubspot_company_id, 
+                'sync' AS source,
+                CURRENT_TIMESTAMP() AS backfill_timestamp
+            FROM ({sync_query})
         """
 
         try:
@@ -315,6 +405,42 @@ def sync_new_events() -> dict:
         return {'error': str(e), 'synced_count': 0}
 
 
+def force_full_sync() -> dict:
+    """
+    Force a full sync of all historical usage_log data to backfilled_events.
+    
+    This resets the sync timestamp and bypasses rate limiting to perform
+    a complete sync. Use this after running the migration script to populate
+    initial data.
+    
+    Returns:
+        dict with 'synced_count', 'last_sync', or 'error'
+    """
+    global _last_sync_check
+    
+    try:
+        # Reset the rate limit
+        _last_sync_check = None
+        
+        # Reset the sync timestamp in Firestore to force full sync
+        from justdata.main.auth import get_firestore_client
+        db = get_firestore_client()
+        
+        if db:
+            try:
+                db.collection('system').document('analytics_sync').delete()
+                print("[INFO] Analytics: Reset sync timestamp for full sync")
+            except Exception as e:
+                print(f"[WARN] Analytics: Could not reset sync timestamp: {e}")
+        
+        # Now run the sync (with no timestamp filter, it will sync all data)
+        return sync_new_events()
+        
+    except Exception as e:
+        print(f"[ERROR] Analytics force sync failed: {e}")
+        return {'error': str(e), 'synced_count': 0}
+
+
 # Analytics data source configuration
 #
 # The unified view combines data from:
@@ -333,13 +459,16 @@ QUERY_PROJECT = 'justdata-ncrc'
 
 # Backfill source (for sync_new_events function - syncs from usage_log to backfilled_events)
 BACKFILL_PROJECT = 'justdata-ncrc'
-BACKFILL_DATASET = 'firebase_analytics'
+BACKFILL_DATASET = 'cache'  # Source dataset for usage_log
+BACKFILL_TARGET_DATASET = 'firebase_analytics'  # Target dataset for backfilled_events
 
 # Target apps for main analytics counts
 TARGET_APPS = [
     'lendsight_report',
     'bizsight_report',
     'branchsight_report',
+    'mergermeter_report',
+    'branchmapper_report',
     'dataexplorer_area_report',
     'dataexplorer_lender_report'
 ]
@@ -845,6 +974,55 @@ def _enrich_with_coordinates(data: List[Dict], fips_field: str = 'county_fips') 
     return data
 
 
+# Cache for lender names
+_lender_names_cache: Dict[str, str] = {}
+
+def _enrich_lender_names(data: List[Dict]) -> List[Dict]:
+    """
+    Look up lender names from the GLEIF reference table for any records missing lender_name.
+    
+    Args:
+        data: List of records with lender_id (LEI) field
+        
+    Returns:
+        Data enriched with lender_name from GLEIF data
+    """
+    global _lender_names_cache
+    
+    # Find LEIs that need lookup
+    leis_to_lookup = set()
+    for item in data:
+        lei = item.get('lender_id')
+        if lei and not item.get('lender_name'):
+            if lei not in _lender_names_cache:
+                leis_to_lookup.add(lei)
+    
+    # Batch lookup from GLEIF table
+    if leis_to_lookup:
+        try:
+            client = get_bigquery_client()
+            leis_str = "', '".join(leis_to_lookup)
+            query = f"""
+                SELECT lei, display_name
+                FROM `justdata-ncrc.shared.lender_names_gleif`
+                WHERE lei IN ('{leis_str}')
+            """
+            results = client.query(query).result()
+            for row in results:
+                _lender_names_cache[row.lei] = row.display_name
+            print(f"[INFO] Loaded {len(leis_to_lookup)} lender names from GLEIF")
+        except Exception as e:
+            print(f"[WARN] Could not load lender names from GLEIF: {e}")
+    
+    # Enrich the data
+    for item in data:
+        lei = item.get('lender_id')
+        if lei and not item.get('lender_name'):
+            item['lender_name'] = _lender_names_cache.get(lei)
+    
+    return data
+
+
 def _enrich_lender_interest_with_coordinates(data: List[Dict]) -> List[Dict]:
     """
     Add latitude/longitude to lender interest data based on researcher county FIPS.
@@ -1108,7 +1286,7 @@ def get_lender_interest(
 
     client = get_bigquery_client()
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
     # User type filter
     user_type_filter = ""
@@ -1119,38 +1297,118 @@ def get_lender_interest(
         types_str = "', '".join(exclude_user_types)
         user_type_filter = f" AND (user_type IS NULL OR user_type NOT IN ('{types_str}'))"
 
-    # Include all lender-related events with county FIPS for coordinate lookup
+    # Query usage_log and join with GA4 page views to get geo data
+    # GA4 captures user location via IP automatically
+    date_filter_ga4 = f"AND TIMESTAMP_MICROS(ga.event_timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    
     query = f"""
-        SELECT
-            lender_id,
-            lender_name,
-            state AS researcher_state,
-            county_fips AS researcher_county_fips,
-            county_name AS researcher_city,
-            COUNT(DISTINCT user_id) AS unique_users,
-            COUNT(*) AS event_count,
-            MAX(event_timestamp) AS last_activity
-        FROM `{EVENTS_TABLE}`
-        WHERE lender_id IS NOT NULL
-            {date_filter}
-            {user_type_filter}
-        GROUP BY lender_id, lender_name, researcher_state, researcher_county_fips, researcher_city
-        HAVING COUNT(DISTINCT user_id) >= {min_users}
-        ORDER BY event_count DESC, unique_users DESC
-        LIMIT 500
+        WITH merger_events AS (
+            SELECT
+                COALESCE(
+                    JSON_VALUE(parameters_json, '$.acquirer_lei'),
+                    JSON_VALUE(parameters_json, '$.target_lei')
+                ) AS lender_id,
+                timestamp AS event_timestamp,
+                user_id,
+                user_email,
+                user_type
+            FROM `justdata-ncrc.cache.usage_log`
+            WHERE app_name = 'mergermeter'
+                AND error_message IS NULL
+                AND (JSON_VALUE(parameters_json, '$.acquirer_lei') IS NOT NULL 
+                     OR JSON_VALUE(parameters_json, '$.target_lei') IS NOT NULL)
+                {date_filter}
+                {user_type_filter}
+        ),
+        ga_geo AS (
+            SELECT DISTINCT
+                geo.region as geo_region,
+                geo.city as geo_city,
+                user_pseudo_id,
+                TIMESTAMP_MICROS(event_timestamp) as event_time
+            FROM `justdata-ncrc.analytics_521852976.events_*` ga
+            WHERE _TABLE_SUFFIX >= FORMAT_DATE('%Y%m%d', DATE_SUB(CURRENT_DATE(), INTERVAL {days if days > 0 else 365} DAY))
+                AND event_name = 'page_view'
+                AND (SELECT value.string_value FROM UNNEST(event_params) WHERE key = 'page_location') LIKE '%mergermeter%'
+                AND geo.region IS NOT NULL
+                {date_filter_ga4}
+        )
+        SELECT 
+            me.lender_id,
+            me.event_timestamp,
+            me.user_id,
+            me.user_email,
+            me.user_type,
+            gg.geo_region,
+            gg.geo_city
+        FROM merger_events me
+        LEFT JOIN ga_geo gg ON 
+            ABS(TIMESTAMP_DIFF(me.event_timestamp, gg.event_time, MINUTE)) <= 30
+        ORDER BY me.event_timestamp DESC
+        LIMIT 1000
     """
 
     try:
         results = client.query(query).result()
-        data = [dict(row) for row in results]
+        raw_events = [dict(row) for row in results]
 
-        # Enrich with county centroid coordinates for map display
+        # Aggregate by lender + geo location from GA4
+        lender_geo_data = {}
+        geo_count = 0
+        
+        for event in raw_events:
+            lender_id = event.get('lender_id')
+            if not lender_id:
+                continue
+            
+            geo_region = event.get('geo_region')
+            geo_city = event.get('geo_city')
+            
+            if geo_region and geo_city:
+                geo_count += 1
+                key = f"{lender_id}_{geo_region}_{geo_city}"
+                if key not in lender_geo_data:
+                    lender_geo_data[key] = {
+                        'lender_id': lender_id,
+                        'lender_name': None,
+                        'researcher_state': geo_region,
+                        'researcher_city': geo_city,
+                        'researcher_county_fips': None,
+                        'latitude': None,
+                        'longitude': None,
+                        'unique_users': set(),
+                        'event_count': 0,
+                        'last_activity': None
+                    }
+                lender_geo_data[key]['unique_users'].add(event.get('user_id') or 'anonymous')
+                lender_geo_data[key]['event_count'] += 1
+                ts = event.get('event_timestamp')
+                if ts and (lender_geo_data[key]['last_activity'] is None or ts > lender_geo_data[key]['last_activity']):
+                    lender_geo_data[key]['last_activity'] = ts
+        
+        # Convert to list and finalize
+        data = []
+        for item in lender_geo_data.values():
+            item['unique_users'] = len(item['unique_users'])
+            if item['event_count'] >= min_users:
+                data.append(item)
+        
+        # Sort by event count
+        data.sort(key=lambda x: x['event_count'], reverse=True)
+        data = data[:500]
+        
+        # Enrich with coordinates using city/state lookup
         data = _enrich_lender_interest_with_coordinates(data)
+
+        # Enrich with lender names from GLEIF table
+        data = _enrich_lender_names(data)
 
         _set_cached(cache_key, data)
         return data
     except Exception as e:
         print(f"BigQuery error in get_lender_interest: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 
@@ -1718,6 +1976,32 @@ def _enrich_users_from_firestore(users: List[Dict[str, Any]]) -> List[Dict[str, 
     return users
 
 
+def _lookup_single_lender_name(lender_id: str) -> Optional[str]:
+    """Look up a single lender name from GLEIF table."""
+    global _lender_names_cache
+    
+    if lender_id in _lender_names_cache:
+        return _lender_names_cache.get(lender_id)
+    
+    try:
+        client = get_bigquery_client()
+        query = f"""
+            SELECT display_name
+            FROM `justdata-ncrc.shared.lender_names_gleif`
+            WHERE lei = '{lender_id}'
+            LIMIT 1
+        """
+        results = list(client.query(query).result())
+        if results:
+            name = results[0].display_name
+            _lender_names_cache[lender_id] = name
+            return name
+    except Exception as e:
+        print(f"[WARN] Could not look up lender name for {lender_id}: {e}")
+    
+    return None
+
+
 def get_lender_detail(
     lender_id: str,
     days: int = 90
@@ -1734,50 +2018,62 @@ def get_lender_detail(
     """
     client = get_bigquery_client()
 
-    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
-    # Get lender summary
+    # Query the usage_log table for MergerMeter events for this lender
+    # MergerMeter events store lender_id in parameters_json as acquirer_lei or target_lei
     summary_query = f"""
         SELECT
-            lender_id,
-            MAX(lender_name) AS lender_name,
+            '{lender_id}' AS lender_id,
             COUNT(*) AS total_reports,
-            COUNT(DISTINCT user_id) AS unique_researchers,
-            MIN(event_timestamp) AS first_activity,
-            MAX(event_timestamp) AS last_activity
-        FROM `{EVENTS_TABLE}`
-        WHERE lender_id = '{lender_id}'
+            COUNT(DISTINCT COALESCE(user_id, user_email, CAST(timestamp AS STRING))) AS unique_researchers,
+            MIN(timestamp) AS first_activity,
+            MAX(timestamp) AS last_activity
+        FROM `justdata-ncrc.cache.usage_log`
+        WHERE app_name = 'mergermeter'
+            AND error_message IS NULL
+            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
+                 OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
             {date_filter}
-        GROUP BY lender_id
     """
 
-    # Get all reports for this lender
+    # Get all reports for this lender with acquirer/target info from parameters
     reports_query = f"""
         SELECT
-            event_timestamp,
-            event_name AS report_type,
-            county_name,
-            state,
-            user_id
-        FROM `{EVENTS_TABLE}`
-        WHERE lender_id = '{lender_id}'
+            timestamp AS event_timestamp,
+            app_name AS report_type,
+            JSON_VALUE(parameters_json, '$.acquirer_name') AS acquirer_name,
+            JSON_VALUE(parameters_json, '$.target_name') AS target_name,
+            JSON_VALUE(parameters_json, '$.acquirer_lei') AS acquirer_lei,
+            JSON_VALUE(parameters_json, '$.target_lei') AS target_lei,
+            COALESCE(user_id, user_email) AS user_id,
+            user_email
+        FROM `justdata-ncrc.cache.usage_log`
+        WHERE app_name = 'mergermeter'
+            AND error_message IS NULL
+            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
+                 OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
             {date_filter}
-        ORDER BY event_timestamp DESC
+        ORDER BY timestamp DESC
         LIMIT 500
     """
 
     # Get researchers for this lender
     researchers_query = f"""
         SELECT
-            user_id,
+            COALESCE(user_id, user_email) AS user_id,
+            user_email,
             COUNT(*) AS report_count,
-            MAX(event_timestamp) AS last_activity,
-            MIN(event_timestamp) AS first_activity
-        FROM `{EVENTS_TABLE}`
-        WHERE lender_id = '{lender_id}'
-            AND user_id IS NOT NULL
+            MAX(timestamp) AS last_activity,
+            MIN(timestamp) AS first_activity
+        FROM `justdata-ncrc.cache.usage_log`
+        WHERE app_name = 'mergermeter'
+            AND error_message IS NULL
+            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
+                 OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
+            AND (user_id IS NOT NULL OR user_email IS NOT NULL)
             {date_filter}
-        GROUP BY user_id
+        GROUP BY COALESCE(user_id, user_email), user_email
         ORDER BY report_count DESC
         LIMIT 100
     """
@@ -1788,10 +2084,14 @@ def get_lender_detail(
         reports_result = [dict(row) for row in client.query(reports_query).result()]
         researchers_result = [dict(row) for row in client.query(researchers_query).result()]
 
-        if not summary_result:
+        if not summary_result or summary_result[0].total_reports == 0:
             return {'error': 'Lender not found'}
 
         summary = dict(summary_result[0])
+        
+        # Enrich lender name from GLEIF
+        lender_name = _lookup_single_lender_name(lender_id)
+        summary['lender_name'] = lender_name or 'Unknown Lender'
 
         # Enrich researchers with Firestore user profile data
         researchers_result = _enrich_users_from_firestore(researchers_result)
@@ -1851,17 +2151,18 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
 # COST MONITORING
 # =============================================================================
 
-def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
+def get_cost_summary(days: int = 30, project_id: str = None, skip_cache: bool = False) -> Dict[str, Any]:
     """
     Get BigQuery cost summary from INFORMATION_SCHEMA.
-    
+
     Queries job history to calculate estimated costs by app.
     Cost calculation: $6.25 per TB processed (BigQuery on-demand pricing).
-    
+
     Args:
         days: Number of days to look back (default 30)
         project_id: GCP project to query (default from config)
-    
+        skip_cache: If True, bypass cache and re-query
+
     Returns:
         Dictionary with:
         - total_bytes_processed: Total bytes across all queries
@@ -1871,11 +2172,12 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
         - cost_by_app: Dict mapping app names to their costs
         - daily_costs: List of daily cost records
     """
-    # Check cache first
     cache_key = _cache_key('get_cost_summary', days=days, project_id=project_id)
-    cached = _get_cached(cache_key)
-    if cached is not None:
-        return cached
+    # Check cache first (unless skip_cache)
+    if not skip_cache:
+        cached = _get_cached(cache_key)
+        if cached is not None:
+            return cached
     
     client = get_bigquery_client()
     if project_id is None:
@@ -1884,96 +2186,170 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
     # Cost per TB in USD (BigQuery on-demand pricing)
     COST_PER_TB = 6.25
     
-    # JustData service accounts to track
-    # Currently using hdma1-242116 service accounts (apps use GOOGLE_APPLICATION_CREDENTIALS_JSON)
-    # Future: migrate to justdata-ncrc service accounts
+    # JustData service accounts to track (hdma1 legacy + justdata-ncrc)
     SERVICE_ACCOUNTS = [
-        'apiclient@hdma1-242116.iam.gserviceaccount.com',  # Main BigQuery credential
-        'justdata@hdma1-242116.iam.gserviceaccount.com',   # Cloud Run service account
+        'apiclient@hdma1-242116.iam.gserviceaccount.com',
+        'justdata@hdma1-242116.iam.gserviceaccount.com',
+        'lendsight@justdata-ncrc.iam.gserviceaccount.com',
+        'bizsight@justdata-ncrc.iam.gserviceaccount.com',
+        'branchsight@justdata-ncrc.iam.gserviceaccount.com',
+        'branchmapper@justdata-ncrc.iam.gserviceaccount.com',
+        'mergermeter@justdata-ncrc.iam.gserviceaccount.com',
+        'dataexplorer@justdata-ncrc.iam.gserviceaccount.com',
+        'lenderprofile@justdata-ncrc.iam.gserviceaccount.com',
+        'analytics@justdata-ncrc.iam.gserviceaccount.com',
+        'electwatch@justdata-ncrc.iam.gserviceaccount.com',
+        
     ]
     service_accounts_str = "', '".join(SERVICE_ACCOUNTS)
     
-    # Query against justdata-ncrc where the jobs actually run
-    query_project = 'justdata-ncrc'
+    # Query both projects in PARALLEL for job metadata:
+    # - justdata-ncrc: new project (Jan 2026+)
+    # - hdma1-242116: historical project (older data)
+    from concurrent.futures import ThreadPoolExecutor, as_completed
     
-    # Query to get cost summary by app (filtered to JustData service accounts)
-    cost_by_app_query = f"""
-    SELECT
-        CASE
-            WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' OR user_email LIKE 'lendsight@%' THEN 'LendSight'
-            WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' OR user_email LIKE 'bizsight@%' THEN 'BizSight'
-            WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' OR user_email LIKE 'branchsight@%' THEN 'BranchSight'
-            WHEN LOWER(query) LIKE '%mergermeter%' OR user_email LIKE 'mergermeter@%' THEN 'MergerMeter'
-            WHEN LOWER(query) LIKE '%dataexplorer%' OR user_email LIKE 'dataexplorer@%' THEN 'DataExplorer'
-            WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%events%' OR LOWER(query) LIKE '%backfilled%' OR user_email LIKE 'analytics@%' THEN 'Analytics'
-            WHEN LOWER(query) LIKE '%lenderprofile%' OR user_email LIKE 'lenderprofile@%' THEN 'LenderProfile'
-            WHEN LOWER(query) LIKE '%electwatch%' OR user_email LIKE 'electwatch@%' THEN 'ElectWatch'
-            WHEN user_email LIKE 'branchmapper@%' THEN 'BranchMapper'
-            WHEN user_email LIKE 'firebase-admin@%' THEN 'Firebase'
-            ELSE 'Other'
-        END as app_name,
-        COUNT(*) as query_count,
-        SUM(total_bytes_processed) as total_bytes,
-        SUM(total_bytes_billed) as total_bytes_billed
-    FROM `{query_project}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
-    WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
-        AND job_type = 'QUERY'
-        AND state = 'DONE'
-        AND error_result IS NULL
-        AND user_email IN ('{service_accounts_str}')
-    GROUP BY app_name
-    ORDER BY total_bytes DESC
-    """
+    def query_project_costs(project: str, region: str) -> tuple:
+        """Query a single project for cost data. Returns (project, app_results, daily_results) or (project, None, None) on error."""
+        app_query = f"""
+        SELECT
+            CASE
+                -- JustData Apps (order matters - most specific first)
+                WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' OR user_email LIKE 'lendsight@%' THEN 'LendSight'
+                WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' OR user_email LIKE 'bizsight@%' THEN 'BizSight'
+                WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' OR user_email LIKE 'branchsight@%' THEN 'BranchSight'
+                WHEN LOWER(query) LIKE '%mergermeter%' OR user_email LIKE 'mergermeter@%' THEN 'MergerMeter'
+                WHEN LOWER(query) LIKE '%dataexplorer%' OR user_email LIKE 'dataexplorer@%' THEN 'DataExplorer'
+                WHEN LOWER(query) LIKE '%lenderprofile%' OR user_email LIKE 'lenderprofile@%' THEN 'LenderProfile'
+                WHEN LOWER(query) LIKE '%electwatch%' OR user_email LIKE 'electwatch@%' THEN 'ElectWatch'
+                WHEN user_email LIKE 'branchmapper@%' THEN 'BranchMapper'
+                
+                -- Platform Services
+                WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%all_events%' OR LOWER(query) LIKE '%backfilled%' OR user_email LIKE 'analytics@%' THEN 'Analytics'
+                WHEN user_email LIKE 'firebase-admin@%' OR LOWER(query) LIKE '%firebase_analytics%' THEN 'Firebase'
+                WHEN LOWER(query) LIKE '%usage_log%' OR LOWER(query) LIKE '%.cache.%' THEN 'Cache/Logging'
+                
+                -- Infrastructure / Metadata
+                WHEN LOWER(query) LIKE '%information_schema%' THEN 'Metadata Queries'
+                WHEN LOWER(query) LIKE '%__tables__%' OR LOWER(query) LIKE '%__partitions__%' THEN 'Metadata Queries'
+                
+                -- External Tools
+                WHEN user_email LIKE '%@bigquery-public-data%' THEN 'Public Data'
+                WHEN user_email LIKE '%looker%' OR LOWER(query) LIKE '%looker%' THEN 'Looker/Data Studio'
+                WHEN user_email LIKE '%dataform%' OR LOWER(query) LIKE '%dataform%' THEN 'Dataform'
+                WHEN user_email LIKE '%scheduled%' OR job_id LIKE 'scheduled_query%' THEN 'Scheduled Queries'
+                
+                -- Console / Manual queries (catch-all for known GCP service accounts)
+                WHEN user_email LIKE '%gserviceaccount.com' THEN 'Service Accounts'
+                
+                ELSE 'Other/Manual'
+            END as app_name,
+            COUNT(*) as query_count,
+            SUM(total_bytes_processed) as total_bytes,
+            SUM(total_bytes_billed) as total_bytes_billed
+        FROM `{project}`.`{region}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+        WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            AND job_type = 'QUERY' AND state = 'DONE' AND error_result IS NULL
+        GROUP BY app_name
+        """
+        daily_query = f"""
+        SELECT
+            DATE(creation_time) as date,
+            CASE
+                -- JustData Apps (order matters - most specific first)
+                WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' OR user_email LIKE 'lendsight@%' THEN 'LendSight'
+                WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' OR user_email LIKE 'bizsight@%' THEN 'BizSight'
+                WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' OR user_email LIKE 'branchsight@%' THEN 'BranchSight'
+                WHEN LOWER(query) LIKE '%mergermeter%' OR user_email LIKE 'mergermeter@%' THEN 'MergerMeter'
+                WHEN LOWER(query) LIKE '%dataexplorer%' OR user_email LIKE 'dataexplorer@%' THEN 'DataExplorer'
+                WHEN LOWER(query) LIKE '%lenderprofile%' OR user_email LIKE 'lenderprofile@%' THEN 'LenderProfile'
+                WHEN LOWER(query) LIKE '%electwatch%' OR user_email LIKE 'electwatch@%' THEN 'ElectWatch'
+                WHEN user_email LIKE 'branchmapper@%' THEN 'BranchMapper'
+                
+                -- Platform Services
+                WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%all_events%' OR LOWER(query) LIKE '%backfilled%' OR user_email LIKE 'analytics@%' THEN 'Analytics'
+                WHEN user_email LIKE 'firebase-admin@%' OR LOWER(query) LIKE '%firebase_analytics%' THEN 'Firebase'
+                WHEN LOWER(query) LIKE '%usage_log%' OR LOWER(query) LIKE '%.cache.%' THEN 'Cache/Logging'
+                
+                -- Infrastructure / Metadata
+                WHEN LOWER(query) LIKE '%information_schema%' THEN 'Metadata Queries'
+                WHEN LOWER(query) LIKE '%__tables__%' OR LOWER(query) LIKE '%__partitions__%' THEN 'Metadata Queries'
+                
+                -- External Tools
+                WHEN user_email LIKE '%@bigquery-public-data%' THEN 'Public Data'
+                WHEN user_email LIKE '%looker%' OR LOWER(query) LIKE '%looker%' THEN 'Looker/Data Studio'
+                WHEN user_email LIKE '%dataform%' OR LOWER(query) LIKE '%dataform%' THEN 'Dataform'
+                WHEN user_email LIKE '%scheduled%' OR job_id LIKE 'scheduled_query%' THEN 'Scheduled Queries'
+                
+                -- Console / Manual queries (catch-all for known GCP service accounts)
+                WHEN user_email LIKE '%gserviceaccount.com' THEN 'Service Accounts'
+                
+                ELSE 'Other/Manual'
+            END as app_name,
+            COUNT(*) as query_count,
+            SUM(total_bytes_processed) as total_bytes,
+            SUM(total_bytes_billed) as total_bytes_billed
+        FROM `{project}`.`{region}`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+        WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+            AND job_type = 'QUERY' AND state = 'DONE' AND error_result IS NULL
+        GROUP BY date, app_name
+        """
+        try:
+            app_results = list(client.query(app_query).result())
+            daily_results = list(client.query(daily_query).result())
+            return (project, app_results, daily_results)
+        except Exception as e:
+            print(f"[COST] {project} failed: {str(e)[:80]}")
+            return (project, None, None)
     
-    # Query for daily costs by app (filtered to JustData service accounts)
-    daily_costs_by_app_query = f"""
-    SELECT
-        DATE(creation_time) as date,
-        CASE
-            WHEN LOWER(query) LIKE '%de_hmda%' OR LOWER(query) LIKE '%lendsight%' OR user_email LIKE 'lendsight@%' THEN 'LendSight'
-            WHEN LOWER(query) LIKE '%sb_%' OR LOWER(query) LIKE '%bizsight%' OR LOWER(query) LIKE '%disclosure%' OR user_email LIKE 'bizsight@%' THEN 'BizSight'
-            WHEN LOWER(query) LIKE '%sod%' OR LOWER(query) LIKE '%branchsight%' OR LOWER(query) LIKE '%fdic%' OR user_email LIKE 'branchsight@%' THEN 'BranchSight'
-            WHEN LOWER(query) LIKE '%mergermeter%' OR user_email LIKE 'mergermeter@%' THEN 'MergerMeter'
-            WHEN LOWER(query) LIKE '%dataexplorer%' OR user_email LIKE 'dataexplorer@%' THEN 'DataExplorer'
-            WHEN LOWER(query) LIKE '%analytics%' OR LOWER(query) LIKE '%events%' OR LOWER(query) LIKE '%backfilled%' OR user_email LIKE 'analytics@%' THEN 'Analytics'
-            WHEN LOWER(query) LIKE '%lenderprofile%' OR user_email LIKE 'lenderprofile@%' THEN 'LenderProfile'
-            WHEN LOWER(query) LIKE '%electwatch%' OR user_email LIKE 'electwatch@%' THEN 'ElectWatch'
-            WHEN user_email LIKE 'branchmapper@%' THEN 'BranchMapper'
-            ELSE 'Other'
-        END as app_name,
-        COUNT(*) as query_count,
-        SUM(total_bytes_processed) as total_bytes,
-        SUM(total_bytes_billed) as total_bytes_billed
-    FROM `{query_project}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
-    WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
-        AND job_type = 'QUERY'
-        AND state = 'DONE'
-        AND error_result IS NULL
-        AND user_email IN ('{service_accounts_str}')
-    GROUP BY date, app_name
-    ORDER BY date DESC, total_bytes_billed DESC
-    """
+    all_app_results = []
+    all_daily_results = []
+    successful_projects = []
+    
+    # Run both project queries in parallel
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [
+            executor.submit(query_project_costs, 'justdata-ncrc', 'region-us'),
+            executor.submit(query_project_costs, 'hdma1-242116', 'region-us'),
+        ]
+        for future in as_completed(futures):
+            project, app_results, daily_results = future.result()
+            if app_results is not None:
+                all_app_results.extend(app_results)
+                all_daily_results.extend(daily_results)
+                successful_projects.append(project)
+
+    # Use combined results from all successful projects
+    if not successful_projects:
+        print(f"BigQuery error in get_cost_summary: No projects succeeded")
+        return {
+            'error': "No projects returned data",
+            'period_days': days,
+            'total_bytes_processed': 0,
+            'total_tb_processed': 0,
+            'estimated_cost_usd': 0,
+            'query_count': 0,
+            'cost_by_app': {},
+            'daily_costs': []
+        }
+
+    print(f"[COST] Combined results from {successful_projects}: {len(all_app_results)} app rows, {len(all_daily_results)} daily rows")
+    
+    # Categories to exclude from JustData costs (not attributable to apps)
+    EXCLUDED_CATEGORIES = {'Other/Manual', 'Service Accounts', 'Metadata Queries', 'Public Data'}
     
     try:
-        # Run both queries in PARALLEL for faster loading
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-        
-        def run_query(query):
-            return list(client.query(query).result())
-        
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            app_future = executor.submit(run_query, cost_by_app_query)
-            daily_future = executor.submit(run_query, daily_costs_by_app_query)
-            app_results = app_future.result()
-            daily_results = daily_future.result()
-        
-        # Process cost by app results
+        # Process cost by app results (aggregate across projects)
         cost_by_app = {}
         total_bytes = 0
         total_queries = 0
         
-        for row in app_results:
+        for row in all_app_results:
             app_name = row.app_name
+            
+            # Skip non-JustData categories
+            if app_name in EXCLUDED_CATEGORIES:
+                continue
+            
             bytes_processed = row.total_bytes or 0
             bytes_billed = row.total_bytes_billed or 0
             query_count = row.query_count or 0
@@ -1982,29 +2358,43 @@ def get_cost_summary(days: int = 30, project_id: str = None) -> Dict[str, Any]:
             tb_billed = bytes_billed / (1024 ** 4)
             cost_usd = tb_billed * COST_PER_TB
             
-            cost_by_app[app_name] = {
-                'query_count': query_count,
-                'bytes_processed': bytes_processed,
-                'tb_processed': round(tb_processed, 4),
-                'bytes_billed': bytes_billed,
-                'tb_billed': round(tb_billed, 4),
-                'estimated_cost_usd': round(cost_usd, 2)
-            }
+            # Aggregate if app already exists (from multiple projects)
+            if app_name in cost_by_app:
+                cost_by_app[app_name]['query_count'] += query_count
+                cost_by_app[app_name]['bytes_processed'] += bytes_processed
+                cost_by_app[app_name]['tb_processed'] += round(tb_processed, 4)
+                cost_by_app[app_name]['bytes_billed'] += bytes_billed
+                cost_by_app[app_name]['tb_billed'] += round(tb_billed, 4)
+                cost_by_app[app_name]['estimated_cost_usd'] += round(cost_usd, 2)
+            else:
+                cost_by_app[app_name] = {
+                    'query_count': query_count,
+                    'bytes_processed': bytes_processed,
+                    'tb_processed': round(tb_processed, 4),
+                    'bytes_billed': bytes_billed,
+                    'tb_billed': round(tb_billed, 4),
+                    'estimated_cost_usd': round(cost_usd, 2)
+                }
             
             total_bytes += bytes_billed
             total_queries += query_count
         
-        # Aggregate daily costs by date with app breakdown
+        # Aggregate daily costs by date with app breakdown (across projects)
         daily_by_date = {}
-        for row in daily_results:
+        for row in all_daily_results:
             date_str = row.date.isoformat() if row.date else None
             if not date_str:
+                continue
+            
+            app_name = row.app_name or 'Other/Manual'
+            
+            # Skip non-JustData categories from daily chart too
+            if app_name in EXCLUDED_CATEGORIES:
                 continue
             
             bytes_billed = row.total_bytes_billed or 0
             tb_billed = bytes_billed / (1024 ** 4)
             cost_usd = tb_billed * COST_PER_TB
-            app_name = row.app_name or 'Other'
             
             if date_str not in daily_by_date:
                 daily_by_date[date_str] = {

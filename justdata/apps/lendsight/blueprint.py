@@ -14,7 +14,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
+from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
 from justdata.shared.utils.bigquery_client import escape_sql_string
@@ -205,8 +205,21 @@ def analyze():
         state_code = data.get('state_code', None)
         loan_purpose = data.get('loan_purpose', ['purchase'])  # Default to purchase only
         
-        # Get user type for logging
+        # Get user type and identity for logging
         user_type = get_user_type()
+        current_user = get_current_user()
+        user_id = current_user.get('uid') if current_user else None
+        user_email = current_user.get('email') if current_user else None
+        
+        # Fallback: Try to get from session directly if get_current_user() returned None
+        if not user_id and not user_email and 'firebase_user' in session:
+            fb_user = session.get('firebase_user', {})
+            user_id = fb_user.get('uid') or user_id
+            user_email = fb_user.get('email') or user_email
+        
+        # Log warning if still no user identity
+        if not user_id and not user_email:
+            print(f"[WARN] LendSight analyze: No user identity captured despite @login_required")
 
         # Check for force_refresh parameter to bypass cache
         force_refresh = data.get('force_refresh', False)
@@ -295,7 +308,9 @@ def analyze():
                 job_id=job_id,
                 response_time_ms=response_time_ms,
                 costs={'bigquery': 0.01, 'ai': 0.0, 'total': 0.01},
-                request_id=request_id
+                request_id=request_id,
+                user_id=user_id,
+                user_email=user_email
             )
             
             return jsonify({
@@ -335,7 +350,9 @@ def analyze():
                 job_id=job_id,
                 response_time_ms=response_time_ms,
                 error_message=str(e),
-                request_id=request_id
+                request_id=request_id,
+                user_id=user_id,
+                user_email=user_email
             )
             return jsonify({'success': False, 'error': f'Error parsing parameters: {str(e)}'}), 400
         
@@ -378,7 +395,9 @@ def analyze():
                         job_id=job_id,
                         response_time_ms=response_time_ms,
                         error_message=error_msg,
-                        request_id=request_id
+                        request_id=request_id,
+                        user_id=user_id,
+                        user_email=user_email
                     )
                     return
                 
@@ -422,7 +441,9 @@ def analyze():
                     job_id=job_id,
                     response_time_ms=response_time_ms,
                     costs={'bigquery': 2.0, 'ai': 0.3, 'total': 2.3},  # Estimated costs
-                    request_id=request_id
+                    request_id=request_id,
+                    user_id=user_id,
+                    user_email=user_email
                 )
                 
             except Exception as e:
@@ -441,7 +462,9 @@ def analyze():
                     job_id=job_id,
                     response_time_ms=response_time_ms,
                     error_message=error_msg,
-                    request_id=request_id
+                    request_id=request_id,
+                    user_id=user_id,
+                    user_email=user_email
                 )
         
         print(f"[DEBUG] Starting background thread for job {job_id}")
@@ -457,6 +480,10 @@ def analyze():
         # Log error
         try:
             response_time_ms = int((time_module.time() - start_time) * 1000)
+            # Get user info if not already captured
+            _user = get_current_user() if 'user_id' not in locals() else None
+            _user_id = user_id if 'user_id' in locals() else (_user.get('uid') if _user else None)
+            _user_email = user_email if 'user_email' in locals() else (_user.get('email') if _user else None)
             log_usage(
                 user_type=get_user_type(),
                 app_name='lendsight',
@@ -466,7 +493,9 @@ def analyze():
                 job_id=job_id if 'job_id' in locals() else str(uuid.uuid4()),
                 response_time_ms=response_time_ms,
                 error_message=str(e),
-                request_id=request_id
+                request_id=request_id,
+                user_id=_user_id,
+                user_email=_user_email
             )
         except:
             pass

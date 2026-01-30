@@ -504,6 +504,72 @@ function loadUsers() {
 }
 
 /**
+ * Check if a string is a valid email address
+ */
+function isValidEmail(str) {
+    if (!str) return false;
+    // Simple email pattern check
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(str);
+}
+
+/**
+ * Check if a user ID represents an anonymous/system user
+ * - GA4 client IDs: digits.digits (e.g., "1339126496.1769183487")
+ * - Firebase UIDs without email: alphanumeric strings (e.g., "hHSWsbZ8xORF2DQLDsww31VeeSV2")
+ */
+function isAnonymousUserId(userId) {
+    if (!userId) return true;
+    // GA4 client ID pattern: digits.digits
+    if (/^\d+\.\d+$/.test(userId)) return true;
+    // Firebase UID pattern: alphanumeric, typically 20-32 characters, no @ symbol
+    if (/^[a-zA-Z0-9]{20,40}$/.test(userId)) return true;
+    return false;
+}
+
+/**
+ * Format user display for the email column
+ * Shows email if available, "Anonymous User" for anonymous IDs
+ */
+function formatUserDisplay(user) {
+    const userId = user.user_id || '';
+    const email = user.user_email || '';
+    
+    // If we have a valid email, show it
+    if (isValidEmail(email)) {
+        return {
+            display: email,
+            isAnonymous: false,
+            cssClass: 'user-email'
+        };
+    }
+    
+    // If user_email looks like an email even if user_id is anonymous, show it
+    if (email && email.includes('@')) {
+        return {
+            display: email,
+            isAnonymous: false,
+            cssClass: 'user-email'
+        };
+    }
+    
+    // Check if the user ID is anonymous (GA4 or Firebase UID without email)
+    if (isAnonymousUserId(userId)) {
+        return {
+            display: 'Anonymous User',
+            isAnonymous: true,
+            cssClass: 'user-email anonymous-user'
+        };
+    }
+    
+    // Otherwise show the user ID (truncated if needed)
+    return {
+        display: userId.length > 25 ? userId.substring(0, 22) + '...' : userId,
+        isAnonymous: false,
+        cssClass: 'user-email'
+    };
+}
+
+/**
  * Format apps_used array into compact display (LS, BS, MM, DE, etc.)
  */
 function formatAppsUsed(apps) {
@@ -559,7 +625,7 @@ function renderUsersTable(data) {
 
     data.forEach(function(user) {
         const userId = user.user_id || 'Unknown';
-        const email = user.user_email || (userId.length > 25 ? userId.substring(0, 22) + '...' : userId);
+        const userDisplay = formatUserDisplay(user);
         const userType = user.user_type || '-';
         const org = user.organization_name || '-';
         const reports = user.total_reports || 0;
@@ -569,7 +635,7 @@ function renderUsersTable(data) {
         const row = $('<tr class="clickable-row">')
             .attr('data-user-id', userId)
             .addClass(selectedUserId === userId ? 'selected' : '')
-            .append('<td title="' + escapeHtml(userId) + '"><div class="user-email">' + escapeHtml(email) + '</div></td>')
+            .append('<td title="' + escapeHtml(userId) + '"><div class="' + userDisplay.cssClass + '">' + escapeHtml(userDisplay.display) + '</div></td>')
             .append('<td class="org-cell">' + escapeHtml(org) + '</td>')
             .append('<td>' + (userType !== '-' ? '<span class="user-type-badge ' + userType + '">' + escapeHtml(userType) + '</span>' : '-') + '</td>')
             .append('<td><strong>' + formatNumber(reports) + '</strong></td>')
@@ -632,8 +698,13 @@ function renderUserDetail(data) {
     }
 
     const user = data.user || {};
-    const displayName = user.user_email || (user.user_id || 'Unknown').substring(0, 25);
-    $('#detail-user-id').text(displayName);
+    const userDisplayInfo = formatUserDisplay(user);
+    $('#detail-user-id').text(userDisplayInfo.display);
+    if (userDisplayInfo.isAnonymous) {
+        $('#detail-user-id').addClass('anonymous-user');
+    } else {
+        $('#detail-user-id').removeClass('anonymous-user');
+    }
 
     let html = '';
 

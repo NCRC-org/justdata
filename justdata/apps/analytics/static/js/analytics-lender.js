@@ -193,9 +193,19 @@ function renderTable(data) {
         byLender[id].event_count += item.event_count || 0;
 
         if (item.researcher_state) {
+            // Convert full state name to abbreviation
+            let stateAbbr = item.researcher_state;
+            if (typeof STATE_NAMES !== 'undefined') {
+                for (const [abbr, name] of Object.entries(STATE_NAMES)) {
+                    if (name === item.researcher_state) {
+                        stateAbbr = abbr;
+                        break;
+                    }
+                }
+            }
             const loc = item.researcher_city
-                ? item.researcher_city + ', ' + item.researcher_state
-                : item.researcher_state;
+                ? item.researcher_city + ', ' + stateAbbr
+                : stateAbbr;
             if (!byLender[id].locations.includes(loc)) {
                 byLender[id].locations.push(loc);
             }
@@ -211,10 +221,16 @@ function renderTable(data) {
 
     sorted.forEach(function(lender) {
         const name = lender.lender_name || 'Unknown';
-        const locations = lender.locations.slice(0, 3).join(', ');
-        const moreLocations = lender.locations.length > 3
-            ? ' +' + (lender.locations.length - 3) + ' more'
-            : '';
+        
+        // Create location pills HTML
+        let locationPillsHtml = '';
+        const displayLocs = lender.locations.slice(0, 3);
+        displayLocs.forEach(function(loc) {
+            locationPillsHtml += '<span class="location-pill">' + escapeHtml(loc) + '</span> ';
+        });
+        if (lender.locations.length > 3) {
+            locationPillsHtml += '<span class="location-pill location-more">+' + (lender.locations.length - 3) + ' more</span>';
+        }
 
         // Create clickable lender name link
         const nameLink = $('<a>')
@@ -240,7 +256,7 @@ function renderTable(data) {
             .append('<td><code>' + escapeHtml(lender.lender_id) + '</code></td>')
             .append('<td>' + formatNumber(lender.unique_users) + '</td>')
             .append('<td>' + formatNumber(lender.event_count) + '</td>')
-            .append('<td>' + escapeHtml(locations) + '<span style="color: #888;">' + moreLocations + '</span></td>')
+            .append('<td class="locations-cell">' + locationPillsHtml + '</td>')
             .append('<td>' + formatDate(lender.last_activity) + '</td>');
 
         // Make entire row clickable (except for direct link clicks)
@@ -643,6 +659,26 @@ function showStateResearchers(stateAbbr) {
 
     // Load researchers for this state
     loadStateResearchers(stateAbbr);
+}
+
+/**
+ * Show state/location detail panel from map click info
+ */
+function showStateDetail(info) {
+    if (!info || !info.state) return;
+    
+    // info.state might be full name (e.g., "District of Columbia") or abbrev (e.g., "DC")
+    // Find abbreviation if it's a full name by searching STATE_NAMES
+    let stateAbbr = info.state;
+    if (typeof STATE_NAMES !== 'undefined') {
+        for (const [abbr, name] of Object.entries(STATE_NAMES)) {
+            if (name === info.state) {
+                stateAbbr = abbr;
+                break;
+            }
+        }
+    }
+    showStateResearchers(stateAbbr);
 }
 
 /**
