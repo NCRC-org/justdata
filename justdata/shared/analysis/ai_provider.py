@@ -186,6 +186,14 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         results = list(client.query(query).result())
         # #region agent log
         print(f"[AI Usage Summary] QUERY_RESULTS count={len(results)} first={dict(results[0]) if results else None}")
+        # Check total count in table (all time)
+        try:
+            count_query = "SELECT COUNT(*) as total FROM `justdata-ncrc.firebase_analytics.ai_usage`"
+            count_result = list(client.query(count_query).result())
+            total_all_time = count_result[0].total if count_result else 0
+            print(f"[AI Usage Summary] TABLE_TOTAL_ROWS all_time={total_all_time}")
+        except Exception as ce:
+            print(f"[AI Usage Summary] TABLE_COUNT_ERROR {ce}")
         # #endregion
         
         total_cost = sum(r.total_cost_usd or 0 for r in results)
@@ -215,13 +223,24 @@ def get_ai_usage_summary(days: int = 30) -> dict:
             {'model': k, **v} for k, v in by_model.items()
         ]
         
+        # #region agent log - diagnostic: check total rows in table
+        total_all_time = 0
+        try:
+            count_query = "SELECT COUNT(*) as total FROM `justdata-ncrc.firebase_analytics.ai_usage`"
+            count_result = list(client.query(count_query).result())
+            total_all_time = count_result[0].total if count_result else 0
+        except:
+            pass
+        # #endregion
+        
         return {
             'period_days': days,
             'total_requests': total_requests,
             'total_tokens': total_tokens,
             'total_cost_usd': round(total_cost, 4),
             'by_app': by_app,
-            'by_model': by_model_list
+            'by_model': by_model_list,
+            '_debug_table_total_rows': total_all_time  # diagnostic
         }
     except Exception as e:
         import traceback as _tb
