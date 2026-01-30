@@ -147,7 +147,7 @@ def _flush_ai_usage_to_bigquery():
 
 
 def get_ai_usage_summary(days: int = 30) -> dict:
-    """Get AI usage summary from BigQuery."""
+    """Get AI usage summary from BigQuery ai_usage table."""
     try:
         from google.cloud import bigquery
         from google.oauth2 import service_account
@@ -160,45 +160,62 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         else:
             client = bigquery.Client(project='justdata-ncrc')
         
-        # Query justdata-ncrc.cache.usage_log for AI costs
-        # Schema: timestamp, app_name, ai_cost_usd, total_cost_usd, etc.
+        # Query the actual ai_usage table where log_ai_usage() writes to
         query = f"""
         SELECT
             app_name,
+            model,
+            provider,
             COUNT(*) as request_count,
-            SUM(ai_cost_usd) as total_ai_cost_usd,
+            SUM(input_tokens) as total_input_tokens,
+            SUM(output_tokens) as total_output_tokens,
+            SUM(total_tokens) as total_tokens,
             SUM(total_cost_usd) as total_cost_usd
-        FROM `justdata-ncrc.cache.usage_log`
-        WHERE timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
-            AND ai_cost_usd IS NOT NULL
-            AND ai_cost_usd > 0
-        GROUP BY app_name
-        ORDER BY total_ai_cost_usd DESC
+        FROM `justdata-ncrc.firebase_analytics.ai_usage`
+        WHERE TIMESTAMP(timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)
+        GROUP BY app_name, model, provider
+        ORDER BY total_cost_usd DESC
         """
         
         results = list(client.query(query).result())
         
-        total_cost = sum(r.total_ai_cost_usd or 0 for r in results)
+        total_cost = sum(r.total_cost_usd or 0 for r in results)
         total_requests = sum(r.request_count or 0 for r in results)
+        total_tokens = sum(r.total_tokens or 0 for r in results)
         
         by_app = {}
+        by_model = {}
         for r in results:
             app = r.app_name or 'unknown'
+            model = r.model or 'unknown'
+            
             if app not in by_app:
                 by_app[app] = {'requests': 0, 'tokens': 0, 'cost_usd': 0}
             by_app[app]['requests'] += r.request_count or 0
-            by_app[app]['cost_usd'] += r.total_ai_cost_usd or 0
+            by_app[app]['tokens'] += r.total_tokens or 0
+            by_app[app]['cost_usd'] += r.total_cost_usd or 0
+            
+            if model not in by_model:
+                by_model[model] = {'requests': 0, 'tokens': 0, 'cost_usd': 0, 'provider': r.provider}
+            by_model[model]['requests'] += r.request_count or 0
+            by_model[model]['tokens'] += r.total_tokens or 0
+            by_model[model]['cost_usd'] += r.total_cost_usd or 0
+        
+        # Convert by_model dict to list for frontend
+        by_model_list = [
+            {'model': k, **v} for k, v in by_model.items()
+        ]
         
         return {
             'period_days': days,
             'total_requests': total_requests,
-            'total_tokens': 0,  # Not tracked in this table
-            'total_cost_usd': round(total_cost, 2),
+            'total_tokens': total_tokens,
+            'total_cost_usd': round(total_cost, 4),
             'by_app': by_app,
-            'by_model': []  # Not tracked in this table
+            'by_model': by_model_list
         }
     except Exception as e:
-        print(f"[AI Usage] Error: {str(e)[:100]}")
+        print(f"[AI Usage] Error getting summary: {str(e)[:200]}")
         return {
             'period_days': days,
             'total_requests': 0,
