@@ -167,14 +167,17 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         # #region agent log
         _dbg('CREDS_CHECK', {'has_creds_json': bool(creds_json), 'creds_len': len(creds_json) if creds_json else 0}, 'H1')
         # #endregion
+        _service_account_used = None
         if creds_json:
             creds_dict = json.loads(creds_json)
+            _service_account_used = creds_dict.get('client_email', 'unknown')
             credentials = service_account.Credentials.from_service_account_info(creds_dict)
             client = bigquery.Client(project='justdata-ncrc', credentials=credentials)
             # #region agent log
-            _dbg('CLIENT_CREATED', {'method': 'from_creds_json', 'project': 'justdata-ncrc', 'service_account': creds_dict.get('client_email', 'unknown')}, 'H1')
+            _dbg('CLIENT_CREATED', {'method': 'from_creds_json', 'project': 'justdata-ncrc', 'service_account': _service_account_used}, 'H1')
             # #endregion
         else:
+            _service_account_used = 'default_application_credentials'
             client = bigquery.Client(project='justdata-ncrc')
             # #region agent log
             _dbg('CLIENT_CREATED', {'method': 'default_creds', 'project': 'justdata-ncrc'}, 'H1')
@@ -293,7 +296,8 @@ def get_ai_usage_summary(days: int = 30) -> dict:
                     '_debug': {
                         'path': 'both_queries_failed',
                         'ai_usage_error': _ai_usage_error,
-                        'fallback_error': _fallback_error
+                        'fallback_error': _fallback_error,
+                        'service_account': _service_account_used
                     }
                 }
         
