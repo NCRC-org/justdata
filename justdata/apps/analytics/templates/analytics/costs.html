@@ -587,9 +587,6 @@ async function loadCostData(forceRefresh) {
         // Update AI costs
         if (aiResult.success && aiResult.data) {
             const aiData = aiResult.data;
-            // #region agent log
-            console.log('[AI Costs Debug]', {error: aiData.error, total_cost: aiData.total_cost_usd, requests: aiData.total_requests, by_app: aiData.by_app, by_model: aiData.by_model, _source: aiData._source, _debug: aiData._debug});
-            // #endregion
             if (aiData.error) {
                 console.error('[AI Costs Error]', aiData.error);
                 document.getElementById('ai-total-cost').textContent = 'Error';
