@@ -149,23 +149,42 @@ def _flush_ai_usage_to_bigquery():
 def get_ai_usage_summary(days: int = 30) -> dict:
     """Get AI usage summary from BigQuery - tries ai_usage table first, falls back to usage_log estimates."""
     # #region agent log
-    print(f"[AI Usage Summary] ENTRY days={days}")
+    _debug_log_path = '/Users/jadedlebi/justdata/.cursor/debug.log'
+    def _dbg(msg, data=None, hyp=''):
+        import json as _j
+        try:
+            with open(_debug_log_path, 'a') as _f:
+                _f.write(_j.dumps({'location':'ai_provider.py:get_ai_usage_summary','hypothesisId':hyp,'message':msg,'data':data,'timestamp':datetime.utcnow().isoformat()}) + '\n')
+        except: pass
+    _dbg('ENTRY', {'days': days}, 'H1')
     # #endregion
+    print(f"[AI Usage Summary] ENTRY days={days}")
     try:
         from google.cloud import bigquery
         from google.oauth2 import service_account
         
         creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+        # #region agent log
+        _dbg('CREDS_CHECK', {'has_creds_json': bool(creds_json), 'creds_len': len(creds_json) if creds_json else 0}, 'H1')
+        # #endregion
         if creds_json:
             creds_dict = json.loads(creds_json)
             credentials = service_account.Credentials.from_service_account_info(creds_dict)
             client = bigquery.Client(project='justdata-ncrc', credentials=credentials)
+            # #region agent log
+            _dbg('CLIENT_CREATED', {'method': 'from_creds_json', 'project': 'justdata-ncrc', 'service_account': creds_dict.get('client_email', 'unknown')}, 'H1')
+            # #endregion
         else:
             client = bigquery.Client(project='justdata-ncrc')
+            # #region agent log
+            _dbg('CLIENT_CREATED', {'method': 'default_creds', 'project': 'justdata-ncrc'}, 'H1')
+            # #endregion
         
         # First try the detailed ai_usage table
         results = []
         source = 'ai_usage'
+        _ai_usage_error = None
+        _fallback_error = None
         try:
             query = f"""
             SELECT
@@ -182,12 +201,18 @@ def get_ai_usage_summary(days: int = 30) -> dict:
             GROUP BY app_name, model, provider
             ORDER BY total_cost_usd DESC
             """
+            # #region agent log
+            _dbg('AI_USAGE_QUERY_START', {'table': 'firebase_analytics.ai_usage', 'days': days}, 'H3')
+            # #endregion
             results = list(client.query(query).result())
             # #region agent log
+            _dbg('AI_USAGE_QUERY_RESULT', {'row_count': len(results), 'first_row': dict(results[0]) if results else None}, 'H3')
             print(f"[AI Usage Summary] ai_usage query returned {len(results)} rows")
             # #endregion
         except Exception as e:
+            _ai_usage_error = str(e)[:300]
             # #region agent log
+            _dbg('AI_USAGE_QUERY_FAILED', {'error': str(e)[:500]}, 'H3')
             print(f"[AI Usage Summary] ai_usage query failed: {e}")
             # #endregion
             pass
@@ -196,6 +221,7 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         if not results:
             source = 'usage_log_estimates'
             # #region agent log
+            _dbg('FALLBACK_TRIGGERED', {'reason': 'ai_usage_empty'}, 'H3')
             print(f"[AI Usage Summary] Falling back to usage_log estimates")
             # #endregion
             try:
@@ -211,8 +237,12 @@ def get_ai_usage_summary(days: int = 30) -> dict:
                 GROUP BY app_name
                 ORDER BY total_cost_usd DESC
                 """
+                # #region agent log
+                _dbg('FALLBACK_QUERY_START', {'table': 'cache.usage_log', 'days': days}, 'H3')
+                # #endregion
                 fallback_results = list(client.query(fallback_query).result())
                 # #region agent log
+                _dbg('FALLBACK_QUERY_RESULT', {'row_count': len(fallback_results), 'first_row': dict(fallback_results[0]) if fallback_results else None}, 'H3')
                 print(f"[AI Usage Summary] usage_log fallback returned {len(fallback_results)} rows")
                 # #endregion
                 
@@ -229,6 +259,9 @@ def get_ai_usage_summary(days: int = 30) -> dict:
                         'cost_usd': r.total_cost_usd or 0
                     }
                 
+                # #region agent log
+                _dbg('RETURN_FALLBACK', {'total_cost': round(total_cost, 4), 'total_requests': total_requests, 'by_app_keys': list(by_app.keys())}, 'H4')
+                # #endregion
                 return {
                     'period_days': days,
                     'total_requests': total_requests,
@@ -236,13 +269,33 @@ def get_ai_usage_summary(days: int = 30) -> dict:
                     'total_cost_usd': round(total_cost, 4),
                     'by_app': by_app,
                     'by_model': [],  # Not tracked in usage_log
-                    '_source': source
+                    '_source': source,
+                    '_debug': {'path': 'fallback_success', 'row_count': len(fallback_results)}
                 }
             except Exception as fe:
+                _fallback_error = str(fe)[:300]
                 # #region agent log
+                _dbg('FALLBACK_QUERY_FAILED', {'error': str(fe)[:500]}, 'H3')
                 print(f"[AI Usage Summary] usage_log fallback also failed: {fe}")
                 # #endregion
-                pass
+                # Both queries failed - return with debug info
+                # #region agent log
+                _dbg('BOTH_QUERIES_FAILED', {'ai_usage_error': _ai_usage_error, 'fallback_error': _fallback_error}, 'H3')
+                # #endregion
+                return {
+                    'period_days': days,
+                    'total_requests': 0,
+                    'total_tokens': 0,
+                    'total_cost_usd': 0,
+                    'by_app': {},
+                    'by_model': [],
+                    '_source': 'both_failed',
+                    '_debug': {
+                        'path': 'both_queries_failed',
+                        'ai_usage_error': _ai_usage_error,
+                        'fallback_error': _fallback_error
+                    }
+                }
         
         # Process ai_usage results
         total_cost = sum(r.total_cost_usd or 0 for r in results)
@@ -269,6 +322,9 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         
         by_model_list = [{'model': k, **v} for k, v in by_model.items()]
         
+        # #region agent log
+        _dbg('RETURN_AI_USAGE', {'total_cost': round(total_cost, 4), 'total_requests': total_requests, 'total_tokens': total_tokens, 'by_app_keys': list(by_app.keys()), 'by_model_count': len(by_model_list)}, 'H3')
+        # #endregion
         return {
             'period_days': days,
             'total_requests': total_requests,
@@ -276,11 +332,13 @@ def get_ai_usage_summary(days: int = 30) -> dict:
             'total_cost_usd': round(total_cost, 4),
             'by_app': by_app,
             'by_model': by_model_list,
-            '_source': source
+            '_source': source,
+            '_debug': {'path': 'ai_usage_success', 'row_count': len(results)}
         }
     except Exception as e:
         import traceback as _tb
         # #region agent log
+        _dbg('EXCEPTION', {'error': str(e)[:500], 'traceback': _tb.format_exc()[:500]}, 'H1')
         print(f"[AI Usage Summary] EXCEPTION error={str(e)[:300]}")
         print(f"[AI Usage Summary] TRACEBACK {_tb.format_exc()[:500]}")
         # #endregion
