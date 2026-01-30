@@ -54,6 +54,11 @@ def handle_jd_command(ack, respond, command):
     
     logger.info(f"User {user_id} executed: /jd {subcommand} {args}")
     
+    # Commands that query BigQuery (slow) - show loading message
+    slow_commands = ["status", "cache", "analytics", "usage", "validate", "refresh", "sync"]
+    if subcommand in slow_commands:
+        respond(f":hourglass_flowing_sand: _Querying data for `{subcommand}`..._")
+    
     # Route to appropriate handler
     try:
         if subcommand in ["refresh", "sync"]:
@@ -155,7 +160,14 @@ def get_lineage(table_name: str):
 
 @flask_app.route("/slack/events", methods=["POST"])
 def slack_events():
-    """Handle Slack events."""
+    """Handle Slack events including URL verification."""
+    # Handle URL verification challenge (required for initial setup)
+    data = request.get_json(silent=True)
+    if data and data.get("type") == "url_verification":
+        logger.info("Handling URL verification challenge")
+        return jsonify({"challenge": data.get("challenge")}), 200
+    
+    # All other events go through Slack Bolt handler
     return handler.handle(request)
 
 

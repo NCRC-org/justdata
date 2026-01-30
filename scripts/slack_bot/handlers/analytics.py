@@ -70,14 +70,14 @@ def get_today_analytics() -> str:
         query = """
         SELECT
             COUNT(*) as total_reports,
-            COUNT(DISTINCT COALESCE(user_id, client_id)) as unique_users,
+            COUNT(DISTINCT user_id) as unique_users,
             COUNTIF(event_name LIKE '%lendsight%') as lendsight_reports,
             COUNTIF(event_name LIKE '%bizsight%') as bizsight_reports,
             COUNTIF(event_name LIKE '%branchsight%') as branchsight_reports,
             COUNTIF(event_name LIKE '%mergermeter%') as mergermeter_reports
         FROM `justdata-ncrc.firebase_analytics.all_events`
         WHERE DATE(event_timestamp) = CURRENT_DATE()
-          AND event_name LIKE '%_report_generated'
+          AND event_name LIKE '%_report'
         """
         
         result = list(client.query(query).result())
@@ -112,11 +112,11 @@ def get_week_analytics() -> str:
         query = """
         SELECT
             COUNT(*) as total_reports,
-            COUNT(DISTINCT COALESCE(user_id, client_id)) as unique_users,
+            COUNT(DISTINCT user_id) as unique_users,
             COUNT(DISTINCT DATE(event_timestamp)) as active_days
         FROM `justdata-ncrc.firebase_analytics.all_events`
         WHERE DATE(event_timestamp) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)
-          AND event_name LIKE '%_report_generated'
+          AND event_name LIKE '%_report'
         """
         
         result = list(client.query(query).result())
@@ -159,7 +159,7 @@ def get_app_analytics() -> str:
             COUNT(*) as report_count
         FROM `justdata-ncrc.firebase_analytics.all_events`
         WHERE DATE(event_timestamp) >= DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY)
-          AND event_name LIKE '%_report_generated'
+          AND event_name LIKE '%_report'
         GROUP BY app_name
         ORDER BY report_count DESC
         """

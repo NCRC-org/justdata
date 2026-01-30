@@ -70,7 +70,7 @@ def get_alerts_status() -> str:
     """Get current alerts status."""
     return """:bell: *Alerts Status*
 
-*Status:* :green_circle: Active
+*Status:* :white_check_mark: Active
 *Channel:* #justdata-alerts
 *Muted:* No
 

@@ -72,9 +72,9 @@ def get_overall_status() -> str:
         
         lines.append("")
         if all_healthy:
-            lines.append(":green_circle: *All systems operational*")
+            lines.append(":white_check_mark: *All systems operational*")
         else:
-            lines.append(":yellow_circle: *Some issues detected*")
+            lines.append(":warning: *Some issues detected*")
         
         return "\n".join(lines)
         
@@ -154,10 +154,10 @@ def get_health_status() -> str:
     """Get health check status."""
     return """:heartbeat: *Health Status*
 
-• Cloud Run: :green_circle: Operational
-• BigQuery: :green_circle: Operational  
-• Slack Bot: :green_circle: Operational
-• Pub/Sub: :green_circle: Operational
+• Cloud Run: :white_check_mark: Operational
+• BigQuery: :white_check_mark: Operational  
+• Slack Bot: :white_check_mark: Operational
+• Pub/Sub: :white_check_mark: Operational
 
 _Last checked: now_
 """

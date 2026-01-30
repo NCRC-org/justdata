@@ -74,7 +74,7 @@ def validate_row_counts() -> str:
                 if source_count == dest_count:
                     status = ":white_check_mark:"
                 elif abs(source_count - dest_count) / max(source_count, 1) < 0.01:
-                    status = ":yellow_circle:"  # Within 1%
+                    status = ":warning:"  # Within 1%
                 else:
                     status = ":x:"
                     all_match = False
@@ -88,9 +88,9 @@ def validate_row_counts() -> str:
         
         lines.append("")
         if all_match:
-            lines.append(":green_circle: *All tables in sync*")
+            lines.append(":white_check_mark: *All tables in sync*")
         else:
-            lines.append(":red_circle: *Some tables out of sync - run `/jd refresh <table>`*")
+            lines.append(":x: *Some tables out of sync - run `/jd refresh <table>`*")
         
         return "\n".join(lines)
         
@@ -128,7 +128,7 @@ def validate_table(table_name: str) -> str:
         diff = dest_count - source_count
         pct_diff = (diff / max(source_count, 1)) * 100
         
-        status = ":white_check_mark:" if diff == 0 else (":yellow_circle:" if abs(pct_diff) < 1 else ":x:")
+        status = ":white_check_mark:" if diff == 0 else (":warning:" if abs(pct_diff) < 1 else ":x:")
         
         return f""":mag: *Validation: {table_name}*
 
@@ -155,7 +155,7 @@ def validate_nulls() -> str:
         checks = [
             ("justdata-ncrc.shared.de_hmda", "lei", "LEI in de_hmda"),
             ("justdata-ncrc.shared.de_hmda", "county_code", "County code in de_hmda"),
-            ("justdata-ncrc.bizsight.sb_lenders", "respondent_id", "Respondent ID in sb_lenders"),
+            ("justdata-ncrc.bizsight.sb_lenders", "sb_resid", "Respondent ID in sb_lenders"),
         ]
         
         lines = [":mag: *Null Value Check*\n"]
@@ -173,7 +173,7 @@ def validate_nulls() -> str:
             if pct_null == 0:
                 status = ":white_check_mark:"
             elif pct_null < 1:
-                status = ":yellow_circle:"
+                status = ":warning:"
             else:
                 status = ":x:"
             
