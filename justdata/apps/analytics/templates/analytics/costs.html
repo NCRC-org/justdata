@@ -587,11 +587,21 @@ async function loadCostData(forceRefresh) {
         // Update AI costs
         if (aiResult.success && aiResult.data) {
             const aiData = aiResult.data;
-            aiCost = aiData.total_cost_usd || 0;
-            document.getElementById('ai-total-cost').textContent = formatCurrency(aiCost);
-            document.getElementById('ai-requests').textContent = formatNumber(aiData.total_requests || 0);
+            // #region agent log
+            console.log('[AI Costs Debug]', {error: aiData.error, total_cost: aiData.total_cost_usd, requests: aiData.total_requests, by_app: aiData.by_app, by_model: aiData.by_model});
+            // #endregion
+            if (aiData.error) {
+                console.error('[AI Costs Error]', aiData.error);
+                document.getElementById('ai-total-cost').textContent = 'Error';
+                document.getElementById('ai-requests').textContent = aiData.error.substring(0, 50);
+            } else {
+                aiCost = aiData.total_cost_usd || 0;
+                document.getElementById('ai-total-cost').textContent = formatCurrency(aiCost);
+                document.getElementById('ai-requests').textContent = formatNumber(aiData.total_requests || 0);
+            }
         } else {
             // AI costs might not be available yet
+            console.warn('[AI Costs] No data returned', aiResult);
             document.getElementById('ai-total-cost').textContent = '$0.00';
             document.getElementById('ai-requests').textContent = '0';
         }

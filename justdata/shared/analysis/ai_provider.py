@@ -148,11 +148,17 @@ def _flush_ai_usage_to_bigquery():
 
 def get_ai_usage_summary(days: int = 30) -> dict:
     """Get AI usage summary from BigQuery ai_usage table."""
+    # #region agent log
+    print(f"[AI Usage Summary] ENTRY days={days}")
+    # #endregion
     try:
         from google.cloud import bigquery
         from google.oauth2 import service_account
         
         creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+        # #region agent log
+        print(f"[AI Usage Summary] CREDS_CHECK has_creds={creds_json is not None} len={len(creds_json) if creds_json else 0}")
+        # #endregion
         if creds_json:
             creds_dict = json.loads(creds_json)
             credentials = service_account.Credentials.from_service_account_info(creds_dict)
@@ -178,6 +184,9 @@ def get_ai_usage_summary(days: int = 30) -> dict:
         """
         
         results = list(client.query(query).result())
+        # #region agent log
+        print(f"[AI Usage Summary] QUERY_RESULTS count={len(results)} first={dict(results[0]) if results else None}")
+        # #endregion
         
         total_cost = sum(r.total_cost_usd or 0 for r in results)
         total_requests = sum(r.request_count or 0 for r in results)
@@ -215,7 +224,11 @@ def get_ai_usage_summary(days: int = 30) -> dict:
             'by_model': by_model_list
         }
     except Exception as e:
-        print(f"[AI Usage] Error getting summary: {str(e)[:200]}")
+        import traceback as _tb
+        # #region agent log
+        print(f"[AI Usage Summary] EXCEPTION error={str(e)[:300]}")
+        print(f"[AI Usage Summary] TRACEBACK {_tb.format_exc()[:500]}")
+        # #endregion
         return {
             'period_days': days,
             'total_requests': 0,
