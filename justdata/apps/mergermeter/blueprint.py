@@ -680,7 +680,7 @@ def api_search_banks():
         if len(query) < 2:
             return jsonify({'success': True, 'banks': [], 'message': 'Enter at least 2 characters'})
 
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
 
         # Search query joining lender_names_gleif with lenders18 and sb.lenders
         # Returns display name, location info, and identifiers (LEI, RSSD, SB Res ID)

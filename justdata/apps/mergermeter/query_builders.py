@@ -197,13 +197,14 @@ WITH cbsa_crosswalk AS (
     FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 -- Filter HMDA data to user-selected assessment area counties
+-- Note: de_hmda has pre-computed race/ethnicity and income flags as BOOL columns
 filtered_hmda AS (
     SELECT
         CAST(h.activity_year AS STRING) as activity_year,
         -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
         COALESCE(c.cbsa_code, '99999') as cbsa_code,
-        -- State code for Goals Calculator state tabs
-        h.state_code,
+        -- State code for Goals Calculator state tabs (derived from county_code, first 2 digits are state FIPS)
+        LPAD(SUBSTR(CAST(h.county_code AS STRING), 1, 2), 2, '0') as state_code,
         -- Loan purpose category for HP/Refi/HI breakdown
         -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Home Equity, 5=N/A
         -- NCRC methodology: Home Equity = loan purposes 2 (Home Improvement) + 4 (Other/Home Equity)
@@ -214,119 +215,18 @@ filtered_hmda AS (
             ELSE 'other'
         END as loan_purpose_cat,
         h.loan_amount,
-        CASE 
-            WHEN h.tract_to_msa_income_percentage IS NOT NULL
-                AND CAST(h.tract_to_msa_income_percentage AS FLOAT64) <= 80 
-            THEN 1 ELSE 0 
-        END as is_lmict,
-        CASE 
-            WHEN h.income IS NOT NULL
-              AND h.ffiec_msa_md_median_family_income IS NOT NULL
-              AND h.ffiec_msa_md_median_family_income > 0
-              AND (CAST(h.income AS FLOAT64) * 1000.0) / 
-                  CAST(h.ffiec_msa_md_median_family_income AS FLOAT64) * 100.0 <= 80.0
-            THEN 1 ELSE 0 
-        END as is_lmib,
-        CASE 
-            WHEN h.tract_minority_population_percent IS NOT NULL
-                AND CAST(h.tract_minority_population_percent AS FLOAT64) > 50 
-            THEN 1 ELSE 0 
-        END as is_mmct,
-        -- Race/Ethnicity classification using COALESCE methodology
-        -- First check for Hispanic ethnicity (if ANY ethnicity field indicates Hispanic)
-        CASE 
-            WHEN h.applicant_ethnicity_1 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_2 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_3 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_4 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_5 IN ('1','11','12','13','14')
-            THEN 1 ELSE 0 
-        END as is_hispanic,
-        -- For non-Hispanic applicants, use COALESCE to find first valid race code
-        -- Valid race codes exclude '6' (Not Provided), '7' (Not Applicable), '8' (No co-applicant)
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) = '3'
-            THEN 1 ELSE 0 
-        END as is_black,
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) IN ('2','21','22','23','24','25','26','27')
-            THEN 1 ELSE 0 
-        END as is_asian,
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) = '1'
-            THEN 1 ELSE 0 
-        END as is_native_american,
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) IN ('4','41','42','43','44')
-            THEN 1 ELSE 0 
-        END as is_hopi
+        -- Use pre-computed flags from de_hmda table (convert BOOL to INT for aggregation)
+        CASE WHEN h.is_lmict THEN 1 ELSE 0 END as is_lmict,
+        CASE WHEN h.is_lmib THEN 1 ELSE 0 END as is_lmib,
+        CASE WHEN h.is_mmct THEN 1 ELSE 0 END as is_mmct,
+        CASE WHEN h.is_hispanic THEN 1 ELSE 0 END as is_hispanic,
+        CASE WHEN h.is_black THEN 1 ELSE 0 END as is_black,
+        CASE WHEN h.is_asian THEN 1 ELSE 0 END as is_asian,
+        CASE WHEN h.is_native_american THEN 1 ELSE 0 END as is_native_american,
+        CASE WHEN h.is_hopi THEN 1 ELSE 0 END as is_hopi
     FROM `justdata-ncrc.shared.de_hmda` h
     LEFT JOIN cbsa_crosswalk c
-        ON LPAD(CAST(h.county_code AS STRING), 5, '0') = c.county_code
+        ON h.geoid5 = c.county_code
     WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
         {action_taken_filter}
         {occupancy_filter}
@@ -335,8 +235,8 @@ filtered_hmda AS (
         {units_filter}
         AND h.lei = '{subject_lei}'
         {loan_purpose_filter}
-        -- Filter to user-selected assessment area counties (county_code in HMDA is the 5-digit GEOID)
-        AND LPAD(CAST(h.county_code AS STRING), 5, '0') IN ('{geoid5_list}')
+        -- Filter to user-selected assessment area counties (use geoid5 which is already normalized)
+        AND h.geoid5 IN ('{geoid5_list}')
 ),
 aggregated_metrics AS (
     SELECT
@@ -539,13 +439,14 @@ WITH cbsa_crosswalk AS (
     FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 -- Filter HMDA data to user-selected assessment area counties (includes all lenders for peer comparison)
+-- Note: de_hmda has pre-computed race/ethnicity and income flags as BOOL columns
 filtered_hmda AS (
     SELECT
         CAST(h.activity_year AS STRING) as activity_year,
         -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
         COALESCE(c.cbsa_code, '99999') as cbsa_code,
-        -- State code for Goals Calculator state tabs
-        h.state_code,
+        -- State code for Goals Calculator state tabs (derived from county_code, first 2 digits are state FIPS)
+        LPAD(SUBSTR(CAST(h.county_code AS STRING), 1, 2), 2, '0') as state_code,
         -- Loan purpose category for HP/Refi/HI breakdown
         -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Home Equity, 5=N/A
         -- NCRC methodology: Home Equity = loan purposes 2 (Home Improvement) + 4 (Other/Home Equity)
@@ -557,119 +458,18 @@ filtered_hmda AS (
         END as loan_purpose_cat,
         h.lei,
         h.loan_amount,
-        CASE
-            WHEN h.tract_to_msa_income_percentage IS NOT NULL
-                AND CAST(h.tract_to_msa_income_percentage AS FLOAT64) <= 80
-            THEN 1 ELSE 0
-        END as is_lmict,
-        CASE
-            WHEN h.income IS NOT NULL
-              AND h.ffiec_msa_md_median_family_income IS NOT NULL
-              AND h.ffiec_msa_md_median_family_income > 0
-              AND (CAST(h.income AS FLOAT64) * 1000.0) /
-                  CAST(h.ffiec_msa_md_median_family_income AS FLOAT64) * 100.0 <= 80.0
-            THEN 1 ELSE 0
-        END as is_lmib,
-        CASE
-            WHEN h.tract_minority_population_percent IS NOT NULL
-                AND CAST(h.tract_minority_population_percent AS FLOAT64) > 50
-            THEN 1 ELSE 0
-        END as is_mmct,
-        -- Race/Ethnicity classification using COALESCE methodology
-        -- First check for Hispanic ethnicity (if ANY ethnicity field indicates Hispanic)
-        CASE 
-            WHEN h.applicant_ethnicity_1 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_2 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_3 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_4 IN ('1','11','12','13','14')
-                OR h.applicant_ethnicity_5 IN ('1','11','12','13','14')
-            THEN 1 ELSE 0 
-        END as is_hispanic,
-        -- For non-Hispanic applicants, use COALESCE to find first valid race code
-        -- Valid race codes exclude '6' (Not Provided), '7' (Not Applicable), '8' (No co-applicant)
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) = '3'
-            THEN 1 ELSE 0 
-        END as is_black,
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) IN ('2','21','22','23','24','25','26','27')
-            THEN 1 ELSE 0 
-        END as is_asian,
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) = '1'
-            THEN 1 ELSE 0 
-        END as is_native_american,
-        CASE 
-            WHEN (h.applicant_ethnicity_1 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_1 IS NULL)
-                AND (h.applicant_ethnicity_2 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_2 IS NULL)
-                AND (h.applicant_ethnicity_3 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_3 IS NULL)
-                AND (h.applicant_ethnicity_4 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_4 IS NULL)
-                AND (h.applicant_ethnicity_5 NOT IN ('1','11','12','13','14') OR h.applicant_ethnicity_5 IS NULL)
-                AND COALESCE(
-                    CASE WHEN h.applicant_race_1 IS NOT NULL AND h.applicant_race_1 != '' AND h.applicant_race_1 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_1 ELSE NULL END,
-                    CASE WHEN h.applicant_race_2 IS NOT NULL AND h.applicant_race_2 != '' AND h.applicant_race_2 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_2 ELSE NULL END,
-                    CASE WHEN h.applicant_race_3 IS NOT NULL AND h.applicant_race_3 != '' AND h.applicant_race_3 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_3 ELSE NULL END,
-                    CASE WHEN h.applicant_race_4 IS NOT NULL AND h.applicant_race_4 != '' AND h.applicant_race_4 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_4 ELSE NULL END,
-                    CASE WHEN h.applicant_race_5 IS NOT NULL AND h.applicant_race_5 != '' AND h.applicant_race_5 NOT IN ('6','7','8') 
-                         THEN h.applicant_race_5 ELSE NULL END
-                ) IN ('4','41','42','43','44')
-            THEN 1 ELSE 0 
-        END as is_hopi
+        -- Use pre-computed flags from de_hmda table (convert BOOL to INT for aggregation)
+        CASE WHEN h.is_lmict THEN 1 ELSE 0 END as is_lmict,
+        CASE WHEN h.is_lmib THEN 1 ELSE 0 END as is_lmib,
+        CASE WHEN h.is_mmct THEN 1 ELSE 0 END as is_mmct,
+        CASE WHEN h.is_hispanic THEN 1 ELSE 0 END as is_hispanic,
+        CASE WHEN h.is_black THEN 1 ELSE 0 END as is_black,
+        CASE WHEN h.is_asian THEN 1 ELSE 0 END as is_asian,
+        CASE WHEN h.is_native_american THEN 1 ELSE 0 END as is_native_american,
+        CASE WHEN h.is_hopi THEN 1 ELSE 0 END as is_hopi
     FROM `justdata-ncrc.shared.de_hmda` h
     LEFT JOIN cbsa_crosswalk c
-        ON LPAD(CAST(h.county_code AS STRING), 5, '0') = c.county_code
+        ON h.geoid5 = c.county_code
     WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
         {action_taken_filter}
         {occupancy_filter}
@@ -677,8 +477,8 @@ filtered_hmda AS (
         {construction_filter}
         {units_filter}
         {loan_purpose_filter}
-        -- Filter to user-selected assessment area counties (county_code in HMDA is the 5-digit GEOID)
-        AND LPAD(CAST(h.county_code AS STRING), 5, '0') IN ('{geoid5_list}')
+        -- Filter to user-selected assessment area counties (use geoid5 which is already normalized)
+        AND h.geoid5 IN ('{geoid5_list}')
 ),
 subject_volume AS (
     SELECT 
@@ -827,18 +627,11 @@ filtered_sb_data AS (
         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         -- SB amounts are stored in thousands of dollars, convert to actual dollars
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
-        -- LMICT: income_group_total codes - 101/102 = Low/Moderate, 001-008 = LMI subcategories
-        -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
-        CASE
-            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-            THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
-            ELSE 0
-        END as lmict_loans_count,
-        CASE
-            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
-            ELSE 0
-        END as lmict_loans_amount,
+        -- LMICT: Use pre-aggregated lmi_tract_loans from sb_county_summary
+        d.lmi_tract_loans as lmict_loans_count,
+        -- LMICT amount: Estimate proportionally since summary table doesn't have separate LMI amount
+        -- (lmi_tract_loans / total_loans) * total_amount
+        SAFE_DIVIDE(d.lmi_tract_loans, d.total_loans) * (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as lmict_loans_amount,
         d.numsbrev_under_1m as loans_rev_under_1m,
         d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
     FROM `justdata-ncrc.bizsight.sb_county_summary` d
@@ -1280,18 +1073,10 @@ filtered_sb_data AS (
         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         -- SB amounts are stored in thousands of dollars, convert to actual dollars
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
-        -- LMICT: income_group_total codes - 101/102 = Low/Moderate, 001-008 = LMI subcategories
-        -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
-        CASE
-            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-            THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
-            ELSE 0
-        END as lmict_loans_count,
-        CASE
-            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
-            ELSE 0
-        END as lmict_loans_amount,
+        -- LMICT: Use pre-aggregated lmi_tract_loans from sb_county_summary
+        d.lmi_tract_loans as lmict_loans_count,
+        -- LMICT amount: Estimate proportionally since summary table doesn't have separate LMI amount
+        SAFE_DIVIDE(d.lmi_tract_loans, d.total_loans) * (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as lmict_loans_amount,
         d.numsbrev_under_1m as loans_rev_under_1m,
         d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
     FROM `justdata-ncrc.bizsight.sb_county_summary` d
