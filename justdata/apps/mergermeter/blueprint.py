@@ -447,8 +447,8 @@ def api_load_bank_names():
             'single_bank_mode': single_bank_mode
         }
         
-        client = get_bigquery_client(PROJECT_ID)
-        
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # Import bank name lookup function
         from .app import get_bank_name_from_lei, clean_bank_name
         

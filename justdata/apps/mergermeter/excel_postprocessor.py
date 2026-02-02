@@ -270,10 +270,10 @@ def _update_assessment_areas_cbsa_names(wb, assessment_areas):
     
     if not aa_sheet:
         return
-    
+
     try:
-        client = get_bigquery_client(PROJECT_ID)
-        
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # Find CBSA code column (usually column B or C)
         cbsa_code_col = None
         cbsa_name_col = None

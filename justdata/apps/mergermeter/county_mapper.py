@@ -178,9 +178,9 @@ def map_counties_to_geoids(
     """
     
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         results = execute_query(client, query)
-        
+
         # Create mapping
         mapped_geoids = []
         mapped_identifiers = set()
@@ -257,8 +257,8 @@ def get_counties_by_msa_name(msa_name: str) -> Tuple[List[str], Optional[str]]:
     
     # Try exact match first, then partial match
     try:
-        client = get_bigquery_client(PROJECT_ID)
-        
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # First try exact match
         query = f"""
         SELECT DISTINCT
@@ -412,10 +412,10 @@ def enrich_counties_with_metadata(
     """
     if not geoids:
         return []
-    
+
     try:
-        client = get_bigquery_client(PROJECT_ID)
-        
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # Query for all GEOID5s at once
         geoid5_str = ', '.join([f"'{g.zfill(5)}'" for g in geoids])
         

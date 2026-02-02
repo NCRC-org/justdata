@@ -690,8 +690,8 @@ def _populate_assessment_areas_sheet(
     
     # Get BigQuery client for CBSA name lookups
     from justdata.shared.utils.bigquery_client import get_bigquery_client
-    client = get_bigquery_client(PROJECT_ID)
-    
+    client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
     # Populate Bank A side (columns A and B)
     row = 2  # Start at row 2 (row 1 is header)
     for cbsa_code_or_name, counties in bank_a_aas.items():
@@ -1060,10 +1060,10 @@ def _get_cbsa_name_from_code(cbsa_code: str, client=None) -> str:
     
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
-        
+
         if client is None:
-            client = get_bigquery_client(PROJECT_ID)
-        
+            client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         query = f"""
         SELECT DISTINCT cbsa as cbsa_name
         FROM `{PROJECT_ID}.geo.cbsa_to_county`
@@ -1085,8 +1085,8 @@ def _group_by_cbsa(data: pd.DataFrame, assessment_areas: Optional[Dict]) -> Dict
     
     # Get BigQuery client for CBSA name lookups
     from justdata.shared.utils.bigquery_client import get_bigquery_client
-    client = get_bigquery_client(PROJECT_ID)
-    
+    client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
     if 'cbsa_name' in data.columns:
         for cbsa_name, group in data.groupby('cbsa_name'):
             # If it's actually a code, convert to name

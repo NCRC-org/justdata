@@ -564,7 +564,7 @@ def _perform_analysis(job_id, form_data):
         if use_national_data:
             update_progress(job_id, {'percent': 10, 'step': 'Loading all US counties for national analysis...', 'done': False, 'error': None})
             from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
-            client = get_bigquery_client(PROJECT_ID)
+            client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
 
             # Query all US county GEOIDs from the cbsa_to_county table
             all_counties_query = """
@@ -630,9 +630,9 @@ def _perform_analysis(job_id, form_data):
         )
         from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
         import pandas as pd
-        
-        client = get_bigquery_client(PROJECT_ID)
-        
+
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # Bank A HMDA Subject
         bank_a_hmda_subject = pd.DataFrame()
         if acquirer_lei and acquirer_geoids:
@@ -1115,10 +1115,18 @@ def _perform_analysis(job_id, form_data):
                         (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
                         -- SB amounts are stored in thousands of dollars, convert to actual dollars
                         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
-                        -- LMICT: Use pre-aggregated lmi_tract_loans from sb_county_summary
-                        d.lmi_tract_loans as lmict_loans_count,
-                        -- LMICT amount: Estimate proportionally since summary table doesn't have separate LMI amount
-                        SAFE_DIVIDE(d.lmi_tract_loans, d.total_loans) * (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as lmict_loans_amount,
+                        -- LMICT: Calculate by filtering on income_group_total codes
+                        -- LMI codes: 101 (Low <50%), 102 (Moderate 50-79%), 001-008 (subcategory codes 0-80%)
+                        CASE
+                            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
+                            THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
+                            ELSE 0
+                        END as lmict_loans_count,
+                        CASE
+                            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
+                            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
+                            ELSE 0
+                        END as lmict_loans_amount,
                         d.numsbrev_under_1m as loans_rev_under_1m,
                         d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
                     FROM `justdata-ncrc.bizsight.sb_county_summary` d
@@ -1389,9 +1397,9 @@ def load_bank_names():
         # Get bank name from LEI number using BigQuery
         # PROJECT_ID is imported at module level (line 22/26), no need to import again
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        
-        client = get_bigquery_client(PROJECT_ID)
-        
+
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # Look up acquirer bank name using LEI (or use provided name from bulk import)
         if acquirer.get('name'):
             # Use provided name from bulk import
@@ -2018,9 +2026,9 @@ def get_counties_by_msa_codes(msa_codes: List[str]) -> Dict[str, List[str]]:
         ORDER BY msa_code, county_state
         """
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         results = execute_query(client, query)
-        
+
         # Group counties by MSA code
         msa_counties = {}
         for row in results:
