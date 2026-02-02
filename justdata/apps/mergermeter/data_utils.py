@@ -45,16 +45,16 @@ def get_last_5_years_hmda() -> List[int]:
 
 def get_last_5_years_sb() -> List[int]:
     """
-    Get the last 5 years dynamically from SB county summary data (bizsight.sb_county_summary).
+    Get the last 5 years dynamically from SB disclosure data (hdma1-242116.sb.disclosure).
 
     Returns:
         List of the 5 most recent years available, sorted descending (e.g., [2024, 2023, 2022, 2021, 2020])
     """
     try:
         client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
-        query = f"""
-        SELECT DISTINCT year
-        FROM `{PROJECT_ID}.bizsight.sb_county_summary`
+        query = """
+        SELECT DISTINCT CAST(year AS INT64) as year
+        FROM `hdma1-242116.sb.disclosure`
         WHERE year IS NOT NULL
         ORDER BY year DESC
         LIMIT 5

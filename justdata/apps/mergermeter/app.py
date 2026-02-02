@@ -1118,21 +1118,22 @@ def _perform_analysis(job_id, form_data):
                         -- LMICT: Calculate by filtering on income_group_total codes
                         -- LMI codes: 101 (Low <50%), 102 (Moderate 50-79%), 001-008 (subcategory codes 0-80%)
                         CASE
-                            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
+                            WHEN d.income_group_total IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
                             THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
                             ELSE 0
                         END as lmict_loans_count,
                         CASE
-                            WHEN CAST(d.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
+                            WHEN d.income_group_total IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
                             THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
                             ELSE 0
                         END as lmict_loans_amount,
-                        d.numsbrev_under_1m as loans_rev_under_1m,
-                        d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
-                    FROM `justdata-ncrc.bizsight.sb_county_summary` d
-                    INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
+                        COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
+                        COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
+                    FROM `hdma1-242116.sb.disclosure` d
+                    INNER JOIN `hdma1-242116.sb.lenders` l
                         ON d.respondent_id = l.sb_resid
-                    WHERE CAST(d.year AS STRING) IN ('{years_list}')
+                        AND d.year = l.sb_year
+                    WHERE d.year IN ('{years_list}')
                         AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
                         AND (l.sb_resid = '{respondent_id_no_prefix}' OR l.sb_resid = '{sb_id}')
                 )
