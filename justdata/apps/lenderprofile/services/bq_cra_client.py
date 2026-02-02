@@ -30,13 +30,20 @@ class BigQueryCRAClient:
         self.client = self._get_client()
 
     def _get_client(self):
-        """Get BigQuery client with credentials."""
+        """Get BigQuery client with credentials.
+        
+        Uses per-app credentials if LENDERPROFILE_CREDENTIALS_JSON is set,
+        otherwise falls back to GOOGLE_APPLICATION_CREDENTIALS_JSON.
+        """
         try:
-            # Check for JSON credentials in environment
-            cred_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+            # Check for app-specific credentials first, then fall back to shared
+            cred_json = os.getenv('LENDERPROFILE_CREDENTIALS_JSON') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
             if cred_json and cred_json.strip().startswith('{'):
                 cred_dict = json.loads(cred_json)
                 credentials = service_account.Credentials.from_service_account_info(cred_dict)
+                client_email = cred_dict.get('client_email', 'unknown')
+                cred_source = 'LENDERPROFILE_CREDENTIALS_JSON' if os.getenv('LENDERPROFILE_CREDENTIALS_JSON') else 'GOOGLE_APPLICATION_CREDENTIALS_JSON'
+                logger.info(f"BigQuery client initialized using {cred_source} (service account: {client_email})")
                 return bigquery.Client(credentials=credentials, project=self.project_id)
 
             # Fall back to default credentials

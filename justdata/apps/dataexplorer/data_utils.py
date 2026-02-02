@@ -17,6 +17,9 @@ import time
 
 logger = logging.getLogger(__name__)
 
+# App name for per-app credential support
+APP_NAME = 'DATAEXPLORER'
+
 # Cache for lenders list (with LAR count)
 _lenders_cache = None
 _lenders_cache_timestamp = None
@@ -111,7 +114,7 @@ def execute_hmda_query(
         query = build_hmda_query(validated_geoids, validated_years, **kwargs)
         
         # Execute query
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         results = execute_query(client, query)
         
         logger.info(f"HMDA query executed: {len(results)} results for {len(validated_geoids)} GEOIDs, {len(validated_years)} years")
@@ -151,7 +154,7 @@ def execute_sb_query(
         query = build_sb_query(validated_geoids, validated_years, **kwargs)
         
         # Execute query
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         results = execute_query(client, query)
         
         logger.info(f"SB query executed: {len(results)} results for {len(validated_geoids)} GEOIDs, {len(validated_years)} years")
@@ -195,7 +198,7 @@ def execute_branch_query(
         query = build_branch_query(validated_geoids, validated_years, **kwargs)
         
         # Execute query
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         results = execute_query(client, query)
         
         logger.info(f"Branch query executed: {len(results)} results")
@@ -263,7 +266,7 @@ def get_lender_target_counties(
         """
         
         # Execute query
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         results = execute_query(client, query)
         
         # Extract GEOIDs
@@ -333,7 +336,7 @@ def load_all_lenders18() -> List[Dict[str, Any]]:
         """
         
         logger.info("Loading all lenders from Lenders18 table (with LAR count)")
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         results = execute_query(client, query)
         logger.info(f"Loaded {len(results)} lenders from Lenders18")
         
@@ -408,7 +411,7 @@ def search_lenders18(lender_name: str, limit: int = 20, include_verification: bo
         """
         
         logger.info(f"Searching Lenders18 for: '{lender_name}' (escaped: '{escaped_name}')")
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         try:
             results = execute_query(client, query)
@@ -536,7 +539,7 @@ def lookup_lender(lender_name: str, exact_match: bool = False) -> List[Dict[str,
                 query = build_lender_lookup_query(lender_name.strip(), exact_match)
                 
                 # Execute query
-                client = get_bigquery_client(PROJECT_ID)
+                client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
                 bq_results = execute_query(client, query)
                 
                 # Add source indicator
@@ -571,7 +574,7 @@ def get_lender_from_bigquery_tables(lei: str = None, rssd: str = None) -> Option
         Lender metadata dictionary or None
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         if lei:
             # Query lenders table by LEI
@@ -778,7 +781,7 @@ def get_gleif_data_by_lei(lei: str) -> Optional[Dict[str, Any]]:
         if not lei:
             return None
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         query = f"""
         SELECT 
@@ -870,7 +873,7 @@ def get_lender_details_by_lei(lei: str) -> Optional[Dict[str, Any]]:
         if not lei:
             return None
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         # Step 1: Get RSSD and type_name from lenders18 table by LEI
         query_rssd = f"""
@@ -1032,7 +1035,7 @@ def get_peer_lenders(
             raise ValueError(f"Unsupported data type: {data_type}")
         
         # Execute query
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         results = execute_query(client, query)
         
         logger.info(f"Found {len(results)} peer lenders for {lender_id}")
@@ -1072,7 +1075,7 @@ def get_county_names_from_geoids(geoids: List[str]) -> List[str]:
         ORDER BY State, County
         """
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         results = execute_query(client, query)
         
         # Format as "County, State"
@@ -1125,7 +1128,7 @@ def execute_mortgage_query_with_filters(
         
         config = get_unified_config(load_env=False, verbose=False)
         PROJECT_ID = config.get('GCP_PROJECT_ID')
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         # Find the exact county match from the database
         county_matches = find_exact_county_match(county)
@@ -1232,7 +1235,7 @@ def get_states() -> List[Dict[str, Any]]:
         List of dictionaries with 'code' (state FIPS) and 'name' (state name)
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
 
         query = f"""
         SELECT DISTINCT
@@ -1265,7 +1268,7 @@ def get_metros() -> List[Dict[str, Any]]:
         List of dictionaries with 'code' (CBSA code) and 'name' (CBSA name)
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
 
         query = f"""
         WITH cbsa_counts AS (
@@ -1330,7 +1333,7 @@ def get_counties_for_state(state_fips: str) -> List[Dict[str, Any]]:
         if not state_fips:
             raise ValueError("State FIPS code is required")
 
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         escaped_state = escape_sql_string(state_fips)
 
         query = f"""
@@ -1375,7 +1378,7 @@ def get_counties_for_metro(cbsa_code: str) -> List[Dict[str, Any]]:
         if not cbsa_code:
             raise ValueError("CBSA code is required")
 
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         escaped_cbsa = escape_sql_string(cbsa_code)
 
         query = f"""

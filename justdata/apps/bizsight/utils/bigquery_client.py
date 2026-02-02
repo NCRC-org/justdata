@@ -21,7 +21,10 @@ _temp_cred_file = None
 
 def get_bigquery_client(project_id: str = None, credentials_path: str = None):
     """
-    Get a BigQuery client instance.
+    Get a BigQuery client instance for BizSight app.
+
+    Uses per-app credentials if BIZSIGHT_CREDENTIALS_JSON is set,
+    otherwise falls back to GOOGLE_APPLICATION_CREDENTIALS_JSON.
 
     Args:
         project_id: GCP project ID (defaults to env var)
@@ -42,17 +45,20 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
     if not project_id:
         project_id = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
 
-    # Check for JSON credentials in environment variable (preferred method)
-    creds_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+    # Check for app-specific credentials first, then fall back to shared
+    creds_json = os.getenv('BIZSIGHT_CREDENTIALS_JSON') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
     if creds_json:
         try:
             creds_dict = json.loads(creds_json)
             credentials = service_account.Credentials.from_service_account_info(creds_dict)
             client = bigquery.Client(credentials=credentials, project=project_id)
-            logger.info(f"BigQuery client initialized using GOOGLE_APPLICATION_CREDENTIALS_JSON")
+            # Log which credential is being used
+            client_email = creds_dict.get('client_email', 'unknown')
+            cred_source = 'BIZSIGHT_CREDENTIALS_JSON' if os.getenv('BIZSIGHT_CREDENTIALS_JSON') else 'GOOGLE_APPLICATION_CREDENTIALS_JSON'
+            logger.info(f"BigQuery client initialized using {cred_source} (service account: {client_email})")
             return client
         except Exception as e:
-            logger.warning(f"Failed to use GOOGLE_APPLICATION_CREDENTIALS_JSON: {e}")
+            logger.warning(f"Failed to use credentials JSON: {e}")
 
     # Try to find credentials file
     cred_path = None

@@ -142,21 +142,49 @@ Execute these SQL files in BigQuery Console (connected to `justdata` project):
 
 ## Service Accounts
 
-| App | Service Account |
-|-----|----------------|
-| LendSight | lendsight@justdata-ncrc.iam.gserviceaccount.com |
-| BizSight | bizsight@justdata-ncrc.iam.gserviceaccount.com |
-| BranchSight | branchsight@justdata-ncrc.iam.gserviceaccount.com |
-| BranchMapper | branchmapper@justdata-ncrc.iam.gserviceaccount.com |
-| MergerMeter | mergermeter@justdata-ncrc.iam.gserviceaccount.com |
-| DataExplorer | dataexplorer@justdata-ncrc.iam.gserviceaccount.com |
-| LenderProfile | lenderprofile@justdata-ncrc.iam.gserviceaccount.com |
-| Analytics | analytics@justdata-ncrc.iam.gserviceaccount.com |
-| ElectWatch | electwatch@justdata-ncrc.iam.gserviceaccount.com |
+| App | Service Account | Env Variable |
+|-----|----------------|--------------|
+| LendSight | lendsight@justdata-ncrc.iam.gserviceaccount.com | `LENDSIGHT_CREDENTIALS_JSON` |
+| BizSight | bizsight@justdata-ncrc.iam.gserviceaccount.com | `BIZSIGHT_CREDENTIALS_JSON` |
+| BranchSight | branchsight@justdata-ncrc.iam.gserviceaccount.com | `BRANCHSIGHT_CREDENTIALS_JSON` |
+| BranchMapper | branchmapper@justdata-ncrc.iam.gserviceaccount.com | `BRANCHMAPPER_CREDENTIALS_JSON` |
+| MergerMeter | mergermeter@justdata-ncrc.iam.gserviceaccount.com | `MERGERMETER_CREDENTIALS_JSON` |
+| DataExplorer | dataexplorer@justdata-ncrc.iam.gserviceaccount.com | `DATAEXPLORER_CREDENTIALS_JSON` |
+| LenderProfile | lenderprofile@justdata-ncrc.iam.gserviceaccount.com | `LENDERPROFILE_CREDENTIALS_JSON` |
+| Analytics | analytics@justdata-ncrc.iam.gserviceaccount.com | `ANALYTICS_CREDENTIALS_JSON` |
+| ElectWatch | electwatch@justdata-ncrc.iam.gserviceaccount.com | `ELECTWATCH_CREDENTIALS_JSON` |
+
+### Per-App Credentials Setup
+
+Each app can use its own service account for BigQuery cost attribution. The app checks for its specific env variable first, then falls back to `GOOGLE_APPLICATION_CREDENTIALS_JSON`.
+
+**Generate a JSON key for a service account:**
+```bash
+gcloud iam service-accounts keys create lendsight-key.json \
+  --iam-account=lendsight@justdata-ncrc.iam.gserviceaccount.com
+```
+
+**Set the env variable in `.env`:**
+```bash
+LENDSIGHT_CREDENTIALS_JSON='{"type":"service_account","client_email":"lendsight@justdata-ncrc.iam.gserviceaccount.com",...}'
+```
+
+**Grant permissions to service accounts:**
+```bash
+PROJECT="justdata-ncrc"
+for app in mergermeter dataexplorer lenderprofile lendsight bizsight branchsight branchmapper analytics electwatch; do
+    gcloud projects add-iam-policy-binding $PROJECT \
+        --member="serviceAccount:${app}@${PROJECT}.iam.gserviceaccount.com" \
+        --role="roles/bigquery.jobUser" --quiet
+    gcloud projects add-iam-policy-binding $PROJECT \
+        --member="serviceAccount:${app}@${PROJECT}.iam.gserviceaccount.com" \
+        --role="roles/bigquery.dataViewer" --quiet
+done
+```
 
 ## Dataset Permissions
 
-Each service account gets `roles/bigquery.dataViewer` on its app-specific dataset plus the `shared` dataset.
+Each service account has project-level `roles/bigquery.dataViewer` and `roles/bigquery.jobUser` permissions, allowing them to query any dataset in `justdata-ncrc`.
 
 ## Validation
 

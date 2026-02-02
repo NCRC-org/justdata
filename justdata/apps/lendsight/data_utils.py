@@ -9,6 +9,9 @@ from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_q
 from typing import List, Optional, Dict, Any
 from justdata.apps.lendsight.config import PROJECT_ID
 
+# App name for per-app credential support
+APP_NAME = 'LENDSIGHT'
+
 
 def find_exact_county_match(county_input: str) -> list:
     """
@@ -21,7 +24,7 @@ def find_exact_county_match(county_input: str) -> list:
         List with single exact county match (or empty if none found)
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         # Use exact match on county_state (since it comes from the dropdown, it should be exact)
         # Also match by geoid5 to ensure we get the exact county
@@ -91,7 +94,7 @@ def get_available_counties() -> List[Dict[str, str]]:
     """
     try:
         print("Attempting to connect to BigQuery...")
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         query = """
         SELECT DISTINCT 
             county_state,
@@ -230,7 +233,7 @@ def get_available_metro_areas() -> List[Dict[str, Any]]:
         List of dictionaries with 'cbsa_code', 'cbsa_name', and 'counties' (list of county names)
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         test_query = """
         SELECT 
@@ -288,7 +291,7 @@ def expand_state_to_counties(state_code: str) -> List[str]:
         List of county names in "County, State" format
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         # Ensure state_code is zero-padded to 2 digits
         state_code_padded = state_code.zfill(2)
         query = f"""
@@ -319,7 +322,7 @@ def expand_metro_to_counties(cbsa_code: str) -> List[str]:
         List of county names in "County, State" format
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         # Cast cbsa_code to string for comparison (it might be stored as integer)
         query = f"""
         SELECT DISTINCT county_state
@@ -353,7 +356,7 @@ def execute_mortgage_query(sql_template: str, county: str, year: int, loan_purpo
         List of dictionaries containing query results
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         # Find the exact county match from the database
         county_matches = find_exact_county_match(county)

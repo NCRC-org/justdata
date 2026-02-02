@@ -7,6 +7,9 @@ from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_q
 from typing import List, Optional, Dict
 from justdata.apps.branchmapper.config import PROJECT_ID
 
+# App name for per-app credential support
+APP_NAME = 'BRANCHMAPPER'
+
 
 def find_exact_county_match(county_input: str) -> list:
     """
@@ -19,7 +22,7 @@ def find_exact_county_match(county_input: str) -> list:
         List of possible county names from database (empty if none found)
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         # Parse county and state
         if ',' in county_input:
@@ -69,7 +72,7 @@ def get_available_counties() -> List[str]:
     """Get list of available counties from the database."""
     try:
         print("Attempting to connect to BigQuery...")
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         query = """
         SELECT DISTINCT county_state 
         FROM geo.cbsa_to_county 
@@ -139,7 +142,7 @@ def get_available_states() -> List[Dict[str, str]]:
     """
     try:
         print("Attempting to get states from BigQuery...")
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         query = """
         SELECT DISTINCT 
             TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)]) as state_name
@@ -230,7 +233,7 @@ def get_available_metro_areas() -> List[Dict[str, str]]:
     """
     try:
         print("Attempting to get metro areas from BigQuery...")
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         query = """
         SELECT DISTINCT 
             cbsa_code,
@@ -268,7 +271,7 @@ def execute_branch_query(sql_template: str, county: str, year: int) -> List[dict
         List of dictionaries containing query results
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         # Find the exact county match from the database
         county_matches = find_exact_county_match(county)

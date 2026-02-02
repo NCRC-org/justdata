@@ -7,6 +7,9 @@ from justdata.shared.utils.bigquery_client import get_bigquery_client
 from typing import List
 from .config import PROJECT_ID
 
+# App name for per-app credential support
+APP_NAME = 'MERGERMETER'
+
 
 def get_last_5_years_hmda() -> List[int]:
     """
@@ -16,7 +19,7 @@ def get_last_5_years_hmda() -> List[int]:
         List of the 5 most recent years available, sorted descending (e.g., [2024, 2023, 2022, 2021, 2020])
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         query = f"""
         SELECT DISTINCT CAST(activity_year AS INT64) as year
         FROM `{PROJECT_ID}.hmda.hmda`
@@ -48,7 +51,7 @@ def get_last_5_years_sb() -> List[int]:
         List of the 5 most recent years available, sorted descending (e.g., [2024, 2023, 2022, 2021, 2020])
     """
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         query = f"""
         SELECT DISTINCT year
         FROM `{PROJECT_ID}.sb.disclosure`
