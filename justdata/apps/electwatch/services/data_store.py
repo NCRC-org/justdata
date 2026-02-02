@@ -125,7 +125,20 @@ CONGRESS_START_YEAR = {
     'Katie Britt': 2023,
     'Bernie Moreno': 2025,
     'John Curtis': 2017,  # House 2017, Senate 2025
-    # House members (key finance committee members)
+    # House members (key finance committee members and long-serving)
+    'Nancy Pelosi': 1987,  # 38 years - Speaker Emerita
+    'Steny Hoyer': 1981,   # 44 years - Majority Leader Emeritus
+    'Jim Clyburn': 1993,   # 32 years - Assistant Democratic Leader
+    'James Clyburn': 1993, # Alternative name form
+    'Rosa DeLauro': 1991,  # 34 years - Appropriations
+    'Rosa L. DeLauro': 1991, # With middle initial
+    'Richard Neal': 1989,  # 36 years - Ways & Means
+    'Richard E. Neal': 1989, # With middle initial
+    'Bobby Scott': 1993,   # 32 years - Education & Labor
+    'Robert Scott': 1993,  # Formal name
+    'Robert C. Scott': 1993, # With middle initial
+    'Eddie Bernice Johnson': 1993,  # 32 years - Science Committee
+    'Marcy Kaptur': 1983,  # 42 years - Appropriations
     'French Hill': 2015,
     'Patrick McHenry': 2005,
     'Maxine Waters': 1991,
@@ -181,6 +194,27 @@ CONGRESS_START_YEAR = {
 
 def get_years_in_congress(name: str, stored_years: int = None) -> int:
     """Get correct years in Congress, using override if available."""
+    # Normalize name from "Last, First" to "First Last" format for lookup
+    normalized_name = name
+    if ', ' in name:
+        parts = name.split(', ', 1)
+        if len(parts) == 2:
+            normalized_name = f"{parts[1]} {parts[0]}"
+
+    if normalized_name in CONGRESS_START_YEAR:
+        return datetime.now().year - CONGRESS_START_YEAR[normalized_name]
+
+    # Try without middle initial (e.g., "Steny H. Hoyer" -> "Steny Hoyer")
+    name_parts = normalized_name.split()
+    if len(name_parts) >= 3:
+        # Check if middle part is an initial (single letter or single letter with period)
+        middle = name_parts[1]
+        if len(middle) <= 2 and middle.replace('.', '').isalpha():
+            simple_name = f"{name_parts[0]} {name_parts[-1]}"
+            if simple_name in CONGRESS_START_YEAR:
+                return datetime.now().year - CONGRESS_START_YEAR[simple_name]
+
+    # Also try original name in case it's already in "First Last" format
     if name in CONGRESS_START_YEAR:
         return datetime.now().year - CONGRESS_START_YEAR[name]
     return stored_years if stored_years else 1

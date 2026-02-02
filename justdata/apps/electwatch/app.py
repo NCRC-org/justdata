@@ -56,15 +56,19 @@ app.secret_key = ElectWatchConfig.SECRET_KEY
 app.config['DEBUG'] = True
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.config['JSON_AS_ASCII'] = False  # Ensure UTF-8 characters in JSON responses
 app.jinja_env.bytecode_cache = None
 
-# Disable caching for all responses
+# Disable caching for all responses and ensure proper content type
 @app.after_request
-def add_no_cache_headers(response):
-    """Add no-cache headers to prevent browser/proxy caching."""
+def add_headers(response):
+    """Add no-cache headers and ensure UTF-8 content type."""
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     response.headers['Pragma'] = 'no-cache'
     response.headers['Expires'] = '0'
+    # Ensure JSON responses have proper UTF-8 encoding
+    if response.content_type and 'application/json' in response.content_type:
+        response.content_type = 'application/json; charset=utf-8'
     return response
 
 # Debug: Log when data is loaded
@@ -113,6 +117,7 @@ def official_profile(official_id: str):
         version=__version__,
         official_id=official_id,
         app_name='ElectWatch',
+        active_tab='leaderboard',
         breadcrumb_items=[
             {'name': 'ElectWatch', 'url': '/electwatch'},
             {'name': 'Official Profile', 'url': '#'}
@@ -134,6 +139,7 @@ def industry_view(sector: str):
         sector=sector,
         sector_info=sector_info,
         app_name='ElectWatch',
+        active_tab='industries',
         breadcrumb_items=[
             {'name': 'ElectWatch', 'url': '/electwatch'},
             {'name': sector_info.get('name', sector), 'url': '#'}
@@ -149,6 +155,7 @@ def firm_view(firm_name: str):
         version=__version__,
         firm_name=firm_name,
         app_name='ElectWatch',
+        active_tab='firms',
         breadcrumb_items=[
             {'name': 'ElectWatch', 'url': '/electwatch'},
             {'name': firm_name, 'url': '#'}
@@ -164,6 +171,7 @@ def committee_view(committee_id: str):
         version=__version__,
         committee_id=committee_id,
         app_name='ElectWatch',
+        active_tab='committees',
         breadcrumb_items=[
             {'name': 'ElectWatch', 'url': '/electwatch'},
             {'name': 'Committee', 'url': '#'}
@@ -2702,6 +2710,7 @@ def view_bill(bill_id: str):
         'bill_view.html',
         bill_id=bill_id,
         app_name='ElectWatch',
+        active_tab='bill',
         breadcrumb_items=[
             {'name': 'ElectWatch', 'url': '/electwatch'},
             {'name': bill_id, 'url': '#'}

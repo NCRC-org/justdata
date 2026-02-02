@@ -1,0 +1,63 @@
+{
+  "status": "valid",
+  "last_updated": "2026-01-31T10:24:26.391399",
+  "last_updated_display": "January 31, 2026 at 10:24 AM",
+  "data_window": {
+    "start": "January 31, 2025",
+    "end": "January 31, 2026"
+  },
+  "stock_data_window": {
+    "start": "January 01, 2023",
+    "end": "January 31, 2026",
+    "start_iso": "2023-01-01",
+    "end_iso": "2026-01-31",
+    "description": "24-month rolling window of STOCK Act disclosures"
+  },
+  "fec_data_window": {
+    "start": "January 01, 2023",
+    "end": "January 31, 2026",
+    "start_iso": "2023-01-01",
+    "end_iso": "2026-01-31",
+    "description": "24-month rolling window of FEC contributions"
+  },
+  "next_update": "2026-02-01T00:00:00",
+  "next_update_display": "February 01, 2026 at midnight",
+  "data_sources": {
+    "congress_members": {
+      "status": "success",
+      "house_members": 437,
+      "senate_members": 100,
+      "total": 537,
+      "timestamp": "2026-01-31T10:17:42.217496",
+      "from_cache": true
+    },
+    "stock_trades": {
+      "status": "success",
+      "source": "unknown",
+      "from_cache": true,
+      "total_trades": 29803,
+      "politicians_with_trades": 172,
+      "matched_to_officials": 159,
+      "unmatched_count": 0,
+      "timestamp": "2026-01-31T10:24:26.830750"
+    },
+    "fec_bulk": {
+      "status": "success",
+      "officials_matched": 549,
+      "officials_with_pac": 527,
+      "officials_with_individual": 535,
+      "total_financial_pac": 60843984.0,
+      "total_financial_individual": 71854683.0,
+      "timestamp": "2026-01-31T10:27:21.166347"
+    }
+  },
+  "counts": {
+    "officials": 549,
+    "firms": 0,
+    "industries": 0,
+    "committees": 0,
+    "news_articles": 0
+  },
+  "errors": [],
+  "warnings": []
+}
