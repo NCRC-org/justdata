@@ -1132,8 +1132,8 @@ def _perform_analysis(job_id, form_data):
                     FROM `justdata-ncrc.bizsight.sb_county_summary` d
                     INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
                         ON d.respondent_id = l.sb_resid
-                        AND d.year = l.sb_year
-                    WHERE d.year IN ('{years_list}')
+                        AND CAST(d.year AS STRING) = l.sb_year
+                    WHERE CAST(d.year AS STRING) IN ('{years_list}')
                         AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
                         AND (l.sb_resid = '{respondent_id_no_prefix}' OR l.sb_resid = '{sb_id}')
                 )
