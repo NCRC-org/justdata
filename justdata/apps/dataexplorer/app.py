@@ -568,12 +568,12 @@ def get_states():
         from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
         from justdata.apps.dataexplorer.config import PROJECT_ID
         
-        # Query geo.cbsa_to_county table for distinct states
+        # Query shared.cbsa_to_county table for distinct states
         query = f"""
         SELECT DISTINCT
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as code,
             State as name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE geoid5 IS NOT NULL
           AND State IS NOT NULL
         ORDER BY State
@@ -617,7 +617,7 @@ def get_metros():
                 COUNTIF(CAST(geoid5 AS STRING) LIKE '091%' 
                        AND CAST(geoid5 AS STRING) >= '09110' 
                        AND CAST(geoid5 AS STRING) <= '09190') as ct_planning_region_count
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE cbsa_code IS NOT NULL
           AND CBSA IS NOT NULL
           AND TRIM(CBSA) != ''
@@ -674,7 +674,7 @@ def get_counties_by_metro(cbsa_code):
         # Escape CBSA code for SQL safety
         escaped_cbsa = escape_sql_string(cbsa_code)
         
-        # Query geo.cbsa_to_county table for counties in the CBSA
+        # Query shared.cbsa_to_county table for counties in the CBSA
         # For Connecticut: exclude old county codes (09001-09015), only include planning regions (09110-09190)
         query = f"""
         SELECT DISTINCT
@@ -684,7 +684,7 @@ def get_counties_by_metro(cbsa_code):
             State as state_name,
             CAST(cbsa_code AS STRING) as cbsa,
             CBSA as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{escaped_cbsa}'
           AND geoid5 IS NOT NULL
           AND County IS NOT NULL
@@ -726,7 +726,7 @@ def get_counties():
         # Escape state code for SQL safety
         escaped_state = escape_sql_string(state_code)
         
-        # Query geo.cbsa_to_county table for counties in the state with CBSA info
+        # Query shared.cbsa_to_county table for counties in the state with CBSA info
         # For Connecticut: exclude old county codes (09001-09015), only include planning regions (09110-09190)
         query = f"""
         SELECT DISTINCT
@@ -734,7 +734,7 @@ def get_counties():
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as fips,
             CAST(cbsa_code AS STRING) as cbsa,
             CBSA as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{escaped_state}'
           AND geoid5 IS NOT NULL
           AND County IS NOT NULL
@@ -950,13 +950,13 @@ def test_lender_analysis():
                     h.lei,
                     SUM(h.loan_amount) as total_volume
                 FROM `{PROJECT_ID}.hmda.hmda` h
-                -- For 2022-2023 Connecticut data, join to geo.census to get planning region from tract
-                LEFT JOIN `{PROJECT_ID}.geo.census` ct_tract
+                -- For 2022-2023 Connecticut data, join to shared.census to get planning region from tract
+                LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
                     ON CAST(h.county_code AS STRING) LIKE '09%'
                     AND CAST(h.county_code AS STRING) NOT LIKE '091%'
                     AND h.census_tract IS NOT NULL
                     AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
-                LEFT JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+                LEFT JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
                     ON COALESCE(
                         -- For 2022-2023: Use planning region from tract
                         CASE 

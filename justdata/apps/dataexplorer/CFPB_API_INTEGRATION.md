@@ -328,7 +328,7 @@ def get_lender_filing_status(lei: str, year: int) -> Dict:
 2. CFPB API returns: `{name: "Wells Fargo Bank, NA", lei: "INR2EJN1ERAN0W5ZP974", rssd: "451965"}`
 3. Use LEI to query BigQuery HMDA data: `SELECT * FROM hmda.hmda WHERE lei = 'INR2EJN1ERAN0W5ZP974'`
 4. Use RSSD to query BigQuery SOD25: `SELECT * FROM branches.sod25 WHERE rssd_id = '451965'`
-5. Use LEI to query BigQuery Disclosure: `SELECT * FROM sb.disclosure WHERE lei = 'INR2EJN1ERAN0W5ZP974'`
+5. Use LEI to query BigQuery Disclosure: `SELECT * FROM bizsight.sb_county_summary WHERE lei = 'INR2EJN1ERAN0W5ZP974'`
 6. Link to lenders/lenders18 tables for additional metadata
 
 **Benefits:**

@@ -91,8 +91,8 @@ def handle_jd_command(ack, respond, command):
 def get_tables_list():
     """List all tables and their sync status."""
     tables = [
-        ("sb_lenders", "bizsight", "Full copy from sb.lenders"),
-        ("sb_county_summary", "bizsight", "Aggregated from sb.disclosure"),
+        ("sb_lenders", "bizsight", "Full copy from hdma1-242116.sb.lenders"),
+        ("sb_county_summary", "bizsight", "Aggregated from hdma1-242116.sb.disclosure"),
         ("lenders18", "lendsight", "Full copy from hmda.lenders18"),
         ("lender_names_gleif", "shared", "Full copy from hmda.lender_names_gleif"),
         ("de_hmda", "shared", "Derived from hmda.hmda + joins"),
@@ -119,14 +119,14 @@ def get_lineage(table_name: str):
     """Show data lineage for a table."""
     lineage = {
         "de_hmda": {
-            "sources": ["hdma1.hmda.hmda", "hdma1.hmda.lenders18", "hdma1.geo.census", "hdma1.geo.cbsa_to_county"],
+            "sources": ["justdata-ncrc.hmda.hmda", "justdata-ncrc.hmda.lenders18", "justdata-ncrc.shared.census", "justdata-ncrc.shared.cbsa_to_county"],
             "dependents": ["lendsight.de_hmda_county_summary", "lendsight.de_hmda_tract_summary"],
             "refresh": "Manual or triggered by hmda.hmda changes"
         },
         "sb_county_summary": {
-            "sources": ["hdma1.sb.disclosure", "hdma1.sb.lenders"],
+            "sources": ["hdma1-242116.sb.disclosure", "hdma1-242116.sb.lenders"],
             "dependents": [],
-            "refresh": "Triggered by sb.disclosure changes"
+            "refresh": "Triggered by hdma1-242116.sb.disclosure changes"
         },
         "branch_hhi_summary": {
             "sources": ["justdata-ncrc.branchsight.sod"],

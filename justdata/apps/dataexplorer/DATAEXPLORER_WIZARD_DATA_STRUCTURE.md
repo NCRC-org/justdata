@@ -103,13 +103,13 @@ This document describes the complete data structure that the DataExplorer wizard
 - **Purpose**: Used for branch/CBSA queries
 - **Format**: 10-digit zero-padded number (e.g., "0000451965")
 - **Lookup**: https://www.ffiec.gov/NPW
-- **Source**: Retrieved from `hmda.lenders18` table, then used to query `sb.lenders` for SB_RESID
+- **Source**: Retrieved from `hmda.lenders18` table, then used to query `bizsight.sb_lenders` for SB_RESID
 
 ### SB_RESID (Small Business Respondent ID)
 - **Purpose**: Used for small business loan data queries
 - **Format**: Variable length string (e.g., "0000012072")
 - **Lookup**: https://www.ffiec.gov/craadweb/DisRptMain.aspx
-- **Source**: Retrieved from `sb.lenders` table using RSSD as crosswalk
+- **Source**: Retrieved from `bizsight.sb_lenders` table using RSSD as crosswalk
 
 ---
 

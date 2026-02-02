@@ -682,9 +682,9 @@ def api_search_banks():
 
         client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
 
-        # Search query joining lender_names_gleif with lenders18 and sb.lenders
+        # Search query joining lender_names_gleif with lenders18 and bizsight.sb_lenders
         # Returns display name, location info, and identifiers (LEI, RSSD, SB Res ID)
-        # Links: LEI -> lenders18 (RSSD) -> sb.lenders (sb_rssd -> sb_resid)
+        # Links: LEI -> lenders18 (RSSD) -> bizsight.sb_lenders (sb_rssd -> sb_resid)
         # Note: ORDER BY must use the alias 'assets' not 'l.assets' when using DISTINCT
         sql = """
         SELECT DISTINCT
@@ -697,7 +697,7 @@ def api_search_banks():
             SAFE_CAST(l.assets AS INT64) AS assets
         FROM `justdata-ncrc.shared.lender_names_gleif` g
         JOIN `justdata-ncrc.lendsight.lenders18` l ON g.lei = l.lei
-        LEFT JOIN `hdma1-242116.sb.lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
+        LEFT JOIN `justdata-ncrc.bizsight.sb_lenders` sb ON CAST(l.respondent_rssd AS STRING) = sb.sb_rssd
         WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
         ORDER BY assets DESC NULLS LAST
         LIMIT @limit
@@ -733,7 +733,7 @@ def api_search_banks():
                 'state': row.state or '',
                 'lei': row.lei or '',
                 'rssd': row.rssd or '',
-                'res_id': row.res_id or '',  # From sb.lenders via RSSD lookup
+                'res_id': row.res_id or '',  # From bizsight.sb_lenders via RSSD lookup
                 'assets': row.assets
             })
 

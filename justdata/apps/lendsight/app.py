@@ -569,7 +569,7 @@ def counties_by_state(state_identifier):
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM geo.cbsa_to_county
+            FROM shared.cbsa_to_county
             WHERE geoid5 IS NOT NULL
                 AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
             ORDER BY county_state
@@ -577,7 +577,7 @@ def counties_by_state(state_identifier):
         else:
             query = f"""
             SELECT DISTINCT county_state, geoid5
-            FROM geo.cbsa_to_county
+            FROM shared.cbsa_to_county
             WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escape_sql_string(state_identifier)}')
             ORDER BY county_state
             """

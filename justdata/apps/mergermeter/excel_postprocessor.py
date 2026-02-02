@@ -312,7 +312,7 @@ def _update_assessment_areas_cbsa_names(wb, assessment_areas):
                     # Query CBSA name
                     query = f"""
                     SELECT DISTINCT cbsa as cbsa_name
-                    FROM `{PROJECT_ID}.geo.cbsa_to_county`
+                    FROM `{PROJECT_ID}.shared.cbsa_to_county`
                     WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
                     LIMIT 1
                     """

@@ -223,7 +223,7 @@ Complete list of all data sources and what they provide.
 ---
 
 ### 20. **BigQuery - Geographic Data** ✅
-**Table:** `geo.cbsa_to_county`  
+**Table:** `shared.cbsa_to_county`  
 **Status:** Active  
 **What It Provides:**
 - CBSA codes and names

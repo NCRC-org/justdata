@@ -46,7 +46,7 @@ def find_exact_county_match(county_input: str) -> list:
         if state:
             county_query = f"""
             SELECT DISTINCT county_state 
-            FROM geo.cbsa_to_county 
+            FROM shared.cbsa_to_county 
             WHERE LOWER(county_state) LIKE LOWER('%{county_name_escaped}%')
             AND LOWER(county_state) LIKE LOWER('%{state_escaped}%')
             ORDER BY county_state
@@ -54,7 +54,7 @@ def find_exact_county_match(county_input: str) -> list:
         else:
             county_query = f"""
             SELECT DISTINCT county_state 
-            FROM geo.cbsa_to_county 
+            FROM shared.cbsa_to_county 
             WHERE LOWER(county_state) LIKE LOWER('%{county_name_escaped}%')
             ORDER BY county_state
             """
@@ -75,7 +75,7 @@ def get_available_counties() -> List[str]:
         client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         query = """
         SELECT DISTINCT county_state 
-        FROM geo.cbsa_to_county 
+        FROM shared.cbsa_to_county 
         ORDER BY county_state
         """
         print("Executing county query...")
@@ -146,7 +146,7 @@ def get_available_states() -> List[Dict[str, str]]:
         query = """
         SELECT DISTINCT 
             TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)]) as state_name
-        FROM geo.cbsa_to_county 
+        FROM shared.cbsa_to_county 
         WHERE county_state LIKE '%,%'
         ORDER BY state_name
         """
@@ -238,7 +238,7 @@ def get_available_metro_areas() -> List[Dict[str, str]]:
         SELECT DISTINCT 
             cbsa_code,
             cbsa_name
-        FROM geo.cbsa_to_county 
+        FROM shared.cbsa_to_county 
         WHERE cbsa_code IS NOT NULL
         AND cbsa_name IS NOT NULL
         ORDER BY cbsa_name

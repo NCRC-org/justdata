@@ -38,7 +38,7 @@ def extract_fips_from_county_state(county_state: str, project_id: str = DEFAULT_
     """
     Extract state and county FIPS codes from "County, State" format.
 
-    Uses BigQuery to look up the geoid5 (5-digit FIPS) from the geo.cbsa_to_county table.
+    Uses BigQuery to look up the geoid5 (5-digit FIPS) from the shared.cbsa_to_county table.
 
     Args:
         county_state: County name in format "County, State" (e.g., "Hillsborough County, Florida")
@@ -55,7 +55,7 @@ def extract_fips_from_county_state(county_state: str, project_id: str = DEFAULT_
         # Try exact match first
         query = f"""
         SELECT DISTINCT geoid5
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE county_state = '{county_state}'
         LIMIT 1
         """
@@ -74,7 +74,7 @@ def extract_fips_from_county_state(county_state: str, project_id: str = DEFAULT_
         # Try case-insensitive match
         query_case_insensitive = f"""
         SELECT DISTINCT geoid5, county_state
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE UPPER(county_state) = UPPER('{county_state}')
         LIMIT 1
         """
@@ -127,7 +127,7 @@ def get_cbsa_for_county(county_state: str, project_id: str = DEFAULT_PROJECT_ID)
         SELECT DISTINCT
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE CAST(geoid5 AS STRING) = '{geoid5}'
             AND cbsa_code IS NOT NULL
         LIMIT 1

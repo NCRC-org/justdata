@@ -1121,7 +1121,7 @@ def build_lender_report(
             progress_tracker.update_progress('building_report', 60, 'Building Section 1 Table 3 (Top Metros)...')
         
         # Look up CBSA information from county codes using BigQuery
-        # We need to query geo.cbsa_to_county to get CBSA codes and names
+        # We need to query shared.cbsa_to_county to get CBSA codes and names
         try:
             from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
             from justdata.shared.utils.unified_env import get_unified_config
@@ -1155,7 +1155,7 @@ def build_lender_report(
                         CAST(c.cbsa_code AS STRING) as cbsa_code,
                         c.CBSA as cbsa_name,
                         CAST(c.geoid5 AS STRING) as geoid5
-                    FROM `{PROJECT_ID}.geo.cbsa_to_county` c
+                    FROM `{PROJECT_ID}.shared.cbsa_to_county` c
                     WHERE CAST(c.geoid5 AS STRING) IN ('{counties_str}')
                       AND c.cbsa_code IS NOT NULL
                       AND c.CBSA IS NOT NULL

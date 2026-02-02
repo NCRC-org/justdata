@@ -1066,7 +1066,7 @@ def _get_cbsa_name_from_code(cbsa_code: str, client=None) -> str:
 
         query = f"""
         SELECT DISTINCT cbsa as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
         LIMIT 1
         """

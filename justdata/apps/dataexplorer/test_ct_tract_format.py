@@ -58,7 +58,7 @@ else:
     print("No results found")
 print()
 
-# Test 2: Check if we can join to geo.census to get county from tract
+# Test 2: Check if we can join to shared.census to get county from tract
 query2 = f"""
 SELECT 
     h.activity_year as year,
@@ -67,7 +67,7 @@ SELECT
     SUBSTR(LPAD(CAST(c.geoid AS STRING), 11, '0'), 1, 5) as actual_county_from_tract,
     COUNT(*) as loan_count
 FROM `{PROJECT_ID}.hmda.hmda` h
-LEFT JOIN `{PROJECT_ID}.geo.census` c
+LEFT JOIN `{PROJECT_ID}.shared.census` c
     ON LPAD(CAST(h.census_tract AS STRING), 11, '0') = LPAD(CAST(c.geoid AS STRING), 11, '0')
 WHERE h.activity_year = '2024'
   AND CAST(h.county_code AS STRING) LIKE '091%'
@@ -79,7 +79,7 @@ ORDER BY loan_count DESC
 LIMIT 20
 """
 
-print("TEST 2: County extraction from tract via geo.census join")
+print("TEST 2: County extraction from tract via shared.census join")
 print("-" * 80)
 results2 = execute_query(client, query2)
 if results2:

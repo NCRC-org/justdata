@@ -39,7 +39,7 @@ def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "ju
         SELECT DISTINCT
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE LOWER(TRIM(County)) = LOWER(TRIM('{county_name.replace("'", "''")}'))
             AND LOWER(TRIM(State)) = LOWER(TRIM('{state_name.replace("'", "''")}'))
             AND cbsa_code IS NOT NULL
@@ -89,7 +89,7 @@ def get_metros_by_state(state_name: str, project_id: str = "justdata-ncrc") -> L
         SELECT DISTINCT
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE LOWER(TRIM(State)) = LOWER(TRIM('{state_name.replace("'", "''")}'))
             AND cbsa_code IS NOT NULL
         ORDER BY 
@@ -138,7 +138,7 @@ def get_counties_by_metro(cbsa_code: str, project_id: str = "justdata-ncrc") -> 
         
         query = f"""
         SELECT DISTINCT county_state
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
         ORDER BY county_state
         """

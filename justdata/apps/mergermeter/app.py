@@ -1129,8 +1129,8 @@ def _perform_analysis(job_id, form_data):
                         END as lmict_loans_amount,
                         COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
                         COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
-                    FROM `hdma1-242116.sb.disclosure` d
-                    INNER JOIN `hdma1-242116.sb.lenders` l
+                    FROM `justdata-ncrc.bizsight.sb_county_summary` d
+                    INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
                         ON d.respondent_id = l.sb_resid
                         AND d.year = l.sb_year
                     WHERE d.year IN ('{years_list}')

@@ -48,7 +48,7 @@ SELECT
     h.activity_year as year,
     COUNT(*) as total_loans
 FROM `{PROJECT_ID}.hmda.hmda` h
-INNER JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+INNER JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
     ON CAST(h.county_code AS STRING) = CAST(c.geoid5 AS STRING)
 INNER JOIN `{PROJECT_ID}.hmda.lenders18` l
     ON h.lei = l.lei
@@ -96,7 +96,7 @@ SELECT
     h.activity_year as year,
     COUNT(*) as total_loans
 FROM `{PROJECT_ID}.hmda.hmda` h
-INNER JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+INNER JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
     ON CAST(h.county_code AS STRING) = CAST(c.geoid5 AS STRING)
 INNER JOIN `{PROJECT_ID}.hmda.lenders18` l
     ON h.lei = l.lei
@@ -141,7 +141,7 @@ SELECT
     END as loan_purpose_group,
     COUNT(*) as total_loans
 FROM `{PROJECT_ID}.hmda.hmda` h
-INNER JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+INNER JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
     ON CAST(h.county_code AS STRING) = CAST(c.geoid5 AS STRING)
 INNER JOIN `{PROJECT_ID}.hmda.lenders18` l
     ON h.lei = l.lei

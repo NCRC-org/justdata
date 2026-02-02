@@ -92,12 +92,12 @@ USING (
     -- (Full logic same as in create_de_hmda_table.sql)
     
   FROM `hdma1-242116.hmda.hmda` h
-  LEFT JOIN `hdma1-242116.geo.census` ct_tract
+  LEFT JOIN `justdata-ncrc.shared.census` ct_tract
     ON CAST(h.county_code AS STRING) LIKE '09%'
     AND CAST(h.county_code AS STRING) NOT LIKE '091%'
     AND h.census_tract IS NOT NULL
     AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
-  LEFT JOIN `hdma1-242116.geo.cbsa_to_county` c
+  LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
     ON COALESCE(
       CASE 
         WHEN CAST(h.county_code AS STRING) LIKE '09%' 

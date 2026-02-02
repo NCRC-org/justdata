@@ -173,7 +173,7 @@ def map_counties_to_geoids(
         SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips,
         CAST(cbsa_code AS STRING) as cbsa_code,
         CBSA as cbsa_name
-    FROM `{PROJECT_ID}.geo.cbsa_to_county`
+    FROM `{PROJECT_ID}.shared.cbsa_to_county`
     WHERE {where_clause}
     """
     
@@ -265,7 +265,7 @@ def get_counties_by_msa_name(msa_name: str) -> Tuple[List[str], Optional[str]]:
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name,
             CONCAT(County, ', ', State) as county_state
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE UPPER(TRIM(CBSA)) = UPPER(TRIM('{clean_name.replace("'", "''")}'))
         ORDER BY county_state
         """
@@ -279,7 +279,7 @@ def get_counties_by_msa_name(msa_name: str) -> Tuple[List[str], Optional[str]]:
                 CAST(cbsa_code AS STRING) as cbsa_code,
                 CBSA as cbsa_name,
                 CONCAT(County, ', ', State) as county_state
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
             WHERE UPPER(TRIM(CBSA)) LIKE UPPER(TRIM('%{clean_name.replace("'", "''")}%'))
             ORDER BY cbsa_code, county_state
             """
@@ -429,7 +429,7 @@ def enrich_counties_with_metadata(
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_code,
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(geoid5 AS STRING) IN ({geoid5_str})
         """
         

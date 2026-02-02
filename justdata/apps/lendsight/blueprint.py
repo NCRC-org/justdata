@@ -698,8 +698,8 @@ def counties():
         
         client = get_bigquery_client(LendSightConfig.PROJECT_ID)
         query = """
-        SELECT DISTINCT county_state 
-        FROM geo.cbsa_to_county 
+        SELECT DISTINCT county_state
+        FROM `justdata-ncrc.shared.cbsa_to_county`
         ORDER BY county_state
         """
         query_job = client.query(query)

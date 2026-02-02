@@ -16,7 +16,7 @@
 
 **After:**
 - Simple key: `CITY|STATE|CBSA`
-- CBSA codes included in BigQuery query via join with `geo.cbsa_to_county`
+- CBSA codes included in BigQuery query via join with `shared.cbsa_to_county`
 
 ### 2. Credit Union Branch Network Analysis
 **Status:** ✅ **COMPLETE**
@@ -105,12 +105,12 @@ ticker_map = {
 
 ### Bank Branches (SOD)
 - **Table:** `justdata.sod_branches_optimized`
-- **New:** JOIN with `geo.cbsa_to_county` to include CBSA codes
+- **New:** JOIN with `shared.cbsa_to_county` to include CBSA codes
 - **Fields Added:** `cbsa_code`, `cbsa_name`
 
 ### Credit Union Branches
 - **Table:** `justdata.credit_union_branches`
-- **New:** JOIN with `geo.cbsa_to_county` to include CBSA codes
+- **New:** JOIN with `shared.cbsa_to_county` to include CBSA codes
 - **Fields Added:** `cbsa_code`, `cbsa_name`
 
 ## 🔧 Configuration Required
