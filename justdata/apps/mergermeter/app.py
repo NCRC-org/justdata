@@ -1112,21 +1112,16 @@ def _perform_analysis(job_id, form_data):
                 filtered_sb_data AS (
                     SELECT
                         LPAD(CAST(d.geoid5 AS STRING), 5, '0') as geoid5,
-                        (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
+                        COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
                         -- SB amounts are stored in thousands of dollars, convert to actual dollars
                         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
-                        -- LMICT: Calculate by filtering on income_group_total codes
-                        -- LMI codes: 101 (Low <50%), 102 (Moderate 50-79%), 001-008 (subcategory codes 0-80%)
-                        CASE
-                            WHEN d.income_group_total IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                            THEN (d.num_under_100k + d.num_100k_250k + d.num_250k_1m)
-                            ELSE 0
-                        END as lmict_loans_count,
-                        CASE
-                            WHEN d.income_group_total IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                            THEN (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
-                            ELSE 0
-                        END as lmict_loans_amount,
+                        -- LMICT: Use pre-computed lmi_tract_loans from summary table
+                        COALESCE(d.lmi_tract_loans, 0) as lmict_loans_count,
+                        -- Estimate LMICT amount proportionally (lmi_tract_loans / total_loans * total_amount)
+                        SAFE_MULTIPLY(
+                            SAFE_DIVIDE(COALESCE(d.lmi_tract_loans, 0), NULLIF(COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m), 0)),
+                            (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
+                        ) as lmict_loans_amount,
                         COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
                         COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
                     FROM `justdata-ncrc.bizsight.sb_county_summary` d
