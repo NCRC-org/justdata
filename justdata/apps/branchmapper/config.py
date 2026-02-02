@@ -23,8 +23,8 @@ STATIC_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'static')
 OUTPUT_DIR = os.path.join(DATA_DIR, 'reports', 'branchmapper')
 os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-# BigQuery Configuration
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+# BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 DATASET_ID = "branches"
 TABLE_ID = "sod"
 

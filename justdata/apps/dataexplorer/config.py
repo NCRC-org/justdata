@@ -17,9 +17,8 @@ STATIC_DIR = Path(__file__).parent / 'static'
 OUTPUT_DIR = DATA_DIR / 'reports' / 'dataexplorer'
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-# BigQuery Configuration
-# Use environment variable for flexible project switching during migration
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+# BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')  # New optimized project
 USE_SUMMARY_TABLES = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
 HMDA_DATASET = "hmda"

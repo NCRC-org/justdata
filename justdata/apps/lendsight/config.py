@@ -38,9 +38,8 @@ GPT_MODEL = "gpt-4"
 
 # BigQuery Configuration
 # Use environment variable for flexible project switching during migration
-# Set JUSTDATA_PROJECT_ID=justdata to use new optimized project
-# Default to old project for backward compatibility
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+# BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')  # New optimized project
 USE_SUMMARY_TABLES = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
 DATASET_ID = "hmda"

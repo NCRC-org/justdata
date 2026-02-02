@@ -51,8 +51,10 @@ CLEAN_TEMPLATE_FILE = None
 # Create output directory if it doesn't exist
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-# BigQuery Project ID
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+# BigQuery Project ID - Use justdata-ncrc for MergerMeter since all tables are there
+# Note: We use JUSTDATA_PROJECT_ID (not GCP_PROJECT_ID) because MergerMeter queries
+# target justdata-ncrc tables and credentials need jobs.create permission on that project
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 # New optimized project with summary tables
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 # Enable summary tables for default filters (hybrid routing)

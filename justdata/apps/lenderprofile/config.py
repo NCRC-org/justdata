@@ -21,8 +21,8 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 APP_NAME = "LenderProfile"
 APP_PORT = int(os.getenv('PORT', 8086))
 
-# BigQuery Configuration (if needed)
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+# BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 
 # Cache Configuration
 CACHE_ENABLED = True
