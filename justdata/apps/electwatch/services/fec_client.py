@@ -96,11 +96,17 @@ class FECClient:
         self,
         endpoint: str,
         params: Dict = None,
-        method: str = 'GET'
+        method: str = 'GET',
+        _retry_count: int = 0
     ) -> Optional[Dict]:
         """
         Make an API request with rate limiting and error handling.
+        
+        Args:
+            _retry_count: Internal retry counter (do not set manually)
         """
+        MAX_RETRIES = 3  # Maximum retries for rate limiting
+        
         if not self.api_key:
             logger.error("FEC_API_KEY not configured")
             return None
@@ -123,9 +129,13 @@ class FECClient:
         except requests.exceptions.HTTPError as e:
             logger.error(f"HTTP error: {e}")
             if response.status_code == 429:
-                logger.warning("Rate limited - waiting 60 seconds")
-                time.sleep(60)
-                return self._request(endpoint, params, method)
+                if _retry_count >= MAX_RETRIES:
+                    logger.warning(f"Rate limited {MAX_RETRIES} times, giving up on {endpoint}")
+                    return None
+                wait_time = 60 * (2 ** _retry_count)  # Exponential backoff: 60s, 120s, 240s
+                logger.warning(f"Rate limited - waiting {wait_time} seconds (retry {_retry_count + 1}/{MAX_RETRIES})")
+                time.sleep(wait_time)
+                return self._request(endpoint, params, method, _retry_count + 1)
             return None
 
         except requests.exceptions.RequestException as e:
