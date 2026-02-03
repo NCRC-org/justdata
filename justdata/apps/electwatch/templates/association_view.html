@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ assoc_name }} | Trade Association | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ElectWatch Design System */
+        :root {
+            /* Primary Palette */
+            --ew-primary: #2D8659;
+            --ew-secondary: #3B5998;
+            --ew-accent: #D4A017;
+
+            /* Neutral Palette */
+            --ew-neutral-900: #1A1A2E;
+            --ew-neutral-700: #4A4A5A;
+            --ew-neutral-500: #8A8A9A;
+            --ew-neutral-200: #E5E5EA;
+            --ew-neutral-50: #F8F8FA;
+
+            /* Status Colors */
+            --ew-success: #28A745;
+            --ew-error: #DC3545;
+
+            /* Party Colors */
+            --party-r: #DC3545;
+            --party-d: #2563EB;
+            --party-i: #6B7280;
+
+            /* Legacy mappings */
+            --ncrc-primary-blue: var(--ew-secondary);
+            --ncrc-justdata-blue: var(--ew-primary);
+            --ncrc-gold: var(--ew-accent);
+            --ncrc-gray: var(--ew-neutral-500);
+            --ncrc-gray-light: var(--ew-neutral-50);
+            --ncrc-gray-dark: var(--ew-neutral-900);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Association Header */
+        .assoc-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .assoc-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+        }
+
+        .assoc-info { flex: 1; min-width: 200px; }
+        .assoc-name {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+        }
+
+        .assoc-type-badge {
+            display: inline-block;
+            margin-left: 12px;
+            padding: 4px 12px;
+            background: linear-gradient(135deg, #7c3aed, #a78bfa);
+            color: white;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .assoc-description {
+            margin-top: 8px;
+            color: var(--ncrc-gray);
+            font-size: 0.95rem;
+        }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 24px 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid var(--ew-neutral-200);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--ncrc-gold); }
+        .card-body { padding: 20px; }
+
+        /* Officials Table */
+        .officials-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .officials-table th,
+        .officials-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .officials-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+        }
+
+        .officials-table tr:hover { background: #f8fafc; }
+
+        .official-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .official-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--ncrc-gray-light);
+        }
+
+        .party-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.75rem;
+            color: white;
+        }
+
+        .party-badge.R { background: var(--party-r); }
+        .party-badge.D { background: var(--party-d); }
+        .party-badge.I { background: var(--party-i); }
+
+        .official-name {
+            font-weight: 600;
+            color: var(--ncrc-justdata-blue);
+            text-decoration: none;
+        }
+
+        .official-name:hover { text-decoration: underline; }
+        .official-meta { font-size: 0.75rem; color: var(--ncrc-gray); }
+
+        .amount-cell {
+            text-align: right;
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+        }
+
+        /* Party Split */
+        .party-bar-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .party-bar {
+            flex: 1;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .party-fill-r { background: var(--party-r); height: 100%; }
+        .party-fill-d { background: var(--party-d); height: 100%; }
+
+        .party-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 0.85rem;
+        }
+
+        .party-legend span { font-weight: 600; }
+        .party-legend .r-label { color: var(--party-r); }
+        .party-legend .d-label { color: var(--party-d); }
+
+        /* Committee List */
+        .committee-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background 0.2s;
+        }
+
+        .committee-row:hover { background: #f8fafc; }
+        .committee-row:last-child { border-bottom: none; }
+
+        .committee-name {
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+        }
+
+        .committee-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* Two columns layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ncrc-gray);
+        }
+
+        .loading::after {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--ncrc-justdata-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Info Box */
+        .info-box {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 1px solid #bae6fd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .info-box i {
+            color: var(--ncrc-justdata-blue);
+            font-size: 1.1rem;
+            margin-top: 2px;
+        }
+
+        .info-box-content {
+            flex: 1;
+        }
+
+        .info-box-title {
+            font-weight: 600;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+        }
+
+        .info-box-text {
+            font-size: 0.9rem;
+            color: var(--ncrc-gray);
+        }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 10px;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .assoc-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .assoc-name {
+                font-size: 1.5rem;
+            }
+
+            .assoc-type-badge {
+                display: block;
+                margin: 8px 0 0 0;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include "shared_header.html" %}
+    {% include "electwatch_subnav.html" %}
+
+    <main class="main-content">
+        <div id="loading" class="loading">Loading trade association data...</div>
+
+        <div id="content" style="display: none;">
+            <!-- Association Header -->
+            <div class="assoc-header">
+                <div class="assoc-icon">
+                    <i class="fas fa-landmark"></i>
+                </div>
+                <div class="assoc-info">
+                    <h1 class="assoc-name">
+                        {{ assoc_name }}
+                        <span class="assoc-type-badge">Trade Association</span>
+                    </h1>
+                    <p class="assoc-description">
+                        Political Action Committee (PAC) contributions to Members of Congress.
+                        Trade associations do not have publicly traded stock.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+                <i class="fas fa-info-circle"></i>
+                <div class="info-box-content">
+                    <div class="info-box-title">Trade Association PAC</div>
+                    <div class="info-box-text">
+                        This is a trade association that lobbies on behalf of its member companies.
+                        Unlike publicly traded firms, trade associations do not have stock that can be traded by Members of Congress.
+                        The data shown here reflects PAC contributions only.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Row -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <div id="stat-officials" class="stat-value">--</div>
+                    <div class="stat-label">Officials Receiving</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-total" class="stat-value">--</div>
+                    <div class="stat-label">Total PAC Contributions</div>
+                </div>
+                <div class="stat-card">
+                    <div id="stat-committees" class="stat-value">--</div>
+                    <div class="stat-label">Committees Reached</div>
+                </div>
+            </div>
+
+            <!-- Party Split -->
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-balance-scale"></i> Contribution Split by Party</h2>
+                </div>
+                <div class="card-body">
+                    <div class="party-bar-container">
+                        <span style="font-weight: 700; color: var(--party-r);">R</span>
+                        <div class="party-bar">
+                            <div id="party-r-fill" class="party-fill-r" style="width: 50%;"></div>
+                            <div id="party-d-fill" class="party-fill-d" style="width: 50%;"></div>
+                        </div>
+                        <span style="font-weight: 700; color: var(--party-d);">D</span>
+                    </div>
+                    <div class="party-legend">
+                        <span class="r-label" id="r-pct">50%</span>
+                        <span class="d-label" id="d-pct">50%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="two-columns">
+                <!-- Top Officials -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-trophy"></i> Top Recipients</h2>
+                    </div>
+                    <div class="card-body">
+                        <table class="officials-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Official</th>
+                                    <th style="text-align: right;">PAC Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody id="officials-body">
+                                <tr><td colspan="3" class="loading">Loading officials...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Committees Receiving -->
+                <div class="card">
+                    <div class="card-header">
+                        <h2><i class="fas fa-building-columns"></i> Committees Receiving</h2>
+                    </div>
+                    <div class="card-body" style="padding: 0;">
+                        <div id="committees-list">
+                            <div class="loading">Loading committees...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background: #1E3D5C; color: white; padding: 0; margin-top: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
+            <div style="text-align: left;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <div style="display: flex; gap: 16px; font-size: 13px;">
+                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
+                </div>
+                <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
+                    Created by Jay Richardson &amp; Jad Edlebi
+                </p>
+            </div>
+            <div style="flex-shrink: 0;">
+                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; width: auto; opacity: 0.9;">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const assocName = '{{ assoc_name }}';
+
+        /**
+         * Format official name consistently as "Last, First" format.
+         */
+        function formatDisplayName(name) {
+            if (!name) return '';
+            if (name.includes(',')) return name.trim();
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const lastName = parts[parts.length - 1];
+            const firstNames = parts.slice(0, -1).join(' ');
+            return `${lastName}, ${firstNames}`;
+        }
+
+        async function loadAssociationData() {
+            try {
+                const response = await fetch(`/electwatch/api/association/${encodeURIComponent(assocName)}`);
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                if (data.success && data.association) {
+                    renderAssociationData(data.association);
+                } else {
+                    renderPlaceholder();
+                }
+            } catch (error) {
+                console.error('Error loading association data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                renderPlaceholder();
+            }
+        }
+
+        function renderPlaceholder() {
+            document.getElementById('stat-officials').textContent = '--';
+            document.getElementById('stat-total').textContent = '--';
+            document.getElementById('stat-committees').textContent = '--';
+
+            document.getElementById('officials-body').innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align: center; color: var(--ncrc-gray); padding: 40px;">
+                        <i class="fas fa-info-circle" style="font-size: 1.5rem; display: block; margin-bottom: 8px;"></i>
+                        Trade association data analysis coming soon.
+                    </td>
+                </tr>
+            `;
+
+            document.getElementById('committees-list').innerHTML = `
+                <p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No committee data available</p>
+            `;
+        }
+
+        function renderAssociationData(assoc) {
+            // Stats
+            document.getElementById('stat-officials').textContent = assoc.officials_count || 0;
+            document.getElementById('stat-total').textContent = formatAmount(assoc.total_pac_contributions || 0);
+            document.getElementById('stat-committees').textContent = assoc.committees_receiving?.length || 0;
+
+            // Party split
+            const rPct = assoc.party_split?.r || 50;
+            const dPct = assoc.party_split?.d || 50;
+            document.getElementById('party-r-fill').style.width = rPct + '%';
+            document.getElementById('party-d-fill').style.width = dPct + '%';
+            document.getElementById('r-pct').textContent = rPct + '%';
+            document.getElementById('d-pct').textContent = dPct + '%';
+
+            // Officials table
+            renderOfficials(assoc.top_officials);
+
+            // Committees
+            renderCommittees(assoc.committees_receiving);
+        }
+
+        function renderOfficials(officials) {
+            const tbody = document.getElementById('officials-body');
+
+            if (!officials || officials.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--ncrc-gray);">No officials found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = officials.map((official, i) => {
+                const officialId = official.name.toLowerCase().replace(/\s+/g, '_');
+                return `
+                    <tr>
+                        <td style="font-weight: 700; color: var(--ncrc-primary-blue); width: 40px;">${i + 1}</td>
+                        <td>
+                            <div class="official-cell">
+                                ${official.photo_url ?
+                                    `<img src="${official.photo_url}" class="official-photo" onerror="this.style.display='none'">` :
+                                    `<div class="party-badge ${official.party}">${official.party}</div>`
+                                }
+                                <div>
+                                    <a href="/electwatch/official/${officialId}" class="official-name">${formatDisplayName(official.name)}</a>
+                                    <div class="official-meta">${official.party === 'R' ? 'Republican' : 'Democrat'}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="amount-cell">${formatAmount(official.pac_amount || 0)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderCommittees(committees) {
+            const container = document.getElementById('committees-list');
+
+            if (!committees || committees.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No committee data available</p>';
+                return;
+            }
+
+            container.innerHTML = committees.map(committee => `
+                <div class="committee-row">
+                    <div>
+                        <div class="committee-name">${committee.name}</div>
+                        <div class="committee-meta">${committee.member_count || 0} members receiving</div>
+                    </div>
+                    <div class="amount-cell">${formatAmount(committee.total || 0)}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        loadAssociationData();
+    </script>
+
+    <!-- Firebase Auth Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+    <script src="/static/js/auth.js"></script>
+</body>
+</html>

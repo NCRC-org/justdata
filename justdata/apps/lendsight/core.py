@@ -327,7 +327,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                         escaped_county = escape_sql_string(county_name)
                         query = f"""
                         SELECT DISTINCT county_state, geoid5
-                        FROM geo.cbsa_to_county
+                        FROM shared.cbsa_to_county
                         WHERE county_state = '{escaped_county}'
                         LIMIT 1
                         """

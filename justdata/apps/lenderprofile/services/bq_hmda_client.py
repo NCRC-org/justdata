@@ -48,7 +48,7 @@ class BigQueryHMDAClient:
         Get top metros where a lender concentrates their lending activity.
 
         Uses HMDA data to find MSA/MD codes with highest application counts.
-        Joins with geo.cbsa_to_county to get proper metro names.
+        Joins with shared.cbsa_to_county to get proper metro names.
 
         Args:
             lei: Legal Entity Identifier for the lender
@@ -76,7 +76,7 @@ class BigQueryHMDAClient:
                     return []
 
             # Query for top metros by application count
-            # Join with geo.cbsa_to_county to get proper CBSA names
+            # Join with shared.cbsa_to_county to get proper CBSA names
             query = f"""
             WITH lender_activity AS (
                 SELECT

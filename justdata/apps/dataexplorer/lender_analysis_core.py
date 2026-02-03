@@ -196,7 +196,7 @@ def _generate_peer_data_sheet_for_excel(
             h.lei,
             COUNT(*) as applications
         FROM `{PROJECT_ID}.shared.de_hmda` h
-        -- For 2022-2023 Connecticut data, join to geo.census to get planning region from tract
+        -- For 2022-2023 Connecticut data, join to shared.census to get planning region from tract
         LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
             ON CAST(h.county_code AS STRING) LIKE '09%'
             AND CAST(h.county_code AS STRING) NOT LIKE '091%'
@@ -1292,7 +1292,7 @@ def run_lender_analysis(
                 batch = geoids_escaped[i:i + geoid_batch_size]
                 geoids_batch = "', '".join(batch)
                 
-                # First try geo.cbsa_to_county
+                # First try shared.cbsa_to_county
                 county_state_query = f"""
                 SELECT DISTINCT
                     CAST(geoid5 AS STRING) as geoid5,
@@ -1810,7 +1810,7 @@ def run_lender_analysis(
             # Strategy:
             # - 2024 data: Already uses planning region codes (09110-09190) - keep as-is
             # - 2022-2023 data: Uses legacy county codes (09001-09015) - map to planning regions via tract
-            # - Join to geo.census using tract portion (last 6 digits) to get planning region
+            # - Join to shared.census using tract portion (last 6 digits) to get planning region
             # This ensures:
             # 1. All Connecticut data uses consistent planning region codes across all years
             # 2. The JOIN to cbsa_to_county works correctly (cbsa_to_county has both codes)

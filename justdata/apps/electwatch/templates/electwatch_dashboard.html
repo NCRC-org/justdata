@@ -15,10 +15,16 @@
            ElectWatch Design System
            ======================================== */
         :root {
-            /* Primary Palette */
-            --ew-primary: #2D8659;          /* NCRC Green - primary actions, links */
-            --ew-secondary: #3B5998;        /* Slate Blue - secondary buttons, headers */
-            --ew-accent: #D4A017;           /* Gold - AI content, special callouts */
+            /* Primary Palette - Navy Blue per Feb 1st Design Spec */
+            --ew-primary: #334e68;          /* Navy Blue - primary brand color */
+            --ew-primary-50: #f0f4f8;
+            --ew-primary-100: #d9e2ec;
+            --ew-primary-200: #bcccdc;
+            --ew-primary-700: #334e68;      /* Main brand color */
+            --ew-primary-800: #243b53;
+            --ew-primary-900: #102a43;
+            --ew-secondary: #486581;        /* Lighter navy - secondary buttons */
+            --ew-accent: #D4A017;           /* Gold - special callouts */
 
             /* Neutral Palette */
             --ew-neutral-900: #1A1A2E;      /* Near Black - headings */
@@ -624,12 +630,13 @@
         }
 
         .leaderboard-table th {
-            font-size: 0.75rem;
+            font-size: 0.85rem;
             text-transform: uppercase;
             color: var(--ncrc-gray);
-            font-weight: 600;
+            font-weight: 700;
             background: var(--ncrc-gray-light);
             position: relative;
+            letter-spacing: 0.03em;
         }
 
         .leaderboard-table th.sortable {
@@ -962,58 +969,54 @@
             flex-direction: column;
             align-items: center;
             gap: 2px;
-            cursor: help;
         }
 
         .trend-arrow {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: bold;
             line-height: 1;
         }
 
-        /* Trend arrow colors based on score change in last 6 months */
-        .trend-arrow.up { color: var(--ew-success); }      /* Green - score increased */
-        .trend-arrow.down { color: var(--ew-error); }      /* Red - score decreased */
-        .trend-arrow.stable { color: var(--ncrc-gray); }   /* Gray - no change */
-        .trend-arrow.no-data { color: var(--ncrc-gray); }  /* Gray - no trend data available */
-
-        .stock-indicator {
-            font-size: 0.8rem;
-            line-height: 1;
+        .trend-arrow i {
+            font-size: 1.1rem;
         }
 
-        .stock-indicator.buyer { color: var(--ncrc-justdata-blue); }
-        .stock-indicator.seller { color: var(--ncrc-gray); }
+        /* Trend arrow colors based on finance contribution change */
+        .trend-arrow.up { color: #22c55e; }      /* Green - contributions increased */
+        .trend-arrow.down { color: #ef4444; }    /* Red - contributions decreased */
+        .trend-arrow.stable { color: #9ca3af; }  /* Gray - no change */
+        .trend-arrow.no-data { color: #d1d5db; } /* Light gray - no data */
 
-        /* Donor Chips */
+        /* Financial Firm Chips */
         .donor-chips {
             display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
+            gap: 6px;
+            flex-direction: column;  /* Stack vertically for full names */
+            align-items: flex-start;
+            max-width: 400px;
         }
 
         .donor-chip {
-            padding: 3px 8px;
-            border-radius: 9999px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            background: var(--ew-secondary);
+            padding: 6px 12px;
+            border-radius: 6px;  /* Less pill-like for longer text */
+            font-size: 0.82rem;
+            font-weight: 600;
+            /* Brighter vibrant blue gradient */
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
             color: white;
             cursor: pointer;
-            white-space: nowrap;
+            white-space: normal;  /* Allow wrapping for long names */
             text-decoration: none;
             transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+            max-width: none;  /* No max width - show full names */
+            line-height: 1.3;
+            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
         }
 
         .donor-chip:hover {
-            transform: scale(1.05);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-            background: var(--ew-primary);
-        }
-
-        .donor-chip.has-overlap {
-            background: linear-gradient(135deg, var(--ew-secondary), var(--ew-accent));
-            border: 1px solid var(--ew-accent);
+            transform: scale(1.02);
+            box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
+            background: linear-gradient(135deg, #2563eb, #1e40af);
         }
 
         /* AI Insights Panel */
@@ -2676,6 +2679,183 @@
             background: #fff7ed;
         }
 
+        /* Nav Badge (iOS-style notification badge on nav items) */
+        .nav-badge {
+            background: var(--ew-error);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+            min-width: 18px;
+            text-align: center;
+            animation: badge-pulse 2s infinite;
+        }
+
+        @keyframes badge-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        /* Review Queue Styles */
+        .review-badge {
+            background: var(--ew-error);
+            color: white;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 10px;
+            margin-left: 6px;
+        }
+
+        .review-queue-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .review-queue-stats .stat-box {
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--ew-neutral-200);
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .review-queue-stats .stat-box.total {
+            background: var(--ew-primary);
+            color: white;
+            border-color: var(--ew-primary);
+        }
+
+        .review-queue-stats .stat-box.total .stat-label {
+            color: rgba(255,255,255,0.8);
+        }
+
+        .review-queue-stats .stat-label {
+            display: block;
+            font-size: 12px;
+            color: var(--ew-neutral-500);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .review-queue-stats .stat-value {
+            display: block;
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .review-queue-filters {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .review-queue-list {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .review-queue-item {
+            background: white;
+            border: 1px solid var(--ew-neutral-200);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            transition: all 0.2s;
+        }
+
+        .review-queue-item:hover {
+            border-color: var(--ew-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .review-queue-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .review-queue-item-name {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--ew-neutral-900);
+        }
+
+        .review-queue-item-type {
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .review-queue-item-type.pac { background: #dbeafe; color: #1e40af; }
+        .review-queue-item-type.employer { background: #fef3c7; color: #92400e; }
+        .review-queue-item-type.ticker { background: #d1fae5; color: #065f46; }
+
+        .review-queue-item-stats {
+            display: flex;
+            gap: 20px;
+            font-size: 13px;
+            color: var(--ew-neutral-500);
+            margin-bottom: 12px;
+        }
+
+        .review-queue-item-stats span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .review-queue-item-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .review-queue-item-actions select {
+            padding: 6px 10px;
+            border: 1px solid var(--ew-neutral-200);
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 120px;
+        }
+
+        .review-queue-item-actions .btn-decide {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .review-queue-item-actions .btn-include {
+            background: var(--ew-success);
+            color: white;
+        }
+
+        .review-queue-item-actions .btn-exclude {
+            background: var(--ew-neutral-500);
+            color: white;
+        }
+
+        .review-queue-item-actions .btn-decide:hover {
+            opacity: 0.9;
+        }
+
+        .review-queue-item.decided {
+            opacity: 0.5;
+            background: #f0f0f0;
+        }
+
         .unmatched-item .entity-name {
             font-weight: 500;
             word-break: break-word;
@@ -2751,12 +2931,13 @@
                 <button class="nav-tab" data-panel="firms">
                     <span>Firms</span>
                 </button>
-                <button class="nav-tab" data-panel="insights">
-                    <span>AI Insights</span>
+                {% if is_admin %}
+                <button class="nav-tab admin-nav-tab" data-panel="admin">
+                    <i class="fas fa-cog"></i>
+                    <span>Admin</span>
+                    <span id="admin-review-badge" class="nav-badge" style="display: none;">0</span>
                 </button>
-                <button class="nav-tab" data-panel="bills">
-                    <span>Bill Lookup</span>
-                </button>
+                {% endif %}
             </nav>
             <div class="data-sources">
                 <div class="data-source" onclick="showSourceInfo('fec')" title="Click for details">
@@ -2853,27 +3034,6 @@
                         <thead>
                             <!-- Group header row -->
                             <tr class="header-group-row">
-                                <th colspan="4"></th>
-                                <th colspan="5" class="financial-sector-group">
-                                    <span class="header-tooltip">
-                                        <i class="fas fa-landmark"></i> Financial Sector Involvement
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            <strong>What We Track:</strong><br>
-                                            PAC + individual contributions and stock trades involving finance/housing sector firms (24 months).<br><br>
-                                            <strong>Contributions Include:</strong><br>
-                                            • PAC contributions from financial firm PACs<br>
-                                            • Individual contributions from finance/housing employees<br><br>
-                                            <strong>Industries Covered:</strong><br>
-                                            • Banking, Investment, Insurance<br>
-                                            • Mortgage & Consumer Finance<br>
-                                            • Real Estate, REITs, Homebuilders<br>
-                                            • Fintech & Crypto
-                                            <span class="tooltip-source">Source: FEC Schedule A, STOCK Act disclosures</span>
-                                        </span>
-                                    </span>
-                                </th>
-                            </tr>
                             <!-- Column headers -->
                             <tr>
                                 <th class="rank" style="width: 40px;">#</th>
@@ -2887,25 +3047,24 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th style="width: 180px;">
+                                <th style="width: 400px; min-width: 350px;">
                                     <span class="header-tooltip">
-                                        Top Firms
+                                        Top Financial Firms
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Top financial firms by stock trading activity.<br>
-                                            Shows companies this official trades most actively.
-                                            <span class="tooltip-source">Source: STOCK Act disclosures</span>
+                                            Top financial sector firms by contributions.<br>
+                                            Shows PAC and individual contributions from verified financial firms only.
+                                            <span class="tooltip-source">Source: FEC contribution data</span>
                                         </span>
                                     </span>
                                 </th>
-                                <th style="width: 100px;">
+                                <th style="width: 70px;">
                                     <span class="header-tooltip">
                                         Trend
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            <strong>Top:</strong> Finance contribution % trend (↑ increasing, ↓ decreasing)<br>
-                                            <strong>Bottom:</strong> Stock activity (◆ net buyer, ◇ net seller)
-                                            <span class="tooltip-source">Hover for detailed history</span>
+                                            Change in financial sector contribution share vs. previous period.
+                                            <span class="tooltip-source">Compared to 6-month prior</span>
                                         </span>
                                     </span>
                                 </th>
@@ -2940,22 +3099,13 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th class="sortable financial-sector-col" data-sort="buys" data-order="desc" style="width: 80px;">
+                                <th class="sortable financial-sector-col" data-sort="trades" data-order="desc" style="width: 100px; text-align: center;">
                                     <span class="header-tooltip">
-                                        Buys
+                                        Stock Trades
                                         <span class="tooltip-icon">?</span>
                                         <span class="tooltip-content">
-                                            Stock PURCHASES in finance/housing companies (24 months).
-                                            <span class="tooltip-source">Source: STOCK Act disclosures</span>
-                                        </span>
-                                    </span>
-                                </th>
-                                <th class="sortable financial-sector-col" data-sort="sells" data-order="desc" style="width: 80px;">
-                                    <span class="header-tooltip">
-                                        Sells
-                                        <span class="tooltip-icon">?</span>
-                                        <span class="tooltip-content">
-                                            Stock SALES in finance/housing companies (24 months).
+                                            Number of stock trades in finance/housing companies (24 months).<br>
+                                            Click official for detailed buy/sell breakdown.
                                             <span class="tooltip-source">Source: STOCK Act disclosures</span>
                                         </span>
                                     </span>
@@ -3500,6 +3650,10 @@
                         <button class="admin-tab" data-admin-panel="unmatched-entities">
                             <i class="fas fa-question-circle"></i> Unmatched
                         </button>
+                        <button class="admin-tab" data-admin-panel="review-queue">
+                            <i class="fas fa-clipboard-check"></i> Weekly Review
+                            <span id="review-queue-badge" class="review-badge" style="display: none;">0</span>
+                        </button>
                     </div>
 
                     <!-- Merge Officials Panel -->
@@ -3709,6 +3863,57 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Weekly Review Queue Panel -->
+                    <div id="admin-review-queue" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-clipboard-check"></i> Weekly Review Queue</h3>
+                            <p class="admin-description">
+                                Entities discovered during data collection that need manual classification.
+                                Use the three-tier system: Sector (financial/non_financial) → Sub-sector → Entity Level (industry/firm).
+                            </p>
+
+                            <div class="review-queue-stats" id="review-queue-stats">
+                                <div class="stat-box">
+                                    <span class="stat-label">PACs</span>
+                                    <span id="rq-pac-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Employers</span>
+                                    <span id="rq-employer-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Tickers</span>
+                                    <span id="rq-ticker-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-box total">
+                                    <span class="stat-label">Total</span>
+                                    <span id="rq-total-count" class="stat-value">--</span>
+                                </div>
+                            </div>
+
+                            <div class="review-queue-filters">
+                                <button class="filter-btn active" data-rq-filter="all" onclick="filterReviewQueue('all')">
+                                    All
+                                </button>
+                                <button class="filter-btn" data-rq-filter="pac" onclick="filterReviewQueue('pac')">
+                                    PACs
+                                </button>
+                                <button class="filter-btn" data-rq-filter="employer" onclick="filterReviewQueue('employer')">
+                                    Employers
+                                </button>
+                                <button class="filter-btn" data-rq-filter="ticker" onclick="filterReviewQueue('ticker')">
+                                    Tickers
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="admin-section" id="review-queue-list-section">
+                            <div id="review-queue-list" class="review-queue-list">
+                                <div class="loading">Loading review queue...</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3799,6 +4004,107 @@
     </footer>
 
     <script>
+        // ============================================================
+        // DOMAIN_MAP for Google Favicons API
+        // Maps company names to domains for logo lookup
+        // ============================================================
+        const DOMAIN_MAP = {
+            'CAPITAL ONE': 'capitalone.com',
+            'NEW YORK LIFE': 'newyorklife.com',
+            'ALLY': 'ally.com',
+            'ALLY FINANCIAL': 'ally.com',
+            'USAA': 'usaa.com',
+            'JPMORGAN': 'jpmorganchase.com',
+            'JPMORGAN CHASE': 'jpmorganchase.com',
+            'JP MORGAN': 'jpmorganchase.com',
+            'BANK OF AMERICA': 'bankofamerica.com',
+            'WELLS FARGO': 'wellsfargo.com',
+            'CITIGROUP': 'citi.com',
+            'CITI': 'citi.com',
+            'GOLDMAN SACHS': 'goldmansachs.com',
+            'MORGAN STANLEY': 'morganstanley.com',
+            'BLACKROCK': 'blackrock.com',
+            'VANGUARD': 'vanguard.com',
+            'FIDELITY': 'fidelity.com',
+            'CHARLES SCHWAB': 'schwab.com',
+            'STATE FARM': 'statefarm.com',
+            'ALLSTATE': 'allstate.com',
+            'PRUDENTIAL': 'prudential.com',
+            'METLIFE': 'metlife.com',
+            'VISA': 'visa.com',
+            'MASTERCARD': 'mastercard.com',
+            'AMERICAN EXPRESS': 'americanexpress.com',
+            'PNC': 'pnc.com',
+            'PNC FINANCIAL': 'pnc.com',
+            'TRUIST': 'truist.com',
+            'US BANK': 'usbank.com',
+            'US BANCORP': 'usbank.com',
+            'FIFTH THIRD': '53.com',
+            'REGIONS': 'regions.com',
+            'CITIZENS': 'citizensbank.com',
+            'HUNTINGTON': 'huntington.com',
+            'BLACKSTONE': 'blackstone.com',
+            'KKR': 'kkr.com',
+            'CARLYLE': 'carlyle.com',
+            'APOLLO': 'apollo.com',
+            'STATE STREET': 'statestreet.com',
+            'NORTHERN TRUST': 'northerntrust.com',
+            'T ROWE PRICE': 'troweprice.com',
+            'INVESCO': 'invesco.com',
+            'FRANKLIN TEMPLETON': 'franklintempleton.com',
+            'AFLAC': 'aflac.com',
+            'PROGRESSIVE': 'progressive.com',
+            'TRAVELERS': 'travelers.com',
+            'CIGNA': 'cigna.com',
+            'AETNA': 'aetna.com',
+            'ANTHEM': 'anthem.com',
+            'UNITEDHEALTH': 'uhc.com',
+            'HUMANA': 'humana.com',
+            'PAYPAL': 'paypal.com',
+            'DISCOVER': 'discover.com',
+            'SYNCHRONY': 'synchrony.com',
+            'ROCKET': 'rocketmortgage.com',
+            'COINBASE': 'coinbase.com',
+            'ROBINHOOD': 'robinhood.com',
+            'EDWARD JONES': 'edwardjones.com',
+            'RAYMOND JAMES': 'raymondjames.com',
+            'LPL FINANCIAL': 'lpl.com',
+            'AMERIPRISE': 'ameriprise.com'
+        };
+
+        /**
+         * Get domain for a company name to use with Google Favicons API
+         */
+        function getDomainForCompany(companyName) {
+            if (!companyName) return null;
+            const upper = companyName.toUpperCase().trim();
+            for (const [key, domain] of Object.entries(DOMAIN_MAP)) {
+                if (upper.includes(key) || key.includes(upper)) {
+                    return domain;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Extract normalized company name from PAC name
+         */
+        function extractCompanyFromPac(pacName) {
+            if (!pacName) return '';
+            let name = pacName.toUpperCase();
+            const suffixes = [
+                'POLITICAL ACTION COMMITTEE', 'FEDERAL POLITICAL ACTION COMMITTEE',
+                'FEDERAL PAC', 'GOOD GOVERNMENT FUND', 'EMPLOYEES PAC', 'EMPLOYEE PAC',
+                'PAC', '& CO.', '& CO', 'INC.', 'INC', 'CORP.', 'CORP', 'LLC', 'NA', 'N.A.'
+            ];
+            for (const suffix of suffixes) {
+                if (name.endsWith(suffix)) {
+                    name = name.slice(0, -suffix.length).trim();
+                }
+            }
+            return name.replace(/[,.\s]+$/, '');
+        }
+
         /**
          * Format official name consistently as "Last, First" format.
          * Handles various input formats:
@@ -3844,8 +4150,9 @@
             });
         });
 
-        // Sorting state - default to score (involvement_score) descending for highest scores first
-        const DEFAULT_SORT = { field: 'score', order: 'desc' };
+        // Sorting state - default to FINANCE $ (finance_contributions) descending
+        // This measures direct financial sector influence via PAC + individual contributions
+        const DEFAULT_SORT = { field: 'finance_contributions', order: 'desc' };
         let currentSort = { field: DEFAULT_SORT.field, order: DEFAULT_SORT.order };
         let allOfficials = [];
 
@@ -3905,14 +4212,24 @@
                     case 'contributions':
                     case 'total_contributions':
                         // Sort by total contributions (PAC + Individual)
-                        aVal = (a.contributions_display?.total) || (a.contributions || 0) + (a.individual_contributions_total || 0);
-                        bVal = (b.contributions_display?.total) || (b.contributions || 0) + (b.individual_contributions_total || 0);
+                        // Use contributions_display if available, otherwise fall back to raw fields
+                        // (supports both old field names and new bulk field names)
+                        aVal = (a.contributions_display?.total) ||
+                               ((a.contributions || 0) + (a.individual_contributions_total || a.total_individual || 0));
+                        bVal = (b.contributions_display?.total) ||
+                               ((b.contributions || 0) + (b.individual_contributions_total || b.total_individual || 0));
                         break;
                     case 'financial_pac':
                     case 'finance_contributions':
                         // Sort by financial sector contributions (PAC + Individual)
-                        aVal = (a.financial_sector_pac || 0) + (a.individual_financial_total || 0);
-                        bVal = (b.financial_sector_pac || 0) + (b.individual_financial_total || 0);
+                        // Use contributions_display if available, otherwise fall back to raw fields
+                        // (supports both old field names and new bulk field names)
+                        aVal = (a.contributions_display?.financial) ||
+                               ((a.financial_sector_pac || a.financial_pac_bulk || 0) +
+                                (a.individual_financial_total || a.financial_individual || 0));
+                        bVal = (b.contributions_display?.financial) ||
+                               ((b.financial_sector_pac || b.financial_pac_bulk || 0) +
+                                (b.individual_financial_total || b.financial_individual || 0));
                         break;
                     case 'financial_pct':
                         // Sort by percentage of contributions from financial sector
@@ -3924,16 +4241,9 @@
                         bVal = b.involvement_score;
                         break;
                     case 'trades':
-                        aVal = a.total_trades;
-                        bVal = b.total_trades;
-                        break;
-                    case 'buys':
-                        aVal = a.purchases_max;
-                        bVal = b.purchases_max;
-                        break;
-                    case 'sells':
-                        aVal = a.sales_max;
-                        bVal = b.sales_max;
+                        // Sort by trade count (array length)
+                        aVal = (a.trades || []).length;
+                        bVal = (b.trades || []).length;
                         break;
                     default:
                         // Default sort by score
@@ -4049,11 +4359,8 @@
                     <td class="amount-cell" style="text-align: center;">
                         <div class="sub">${formatFinancialPct(official)}</div>
                     </td>
-                    <td class="amount-cell">
-                        <div class="sub buy-amount">${official.purchases_display || formatTradeAmount(official.purchases_min, official.purchases_max)}</div>
-                    </td>
-                    <td class="amount-cell">
-                        <div class="sub sell-amount">${official.sales_display || formatTradeAmount(official.sales_min, official.sales_max)}</div>
+                    <td class="amount-cell" style="text-align: center;">
+                        <div class="sub stock-trades">${formatTradeCount(official)}</div>
                     </td>
                 </tr>
             `).join('');
@@ -4168,79 +4475,54 @@
             return `${formatK(min)} - ${formatK(max)}`;
         }
 
-        function formatTrendCell(official) {
-            // Format trend cell with trading trend and stock activity indicator
-            // Uses BOTH time-series data (trades_by_quarter) and snapshot data (finance_trend)
+        function formatTradeCount(official) {
+            // Show trade count for leaderboard - detailed breakdown on profile page
+            const trades = official.trades || [];
+            const tradeCount = trades.length;
 
-            // PRIMARY: Use time-series trade trend if available
-            const tradeTrend = official.trade_trend || 'stable';
-            const hasTrendData = official.has_trend_data || false;
-
-            // FALLBACK: Use finance_trend_direction from weekly snapshots
-            const financeTrend = official.finance_trend_direction || 'stable';
-
-            // Determine which trend to display (prioritize actual trade data)
-            let trendDirection = hasTrendData ? tradeTrend : financeTrend;
-            let trendArrow = '\u2192';  // Unicode RIGHT arrow - stable/no change default
-
-            // For time-series trade data, use arrow based on recent activity
-            if (hasTrendData) {
-                const tradesByQuarter = official.trades_by_quarter || [];
-                if (tradesByQuarter.length >= 2) {
-                    const recent = tradesByQuarter.slice(-2);
-                    const recentNet = recent.reduce((sum, q) => sum + (q.net || 0), 0);
-                    if (recentNet > 10000) {
-                        trendDirection = 'increasing';
-                        trendArrow = '\u2191';  // Unicode UP arrow
-                    } else if (recentNet < -10000) {
-                        trendDirection = 'decreasing';
-                        trendArrow = '\u2193';  // Unicode DOWN arrow
-                    }
-                }
-            } else {
-                // Use snapshot-based arrows - convert to Unicode arrows
-                const snapshotArrow = official.finance_trend_arrow;
-                if (snapshotArrow === '\u25B2' || snapshotArrow === '▲') {
-                    trendArrow = '\u2191';  // UP arrow
-                    trendDirection = 'increasing';
-                } else if (snapshotArrow === '\u25BC' || snapshotArrow === '▼') {
-                    trendArrow = '\u2193';  // DOWN arrow
-                    trendDirection = 'decreasing';
-                } else {
-                    trendArrow = '\u2192';  // RIGHT arrow for stable
-                }
+            if (tradeCount === 0) {
+                return '<span style="color: var(--ew-neutral-500);">—</span>';
             }
 
-            const stockDirection = official.stock_trend_direction || 'neutral';
-            const stockIcon = official.stock_trend_icon || '';
+            // Show count with icon
+            return `<span title="Click for details" style="cursor: pointer;">
+                <i class="fas fa-chart-line" style="color: var(--ew-neutral-500); margin-right: 4px;"></i>
+                ${tradeCount} trade${tradeCount !== 1 ? 's' : ''}
+            </span>`;
+        }
+
+        function formatTrendCell(official) {
+            // Format trend cell showing CONTRIBUTION trend only (not stock activity)
+            // Uses finance_trend_direction from weekly snapshots to show contribution changes
+
+            const financeTrend = official.finance_trend_direction || 'stable';
+            const pctChange = official.finance_pct_change || 0;
 
             // Check if no trend data is available
-            const noTrendData = !hasTrendData && !official.finance_trend_direction && !official.finance_pct_change && !official.finance_trend_arrow;
+            const noTrendData = !official.finance_trend_direction && !pctChange && !official.finance_trend_arrow;
 
-            // Map trend direction to CSS class and set appropriate title
-            let trendClass = noTrendData ? 'no-data' : 'stable';
-            let trendTitle = noTrendData ? 'No trend data available' : 'No significant change in last 6 months';
-            if (noTrendData) { trendArrow = '-'; }
-            else if (trendDirection === 'increasing') {
+            // Determine trend direction and icon
+            let trendClass = 'stable';
+            let trendIcon = '<i class="fas fa-minus"></i>';  // Stable/no change
+            let trendTitle = 'No significant change';
+
+            if (noTrendData) {
+                trendClass = 'no-data';
+                trendIcon = '-';
+                trendTitle = 'No trend data available';
+            } else if (financeTrend === 'increasing' || pctChange > 2) {
                 trendClass = 'up';
-                trendTitle = 'Score increased in last 6 months';
-            } else if (trendDirection === 'decreasing') {
+                trendIcon = '<i class="fas fa-arrow-up"></i>';
+                trendTitle = `Finance share increased${pctChange ? ' (+' + pctChange.toFixed(1) + '%)' : ''}`;
+            } else if (financeTrend === 'decreasing' || pctChange < -2) {
                 trendClass = 'down';
-                trendTitle = 'Score decreased in last 6 months';
+                trendIcon = '<i class="fas fa-arrow-down"></i>';
+                trendTitle = `Finance share decreased${pctChange ? ' (' + pctChange.toFixed(1) + '%)' : ''}`;
             }
 
-            // Map stock direction to CSS class
-            let stockClass = '';
-            if (stockDirection === 'buyer') stockClass = 'buyer';
-            else if (stockDirection === 'seller') stockClass = 'seller';
-
-            // Build tooltip content for hover
-            const tooltipContent = buildTrendTooltip(official);
-
             return `
-                <div class="trend-indicators" data-tippy-content="${tooltipContent.replace(/"/g, '&quot;')}">
-                    <span class="trend-arrow ${trendClass}" title="${trendTitle}">${trendArrow}</span>
-                    ${stockIcon && stockDirection !== 'neutral' ? `<span class="stock-indicator ${stockClass}" title="${official.net_stock_label || 'Stock activity'}">${stockIcon}</span>` : ''}
+                <div class="trend-indicators">
+                    <span class="trend-arrow ${trendClass}" title="${trendTitle}">${trendIcon}</span>
                 </div>
             `;
         }
@@ -4339,52 +4621,136 @@
         }
 
         function formatTopDonors(official) {
-            // Format top firms as chips with Tippy tooltips
-            // Shows firms the official trades stock in (from STOCK Act disclosures)
-            const donors = official.top_donors || [];
+            // Format top FINANCIAL SECTOR firms as LOGO icons with Tippy tooltips
+            // Uses Google Favicons API for company logos
+            // Combines PAC + Individual contributions from same company
 
-            if (!donors.length) {
-                // No trade data available
+            // Combine financial PACs and financial employers using extractCompanyFromPac
+            const financialPacs = official.top_financial_pacs || [];
+            const financialEmployers = official.top_financial_employers || [];
+
+            // Merge and dedupe by normalized company name
+            const firmMap = new Map();
+
+            for (const pac of financialPacs) {
+                const rawName = pac.name || pac.pac_name || '';
+                // Skip if it looks like the official's own campaign PAC
+                const officialName = (official.name || '').toUpperCase();
+                if (rawName.toUpperCase().includes(officialName.split(',')[0])) continue;
+                // Skip generic PAC names
+                if (rawName.includes('FOR CONGRESS') || rawName.includes('FOR SENATE')) continue;
+
+                // Normalize PAC name to company name
+                const companyName = extractCompanyFromPac(rawName);
+                if (!companyName) continue;
+
+                const existing = firmMap.get(companyName) || { name: companyName, pac_amount: 0, individual_amount: 0 };
+                existing.pac_amount = (existing.pac_amount || 0) + (pac.amount || 0);
+                existing.sector = pac.sector || existing.sector;
+                firmMap.set(companyName, existing);
+            }
+
+            for (const emp of financialEmployers) {
+                const rawName = (emp.name || emp.employer || '').toUpperCase().trim();
+                if (!rawName) continue;
+
+                // Check if this employer matches an existing PAC company
+                let matchedKey = null;
+                for (const [key] of firmMap) {
+                    if (rawName.includes(key) || key.includes(rawName)) {
+                        matchedKey = key;
+                        break;
+                    }
+                }
+                const companyName = matchedKey || rawName;
+
+                const existing = firmMap.get(companyName) || { name: companyName, pac_amount: 0, individual_amount: 0 };
+                existing.individual_amount = (existing.individual_amount || 0) + (emp.amount || 0);
+                existing.sector = emp.sector || existing.sector;
+                firmMap.set(companyName, existing);
+            }
+
+            // Convert to array and sort by total amount
+            const firms = Array.from(firmMap.values())
+                .map(f => ({ ...f, total: (f.pac_amount || 0) + (f.individual_amount || 0) }))
+                .filter(f => f.total > 0)
+                .sort((a, b) => b.total - a.total);
+
+            if (!firms.length) {
                 return '<span style="color: var(--ncrc-gray);">-</span>';
             }
 
-            return donors.slice(0, 3).map(donor => {
-                const name = donor.name || donor.company || 'Unknown';
-                const amount = donor.total || donor.amount || 0;
-                const tradeCount = donor.trade_count || 0;
-                const ticker = donor.ticker || '';
-                const hasOverlap = donor.stock_overlap || false;
-                const overlapClass = hasOverlap ? 'has-overlap' : '';
+            // Return up to 5 sponsor logos with tooltips
+            return firms.slice(0, 5).map(firm => {
+                const name = firm.name;
+                const domain = getDomainForCompany(name);
 
-                // Build tooltip with firm/trade details
+                // Build tooltip with PAC/Individual breakdown
                 let tooltip = `<strong>${name}</strong>`;
-                if (ticker) tooltip += ` (${ticker})`;
-                tooltip += `<br>Trade Value: ${formatDollars(amount)}`;
-                if (tradeCount > 0) tooltip += `<br>Trades: ${tradeCount}`;
-                if (donor.pac_amount) tooltip += `<br>PAC Contributions: ${formatDollars(donor.pac_amount)}`;
-                if (donor.individual_amount) tooltip += `<br>Individual Contributions: ${formatDollars(donor.individual_amount)}`;
-                tooltip += `<br><em>Click to view firm details</em>`;
+                tooltip += `<br>Total: ${formatDollars(firm.total)}`;
+                if (firm.pac_amount > 0) tooltip += `<br>PAC: ${formatDollars(firm.pac_amount)}`;
+                if (firm.individual_amount > 0) tooltip += `<br>Individual: ${formatDollars(firm.individual_amount)}`;
 
-                return `<a href="firm/${encodeURIComponent(name)}" class="donor-chip ${overlapClass}" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();">${truncateName(name)}</a>`;
+                if (domain) {
+                    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                    return `<a href="firm/${encodeURIComponent(name)}" class="sponsor-logo" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();" style="display: inline-block; width: 32px; height: 32px; margin-right: 4px; border-radius: 4px; background: white; border: 1px solid #ddd; overflow: hidden;"><img src="${faviconUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.parentElement.innerHTML='${name.substring(0,3)}'"></a>`;
+                } else {
+                    // Fallback: text abbreviation
+                    return `<a href="firm/${encodeURIComponent(name)}" class="sponsor-logo-fallback" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: 4px; border-radius: 4px; background: var(--ew-primary-100, #e8f0fe); color: var(--ew-primary-700, #1e3a5f); font-size: 10px; font-weight: 600; border: 1px solid #ddd;">${name.substring(0,3)}</a>`;
+                }
             }).join('');
         }
 
         function truncateName(name) {
-            // Truncate company names for display in chips
-            if (name.length <= 12) return name;
-            // Common abbreviations
-            const abbrevs = {
-                'Bank of America': 'BofA',
-                'JPMorgan Chase': 'JPMorgan',
-                'Goldman Sachs': 'Goldman',
-                'Morgan Stanley': 'Morgan S.',
-                'Wells Fargo': 'Wells F.',
-                'Citigroup': 'Citi',
-                'American Express': 'AmEx',
-                'Capital One': 'Cap One'
+            // Clean up PAC suffixes and return FULL name (no truncation)
+            let cleanName = name
+                .replace(/ PAC$/, '')
+                .replace(/ POLITICAL ACTION COMMITTEE$/, '')
+                .replace(/ & CO\.?$/, '')
+                .replace(/ INC\.?$/, '')
+                .replace(/ CORP\.?$/, '')
+                .replace(/ GROUP$/i, '')
+                .replace(/ CORPORATION$/, '')
+                .replace(/ LLC$/, '')
+                .replace(/ LP$/, '');
+
+            // Format to title case for readability
+            const formatTitle = (str) => {
+                return str.toLowerCase().replace(/\b[a-z]/g, c => c.toUpperCase());
             };
-            if (abbrevs[name]) return abbrevs[name];
-            return name.slice(0, 10) + '...';
+
+            // Common abbreviations for well-known firms
+            const abbrevs = {
+                'NATIONAL ASSOCIATION OF REALTORS': 'National Assn of Realtors',
+                'AMERICAN BANKERS ASSOCIATION': 'American Bankers Assn',
+                'INDEPENDENT COMMUNITY BANKERS': 'Independent Community Bankers',
+                'MORTGAGE BANKERS ASSOCIATION': 'Mortgage Bankers Assn',
+                'CREDIT UNION NATIONAL ASSOCIATION': 'Credit Union Natl Assn',
+                'NATIONAL VENTURE CAPITAL ASSOCIATION': 'Natl Venture Capital Assn',
+                'SECURITIES INDUSTRY AND FINANCIAL MARKETS': 'SIFMA',
+                'BANK OF AMERICA': 'Bank of America',
+                'JPMORGAN CHASE': 'JPMorgan Chase',
+                'GOLDMAN SACHS': 'Goldman Sachs',
+                'MORGAN STANLEY': 'Morgan Stanley',
+                'WELLS FARGO': 'Wells Fargo',
+                'AMERICAN EXPRESS': 'American Express',
+                'CAPITAL ONE': 'Capital One',
+                'CHARLES SCHWAB': 'Charles Schwab',
+                'NORTHERN TRUST': 'Northern Trust',
+                'STATE STREET': 'State Street',
+                'BLACKROCK': 'BlackRock',
+                'BLACKSTONE': 'Blackstone',
+                'CME GROUP': 'CME Group',
+                'INTERCONTINENTAL EXCHANGE': 'ICE (Intercontinental Exchange)'
+            };
+
+            const upper = cleanName.toUpperCase();
+            for (const [key, val] of Object.entries(abbrevs)) {
+                if (upper.includes(key)) return val;
+            }
+
+            // Return full name in title case
+            return formatTitle(cleanName);
         }
 
         function getScoreClass(score) {
@@ -5926,6 +6292,215 @@
         document.querySelector('.admin-tab[data-admin-panel="unmatched-entities"]')?.addEventListener('click', () => {
             loadUnmatchedEntities();
         });
+
+        // Load review queue when Review Queue tab is clicked
+        document.querySelector('.admin-tab[data-admin-panel="review-queue"]')?.addEventListener('click', () => {
+            loadReviewQueue();
+        });
+
+        // Review Queue Functions
+        let reviewQueueData = { unknown_pacs: [], unknown_employers: [], unknown_tickers: [] };
+        let currentReviewFilter = 'all';
+
+        async function loadReviewQueue() {
+            try {
+                const response = await fetch('/electwatch/api/review-queue?limit=100');
+                const data = await response.json();
+
+                if (data.error) {
+                    document.getElementById('review-queue-list').innerHTML =
+                        `<div class="error-message"><i class="fas fa-exclamation-circle"></i> ${data.error}</div>`;
+                    return;
+                }
+
+                reviewQueueData = data;
+
+                // Update stats
+                document.getElementById('rq-pac-count').textContent = data.counts?.unknown_pacs || 0;
+                document.getElementById('rq-employer-count').textContent = data.counts?.unknown_employers || 0;
+                document.getElementById('rq-ticker-count').textContent = data.counts?.unknown_tickers || 0;
+                document.getElementById('rq-total-count').textContent = data.counts?.total || 0;
+
+                // Update badge
+                const badge = document.getElementById('review-queue-badge');
+                if (data.counts?.total > 0) {
+                    badge.textContent = data.counts.total;
+                    badge.style.display = '';
+                } else {
+                    badge.style.display = 'none';
+                }
+
+                renderReviewQueue();
+            } catch (error) {
+                console.error('Error loading review queue:', error);
+                document.getElementById('review-queue-list').innerHTML =
+                    '<div class="error-message">Failed to load review queue</div>';
+            }
+        }
+
+        function filterReviewQueue(filter) {
+            currentReviewFilter = filter;
+            document.querySelectorAll('.review-queue-filters .filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.rqFilter === filter);
+            });
+            renderReviewQueue();
+        }
+
+        function renderReviewQueue() {
+            const container = document.getElementById('review-queue-list');
+            let items = [];
+
+            if (currentReviewFilter === 'all' || currentReviewFilter === 'pac') {
+                items = items.concat((reviewQueueData.unknown_pacs || []).map(p => ({...p, type: 'pac'})));
+            }
+            if (currentReviewFilter === 'all' || currentReviewFilter === 'employer') {
+                items = items.concat((reviewQueueData.unknown_employers || []).map(e => ({...e, type: 'employer'})));
+            }
+            if (currentReviewFilter === 'all' || currentReviewFilter === 'ticker') {
+                items = items.concat((reviewQueueData.unknown_tickers || []).map(t => ({...t, type: 'ticker'})));
+            }
+
+            // Sort by amount descending
+            items.sort((a, b) => {
+                const aAmt = a.total_amount || a.total_amount_min || 0;
+                const bAmt = b.total_amount || b.total_amount_min || 0;
+                return bAmt - aAmt;
+            });
+
+            if (items.length === 0) {
+                container.innerHTML = '<div class="empty-message"><i class="fas fa-check-circle"></i> No items pending review</div>';
+                return;
+            }
+
+            container.innerHTML = items.map((item, idx) => {
+                const name = item.name || item.ticker || 'Unknown';
+                const amount = item.total_amount || item.total_amount_min || 0;
+                const company = item.company || '';
+
+                return `
+                    <div class="review-queue-item" id="rq-item-${idx}">
+                        <div class="review-queue-item-header">
+                            <span class="review-queue-item-name">${name}${company ? ` (${company})` : ''}</span>
+                            <span class="review-queue-item-type ${item.type}">${item.type}</span>
+                        </div>
+                        <div class="review-queue-item-stats">
+                            <span><i class="fas fa-dollar-sign"></i> $${amount.toLocaleString()}</span>
+                            <span><i class="fas fa-users"></i> ${item.official_count || 0} officials</span>
+                            <span><i class="fas fa-list"></i> ${item.transaction_count || 0} transactions</span>
+                        </div>
+                        <div class="review-queue-item-actions">
+                            <select id="rq-sector-${idx}" onchange="updateSubSectors(${idx})">
+                                <option value="">-- Sector --</option>
+                                <option value="financial">Financial</option>
+                                <option value="non_financial">Non-Financial</option>
+                            </select>
+                            <select id="rq-subsector-${idx}" disabled>
+                                <option value="">-- Sub-sector --</option>
+                            </select>
+                            <select id="rq-level-${idx}">
+                                <option value="">-- Level --</option>
+                                <option value="firm" ${item.type === 'ticker' ? 'selected' : ''}>Firm</option>
+                                <option value="industry">Industry</option>
+                            </select>
+                            <button class="btn-decide btn-include" onclick="submitReviewDecision(${idx}, '${item.type}', '${name.replace(/'/g, "\\'")}', true)">
+                                <i class="fas fa-check"></i> Include
+                            </button>
+                            <button class="btn-decide btn-exclude" onclick="submitReviewDecision(${idx}, '${item.type}', '${name.replace(/'/g, "\\'")}', false)">
+                                <i class="fas fa-times"></i> Exclude
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        const subSectorOptions = {
+            financial: [
+                'banking', 'mortgage', 'consumer_lending', 'payday', 'fintech',
+                'credit_reporting', 'debt_collection', 'payments', 'investment_banking',
+                'crypto', 'housing', 'real_estate', 'insurance', 'community_development'
+            ],
+            non_financial: []
+        };
+
+        function updateSubSectors(idx) {
+            const sectorSelect = document.getElementById(`rq-sector-${idx}`);
+            const subSectorSelect = document.getElementById(`rq-subsector-${idx}`);
+            const sector = sectorSelect.value;
+
+            if (sector && subSectorOptions[sector] && subSectorOptions[sector].length > 0) {
+                subSectorSelect.disabled = false;
+                subSectorSelect.innerHTML = '<option value="">-- Sub-sector --</option>' +
+                    subSectorOptions[sector].map(s => `<option value="${s}">${s.replace(/_/g, ' ')}</option>`).join('');
+            } else {
+                subSectorSelect.disabled = true;
+                subSectorSelect.innerHTML = '<option value="">-- Sub-sector --</option>';
+            }
+        }
+
+        async function submitReviewDecision(idx, entityType, entityName, include) {
+            const sector = document.getElementById(`rq-sector-${idx}`).value;
+            const subSector = document.getElementById(`rq-subsector-${idx}`).value;
+            const entityLevel = document.getElementById(`rq-level-${idx}`).value;
+
+            if (include && sector === 'financial' && !subSector) {
+                alert('Please select a sub-sector for financial entities');
+                return;
+            }
+
+            try {
+                const response = await fetch('/electwatch/api/review-queue/decide', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        entity_type: entityType,
+                        entity_name: entityName,
+                        include: include,
+                        sector: sector || null,
+                        sub_sector: subSector || null,
+                        entity_level: entityLevel || null
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Mark item as decided
+                    document.getElementById(`rq-item-${idx}`).classList.add('decided');
+                    document.getElementById(`rq-item-${idx}`).innerHTML =
+                        `<div style="padding: 10px; color: var(--ew-success);"><i class="fas fa-check-circle"></i> Decided: ${include ? 'Include' : 'Exclude'} - ${entityName}</div>`;
+                } else {
+                    alert('Error: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error submitting decision:', error);
+                alert('Failed to submit decision');
+            }
+        }
+
+        // Load review queue count on page load (for badges)
+        async function loadReviewQueueCount() {
+            try {
+                const response = await fetch('/electwatch/api/review-queue/count');
+                const data = await response.json();
+
+                // Update admin sub-tab badge
+                const subTabBadge = document.getElementById('review-queue-badge');
+                if (subTabBadge && data.total > 0) {
+                    subTabBadge.textContent = data.total;
+                    subTabBadge.style.display = '';
+                }
+
+                // Update main nav admin badge (iOS-style)
+                const navBadge = document.getElementById('admin-review-badge');
+                if (navBadge && data.total > 0) {
+                    navBadge.textContent = data.total;
+                    navBadge.style.display = '';
+                }
+            } catch (error) {
+                console.log('Could not load review queue count');
+            }
+        }
+        loadReviewQueueCount();
 
         {% endif %}
     </script>

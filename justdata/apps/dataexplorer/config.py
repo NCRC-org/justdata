@@ -21,13 +21,16 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')  # New optimized project
 USE_SUMMARY_TABLES = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
-HMDA_DATASET = "hmda"
-HMDA_TABLE = "hmda"
-SB_DATASET = "sb"
-SB_DISCLOSURE_TABLE = "disclosure"
-SB_AGGREGATE_TABLE = "aggregate"
-BRANCHES_DATASET = "branches"
-BRANCHES_TABLE = "sod25"
+# HMDA data - de_hmda table in dataexplorer dataset
+HMDA_DATASET = "dataexplorer"
+HMDA_TABLE = "de_hmda"
+# Small Business data - sb_county_summary in bizsight dataset
+SB_DATASET = "bizsight"
+SB_DISCLOSURE_TABLE = "sb_county_summary"
+SB_AGGREGATE_TABLE = "sb_county_summary"
+# Branch data - sod table in branchsight dataset
+BRANCHES_DATASET = "branchsight"
+BRANCHES_TABLE = "sod"
 
 # Data Type Configuration
 HMDA_YEARS = list(range(2018, 2025))  # 2018-2024 (most recent is 2024)

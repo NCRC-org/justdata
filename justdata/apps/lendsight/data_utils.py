@@ -32,7 +32,7 @@ def find_exact_county_match(county_input: str) -> list:
         escaped_county = escape_sql_string(county_input)
         county_query = f"""
             SELECT DISTINCT county_state, geoid5
-            FROM geo.cbsa_to_county 
+            FROM shared.cbsa_to_county 
             WHERE county_state = '{escaped_county}'
             ORDER BY geoid5
             LIMIT 1
@@ -59,7 +59,7 @@ def find_exact_county_match(county_input: str) -> list:
                 print(f"No exact match found for {county_input}, trying case-insensitive match...")
                 county_query_ci = f"""
                     SELECT DISTINCT county_state, geoid5
-                    FROM geo.cbsa_to_county
+                    FROM shared.cbsa_to_county
                     WHERE LOWER(county_state) = LOWER('{escaped_county}')
                     ORDER BY geoid5
                     LIMIT 1
@@ -101,7 +101,7 @@ def get_available_counties() -> List[Dict[str, str]]:
             geoid5,
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-        FROM geo.cbsa_to_county 
+        FROM shared.cbsa_to_county 
         WHERE geoid5 IS NOT NULL
             AND county_state IS NOT NULL
             AND TRIM(county_state) != ''
@@ -240,7 +240,7 @@ def get_available_metro_areas() -> List[Dict[str, Any]]:
             CAST(cbsa_code AS STRING) as cbsa_code,
             cbsa_name,
             ARRAY_AGG(DISTINCT county_state ORDER BY county_state) as counties
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE cbsa_code IS NOT NULL 
             AND cbsa_name IS NOT NULL
             AND TRIM(cbsa_name) != ''
@@ -296,7 +296,7 @@ def expand_state_to_counties(state_code: str) -> List[str]:
         state_code_padded = state_code.zfill(2)
         query = f"""
         SELECT DISTINCT county_state
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
         ORDER BY county_state
         """
@@ -326,7 +326,7 @@ def expand_metro_to_counties(cbsa_code: str) -> List[str]:
         # Cast cbsa_code to string for comparison (it might be stored as integer)
         query = f"""
         SELECT DISTINCT county_state
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
         ORDER BY county_state
         """

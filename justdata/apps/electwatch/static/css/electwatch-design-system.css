@@ -1,0 +1,709 @@
+/**
+ * ElectWatch Design System
+ * Version: 1.0.0
+ * Created: 2026-02-02
+ *
+ * This file contains the core design tokens and base styles for ElectWatch.
+ * See ELECTWATCH_COMPLETE_RECONSTRUCTION.md for full documentation.
+ */
+
+/* ==========================================================================
+   1. CSS VARIABLES (Design Tokens)
+   ========================================================================== */
+
+:root {
+    /* Primary (Navy Blue) */
+    --ew-primary-50: #f0f4f8;
+    --ew-primary-100: #d9e2ec;
+    --ew-primary-200: #bcccdc;
+    --ew-primary-300: #9fb3c8;
+    --ew-primary-400: #829ab1;
+    --ew-primary-500: #627d98;
+    --ew-primary-600: #486581;
+    --ew-primary-700: #334e68;  /* Main brand color */
+    --ew-primary-800: #243b53;
+    --ew-primary-900: #102a43;
+
+    /* Neutral (Gray) */
+    --ew-neutral-50: #f8f9fa;
+    --ew-neutral-100: #f1f3f5;
+    --ew-neutral-200: #e9ecef;
+    --ew-neutral-300: #dee2e6;
+    --ew-neutral-400: #ced4da;
+    --ew-neutral-500: #adb5bd;
+    --ew-neutral-600: #868e96;
+    --ew-neutral-700: #495057;
+    --ew-neutral-800: #343a40;
+    --ew-neutral-900: #212529;
+
+    /* Semantic */
+    --ew-success-600: #38a169;  /* Green - Buy */
+    --ew-danger-600: #e53e3e;   /* Red - Sell */
+    --ew-warning-600: #d69e2e;  /* Yellow/Orange */
+
+    /* Party colors */
+    --ew-democrat: #2166ac;
+    --ew-republican: #b2182b;
+    --ew-independent: #7f7f7f;
+
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;  /* Pills, circles */
+
+    /* Spacing Scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
+    --space-8: 32px;
+    --space-12: 48px;
+    --space-16: 64px;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+    /* Transitions */
+    --transition-fast: 0.15s ease;
+    --transition-normal: 0.2s ease;
+    --transition-slow: 0.3s ease;
+}
+
+/* ==========================================================================
+   2. BASE TYPOGRAPHY
+   ========================================================================== */
+
+.ew-app {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--ew-neutral-800);
+    background: var(--ew-neutral-50);
+}
+
+.ew-app h1 { font-size: 28px; font-weight: 700; margin: 0 0 var(--space-4) 0; }
+.ew-app h2 { font-size: 22px; font-weight: 600; margin: 0 0 var(--space-3) 0; }
+.ew-app h3 { font-size: 18px; font-weight: 600; margin: 0 0 var(--space-3) 0; }
+.ew-app h4 { font-size: 16px; font-weight: 600; margin: 0 0 var(--space-2) 0; }
+
+.stat-value { font-size: 28px; font-weight: 700; }
+.stat-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ==========================================================================
+   3. NAVIGATION BAR
+   ========================================================================== */
+
+.ew-navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-6);
+    height: 64px;
+    background: white;
+    border-bottom: 1px solid var(--ew-neutral-200);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.ew-navbar-brand a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    text-decoration: none;
+    color: var(--ew-primary-700);
+    font-weight: 700;
+    font-size: 18px;
+}
+
+.ew-navbar-brand img {
+    height: 32px;
+}
+
+.ew-navbar-links {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.nav-link {
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    color: var(--ew-neutral-600);
+    font-weight: 500;
+    transition: background var(--transition-normal), color var(--transition-normal);
+}
+
+.nav-link:hover {
+    background: var(--ew-neutral-100);
+    color: var(--ew-neutral-800);
+}
+
+.nav-link.active {
+    background: var(--ew-primary-100);
+    color: var(--ew-primary-700);
+}
+
+.ew-navbar-search input {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--ew-neutral-300);
+    border-radius: var(--radius-md);
+    width: 200px;
+    font-size: 14px;
+}
+
+.ew-navbar-search input:focus {
+    outline: none;
+    border-color: var(--ew-primary-400);
+    box-shadow: 0 0 0 3px var(--ew-primary-100);
+}
+
+/* ==========================================================================
+   4. PAGE LAYOUT
+   ========================================================================== */
+
+.ew-page-header {
+    padding: var(--space-6);
+    background: white;
+    border-bottom: 1px solid var(--ew-neutral-200);
+}
+
+.ew-page-header h1 {
+    margin-bottom: var(--space-2);
+}
+
+.ew-page-header .subtitle {
+    color: var(--ew-neutral-600);
+    font-size: 15px;
+}
+
+.ew-page-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: var(--space-6);
+}
+
+/* ==========================================================================
+   5. CARDS & CONTAINERS
+   ========================================================================== */
+
+.ew-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+}
+
+.ew-card-header {
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--ew-neutral-100);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ew-card-body {
+    padding: var(--space-5);
+}
+
+/* ==========================================================================
+   6. STATS CARDS
+   ========================================================================== */
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: var(--space-4);
+    padding: var(--space-6);
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.stat-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: var(--space-5);
+    text-align: center;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    flex-direction: column;
+    min-height: 140px;
+}
+
+.stat-card .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--ew-primary-700);
+    margin-bottom: var(--space-1);
+}
+
+.stat-card .stat-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ew-neutral-600);
+    margin-bottom: var(--space-1);
+}
+
+.stat-card .stat-sublabel {
+    font-size: 12px;
+    color: var(--ew-neutral-500);
+}
+
+.stat-card .stat-source {
+    font-size: 10px;
+    color: var(--ew-neutral-400);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-top: auto;
+    padding-top: var(--space-2);
+}
+
+/* Highlighted stat card */
+.stat-card.highlighted {
+    background: var(--ew-primary-700);
+}
+
+.stat-card.highlighted .stat-value,
+.stat-card.highlighted .stat-label {
+    color: white;
+}
+
+.stat-card.highlighted .stat-sublabel {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.stat-card.highlighted .stat-source {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+/* ==========================================================================
+   7. TABLES
+   ========================================================================== */
+
+/* Leaderboard Table */
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+}
+
+.leaderboard-table thead {
+    background: var(--ew-neutral-50);
+    border-bottom: 1px solid var(--ew-neutral-200);
+}
+
+.leaderboard-table th {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ew-neutral-600);
+}
+
+.leaderboard-table td {
+    padding: var(--space-4);
+    border-bottom: 1px solid var(--ew-neutral-100);
+    vertical-align: middle;
+}
+
+.leaderboard-table tbody tr:hover {
+    background: var(--ew-neutral-50);
+    cursor: pointer;
+}
+
+/* Column widths */
+.rank-cell { width: 50px; text-align: center; font-weight: 600; color: var(--ew-neutral-500); }
+.official-cell { width: 160px; }
+.sponsors-cell { width: 250px; }
+.committee-cell { width: 120px; }
+.total-cell { width: 100px; text-align: right; font-weight: 600; }
+.financial-cell { width: 100px; text-align: right; font-weight: 600; color: var(--ew-primary-700); }
+.percent-cell { width: 60px; text-align: right; font-weight: 600; }
+
+/* Data Table (generic) */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--ew-neutral-600);
+    background: var(--ew-neutral-50);
+    border-bottom: 1px solid var(--ew-neutral-200);
+}
+
+.data-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--ew-neutral-100);
+    font-size: 14px;
+}
+
+.data-table tbody tr:hover {
+    background: var(--ew-neutral-50);
+}
+
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+.font-bold { font-weight: 600; }
+
+/* ==========================================================================
+   8. OFFICIAL INFO (in table rows)
+   ========================================================================== */
+
+.official-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.official-photo {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--ew-neutral-200);
+}
+
+.official-name {
+    font-weight: 600;
+    color: var(--ew-neutral-800);
+    text-decoration: none;
+}
+
+.official-name:hover {
+    color: var(--ew-primary-700);
+    text-decoration: underline;
+}
+
+.official-party-state {
+    display: block;
+    font-size: 12px;
+    color: var(--ew-neutral-500);
+}
+
+/* ==========================================================================
+   9. COMMITTEE BADGES
+   ========================================================================== */
+
+.committee-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 6px 12px;
+    border-radius: var(--radius-full);
+    background: var(--ew-neutral-100);
+    border: 1px solid var(--ew-neutral-200);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ew-neutral-700);
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.committee-badge.financial {
+    background: var(--ew-primary-50);
+    border-color: var(--ew-primary-200);
+    color: var(--ew-primary-700);
+}
+
+.committee-badge:hover {
+    background: var(--ew-primary-100);
+}
+
+/* ==========================================================================
+   10. SECTION HEADERS (with source labels)
+   ========================================================================== */
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--ew-neutral-200);
+}
+
+.section-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ew-neutral-800);
+}
+
+.section-header h3 i {
+    margin-right: var(--space-2);
+    color: var(--ew-neutral-500);
+}
+
+.section-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+}
+
+.source-label {
+    font-size: 12px;
+    color: var(--ew-neutral-500);
+}
+
+.source-label a {
+    color: var(--ew-primary-600);
+    text-decoration: none;
+}
+
+.source-label a:hover {
+    text-decoration: underline;
+}
+
+.view-all-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ew-primary-700);
+    background: var(--ew-primary-50);
+    border: 1px solid var(--ew-primary-200);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background var(--transition-normal);
+}
+
+.view-all-btn:hover {
+    background: var(--ew-primary-100);
+}
+
+/* ==========================================================================
+   11. DATA DISCLAIMER
+   ========================================================================== */
+
+.data-disclaimer {
+    background: var(--ew-neutral-50);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-5);
+    margin-top: var(--space-6);
+}
+
+.data-disclaimer p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ew-neutral-600);
+    line-height: 1.6;
+}
+
+.data-disclaimer a {
+    color: var(--ew-primary-600);
+}
+
+/* ==========================================================================
+   12. MODALS
+   ========================================================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-overlay.active {
+    display: flex;
+}
+
+.modal-content {
+    background: white;
+    border-radius: var(--radius-lg);
+    max-width: 900px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-4) var(--space-5);
+    border-bottom: 1px solid var(--ew-neutral-200);
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--ew-neutral-100);
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-close:hover {
+    background: var(--ew-neutral-200);
+}
+
+.modal-body {
+    padding: var(--space-5);
+    overflow-y: auto;
+}
+
+/* ==========================================================================
+   13. FILTERS
+   ========================================================================== */
+
+.filter-bar {
+    display: flex;
+    gap: var(--space-3);
+    padding: var(--space-4);
+    background: white;
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.filter-bar input,
+.filter-bar select {
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--ew-neutral-300);
+    border-radius: var(--radius-md);
+    font-size: 14px;
+}
+
+.filter-bar input:focus,
+.filter-bar select:focus {
+    outline: none;
+    border-color: var(--ew-primary-400);
+}
+
+/* ==========================================================================
+   14. RESPONSIVE BREAKPOINTS
+   ========================================================================== */
+
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .ew-navbar-search {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .stat-card .stat-value {
+        font-size: 22px;
+    }
+
+    .ew-navbar {
+        padding: 0 var(--space-4);
+    }
+
+    .ew-navbar-links {
+        gap: var(--space-1);
+    }
+
+    .nav-link {
+        padding: var(--space-2);
+        font-size: 13px;
+    }
+
+    /* Mobile modal: slide up from bottom */
+    .modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .modal-content {
+        border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+        max-height: 90vh;
+    }
+
+    /* Stack filter bar vertically */
+    .filter-bar {
+        flex-direction: column;
+    }
+
+    .filter-bar input,
+    .filter-bar select {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .ew-page-content {
+        padding: var(--space-4);
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
+    }
+
+    .leaderboard-table {
+        font-size: 13px;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .official-photo {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* ==========================================================================
+   15. UTILITY CLASSES
+   ========================================================================== */
+
+.ew-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+}
+
+.ew-flex { display: flex; }
+.ew-flex-center { display: flex; align-items: center; justify-content: center; }
+.ew-gap-2 { gap: var(--space-2); }
+.ew-gap-4 { gap: var(--space-4); }
+.ew-mt-4 { margin-top: var(--space-4); }
+.ew-mb-4 { margin-bottom: var(--space-4); }
+.ew-p-4 { padding: var(--space-4); }

@@ -31,7 +31,7 @@ SELECT DISTINCT
     county_state,
     cbsa_code,
     CBSA as cbsa_name
-FROM `{PROJECT_ID}.geo.cbsa_to_county`
+FROM `{PROJECT_ID}.shared.cbsa_to_county`
 WHERE state = 'Connecticut' OR state = 'CT' OR CAST(geoid5 AS STRING) LIKE '09%'
 ORDER BY geoid5
 """
@@ -94,7 +94,7 @@ SELECT
     c.county_state,
     COUNT(*) as total_loans
 FROM `{PROJECT_ID}.hmda.hmda` h
-LEFT JOIN `{PROJECT_ID}.geo.cbsa_to_county` c
+LEFT JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
     ON CAST(h.county_code AS STRING) = CAST(c.geoid5 AS STRING)
 WHERE h.activity_year IN ('2022', '2023', '2024')
   AND CAST(h.action_taken AS FLOAT64) = 1

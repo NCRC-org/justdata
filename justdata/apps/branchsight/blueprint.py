@@ -478,61 +478,97 @@ def metro_areas():
 
 @branchsight_bp.route('/counties-by-state/<state_code>')
 def counties_by_state(state_code):
-    """Get list of counties for a specific state"""
+    """Get list of counties for a specific state.
+
+    Handles both FIPS codes (e.g., '11' for DC) and state names.
+    """
     try:
         from urllib.parse import unquote
         from justdata.shared.utils.bigquery_client import get_bigquery_client
 
-        state_code = unquote(state_code)
+        state_code = unquote(str(state_code)).strip()
+        print(f"[DEBUG] branchsight/counties-by-state called with state_code: '{state_code}'")
 
-        # Try to query BigQuery directly
-        try:
-            client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID)
+
+        # Check if state_code is a numeric FIPS code (2 digits) or a state name
+        is_numeric_code = state_code.isdigit() and len(state_code) <= 2
+
+        if is_numeric_code:
+            # Use geoid5 to match by state FIPS code (first 2 digits of geoid5)
+            state_code_padded = state_code.zfill(2)
+            print(f"[DEBUG] Using state FIPS code: {state_code_padded}")
             query = f"""
-            SELECT DISTINCT county_state
-            FROM geo.cbsa_to_county
-            WHERE LOWER(SPLIT(county_state, ',')[SAFE_OFFSET(1)]) = LOWER('{state_code}')
+            SELECT DISTINCT
+                county_state,
+                geoid5,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
+            FROM `justdata-ncrc.shared.cbsa_to_county`
+            WHERE geoid5 IS NOT NULL
+                AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
+                AND county_state IS NOT NULL
+                AND TRIM(county_state) != ''
             ORDER BY county_state
             """
-            query_job = client.query(query)
-            results = query_job.result()
-            counties = [row.county_state for row in results]
-            if counties:
-                return jsonify(counties)
-        except Exception as bq_error:
-            pass
+        else:
+            # Use state name to match
+            print(f"[DEBUG] Using state name: {state_code}")
+            escaped_state_code = state_code.replace("'", "''")
+            query = f"""
+            SELECT DISTINCT
+                county_state,
+                geoid5,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
+                SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
+            FROM `justdata-ncrc.shared.cbsa_to_county`
+            WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state_code}')
+                AND county_state IS NOT NULL
+                AND TRIM(county_state) != ''
+            ORDER BY county_state
+            """
 
-        # Fallback: filter from available counties
-        all_counties = get_available_counties()
-        filtered = []
-        for county in all_counties:
-            if isinstance(county, dict):
-                county_name = county.get('name', '')
-                state_fips = county.get('state_fips', '')
-                if state_code.isdigit() and len(state_code) <= 2:
-                    state_code_padded = state_code.zfill(2)
-                    if state_fips and state_fips == state_code_padded:
-                        filtered.append(county)
-                else:
-                    if ',' in county_name:
-                        _, state_name = county_name.split(',', 1)
-                        state_name = state_name.strip()
-                        if state_name.lower() == state_code.lower():
-                            filtered.append(county)
-            else:
-                if ',' in county:
-                    county_name, state_name = county.split(',', 1)
-                    state_name = state_name.strip()
-                    if state_name.lower() == state_code.lower():
-                        filtered.append(county)
-        return jsonify(filtered)
+        query_job = client.query(query)
+        results = list(query_job.result())
+
+        # Return counties with proper structure
+        counties = []
+        seen_geoids = set()
+
+        for row in results:
+            geoid5 = str(row.geoid5).zfill(5) if row.geoid5 else None
+
+            if geoid5 and geoid5 in seen_geoids:
+                continue
+            if geoid5:
+                seen_geoids.add(geoid5)
+
+            state_fips = row.state_fips if hasattr(row, 'state_fips') else (geoid5[:2] if geoid5 and len(geoid5) >= 2 else None)
+            county_fips = row.county_fips if hasattr(row, 'county_fips') else (geoid5[2:] if geoid5 and len(geoid5) >= 5 else None)
+
+            county_name = ''
+            state_name = ''
+            if row.county_state and ',' in row.county_state:
+                parts = row.county_state.split(',', 1)
+                county_name = parts[0].strip()
+                state_name = parts[1].strip() if len(parts) > 1 else ''
+
+            counties.append({
+                'geoid5': geoid5,
+                'name': row.county_state,
+                'county_name': county_name,
+                'state_name': state_name,
+                'state_fips': state_fips,
+                'county_fips': county_fips
+            })
+
+        print(f"[DEBUG] branchsight/counties-by-state: Found {len(counties)} counties for state_code: {state_code}")
+        return jsonify(counties)
     except Exception as e:
         import traceback
         error_msg = str(e).encode('ascii', 'ignore').decode('ascii')
-        try:
-            traceback.print_exc()
-        except:
-            pass
+        print(f"[ERROR] branchsight/counties-by-state error: {error_msg}")
+        traceback.print_exc()
         return jsonify({'error': error_msg}), 500
 
 

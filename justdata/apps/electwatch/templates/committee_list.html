@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Committees | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ElectWatch Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/electwatch-design-system.css') }}">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ew-neutral-50);
+            color: var(--ew-neutral-800);
+            min-height: 100vh;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page-header {
+            background: white;
+            padding: 24px;
+            border-bottom: 1px solid var(--ew-neutral-200);
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+            margin: 0 0 8px 0;
+        }
+
+        .page-header .subtitle {
+            color: var(--ew-neutral-600);
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar select {
+            padding: 8px 12px;
+            border: 1px solid var(--ew-neutral-300);
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .committees-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .committees-table thead {
+            background: var(--ew-neutral-50);
+            border-bottom: 1px solid var(--ew-neutral-200);
+        }
+
+        .committees-table th {
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--ew-neutral-600);
+        }
+
+        .committees-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--ew-neutral-100);
+            vertical-align: middle;
+        }
+
+        .committees-table tbody tr:hover {
+            background: var(--ew-neutral-50);
+            cursor: pointer;
+        }
+
+        .committee-name-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .committee-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            background: var(--ew-primary-100);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .committee-icon.house {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .committee-icon.senate {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .committee-info h3 {
+            margin: 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--ew-neutral-800);
+        }
+
+        .committee-info h3 a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .committee-info h3 a:hover {
+            color: var(--ew-primary-700);
+        }
+
+        .committee-chamber {
+            font-size: 12px;
+            color: var(--ew-neutral-500);
+        }
+
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .font-bold { font-weight: 600; }
+
+        .total-cell {
+            font-weight: 700;
+            color: var(--ew-primary-700);
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ew-neutral-600);
+        }
+
+        .loading::after {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--ew-neutral-200);
+            border-top-color: var(--ew-primary-700);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 16px;
+            }
+
+            .filter-bar {
+                flex-direction: column;
+            }
+
+            .filter-bar select {
+                width: 100%;
+            }
+
+            .committees-table {
+                font-size: 13px;
+            }
+
+            .committees-table th,
+            .committees-table td {
+                padding: 12px 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include "shared_header.html" %}
+
+    <div class="page-header">
+        <h1>Congressional Committees</h1>
+        <p class="subtitle">Financial sector contributions to members by committee</p>
+    </div>
+
+    <main class="main-content">
+        <div class="filter-bar">
+            <select id="chamber-filter">
+                <option value="all">All Chambers</option>
+                <option value="house">House</option>
+                <option value="senate">Senate</option>
+            </select>
+            <select id="sort-by">
+                <option value="total">Sort by: Financial Total</option>
+                <option value="members">Sort by: Member Count</option>
+                <option value="name">Sort by: Name</option>
+            </select>
+        </div>
+
+        <div id="loading" class="loading">Loading committees...</div>
+
+        <table id="committees-table" class="committees-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Committee</th>
+                    <th class="text-center">Members</th>
+                    <th class="text-right">PAC Total</th>
+                    <th class="text-right">Indiv. Total</th>
+                    <th class="text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody id="committees-body">
+            </tbody>
+        </table>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background: #1E3D5C; color: white; padding: 0; margin-top: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
+            <div style="text-align: left;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <div style="display: flex; gap: 16px; font-size: 13px;">
+                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
+                </div>
+                <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
+                    Created by Jay Richardson &amp; Jad Edlebi
+                </p>
+            </div>
+            <div>
+                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; opacity: 0.9;">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let allCommittees = [];
+
+        async function loadCommittees() {
+            try {
+                const response = await fetch('/electwatch/api/committees');
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('committees-table').style.display = 'table';
+
+                if (data.success && data.committees) {
+                    allCommittees = data.committees;
+                    renderCommittees(allCommittees);
+                } else {
+                    document.getElementById('committees-body').innerHTML =
+                        '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--ew-neutral-500);">No committees found</td></tr>';
+                }
+            } catch (error) {
+                console.error('Error loading committees:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('committees-table').style.display = 'table';
+                document.getElementById('committees-body').innerHTML =
+                    '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--ew-neutral-500);">Error loading committees</td></tr>';
+            }
+        }
+
+        function renderCommittees(committees) {
+            const tbody = document.getElementById('committees-body');
+
+            if (!committees || committees.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 40px; color: var(--ew-neutral-500);">No committees found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = committees.map(committee => {
+                const chamber = committee.chamber || 'house';
+                const chamberLabel = chamber === 'senate' ? 'Senate' : 'House';
+                const icon = chamber === 'senate' ? 'fas fa-landmark' : 'fas fa-building-columns';
+
+                return `
+                    <tr onclick="window.location='/electwatch/committee/${encodeURIComponent(committee.id)}'">
+                        <td>
+                            <div class="committee-name-cell">
+                                <div class="committee-icon ${chamber}">
+                                    <i class="${icon}"></i>
+                                </div>
+                                <div class="committee-info">
+                                    <h3><a href="/electwatch/committee/${encodeURIComponent(committee.id)}">${committee.name}</a></h3>
+                                    <span class="committee-chamber">${chamberLabel}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-center">${committee.members_count || 0}</td>
+                        <td class="text-right">${formatAmount(committee.total_pac || 0)}</td>
+                        <td class="text-right">${formatAmount(committee.total_individual || 0)}</td>
+                        <td class="text-right total-cell">${formatAmount(committee.total_contributions || 0)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function formatAmount(amount) {
+            if (!amount || amount === 0) return '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${Math.round(amount / 1000)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function applyFilters() {
+            const chamberFilter = document.getElementById('chamber-filter').value;
+            const sortBy = document.getElementById('sort-by').value;
+
+            let filtered = [...allCommittees];
+
+            // Filter by chamber
+            if (chamberFilter !== 'all') {
+                filtered = filtered.filter(c => c.chamber === chamberFilter);
+            }
+
+            // Sort
+            if (sortBy === 'total') {
+                filtered.sort((a, b) => (b.total_contributions || 0) - (a.total_contributions || 0));
+            } else if (sortBy === 'members') {
+                filtered.sort((a, b) => (b.members_count || 0) - (a.members_count || 0));
+            } else if (sortBy === 'name') {
+                filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+            }
+
+            renderCommittees(filtered);
+        }
+
+        // Event listeners
+        document.getElementById('chamber-filter').addEventListener('change', applyFilters);
+        document.getElementById('sort-by').addEventListener('change', applyFilters);
+
+        // Load data
+        loadCommittees();
+    </script>
+</body>
+</html>

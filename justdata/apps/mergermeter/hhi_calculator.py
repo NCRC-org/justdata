@@ -124,9 +124,9 @@ def get_county_deposit_data(
     """
     
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         results = execute_query(client, query)
-        
+
         if not results:
             print(f"[HHI] No deposit data found for {len(county_geoids)} counties, year {year}")
             print(f"[HHI] Query was for RSSDs: {acquirer_rssd}, {target_rssd}")

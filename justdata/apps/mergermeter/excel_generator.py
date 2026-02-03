@@ -54,10 +54,10 @@ def _get_cbsa_name_from_code(cbsa_code: str, cbsa_name_cache: Dict[str, str] = N
     
     # Try to look up from BigQuery
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         query = f"""
         SELECT DISTINCT cbsa as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{cbsa_code_str}'
         LIMIT 1
         """

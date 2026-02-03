@@ -241,12 +241,11 @@ def get_bigquery_client(project_id: str = None, app_name: str = None):
             _app_client_cache[cache_key] = client
             return client
         
-        # Try to find credentials file in common locations (legacy support)
+        # Try to find credentials file in common locations (fallback - prefer environment variables)
         possible_paths = [
-            Path("C:/Code/Dream/config/credentials/hdma1-242116-74024e2eb88f.json"),
-            Path("C:/DREAM/config/credentials/hdma1-242116-74024e2eb88f.json"),
-            Path("config/credentials/hdma1-242116-74024e2eb88f.json"),
-            Path(__file__).parent.parent.parent / "config" / "credentials" / "hdma1-242116-74024e2eb88f.json",
+            Path("config/credentials/bigquery_service_account.json"),
+            Path(__file__).parent.parent.parent / "config" / "credentials" / "bigquery_service_account.json",
+            Path(__file__).parent.parent.parent / "credentials" / "bigquery_service_account.json",
         ]
         
         cred_path = None

@@ -1,0 +1,147 @@
+<!-- ElectWatch Sub-Navigation Component -->
+<!-- Provides navigation between ElectWatch views (Leaderboard, Committees, Industries) -->
+<!-- Include this in detail pages (profile, committee, industry, firm) to prevent user stranding -->
+<style>
+    :root {
+        /* ElectWatch Design System Colors */
+        --ew-primary-100: #d9e2ec;
+        --ew-primary-700: #334e68;
+        --ew-neutral-100: #f1f3f5;
+        --ew-neutral-200: #e9ecef;
+        --ew-neutral-300: #dee2e6;
+        --ew-neutral-600: #868e96;
+        --ew-neutral-800: #343a40;
+        --radius-md: 8px;
+    }
+
+    .electwatch-subnav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        height: 64px;
+        background: white;
+        border-bottom: 1px solid var(--ew-neutral-200);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+
+    .electwatch-subnav-brand a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+        color: var(--ew-primary-700);
+        font-weight: 700;
+        font-size: 18px;
+    }
+
+    .electwatch-subnav-brand i {
+        font-size: 24px;
+    }
+
+    .electwatch-subnav-links {
+        display: flex;
+        gap: 8px;
+    }
+
+    .electwatch-subnav-link {
+        padding: 8px 16px;
+        border-radius: var(--radius-md);
+        text-decoration: none;
+        color: var(--ew-neutral-600);
+        font-weight: 500;
+        font-size: 14px;
+        transition: background 0.2s, color 0.2s;
+    }
+
+    .electwatch-subnav-link:hover {
+        background: var(--ew-neutral-100);
+        color: var(--ew-neutral-800);
+    }
+
+    .electwatch-subnav-link.active {
+        background: var(--ew-primary-100);
+        color: var(--ew-primary-700);
+    }
+
+    .electwatch-subnav-link i {
+        margin-right: 6px;
+    }
+
+    .electwatch-subnav-search input {
+        padding: 8px 12px;
+        border: 1px solid var(--ew-neutral-300);
+        border-radius: var(--radius-md);
+        width: 200px;
+        font-size: 14px;
+    }
+
+    .electwatch-subnav-search input:focus {
+        outline: none;
+        border-color: var(--ew-primary-700);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .electwatch-subnav {
+            padding: 0 16px;
+            height: 56px;
+        }
+
+        .electwatch-subnav-brand span {
+            display: none;
+        }
+
+        .electwatch-subnav-link {
+            padding: 6px 12px;
+            font-size: 13px;
+        }
+
+        .electwatch-subnav-search {
+            display: none;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .electwatch-subnav-link span {
+            display: none;
+        }
+
+        .electwatch-subnav-link i {
+            margin-right: 0;
+            font-size: 16px;
+        }
+
+        .electwatch-subnav-link {
+            padding: 8px 10px;
+        }
+    }
+</style>
+
+<nav class="electwatch-subnav" aria-label="ElectWatch navigation">
+    <div class="electwatch-subnav-brand">
+        <a href="/electwatch/">
+            <i class="fas fa-landmark"></i>
+            <span>ElectWatch</span>
+        </a>
+    </div>
+    <div class="electwatch-subnav-links">
+        <a href="/electwatch/" class="electwatch-subnav-link {% if active_tab == 'leaderboard' %}active{% endif %}" title="Officials Leaderboard">
+            <i class="fas fa-ranking-star"></i>
+            <span>Leaderboard</span>
+        </a>
+        <a href="/electwatch/committees" class="electwatch-subnav-link {% if active_tab == 'committees' %}active{% endif %}" title="Congressional Committees">
+            <i class="fas fa-gavel"></i>
+            <span>Committees</span>
+        </a>
+        <a href="/electwatch/industries" class="electwatch-subnav-link {% if active_tab == 'industries' %}active{% endif %}" title="Financial Industries">
+            <i class="fas fa-chart-pie"></i>
+            <span>Industries</span>
+        </a>
+    </div>
+    <div class="electwatch-subnav-search">
+        <input type="text" placeholder="Search officials, firms..." id="global-search">
+    </div>
+</nav>

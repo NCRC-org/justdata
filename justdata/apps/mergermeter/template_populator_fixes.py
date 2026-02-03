@@ -16,13 +16,13 @@ def get_cbsa_name_from_code(cbsa_code: str, client=None) -> str:
     
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
-        
+
         if client is None:
-            client = get_bigquery_client(PROJECT_ID)
-        
+            client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         query = f"""
         SELECT DISTINCT cbsa as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
         LIMIT 1
         """

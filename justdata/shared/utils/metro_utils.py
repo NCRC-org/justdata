@@ -40,7 +40,7 @@ def get_cbsa_for_county(county_name: str, state_name: str, project_id: str = "ju
         SELECT DISTINCT
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE LOWER(TRIM(County)) = LOWER(TRIM('{county_name.replace("'", "''")}'))
             AND LOWER(TRIM(State)) = LOWER(TRIM('{state_name.replace("'", "''")}'))
             AND cbsa_code IS NOT NULL
@@ -91,7 +91,7 @@ def get_cbsa_for_geoid5(geoid5: str, project_id: str = "justdata-ncrc") -> Optio
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name,
             State as state_name
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE CAST(geoid5 AS STRING) = '{geoid5}'
             AND cbsa_code IS NOT NULL
         LIMIT 1
@@ -141,7 +141,7 @@ def get_metros_by_state(state_name: str, project_id: str = "justdata-ncrc") -> L
         SELECT DISTINCT
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE LOWER(TRIM(State)) = LOWER(TRIM('{state_name.replace("'", "''")}'))
             AND cbsa_code IS NOT NULL
         ORDER BY
@@ -190,7 +190,7 @@ def get_counties_by_metro(cbsa_code: str, project_id: str = "justdata-ncrc") -> 
 
         query = f"""
         SELECT DISTINCT county_state
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
         ORDER BY county_state
         """
@@ -222,7 +222,7 @@ def get_all_states(project_id: str = "justdata-ncrc") -> List[str]:
 
         query = f"""
         SELECT DISTINCT State as state_name
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE State IS NOT NULL
         ORDER BY State
         """
@@ -258,7 +258,7 @@ def get_counties_by_state(state_name: str, project_id: str = "justdata-ncrc") ->
             County as county_name,
             county_state,
             CAST(geoid5 AS STRING) as geoid5
-        FROM `{project_id}.geo.cbsa_to_county`
+        FROM `{project_id}.shared.cbsa_to_county`
         WHERE LOWER(TRIM(State)) = LOWER(TRIM('{state_name.replace("'", "''")}'))
         ORDER BY County
         """

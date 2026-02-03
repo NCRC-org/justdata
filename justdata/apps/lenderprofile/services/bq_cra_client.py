@@ -19,8 +19,8 @@ class BigQueryCRAClient:
     Client for fetching CRA small business lending data from BigQuery.
 
     Data tables:
-    - sb.disclosure: Lender-level, county-level SB lending data
-    - sb.lenders: Lender crosswalk with respondent_id, LEI, name
+    - bizsight.sb_county_summary: Lender-level, county-level SB lending data
+    - bizsight.sb_lenders: Lender crosswalk with respondent_id, LEI, name
     - sb.aggregate: Tract-level aggregate SB lending data
     """
 
@@ -71,7 +71,7 @@ class BigQueryCRAClient:
         """
         Look up respondent_id from LEI, FDIC cert, or institution name.
 
-        The sb.lenders table contains the crosswalk between:
+        The bizsight.sb_lenders table contains the crosswalk between:
         - sb_resid (respondent_id)
         - sb_lender (lender name)
         - lei (Legal Entity Identifier)
@@ -89,7 +89,7 @@ class BigQueryCRAClient:
             return None
 
         # Try RSSD first if available (CRA uses RSSD via sb_rssd column)
-        # Note: The sb.lenders table has sb_rssd, not lei or fdic_cert columns
+        # Note: The bizsight.sb_lenders table has sb_rssd, not lei or fdic_cert columns
         if fdic_cert:
             # FDIC cert might map to RSSD in some cases - try name search instead
             pass
@@ -164,7 +164,7 @@ class BigQueryCRAClient:
             SUM(COALESCE(d.amt_under_100k, 0) +
                 COALESCE(d.amt_100k_250k, 0) +
                 COALESCE(d.amt_250k_1m, 0)) as loan_amount_thousands
-        FROM `{self.project_id}.sb.disclosure` d
+        FROM `{self.project_id}.bizsight.sb_county_summary` d
         WHERE d.respondent_id = '{respondent_id}'
         GROUP BY year
         ORDER BY year DESC
@@ -204,7 +204,7 @@ class BigQueryCRAClient:
             SUM(COALESCE(d.amt_under_100k, 0) +
                 COALESCE(d.amt_100k_250k, 0) +
                 COALESCE(d.amt_250k_1m, 0)) as loan_amount_thousands
-        FROM `{self.project_id}.sb.disclosure` d
+        FROM `{self.project_id}.bizsight.sb_county_summary` d
         GROUP BY year
         ORDER BY year DESC
         LIMIT {years}
@@ -242,9 +242,9 @@ class BigQueryCRAClient:
                 SUM(COALESCE(d.num_under_100k, 0) +
                     COALESCE(d.num_100k_250k, 0) +
                     COALESCE(d.num_250k_1m, 0)) as loan_count
-            FROM `{self.project_id}.sb.disclosure` d
+            FROM `{self.project_id}.bizsight.sb_county_summary` d
             WHERE d.respondent_id = '{respondent_id}'
-                AND d.year = (SELECT MAX(year) FROM `{self.project_id}.sb.disclosure` WHERE respondent_id = '{respondent_id}')
+                AND d.year = (SELECT MAX(year) FROM `{self.project_id}.bizsight.sb_county_summary` WHERE respondent_id = '{respondent_id}')
             GROUP BY state_fips
         ),
         total_loans AS (
@@ -298,7 +298,7 @@ class BigQueryCRAClient:
                 SUM(COALESCE(d.amt_under_100k, 0) +
                     COALESCE(d.amt_100k_250k, 0) +
                     COALESCE(d.amt_250k_1m, 0)) as loan_amount
-            FROM `{self.project_id}.sb.disclosure` d
+            FROM `{self.project_id}.bizsight.sb_county_summary` d
             WHERE d.respondent_id = '{respondent_id}'
             GROUP BY year, state_fips
         ),

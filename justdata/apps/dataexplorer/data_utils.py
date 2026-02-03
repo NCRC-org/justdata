@@ -906,13 +906,13 @@ def get_lender_details_by_lei(lei: str) -> Optional[Dict[str, Any]]:
         # Pad RSSD to 10 digits
         rssd_padded = str(rssd).strip().zfill(10) if rssd else None
         
-        # Step 2: Use RSSD to get SB_RESID from sb.lenders table
-        # The sb.lenders table has sb_resid and sb_rssd columns
+        # Step 2: Use RSSD to get SB_RESID from bizsight.sb_lenders table
+        # The bizsight.sb_lenders table has sb_resid and sb_rssd columns
         sb_resid = None
         if rssd_padded:
             try:
-                # Query sb.lenders table for sb_resid using RSSD
-                # Note: sb_rssd in sb.lenders may not be padded, so try both padded and unpadded
+                # Query bizsight.sb_lenders table for sb_resid using RSSD
+                # Note: sb_rssd in bizsight.sb_lenders may not be padded, so try both padded and unpadded
                 rssd_unpadded = str(int(rssd_padded)) if rssd_padded.isdigit() else rssd_padded
                 
                 query_sb_resid = f"""
@@ -923,7 +923,7 @@ def get_lender_details_by_lei(lei: str) -> Optional[Dict[str, Any]]:
                    OR sb_rssd = '{escape_sql_string(rssd_padded)}'
                 LIMIT 1
                 """
-                logger.info(f"Querying sb.lenders for SB_RESID with RSSD: {rssd_padded} (also trying {rssd_unpadded})")
+                logger.info(f"Querying bizsight.sb_lenders for SB_RESID with RSSD: {rssd_padded} (also trying {rssd_unpadded})")
                 sb_results = execute_query(client, query_sb_resid)
                 logger.info(f"Query returned {len(sb_results) if sb_results else 0} results")
                 
@@ -931,16 +931,16 @@ def get_lender_details_by_lei(lei: str) -> Optional[Dict[str, Any]]:
                     result = sb_results[0]
                     sb_resid = result.get('sb_resid')
                     if sb_resid:
-                        logger.info(f"Found SB_RESID in sb.lenders: {sb_resid} for RSSD: {rssd_padded}")
+                        logger.info(f"Found SB_RESID in bizsight.sb_lenders: {sb_resid} for RSSD: {rssd_padded}")
                     else:
                         logger.warning(f"SB_RESID column found but value is None in result: {result}")
                 else:
-                    logger.warning(f"No results returned from sb.lenders query for RSSD: {rssd_padded}")
+                    logger.warning(f"No results returned from bizsight.sb_lenders query for RSSD: {rssd_padded}")
             except Exception as e:
-                logger.error(f"Error querying sb.lenders for SB_RESID: {e}", exc_info=True)
+                logger.error(f"Error querying bizsight.sb_lenders for SB_RESID: {e}", exc_info=True)
             
             if not sb_resid:
-                logger.warning(f"No SB_RESID found in sb.lenders for RSSD: {rssd_padded}")
+                logger.warning(f"No SB_RESID found in bizsight.sb_lenders for RSSD: {rssd_padded}")
         
         return {
             'rssd': rssd_padded,

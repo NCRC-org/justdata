@@ -8,7 +8,7 @@ This guide walks you through creating and populating the optimized `justdata.de_
 
 - Access to BigQuery Console (project: `hdma1-242116`)
 - Permissions to create tables in the `justdata` dataset
-- Access to source tables: `hmda.hmda`, `geo.census`, `geo.cbsa_to_county`, `hmda.lenders18`
+- Access to source tables: `hmda.hmda`, `shared.census`, `shared.cbsa_to_county`, `hmda.lenders18`
 
 ---
 
@@ -261,9 +261,9 @@ Now update DataExplorer to use the new `de_hmda` table instead of `hmda.hmda`.
    ```
 
 4. **Remove joins that are already in de_hmda**
-   - Remove: `LEFT JOIN ... geo.cbsa_to_county` (county_state is already in de_hmda)
+   - Remove: `LEFT JOIN ... shared.cbsa_to_county` (county_state is already in de_hmda)
    - Remove: `LEFT JOIN ... hmda.lenders18` (lender_name, lender_type already in de_hmda)
-   - Remove: `LEFT JOIN ... geo.census` (geoid5 normalization already done)
+   - Remove: `LEFT JOIN ... shared.census` (geoid5 normalization already done)
 
 5. **Update income category calculations**
    - Replace complex income calculations with pre-computed flags:

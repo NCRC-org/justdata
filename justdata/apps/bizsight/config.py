@@ -75,7 +75,7 @@ class BizSightConfig:
     AGGREGATE_TABLE = 'aggregate'  # Tract-level data
     DISCLOSURE_TABLE = 'disclosure'  # Lender-level data (county level)
     LENDERS_TABLE = 'lenders'  # Lender information
-    GEO_TABLE = 'geo.cbsa_to_county'  # Geographic mapping
+    GEO_TABLE = 'shared.cbsa_to_county'  # Geographic mapping
     
     # BigQuery Credentials (use os.path.join for compatibility)
     _default_credentials = os.path.join(CREDENTIALS_DIR_STR, 'bigquery_service_account.json')

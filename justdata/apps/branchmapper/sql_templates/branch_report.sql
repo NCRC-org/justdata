@@ -21,7 +21,7 @@ SELECT
     MAX(s.rssd) as rssd,
     MAX(s.assets_000s) as assets_000s
 FROM branches.sod s
-LEFT JOIN geo.cbsa_to_county c
+LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county
     AND s.year = @year
@@ -50,7 +50,7 @@ SELECT
     MAX(s.rssd) as rssd,
     MAX(s.assets_000s) as assets_000s
 FROM branches.sod_legacy s
-LEFT JOIN geo.cbsa_to_county c
+LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county
     AND s.year = @year
@@ -79,7 +79,7 @@ SELECT
     MAX(s.rssd) as rssd,
     MAX(s.assets_000s) as assets_000s
 FROM branches.sod25 s
-LEFT JOIN geo.cbsa_to_county c
+LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county
     AND s.year = @year

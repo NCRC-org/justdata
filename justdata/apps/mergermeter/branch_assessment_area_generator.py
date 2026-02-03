@@ -119,15 +119,15 @@ def get_all_branches_for_bank(
     """
     
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         results = execute_query(client, query)
-        
+
         if not results:
             return pd.DataFrame()
-        
+
         df = pd.DataFrame(results)
         return df
-        
+
     except Exception as e:
         print(f"Error querying branches for RSSD {rssd}: {e}")
         import traceback
@@ -244,17 +244,17 @@ def get_cbsa_deposit_shares(
     """
     
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         results = execute_query(client, query)
-        
+
         if not results:
             return pd.DataFrame(), 0.0
-        
+
         df = pd.DataFrame(results)
         total_deposits = df['total_national_deposits'].iloc[0] if not df.empty else 0.0
-        
+
         return df, total_deposits
-        
+
     except Exception as e:
         print(f"Error querying CBSA deposit shares for RSSD {rssd}: {e}")
         import traceback
@@ -474,9 +474,9 @@ def generate_assessment_areas_from_branches(
     """
     if not rssd or not rssd.strip():
         return []
-    
+
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         qualifying_cbsas = []
         
         # Get branch data - needed for all methods to filter to branch-only counties

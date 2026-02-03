@@ -1,0 +1,296 @@
+/**
+ * ElectWatch Sponsor Logo Styles
+ * Version: 1.0.0
+ * Created: 2026-02-02
+ *
+ * Styles for sponsor logos using Google Favicons API.
+ * See ELECTWATCH_COMPLETE_RECONSTRUCTION.md section 3.3-3.5 for specs.
+ */
+
+/* ==========================================================================
+   1. SPONSOR LOGO CONTAINER
+   ========================================================================== */
+
+.sponsor-logos {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.no-sponsors {
+    color: var(--ew-neutral-400);
+    font-style: italic;
+}
+
+/* ==========================================================================
+   2. SPONSOR LOGO (Favicon)
+   ========================================================================== */
+
+.sponsor-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: white;
+    border: 1px solid var(--ew-neutral-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+}
+
+.sponsor-logo:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 10;
+}
+
+.sponsor-logo img {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+}
+
+/* ==========================================================================
+   3. SPONSOR LOGO FALLBACK (When favicon unavailable)
+   ========================================================================== */
+
+.sponsor-logo-fallback {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: var(--ew-primary-100);
+    border: 1px solid var(--ew-primary-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ew-primary-700);
+    cursor: default;
+}
+
+.sponsor-logo-fallback:hover {
+    background: var(--ew-primary-200);
+}
+
+/* ==========================================================================
+   4. HEADER SPONSOR LOGOS (Larger, on profile pages)
+   ========================================================================== */
+
+.official-header-sponsors {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.official-header-sponsors .sponsor-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    background: white;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.official-header-sponsors .sponsor-logo img {
+    width: 40px;
+    height: 40px;
+}
+
+.official-header-sponsors .sponsor-logo-fallback {
+    width: 56px;
+    height: 56px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: var(--ew-primary-700);
+}
+
+/* ==========================================================================
+   5. FIRM LOGO (Single, larger logo for firm pages)
+   ========================================================================== */
+
+.firm-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    background: white;
+    border: 2px solid var(--ew-neutral-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.firm-logo img {
+    width: 56px;
+    height: 56px;
+    object-fit: contain;
+}
+
+.firm-logo-fallback {
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    background: var(--ew-primary-100);
+    border: 2px solid var(--ew-primary-200);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--ew-primary-700);
+}
+
+/* ==========================================================================
+   6. LEADERBOARD ROW - LARGE SPONSOR LOGOS (72px)
+   ========================================================================== */
+
+.sponsor-logos-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: nowrap;
+}
+
+.sponsor-logos-row .sponsor-logos {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.sponsor-logos-row .sponsor-logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    background: white;
+    border: 1px solid var(--ew-neutral-200, #e5e7eb);
+    flex-shrink: 0;
+}
+
+.sponsor-logos-row .sponsor-logo img {
+    width: 48px;
+    height: 48px;
+}
+
+.sponsor-logos-row .sponsor-logo-fallback {
+    width: 72px;
+    height: 72px;
+    border-radius: 8px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   7. SPONSOR IN TABLE CELLS
+   ========================================================================== */
+
+.sponsor-cell-single {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sponsor-cell-single .sponsor-logo {
+    width: 32px;
+    height: 32px;
+    flex-shrink: 0;
+}
+
+.sponsor-cell-single .sponsor-logo img {
+    width: 22px;
+    height: 22px;
+}
+
+.sponsor-cell-single .sponsor-name {
+    font-weight: 500;
+    color: var(--ew-neutral-800);
+}
+
+/* ==========================================================================
+   7. TIPPY TOOLTIP CUSTOMIZATION
+   ========================================================================== */
+
+/* Light border theme for sponsor tooltips */
+.tippy-box[data-theme~='light-border'] {
+    background-color: white;
+    border: 1px solid var(--ew-neutral-200);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+}
+
+.tippy-box[data-theme~='light-border'] .tippy-content {
+    color: var(--ew-neutral-800);
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.tippy-box[data-theme~='light-border'] .tippy-arrow {
+    color: white;
+}
+
+.tippy-box[data-theme~='light-border'] .tippy-arrow::before {
+    border-top-color: white;
+}
+
+/* Tooltip content formatting */
+.tippy-box[data-theme~='light-border'] strong {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--ew-neutral-900);
+}
+
+/* ==========================================================================
+   8. RESPONSIVE ADJUSTMENTS
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    .sponsor-logos {
+        gap: 4px;
+    }
+
+    .sponsor-logo {
+        width: 32px;
+        height: 32px;
+    }
+
+    .sponsor-logo img {
+        width: 22px;
+        height: 22px;
+    }
+
+    .sponsor-logo-fallback {
+        width: 32px;
+        height: 32px;
+        font-size: 10px;
+    }
+
+    .official-header-sponsors .sponsor-logo {
+        width: 44px;
+        height: 44px;
+    }
+
+    .official-header-sponsors .sponsor-logo img {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Show fewer sponsor logos on mobile */
+    .sponsor-logos .sponsor-logo:nth-child(n+4),
+    .sponsor-logos .sponsor-logo-fallback:nth-child(n+4) {
+        display: none;
+    }
+
+    /* Add "+X more" indicator */
+    .sponsor-logos::after {
+        content: attr(data-more-count);
+        font-size: 11px;
+        color: var(--ew-neutral-500);
+        margin-left: 4px;
+    }
+}

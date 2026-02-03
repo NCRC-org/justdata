@@ -111,12 +111,12 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
         
         # Query using GEOID5 (more reliable than county name)
         # Check for both metropolitan and micropolitan areas
-        # Note: geo.cbsa_to_county table has cbsa_code and CBSA (the name)
+        # Note: shared.cbsa_to_county table has cbsa_code and CBSA (the name)
         query = f"""
         SELECT DISTINCT
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE CAST(geoid5 AS STRING) = '{geoid5}'
             AND cbsa_code IS NOT NULL
         LIMIT 1
@@ -143,7 +143,7 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
         # If no results, check if the GEOID5 exists in the table at all
         check_query = f"""
         SELECT DISTINCT geoid5, county_state, cbsa_code
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE CAST(geoid5 AS STRING) = '{geoid5}'
         LIMIT 5
         """
@@ -159,7 +159,7 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
             for row in check_results:
                 print(f"  - {row.county_state}: cbsa_code={row.cbsa_code}")
         else:
-            print(f"No rows found in geo.cbsa_to_county for GEOID5 {geoid5} ({county_state})")
+            print(f"No rows found in shared.cbsa_to_county for GEOID5 {geoid5} ({county_state})")
             # Try querying by county_state as a fallback
             print(f"Trying fallback query by county_state: '{county_state}'")
             from justdata.shared.utils.bigquery_client import escape_sql_string
@@ -169,7 +169,7 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
                 CAST(cbsa_code AS STRING) as cbsa_code,
                 CBSA as cbsa_name,
                 geoid5
-            FROM geo.cbsa_to_county
+            FROM shared.cbsa_to_county
             WHERE county_state = '{escaped_county_state}'
                 AND cbsa_code IS NOT NULL
             LIMIT 1
@@ -192,7 +192,7 @@ def get_cbsa_for_county(county_state: str) -> Optional[Dict[str, Any]]:
             # Try to find similar GEOID5s
             similar_query = f"""
             SELECT DISTINCT geoid5, county_state
-            FROM geo.cbsa_to_county
+            FROM shared.cbsa_to_county
             WHERE CAST(geoid5 AS STRING) LIKE '{geoid5[:4]}%'
             LIMIT 5
             """
@@ -218,7 +218,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
     """
     Extract state and county FIPS codes from "County, State" format.
 
-    Uses BigQuery to look up the geoid5 (5-digit FIPS) from the geo.cbsa_to_county table.
+    Uses BigQuery to look up the geoid5 (5-digit FIPS) from the shared.cbsa_to_county table.
     Tries exact match first, then case-insensitive match.
     Results are cached for 24 hours.
 
@@ -246,7 +246,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
         escaped_county_state = escape_sql_string(county_state)
         query = f"""
         SELECT DISTINCT geoid5
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE TRIM(county_state) = TRIM('{escaped_county_state}')
         LIMIT 1
         """
@@ -273,7 +273,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
         print(f"No exact match, trying case-insensitive match...")
         query_case_insensitive = f"""
         SELECT DISTINCT geoid5, county_state
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE UPPER(TRIM(county_state)) = UPPER(TRIM('{escaped_county_state}'))
         LIMIT 1
         """
@@ -308,7 +308,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
                 
                 query_split = f"""
                 SELECT DISTINCT geoid5, county_state
-                FROM geo.cbsa_to_county
+                FROM shared.cbsa_to_county
                 WHERE UPPER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(0)])) = UPPER(TRIM('{escaped_county}'))
                     AND UPPER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = UPPER(TRIM('{escaped_state}'))
                 LIMIT 1

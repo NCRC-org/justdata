@@ -564,15 +564,15 @@ SELECT
   ) as is_mmct
 
 FROM `hdma1-242116.hmda.hmda` h
--- For 2022-2023 Connecticut data, join to geo.census to get planning region from tract
-LEFT JOIN `hdma1-242116.geo.census` ct_tract
+-- For 2022-2023 Connecticut data, join to shared.census to get planning region from tract
+LEFT JOIN `justdata-ncrc.shared.census` ct_tract
   ON CAST(h.county_code AS STRING) LIKE '09%'
   AND CAST(h.county_code AS STRING) NOT LIKE '091%'  -- Legacy county codes only (2022-2023)
   AND h.census_tract IS NOT NULL
   -- Match on tract portion (last 6 digits) - tract numbers are stable
   AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
--- Join to geo.cbsa_to_county for county_state
-LEFT JOIN `hdma1-242116.geo.cbsa_to_county` c
+-- Join to shared.cbsa_to_county for county_state
+LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
   ON COALESCE(
     -- For 2022-2023: Use planning region from tract (extracted above)
     CASE 
