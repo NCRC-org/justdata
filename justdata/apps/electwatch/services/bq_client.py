@@ -155,6 +155,26 @@ class ElectWatchBQClient:
         if 'trades' not in official:
             official['trades'] = []
         
+        # Build contributions_display object expected by frontend
+        # Frontend expects: contributions_display.total and contributions_display.financial
+        pac_total = float(official.get('pac_contributions') or official.get('contributions') or 0)
+        individual_total = float(official.get('individual_contributions_total') or 0)
+        financial_pac = float(official.get('financial_sector_pac') or 0)
+        financial_individual = float(official.get('individual_financial_total') or 0)
+        
+        official['contributions_display'] = {
+            'total': pac_total + individual_total,
+            'financial': financial_pac + financial_individual,
+            'pac': pac_total,
+            'individual': individual_total,
+            'financial_pac': financial_pac,
+            'financial_individual': financial_individual
+        }
+        
+        # Frontend expects top_financial_employers but BQ stores top_individual_financial
+        if 'top_individual_financial' in official and 'top_financial_employers' not in official:
+            official['top_financial_employers'] = official.get('top_individual_financial', [])
+        
         return official
     
     # =========================================================================
