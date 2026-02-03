@@ -2,35 +2,33 @@
 """
 ElectWatch Data Store
 
-Local storage layer for pre-computed weekly data.
-All data is fetched during weekly updates and stored in JSON files.
-The app serves this static data throughout the week.
+BigQuery-backed storage layer for ElectWatch data.
+All data is fetched during weekly updates and stored in BigQuery.
+The app queries BigQuery directly for all data.
 
-Directory structure:
-    data/
-        current/           # Symlink/copy of latest valid data
-            officials.json
-            firms.json
-            industries.json
-            committees.json
-            news.json
-            summaries.json
-            metadata.json
-        weekly/
-            2026-01-05/    # Weekly snapshots
-            2026-01-12/
-            ...
+Tables (justdata-ncrc.electwatch):
+    officials           - Congress members with aggregated stats
+    official_trades     - Individual stock trades
+    firms               - Companies/stocks tracked
+    industries          - Sector aggregations
+    committees          - Congressional committees
+    insights            - AI-generated insights
+    metadata            - Update metadata
+    trend_snapshots     - Historical time-series
+
+Note: This module was migrated from JSON file storage to BigQuery.
+All the name normalization constants and helper functions are preserved.
 """
 
-import os
-import json
-import shutil
 import logging
-from pathlib import Path
 from datetime import datetime
 from typing import Dict, Any, List, Optional
 
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# NAME NORMALIZATION CONSTANTS
+# =============================================================================
 
 # Formal/legal names -> public names mapping
 # These are officials whose disclosure names differ from their commonly-used names
@@ -179,6 +177,10 @@ CONGRESS_START_YEAR = {
 }
 
 
+# =============================================================================
+# HELPER FUNCTIONS
+# =============================================================================
+
 def get_years_in_congress(name: str, stored_years: int = None) -> int:
     """Get correct years in Congress, using override if available."""
     if name in CONGRESS_START_YEAR:
@@ -273,7 +275,6 @@ def get_photo_url(name: str, bioguide_id: str = None, chamber: str = 'house') ->
         bioguide_id = MISSING_BIOGUIDE_IDS[name]
 
     # Use clerk.house.gov for photos (works for both House and many Senate members)
-    # URL pattern updated from /content/assets/img/members/ to /images/members/
     if bioguide_id:
         return f"https://clerk.house.gov/images/members/{bioguide_id}.jpg"
 
@@ -298,201 +299,200 @@ def get_website_url(name: str, chamber: str = 'house') -> Optional[str]:
     return None
 
 
-# Data directory
-DATA_DIR = Path(__file__).parent.parent / 'data'
-CURRENT_DIR = DATA_DIR / 'current'
-WEEKLY_DIR = DATA_DIR / 'weekly'
+# =============================================================================
+# BIGQUERY CLIENT
+# =============================================================================
 
-
-def ensure_dirs():
-    """Ensure data directories exist."""
-    DATA_DIR.mkdir(exist_ok=True)
-    CURRENT_DIR.mkdir(exist_ok=True)
-    WEEKLY_DIR.mkdir(exist_ok=True)
-
-
-def get_current_data_path() -> Path:
-    """Get path to current data directory."""
-    ensure_dirs()
-    return CURRENT_DIR
-
-
-def get_weekly_data_path(date: Optional[datetime] = None) -> Path:
-    """Get path to a weekly snapshot directory."""
-    ensure_dirs()
-    if date is None:
-        date = datetime.now()
-    # Use Sunday's date for the week
-    days_since_sunday = date.weekday() + 1 if date.weekday() != 6 else 0
-    sunday = date.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_str = sunday.strftime('%Y-%m-%d')
-    week_dir = WEEKLY_DIR / week_str
-    week_dir.mkdir(exist_ok=True)
-    return week_dir
+def _get_bq_client():
+    """Get the BigQuery client instance."""
+    from justdata.apps.electwatch.services.bq_client import get_client
+    return get_client()
 
 
 # =============================================================================
 # DATA READING (for app endpoints)
 # =============================================================================
 
-def load_json(filename: str) -> Optional[Dict]:
-    """Load a JSON file from current data directory."""
-    filepath = CURRENT_DIR / filename
-    if not filepath.exists():
-        logger.warning(f"Data file not found: {filepath}")
-        return None
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except Exception as e:
-        logger.error(f"Error loading {filepath}: {e}")
-        return None
-
-
 def get_metadata() -> Dict[str, Any]:
     """Get metadata about the current data."""
-    data = load_json('metadata.json')
-    if not data:
+    try:
+        client = _get_bq_client()
+        return client.get_metadata()
+    except Exception as e:
+        logger.error(f"Error loading metadata from BigQuery: {e}")
         return {
             'last_updated': None,
             'data_sources': {},
-            'status': 'no_data'
+            'status': 'error'
         }
-    return data
 
 
-def get_officials() -> List[Dict]:
-    """Get all officials data with normalized public names and photos."""
-    data = load_json('officials.json')
-    officials = data.get('officials', []) if data else []
+def get_officials(include_trades: bool = False) -> List[Dict]:
+    """
+    Get all officials data with normalized public names and photos.
+    
+    Args:
+        include_trades: If True, load trades for each official (slow for large datasets).
+                       Default False for list views, set True for detail views.
+    """
+    try:
+        client = _get_bq_client()
+        officials = client.get_officials()
+    except Exception as e:
+        logger.error(f"Error loading officials from BigQuery: {e}")
+        return []
 
-    # Normalize names, parties, and ensure photos
-    for official in officials:
-        # Normalize name to public version (e.g., 'Rafael Cruz' -> 'Ted Cruz')
-        if 'name' in official:
-            official['name'] = normalize_to_public_name(official['name'])
+    # Only load trades if explicitly requested (expensive operation)
+    if include_trades:
+        for official in officials:
+            bioguide_id = official.get('bioguide_id')
+            if bioguide_id:
+                try:
+                    trades = client.get_official_trades(bioguide_id)
+                    official['trades'] = trades
+                except Exception as e:
+                    logger.warning(f"Error loading trades for {bioguide_id}: {e}")
+                    official['trades'] = []
+    else:
+        # Set empty trades for list views
+        for official in officials:
+            if 'trades' not in official:
+                official['trades'] = []
 
-        # Also update the ID to match the public name
-        if official.get('name'):
-            official['id'] = official['name'].lower().replace(' ', '_')
-
-        # Normalize party to single letter (REP -> R, DEM -> D)
-        party = official.get('party', '')
-        if party == 'REP':
-            official['party'] = 'R'
-        elif party == 'DEM':
-            official['party'] = 'D'
-        elif party == 'IND':
-            official['party'] = 'I'
-
-        # FIRST: Override incorrect bioguide IDs (must happen before photo lookup)
-        name = official.get('name', '')
-        if name in BIOGUIDE_OVERRIDES:
-            official['bioguide_id'] = BIOGUIDE_OVERRIDES[name]
-            # Clear existing photo URL since it was based on wrong bioguide
-            official['photo_url'] = None
-
-        # SECOND: Override website URLs for officials with non-standard or wrong URLs
-        if name in WEBSITE_URL_OVERRIDES:
-            official['website_url'] = WEBSITE_URL_OVERRIDES[name]
-
-        # THIRD: Ensure photo URL - use Wikipedia fallback or generate from bioguide
-        if not official.get('photo_url'):
-            photo_url = get_photo_url(
-                name,
-                official.get('bioguide_id'),
-                official.get('chamber', 'house')
-            )
-            if photo_url:
-                official['photo_url'] = photo_url
-                official['photo_source'] = 'wikipedia' if 'wikimedia' in photo_url else 'house_clerk'
-
-        # Populate contributions_list from top_financial_pacs if available
-        if not official.get('contributions_list') and official.get('top_financial_pacs'):
-            official['contributions_list'] = [
-                {
-                    'source': pac.get('name', 'Unknown PAC'),
-                    'pac_name': pac.get('name', 'Unknown PAC'),
-                    'amount': pac.get('amount', 0),
-                    'date': None,  # Date not available from this source
-                    'industry': 'financial'  # All are financial sector PACs
-                }
-                for pac in official.get('top_financial_pacs', [])
-            ]
-            official['contributions_count'] = len(official['contributions_list'])
-
-        # Add website URL (with overrides for non-standard URLs like juliejohnson.house.gov)
-        if not official.get('website_url'):
-            official['website_url'] = get_website_url(
-                official.get('name', ''),
-                official.get('chamber', 'house')
-            )
-
-        # Add bioguide_id from mapping if missing
-        if not official.get('bioguide_id') and official.get('name') in MISSING_BIOGUIDE_IDS:
-            official['bioguide_id'] = MISSING_BIOGUIDE_IDS[official.get('name')]
-
-        # Correct years in Congress using lookup table
-        official['years_in_congress'] = get_years_in_congress(
-            official.get('name', ''),
-            official.get('years_in_congress')
-        )
-
-        # Build top_donors from stock trades if not already present
-        # This ensures we show specific firm names instead of falling back to industries
-        if not official.get('top_donors'):
-            trades = official.get('trades', [])
-            if trades:
-                official['top_donors'] = build_top_donors_from_trades(trades)
+    # Apply name normalization and enrichment using helper function
+    officials = [_normalize_official(official) for official in officials]
 
     return officials
 
 
 def get_official(official_id: str) -> Optional[Dict]:
     """Get a specific official by ID (handles both original and normalized IDs)."""
-    # First try get_officials which has all the normalization applied
-    officials = get_officials()
-    for official in officials:
-        if official.get('id') == official_id:
+    try:
+        client = _get_bq_client()
+        
+        # Try direct lookup by bioguide_id first
+        official = client.get_official(official_id)
+        if official:
+            # Load trades for individual official
+            trades = client.get_official_trades(official.get('bioguide_id', ''))
+            official['trades'] = trades
+            
+            # Apply normalization
+            official = _normalize_official(official)
             return official
-
-    # Fall back to by_id index (try original and normalized keys)
-    data = load_json('officials.json')
-    if not data:
-        return None
-
-    officials_by_id = data.get('by_id', {})
-
-    # Try direct match
-    if official_id in officials_by_id:
-        return officials_by_id.get(official_id)
-
-    # Try matching by normalized ID
-    for stored_id, official in officials_by_id.items():
-        normalized_id = normalize_to_public_name(official.get('name', '')).lower().replace(' ', '_')
-        if normalized_id == official_id:
+        
+        # Try by name
+        official = client.get_official_by_name(official_id.replace('_', ' '))
+        if official:
+            trades = client.get_official_trades(official.get('bioguide_id', ''))
+            official['trades'] = trades
+            official = _normalize_official(official)
             return official
-
+            
+    except Exception as e:
+        logger.error(f"Error loading official {official_id}: {e}")
+    
     return None
+
+
+def _normalize_official(official: Dict) -> Dict:
+    """Apply name normalization and enrichment to an official."""
+    # Normalize name to public version (e.g., 'Rafael Cruz' -> 'Ted Cruz')
+    if 'name' in official:
+        official['name'] = normalize_to_public_name(official['name'])
+
+    # Also update the ID to match the public name
+    if official.get('name'):
+        official['id'] = official['name'].lower().replace(' ', '_')
+
+    # Normalize party to single letter (REP -> R, DEM -> D)
+    party = official.get('party', '')
+    if party == 'REP':
+        official['party'] = 'R'
+    elif party == 'DEM':
+        official['party'] = 'D'
+    elif party == 'IND':
+        official['party'] = 'I'
+
+    # Override incorrect bioguide IDs
+    name = official.get('name', '')
+    if name in BIOGUIDE_OVERRIDES:
+        official['bioguide_id'] = BIOGUIDE_OVERRIDES[name]
+        official['photo_url'] = None
+
+    # Override website URLs
+    if name in WEBSITE_URL_OVERRIDES:
+        official['website_url'] = WEBSITE_URL_OVERRIDES[name]
+
+    # Ensure photo URL
+    if not official.get('photo_url'):
+        photo_url = get_photo_url(
+            name,
+            official.get('bioguide_id'),
+            official.get('chamber', 'house')
+        )
+        if photo_url:
+            official['photo_url'] = photo_url
+            official['photo_source'] = 'wikipedia' if 'wikimedia' in photo_url else 'house_clerk'
+
+    # Populate contributions_list from top_financial_pacs
+    if not official.get('contributions_list') and official.get('top_financial_pacs'):
+        official['contributions_list'] = [
+            {
+                'source': pac.get('name', 'Unknown PAC'),
+                'pac_name': pac.get('name', 'Unknown PAC'),
+                'amount': pac.get('amount', 0),
+                'date': None,
+                'industry': 'financial'
+            }
+            for pac in official.get('top_financial_pacs', [])
+        ]
+        official['contributions_count'] = len(official['contributions_list'])
+
+    # Add website URL
+    if not official.get('website_url'):
+        official['website_url'] = get_website_url(
+            official.get('name', ''),
+            official.get('chamber', 'house')
+        )
+
+    # Add bioguide_id from mapping if missing
+    if not official.get('bioguide_id') and official.get('name') in MISSING_BIOGUIDE_IDS:
+        official['bioguide_id'] = MISSING_BIOGUIDE_IDS[official.get('name')]
+
+    # Correct years in Congress
+    official['years_in_congress'] = get_years_in_congress(
+        official.get('name', ''),
+        official.get('years_in_congress')
+    )
+
+    # Build top_donors from stock trades
+    if not official.get('top_donors'):
+        trades = official.get('trades', [])
+        if trades:
+            official['top_donors'] = build_top_donors_from_trades(trades)
+
+    return official
 
 
 def get_firms() -> List[Dict]:
     """Get all firms data."""
-    data = load_json('firms.json')
-    return data.get('firms', []) if data else []
+    try:
+        client = _get_bq_client()
+        return client.get_firms()
+    except Exception as e:
+        logger.error(f"Error loading firms from BigQuery: {e}")
+        return []
 
 
 def get_firm(firm_name: str) -> Optional[Dict]:
-    """Get a specific firm by name."""
-    data = load_json('firms.json')
-    if not data:
+    """Get a specific firm by name or ticker."""
+    try:
+        client = _get_bq_client()
+        return client.get_firm(firm_name)
+    except Exception as e:
+        logger.error(f"Error loading firm from BigQuery: {e}")
         return None
-    firms_by_name = data.get('by_name', {})
-    # Try exact match first, then case-insensitive
-    normalized = firm_name.lower().strip()
-    return firms_by_name.get(normalized) or firms_by_name.get(firm_name)
-
-
 
 
 def get_firms_with_stats() -> List[Dict]:
@@ -508,8 +508,7 @@ def get_firms_with_stats() -> List[Dict]:
     - stock_trades: Total number of stock trades for this firm
     """
     # Get raw firms data
-    firms_data = load_json('firms.json')
-    raw_firms = firms_data.get('firms', []) if firms_data else []
+    raw_firms = get_firms()
     
     # Get officials data to aggregate trades by firm
     officials = get_officials()
@@ -558,7 +557,7 @@ def get_firms_with_stats() -> List[Dict]:
     result = []
     processed_tickers = set()
     
-    # First, process firms from firms.json that have trade activity
+    # First, process firms from firms table that have trade activity
     for firm in raw_firms:
         ticker = firm.get('ticker', '')
         stats = firm_stats.get(ticker, {})
@@ -574,11 +573,11 @@ def get_firms_with_stats() -> List[Dict]:
             'officials': len(stats.get('officials', set())),
             'stock_trades': stats.get('trade_count', 0),
             'quote': firm.get('quote'),
-            'news': firm.get('news', [])[:3] if firm.get('news') else [],  # Limit news items
+            'news': firm.get('news', [])[:3] if firm.get('news') else [],
         })
         processed_tickers.add(ticker)
     
-    # Add any firms from trades that aren't in firms.json
+    # Add any firms from trades that aren't in firms table
     for ticker, stats in firm_stats.items():
         if ticker not in processed_tickers:
             result.append({
@@ -600,45 +599,84 @@ def get_firms_with_stats() -> List[Dict]:
 
 def get_industries() -> List[Dict]:
     """Get all industries data."""
-    data = load_json('industries.json')
-    return data.get('industries', []) if data else []
+    try:
+        client = _get_bq_client()
+        return client.get_industries()
+    except Exception as e:
+        logger.error(f"Error loading industries from BigQuery: {e}")
+        return []
 
 
 def get_industry(sector: str) -> Optional[Dict]:
     """Get a specific industry sector."""
-    data = load_json('industries.json')
-    if not data:
+    try:
+        client = _get_bq_client()
+        return client.get_industry(sector)
+    except Exception as e:
+        logger.error(f"Error loading industry from BigQuery: {e}")
         return None
-    by_sector = data.get('by_sector', {})
-    return by_sector.get(sector.lower())
 
 
 def get_committees() -> List[Dict]:
     """Get all committees data."""
-    data = load_json('committees.json')
-    return data.get('committees', []) if data else []
+    try:
+        client = _get_bq_client()
+        return client.get_committees()
+    except Exception as e:
+        logger.error(f"Error loading committees from BigQuery: {e}")
+        return []
 
 
 def get_committee(committee_id: str) -> Optional[Dict]:
     """Get a specific committee by ID."""
-    data = load_json('committees.json')
-    if not data:
+    try:
+        client = _get_bq_client()
+        return client.get_committee(committee_id)
+    except Exception as e:
+        logger.error(f"Error loading committee from BigQuery: {e}")
         return None
-    by_id = data.get('by_id', {})
-    normalized = committee_id.lower().replace(' ', '-').replace('_', '-')
-    return by_id.get(normalized) or by_id.get(committee_id)
 
 
 def get_news() -> List[Dict]:
     """Get all news articles."""
-    data = load_json('news.json')
-    return data.get('articles', []) if data else []
+    try:
+        client = _get_bq_client()
+        return client.get_news()
+    except Exception as e:
+        logger.error(f"Error loading news from BigQuery: {e}")
+        return []
 
 
 def get_summaries() -> Dict[str, str]:
     """Get AI-generated summaries."""
-    data = load_json('summaries.json')
-    return data if data else {}
+    try:
+        client = _get_bq_client()
+        return client.get_summaries()
+    except Exception as e:
+        logger.error(f"Error loading summaries from BigQuery: {e}")
+        return {}
+
+
+def get_insights() -> List[Dict[str, Any]]:
+    """Get AI-generated pattern insights from storage."""
+    try:
+        client = _get_bq_client()
+        return client.get_insights()
+    except Exception as e:
+        logger.error(f"Error loading insights from BigQuery: {e}")
+        return []
+
+
+def get_insights_metadata() -> Dict[str, Any]:
+    """Get metadata about when insights were generated."""
+    insights = get_insights()
+    if insights:
+        return {
+            'generated_at': insights[0].get('generated_at') if insights else None,
+            'version': '1.0',
+            'count': len(insights)
+        }
+    return {}
 
 
 def get_freshness() -> Dict[str, Any]:
@@ -647,9 +685,18 @@ def get_freshness() -> Dict[str, Any]:
     return {
         'last_updated': metadata.get('last_updated'),
         'last_updated_display': metadata.get('last_updated_display'),
-        'data_window': metadata.get('data_window'),
-        'stock_data_window': metadata.get('stock_data_window'),
-        'fec_data_window': metadata.get('fec_data_window'),
+        'data_window': {
+            'start': metadata.get('data_window_start'),
+            'end': metadata.get('data_window_end')
+        },
+        'stock_data_window': {
+            'start_iso': metadata.get('stock_data_window_start'),
+            'end_iso': metadata.get('stock_data_window_end')
+        },
+        'fec_data_window': {
+            'start_iso': metadata.get('fec_data_window_start'),
+            'end_iso': metadata.get('fec_data_window_end')
+        },
         'sources': metadata.get('data_sources', {}),
         'next_update': metadata.get('next_update')
     }
@@ -657,151 +704,77 @@ def get_freshness() -> Dict[str, Any]:
 
 # =============================================================================
 # DATA WRITING (for weekly updates)
+# Note: All write functions now delegate to bq_writer.py
 # =============================================================================
 
-def save_json(filename: str, data: Dict, weekly_dir: Optional[Path] = None):
-    """Save data to JSON file."""
-    ensure_dirs()
-
-    # Save to current
-    current_path = CURRENT_DIR / filename
-    with open(current_path, 'w', encoding='utf-8') as f:
-        json.dump(data, f, indent=2, ensure_ascii=False, default=str)
-
-    # Also save to weekly snapshot if provided
-    if weekly_dir:
-        weekly_path = weekly_dir / filename
-        with open(weekly_path, 'w', encoding='utf-8') as f:
-            json.dump(data, f, indent=2, ensure_ascii=False, default=str)
-
-    logger.info(f"Saved {filename}")
+def _get_bq_writer():
+    """Get the BigQuery writer instance."""
+    from justdata.apps.electwatch.services.bq_writer import ElectWatchBQWriter
+    return ElectWatchBQWriter()
 
 
-def save_officials(officials: List[Dict], weekly_dir: Optional[Path] = None):
-    """Save officials data with index."""
-    by_id = {}
-    for official in officials:
-        oid = official.get('id', official.get('name', '').lower().replace(' ', '_'))
-        by_id[oid] = official
-
-    data = {
-        'officials': officials,
-        'by_id': by_id,
-        'count': len(officials),
-        'generated_at': datetime.now().isoformat()
-    }
-    save_json('officials.json', data, weekly_dir)
+def save_officials(officials: List[Dict], weekly_dir=None):
+    """Save officials data to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_officials(officials)
+    writer.write_official_trades(officials)
+    writer.write_pac_contributions(officials)
+    writer.write_individual_contributions(officials)
+    logger.info(f"Saved {len(officials)} officials to BigQuery")
 
 
-def save_firms(firms: List[Dict], weekly_dir: Optional[Path] = None):
-    """Save firms data with index."""
-    by_name = {}
-    for firm in firms:
-        name = firm.get('name', '').lower().strip()
-        by_name[name] = firm
-        # Also index by ticker if available
-        ticker = firm.get('ticker')
-        if ticker:
-            by_name[ticker.lower()] = firm
-
-    data = {
-        'firms': firms,
-        'by_name': by_name,
-        'count': len(firms),
-        'generated_at': datetime.now().isoformat()
-    }
-    save_json('firms.json', data, weekly_dir)
+def save_firms(firms: List[Dict], weekly_dir=None):
+    """Save firms data to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_firms(firms)
+    logger.info(f"Saved {len(firms)} firms to BigQuery")
 
 
-def save_industries(industries: List[Dict], weekly_dir: Optional[Path] = None):
-    """Save industries data with index."""
-    by_sector = {}
-    for industry in industries:
-        sector = industry.get('sector', '').lower()
-        by_sector[sector] = industry
-
-    data = {
-        'industries': industries,
-        'by_sector': by_sector,
-        'count': len(industries),
-        'generated_at': datetime.now().isoformat()
-    }
-    save_json('industries.json', data, weekly_dir)
+def save_industries(industries: List[Dict], weekly_dir=None):
+    """Save industries data to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_industries(industries)
+    logger.info(f"Saved {len(industries)} industries to BigQuery")
 
 
-def save_committees(committees: List[Dict], weekly_dir: Optional[Path] = None):
-    """Save committees data with index."""
-    by_id = {}
-    for committee in committees:
-        cid = committee.get('id', '').lower()
-        by_id[cid] = committee
-
-    data = {
-        'committees': committees,
-        'by_id': by_id,
-        'count': len(committees),
-        'generated_at': datetime.now().isoformat()
-    }
-    save_json('committees.json', data, weekly_dir)
+def save_committees(committees: List[Dict], weekly_dir=None):
+    """Save committees data to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_committees(committees)
+    logger.info(f"Saved {len(committees)} committees to BigQuery")
 
 
-def save_news(articles: List[Dict], weekly_dir: Optional[Path] = None):
-    """Save news articles."""
-    data = {
-        'articles': articles,
-        'count': len(articles),
-        'generated_at': datetime.now().isoformat()
-    }
-    save_json('news.json', data, weekly_dir)
+def save_news(articles: List[Dict], weekly_dir=None):
+    """Save news articles to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_news(articles)
+    logger.info(f"Saved {len(articles)} news articles to BigQuery")
 
 
-def save_summaries(summaries: Dict[str, str], weekly_dir: Optional[Path] = None):
-    """Save AI-generated summaries."""
-    summaries['generated_at'] = datetime.now().isoformat()
-    save_json('summaries.json', summaries, weekly_dir)
+def save_summaries(summaries: Dict[str, str], weekly_dir=None):
+    """Save AI-generated summaries to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_summaries(summaries)
+    logger.info("Saved summaries to BigQuery")
 
 
-def save_insights(insights: List[Dict[str, Any]], weekly_dir: Optional[Path] = None):
-    """Save AI-generated pattern insights."""
-    data = {
-        'insights': insights,
-        'generated_at': datetime.now().isoformat(),
-        'version': '1.0'
-    }
-    save_json('insights.json', data, weekly_dir)
+def save_insights(insights: List[Dict[str, Any]], weekly_dir=None):
+    """Save AI-generated pattern insights to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_insights(insights)
+    logger.info(f"Saved {len(insights)} insights to BigQuery")
 
 
-def get_insights() -> List[Dict[str, Any]]:
-    """Get AI-generated pattern insights from storage."""
-    data = load_json('insights.json')
-    if data and 'insights' in data:
-        return data['insights']
-    return []
-
-
-def get_insights_metadata() -> Dict[str, Any]:
-    """Get metadata about when insights were generated."""
-    data = load_json('insights.json')
-    if data:
-        return {
-            'generated_at': data.get('generated_at'),
-            'version': data.get('version'),
-            'count': len(data.get('insights', []))
-        }
-    return {}
-
-
-def save_metadata(metadata: Dict[str, Any], weekly_dir: Optional[Path] = None):
-    """Save metadata about the update."""
-    save_json('metadata.json', metadata, weekly_dir)
+def save_metadata(metadata: Dict[str, Any], weekly_dir=None):
+    """Save metadata about the update to BigQuery."""
+    writer = _get_bq_writer()
+    writer.write_metadata(metadata)
+    logger.info("Saved metadata to BigQuery")
 
 
 # =============================================================================
 # TREND SNAPSHOTS - For historical trend tracking
 # =============================================================================
-
-TREND_SNAPSHOTS_FILE = DATA_DIR / 'trend_snapshots.json'
-
 
 def save_trend_snapshot(officials: List[Dict]):
     """
@@ -812,21 +785,15 @@ def save_trend_snapshot(officials: List[Dict]):
     """
     snapshot_date = datetime.now().strftime('%Y-%m-%d')
 
-    # Build snapshot data - just the essentials for trends
-    snapshot = {
-        'date': snapshot_date,
-        'officials': {}
-    }
-
+    # Build snapshot data
+    snapshot_officials = {}
     for official in officials:
         bioguide_id = official.get('bioguide_id')
         if not bioguide_id:
             continue
 
-        # Get contribution breakdown if available
         contrib_display = official.get('contributions_display', {})
-
-        snapshot['officials'][bioguide_id] = {
+        snapshot_officials[bioguide_id] = {
             'name': official.get('name'),
             'finance_pct': official.get('financial_sector_pct', 0),
             'total_contributions': contrib_display.get('total', 0),
@@ -835,43 +802,10 @@ def save_trend_snapshot(officials: List[Dict]):
             'stock_sells': official.get('sales_min', 0),
         }
 
-    # Load existing snapshots
-    snapshots = []
-    if TREND_SNAPSHOTS_FILE.exists():
-        try:
-            with open(TREND_SNAPSHOTS_FILE, 'r') as f:
-                data = json.load(f)
-                snapshots = data.get('snapshots', [])
-        except Exception as e:
-            logger.warning(f"Could not load existing trend snapshots: {e}")
-
-    # Check if we already have a snapshot for today (avoid duplicates)
-    existing_dates = {s.get('date') for s in snapshots}
-    if snapshot_date not in existing_dates:
-        snapshots.append(snapshot)
-        logger.info(f"Added trend snapshot for {snapshot_date}")
-    else:
-        # Update today's snapshot
-        for i, s in enumerate(snapshots):
-            if s.get('date') == snapshot_date:
-                snapshots[i] = snapshot
-                logger.info(f"Updated trend snapshot for {snapshot_date}")
-                break
-
-    # Keep only last 104 weeks (2 years of weekly data)
-    snapshots = snapshots[-104:]
-
-    # Save
-    try:
-        with open(TREND_SNAPSHOTS_FILE, 'w') as f:
-            json.dump({
-                'snapshots': snapshots,
-                'last_updated': datetime.now().isoformat(),
-                'count': len(snapshots)
-            }, f, indent=2)
-        logger.info(f"Saved {len(snapshots)} trend snapshots")
-    except Exception as e:
-        logger.error(f"Failed to save trend snapshots: {e}")
+    # Write to BigQuery
+    writer = _get_bq_writer()
+    writer.write_trend_snapshot(snapshot_date, snapshot_officials)
+    logger.info(f"Saved trend snapshot for {snapshot_date}")
 
 
 def get_trend_history(bioguide_id: str, periods: int = 8) -> List[Dict]:
@@ -885,31 +819,12 @@ def get_trend_history(bioguide_id: str, periods: int = 8) -> List[Dict]:
     Returns:
         List of {date, finance_pct} dicts, oldest first
     """
-    if not TREND_SNAPSHOTS_FILE.exists():
-        return []
-
     try:
-        with open(TREND_SNAPSHOTS_FILE, 'r') as f:
-            data = json.load(f)
-            snapshots = data.get('snapshots', [])
+        client = _get_bq_client()
+        return client.get_trend_history(bioguide_id, periods)
     except Exception as e:
         logger.warning(f"Could not load trend snapshots: {e}")
         return []
-
-    # Extract this official's history
-    history = []
-    for snapshot in snapshots:
-        official_data = snapshot.get('officials', {}).get(bioguide_id)
-        if official_data:
-            history.append({
-                'date': snapshot.get('date'),
-                'finance_pct': official_data.get('finance_pct', 0),
-                'total_contributions': official_data.get('total_contributions', 0),
-                'finance_contributions': official_data.get('finance_contributions', 0),
-            })
-
-    # Return last N periods
-    return history[-periods:]
 
 
 def enrich_officials_with_trends(officials: List[Dict], periods: int = 8):
@@ -937,7 +852,7 @@ def enrich_officials_with_trends(officials: List[Dict], periods: int = 8):
             official['finance_trend_arrow'] = '►'
         else:
             # Calculate trend
-            pct_values = [h['finance_pct'] for h in history]
+            pct_values = [h.get('finance_pct', 0) for h in history]
             official['finance_pct_trend'] = pct_values
 
             first_pct = pct_values[0]
@@ -998,11 +913,12 @@ def aggregate_trades_by_quarter(trades: List[Dict]) -> List[Dict]:
 
     for trade in trades:
         date_str = trade.get('transaction_date', '')
-        if not date_str or len(date_str) < 7:
+        if not date_str or len(str(date_str)) < 7:
             continue
 
         try:
             # Parse date to get year and quarter
+            date_str = str(date_str)
             year = int(date_str[:4])
             month = int(date_str[5:7])
             quarter = (month - 1) // 3 + 1
@@ -1017,7 +933,7 @@ def aggregate_trades_by_quarter(trades: List[Dict]) -> List[Dict]:
             else:
                 trade_value = float(amount) if amount else 0
 
-            trade_type = (trade.get('type', '') or '').lower()
+            trade_type = (trade.get('type', '') or trade.get('trade_type', '') or '').lower()
 
             if trade_type in ('purchase', 'buy'):
                 quarterly[quarter_key]['purchases'] += trade_value
@@ -1063,10 +979,11 @@ def aggregate_contributions_by_quarter(contributions: List[Dict]) -> List[Dict]:
 
     for contrib in contributions:
         date_str = contrib.get('date', '')
-        if not date_str or len(date_str) < 7:
+        if not date_str or len(str(date_str)) < 7:
             continue
 
         try:
+            date_str = str(date_str)
             year = int(date_str[:4])
             month = int(date_str[5:7])
             quarter = (month - 1) // 3 + 1
@@ -1163,10 +1080,32 @@ def get_data_age_days() -> Optional[int]:
     if not last_updated:
         return None
     try:
-        updated_dt = datetime.fromisoformat(last_updated)
-        return (datetime.now() - updated_dt).days
+        if isinstance(last_updated, str):
+            updated_dt = datetime.fromisoformat(last_updated.replace('Z', '+00:00'))
+        else:
+            updated_dt = last_updated
+        return (datetime.now() - updated_dt.replace(tzinfo=None)).days
     except:
         return None
+
+
+# =============================================================================
+# LEGACY DIRECTORY FUNCTIONS (no-ops for backward compatibility)
+# =============================================================================
+
+def ensure_dirs():
+    """No-op: directories not needed with BigQuery storage."""
+    pass
+
+
+def get_current_data_path():
+    """No-op: returns None since we use BigQuery."""
+    return None
+
+
+def get_weekly_data_path(date=None):
+    """No-op: returns None since we use BigQuery."""
+    return None
 
 
 # =============================================================================
@@ -1176,15 +1115,13 @@ def get_data_age_days() -> Optional[int]:
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
-    print("Data Store Test")
+    print("Data Store Test (BigQuery)")
     print("=" * 40)
-    print(f"Data directory: {DATA_DIR}")
-    print(f"Current directory: {CURRENT_DIR}")
     print(f"Has valid data: {has_valid_data()}")
     print(f"Data age: {get_data_age_days()} days")
 
     metadata = get_metadata()
-    print(f"\nMetadata: {json.dumps(metadata, indent=2)}")
+    print(f"\nMetadata: {metadata}")
 
     officials = get_officials()
     print(f"\nOfficials count: {len(officials)}")
