@@ -103,8 +103,27 @@ class ElectWatchBQWriter:
         """
         logger.info(f"Writing {len(officials)} officials to BigQuery")
         
-        rows = []
+        # Deduplicate by bioguide_id, keeping the record with more data
+        seen = {}
         for official in officials:
+            bid = official.get('bioguide_id')
+            if bid:
+                if bid not in seen:
+                    seen[bid] = official
+                else:
+                    # Keep the one with more non-null fields
+                    existing = seen[bid]
+                    new_fields = sum(1 for v in official.values() if v)
+                    existing_fields = sum(1 for v in existing.values() if v)
+                    if new_fields > existing_fields:
+                        seen[bid] = official
+        
+        deduped_officials = list(seen.values())
+        if len(deduped_officials) < len(officials):
+            logger.info(f"Deduplicated {len(officials)} -> {len(deduped_officials)} officials by bioguide_id")
+        
+        rows = []
+        for official in deduped_officials:
             row = self._transform_official(official)
             rows.append(row)
         
