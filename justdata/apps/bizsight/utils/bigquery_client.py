@@ -60,32 +60,16 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
         except Exception as e:
             logger.warning(f"Failed to use credentials JSON: {e}")
 
-    # Try to find credentials file
+    # Try to find credentials file (fallback - prefer environment variables above)
     cred_path = None
     base_dir = Path(__file__).parent.parent
     possible_paths = [
-        # Actual workspace location (primary)
-        Path(r"C:\Users\edite\OneDrive - Nat'l Community Reinvestment Coaltn\Desktop\DREAM Analysis\config\credentials\hdma1-242116-74024e2eb88f.json"),
-        # C:\DREAM locations (common workspace location)
-        Path('C:/DREAM/config/credentials/hdma1-242116-74024e2eb88f.json'),
-        Path('C:/DREAM/hdma1-242116-74024e2eb88f.json'),
         # Local credentials directory
         base_dir / 'credentials' / 'bigquery_service_account.json',
-        base_dir / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
-        # Relative paths
-        Path('config/credentials/hdma1-242116-74024e2eb88f.json'),
-        Path('hdma1-242116-74024e2eb88f.json'),
-        # Root workspace locations
-        Path(__file__).parent.parent.parent.parent / 'config' / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
-        Path(__file__).parent.parent.parent.parent / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
+        # Project root credentials
+        Path(__file__).parent.parent.parent.parent / 'credentials' / 'bigquery_service_account.json',
+        Path(__file__).parent.parent.parent.parent / 'config' / 'credentials' / 'bigquery_service_account.json',
     ]
-
-    # Also check if C:\DREAM\config\credentials exists and search for any hdma1-*.json files
-    cred_dir = Path('C:/DREAM/config/credentials')
-    if cred_dir.exists():
-        for json_file in cred_dir.glob('hdma1-*.json'):
-            if json_file not in possible_paths:
-                possible_paths.append(json_file)
 
     # First, check if credentials_path is provided and exists
     if credentials_path and os.path.exists(credentials_path):

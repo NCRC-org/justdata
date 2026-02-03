@@ -944,33 +944,18 @@ def test_lender_analysis():
                     progress_tracker.update_progress('querying_data', 25, 'Finding peer lenders in Orange County...')
                 
                 # Query aggregated volumes for all lenders in Orange County
-                years_str = "', '".join(map(str, test_years))
+                # Note: de_hmda has activity_year as INT64, so use integers not strings
+                years_int_str = ", ".join(map(str, test_years))
                 volume_query = f"""
-                SELECT 
+                SELECT
                     h.lei,
                     SUM(h.loan_amount) as total_volume
-                FROM `{PROJECT_ID}.hmda.hmda` h
-                -- For 2022-2023 Connecticut data, join to shared.census to get planning region from tract
-                LEFT JOIN `{PROJECT_ID}.shared.census` ct_tract
-                    ON CAST(h.county_code AS STRING) LIKE '09%'
-                    AND CAST(h.county_code AS STRING) NOT LIKE '091%'
-                    AND h.census_tract IS NOT NULL
-                    AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
+                FROM `{PROJECT_ID}.dataexplorer.de_hmda` h
+                -- de_hmda already has geoid5 normalized (Connecticut planning regions applied)
                 LEFT JOIN `{PROJECT_ID}.shared.cbsa_to_county` c
-                    ON COALESCE(
-                        -- For 2022-2023: Use planning region from tract
-                        CASE 
-                            WHEN CAST(h.county_code AS STRING) LIKE '09%' 
-                                 AND CAST(h.county_code AS STRING) NOT LIKE '091%'
-                                 AND ct_tract.geoid IS NOT NULL THEN
-                                SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 1, 5)
-                            ELSE NULL
-                        END,
-                        -- For 2024: Use planning region code directly from county_code
-                        CAST(h.county_code AS STRING)
-                    ) = CAST(c.geoid5 AS STRING)
+                    ON h.geoid5 = CAST(c.geoid5 AS STRING)
                 WHERE c.county_state = '{escaped_county}'
-                  AND h.activity_year IN ('{years_str}')
+                  AND h.activity_year IN ({years_int_str})
                   AND h.action_taken = '1'
                   AND h.occupancy_type = '1'
                   AND h.total_units IN ('1', '2', '3', '4')

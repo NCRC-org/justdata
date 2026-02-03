@@ -78,7 +78,7 @@ SELECT
     AVG(h.income) as avg_income,
     -- Check if loan has demographic data (using pre-computed flag from de_hmda)
     COUNTIF(h.has_demographic_data) as loans_with_demographic_data
-FROM `justdata-ncrc.shared.de_hmda` h
+FROM `justdata-ncrc.dataexplorer.de_hmda` h
 -- No joins needed! Everything is already in de_hmda:
 -- - county_state is already joined from shared.cbsa_to_county
 -- - lender_name and lender_type are already joined from hmda.lenders18
