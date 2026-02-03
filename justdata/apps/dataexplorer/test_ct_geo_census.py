@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test if geo.census table has planning region codes for Connecticut tracts.
+Test if shared.census table has planning region codes for Connecticut tracts.
 This will tell us if we can use it to map 2022-2023 legacy county codes to planning regions.
 """
 
@@ -20,23 +20,23 @@ print("TESTING GEO.CENSUS FOR CONNECTICUT PLANNING REGION CODES")
 print("=" * 80)
 print()
 
-# Test: Check if geo.census has planning region codes for Connecticut tracts
+# Test: Check if shared.census has planning region codes for Connecticut tracts
 query = f"""
 SELECT 
     SUBSTR(LPAD(CAST(geoid AS STRING), 11, '0'), 1, 5) as geoid5,
     COUNT(DISTINCT geoid) as distinct_tracts,
     COUNT(*) as total_records
-FROM `{PROJECT_ID}.geo.census`
+FROM `{PROJECT_ID}.shared.census`
 WHERE SUBSTR(LPAD(CAST(geoid AS STRING), 11, '0'), 1, 2) = '09'  -- Connecticut
 GROUP BY geoid5
 ORDER BY geoid5
 """
 
-print("Checking geo.census for Connecticut GEOID5 codes:")
+print("Checking shared.census for Connecticut GEOID5 codes:")
 print("-" * 80)
 results = execute_query(client, query)
 if results:
-    print(f"Found {len(results)} distinct GEOID5 codes in geo.census for Connecticut")
+    print(f"Found {len(results)} distinct GEOID5 codes in shared.census for Connecticut")
     print("\nGEOID5 codes found:")
     print("GEOID5 | Distinct Tracts | Total Records")
     print("-" * 50)
@@ -66,13 +66,13 @@ if results:
         print(f"  Codes: {', '.join(sorted(legacy_counties))}")
     
     if planning_regions and legacy_counties:
-        print("\n✓ geo.census has BOTH planning regions AND legacy counties")
+        print("\n✓ shared.census has BOTH planning regions AND legacy counties")
         print("  This means we can map 2022-2023 data using tract lookups!")
     elif planning_regions and not legacy_counties:
-        print("\n✓ geo.census has ONLY planning regions")
+        print("\n✓ shared.census has ONLY planning regions")
         print("  We can use tract lookups to map 2022-2023 legacy counties to planning regions")
     elif legacy_counties and not planning_regions:
-        print("\n✗ geo.census has ONLY legacy counties")
+        print("\n✗ shared.census has ONLY legacy counties")
         print("  We'll need a different mapping approach")
     else:
         print("\n? Unexpected: No Connecticut codes found")

@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "last_updated": "2026-02-01T06:23:07.542244",
+  "classification_schema": {
+    "sectors": [
+      "financial",
+      "non_financial"
+    ],
+    "sub_sectors": [
+      "banking",
+      "mortgage",
+      "consumer_lending",
+      "payday",
+      "fintech",
+      "credit_reporting",
+      "debt_collection",
+      "payments",
+      "investment_banking",
+      "crypto",
+      "housing",
+      "real_estate",
+      "insurance",
+      "community_development"
+    ],
+    "entity_levels": [
+      "industry",
+      "firm"
+    ]
+  },
+  "pac_decisions": {},
+  "employer_decisions": {},
+  "ticker_decisions": {
+    "37045XEF9": {
+      "include": false,
+      "sector": null,
+      "sub_sector": null,
+      "entity_level": "firm",
+      "decided_by": "admin",
+      "decided_date": "2026-02-01"
+    }
+  }
+}

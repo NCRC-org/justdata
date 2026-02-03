@@ -24,7 +24,7 @@ tract_minority_population_percent = (
 
 **Data Source:**
 - U.S. Census Bureau data (ACS 5-year estimates or Decennial Census)
-- Stored in BigQuery `geo.census` table
+- Stored in BigQuery `shared.census` table
 - Fields: `total_persons`, `total_white` (non-Hispanic White)
 
 **SQL Implementation:**
@@ -124,7 +124,7 @@ A tract with 85% minority population is always "High Minority" regardless of the
 
 ### Base Calculation
 - **SQL Generation**: `shared/data_processing/census_tract_utils.py` → `get_minority_percentage()`
-- **BigQuery Table**: `geo.census` table with `total_persons` and `total_white` fields
+- **BigQuery Table**: `shared.census` table with `total_persons` and `total_white` fields
 
 ### Area Analysis (Quartiles)
 - **Quartile Calculation**: `apps/lendsight/mortgage_report_builder.py` → `calculate_minority_quartiles()`

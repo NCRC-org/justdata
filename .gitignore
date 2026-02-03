@@ -190,3 +190,11 @@ credentials.json
 justdata/data/cache/
 *.pkl
 keys/
+
+# ElectWatch data artifacts (should be stored in BigQuery, not git)
+justdata/apps/electwatch/data/weekly/
+justdata/apps/electwatch/data/exports/
+justdata/apps/electwatch/data/review_queue.json
+
+# Never commit backup files
+*_backup_*.html

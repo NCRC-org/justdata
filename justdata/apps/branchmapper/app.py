@@ -136,7 +136,7 @@ def counties_by_state(state_code):
             state_code_escaped = escape_sql_string(state_code)
             query = f"""
             SELECT DISTINCT county_state 
-            FROM geo.cbsa_to_county 
+            FROM shared.cbsa_to_county 
             WHERE LOWER(SPLIT(county_state, ',')[SAFE_OFFSET(1)]) = LOWER('{state_code_escaped}')
             ORDER BY county_state
             """

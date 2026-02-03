@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Industries | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ElectWatch Design System CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/electwatch-design-system.css') }}">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ew-neutral-50);
+            color: var(--ew-neutral-800);
+            min-height: 100vh;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .page-header {
+            background: white;
+            padding: 24px;
+            border-bottom: 1px solid var(--ew-neutral-200);
+        }
+
+        .page-header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--ew-neutral-900);
+            margin: 0 0 8px 0;
+        }
+
+        .page-header .subtitle {
+            color: var(--ew-neutral-600);
+            font-size: 15px;
+            margin: 0;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .industries-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .industry-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            padding: 24px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .industry-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .industry-card-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .industry-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .industry-icon.banking {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+
+        .industry-icon.insurance {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .industry-icon.investment {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .industry-icon.consumer {
+            background: #ffedd5;
+            color: #ea580c;
+        }
+
+        .industry-icon.realestate {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .industry-icon.crypto {
+            background: #cffafe;
+            color: #0891b2;
+        }
+
+        .industry-card-title {
+            flex: 1;
+        }
+
+        .industry-card-title h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--ew-neutral-800);
+        }
+
+        .industry-card-title .firms-count {
+            font-size: 13px;
+            color: var(--ew-neutral-500);
+        }
+
+        .industry-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--ew-neutral-100);
+        }
+
+        .industry-stat {
+            text-align: center;
+        }
+
+        .industry-stat-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ew-primary-700);
+        }
+
+        .industry-stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--ew-neutral-500);
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 16px;
+            }
+
+            .industries-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include "shared_header.html" %}
+
+    <div class="page-header">
+        <h1>Financial Sector Industries</h1>
+        <p class="subtitle">Contributions by industry segment</p>
+    </div>
+
+    <main class="main-content">
+        <div class="industries-grid" id="industries-grid">
+            <!-- Populated by JavaScript -->
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background: #1E3D5C; color: white; padding: 0; margin-top: 40px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 24px;">
+            <div style="text-align: left;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; color: rgba(255,255,255,0.9);">&copy; 2026 National Community Reinvestment Coalition</p>
+                <div style="display: flex; gap: 16px; font-size: 13px;">
+                    <a href="mailto:research@ncrc.org" style="color: #8bb8ff; text-decoration: none;">research@ncrc.org</a>
+                    <span style="color: rgba(255,255,255,0.5);">|</span>
+                    <a href="tel:+12024644600" style="color: #8bb8ff; text-decoration: none;">(202) 464-4600</a>
+                </div>
+                <p style="margin: 12px 0 0 0; font-size: 11px; color: rgba(255,255,255,0.6);">
+                    Created by Jay Richardson &amp; Jad Edlebi
+                </p>
+            </div>
+            <div>
+                <img src="/static/img/ncrc-logo-white.png" alt="NCRC" style="height: 50px; opacity: 0.9;">
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const industries = [
+            {
+                id: 'banking',
+                name: 'Commercial Banking',
+                icon: 'fa-building-columns',
+                iconClass: 'banking',
+                firms: 45,
+                pac_total: 12500000,
+                individual_total: 4200000,
+                total: 16700000
+            },
+            {
+                id: 'insurance',
+                name: 'Insurance',
+                icon: 'fa-shield-halved',
+                iconClass: 'insurance',
+                firms: 38,
+                pac_total: 8200000,
+                individual_total: 2100000,
+                total: 10300000
+            },
+            {
+                id: 'investment',
+                name: 'Securities & Investment',
+                icon: 'fa-chart-line',
+                iconClass: 'investment',
+                firms: 32,
+                pac_total: 7800000,
+                individual_total: 3500000,
+                total: 11300000
+            },
+            {
+                id: 'consumer_lending',
+                name: 'Consumer Finance',
+                icon: 'fa-credit-card',
+                iconClass: 'consumer',
+                firms: 28,
+                pac_total: 5400000,
+                individual_total: 1800000,
+                total: 7200000
+            },
+            {
+                id: 'mortgage',
+                name: 'Real Estate & Mortgage',
+                icon: 'fa-house',
+                iconClass: 'realestate',
+                firms: 25,
+                pac_total: 4200000,
+                individual_total: 1200000,
+                total: 5400000
+            },
+            {
+                id: 'fintech',
+                name: 'Fintech & Crypto',
+                icon: 'fa-bitcoin-sign',
+                iconClass: 'crypto',
+                firms: 18,
+                pac_total: 2800000,
+                individual_total: 1500000,
+                total: 4300000
+            }
+        ];
+
+        function formatAmount(amount) {
+            if (!amount || amount === 0) return '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${Math.round(amount / 1000)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function renderIndustries() {
+            const grid = document.getElementById('industries-grid');
+            grid.innerHTML = industries.map(ind => `
+                <a href="/electwatch/industry/${ind.id}" class="industry-card">
+                    <div class="industry-card-header">
+                        <div class="industry-icon ${ind.iconClass}">
+                            <i class="fas ${ind.icon}"></i>
+                        </div>
+                        <div class="industry-card-title">
+                            <h3>${ind.name}</h3>
+                            <span class="firms-count">${ind.firms} firms</span>
+                        </div>
+                    </div>
+                    <div class="industry-stats">
+                        <div class="industry-stat">
+                            <div class="industry-stat-value">${formatAmount(ind.pac_total)}</div>
+                            <div class="industry-stat-label">PAC</div>
+                        </div>
+                        <div class="industry-stat">
+                            <div class="industry-stat-value">${formatAmount(ind.individual_total)}</div>
+                            <div class="industry-stat-label">Individual</div>
+                        </div>
+                        <div class="industry-stat">
+                            <div class="industry-stat-value">${formatAmount(ind.total)}</div>
+                            <div class="industry-stat-label">Total</div>
+                        </div>
+                    </div>
+                </a>
+            `).join('');
+        }
+
+        renderIndustries();
+    </script>
+</body>
+</html>

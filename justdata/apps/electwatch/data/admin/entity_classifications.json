@@ -1,0 +1,20 @@
+{
+  "classifications": {
+    "MICROSOFT CORP": {
+      "entity_type": "trade_association",
+      "original_name": "Microsoft Corp",
+      "user_email": "anonymous",
+      "updated_at": "2026-02-01T08:37:40.395573"
+    }
+  },
+  "history": [
+    {
+      "entity_id": "Microsoft Corp",
+      "old_type": null,
+      "new_type": "trade_association",
+      "user_email": "anonymous",
+      "timestamp": "2026-02-01T08:37:40.395573"
+    }
+  ],
+  "updated_at": "2026-02-01T08:37:40.395573"
+}

@@ -353,7 +353,7 @@ def create_app():
                         SELECT
                             COUNT(*) as total_records,
                             COUNT(DISTINCT lei) as unique_leis
-                        FROM `justdata-ncrc.shared.de_hmda`
+                        FROM `justdata-ncrc.dataexplorer.de_hmda`
                         WHERE activity_year >= 2018
                     """
                     result = client.query(query).result()

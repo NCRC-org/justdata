@@ -45,9 +45,9 @@ Here's how to update `apps/lendsight/sql_templates/mortgage_report.sql`:
 **Before:**
 ```sql
 FROM `hdma1-242116.hmda.hmda` h
-LEFT JOIN `hdma1-242116.geo.census` ct_tract
+LEFT JOIN `justdata-ncrc.shared.census` ct_tract
   ON ...
-LEFT JOIN `hdma1-242116.geo.cbsa_to_county` c
+LEFT JOIN `justdata-ncrc.shared.cbsa_to_county` c
   ON ...
 LEFT JOIN `hdma1-242116.hmda.lenders18` l
   ON h.lei = l.lei

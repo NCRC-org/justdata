@@ -624,23 +624,26 @@ filtered_sb_data AS (
             END
         ) as cbsa_name,
         c.state_code,
-        (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
+        COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         -- SB amounts are stored in thousands of dollars, convert to actual dollars
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
-        -- LMICT: Use pre-aggregated lmi_tract_loans from sb_county_summary
-        d.lmi_tract_loans as lmict_loans_count,
-        -- LMICT amount: Estimate proportionally since summary table doesn't have separate LMI amount
-        -- (lmi_tract_loans / total_loans) * total_amount
-        SAFE_DIVIDE(d.lmi_tract_loans, d.total_loans) * (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as lmict_loans_amount,
-        d.numsbrev_under_1m as loans_rev_under_1m,
-        d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
+        -- LMICT: Use pre-computed lmi_tract_loans from summary table
+        COALESCE(d.lmi_tract_loans, 0) as lmict_loans_count,
+        -- Estimate LMICT amount proportionally (lmi_tract_loans / total_loans * total_amount)
+        SAFE_MULTIPLY(
+            SAFE_DIVIDE(COALESCE(d.lmi_tract_loans, 0), NULLIF(COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m), 0)),
+            (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
+        ) as lmict_loans_amount,
+        COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
+        COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
     FROM `justdata-ncrc.bizsight.sb_county_summary` d
     INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
         ON d.respondent_id = l.sb_resid
+        AND CAST(d.year AS STRING) = l.sb_year
     LEFT JOIN cbsa_crosswalk c
-        ON CAST(d.geoid5 AS STRING) = c.geoid5
+        ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = c.geoid5
     WHERE CAST(d.year AS STRING) IN ('{years_list}')
-        AND CAST(d.geoid5 AS STRING) IN ('{geoid5_list}')
+        AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
         AND (l.sb_resid = '{respondent_id_no_prefix}' OR l.sb_resid = '{sb_respondent_id}')
         AND c.cbsa_code IS NOT NULL  -- Only include counties that have a CBSA mapping (in assessment areas)
 ),
@@ -1060,36 +1063,40 @@ WITH cbsa_crosswalk AS (
     WHERE CAST(geoid5 AS STRING) IN ('{geoid5_list}')
 ),
 filtered_sb_data AS (
-    SELECT 
+    SELECT
         CAST(d.year AS STRING) as year,
         COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
-        COALESCE(c.cbsa_name, 
-            CASE 
+        COALESCE(c.cbsa_name,
+            CASE
                 WHEN c.state_name IS NOT NULL THEN CONCAT(c.state_name, ' Non-MSA')
                 ELSE 'Non-MSA'
             END
         ) as cbsa_name,
         l.sb_resid,
-        (d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
+        COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         -- SB amounts are stored in thousands of dollars, convert to actual dollars
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
-        -- LMICT: Use pre-aggregated lmi_tract_loans from sb_county_summary
-        d.lmi_tract_loans as lmict_loans_count,
-        -- LMICT amount: Estimate proportionally since summary table doesn't have separate LMI amount
-        SAFE_DIVIDE(d.lmi_tract_loans, d.total_loans) * (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as lmict_loans_amount,
-        d.numsbrev_under_1m as loans_rev_under_1m,
-        d.amtsbrev_under_1m * 1000 as amount_rev_under_1m
+        -- LMICT: Use pre-computed lmi_tract_loans from summary table
+        COALESCE(d.lmi_tract_loans, 0) as lmict_loans_count,
+        -- Estimate LMICT amount proportionally (lmi_tract_loans / total_loans * total_amount)
+        SAFE_MULTIPLY(
+            SAFE_DIVIDE(COALESCE(d.lmi_tract_loans, 0), NULLIF(COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m), 0)),
+            (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
+        ) as lmict_loans_amount,
+        COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
+        COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
     FROM `justdata-ncrc.bizsight.sb_county_summary` d
     INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
         ON d.respondent_id = l.sb_resid
+        AND CAST(d.year AS STRING) = l.sb_year
     LEFT JOIN cbsa_crosswalk c
-        ON CAST(d.geoid5 AS STRING) = c.geoid5
+        ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = c.geoid5
     WHERE CAST(d.year AS STRING) IN ('{years_list}')
-        AND CAST(d.geoid5 AS STRING) IN ('{geoid5_list}')
+        AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
         AND c.cbsa_code IS NOT NULL  -- Only include counties that have a CBSA mapping (in assessment areas)
 ),
 subject_sb_volume AS (
-    SELECT 
+    SELECT
         year,
         cbsa_code,
         SUM(sb_loans_count) as subject_sb_vol

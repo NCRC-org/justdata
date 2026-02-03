@@ -60,32 +60,16 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
         except Exception as e:
             logger.warning(f"Failed to use credentials JSON: {e}")
 
-    # Try to find credentials file
+    # Try to find credentials file (fallback - prefer environment variables above)
     cred_path = None
     base_dir = Path(__file__).parent.parent
     possible_paths = [
-        # Actual workspace location (primary)
-        Path(r"C:\Users\edite\OneDrive - Nat'l Community Reinvestment Coaltn\Desktop\DREAM Analysis\config\credentials\hdma1-242116-74024e2eb88f.json"),
-        # C:\DREAM locations (common workspace location)
-        Path('C:/DREAM/config/credentials/hdma1-242116-74024e2eb88f.json'),
-        Path('C:/DREAM/hdma1-242116-74024e2eb88f.json'),
         # Local credentials directory
         base_dir / 'credentials' / 'bigquery_service_account.json',
-        base_dir / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
-        # Relative paths
-        Path('config/credentials/hdma1-242116-74024e2eb88f.json'),
-        Path('hdma1-242116-74024e2eb88f.json'),
-        # Root workspace locations
-        Path(__file__).parent.parent.parent.parent / 'config' / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
-        Path(__file__).parent.parent.parent.parent / 'credentials' / 'hdma1-242116-74024e2eb88f.json',
+        # Project root credentials
+        Path(__file__).parent.parent.parent.parent / 'credentials' / 'bigquery_service_account.json',
+        Path(__file__).parent.parent.parent.parent / 'config' / 'credentials' / 'bigquery_service_account.json',
     ]
-
-    # Also check if C:\DREAM\config\credentials exists and search for any hdma1-*.json files
-    cred_dir = Path('C:/DREAM/config/credentials')
-    if cred_dir.exists():
-        for json_file in cred_dir.glob('hdma1-*.json'):
-            if json_file not in possible_paths:
-                possible_paths.append(json_file)
 
     # First, check if credentials_path is provided and exists
     if credentials_path and os.path.exists(credentials_path):
@@ -226,7 +210,7 @@ class BigQueryClient:
             year_list = ", ".join(str(y) for y in years)
             year_filter = f"AND CAST(a.year AS INT64) IN ({year_list})"
         
-        # Note: sb.disclosure is county-level data (geoid5), not tract-level (geoid10)
+        # Note: bizsight.sb_county_summary is county-level data (geoid5), not tract-level (geoid10)
         # This function now returns county-level data instead of tract-level
         # Note: income_group_total indicates tract income level with these known values:
         #   3-digit codes: 101=Low, 102=Moderate, 103=Middle, 104=Upper
@@ -278,8 +262,8 @@ class BigQueryClient:
                 WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
                 ELSE 0
             END as income_level
-        FROM `{self.project_id}.sb.disclosure` a
-        JOIN `{self.project_id}.geo.cbsa_to_county` g
+        FROM `{self.project_id}.bizsight.sb_county_summary` a
+        JOIN `{self.project_id}.shared.cbsa_to_county` g
             ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
         WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
             {year_filter}
@@ -315,10 +299,10 @@ class BigQueryClient:
             g.county as county_name,
             g.state as state_name,
             g.geoid5
-        FROM `{self.project_id}.sb.disclosure` d
-        JOIN `{self.project_id}.sb.lenders` l 
+        FROM `{self.project_id}.bizsight.sb_county_summary` d
+        JOIN `{self.project_id}.bizsight.sb_lenders` l 
             ON d.respondent_id = l.sb_resid
-        JOIN `{self.project_id}.geo.cbsa_to_county` g 
+        JOIN `{self.project_id}.shared.cbsa_to_county` g 
             ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
         WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
             {year_filter}
@@ -366,8 +350,8 @@ class BigQueryClient:
                     WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
                     ELSE 0
                 END as is_lmi
-            FROM `{self.project_id}.sb.disclosure` a
-            JOIN `{self.project_id}.geo.cbsa_to_county` g
+            FROM `{self.project_id}.bizsight.sb_county_summary` a
+            JOIN `{self.project_id}.shared.cbsa_to_county` g
                 ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
             WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
                 {year_filter}
@@ -413,8 +397,8 @@ class BigQueryClient:
                 COALESCE(c.total_persons, 0) - COALESCE(c.total_white, 0),
                 NULLIF(COALESCE(c.total_persons, 0), 0)
             ) * 100, 0.5) OVER() as county_median_minority_pct
-        FROM `{self.project_id}.geo.census` c
-        JOIN `{self.project_id}.geo.cbsa_to_county` g 
+        FROM `{self.project_id}.shared.census` c
+        JOIN `{self.project_id}.shared.cbsa_to_county` g 
             ON SUBSTR(c.geoid, 1, 5) = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
         WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
         LIMIT 1
@@ -444,7 +428,7 @@ class BigQueryClient:
             geoid5,
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-        FROM `{self.project_id}.geo.cbsa_to_county`
+        FROM `{self.project_id}.shared.cbsa_to_county`
         WHERE geoid5 IS NOT NULL
             AND county_state IS NOT NULL
             AND TRIM(county_state) != ''
@@ -464,12 +448,12 @@ class BigQueryClient:
         in data_utils.py now uses a hardcoded list of all US states (like LendSight)
         for better reliability and performance.
         """
-        # Query directly from geo.cbsa_to_county (like LendSight does for counties)
+        # Query directly from shared.cbsa_to_county (like LendSight does for counties)
         sql = f"""
         SELECT DISTINCT
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
             state as state_name
-        FROM `{self.project_id}.geo.cbsa_to_county`
+        FROM `{self.project_id}.shared.cbsa_to_county`
         WHERE geoid5 IS NOT NULL
             AND state IS NOT NULL
         ORDER BY state
@@ -479,7 +463,7 @@ class BigQueryClient:
     
     def get_last_5_years_sb(self) -> List[int]:
         """
-        Get the last 5 years dynamically from SB disclosure data (sb.disclosure).
+        Get the last 5 years dynamically from SB disclosure data (bizsight.sb_county_summary).
         
         Returns:
             List of the 5 most recent years available, sorted descending (e.g., [2024, 2023, 2022, 2021, 2020])
@@ -487,7 +471,7 @@ class BigQueryClient:
         try:
             query = f"""
             SELECT DISTINCT year
-            FROM `{self.project_id}.sb.disclosure`
+            FROM `{self.project_id}.bizsight.sb_county_summary`
             WHERE year IS NOT NULL
             ORDER BY year DESC
             LIMIT 5
@@ -511,7 +495,7 @@ class BigQueryClient:
         """Get list of available years from disclosure data."""
         sql = f"""
         SELECT DISTINCT year
-        FROM `{self.project_id}.sb.disclosure`
+        FROM `{self.project_id}.bizsight.sb_county_summary`
         WHERE year IS NOT NULL
         ORDER BY year
         """
@@ -552,8 +536,8 @@ class BigQueryClient:
                     WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
                     ELSE 0
                 END as is_lmi
-            FROM `{self.project_id}.sb.disclosure` a
-            JOIN `{self.project_id}.geo.cbsa_to_county` g
+            FROM `{self.project_id}.bizsight.sb_county_summary` a
+            JOIN `{self.project_id}.shared.cbsa_to_county` g
                 ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
             WHERE SUBSTR(LPAD(CAST(g.geoid5 AS STRING), 5, '0'), 1, 2) = '{state_fips_padded}'
                 AND CAST(a.year AS INT64) = {year}
@@ -616,7 +600,7 @@ class BigQueryClient:
                     WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
                     ELSE 0
                 END as is_lmi
-            FROM `{self.project_id}.sb.disclosure` a
+            FROM `{self.project_id}.bizsight.sb_county_summary` a
             WHERE CAST(a.year AS INT64) = {year}
         )
         SELECT

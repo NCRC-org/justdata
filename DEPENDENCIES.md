@@ -68,7 +68,7 @@ JustData is a unified platform with multiple subprojects, each with specific dep
 
 **BigQuery Tables**:
 - `fdic.sod_*` - Summary of Deposits data by year
-- `geo.cbsa_to_county` - Geographic mapping
+- `shared.cbsa_to_county` - Geographic mapping
 
 **Report Generation**:
 - **Format**: Excel (.xlsx), CSV, JSON, ZIP
@@ -101,7 +101,7 @@ JustData is a unified platform with multiple subprojects, each with specific dep
 **BigQuery Tables**:
 - `sb.disclosure` - Lender-level disclosure data (county level)
 - `sb.lenders` - Lender information
-- `geo.cbsa_to_county` - Geographic mapping
+- `shared.cbsa_to_county` - Geographic mapping
 
 **Report Generation**:
 - **Format**: Excel (.xlsx), PDF, PowerPoint (via Playwright)

@@ -3,7 +3,7 @@
 This document contains the exact BigQuery queries used across all applications to ensure consistency.
 
 ## Data Source
-**Table**: `geo.cbsa_to_county`
+**Table**: `shared.cbsa_to_county`
 
 **Key Columns**:
 - `state` - State abbreviation (e.g., "CA", "NY", "TX")
@@ -19,7 +19,7 @@ This document contains the exact BigQuery queries used across all applications t
 
 ```sql
 SELECT DISTINCT county_state 
-FROM geo.cbsa_to_county 
+FROM shared.cbsa_to_county 
 WHERE county_state IS NOT NULL
 ORDER BY county_state
 ```
@@ -37,7 +37,7 @@ ORDER BY county_state
 
 ```sql
 SELECT DISTINCT state
-FROM geo.cbsa_to_county 
+FROM shared.cbsa_to_county 
 WHERE state IS NOT NULL
 ORDER BY state
 ```
@@ -56,7 +56,7 @@ ORDER BY state
 
 ```sql
 SELECT DISTINCT county_state
-FROM geo.cbsa_to_county 
+FROM shared.cbsa_to_county 
 WHERE state = '{STATE_CODE}'
 ORDER BY county_state
 ```
@@ -67,7 +67,7 @@ ORDER BY county_state
 **Example**:
 ```sql
 SELECT DISTINCT county_state
-FROM geo.cbsa_to_county 
+FROM shared.cbsa_to_county 
 WHERE state = 'CA'
 ORDER BY county_state
 ```
@@ -86,7 +86,7 @@ ORDER BY county_state
 SELECT DISTINCT 
     cbsa_code as code,
     cbsa_name as name
-FROM geo.cbsa_to_county 
+FROM shared.cbsa_to_county 
 WHERE cbsa_code IS NOT NULL AND cbsa_name IS NOT NULL
 ORDER BY cbsa_name
 ```
@@ -112,7 +112,7 @@ This ensures the applications work reliably even without BigQuery access.
 1. All queries use `DISTINCT` to avoid duplicates
 2. `ORDER BY` ensures consistent, alphabetical sorting
 3. `WHERE ... IS NOT NULL` filters out any null/invalid entries
-4. Queries are fast because `geo.cbsa_to_county` is a reference table (~3,247 rows)
+4. Queries are fast because `shared.cbsa_to_county` is a reference table (~3,247 rows)
 
 ---
 

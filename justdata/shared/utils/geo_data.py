@@ -2,7 +2,7 @@
 """
 Shared geographic data utilities for all applications.
 Provides fallback data for states and counties when BigQuery is unavailable.
-All 3,247 counties from geo.cbsa_to_county are included.
+All 3,247 counties from shared.cbsa_to_county are included.
 """
 
 from typing import List, Dict

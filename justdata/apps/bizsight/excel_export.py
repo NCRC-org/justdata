@@ -88,7 +88,7 @@ def save_bizsight_excel_report(analysis_result: Dict[str, Any], output_path: str
         notes_content.append(('', 'This report uses data from the Community Reinvestment Act (CRA) Small Business Lending data.'))
         notes_content.append(('', 'Data compiled and maintained in NCRC\'s curated BigQuery databases.'))
         notes_content.append(('', 'U.S. Census Bureau American Community Survey (ACS) 5-Year Estimates for demographic context.'))
-        notes_content.append(('', 'Census data retrieved from geo.census table in BigQuery.'))
+        notes_content.append(('', 'Census data retrieved from shared.census table in BigQuery.'))
         notes_content.append(('', ''))
         
         notes_content.append(('Report Configuration', ''))

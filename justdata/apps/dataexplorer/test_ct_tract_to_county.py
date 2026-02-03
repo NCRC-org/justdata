@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test if we can get actual county codes from geo.census table for Connecticut tracts.
+Test if we can get actual county codes from shared.census table for Connecticut tracts.
 """
 
 import sys
@@ -19,7 +19,7 @@ print("TESTING TRACT TO COUNTY MAPPING VIA GEO.CENSUS")
 print("=" * 80)
 print()
 
-# Test: Join HMDA tracts to geo.census to see what county codes we get
+# Test: Join HMDA tracts to shared.census to see what county codes we get
 query = f"""
 SELECT 
     h.activity_year as year,
@@ -30,7 +30,7 @@ SELECT
     c.geoid5 as geo_census_geoid5_column,
     COUNT(*) as loan_count
 FROM `{PROJECT_ID}.hmda.hmda` h
-LEFT JOIN `{PROJECT_ID}.geo.census` c
+LEFT JOIN `{PROJECT_ID}.shared.census` c
     ON LPAD(CAST(h.census_tract AS STRING), 11, '0') = LPAD(CAST(c.geoid AS STRING), 11, '0')
 WHERE h.activity_year = '2024'
   AND CAST(h.county_code AS STRING) LIKE '091%'
@@ -42,13 +42,13 @@ ORDER BY loan_count DESC
 LIMIT 30
 """
 
-print("Testing tract-to-county mapping via geo.census")
+print("Testing tract-to-county mapping via shared.census")
 print("-" * 80)
 results = execute_query(client, query)
 if results:
     print(f"Found {len(results)} records")
     print("\nMapping analysis:")
-    print("Planning Region | Tract | Tract PR Code | geo.census geoid5 | geo.census geoid5_col | Loans")
+    print("Planning Region | Tract | Tract PR Code | shared.census geoid5 | shared.census geoid5_col | Loans")
     print("-" * 100)
     
     county_mappings = {}
@@ -70,7 +70,7 @@ if results:
         county_mappings[pr_code][geo_geoid5_col] += count
     
     print("\n" + "=" * 100)
-    print("Summary: Planning Region → County mappings (from geo.census)")
+    print("Summary: Planning Region → County mappings (from shared.census)")
     print("-" * 100)
     for pr_code in sorted(county_mappings.keys()):
         print(f"\nPlanning Region {pr_code}:")

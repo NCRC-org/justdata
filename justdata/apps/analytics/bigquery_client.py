@@ -1229,7 +1229,7 @@ def get_research_activity(
 
 
 def _enrich_with_county_names(client, data: List[Dict]) -> List[Dict]:
-    """Add county names to data using geo.cbsa_to_county table."""
+    """Add county names to data using shared.cbsa_to_county table."""
     fips_list = [d['county_fips'] for d in data if d.get('county_fips')]
     if not fips_list:
         return data

@@ -69,7 +69,7 @@ class IdentifierResolver:
             client = get_bigquery_client(PROJECT_ID)
 
             # Query pattern matching MergerMeter - uses lender_names_gleif for GLEIF-verified data
-            # Joins with lenders18 for RSSD and sb.lenders for small business IDs
+            # Joins with lenders18 for RSSD and bizsight.sb_lenders for small business IDs
             sql = """
             SELECT DISTINCT
                 g.display_name AS name,

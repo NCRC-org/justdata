@@ -173,14 +173,14 @@ def map_counties_to_geoids(
         SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips,
         CAST(cbsa_code AS STRING) as cbsa_code,
         CBSA as cbsa_name
-    FROM `{PROJECT_ID}.geo.cbsa_to_county`
+    FROM `{PROJECT_ID}.shared.cbsa_to_county`
     WHERE {where_clause}
     """
     
     try:
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
         results = execute_query(client, query)
-        
+
         # Create mapping
         mapped_geoids = []
         mapped_identifiers = set()
@@ -257,15 +257,15 @@ def get_counties_by_msa_name(msa_name: str) -> Tuple[List[str], Optional[str]]:
     
     # Try exact match first, then partial match
     try:
-        client = get_bigquery_client(PROJECT_ID)
-        
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # First try exact match
         query = f"""
         SELECT DISTINCT
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name,
             CONCAT(County, ', ', State) as county_state
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE UPPER(TRIM(CBSA)) = UPPER(TRIM('{clean_name.replace("'", "''")}'))
         ORDER BY county_state
         """
@@ -279,7 +279,7 @@ def get_counties_by_msa_name(msa_name: str) -> Tuple[List[str], Optional[str]]:
                 CAST(cbsa_code AS STRING) as cbsa_code,
                 CBSA as cbsa_name,
                 CONCAT(County, ', ', State) as county_state
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
             WHERE UPPER(TRIM(CBSA)) LIKE UPPER(TRIM('%{clean_name.replace("'", "''")}%'))
             ORDER BY cbsa_code, county_state
             """
@@ -412,10 +412,10 @@ def enrich_counties_with_metadata(
     """
     if not geoids:
         return []
-    
+
     try:
-        client = get_bigquery_client(PROJECT_ID)
-        
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # Query for all GEOID5s at once
         geoid5_str = ', '.join([f"'{g.zfill(5)}'" for g in geoids])
         
@@ -429,7 +429,7 @@ def enrich_counties_with_metadata(
             SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_code,
             CAST(cbsa_code AS STRING) as cbsa_code,
             CBSA as cbsa_name
-        FROM `{PROJECT_ID}.geo.cbsa_to_county`
+        FROM `{PROJECT_ID}.shared.cbsa_to_county`
         WHERE CAST(geoid5 AS STRING) IN ({geoid5_str})
         """
         

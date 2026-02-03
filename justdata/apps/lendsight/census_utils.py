@@ -39,7 +39,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
     """
     Extract state and county FIPS codes from "County, State" format.
     
-    Uses BigQuery to look up the geoid5 (5-digit FIPS) from the geo.cbsa_to_county table.
+    Uses BigQuery to look up the geoid5 (5-digit FIPS) from the shared.cbsa_to_county table.
     
     Args:
         county_state: County name in format "County, State" (e.g., "Montgomery County, Maryland")
@@ -58,7 +58,7 @@ def extract_fips_from_county_state(county_state: str) -> Optional[Dict[str, str]
         escaped_county_state = escape_sql_string(county_state)
         query = f"""
         SELECT DISTINCT geoid5
-        FROM geo.cbsa_to_county
+        FROM shared.cbsa_to_county
         WHERE county_state = '{escaped_county_state}'
         LIMIT 1
         """

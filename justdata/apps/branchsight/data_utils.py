@@ -301,7 +301,7 @@ def expand_metro_to_counties(metro_code: str) -> List[str]:
     """
     try:
         # For now, return empty list as metro expansion is not yet implemented
-        # This can be implemented by querying the geo.cbsa_to_county table
+        # This can be implemented by querying the shared.cbsa_to_county table
         print(f"Metro expansion not yet implemented for code: {metro_code}")
         return []
     except Exception as e:

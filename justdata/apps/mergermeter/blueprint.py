@@ -447,8 +447,8 @@ def api_load_bank_names():
             'single_bank_mode': single_bank_mode
         }
         
-        client = get_bigquery_client(PROJECT_ID)
-        
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
         # Import bank name lookup function
         from .app import get_bank_name_from_lei, clean_bank_name
         
@@ -682,9 +682,9 @@ def api_search_banks():
 
         client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
 
-        # Search query joining lender_names_gleif with lenders18 and sb.lenders
+        # Search query joining lender_names_gleif with lenders18 and bizsight.sb_lenders
         # Returns display name, location info, and identifiers (LEI, RSSD, SB Res ID)
-        # Links: LEI -> lenders18 (RSSD) -> sb.lenders (sb_rssd -> sb_resid)
+        # Links: LEI -> lenders18 (RSSD) -> bizsight.sb_lenders (sb_rssd -> sb_resid)
         # Note: ORDER BY must use the alias 'assets' not 'l.assets' when using DISTINCT
         sql = """
         SELECT DISTINCT
@@ -733,7 +733,7 @@ def api_search_banks():
                 'state': row.state or '',
                 'lei': row.lei or '',
                 'rssd': row.rssd or '',
-                'res_id': row.res_id or '',  # From sb.lenders via RSSD lookup
+                'res_id': row.res_id or '',  # From bizsight.sb_lenders via RSSD lookup
                 'assets': row.assets
             })
 

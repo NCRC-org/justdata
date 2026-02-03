@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Generate metros JSON file from BigQuery.
-This script fetches all metros from the geo.cbsa_to_county table
+This script fetches all metros from the shared.cbsa_to_county table
 and saves them to a JSON file for fast client-side loading.
 """
 
@@ -39,7 +39,7 @@ def generate_metros_json():
                 COUNTIF(CAST(geoid5 AS STRING) LIKE '091%' 
                        AND CAST(geoid5 AS STRING) >= '09110' 
                        AND CAST(geoid5 AS STRING) <= '09190') as ct_planning_region_count
-            FROM `{PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{PROJECT_ID}.shared.cbsa_to_county`
             WHERE cbsa_code IS NOT NULL
               AND CBSA IS NOT NULL
               AND TRIM(CBSA) != ''

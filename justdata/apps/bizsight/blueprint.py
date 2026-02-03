@@ -486,7 +486,7 @@ def get_counties_by_state(state_code):
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{BizSightConfig.GCP_PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{BizSightConfig.GCP_PROJECT_ID}.shared.cbsa_to_county`
             WHERE geoid5 IS NOT NULL
                 AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
                 AND county_state IS NOT NULL
@@ -503,7 +503,7 @@ def get_counties_by_state(state_code):
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{BizSightConfig.GCP_PROJECT_ID}.geo.cbsa_to_county`
+            FROM `{BizSightConfig.GCP_PROJECT_ID}.shared.cbsa_to_county`
             WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state_code}')
                 AND county_state IS NOT NULL
                 AND TRIM(county_state) != ''
