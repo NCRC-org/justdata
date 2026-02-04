@@ -53,9 +53,11 @@ RUN mkdir -p /app/justdata/apps/data/reports && \
     mkdir -p /app/justdata/data/reports/mergermeter
 
 # Create non-root user and give ownership of all app files
-# Also fix permissions on data directories (OneDrive sync can set restrictive perms)
+# Also fix permissions on ALL directories (OneDrive sync can set restrictive perms)
 RUN useradd --create-home --shell /bin/bash app && \
-    chmod -R 755 /app/justdata/data && \
+    find /app -type d -exec chmod 755 {} \; && \
+    find /app -type f -exec chmod 644 {} \; && \
+    chmod +x /app/start.sh && \
     chown -R app:app /app
 USER app
 
