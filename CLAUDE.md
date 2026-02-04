@@ -169,6 +169,70 @@ If the domain is missing, users see "Domain not authorized" or "The requested ac
 - **SEC EDGAR** - Company filings
 - **GLEIF** - Legal Entity Identifiers
 
+## ElectWatch Data Architecture
+
+ElectWatch tracks congressional financial activity. Data is stored in BigQuery (`justdata-ncrc.electwatch`).
+
+### External APIs
+| API | Data | Update Frequency |
+|-----|------|------------------|
+| FEC OpenFEC | PAC/individual contributions | Weekly |
+| FMP/Quiver | STOCK Act trade disclosures | Weekly |
+| Congress.gov | Officials, committees | Weekly |
+| Finnhub | Stock quotes | Weekly |
+| Claude AI | Pattern insights | Weekly |
+
+### BigQuery Tables
+```
+electwatch/
+├── officials               # Congress members with stats
+├── official_trades         # Individual stock trades
+├── official_pac_contributions
+├── official_individual_contributions
+├── firms                   # Companies/stocks
+├── industries              # Sector aggregations
+├── committees              # Congressional committees
+├── insights                # AI-generated patterns
+├── trend_snapshots         # Historical time-series
+├── summaries               # AI summaries
+└── metadata                # Update status
+```
+
+### Weekly Update
+```bash
+# Run the weekly data update manually (fetches APIs, writes to BigQuery)
+python -c "from dotenv import load_dotenv; load_dotenv(); from justdata.apps.electwatch.weekly_update import WeeklyDataUpdate; WeeklyDataUpdate().run()"
+```
+
+### Automated Scheduling (Cloud Run Job)
+The weekly update runs automatically via Cloud Scheduler + Cloud Run Job:
+- **Schedule:** Every Sunday at 5:00 AM EST
+- **Job Name:** `electwatch-weekly-update`
+- **Trigger:** `electwatch-weekly-trigger`
+
+```bash
+# Deploy the scheduled job
+./scripts/deploy-electwatch-job.sh
+
+# Run manually
+gcloud run jobs execute electwatch-weekly-update --region=us-east1 --project=justdata-ncrc
+
+# View logs
+gcloud logging read 'resource.type=cloud_run_job AND resource.labels.job_name=electwatch-weekly-update' --limit=100
+```
+
+### Required Credentials
+- `ELECTWATCH_CREDENTIALS_JSON` - BigQuery service account with write access
+- `FEC_API_KEY` - FEC OpenFEC API key
+- `CONGRESS_GOV_API_KEY` - Congress.gov API key
+- `CLAUDE_API_KEY` - For AI insights generation
+
+### Required Secrets (in Secret Manager for Cloud Run Job)
+- `electwatch-credentials` - BigQuery credentials JSON
+- `fec-api-key` - FEC API key
+- `congress-gov-api-key` - Congress.gov API key  
+- `claude-api-key` - Claude API key
+
 ## Deployment
 
 ### Google Cloud Run

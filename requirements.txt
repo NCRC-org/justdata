@@ -47,3 +47,7 @@ lxml>=4.9.0
 
 # Firebase Authentication
 firebase-admin>=6.0.0
+
+# ElectWatch dependencies
+PyYAML>=6.0  # Required for congress-legislators crosswalk parsing
+python-dateutil>=2.8.0  # Date parsing for metadata

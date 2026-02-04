@@ -263,10 +263,9 @@ class WeeklyDataUpdate:
     """Comprehensive weekly data update process."""
 
     def __init__(self, use_cache: bool = True, cache_max_age_hours: int = 24):
-        from justdata.apps.electwatch.services.data_store import get_weekly_data_path
-
         self.start_time = datetime.now()
-        self.weekly_dir = get_weekly_data_path(self.start_time)
+        # Data is stored in BigQuery, weekly_dir kept for backward compatibility
+        self.weekly_dir = None  # No longer using file-based storage
         self.errors = []
         self.warnings = []
 
@@ -361,7 +360,7 @@ class WeeklyDataUpdate:
         logger.info("=" * 70)
         logger.info("ELECTWATCH WEEKLY DATA UPDATE")
         logger.info(f"Started: {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-        logger.info(f"Output directory: {self.weekly_dir}")
+        logger.info("Output: BigQuery (justdata-ncrc.electwatch)")
         logger.info("=" * 70)
 
         try:
@@ -2956,7 +2955,7 @@ Be factual and avoid speculation."""
         logger.info("Saving metadata...")
         save_metadata(metadata, self.weekly_dir)
 
-        logger.info(f"All data saved to {self.weekly_dir}")
+        logger.info("All data saved to BigQuery")
 
         # Generate and save matching report
         logger.info("Generating matching report...")
@@ -3127,7 +3126,7 @@ Be factual and avoid speculation."""
         logger.info("=" * 70)
         logger.info(f"Status: {'SUCCESS' if verified else 'FAILED'}")
         logger.info(f"Duration: {duration:.1f} seconds")
-        logger.info(f"Data saved to: {self.weekly_dir}")
+        logger.info("Data saved to: BigQuery (justdata-ncrc.electwatch)")
 
         logger.info("\nData Sources:")
         for source, status in self.source_status.items():

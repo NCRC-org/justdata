@@ -37,7 +37,10 @@ class ElectWatchConfig:
 
     # BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
     GCP_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
-    DATASET_ID = 'elected_officials'
+    DATASET_ID = 'electwatch'
+    
+    # BigQuery app name for credential lookup
+    BQ_APP_NAME = 'ELECTWATCH'
 
     # FEC API Configuration
     FEC_API_KEY = os.getenv('FEC_API_KEY')

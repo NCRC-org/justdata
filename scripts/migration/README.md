@@ -40,6 +40,18 @@ This folder contains scripts to migrate JustData from `hdma1-242116` to `justdat
 │  ├── analysis_results (completed analysis jobs)                     │
 │  └── usage_log (API request logging)                                │
 ├─────────────────────────────────────────────────────────────────────┤
+│  electwatch dataset                                                 │
+│  ├── officials (congress members with financial activity)           │
+│  ├── official_trades (STOCK Act disclosures)                        │
+│  ├── official_pac_contributions (PAC contributions)                 │
+│  ├── official_individual_contributions (individual contributions)   │
+│  ├── firms (companies/stocks tracked)                               │
+│  ├── industries (sector aggregations)                               │
+│  ├── committees (congressional committees)                          │
+│  ├── insights (AI-generated patterns)                               │
+│  ├── trend_snapshots (historical time-series)                       │
+│  └── metadata (update status)                                       │
+├─────────────────────────────────────────────────────────────────────┤
 │  firebase_analytics dataset                                         │
 │  ├── all_events (unified analytics view)                            │
 │  └── backfilled_events (historical events pre-Firebase)             │
@@ -75,6 +87,18 @@ Real-time synchronization from `hdma1-242116` (source) to `justdata-ncrc` (desti
 | `branches.sod` | `branchsight.sod` | Full Copy |
 | `credit_unions.cu_branches` | `lenderprofile.cu_branches` | Full Copy |
 | `credit_unions.cu_call_reports` | `lenderprofile.cu_call_reports` | Full Copy |
+
+### ElectWatch Data Sources
+
+ElectWatch tables are populated from external APIs via `weekly_update.py`:
+
+| External API | Destination Table | Update Frequency |
+|--------------|-------------------|------------------|
+| FEC OpenFEC | `electwatch.official_pac_contributions`, `electwatch.official_individual_contributions` | Weekly |
+| Quiver/FMP | `electwatch.official_trades` | Weekly |
+| Congress.gov | `electwatch.officials`, `electwatch.committees` | Weekly |
+| Finnhub | `electwatch.firms` (quote data) | Weekly |
+| Claude AI | `electwatch.insights`, `electwatch.summaries` | Weekly |
 
 ### Cascading Dependencies
 
@@ -132,6 +156,15 @@ Execute these SQL files in BigQuery Console (connected to `justdata` project):
 5. `07_create_sb_county_summary.sql` - Create SB county summary
 6. `08_copy_branch_tables.sql` - Copy SOD tables
 7. `09_copy_raw_hmda.sql` - Copy raw HMDA for edge cases
+
+### ElectWatch Migration
+
+```bash
+# Create ElectWatch tables (run in BigQuery Console)
+bq query --use_legacy_sql=false < 28_create_electwatch_tables.sql
+```
+
+This creates empty tables that will be populated by the weekly update script.
 
 ### Phase 3: Verification
 
