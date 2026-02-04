@@ -45,10 +45,17 @@ RUN chmod +x /app/start.sh
 # Create data directories needed by apps (before changing to non-root user)
 RUN mkdir -p /app/justdata/apps/data/reports && \
     mkdir -p /app/justdata/apps/credentials && \
-    mkdir -p /app/justdata/data/reports
+    mkdir -p /app/justdata/data/reports && \
+    mkdir -p /app/justdata/data/reports/dataexplorer && \
+    mkdir -p /app/justdata/data/reports/lendsight && \
+    mkdir -p /app/justdata/data/reports/bizsight && \
+    mkdir -p /app/justdata/data/reports/branchsight && \
+    mkdir -p /app/justdata/data/reports/mergermeter
 
 # Create non-root user and give ownership of all app files
+# Also fix permissions on data directories (OneDrive sync can set restrictive perms)
 RUN useradd --create-home --shell /bin/bash app && \
+    chmod -R 755 /app/justdata/data && \
     chown -R app:app /app
 USER app
 
