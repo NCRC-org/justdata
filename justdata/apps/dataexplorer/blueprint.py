@@ -331,6 +331,64 @@ def verify_lender_gleif():
         return jsonify({'error': f'An error occurred: {str(e)}'}), 500
 
 
+@dataexplorer_bp.route('/api/lender/assets', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def get_lender_assets():
+    """Get lender assets from CFPB HMDA API by LEI."""
+    try:
+        data = request.get_json()
+        lei = data.get('lei', '').strip()
+
+        if not lei:
+            return jsonify({'error': 'LEI is required'}), 400
+
+        # Try to get assets from CFPB API
+        assets = None
+        try:
+            from justdata.apps.dataexplorer.utils.cfpb_client import CFPBClient
+            cfpb_client = CFPBClient()
+
+            if cfpb_client._is_enabled():
+                # Get institution by LEI to get detailed info including assets
+                institution = cfpb_client.get_institution_by_lei(lei)
+
+                if institution:
+                    # Extract assets from various possible field names
+                    assets = (institution.get('assets') or
+                             institution.get('total_assets') or
+                             institution.get('asset_size') or
+                             institution.get('assetSize') or
+                             institution.get('totalAssets'))
+
+                    # Ensure assets is a number if it exists
+                    # Note: CFPB API returns -1 for non-banks/credit unions
+                    if assets is not None:
+                        try:
+                            if isinstance(assets, str):
+                                # Remove commas and dollar signs
+                                assets_clean = assets.replace(',', '').replace('$', '').strip()
+                                assets = float(assets_clean) if assets_clean else None
+                            else:
+                                assets = float(assets) if assets else None
+
+                            # If assets is -1, it means not applicable for this institution type
+                            if assets == -1:
+                                logger.debug(f"Assets is -1 for LEI {lei} (not applicable for institution type)")
+                        except (ValueError, TypeError):
+                            assets = None
+        except Exception as e:
+            logger.debug(f"Could not get assets from CFPB API: {e}", exc_info=True)
+
+        return jsonify({
+            'success': True,
+            'assets': assets
+        })
+
+    except Exception as e:
+        logger.error(f"Error getting lender assets: {e}", exc_info=True)
+        return jsonify({'error': f'An error occurred: {str(e)}'}), 500
+
+
 @dataexplorer_bp.route('/api/clear-cache', methods=['POST'])
 @require_access('dataexplorer', 'full')
 def api_clear_cache():
