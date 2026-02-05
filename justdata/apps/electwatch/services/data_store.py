@@ -352,14 +352,8 @@ def get_metadata() -> Dict[str, Any]:
     try:
         client = _get_bq_client()
         metadata = client.get_metadata()
-        # #region agent log
-        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_metadata','message':'Metadata loaded','data':{'status':metadata.get('status'),'officials_count':metadata.get('officials_count')},'hypothesisId':'D','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
         return metadata
     except Exception as e:
-        # #region agent log
-        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_metadata','message':'Exception loading metadata','data':{'error':str(e)},'hypothesisId':'D','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
         logger.error(f"Error loading metadata from BigQuery: {e}")
         return {
             'last_updated': None,
@@ -376,22 +370,10 @@ def get_officials(include_trades: bool = False) -> List[Dict]:
         include_trades: If True, load trades for each official (slow for large datasets).
                        Default False for list views, set True for detail views.
     """
-    # #region agent log
-    import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'Entering get_officials','hypothesisId':'C','timestamp':__import__('time').time()*1000})+'\n')
-    # #endregion
     try:
         client = _get_bq_client()
-        # #region agent log
-        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'Got BQ client, calling client.get_officials()','hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
         officials = client.get_officials()
-        # #region agent log
-        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'BQ client returned','data':{'count':len(officials) if officials else 0},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
     except Exception as e:
-        # #region agent log
-        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'Exception in get_officials','data':{'error':str(e)},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
         logger.error(f"Error loading officials from BigQuery: {e}")
         return []
 

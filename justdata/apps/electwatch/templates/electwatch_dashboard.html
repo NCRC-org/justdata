@@ -617,7 +617,7 @@
         /* Leaderboard Table */
         .leaderboard-table {
             width: 100%;
-            min-width: 800px;
+            min-width: 1100px;
             border-collapse: collapse;
             table-layout: auto;
         }
@@ -760,8 +760,8 @@
         }
 
         .official-photo {
-            width: 40px;
-            height: 40px;
+            width: 72px;
+            height: 72px;
             border-radius: 50%;
             object-fit: cover;
             border: 2px solid #e5e7eb;
@@ -987,13 +987,14 @@
         .trend-arrow.stable { color: #9ca3af; }  /* Gray - no change */
         .trend-arrow.no-data { color: #d1d5db; } /* Light gray - no data */
 
-        /* Financial Firm Chips */
+        /* Financial Firm Chips - Horizontal layout */
         .donor-chips {
             display: flex;
-            gap: 6px;
-            flex-direction: column;  /* Stack vertically for full names */
-            align-items: flex-start;
-            max-width: 400px;
+            gap: 10px;
+            flex-direction: row;  /* Horizontal layout */
+            flex-wrap: nowrap;  /* Single line */
+            align-items: center;
+            min-width: 450px;
         }
 
         .donor-chip {
@@ -1644,8 +1645,8 @@
             }
 
             .official-photo {
-                width: 32px;
-                height: 32px;
+                width: 64px;
+                height: 64px;
             }
 
             .amount-cell {
@@ -1678,8 +1679,8 @@
             }
 
             .official-photo {
-                width: 28px;
-                height: 28px;
+                width: 56px;
+                height: 56px;
             }
 
             .filters {
@@ -3047,7 +3048,7 @@
                                         </span>
                                     </span>
                                 </th>
-                                <th style="width: 400px; min-width: 350px;">
+                                <th style="width: 500px; min-width: 450px;">
                                     <span class="header-tooltip">
                                         Top Financial Firms
                                         <span class="tooltip-icon">?</span>
@@ -4009,11 +4010,8 @@
         // Maps company names to domains for logo lookup
         // ============================================================
         const DOMAIN_MAP = {
+            // Major Banks
             'CAPITAL ONE': 'capitalone.com',
-            'NEW YORK LIFE': 'newyorklife.com',
-            'ALLY': 'ally.com',
-            'ALLY FINANCIAL': 'ally.com',
-            'USAA': 'usaa.com',
             'JPMORGAN': 'jpmorganchase.com',
             'JPMORGAN CHASE': 'jpmorganchase.com',
             'JP MORGAN': 'jpmorganchase.com',
@@ -4021,69 +4019,504 @@
             'WELLS FARGO': 'wellsfargo.com',
             'CITIGROUP': 'citi.com',
             'CITI': 'citi.com',
+            'CITIBANK': 'citi.com',
             'GOLDMAN SACHS': 'goldmansachs.com',
             'MORGAN STANLEY': 'morganstanley.com',
-            'BLACKROCK': 'blackrock.com',
-            'VANGUARD': 'vanguard.com',
-            'FIDELITY': 'fidelity.com',
-            'CHARLES SCHWAB': 'schwab.com',
-            'STATE FARM': 'statefarm.com',
-            'ALLSTATE': 'allstate.com',
-            'PRUDENTIAL': 'prudential.com',
-            'METLIFE': 'metlife.com',
-            'VISA': 'visa.com',
-            'MASTERCARD': 'mastercard.com',
-            'AMERICAN EXPRESS': 'americanexpress.com',
             'PNC': 'pnc.com',
             'PNC FINANCIAL': 'pnc.com',
             'TRUIST': 'truist.com',
+            'SUNTRUST': 'truist.com',
+            'BB&T': 'truist.com',
             'US BANK': 'usbank.com',
             'US BANCORP': 'usbank.com',
             'FIFTH THIRD': '53.com',
             'REGIONS': 'regions.com',
             'CITIZENS': 'citizensbank.com',
             'HUNTINGTON': 'huntington.com',
+            'ALLY': 'ally.com',
+            'ALLY FINANCIAL': 'ally.com',
+            'TD BANK': 'td.com',
+            'SANTANDER': 'santander.com',
+            'HSBC': 'hsbc.com',
+            'BMO': 'bmo.com',
+            'FIRST REPUBLIC': 'firstrepublic.com',
+            'COMERICA': 'comerica.com',
+            'ZIONS': 'zionsbank.com',
+            'M&T BANK': 'mtb.com',
+            'KEYCORP': 'key.com',
+            'KEY BANK': 'key.com',
+            
+            // Investment Firms & Asset Managers
+            'BLACKROCK': 'blackrock.com',
             'BLACKSTONE': 'blackstone.com',
-            'KKR': 'kkr.com',
-            'CARLYLE': 'carlyle.com',
-            'APOLLO': 'apollo.com',
+            'VANGUARD': 'vanguard.com',
+            'FIDELITY': 'fidelity.com',
+            'FIDELITY INVESTMENTS': 'fidelity.com',
+            'CHARLES SCHWAB': 'schwab.com',
+            'SCHWAB': 'schwab.com',
             'STATE STREET': 'statestreet.com',
             'NORTHERN TRUST': 'northerntrust.com',
             'T ROWE PRICE': 'troweprice.com',
             'INVESCO': 'invesco.com',
             'FRANKLIN TEMPLETON': 'franklintempleton.com',
+            'CAPITAL GROUP': 'capitalgroup.com',
+            'CAPITAL GROUP COMPANIES': 'capitalgroup.com',
+            'KKR': 'kkr.com',
+            'CARLYLE': 'carlyle.com',
+            'THE CARLYLE GROUP': 'carlyle.com',
+            'APOLLO': 'apollo.com',
+            'APOLLO GLOBAL': 'apollo.com',
+            'APOLLO GLOBAL MANAGEMENT': 'apollo.com',
+            'APOLLO MANAGEMENT': 'apollo.com',
+            'BAIN CAPITAL': 'baincapital.com',
+            'BAIN': 'baincapital.com',
+            'ELLIOTT': 'elliottmgmt.com',
+            'ELLIOTT INVESTMENT': 'elliottmgmt.com',
+            'ELLIOTT INVESTMENT MANAGEMENT': 'elliottmgmt.com',
+            'LONE PINE': 'lonepinecapital.com',
+            'LONE PINE CAPITAL': 'lonepinecapital.com',
+            'JANE STREET': 'janestreet.com',
+            'JANE STREET CAPITAL': 'janestreet.com',
+            'JANE STREET GROUP': 'janestreet.com',
+            'CITADEL': 'citadel.com',
+            'CITADEL LLC': 'citadel.com',
+            'TWO SIGMA': 'twosigma.com',
+            'BRIDGEWATER': 'bridgewater.com',
+            'PIMCO': 'pimco.com',
+            'WELLINGTON': 'wellington.com',
+            'ARIEL INVESTMENTS': 'arielinvestments.com',
+            'ARIEL INVESTMENTS LLC': 'arielinvestments.com',
+            'ARIEL': 'arielinvestments.com',
+            'FISHER INVESTMENTS': 'fisherinvestments.com',
+            'FISHER': 'fisherinvestments.com',
+            'SOROBAN': 'sorobancapital.com',
+            'SOROBAN CAPITAL': 'sorobancapital.com',
+            'SOROBAN CAPITAL PARTNERS': 'sorobancapital.com',
+            'PALOMA': 'palomapartners.com',
+            'PALOMA PARTNERS': 'palomapartners.com',
+            'PALOMA PARTNERS ADVISORS': 'palomapartners.com',
+            'WINKLEVOSS': 'gemini.com',
+            'WINKLEVOSS CAPITAL': 'gemini.com',
+            'WINKLEVOSS CAPITAL MANAGEMENT': 'gemini.com',
+            'GEMINI': 'gemini.com',
+            'DRAGONEER': 'dragoneer.com',
+            'DRAGONEER INVESTMENT': 'dragoneer.com',
+            'DRAGONEER INVESTMENT GROUP': 'dragoneer.com',
+            'BLUE OWL': 'blueowl.com',
+            'BLUE OWL CAPITAL': 'blueowl.com',
+            'SESSA CAPITAL': 'sessacapital.com',
+            'HACKMAN CAPITAL': 'hackmancapital.com',
+            'HACKMAN CAPITAL PARTNERS': 'hackmancapital.com',
+            'CHARLESBANK': 'charlesbank.com',
+            'CHARLESBANK CAPITAL': 'charlesbank.com',
+            'CHARLESBANK CAPITAL PARTNERS': 'charlesbank.com',
+            'SCHOONER CAPITAL': 'schoonercapital.com',
+            'WILLOUGHBY CAPITAL': 'willoughbycapital.com',
+            'MANZANITA CAPITAL': 'manzanitacapital.com',
+            'EVERCORE': 'evercore.com',
+            'VESTAR': 'vestarcapital.com',
+            'VESTAR CAPITAL': 'vestarcapital.com',
+            'VIBRANT CAPITAL': 'vibrantcapital.com',
+            'PDT PARTNERS': 'pdtpartners.com',
+            'OAKTREE': 'oaktreecapital.com',
+            'OAKTREE CAPITAL': 'oaktreecapital.com',
+            'MOORE CAPITAL': 'moorecap.com',
+            'SUN CAPITAL': 'suncappart.com',
+            'SUN CAPITAL PARTNERS': 'suncappart.com',
+            'NEUBERGER': 'nb.com',
+            'NEUBERGER BERMAN': 'nb.com',
+            'RBC': 'rbc.com',
+            'RBC CAPITAL': 'rbc.com',
+            'RBC CAPITAL MARKETS': 'rbc.com',
+            'MESIROW': 'mesirow.com',
+            'MESIROW FINANCIAL': 'mesirow.com',
+            'OBERLAND CAPITAL': 'oberlandcapital.com',
+            'BLUMBERG CAPITAL': 'blumbergcapital.com',
+            'BENTON CAPITAL': 'bentoncapital.com',
+            'SUTHERLAND CAPITAL': 'sutherlandcapital.com',
+            'PRITZKER': 'pritzkergroup.com',
+            'THE PRITZKER ORGANIZATION': 'pritzkergroup.com',
+            'BERKSHIRE PARTNERS': 'berkshirepartners.com',
+            'MERRILL': 'ml.com',
+            'MERRILL LYNCH': 'ml.com',
+            'YELLOWSTONE': 'yellowstone.bank',
+            'YELLOWSTONE BANK': 'yellowstone.bank',
+            'COLDWELL BANKER': 'coldwellbanker.com',
+            'COLDWELL BANKER REALTY': 'coldwellbanker.com',
+            'KELLER WILLIAMS': 'kw.com',
+            'KELLER WILLIAMS REALTY': 'kw.com',
+            'GFP REAL ESTATE': 'gfrealstate.com',
+            'ATLANTIC REALTY': 'atlanticrealty.com',
+            'JORDAN REAL ESTATE': 'jordanre.com',
+            'BANK OZK': 'ozk.com',
+            'OZK': 'ozk.com',
+            'ARVEST': 'arvest.com',
+            'ARVEST BANK': 'arvest.com',
+            'AMSCOT': 'amscot.com',
+            'AMSCOT FINANCIAL': 'amscot.com',
+            'ADVANCE FINANCIAL': 'af247.com',
+            'STEPHENS': 'stephens.com',
+            'STEPHENS INC': 'stephens.com',
+            'NOTIAS': 'notias.com',
+            'STERLING': 'sterlingcheck.com',
+            'EDGEWATER': 'edgewater.com',
+            'CROSSHARBOR': 'crossharbor.com',
+            'CROSSHARBOR PARTNERS': 'crossharbor.com',
+            
+            // Insurance Companies
+            'NEW YORK LIFE': 'newyorklife.com',
+            'USAA': 'usaa.com',
+            'STATE FARM': 'statefarm.com',
+            'ALLSTATE': 'allstate.com',
+            'PRUDENTIAL': 'prudential.com',
+            'METLIFE': 'metlife.com',
             'AFLAC': 'aflac.com',
             'PROGRESSIVE': 'progressive.com',
             'TRAVELERS': 'travelers.com',
             'CIGNA': 'cigna.com',
             'AETNA': 'aetna.com',
             'ANTHEM': 'anthem.com',
+            'ELEVANCE': 'elevancehealth.com',
             'UNITEDHEALTH': 'uhc.com',
             'HUMANA': 'humana.com',
+            'NORTHWESTERN MUTUAL': 'northwesternmutual.com',
+            'MASS MUTUAL': 'massmutual.com',
+            'MASSACHUSETTS MUTUAL': 'massmutual.com',
+            'THRIVENT': 'thrivent.com',
+            'TIAA': 'tiaa.org',
+            'PRINCIPAL': 'principal.com',
+            'LINCOLN FINANCIAL': 'lfg.com',
+            'HARTFORD': 'thehartford.com',
+            'LIBERTY MUTUAL': 'libertymutual.com',
+            'NATIONWIDE': 'nationwide.com',
+            'AIG': 'aig.com',
+            'CHUBB': 'chubb.com',
+            'FARMERS': 'farmers.com',
+            'GEICO': 'geico.com',
+            
+            // Credit Cards & Payments
+            'VISA': 'visa.com',
+            'MASTERCARD': 'mastercard.com',
+            'AMERICAN EXPRESS': 'americanexpress.com',
+            'AMEX': 'americanexpress.com',
             'PAYPAL': 'paypal.com',
             'DISCOVER': 'discover.com',
             'SYNCHRONY': 'synchrony.com',
+            'SQUARE': 'squareup.com',
+            'STRIPE': 'stripe.com',
+            
+            // Mortgage & Real Estate
             'ROCKET': 'rocketmortgage.com',
+            'QUICKEN': 'quickenloans.com',
+            'VETERANS UNITED': 'veteransunited.com',
+            'UNITED WHOLESALE': 'uwm.com',
+            'LOANDEPOT': 'loandepot.com',
+            'GFP REAL ESTATE': 'gfrealstate.com',
+            'NAREIT': 'reit.com',
+            'REAL ESTATE INVESTMENT TRUST': 'reit.com',
+            
+            // Fintech & Crypto
             'COINBASE': 'coinbase.com',
             'ROBINHOOD': 'robinhood.com',
+            'SOFI': 'sofi.com',
+            'CHIME': 'chime.com',
+            
+            // Financial Advisors & Brokers
             'EDWARD JONES': 'edwardjones.com',
             'RAYMOND JAMES': 'raymondjames.com',
             'LPL FINANCIAL': 'lpl.com',
-            'AMERIPRISE': 'ameriprise.com'
+            'LPL': 'lpl.com',
+            'AMERIPRISE': 'ameriprise.com',
+            'STIFEL': 'stifel.com',
+            'BAIRD': 'rwbaird.com',
+            'ROBERT W. BAIRD': 'rwbaird.com',
+            
+            // Industry Associations (use trade group logos)
+            'CREDIT UNION': 'cuna.org',
+            'AMERICA\'S CREDIT UNIONS': 'cuna.org',
+            'CUNA': 'cuna.org',
+            'AMERICAN BANKERS': 'aba.com',
+            'BANKERS ASSOCIATION': 'aba.com',
+            'BANKPAC': 'aba.com',
+            'INDEPENDENT COMMUNITY BANKERS': 'icba.org',
+            'ICBA': 'icba.org',
+            'MORTGAGE BANKERS': 'mba.org',
+            'MBA': 'mba.org',
+            'INSURANCE AGENTS': 'independentagent.com',
+            'INDEPENDENT INSURANCE': 'independentagent.com',
+            'COUNCIL OF INSURANCE': 'ciab.com',
+            'INVESTMENT COMPANY INSTITUTE': 'ici.org',
+            'ICI PAC': 'ici.org',
+            'AMERICAN COUNCIL OF LIFE INSURERS': 'acli.com',
+            'ACLI': 'acli.com',
+            'NAIFA': 'naifa.org',
+            'FARM CREDIT': 'farmcredit.com',
+            'AMERICAN INVESTMENT COUNCIL': 'investmentcouncil.org',
+            'AMERICAN PROPERTY CASUALTY': 'apci.org',
+            'MUTUAL INSURANCE': 'namic.org',
+            'FINANCIAL SERVICES': 'afsa.org',
+            
+            // Political & Advocacy Organizations
+            'AIPAC': 'aipac.org',
+            'AMERICAN ISRAEL PUBLIC AFFAIRS': 'aipac.org',
+            'UNITED DEMOCRACY PROJECT': 'aipac.org',
+            'END CITIZENS UNITED': 'endcitizensunited.org',
+            'AMERICANS FOR PROSPERITY': 'americansforprosperity.org',
+            'AFP ACTION': 'americansforprosperity.org',
+            'CLUB FOR GROWTH': 'clubforgrowth.org',
+            'LCV': 'lcv.org',
+            'LEAGUE OF CONSERVATION VOTERS': 'lcv.org',
+            'VOTEVETS': 'votevets.org',
+            'GIFFORDS': 'giffords.org',
+            'EVERYTOWN': 'everytown.org',
+            'NRA': 'nra.org',
+            'NATIONAL RIFLE ASSOCIATION': 'nra.org',
+            'EMILY\'S LIST': 'emilyslist.org',
+            'PLANNED PARENTHOOD': 'plannedparenthood.org',
+            'NRDC': 'nrdc.org',
+            'SIERRA CLUB': 'sierraclub.org',
+            'ACLU': 'aclu.org',
+            'HUMAN RIGHTS CAMPAIGN': 'hrc.org',
+            'HERITAGE': 'heritage.org',
+            'CATO': 'cato.org',
+            'FAIRSHAKE': 'fairshakepac.com',
+            '314 ACTION': '314action.org',
+            'END CITIZENS UNITED': 'endcitizensunited.org',
+            'BLACKPAC': 'blackpac.com',
+            
+            // Trade Associations
+            'NATIONAL ASSOCIATION OF REALTORS': 'nar.realtor',
+            'REALTORS': 'nar.realtor',
+            'NAR': 'nar.realtor',
+            'AMERICAN HOSPITAL ASSOCIATION': 'aha.org',
+            'AHA': 'aha.org',
+            'NATIONAL AUTOMOBILE DEALERS': 'nada.org',
+            'NADA': 'nada.org',
+            'NATIONAL BEER WHOLESALERS': 'nbwa.org',
+            'AMERICAN COUNCIL OF ENGINEERING': 'acec.org',
+            'ACEC': 'acec.org',
+            'AICPA': 'aicpa.org',
+            'CERTIFIED PUBLIC ACCOUNTANTS': 'aicpa.org',
+            'AMERICAN ASSOCIATION FOR JUSTICE': 'justice.org',
+            'AAJ': 'justice.org',
+            'NATIONAL HOME BUILDERS': 'nahb.org',
+            'NAHB': 'nahb.org',
+            'NATIONAL MULTIFAMILY HOUSING': 'nmhc.org',
+            'NMHC': 'nmhc.org',
+            'NATIONAL RURAL ELECTRIC': 'electric.coop',
+            
+            // Labor Unions
+            'SEIU': 'seiu.org',
+            'SERVICE EMPLOYEES': 'seiu.org',
+            'AFT': 'aft.org',
+            'AMERICAN FEDERATION OF TEACHERS': 'aft.org',
+            'NEA': 'nea.org',
+            'NATIONAL EDUCATION ASSOCIATION': 'nea.org',
+            'AFSCME': 'afscme.org',
+            'NATIONAL NURSES UNITED': 'nationalnursesunited.org',
+            'FIREFIGHTERS': 'iaff.org',
+            'IAFF': 'iaff.org',
+            'AIR LINE PILOTS': 'alpa.org',
+            'ALPA': 'alpa.org',
+            'MACHINISTS': 'goiam.org',
+            'IAM': 'goiam.org',
+            'CARPENTERS': 'carpenters.org',
+            'SHEET METAL': 'smart-union.org',
+            'SMART': 'smart-union.org',
+            'TEAMSTERS': 'teamster.org',
+            'IBT': 'teamster.org',
+            'UAW': 'uaw.org',
+            'UNITED AUTO WORKERS': 'uaw.org',
+            'NATIONAL AIR TRAFFIC CONTROLLERS': 'natca.org',
+            'NATCA': 'natca.org',
+            'CWA': 'cwa-union.org',
+            'COMMUNICATIONS WORKERS': 'cwa-union.org',
+            'IBEW': 'ibew.org',
+            'ELECTRICAL WORKERS': 'ibew.org',
+            'LABORERS': 'liuna.org',
+            'LIUNA': 'liuna.org',
+            'OPERATING ENGINEERS': 'iuoe.org',
+            'IUOE': 'iuoe.org',
+            'PLUMBERS': 'ua.org',
+            'PIPEFITTERS': 'ua.org',
+            'IRONWORKERS': 'ironworkers.org',
+            'STEELWORKERS': 'usw.org',
+            'USW': 'usw.org',
+            'UFCW': 'ufcw.org',
+            'FOOD AND COMMERCIAL WORKERS': 'ufcw.org',
+            
+            // Major Corporations
+            'HOME DEPOT': 'homedepot.com',
+            'HONEYWELL': 'honeywell.com',
+            'COMCAST': 'comcast.com',
+            'NBCUNIVERSAL': 'nbcuniversal.com',
+            'AT&T': 'att.com',
+            'BOEING': 'boeing.com',
+            'DELOITTE': 'deloitte.com',
+            'UPS': 'ups.com',
+            'UNITED PARCEL SERVICE': 'ups.com',
+            'CHARTER': 'charter.com',
+            'UBS': 'ubs.com',
+            'AMAZON': 'amazon.com',
+            'GOOGLE': 'google.com',
+            'ALPHABET': 'abc.xyz',
+            'MICROSOFT': 'microsoft.com',
+            'APPLE': 'apple.com',
+            'META': 'meta.com',
+            'FACEBOOK': 'meta.com',
+            'LOCKHEED': 'lockheedmartin.com',
+            'RAYTHEON': 'rtx.com',
+            'RTX': 'rtx.com',
+            'NORTHROP': 'northropgrumman.com',
+            'GENERAL DYNAMICS': 'gd.com',
+            'BAE SYSTEMS': 'baesystems.com',
+            'L3HARRIS': 'l3harris.com',
+            'EXXON': 'exxonmobil.com',
+            'EXXONMOBIL': 'exxonmobil.com',
+            'CHEVRON': 'chevron.com',
+            'SHELL': 'shell.com',
+            'BP': 'bp.com',
+            'CONOCOPHILLIPS': 'conocophillips.com',
+            'PFIZER': 'pfizer.com',
+            'JOHNSON & JOHNSON': 'jnj.com',
+            'MERCK': 'merck.com',
+            'ABBVIE': 'abbvie.com',
+            'BRISTOL-MYERS': 'bms.com',
+            'ELI LILLY': 'lilly.com',
+            'AMGEN': 'amgen.com',
+            'GILEAD': 'gilead.com',
+            'REGENERON': 'regeneron.com',
+            'MODERNA': 'modernatx.com',
+            'WALMART': 'walmart.com',
+            'TARGET': 'target.com',
+            'COSTCO': 'costco.com',
+            'KROGER': 'kroger.com',
+            'COCA-COLA': 'coca-colacompany.com',
+            'PEPSICO': 'pepsico.com',
+            'MCDONALDS': 'mcdonalds.com',
+            'STARBUCKS': 'starbucks.com',
+            'DISNEY': 'disney.com',
+            'WARNER BROS': 'warnerbros.com',
+            'PARAMOUNT': 'paramount.com',
+            'NETFLIX': 'netflix.com',
+            'FORD': 'ford.com',
+            'GM': 'gm.com',
+            'GENERAL MOTORS': 'gm.com',
+            'TOYOTA': 'toyota.com',
+            'TESLA': 'tesla.com',
+            'UBER': 'uber.com',
+            'LYFT': 'lyft.com',
+            'AIRBNB': 'airbnb.com',
+            'DOORDASH': 'doordash.com',
+            'FED EX': 'fedex.com',
+            'FEDEX': 'fedex.com',
+            'AMERICAN AIRLINES': 'aa.com',
+            'DELTA': 'delta.com',
+            'UNITED AIRLINES': 'united.com',
+            'SOUTHWEST': 'southwest.com',
+            'AMERICAN CRYSTAL SUGAR': 'crystalsugar.com',
+            
+            // Crypto
+            'RIPPLE': 'ripple.com',
+            'BINANCE': 'binance.com',
+            'KRAKEN': 'kraken.com',
+            'FTX': 'ftx.com',
+            'CIRCLE': 'circle.com',
+            'BLOCKCHAIN': 'blockchain.com',
+            
+            // Other Notable Firms
+            'PIVOTAL VENTURES': 'pivotalventures.org',
+            'ARNOLD VENTURES': 'arnoldventures.org',
+            'EMERSON COLLECTIVE': 'emersoncollective.com',
+            'KPS CAPITAL': 'kpsfund.com',
+            'WARBURG PINCUS': 'warburgpincus.com',
+            'GENERAL ATLANTIC': 'generalatlantic.com',
+            'ADVENT': 'adventinternational.com',
+            'SILVER LAKE': 'silverlake.com',
+            'VISTA EQUITY': 'vistaequitypartners.com',
+            'THOMA BRAVO': 'thomabravo.com',
+            'FORTRESS': 'fortress.com',
+            'FORTRESS INVESTMENT': 'fortress.com',
+            'BESSEMER': 'bvp.com',
+            'BESSEMER VENTURE': 'bvp.com',
+            'SAGESURE': 'sagesure.com',
+            'KLEINER': 'kleinerperkins.com',
+            'KLEINER PERKINS': 'kleinerperkins.com',
+            'GREYLOCK': 'greylock.com',
+            'TA ASSOCIATES': 'ta.com',
+            'BRIGHTHOUSE': 'brighthousefinancial.com',
+            'AUSTIN VENTURES': 'austinventures.com',
+            'SEQUOIA': 'sequoiacap.com',
+            'ANDREESSEN': 'a16z.com',
+            'A16Z': 'a16z.com',
+            'BENCHMARK': 'benchmark.com',
+            'ACCEL': 'accel.com',
+            'NEA': 'nea.com',
+            'NEW ENTERPRISE': 'nea.com',
+            'INSIGHT PARTNERS': 'insightpartners.com',
+            'TIGER GLOBAL': 'tigerglobal.com',
+            'COATUE': 'coatue.com',
+            'D1 CAPITAL': 'd1cap.com',
+            'MILLENNIUM': 'mlp.com',
+            'POINT72': 'point72.com',
+            'RENAISSANCE': 'rentec.com',
+            'THIRD POINT': 'thirdpoint.com',
+            'PERSHING SQUARE': 'pershingsquareholdings.com',
+            'ICAHN': 'carlicahn.com',
+            'GREENLIGHT': 'greenlightcapital.com',
+            'BAUPOST': 'baupost.com',
+            'RENAISSANCE TECHNOLOGIES': 'rentec.com',
+            'TUDOR': 'tudorinvestmentcorp.com',
+            'AQR': 'aqr.com',
+            'BREVAN HOWARD': 'brevanhoward.com',
+            'DAVIDSON KEMPNER': 'davidsonkempner.com',
+            'YORK CAPITAL': 'yorkcapital.com',
+            'SCULPTOR': 'sculptor.com',
+            'OZ MANAGEMENT': 'sculptor.com'
         };
 
         /**
          * Get domain for a company name to use with Google Favicons API
+         * Uses word-boundary matching to avoid false positives (e.g., CITI matching CITIZENS)
          */
         function getDomainForCompany(companyName) {
             if (!companyName) return null;
             const upper = companyName.toUpperCase().trim();
-            for (const [key, domain] of Object.entries(DOMAIN_MAP)) {
-                if (upper.includes(key) || key.includes(upper)) {
-                    return domain;
+            
+            // First try EXACT match
+            if (DOMAIN_MAP[upper]) {
+                return DOMAIN_MAP[upper];
+            }
+            
+            // Try word-boundary matching (key must be a complete word in company name)
+            // Sort keys by length descending to match longer keys first (e.g., "GOLDMAN SACHS" before "GOLDMAN")
+            const sortedKeys = Object.keys(DOMAIN_MAP).sort((a, b) => b.length - a.length);
+            
+            for (const key of sortedKeys) {
+                // Create regex that matches key as whole word(s)
+                // \b = word boundary, but we also handle start/end of string
+                const keyEscaped = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const regex = new RegExp(`(^|\\s|-)${keyEscaped}($|\\s|-)`, 'i');
+                
+                if (regex.test(upper)) {
+                    return DOMAIN_MAP[key];
                 }
             }
-            return null;
+            
+            // Auto-generate domain guess from company name
+            // Clean up the name and create a plausible domain
+            let cleanName = upper
+                .replace(/\s+(LLC|LP|LLP|INC|CORP|CO|COMPANY|CORPORATION|GROUP|PARTNERS|MANAGEMENT|INVESTMENTS|INVESTMENT|CAPITAL|ADVISORS|FUND|HOLDINGS|PAC|POLITICAL|ACTION|COMMITTEE)\.?$/gi, '')
+                .replace(/[^A-Z0-9\s]/g, '')
+                .trim();
+            
+            // Skip if too short or generic
+            if (cleanName.length < 3) return null;
+            if (['SELF', 'NONE', 'NA', 'RETIRED', 'NOT', 'END', 'THE', 'FOR', 'AND'].includes(cleanName)) return null;
+            
+            // Create domain: remove spaces, add .com
+            const domainGuess = cleanName.toLowerCase().replace(/\s+/g, '') + '.com';
+            return domainGuess;
         }
 
         /**
@@ -4138,6 +4571,47 @@
             return `${lastName}, ${firstNames}`;
         }
 
+        /**
+         * Get last name only for compact display
+         */
+        function getLastName(name) {
+            if (!name) return '';
+
+            // If already in "Last, First" format, extract the last name
+            if (name.includes(',')) {
+                return name.split(',')[0].trim();
+            }
+
+            // Otherwise, last name is the final part
+            const parts = name.trim().split(/\s+/);
+            return parts[parts.length - 1];
+        }
+
+        /**
+         * Convert state name to abbreviation
+         */
+        const STATE_ABBREVS = {
+            'Alabama': 'AL', 'Alaska': 'AK', 'Arizona': 'AZ', 'Arkansas': 'AR', 'California': 'CA',
+            'Colorado': 'CO', 'Connecticut': 'CT', 'Delaware': 'DE', 'Florida': 'FL', 'Georgia': 'GA',
+            'Hawaii': 'HI', 'Idaho': 'ID', 'Illinois': 'IL', 'Indiana': 'IN', 'Iowa': 'IA',
+            'Kansas': 'KS', 'Kentucky': 'KY', 'Louisiana': 'LA', 'Maine': 'ME', 'Maryland': 'MD',
+            'Massachusetts': 'MA', 'Michigan': 'MI', 'Minnesota': 'MN', 'Mississippi': 'MS', 'Missouri': 'MO',
+            'Montana': 'MT', 'Nebraska': 'NE', 'Nevada': 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ',
+            'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', 'Ohio': 'OH',
+            'Oklahoma': 'OK', 'Oregon': 'OR', 'Pennsylvania': 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC',
+            'South Dakota': 'SD', 'Tennessee': 'TN', 'Texas': 'TX', 'Utah': 'UT', 'Vermont': 'VT',
+            'Virginia': 'VA', 'Washington': 'WA', 'West Virginia': 'WV', 'Wisconsin': 'WI', 'Wyoming': 'WY',
+            'District of Columbia': 'DC', 'Puerto Rico': 'PR', 'Guam': 'GU', 'American Samoa': 'AS',
+            'U.S. Virgin Islands': 'VI', 'Northern Mariana Islands': 'MP'
+        };
+
+        function getStateAbbrev(state) {
+            if (!state) return '';
+            // If already an abbreviation (2 chars), return as-is
+            if (state.length === 2) return state.toUpperCase();
+            return STATE_ABBREVS[state] || state;
+        }
+
         // Tab Navigation
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -4175,6 +4649,7 @@
                 if (data.success) {
                     allOfficials = data.officials;
                     sortAndRenderLeaderboard();
+                } else {
                 }
             } catch (error) {
                 console.error('Error loading leaderboard:', error);
@@ -4324,7 +4799,7 @@
                 return;
             }
 
-            tbody.innerHTML = officials.map((official, index) => `
+            const htmlContent = officials.map((official, index) => `
                 <tr>
                     <td class="rank">${index + 1}</td>
                     <td>
@@ -4334,11 +4809,10 @@
                                     ? `<img class="official-photo" src="${official.photo_url || 'https://clerk.house.gov/images/members/' + official.bioguide_id + '.jpg'}" alt="${official.name}" title="${(official.photo_attribution || 'Official portrait').replace(/"/g, '&quot;')}" onerror="this.outerHTML='<div class=\\'official-photo placeholder\\'><i class=\\'fas fa-user\\'></i></div>'">`
                                     : `<div class="official-photo placeholder"><i class="fas fa-user"></i></div>`
                                 }
-                                <div class="party-indicator ${official.party}">${official.party}</div>
                             </div>
                             <div class="official-info">
-                                <a href="official/${official.id}" class="official-name">${formatDisplayName(official.name)}</a>
-                                <span class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}${official.district ? '-' + official.district : ''}</span>
+                                <a href="official/${official.id}" class="official-name">${getLastName(official.name)}</a>
+                                <span class="official-meta">${official.party}-${getStateAbbrev(official.state)}</span>
                             </div>
                         </div>
                     </td>
@@ -4364,6 +4838,8 @@
                     </td>
                 </tr>
             `).join('');
+            
+            tbody.innerHTML = htmlContent;
 
             loading.style.display = 'none';
 
@@ -4476,7 +4952,7 @@
         }
 
         function formatTradeCount(official) {
-            // Show trade count for leaderboard - detailed breakdown on profile page
+            // Show trade count for leaderboard - clickable link to profile page
             const trades = official.trades || [];
             const tradeCount = trades.length;
 
@@ -4484,11 +4960,12 @@
                 return '<span style="color: var(--ew-neutral-500);">—</span>';
             }
 
-            // Show count with icon
-            return `<span title="Click for details" style="cursor: pointer;">
-                <i class="fas fa-chart-line" style="color: var(--ew-neutral-500); margin-right: 4px;"></i>
-                ${tradeCount} trade${tradeCount !== 1 ? 's' : ''}
-            </span>`;
+            // Make it a link to the official's profile page
+            const officialId = official.id || official.bioguide_id;
+            return `<a href="official/${officialId}" title="View ${tradeCount} stock trades" style="color: var(--ew-primary-600); text-decoration: none; font-weight: 500;">
+                <i class="fas fa-chart-line" style="margin-right: 4px;"></i>
+                ${tradeCount}
+            </a>`;
         }
 
         function formatTrendCell(official) {
@@ -4651,23 +5128,30 @@
             }
 
             for (const emp of financialEmployers) {
-                const rawName = (emp.name || emp.employer || '').toUpperCase().trim();
+                // For individual contributions, use EMPLOYER name (the company), not contributor name
+                const rawName = (emp.employer || emp.name || '').toUpperCase().trim();
                 if (!rawName) continue;
+                // Skip generic values
+                if (['SELF', 'SELF EMPLOYED', 'SELF-EMPLOYED', 'RETIRED', 'NOT EMPLOYED', 'N/A', 'NONE'].includes(rawName)) continue;
+
+                // Extract company name (clean up suffixes)
+                const companyName = extractCompanyFromPac(rawName);
+                if (!companyName || companyName.length < 3) continue;
 
                 // Check if this employer matches an existing PAC company
                 let matchedKey = null;
                 for (const [key] of firmMap) {
-                    if (rawName.includes(key) || key.includes(rawName)) {
+                    if (companyName.includes(key) || key.includes(companyName)) {
                         matchedKey = key;
                         break;
                     }
                 }
-                const companyName = matchedKey || rawName;
+                const finalName = matchedKey || companyName;
 
-                const existing = firmMap.get(companyName) || { name: companyName, pac_amount: 0, individual_amount: 0 };
+                const existing = firmMap.get(finalName) || { name: finalName, pac_amount: 0, individual_amount: 0 };
                 existing.individual_amount = (existing.individual_amount || 0) + (emp.amount || 0);
                 existing.sector = emp.sector || existing.sector;
-                firmMap.set(companyName, existing);
+                firmMap.set(finalName, existing);
             }
 
             // Convert to array and sort by total amount
@@ -4680,25 +5164,54 @@
                 return '<span style="color: var(--ncrc-gray);">-</span>';
             }
 
-            // Return up to 5 sponsor logos with tooltips
+            // Return up to 5 sponsor logos with tooltips - horizontal layout
             return firms.slice(0, 5).map(firm => {
                 const name = firm.name;
                 const domain = getDomainForCompany(name);
+                const abbrev = name.substring(0, 3).toUpperCase();
 
                 // Build tooltip with PAC/Individual breakdown
                 let tooltip = `<strong>${name}</strong>`;
                 tooltip += `<br>Total: ${formatDollars(firm.total)}`;
                 if (firm.pac_amount > 0) tooltip += `<br>PAC: ${formatDollars(firm.pac_amount)}`;
                 if (firm.individual_amount > 0) tooltip += `<br>Individual: ${formatDollars(firm.individual_amount)}`;
+                const safeTooltip = tooltip.replace(/"/g, '&quot;');
 
                 if (domain) {
-                    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-                    return `<a href="firm/${encodeURIComponent(name)}" class="sponsor-logo" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();" style="display: inline-block; width: 32px; height: 32px; margin-right: 4px; border-radius: 4px; background: white; border: 1px solid #ddd; overflow: hidden;"><img src="${faviconUrl}" alt="${name}" style="width: 100%; height: 100%; object-fit: contain;" onerror="this.parentElement.innerHTML='${name.substring(0,3)}'"></a>`;
+                    const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+                    // Check onload if it's the default globe (small dimensions = fallback)
+                    return `<a href="firm/${encodeURIComponent(name)}" class="sponsor-logo" data-tippy-content="${safeTooltip}" onclick="event.stopPropagation();" style="display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; flex-shrink: 0;"><img src="${faviconUrl}" alt="${abbrev}" style="width: 72px; height: 72px; object-fit: contain;" onload="if(this.naturalWidth < 64) { this.parentElement.innerHTML=createFallbackLogo('${abbrev.replace(/'/g, "\\'")}'); }" onerror="this.onerror=null; this.parentElement.innerHTML=createFallbackLogo('${abbrev.replace(/'/g, "\\'")}');"></a>`;
                 } else {
-                    // Fallback: text abbreviation
-                    return `<a href="firm/${encodeURIComponent(name)}" class="sponsor-logo-fallback" data-tippy-content="${tooltip.replace(/"/g, '&quot;')}" onclick="event.stopPropagation();" style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; margin-right: 4px; border-radius: 4px; background: var(--ew-primary-100, #e8f0fe); color: var(--ew-primary-700, #1e3a5f); font-size: 10px; font-weight: 600; border: 1px solid #ddd;">${name.substring(0,3)}</a>`;
+                    // No domain - show styled initials
+                    return `<a href="firm/${encodeURIComponent(name)}" class="sponsor-logo-text" data-tippy-content="${safeTooltip}" onclick="event.stopPropagation();" style="display: inline-flex; align-items: center; justify-content: center; width: 72px; height: 72px; flex-shrink: 0;">${createFallbackLogo(abbrev)}</a>`;
                 }
             }).join('');
+        }
+
+        /**
+         * Create a professional fallback logo for companies without favicons
+         * Uses solid colors with clean typography - modern corporate style
+         */
+        function createFallbackLogo(abbrev) {
+            // Professional solid colors (corporate/finance appropriate)
+            const colors = [
+                '#1a365d',  // Navy blue
+                '#2d3748',  // Dark gray
+                '#744210',  // Brown
+                '#22543d',  // Forest green
+                '#702459',  // Burgundy
+                '#1a202c',  // Charcoal
+                '#2a4365',  // Steel blue
+                '#285e61',  // Teal
+                '#5b21b6',  // Purple
+                '#9c4221',  // Rust
+            ];
+            
+            // Use abbreviation to pick a consistent color
+            const colorIndex = abbrev.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
+            const bgColor = colors[colorIndex];
+            
+            return `<div style="width: 72px; height: 72px; border-radius: 12px; background: ${bgColor}; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; font-weight: 600; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; letter-spacing: 1px;">${abbrev}</div>`;
         }
 
         function truncateName(name) {
@@ -5044,9 +5557,20 @@
             if (dataWindow && dataWindow.start && dataWindow.end) {
                 // Format: "Jan 2024 - Jan 2026" (shortened for display)
                 const formatShortDate = (dateStr) => {
+                    // Handle ISO date strings (YYYY-MM-DD) - parse as local date to avoid timezone shift
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+                        const [year, month] = dateStr.split('-');
+                        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                        return `${monthNames[parseInt(month, 10) - 1]} ${year}`;
+                    }
+                    // Handle full date strings like "Sun, 01 Jan 2023 00:00:00 GMT"
+                    const gmtMatch = dateStr.match(/(\d{2})\s+(\w{3})\s+(\d{4})/);
+                    if (gmtMatch) {
+                        return `${gmtMatch[2]} ${gmtMatch[3]}`;
+                    }
                     const date = new Date(dateStr);
                     if (!isNaN(date.getTime())) {
-                        const options = { month: 'short', year: 'numeric' };
+                        const options = { month: 'short', year: 'numeric', timeZone: 'UTC' };
                         return date.toLocaleDateString('en-US', options);
                     }
                     // Fallback: extract month and year from string like "January 20, 2025"

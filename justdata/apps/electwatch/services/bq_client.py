@@ -121,9 +121,6 @@ class ElectWatchBQClient:
         """
         
         rows = self._execute_query(query)
-        # #region agent log
-        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'bq_client.py:get_officials','message':'BQ query executed','data':{'row_count':len(rows) if rows else 0},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
         officials = [self._transform_official_row(row) for row in rows]
         logger.info(f"Loaded {len(officials)} officials from BigQuery")
         

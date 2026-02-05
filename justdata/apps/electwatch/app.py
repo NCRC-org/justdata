@@ -211,14 +211,7 @@ def api_get_officials():
     # PRIORITY 1: Try to get pre-computed weekly data from data store
     try:
         from justdata.apps.electwatch.services.data_store import get_officials, get_metadata
-        # #region agent log
-        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_officials','message':'Before get_officials call','hypothesisId':'A','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
         stored_officials = get_officials()
-        # #region agent log
-        first = stored_officials[0] if stored_officials else {}
-        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_officials','message':'After get_officials','data':{'count':len(stored_officials) if stored_officials else 0,'first_name':first.get('name'),'first_contributions':first.get('contributions'),'first_financial_sector_pac':first.get('financial_sector_pac'),'first_purchases_max':first.get('purchases_max'),'first_sales_max':first.get('sales_max'),'first_top_donors':len(first.get('top_donors',[])),'first_keys':list(first.keys())[:15]},'hypothesisId':'F','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
         metadata = get_metadata()
 
         # DEBUG: Log data loading
@@ -324,10 +317,6 @@ def api_get_officials():
                     'photo_attribution': photo_attribution,  # Citation for hover tooltip
                 })
 
-            # #region agent log
-            first_formatted = formatted[0] if formatted else {}
-            open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_officials','message':'Formatted response','data':{'formatted_count':len(formatted),'first_name':first_formatted.get('name'),'first_contributions':first_formatted.get('contributions'),'first_financial_sector_pac':first_formatted.get('financial_sector_pac'),'first_stock_trades':first_formatted.get('stock_trades')},'hypothesisId':'F','timestamp':__import__('time').time()*1000})+'\n')
-            # #endregion
             return jsonify({
                 'success': True,
                 'officials': formatted,
@@ -869,9 +858,6 @@ def api_get_official(official_id: str):
         stored_official = get_official(official_id)
         metadata = get_metadata()
 
-        # #region agent log
-        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_official','message':'Stored official loaded','data':{'official_id':official_id,'found':stored_official is not None,'committees':stored_official.get('committees') if stored_official else None,'firms':stored_official.get('firms') if stored_official else None,'top_individual_financial_count':len(stored_official.get('top_individual_financial',[])) if stored_official else 0,'financial_sector_pac':stored_official.get('financial_sector_pac') if stored_official else None,'top_financial_pacs_count':len(stored_official.get('top_financial_pacs',[])) if stored_official else 0},'hypothesisId':'A','timestamp':__import__('time').time()*1000})+'\n')
-        # #endregion
 
         if stored_official:
             # Format trades list for response
@@ -942,9 +928,6 @@ def api_get_official(official_id: str):
                 except Exception:
                     pass
 
-            # #region agent log
-            import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_official:response','message':'API response built','data':{'has_firms':bool(official.get('firms')),'firms_count':len(official.get('firms',[])) if official.get('firms') else 0,'has_top_individual_financial':'top_individual_financial' in official,'has_committees':bool(official.get('committees')),'committees_count':len(official.get('committees',[])) if official.get('committees') else 0,'financial_sector_pac':official.get('financial_sector_pac'),'top_financial_pacs_count':len(official.get('top_financial_pacs',[]))},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
-            # #endregion
 
             return jsonify({
                 'success': True,
