@@ -882,16 +882,18 @@ def _create_sb_data_sheet(
         _write_sb_metric_new_format(ws, row, 3, metric, grand_total)
         if peer_grand_total:
             _write_sb_metric_new_format(ws, row, 4, metric, peer_grand_total)
-        # Difference column - show "--" for SB Loans, calculate difference for others
+        # Difference column - show "--" for SB Loans, percentage point diff for count metrics, dollar diff for averages
         if metric == 'SB Loans':
             ws.cell(row, 5, '--')
-        else:
+        elif metric in ['#LMICT', 'Loans Rev Under $1m']:
+            # Percentage point difference: (Bank count / Bank SB Loans) - (Peer count / Peer SB Loans)
+            sb_loans_row = row - metrics.index(metric)
+            diff_cell = ws.cell(row, 5, f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)')
+            diff_cell.number_format = '0.00%'
+        elif 'Avg' in metric:
+            # Dollar difference for average amounts
             diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
-            # Apply dollar format for average amount metrics
-            if 'Avg' in metric:
-                diff_cell.number_format = '$#,##0'
-            else:
-                diff_cell.number_format = '#,##0'
+            diff_cell.number_format = '$#,##0'
         row += 1
 
     # Write CBSA-level data
@@ -915,14 +917,18 @@ def _create_sb_data_sheet(
                 _write_sb_metric_new_format(ws, row, 3, metric, cbsa_total)
                 if peer_cbsa_total:
                     _write_sb_metric_new_format(ws, row, 4, metric, peer_cbsa_total)
+                # Difference column - show "--" for SB Loans, percentage point diff for count metrics, dollar diff for averages
                 if metric == 'SB Loans':
                     ws.cell(row, 5, '--')
-                else:
+                elif metric in ['#LMICT', 'Loans Rev Under $1m']:
+                    # Percentage point difference: (Bank count / Bank SB Loans) - (Peer count / Peer SB Loans)
+                    sb_loans_row = row - metrics.index(metric)
+                    diff_cell = ws.cell(row, 5, f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)')
+                    diff_cell.number_format = '0.00%'
+                elif 'Avg' in metric:
+                    # Dollar difference for average amounts
                     diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
-                    if 'Avg' in metric:
-                        diff_cell.number_format = '$#,##0'
-                    else:
-                        diff_cell.number_format = '#,##0'
+                    diff_cell.number_format = '$#,##0'
                 row += 1
 
     # Adjust column widths
