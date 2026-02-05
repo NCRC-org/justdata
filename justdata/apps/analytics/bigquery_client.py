@@ -1124,9 +1124,6 @@ def get_user_locations(
 
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
-    # Apply valid user filter to exclude test/anonymous users
-    user_filter = get_valid_user_filter()
-
     # User type filter
     user_type_filter = ""
     if user_types:
@@ -1152,7 +1149,6 @@ def get_user_locations(
             organization_name
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
-            AND {user_filter}
             AND state IS NOT NULL
             {date_filter}
             {user_type_filter}
@@ -1212,9 +1208,6 @@ def get_research_activity(
 
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
-    # Apply valid user filter to exclude test/anonymous users
-    user_filter = get_valid_user_filter()
-
     # User type filter
     user_type_filter = ""
     if user_types:
@@ -1238,7 +1231,6 @@ def get_research_activity(
             MAX(event_timestamp) AS last_activity
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
-            AND {user_filter}
             {date_filter}
             {user_type_filter}
     """
@@ -1490,9 +1482,6 @@ def get_coalition_opportunities(
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
     state_filter = f"AND state = '{state}'" if state else ""
 
-    # Apply valid user filter to exclude test/anonymous users
-    user_filter = get_valid_user_filter()
-
     # Note: organization_name may not exist in events table - using NULL for now
     # Will be enriched from Firestore user profiles
     query = f"""
@@ -1508,7 +1497,6 @@ def get_coalition_opportunities(
                 event_timestamp
             FROM `{EVENTS_TABLE}`
             WHERE event_name IN ('{TARGET_APPS[3]}', '{TARGET_APPS[4]}')
-                AND {user_filter}
                 {date_filter}
                 AND lender_id IS NOT NULL
                 {state_filter}
@@ -1526,7 +1514,6 @@ def get_coalition_opportunities(
                 event_timestamp
             FROM `{EVENTS_TABLE}`
             WHERE event_name IN ('{TARGET_APPS[0]}', '{TARGET_APPS[1]}', '{TARGET_APPS[2]}')
-                AND {user_filter}
                 {date_filter}
                 AND county_fips IS NOT NULL
                 {state_filter}
@@ -1605,8 +1592,7 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     # Build date filter
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
-    # Apply valid user filter to exclude test/anonymous users
-    user_filter = get_valid_user_filter()
+    # NOTE: Don't filter users here - we want to count ALL events for dashboard metrics
 
     # Define all queries
     totals_query = f"""
@@ -1614,10 +1600,9 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(DISTINCT user_id) AS total_users,
             COUNT(*) AS total_events,
             (SELECT COUNT(DISTINCT lender_id) FROM `{EVENTS_TABLE}`
-             WHERE event_name IN ('{lender_apps_str}') AND {user_filter} {date_filter} AND lender_id IS NOT NULL) AS total_lenders
+             WHERE event_name IN ('{lender_apps_str}') {date_filter} AND lender_id IS NOT NULL) AS total_lenders
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
-            AND {user_filter}
             {date_filter}
     """
 
@@ -1629,7 +1614,6 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(*) AS total_reports
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
-            AND {user_filter}
             {date_filter}
             AND county_fips IS NOT NULL
         GROUP BY county_fips, state, county_name
@@ -1644,7 +1628,6 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(*) AS total_events
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{lender_apps_str}')
-            AND {user_filter}
             {date_filter}
             AND lender_id IS NOT NULL
         GROUP BY lender_id, lender_name
@@ -1659,7 +1642,6 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
             COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
-            AND {user_filter}
             {date_filter}
         GROUP BY event_name
         ORDER BY event_count DESC
@@ -2205,9 +2187,6 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
 
     client = get_bigquery_client()
 
-    # Apply valid user filter to exclude test/anonymous users
-    user_filter = get_valid_user_filter()
-
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
     query = f"""
@@ -2216,7 +2195,7 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
             COUNT(*) AS event_count,
             COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
-        WHERE {user_filter}
+        WHERE 1=1
         {date_filter}
         GROUP BY date
         ORDER BY date ASC
