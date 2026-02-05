@@ -77,12 +77,27 @@ def index():
 
 
 @mergermeter_bp.route('/report')
+@login_required
 @require_access('mergermeter', 'full')
 def report():
     """Report display page - renders Goals Calculator directly"""
     try:
         from .app import goals_calculator as goals_calc_func
         # Call the goals calculator function which handles all the data loading
+        return goals_calc_func()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
+@mergermeter_bp.route('/goals-calculator')
+@login_required
+@require_access('mergermeter', 'full')
+def goals_calculator():
+    """CBA Goals Calculator page - interactive tool for setting lending goals"""
+    try:
+        from .app import goals_calculator as goals_calc_func
         return goals_calc_func()
     except Exception as e:
         import traceback
@@ -383,6 +398,7 @@ def analyze():
 
 
 @mergermeter_bp.route('/download')
+@login_required
 @require_access('mergermeter', 'full')
 def download():
     """Download the generated Excel file"""
@@ -747,6 +763,19 @@ def api_search_banks():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@mergermeter_bp.route('/api/export-goals', methods=['POST'])
+@require_access('mergermeter', 'full')
+def api_export_goals():
+    """Export goals calculator configuration and data to Excel"""
+    try:
+        from .app import export_goals as export_goals_func
+        return export_goals_func()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
 
 
 @mergermeter_bp.route('/health')

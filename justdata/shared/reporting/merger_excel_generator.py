@@ -682,8 +682,10 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                     ws.cell(row, 6, f'=D{row}-E{row}')
 
                 # Apply number formatting based on metric
-                if 'Avg' in metric or '$' in metric:
-                    # Dollar format for average amounts
+                # Note: Only 'Avg' metrics are dollar amounts. "Loans Rev Under $1m" is a count
+                # (the $1m refers to the revenue threshold, not the format)
+                if 'Avg' in metric:
+                    # Dollar format for average amounts only
                     for col in [3, 4, 5, 6]:
                         ws.cell(row, col).number_format = '$#,##0'
                 else:
@@ -722,8 +724,9 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                         ws.cell(row, 6, f'=D{row}-E{row}')
 
                     # Apply number formatting based on metric
-                    if 'Avg' in metric or '$' in metric:
-                        # Dollar format for average amounts
+                    # Note: Only 'Avg' metrics are dollar amounts. "Loans Rev Under $1m" is a count
+                    if 'Avg' in metric:
+                        # Dollar format for average amounts only
                         for col in [3, 4, 5, 6]:
                             ws.cell(row, col).number_format = '$#,##0'
                     else:
