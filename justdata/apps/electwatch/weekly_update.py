@@ -51,6 +51,13 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # =============================================================================
+# ELECTION CYCLE DATE RANGE
+# =============================================================================
+# Covers the current and previous election cycles (2023-2024 and 2025-2026)
+# All data sources should use this start date for consistency
+ELECTION_CYCLE_START = '2023-01-01'
+
+# =============================================================================
 # NAME MATCHING CONSTANTS
 # =============================================================================
 
@@ -133,6 +140,24 @@ def normalize_to_public_name(formal_name: str) -> str:
         'Angus S. King' -> 'Angus King'
     """
     return FORMAL_TO_PUBLIC_NAME.get(formal_name, formal_name)
+
+
+def convert_last_first_to_first_last(name: str) -> str:
+    """Convert 'Last, First' format to 'First Last' format.
+    
+    Examples:
+        'Khanna, Ro' -> 'Ro Khanna'
+        'Pelosi, Nancy' -> 'Nancy Pelosi'
+        'Taylor Greene, Marjorie' -> 'Marjorie Taylor Greene'
+        'Ro Khanna' -> 'Ro Khanna' (already in correct format)
+    """
+    if not name:
+        return name
+    if ', ' in name:
+        parts = name.split(', ', 1)
+        if len(parts) == 2:
+            return f"{parts[1]} {parts[0]}"
+    return name
 
 # Common nickname mappings for fuzzy matching
 NICKNAME_MAP = {
@@ -410,17 +435,230 @@ class WeeklyDataUpdate:
     # =========================================================================
 
     def fetch_all_data(self):
-        """Fetch data from all sources."""
+        """Fetch data from all sources.
+        
+        Since we use bulk FEC data loaded into BigQuery, we only fetch:
+        - Congress members from Congress.gov (for basic info)
+        - Stock trades from FMP
+        - FEC IDs from crosswalk (no API calls)
+        - Incremental FEC updates for last 7 days only
+        """
         # FIRST: Get ALL Congress members (not just those with financial activity)
         self.fetch_all_congress_members()
 
         # Then enrich with financial activity data
         self.fetch_fmp_data()  # FMP for congressional stock trades (replaced Quiver)
-        self.fetch_fec_data()  # Aggregate FEC data + committee IDs
+        self.fetch_fec_crosswalk_ids()  # Get FEC IDs from crosswalk (no API calls)
 
-        # Financial sector deep dive
-        self.fetch_financial_pac_data()  # PAC contributions from financial sector
-        self.fetch_individual_financial_contributions()  # Personal money from financial execs
+        # Financial sector data comes from BigQuery (bulk loaded)
+        # Only fetch incremental updates for the last 7 days
+        self.fetch_incremental_fec_updates()
+    
+    def fetch_fec_crosswalk_ids(self):
+        """Populate FEC IDs from crosswalk (no API calls needed)."""
+        logger.info("\n--- Populating FEC IDs from Crosswalk ---")
+        
+        try:
+            from justdata.apps.electwatch.services.crosswalk import get_crosswalk
+            crosswalk = get_crosswalk()
+            
+            crosswalk_matches = 0
+            for official in self.officials_data:
+                bioguide_id = official.get('bioguide_id', '')
+                if not bioguide_id:
+                    continue
+                
+                fec_id = crosswalk.get_fec_id(bioguide_id)
+                if fec_id:
+                    official['fec_candidate_id'] = fec_id
+                    crosswalk_matches += 1
+                    
+                    # Also get additional IDs
+                    member_info = crosswalk.get_member_info(bioguide_id)
+                    if member_info:
+                        if member_info.get('opensecrets_id'):
+                            official['opensecrets_id'] = member_info['opensecrets_id']
+                        if member_info.get('govtrack_id'):
+                            official['govtrack_id'] = member_info['govtrack_id']
+            
+            logger.info(f"Crosswalk: Matched {crosswalk_matches}/{len(self.officials_data)} officials with FEC IDs")
+            
+            self.source_status['fec_crosswalk'] = {
+                'status': 'success',
+                'matches': crosswalk_matches,
+                'total_officials': len(self.officials_data),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Crosswalk population failed: {e}")
+            self.source_status['fec_crosswalk'] = {'status': 'failed', 'error': str(e)}
+    
+    def fetch_incremental_fec_updates(self):
+        """Fetch only the last 7 days of FEC data (incremental update).
+        
+        This is much faster than full FEC API pulls since:
+        1. Bulk data is already in BigQuery (loaded separately)
+        2. We only query FEC API for the last 7 days
+        3. New contributions are appended to BigQuery tables
+        """
+        logger.info("\n--- Fetching Incremental FEC Updates (Last 7 Days) ---")
+        
+        import requests
+        import time
+        
+        api_key = os.getenv('FEC_API_KEY')
+        if not api_key:
+            logger.warning("FEC_API_KEY not set - skipping incremental updates")
+            self.source_status['fec_incremental'] = {'status': 'skipped', 'reason': 'No API key'}
+            return
+        
+        # Calculate 7-day window
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=7)
+        min_date_str = start_date.strftime('%Y-%m-%d')
+        max_date_str = end_date.strftime('%Y-%m-%d')
+        
+        logger.info(f"  Date window: {min_date_str} to {max_date_str}")
+        
+        # Get all Congress member FEC IDs
+        fec_ids = [o.get('fec_candidate_id') for o in self.officials_data if o.get('fec_candidate_id')]
+        logger.info(f"  Checking {len(fec_ids)} Congress member FEC IDs")
+        
+        # Financial sector keywords
+        FINANCIAL_KEYWORDS = [
+            'BANK', 'FINANCIAL', 'CAPITAL', 'CREDIT', 'INSURANCE', 'INVEST',
+            'SECURITIES', 'MORTGAGE', 'WELLS', 'CHASE', 'CITI', 'GOLDMAN',
+            'MORGAN', 'BLACKROCK', 'FIDELITY', 'SCHWAB', 'PRUDENTIAL'
+        ]
+        
+        new_pac_contributions = []
+        new_individual_contributions = []
+        api_calls = 0
+        max_api_calls = 200  # Limit for 7-day incremental
+        
+        # Build bioguide lookup
+        fec_to_bioguide = {o.get('fec_candidate_id'): o.get('bioguide_id') 
+                          for o in self.officials_data if o.get('fec_candidate_id')}
+        
+        try:
+            # Query recent PAC contributions (Schedule A from committees)
+            logger.info("  Fetching recent PAC contributions...")
+            url = 'https://api.open.fec.gov/v1/schedules/schedule_a/'
+            
+            for fec_id in fec_ids[:100]:  # Limit to 100 for speed
+                if api_calls >= max_api_calls:
+                    logger.info(f"  Reached API limit ({max_api_calls}), stopping")
+                    break
+                
+                bioguide_id = fec_to_bioguide.get(fec_id)
+                if not bioguide_id:
+                    continue
+                
+                params = {
+                    'api_key': api_key,
+                    'candidate_id': fec_id,
+                    'min_date': min_date_str,
+                    'max_date': max_date_str,
+                    'contributor_type': 'committee',
+                    'per_page': 100
+                }
+                
+                try:
+                    time.sleep(0.3)
+                    r = requests.get(url, params=params, timeout=30)
+                    api_calls += 1
+                    
+                    if r.status_code == 429:
+                        logger.warning("  Rate limited - stopping")
+                        break
+                    
+                    if r.ok:
+                        data = r.json()
+                        for c in data.get('results', []):
+                            name = c.get('contributor_name', '').upper()
+                            amt = c.get('contribution_receipt_amount', 0)
+                            
+                            if amt > 0:
+                                is_financial = any(kw in name for kw in FINANCIAL_KEYWORDS)
+                                new_pac_contributions.append({
+                                    'bioguide_id': bioguide_id,
+                                    'committee_id': c.get('contributor_id', ''),
+                                    'committee_name': c.get('contributor_name', ''),
+                                    'amount': amt,
+                                    'contribution_date': c.get('contribution_receipt_date'),
+                                    'is_financial': is_financial,
+                                    'sector': 'financial' if is_financial else ''
+                                })
+                except Exception as e:
+                    logger.debug(f"  Error for {fec_id}: {e}")
+                
+                if api_calls % 50 == 0:
+                    logger.info(f"  Progress: {api_calls} API calls, {len(new_pac_contributions)} new PAC contributions")
+            
+            logger.info(f"  Found {len(new_pac_contributions)} new PAC contributions in last 7 days")
+            logger.info(f"  Total API calls: {api_calls}")
+            
+            # If we found new contributions, append to BigQuery
+            if new_pac_contributions:
+                self._append_pac_contributions_to_bq(new_pac_contributions)
+            
+            self.source_status['fec_incremental'] = {
+                'status': 'success',
+                'date_range': f"{min_date_str} to {max_date_str}",
+                'api_calls': api_calls,
+                'new_pac_contributions': len(new_pac_contributions),
+                'new_individual_contributions': len(new_individual_contributions),
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Incremental FEC update failed: {e}")
+            self.source_status['fec_incremental'] = {'status': 'failed', 'error': str(e)}
+    
+    def _append_pac_contributions_to_bq(self, contributions: list):
+        """Append new PAC contributions to BigQuery (incremental update)."""
+        if not contributions:
+            return
+        
+        logger.info(f"  Appending {len(contributions)} PAC contributions to BigQuery...")
+        
+        try:
+            from google.cloud import bigquery
+            import hashlib
+            
+            client = bigquery.Client(project='justdata-ncrc')
+            table_id = 'justdata-ncrc.electwatch.official_pac_contributions'
+            
+            # Add IDs and timestamps
+            rows = []
+            for c in contributions:
+                row_id = hashlib.md5(
+                    f"{c['bioguide_id']}|{c['committee_id']}|{c.get('contribution_date','')}|{c['amount']}".encode()
+                ).hexdigest()[:16]
+                
+                rows.append({
+                    'id': row_id,
+                    'bioguide_id': c['bioguide_id'],
+                    'committee_id': c.get('committee_id', ''),
+                    'committee_name': c.get('committee_name', ''),
+                    'amount': c['amount'],
+                    'contribution_date': c.get('contribution_date'),
+                    'sector': c.get('sector', ''),
+                    'sub_sector': '',
+                    'is_financial': c.get('is_financial', False),
+                    'updated_at': datetime.now().isoformat()
+                })
+            
+            # Use streaming insert for small batches
+            errors = client.insert_rows_json(table_id, rows)
+            if errors:
+                logger.error(f"  BigQuery insert errors: {errors[:3]}")
+            else:
+                logger.info(f"  Successfully appended {len(rows)} PAC contributions")
+                
+        except Exception as e:
+            logger.error(f"  Failed to append to BigQuery: {e}")
 
     def fetch_all_congress_members(self):
         """Fetch complete list of all Congress members from Congress.gov API."""
@@ -533,8 +771,8 @@ class WeeklyDataUpdate:
             if not client.test_connection():
                 raise Exception("FMP API connection failed")
 
-            # Calculate date range (last 24 months / 730 days)
-            from_date = (datetime.now() - timedelta(days=730)).strftime('%Y-%m-%d')
+            # Use election cycle start date (covers 2023-2024 and 2025-2026 cycles)
+            from_date = ELECTION_CYCLE_START
 
             # Fetch financial sector trades only
             logger.info(f"Fetching trades for {len(ALL_FINANCIAL_SYMBOLS)} financial sector symbols...")
@@ -779,8 +1017,9 @@ class WeeklyDataUpdate:
             if not client.test_connection():
                 raise Exception("Quiver API connection failed")
 
-            # Fetch all trades from the past year
-            trades = client.get_recent_trades(days=365)
+            # Fetch all trades from election cycle start (covers 2023-2024 and 2025-2026)
+            days_since_cycle_start = (datetime.now() - datetime.strptime(ELECTION_CYCLE_START, '%Y-%m-%d')).days
+            trades = client.get_recent_trades(days=days_since_cycle_start)
             logger.info(f"Fetched {len(trades) if trades else 0} trades from Quiver")
 
             # Aggregate by politician
@@ -1127,12 +1366,11 @@ class WeeklyDataUpdate:
             'INDEPENDENT BANKER', 'AMERICAN BANKER', 'CREDIT UNION'
         ]
 
-        # Calculate rolling 24-month date window
+        # Use election cycle start date (covers 2023-2024 and 2025-2026 cycles)
         rolling_end_date = datetime.now()
-        rolling_start_date = rolling_end_date - timedelta(days=730)  # 24 months
-        min_date_str = rolling_start_date.strftime('%Y-%m-%d')
+        min_date_str = ELECTION_CYCLE_START
         max_date_str = rolling_end_date.strftime('%Y-%m-%d')
-        logger.info(f"  Using rolling 24-month window: {min_date_str} to {max_date_str}")
+        logger.info(f"  Using election cycle window: {min_date_str} to {max_date_str}")
 
         def get_financial_pac_total(committee_id: str) -> dict:
             """
@@ -1851,6 +2089,8 @@ class WeeklyDataUpdate:
         officials_by_name = {}
         for official in self.officials_data:
             name = official.get('name', '')
+            # Convert "Last, First" to "First Last" format for dictionary lookups
+            name = convert_last_first_to_first_last(name)
             # Apply name aliases to normalize
             canonical_name = NAME_ALIASES.get(name, name)
             official['name'] = canonical_name
@@ -1875,10 +2115,11 @@ class WeeklyDataUpdate:
         logger.info(f"After deduplication: {len(self.officials_data)} unique officials")
 
         for official in self.officials_data:
-            # Get committee assignments
+            # Get committee assignments (name should already be in "First Last" format)
             name = official.get('name', '')
-            if name in COMMITTEE_ASSIGNMENTS:
-                official['committees'] = COMMITTEE_ASSIGNMENTS[name]
+            lookup_name = convert_last_first_to_first_last(name)  # Ensure correct format
+            if lookup_name in COMMITTEE_ASSIGNMENTS:
+                official['committees'] = COMMITTEE_ASSIGNMENTS[lookup_name]
             else:
                 official.setdefault('committees', [])
             official.setdefault('contributions', 0)
@@ -1902,8 +2143,9 @@ class WeeklyDataUpdate:
 
             # Add years in Congress data, party info, and photo URL
             name = official.get('name', '')
-            if name in MEMBER_DATA:
-                member_info = MEMBER_DATA[name]
+            lookup_name = convert_last_first_to_first_last(name)  # Ensure correct format
+            if lookup_name in MEMBER_DATA:
+                member_info = MEMBER_DATA[lookup_name]
                 first_elected = member_info[0]
                 chamber = member_info[1] if len(member_info) > 1 else None
                 party = member_info[2] if len(member_info) > 2 else None
@@ -1934,7 +2176,7 @@ class WeeklyDataUpdate:
             except Exception as e:
                 logger.debug(f"Could not fetch photo for {name}: {e}")
 
-            if name not in MEMBER_DATA:
+            if lookup_name not in MEMBER_DATA:
                 # Estimate from trades if available (rough approximation)
                 trades = official.get('trades', [])
                 if trades:
@@ -2911,17 +3153,17 @@ Be factual and avoid speculation."""
 
         # Save metadata
         # Calculate date ranges for different data sources
-        # Stock trades use 24-month (730 day) rolling window
-        stock_start = self.start_time - timedelta(days=730)
-        # FEC data uses 24-month rolling window for contributions
-        fec_start = self.start_time - timedelta(days=730)
+        # All data uses election cycle start (2023-2024 and 2025-2026 cycles)
+        cycle_start = datetime.strptime(ELECTION_CYCLE_START, '%Y-%m-%d')
+        stock_start = cycle_start
+        fec_start = cycle_start
 
         metadata = {
             'status': 'valid',
             'last_updated': self.start_time.isoformat(),
             'last_updated_display': self.start_time.strftime('%B %d, %Y at %I:%M %p'),
             'data_window': {
-                'start': (self.start_time - timedelta(days=365)).strftime('%B %d, %Y'),
+                'start': datetime.strptime(ELECTION_CYCLE_START, '%Y-%m-%d').strftime('%B %d, %Y'),
                 'end': self.start_time.strftime('%B %d, %Y')
             },
             'stock_data_window': {

@@ -351,8 +351,15 @@ def get_metadata() -> Dict[str, Any]:
     """Get metadata about the current data."""
     try:
         client = _get_bq_client()
-        return client.get_metadata()
+        metadata = client.get_metadata()
+        # #region agent log
+        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_metadata','message':'Metadata loaded','data':{'status':metadata.get('status'),'officials_count':metadata.get('officials_count')},'hypothesisId':'D','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
+        return metadata
     except Exception as e:
+        # #region agent log
+        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_metadata','message':'Exception loading metadata','data':{'error':str(e)},'hypothesisId':'D','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
         logger.error(f"Error loading metadata from BigQuery: {e}")
         return {
             'last_updated': None,
@@ -369,10 +376,22 @@ def get_officials(include_trades: bool = False) -> List[Dict]:
         include_trades: If True, load trades for each official (slow for large datasets).
                        Default False for list views, set True for detail views.
     """
+    # #region agent log
+    import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'Entering get_officials','hypothesisId':'C','timestamp':__import__('time').time()*1000})+'\n')
+    # #endregion
     try:
         client = _get_bq_client()
+        # #region agent log
+        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'Got BQ client, calling client.get_officials()','hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
         officials = client.get_officials()
+        # #region agent log
+        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'BQ client returned','data':{'count':len(officials) if officials else 0},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
     except Exception as e:
+        # #region agent log
+        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'data_store.py:get_officials','message':'Exception in get_officials','data':{'error':str(e)},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
         logger.error(f"Error loading officials from BigQuery: {e}")
         return []
 
@@ -400,11 +419,11 @@ def get_officials(include_trades: bool = False) -> List[Dict]:
 
 
 def get_official(official_id: str) -> Optional[Dict]:
-    """Get a specific official by ID (handles both original and normalized IDs)."""
+    """Get a specific official by ID (bioguide_id is the primary identifier)."""
     try:
         client = _get_bq_client()
         
-        # Try direct lookup by bioguide_id first
+        # Look up by bioguide_id (the canonical ID)
         official = client.get_official(official_id)
         if official:
             # Load trades for individual official
@@ -412,14 +431,6 @@ def get_official(official_id: str) -> Optional[Dict]:
             official['trades'] = trades
             
             # Apply normalization
-            official = _normalize_official(official)
-            return official
-        
-        # Try by name
-        official = client.get_official_by_name(official_id.replace('_', ' '))
-        if official:
-            trades = client.get_official_trades(official.get('bioguide_id', ''))
-            official['trades'] = trades
             official = _normalize_official(official)
             return official
             
@@ -435,9 +446,13 @@ def _normalize_official(official: Dict) -> Dict:
     if 'name' in official:
         official['name'] = normalize_to_public_name(official['name'])
 
-    # Also update the ID to match the public name
-    if official.get('name'):
-        official['id'] = official['name'].lower().replace(' ', '_')
+    # Use bioguide_id as the canonical ID for URL routing
+    # This is the most reliable identifier for Congress members
+    if official.get('bioguide_id'):
+        official['id'] = official['bioguide_id']
+    elif official.get('name'):
+        # Fallback to name-based ID if no bioguide_id
+        official['id'] = official['name'].lower().replace(', ', '_').replace(' ', '_')
 
     # Normalize party to single letter (REP -> R, DEM -> D)
     party = official.get('party', '')
@@ -715,23 +730,58 @@ def get_insights_metadata() -> Dict[str, Any]:
 
 def get_freshness() -> Dict[str, Any]:
     """Get data freshness information."""
+    from datetime import datetime
     metadata = get_metadata()
+    raw_sources = metadata.get('data_sources', {})
+    last_updated = metadata.get('last_updated')
+    
+    # Parse last_updated for date display
+    try:
+        if last_updated:
+            last_updated_dt = datetime.fromisoformat(str(last_updated).replace('Z', '+00:00').replace('+00:00+00:00', '+00:00'))
+            date_display = last_updated_dt.strftime('%b %d, %Y')
+        else:
+            date_display = 'Not loaded'
+    except:
+        date_display = 'Not loaded'
+    
+    # Normalize source keys to match frontend expectations
+    # Frontend expects: fec, fmp, congress
+    # Metadata has: fec_crosswalk, fec_incremental, fmp, congress_members
+    normalized_sources = {
+        'fec': {
+            'status': raw_sources.get('fec_crosswalk', raw_sources.get('fec_incremental', {})).get('status', 'success'),
+            'date': date_display,
+            'records': raw_sources.get('fec_crosswalk', {}).get('matches', 0)
+        },
+        'fmp': {
+            'status': raw_sources.get('fmp', {}).get('status', 'success'),
+            'date': date_display,
+            'records': raw_sources.get('fmp', {}).get('total_trades', 0)
+        },
+        'congress': {
+            'status': raw_sources.get('congress_members', {}).get('status', 'success'),
+            'date': date_display,
+            'records': raw_sources.get('congress_members', {}).get('total', 0)
+        }
+    }
+    
     return {
-        'last_updated': metadata.get('last_updated'),
+        'last_updated': last_updated,
         'last_updated_display': metadata.get('last_updated_display'),
         'data_window': {
             'start': metadata.get('data_window_start'),
             'end': metadata.get('data_window_end')
         },
         'stock_data_window': {
-            'start_iso': metadata.get('stock_data_window_start'),
-            'end_iso': metadata.get('stock_data_window_end')
+            'start': metadata.get('stock_data_window_start'),
+            'end': metadata.get('stock_data_window_end')
         },
         'fec_data_window': {
-            'start_iso': metadata.get('fec_data_window_start'),
-            'end_iso': metadata.get('fec_data_window_end')
+            'start': metadata.get('fec_data_window_start'),
+            'end': metadata.get('fec_data_window_end')
         },
-        'sources': metadata.get('data_sources', {}),
+        'sources': normalized_sources,
         'next_update': metadata.get('next_update')
     }
 

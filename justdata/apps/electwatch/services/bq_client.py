@@ -64,30 +64,96 @@ class ElectWatchBQClient:
     # OFFICIALS
     # =========================================================================
     
-    def get_officials(self) -> List[Dict]:
+    def get_officials(self, include_trades: bool = True, include_trends: bool = True) -> List[Dict]:
         """
-        Get all officials.
+        Get all officials with optional trades and trend data.
         
+        Args:
+            include_trades: Whether to fetch and merge trades from official_trades table
+            include_trends: Whether to calculate and include trend data
+            
         Returns:
             List of official dicts
         """
+        # Join with PAC contributions to get live data (avoids streaming buffer issue)
         query = f"""
-        SELECT *
-        FROM {self._table_ref('officials')}
-        ORDER BY involvement_score DESC, name ASC
+        SELECT 
+            o.*,
+            COALESCE(pac_totals.total_pac, 0) as live_pac_contributions,
+            COALESCE(pac_totals.financial_pac, 0) as live_financial_sector_pac,
+            CASE 
+                WHEN COALESCE(pac_totals.total_pac, 0) > 0 
+                THEN ROUND(100.0 * COALESCE(pac_totals.financial_pac, 0) / pac_totals.total_pac, 1)
+                ELSE 0 
+            END as live_financial_pac_pct,
+            top_pacs.top_financial_pacs as live_top_financial_pacs
+        FROM {self._table_ref('officials')} o
+        LEFT JOIN (
+            SELECT 
+                bioguide_id,
+                SUM(amount) as total_pac,
+                SUM(CASE WHEN is_financial THEN amount ELSE 0 END) as financial_pac
+            FROM {self._table_ref('official_pac_contributions')}
+            GROUP BY bioguide_id
+        ) pac_totals ON o.bioguide_id = pac_totals.bioguide_id
+        LEFT JOIN (
+            -- Get top 10 financial PACs per official
+            SELECT 
+                bioguide_id,
+                ARRAY_AGG(
+                    STRUCT(committee_name as name, total_amount as amount, sector)
+                    ORDER BY total_amount DESC
+                    LIMIT 10
+                ) as top_financial_pacs
+            FROM (
+                SELECT 
+                    bioguide_id,
+                    committee_name,
+                    SUM(amount) as total_amount,
+                    MAX(sector) as sector
+                FROM {self._table_ref('official_pac_contributions')}
+                WHERE is_financial = TRUE
+                GROUP BY bioguide_id, committee_name
+            )
+            GROUP BY bioguide_id
+        ) top_pacs ON o.bioguide_id = top_pacs.bioguide_id
+        ORDER BY COALESCE(pac_totals.total_pac, o.pac_contributions, 0) DESC, o.name ASC
         """
         
         rows = self._execute_query(query)
+        # #region agent log
+        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'bq_client.py:get_officials','message':'BQ query executed','data':{'row_count':len(rows) if rows else 0},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
         officials = [self._transform_official_row(row) for row in rows]
         logger.info(f"Loaded {len(officials)} officials from BigQuery")
+        
+        # Batch fetch trades for all officials
+        if include_trades:
+            trades_by_official = self._get_all_trades_grouped()
+            for official in officials:
+                bioguide_id = official.get('bioguide_id', '')
+                official['trades'] = trades_by_official.get(bioguide_id, [])
+        
+        # Calculate trends from snapshots
+        if include_trends:
+            trends_by_official = self._get_trend_data()
+            for official in officials:
+                bioguide_id = official.get('bioguide_id', '')
+                trend_data = trends_by_official.get(bioguide_id)
+                if trend_data:
+                    official['finance_trend_direction'] = trend_data.get('direction')
+                    official['finance_pct_change'] = trend_data.get('pct_change')
+                # If no trend_data, leave fields undefined so frontend shows "no data"
+        
         return officials
     
-    def get_official(self, official_id: str) -> Optional[Dict]:
+    def get_official(self, official_id: str, include_trades: bool = True) -> Optional[Dict]:
         """
         Get a single official by bioguide_id.
         
         Args:
             official_id: Bioguide ID or normalized ID
+            include_trades: Whether to fetch trades from official_trades table
             
         Returns:
             Official dict or None if not found
@@ -104,22 +170,28 @@ class ElectWatchBQClient:
         """
         
         rows = self._execute_query(query)
+        official = None
         if rows:
-            return self._transform_official_row(rows[0])
+            official = self._transform_official_row(rows[0])
+        else:
+            # Try case-insensitive match
+            query = f"""
+            SELECT *
+            FROM {self._table_ref('officials')}
+            WHERE UPPER(REPLACE(REPLACE(bioguide_id, '_', ''), '-', '')) = '{escape_sql_string(normalized_id)}'
+            LIMIT 1
+            """
+            
+            rows = self._execute_query(query)
+            if rows:
+                official = self._transform_official_row(rows[0])
         
-        # Try case-insensitive match
-        query = f"""
-        SELECT *
-        FROM {self._table_ref('officials')}
-        WHERE UPPER(REPLACE(REPLACE(bioguide_id, '_', ''), '-', '')) = '{escape_sql_string(normalized_id)}'
-        LIMIT 1
-        """
+        # Fetch trades for this official
+        if official and include_trades:
+            bioguide_id = official.get('bioguide_id', '')
+            official['trades'] = self.get_official_trades(bioguide_id)
         
-        rows = self._execute_query(query)
-        if rows:
-            return self._transform_official_row(rows[0])
-        
-        return None
+        return official
     
     def get_official_by_name(self, name: str) -> Optional[Dict]:
         """
@@ -154,6 +226,27 @@ class ElectWatchBQClient:
         # Ensure trades are loaded separately if needed
         if 'trades' not in official:
             official['trades'] = []
+        
+        # Use live PAC data from JOIN if available, otherwise fall back to stored values
+        live_pac = official.get('live_pac_contributions')
+        live_financial_pac = official.get('live_financial_sector_pac')
+        live_financial_pct = official.get('live_financial_pac_pct')
+        live_top_pacs = official.get('live_top_financial_pacs')
+        
+        # Override stored values with live data if available
+        if live_pac is not None and live_pac > 0:
+            official['pac_contributions'] = float(live_pac)
+            official['contributions'] = float(live_pac)
+            official['financial_sector_pac'] = float(live_financial_pac or 0)
+            official['financial_pac_pct'] = float(live_financial_pct or 0)
+        
+        # Use live top financial PACs if available
+        if live_top_pacs:
+            # Convert BigQuery STRUCT array to list of dicts
+            official['top_financial_pacs'] = [
+                {'name': pac.get('name', ''), 'amount': float(pac.get('amount', 0)), 'sector': pac.get('sector', '')}
+                for pac in live_top_pacs
+            ] if live_top_pacs else []
         
         # Build contributions_display object expected by frontend
         # Frontend expects: contributions_display.total and contributions_display.financial
@@ -241,6 +334,142 @@ class ElectWatchBQClient:
         """
         
         return self._execute_query(query)
+    
+    def _get_all_trades_grouped(self) -> Dict[str, List[Dict]]:
+        """
+        Get all trades grouped by bioguide_id for batch loading.
+        Returns all trades per official (no limit).
+        
+        Returns:
+            Dict mapping bioguide_id to list of trades
+        """
+        query = f"""
+        SELECT *
+        FROM {self._table_ref('official_trades')}
+        ORDER BY bioguide_id, transaction_date DESC
+        """
+        
+        rows = self._execute_query(query)
+        
+        # Group by bioguide_id
+        trades_by_official: Dict[str, List[Dict]] = {}
+        for row in rows:
+            trade = dict(row)
+            bioguide_id = trade.get('bioguide_id', '')
+            
+            # Reconstruct amount dict
+            trade['amount'] = {
+                'min': trade.get('amount_min', 0),
+                'max': trade.get('amount_max', 0),
+                'display': trade.get('amount_display', '')
+            }
+            trade['type'] = trade.get('trade_type', '')
+            
+            if bioguide_id not in trades_by_official:
+                trades_by_official[bioguide_id] = []
+            trades_by_official[bioguide_id].append(trade)
+        
+        logger.info(f"Loaded trades for {len(trades_by_official)} officials")
+        return trades_by_official
+    
+    def _get_trend_data(self) -> Dict[str, Dict]:
+        """
+        Calculate trend data from trend_snapshots table.
+        Compares most recent snapshot to previous week's snapshot.
+        
+        Returns:
+            Dict mapping bioguide_id to trend info (direction, pct_change)
+        """
+        # First check if we have snapshots from multiple dates
+        date_check_query = f"""
+        SELECT COUNT(DISTINCT snapshot_date) as date_count
+        FROM {self._table_ref('trend_snapshots')}
+        WHERE snapshot_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY)
+        """
+        
+        try:
+            date_rows = self._execute_query(date_check_query)
+            date_count = date_rows[0].get('date_count', 0) if date_rows else 0
+            
+            if date_count < 2:
+                logger.info(f"Only {date_count} snapshot date(s) - trends require at least 2 weekly snapshots")
+                return {}  # Return empty - frontend will show "no data"
+            
+        except Exception as e:
+            logger.warning(f"Could not check trend snapshot dates: {e}")
+            return {}
+        
+        # Get last two snapshots per official (from different dates)
+        query = f"""
+        WITH ranked_snapshots AS (
+            SELECT 
+                bioguide_id,
+                snapshot_date,
+                finance_pct,
+                total_contributions,
+                finance_contributions,
+                ROW_NUMBER() OVER (PARTITION BY bioguide_id ORDER BY snapshot_date DESC) as rn
+            FROM {self._table_ref('trend_snapshots')}
+            WHERE snapshot_date >= DATE_SUB(CURRENT_DATE(), INTERVAL 60 DAY)
+        )
+        SELECT 
+            curr.bioguide_id,
+            curr.snapshot_date as curr_date,
+            curr.finance_pct as current_pct,
+            curr.finance_contributions as current_finance,
+            prev.snapshot_date as prev_date,
+            prev.finance_pct as prev_pct,
+            prev.finance_contributions as prev_finance
+        FROM ranked_snapshots curr
+        LEFT JOIN ranked_snapshots prev 
+            ON curr.bioguide_id = prev.bioguide_id AND prev.rn = 2
+        WHERE curr.rn = 1
+        """
+        
+        try:
+            rows = self._execute_query(query)
+        except Exception as e:
+            logger.warning(f"Could not fetch trend data: {e}")
+            return {}
+        
+        trends: Dict[str, Dict] = {}
+        for row in rows:
+            bioguide_id = row.get('bioguide_id', '')
+            curr_date = row.get('curr_date')
+            prev_date = row.get('prev_date')
+            
+            # Skip if no previous snapshot or same date
+            if not prev_date or (curr_date and prev_date and str(curr_date) == str(prev_date)):
+                continue
+            
+            current_pct = row.get('current_pct') or 0
+            prev_pct = row.get('prev_pct')
+            current_finance = row.get('current_finance') or 0
+            prev_finance = row.get('prev_finance')
+            
+            # Calculate direction and change
+            if prev_pct is not None and prev_pct > 0:
+                pct_change = ((current_pct - prev_pct) / prev_pct) * 100
+            elif prev_finance is not None and prev_finance > 0:
+                pct_change = ((current_finance - prev_finance) / prev_finance) * 100
+            else:
+                pct_change = 0
+            
+            # Determine direction (threshold of 5% change)
+            if pct_change > 5:
+                direction = 'increasing'
+            elif pct_change < -5:
+                direction = 'decreasing'
+            else:
+                direction = 'stable'
+            
+            trends[bioguide_id] = {
+                'direction': direction,
+                'pct_change': round(pct_change, 1)
+            }
+        
+        logger.info(f"Calculated trends for {len(trends)} officials")
+        return trends
     
     # =========================================================================
     # FIRMS

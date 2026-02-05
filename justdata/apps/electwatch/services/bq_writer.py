@@ -87,6 +87,62 @@ class ElectWatchBQWriter:
         logger.info(f"Inserted {len(rows)} rows into {table_name}")
         return len(rows)
     
+    def _merge_rows(self, table_name: str, rows: List[Dict], key_column: str = 'id') -> int:
+        """
+        Merge rows into a table (upsert: insert if new, update if exists).
+        
+        This preserves existing data while adding new records - no data loss!
+        Uses delete-then-insert pattern: only deletes rows that will be replaced.
+        
+        Args:
+            table_name: Target table name
+            rows: List of row dicts to merge
+            key_column: Column to use for matching (default 'id')
+            
+        Returns:
+            Number of rows processed
+        """
+        if not rows:
+            logger.info(f"No rows to merge into {table_name}")
+            return 0
+        
+        # Get all IDs we're about to insert
+        ids_to_upsert = [r.get(key_column) for r in rows if r.get(key_column)]
+        
+        if ids_to_upsert:
+            # Delete ONLY existing rows with these specific IDs (in batches)
+            # This preserves all other data in the table!
+            id_batch_size = 1000
+            deleted_count = 0
+            for j in range(0, len(ids_to_upsert), id_batch_size):
+                id_batch = ids_to_upsert[j:j + id_batch_size]
+                # Escape single quotes properly
+                escaped_ids = [f"'{str(id).replace(chr(39), chr(39)+chr(39))}'" for id in id_batch]
+                delete_query = f"""
+                DELETE FROM `{self._table_ref(table_name)}`
+                WHERE {key_column} IN ({', '.join(escaped_ids)})
+                """
+                try:
+                    job = self.client.query(delete_query)
+                    result = job.result()
+                    deleted_count += job.num_dml_affected_rows or 0
+                except Exception as e:
+                    logger.warning(f"Could not delete existing rows from {table_name}: {e}")
+            
+            if deleted_count > 0:
+                logger.info(f"Deleted {deleted_count} existing rows from {table_name} for upsert")
+        
+        # Now insert all rows
+        table_ref = self.client.dataset(DATASET_ID).table(table_name)
+        errors = self.client.insert_rows_json(table_ref, rows)
+        
+        if errors:
+            logger.error(f"Errors merging into {table_name}: {errors[:5]}")
+            # Don't raise - log and continue
+        
+        logger.info(f"Merged {len(rows)} rows into {table_name} (upsert - preserves existing data)")
+        return len(rows)
+    
     # =========================================================================
     # OFFICIALS
     # =========================================================================
@@ -127,8 +183,9 @@ class ElectWatchBQWriter:
             row = self._transform_official(official)
             rows.append(row)
         
-        self._truncate_table('officials')
-        return self._insert_rows('officials', rows)
+        # Use MERGE instead of truncate to preserve existing data
+        # Only updates/inserts rows for officials in this batch
+        return self._merge_rows('officials', rows, key_column='bioguide_id')
     
     def _transform_official(self, official: Dict) -> Dict:
         """Transform official dict to BigQuery row format."""
@@ -337,8 +394,9 @@ class ElectWatchBQWriter:
                 rows.append(row)
         
         logger.info(f"Writing {len(rows)} PAC contributions to BigQuery")
-        self._truncate_table('official_pac_contributions')
-        return self._insert_rows('official_pac_contributions', rows)
+        # Use MERGE to add new contributions without deleting existing bulk data
+        # Only updates/inserts rows with matching IDs, preserves everything else
+        return self._merge_rows('official_pac_contributions', rows, key_column='id')
     
     # =========================================================================
     # INDIVIDUAL CONTRIBUTIONS
@@ -381,8 +439,9 @@ class ElectWatchBQWriter:
                 rows.append(row)
         
         logger.info(f"Writing {len(rows)} individual contributions to BigQuery")
-        self._truncate_table('official_individual_contributions')
-        return self._insert_rows('official_individual_contributions', rows)
+        # Use MERGE to add new contributions without deleting existing bulk data
+        # Only updates/inserts rows with matching IDs, preserves everything else
+        return self._merge_rows('official_individual_contributions', rows, key_column='id')
     
     # =========================================================================
     # FIRMS

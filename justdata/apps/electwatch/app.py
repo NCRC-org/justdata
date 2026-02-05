@@ -12,8 +12,11 @@ import uuid
 import json
 import threading
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, request, jsonify, session, Response, send_file, send_from_directory
+
+# Election cycle start date (covers 2023-2024 and 2025-2026 cycles)
+ELECTION_CYCLE_START = '2023-01-01'
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Add repo root to path
@@ -208,7 +211,14 @@ def api_get_officials():
     # PRIORITY 1: Try to get pre-computed weekly data from data store
     try:
         from justdata.apps.electwatch.services.data_store import get_officials, get_metadata
+        # #region agent log
+        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_officials','message':'Before get_officials call','hypothesisId':'A','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
         stored_officials = get_officials()
+        # #region agent log
+        first = stored_officials[0] if stored_officials else {}
+        open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_officials','message':'After get_officials','data':{'count':len(stored_officials) if stored_officials else 0,'first_name':first.get('name'),'first_contributions':first.get('contributions'),'first_financial_sector_pac':first.get('financial_sector_pac'),'first_purchases_max':first.get('purchases_max'),'first_sales_max':first.get('sales_max'),'first_top_donors':len(first.get('top_donors',[])),'first_keys':list(first.keys())[:15]},'hypothesisId':'F','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
         metadata = get_metadata()
 
         # DEBUG: Log data loading
@@ -314,6 +324,10 @@ def api_get_officials():
                     'photo_attribution': photo_attribution,  # Citation for hover tooltip
                 })
 
+            # #region agent log
+            first_formatted = formatted[0] if formatted else {}
+            open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_officials','message':'Formatted response','data':{'formatted_count':len(formatted),'first_name':first_formatted.get('name'),'first_contributions':first_formatted.get('contributions'),'first_financial_sector_pac':first_formatted.get('financial_sector_pac'),'first_stock_trades':first_formatted.get('stock_trades')},'hypothesisId':'F','timestamp':__import__('time').time()*1000})+'\n')
+            # #endregion
             return jsonify({
                 'success': True,
                 'officials': formatted,
@@ -855,6 +869,10 @@ def api_get_official(official_id: str):
         stored_official = get_official(official_id)
         metadata = get_metadata()
 
+        # #region agent log
+        import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_official','message':'Stored official loaded','data':{'official_id':official_id,'found':stored_official is not None,'committees':stored_official.get('committees') if stored_official else None,'firms':stored_official.get('firms') if stored_official else None,'top_individual_financial_count':len(stored_official.get('top_individual_financial',[])) if stored_official else 0,'financial_sector_pac':stored_official.get('financial_sector_pac') if stored_official else None,'top_financial_pacs_count':len(stored_official.get('top_financial_pacs',[])) if stored_official else 0},'hypothesisId':'A','timestamp':__import__('time').time()*1000})+'\n')
+        # #endregion
+
         if stored_official:
             # Format trades list for response
             trades_list = []
@@ -923,6 +941,10 @@ def api_get_official(official_id: str):
                     )
                 except Exception:
                     pass
+
+            # #region agent log
+            import json as _json; open('/Users/jadedlebi/justdata/.cursor/debug.log','a').write(_json.dumps({'location':'app.py:api_get_official:response','message':'API response built','data':{'has_firms':bool(official.get('firms')),'firms_count':len(official.get('firms',[])) if official.get('firms') else 0,'has_top_individual_financial':'top_individual_financial' in official,'has_committees':bool(official.get('committees')),'committees_count':len(official.get('committees',[])) if official.get('committees') else 0,'financial_sector_pac':official.get('financial_sector_pac'),'top_financial_pacs_count':len(official.get('top_financial_pacs',[]))},'hypothesisId':'B','timestamp':__import__('time').time()*1000})+'\n')
+            # #endregion
 
             return jsonify({
                 'success': True,
@@ -1905,8 +1927,6 @@ def api_get_freshness():
 
     Returns timestamps showing when data was last updated and next scheduled update.
     """
-    from datetime import datetime, timedelta
-
     # Try to get actual metadata from data store
     try:
         from justdata.apps.electwatch.services.data_store import get_metadata, get_freshness
@@ -1929,8 +1949,9 @@ def api_get_freshness():
                         'date': last_updated_dt.strftime('%b %d, %Y'),
                         'date_full': last_updated_dt.strftime('%B %d, %Y'),
                         'days_old': (datetime.now() - last_updated_dt).days,
-                        'status': sources.get('fec', {}).get('status', 'unknown'),
-                        'records': sources.get('fec', {}).get('records', 0),
+                        # FEC data comes from fec_crosswalk (mapping) and fec_incremental (updates)
+                        'status': sources.get('fec_crosswalk', sources.get('fec_incremental', {})).get('status', 'success'),
+                        'records': sources.get('fec_crosswalk', {}).get('matches', 0),
                         'refresh_schedule': 'Weekly (Sundays at midnight)',
                         'note': 'Campaign contributions and PAC data'
                     },
@@ -1939,8 +1960,9 @@ def api_get_freshness():
                         'date': last_updated_dt.strftime('%b %d, %Y'),
                         'date_full': last_updated_dt.strftime('%B %d, %Y'),
                         'days_old': (datetime.now() - last_updated_dt).days,
-                        'status': sources.get('quiver', {}).get('status', 'unknown'),
-                        'records': sources.get('quiver', {}).get('records', 0),
+                        # Stock data comes from fmp source
+                        'status': sources.get('fmp', sources.get('quiver', {})).get('status', 'success'),
+                        'records': sources.get('fmp', {}).get('total_trades', 0),
                         'refresh_schedule': 'Weekly (Sundays at midnight)',
                         'note': 'Congressional stock trades (may lag up to 45 days per STOCK Act)'
                     },
@@ -1956,7 +1978,7 @@ def api_get_freshness():
                     }
                 },
                 'data_window': metadata.get('data_window', {
-                    'start': (datetime.now() - timedelta(days=365)).strftime('%B %d, %Y'),
+                    'start': datetime.strptime(ELECTION_CYCLE_START, '%Y-%m-%d').strftime('%B %d, %Y'),
                     'end': datetime.now().strftime('%B %d, %Y')
                 }),
                 'counts': metadata.get('counts', {})
@@ -1980,7 +2002,7 @@ def api_get_freshness():
             'committees': {'name': 'Committees', 'date': 'Not loaded', 'status': 'pending', 'records': 0}
         },
         'data_window': {
-            'start': (now - timedelta(days=365)).strftime('%B %d, %Y'),
+            'start': datetime.strptime(ELECTION_CYCLE_START, '%Y-%m-%d').strftime('%B %d, %Y'),
             'end': now.strftime('%B %d, %Y')
         }
     })
@@ -2001,13 +2023,15 @@ def api_get_firm_detail(firm_name: str):
     """
     from justdata.apps.electwatch.services.sec_client import get_sample_sec_data
 
-    # Try to get live data first
+    # Try to get live data first (only if we have congressional trades which provide officials)
     try:
         from justdata.apps.electwatch.services.data_aggregator import get_data_aggregator
         aggregator = get_data_aggregator()
         live_data = aggregator.get_firm_detail(firm_name)
 
-        if live_data and (live_data.get('congressional_trades') or live_data.get('news') or live_data.get('sec_filings')):
+        # Only use live data if we have congressional trades (the main data for this page)
+        # News/SEC filings alone aren't sufficient - we need officials data
+        if live_data and live_data.get('congressional_trades'):
             # Format officials from congressional trades
             officials = []
             for off in live_data.get('officials', [])[:10]:
@@ -2138,47 +2162,32 @@ def api_get_firm_detail(firm_name: str):
 
             # If no firms data, check trades array for ticker match
             if not has_match and official.get('trades'):
-                # Check if official traded this ticker
-                from justdata.apps.electwatch.services.firm_mapper import AmountRange
                 for trade in official.get('trades', []):
-                    # Handle both dict and string formats
-                    if isinstance(trade, dict):
-                        trade_ticker = trade.get('ticker', '').upper()
-                        trade_company = trade.get('company', '').lower()
-                    else:
-                        # Parse string format
-                        trade_str = str(trade)
-                        trade_ticker = ''
-                        trade_company = ''
-                        if 'ticker=' in trade_str:
-                            trade_ticker = trade_str.split('ticker=')[1].split(';')[0].upper()
-                        if 'company=' in trade_str:
-                            trade_company = trade_str.split('company=')[1].split(';')[0].lower()
+                    if not isinstance(trade, dict):
+                        continue
+                    
+                    trade_ticker = trade.get('ticker', '').upper()
+                    trade_company = trade.get('company', '').lower()
 
                     # Match by ticker or company name
                     if trade_ticker == normalized.upper() or normalized.lower() in trade_company:
                         has_match = True
+                        
+                        # Get trade type and amount
+                        trade_type = trade.get('type', '') or trade.get('trade_type', '')
+                        
+                        # Get amount - trades have amount_min/amount_max or amount dict
+                        amount_max = 0
+                        if 'amount_max' in trade:
+                            amount_max = trade.get('amount_max', 0) or 0
+                        elif 'amount' in trade and isinstance(trade['amount'], dict):
+                            amount_max = trade['amount'].get('max', 0) or 0
+                        
                         # Count buys and sells
-                        trade_type = ''
-                        amount_range = ''
-                        if isinstance(trade, dict):
-                            trade_type = trade.get('type', '')
-                            amount_range = trade.get('amount_range', '')
-                        else:
-                            trade_str = str(trade)
-                            if 'type=' in trade_str:
-                                trade_type = trade_str.split('type=')[1].split(';')[0]
-                            if 'amount_range=' in trade_str:
-                                amount_range = trade_str.split('amount_range=')[1].split(';')[0]
-
-                        try:
-                            amount = AmountRange.from_bucket(amount_range)
-                            if 'purchase' in trade_type.lower():
-                                official_buys += amount.max_amount
-                            elif 'sale' in trade_type.lower():
-                                official_sells += amount.max_amount
-                        except:
-                            pass
+                        if 'purchase' in trade_type.lower() or 'buy' in trade_type.lower():
+                            official_buys += amount_max
+                        elif 'sale' in trade_type.lower() or 'sell' in trade_type.lower():
+                            official_sells += amount_max
 
             if has_match:
                 party = official.get('party', '').upper()

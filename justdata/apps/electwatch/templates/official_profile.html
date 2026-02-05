@@ -202,7 +202,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            overflow: visible;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             position: relative;
@@ -211,12 +211,14 @@
         .header-sponsor-logo:hover {
             transform: scale(1.1);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 200;
         }
 
         .header-sponsor-logo img {
             width: 40px;
             height: 40px;
             object-fit: contain;
+            border-radius: 6px;
         }
 
         .header-sponsor-fallback {
@@ -235,16 +237,19 @@
             padding: 4px;
             cursor: pointer;
             transition: transform 0.2s;
+            position: relative;
         }
 
         .header-sponsor-fallback:hover {
             transform: scale(1.1);
+            z-index: 200;
         }
 
         /* Tooltip for sponsor logos */
         .sponsor-tooltip {
             position: absolute;
-            bottom: -80px;
+            top: 100%;
+            margin-top: 8px;
             left: 50%;
             transform: translateX(-50%);
             background: var(--ew-neutral-900);
@@ -253,7 +258,7 @@
             border-radius: 6px;
             font-size: 12px;
             white-space: nowrap;
-            z-index: 100;
+            z-index: 1000;
             display: none;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
@@ -272,6 +277,16 @@
             border-left: 6px solid transparent;
             border-right: 6px solid transparent;
             border-bottom: 6px solid var(--ew-neutral-900);
+        }
+
+        /* Ensure tooltip arrow points up correctly */
+        .sponsor-tooltip::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: 0;
+            right: 0;
+            height: 12px;
         }
 
         /* ============================================================
@@ -1203,7 +1218,37 @@
             'EDWARD JONES': 'edwardjones.com',
             'RAYMOND JAMES': 'raymondjames.com',
             'LPL FINANCIAL': 'lpl.com',
-            'AMERIPRISE': 'ameriprise.com'
+            'AMERIPRISE': 'ameriprise.com',
+            // Venture Capital / Private Equity
+            'DRAGONEER': 'dragoneer.com',
+            'DRAGONEER INVESTMENT': 'dragoneer.com',
+            'DRAGONEER INVESTMENT GROUP': 'dragoneer.com',
+            'KLEINER PERKINS': 'kleinerperkins.com',
+            'KLEINER': 'kleinerperkins.com',
+            'BESSEMER': 'bvp.com',
+            'BESSEMER VENTURE': 'bvp.com',
+            'BESSEMER VENTURE PARTNERS': 'bvp.com',
+            'SEQUOIA': 'sequoiacap.com',
+            'SEQUOIA CAPITAL': 'sequoiacap.com',
+            'ANDREESSEN': 'a16z.com',
+            'ANDREESSEN HOROWITZ': 'a16z.com',
+            'A16Z': 'a16z.com',
+            'ACCEL': 'accel.com',
+            'BENCHMARK': 'benchmark.com',
+            'GREYLOCK': 'greylock.com',
+            'LIGHTSPEED': 'lsvp.com',
+            'NEA': 'nea.com',
+            'GENERAL CATALYST': 'generalcatalyst.com',
+            'INSIGHT PARTNERS': 'insightpartners.com',
+            'TIGER GLOBAL': 'tigerglobal.com',
+            'COATUE': 'coatue.com',
+            'THRIVE CAPITAL': 'thrivecap.com',
+            'FOUNDERS FUND': 'foundersfund.com',
+            'KHOSLA': 'khoslaventures.com',
+            'KHOSLA VENTURES': 'khoslaventures.com',
+            'SOFTBANK': 'softbank.com',
+            'B CAPITAL': 'bcapgroup.com',
+            'B CAPITAL GROUP': 'bcapgroup.com'
         };
 
         // Financial committees to highlight
@@ -1404,6 +1449,51 @@
             linksContainer.innerHTML = linksHtml;
         }
 
+        /**
+         * Create a clean short abbreviation for company names
+         */
+        function getShortName(name) {
+            if (!name) return '?';
+            // Remove common suffixes
+            let clean = name.toUpperCase()
+                .replace(/\s+(LLC|INC|CORP|CO|LP|LLP|GROUP|PARTNERS|CAPITAL|VENTURES|MANAGEMENT|INVESTMENT|INVESTMENTS|FINANCIAL|SERVICES)\.?$/gi, '')
+                .trim();
+            // If it's short enough, use first word
+            const words = clean.split(/\s+/);
+            if (words.length === 1) {
+                return words[0].substring(0, 4);
+            }
+            // Use initials for multi-word names (max 4 chars)
+            const initials = words.slice(0, 4).map(w => w[0]).join('');
+            return initials || clean.substring(0, 4);
+        }
+
+        /**
+         * Handle favicon load errors by replacing with text fallback
+         */
+        function handleFaviconError(img) {
+            const parent = img.parentElement;
+            const shortName = parent.dataset.shortname || '?';
+            const name = parent.dataset.name || '';
+            const total = parent.dataset.total || 0;
+            const pac = parent.dataset.pac || 0;
+            const individual = parent.dataset.individual || 0;
+            
+            // Create fallback element
+            const fallback = document.createElement('div');
+            fallback.className = 'header-sponsor-fallback';
+            fallback.innerHTML = `
+                ${shortName}
+                <div class="sponsor-tooltip">
+                    <strong>${name}</strong><br>
+                    Total: ${formatAmount(Number(total))}<br>
+                    PAC: ${formatAmount(Number(pac))}<br>
+                    Individual: ${formatAmount(Number(individual))}
+                </div>
+            `;
+            parent.replaceWith(fallback);
+        }
+
         function renderHeaderSponsors(sponsors) {
             const container = document.getElementById('header-sponsors');
             const top5 = sponsors.slice(0, 5);
@@ -1415,6 +1505,7 @@
 
             container.innerHTML = top5.map(sponsor => {
                 const domain = getDomainForCompany(sponsor.name);
+                const shortName = getShortName(sponsor.name);
                 const tooltipHtml = `
                     <div class="sponsor-tooltip">
                         <strong>${sponsor.name}</strong><br>
@@ -1426,16 +1517,18 @@
 
                 if (domain) {
                     const faviconUrl = `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
+                    // Store fallback data for onerror handler
+                    const fallbackId = `fallback-${sponsor.name.replace(/\W+/g, '')}`;
                     return `
-                        <div class="header-sponsor-logo" title="${sponsor.name}">
-                            <img src="${faviconUrl}" alt="${sponsor.name}" onerror="this.parentElement.outerHTML='<div class=\\'header-sponsor-fallback\\'>${sponsor.name.substring(0, 6)}${tooltipHtml}</div>'">
+                        <div class="header-sponsor-logo" data-shortname="${shortName}" data-name="${sponsor.name}" data-total="${sponsor.total}" data-pac="${sponsor.pac}" data-individual="${sponsor.individual}">
+                            <img src="${faviconUrl}" alt="${sponsor.name}" onload="if(this.naturalWidth<2||this.naturalHeight<2){this.onerror();}" onerror="handleFaviconError(this)">
                             ${tooltipHtml}
                         </div>
                     `;
                 } else {
                     return `
                         <div class="header-sponsor-fallback">
-                            ${sponsor.name.substring(0, 6)}
+                            ${shortName}
                             ${tooltipHtml}
                         </div>
                     `;
@@ -1641,7 +1734,8 @@
 
             // Render all sections
             renderHeader(official);
-            renderHeaderSponsors(buildTopSponsors(official));
+            const sponsors = buildTopSponsors(official);
+            renderHeaderSponsors(sponsors);
             renderStats(official);
             renderCommittees(official.committees, official.subcommittees);
             renderFirms(official.firms || official.top_firms);
