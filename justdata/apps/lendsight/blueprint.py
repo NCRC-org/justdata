@@ -696,7 +696,8 @@ def counties():
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
         
-        client = get_bigquery_client(LendSightConfig.PROJECT_ID)
+        # Use justdata-ncrc project with lendsight credentials
+        client = get_bigquery_client(project_id='justdata-ncrc', app_name='lendsight')
         query = """
         SELECT DISTINCT county_state
         FROM `justdata-ncrc.shared.cbsa_to_county`
@@ -757,7 +758,8 @@ def counties_by_state(state_code):
         state_code = unquote(str(state_code)).strip()
         print(f"[DEBUG] lendsight/counties-by-state called with state_code: '{state_code}'")
 
-        client = get_bigquery_client(LendSightConfig.PROJECT_ID)
+        # Use justdata-ncrc project with lendsight credentials
+        client = get_bigquery_client(project_id='justdata-ncrc', app_name='lendsight')
 
         # Check if state_code is a numeric FIPS code (2 digits) or a state name
         is_numeric_code = state_code.isdigit() and len(state_code) <= 2
@@ -766,13 +768,14 @@ def counties_by_state(state_code):
             # Use geoid5 to match by state FIPS code (first 2 digits of geoid5)
             state_code_padded = state_code.zfill(2)
             print(f"[DEBUG] Using state FIPS code: {state_code_padded}")
+            # Use justdata-ncrc for shared tables (cbsa_to_county is always in justdata-ncrc)
             query = f"""
             SELECT DISTINCT
                 county_state,
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{LendSightConfig.PROJECT_ID}.shared.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE geoid5 IS NOT NULL
                 AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
                 AND county_state IS NOT NULL
@@ -783,13 +786,14 @@ def counties_by_state(state_code):
             # Use state name to match
             print(f"[DEBUG] Using state name: {state_code}")
             escaped_state_code = escape_sql_string(state_code)
+            # Use justdata-ncrc for shared tables (cbsa_to_county is always in justdata-ncrc)
             query = f"""
             SELECT DISTINCT
                 county_state,
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{LendSightConfig.PROJECT_ID}.shared.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state_code}')
                 AND county_state IS NOT NULL
                 AND TRIM(county_state) != ''
@@ -848,7 +852,8 @@ def years():
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
         
-        client = get_bigquery_client(LendSightConfig.PROJECT_ID)
+        # Use justdata-ncrc project with lendsight credentials
+        client = get_bigquery_client(project_id='justdata-ncrc', app_name='lendsight')
         # Query HMDA table for available years (using activity_year field)
         query = """
         SELECT DISTINCT CAST(activity_year AS INT64) as year
