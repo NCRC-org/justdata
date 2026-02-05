@@ -343,7 +343,8 @@ def create_app():
 
         try:
             from justdata.shared.utils.bigquery_client import get_bigquery_client
-            client = get_bigquery_client()
+            # Use analytics service account for platform stats
+            client = get_bigquery_client(project_id='justdata-ncrc', app_name='analytics')
             if include_debug:
                 stats['_debug']['client_ok'] = client is not None
             if client:
