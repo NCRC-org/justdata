@@ -1034,13 +1034,10 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
     )
     
     try:
-        # Insert cache entry
-        client.query(cache_insert, job_config=job_config_cache).result()
-        
-        # Insert result summary
-        client.query(results_insert, job_config=job_config_results).result()
-        
-        # Insert each section
+        # IMPORTANT: Insert sections FIRST, before the results row.
+        # The results row has status='completed' which makes data visible to the
+        # report-data endpoint. If we insert results first, the frontend can query
+        # via LEFT JOIN and get partial data before all sections are stored.
         print(f"[DEBUG] Storing {len(sections)} sections to BigQuery...")
         for idx, section in enumerate(sections):
             section_id = str(uuid.uuid4())
@@ -1050,10 +1047,10 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
              section_data, section_metadata, display_order, created_at, updated_at)
             VALUES
             (@section_id, @job_id, @app_name, @section_type, @section_name, @section_category,
-             PARSE_JSON(@section_data), PARSE_JSON(@section_metadata), @display_order, 
+             PARSE_JSON(@section_data), PARSE_JSON(@section_metadata), @display_order,
              CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
             """
-            
+
             section_config = bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter("section_id", "STRING", section_id),
@@ -1067,13 +1064,19 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
                     bigquery.ScalarQueryParameter("display_order", "INT64", section.get('display_order', 0)),
                 ]
             )
-            
+
             try:
                 client.query(section_insert, job_config=section_config).result()
                 print(f"  [OK] Stored section {idx+1}/{len(sections)}: {section['section_name']}")
             except Exception as section_error:
                 print(f"  [ERROR] Failed to store section {section['section_name']}: {section_error}")
                 raise
+
+        # Now insert result summary (with status='completed') - all sections exist at this point
+        client.query(results_insert, job_config=job_config_results).result()
+
+        # Insert cache entry last (maps cache_key -> job_id for cache lookups)
+        client.query(cache_insert, job_config=job_config_cache).result()
 
         print(f"[OK] Stored cache entry, result summary, and {len(sections)} sections for job_id: {job_id}")
 
