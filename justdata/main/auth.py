@@ -1752,6 +1752,44 @@ def sync_all_users():
             # Get next page
             page = page.get_next_page()
 
+        # Phase 2: Prune orphaned Firestore docs (no matching Firebase Auth account)
+        # Build set of all Firebase Auth UIDs
+        auth_uids = set()
+        try:
+            page = firebase_auth.list_users()
+            while page:
+                for auth_user in page.users:
+                    auth_uids.add(auth_user.uid)
+                page = page.get_next_page()
+        except Exception as e:
+            print(f"Error building Auth UID set for pruning: {e}")
+
+        results['pruned'] = []
+        if auth_uids:  # Only prune if we successfully fetched Auth users
+            for doc in db.collection('users').stream():
+                uid = doc.id
+                if uid not in auth_uids:
+                    try:
+                        user_data = doc.to_dict()
+                        email = user_data.get('email', 'unknown')
+                        user_type = user_data.get('userType', 'unknown')
+                        # Safety: skip admin users even if orphaned
+                        if user_type == 'admin':
+                            print(f"Skipping orphaned admin user: {email} ({uid})")
+                            continue
+                        db.collection('users').document(uid).delete()
+                        results['pruned'].append({
+                            'email': email,
+                            'uid': uid,
+                            'userType': user_type
+                        })
+                        print(f"Pruned orphaned Firestore doc: {email} ({uid})")
+                    except Exception as e:
+                        results['errors'].append({
+                            'email': email,
+                            'error': f'Prune failed: {str(e)}'
+                        })
+
         return jsonify({
             'success': True,
             'results': results,
@@ -1759,8 +1797,10 @@ def sync_all_users():
                 'created': len(results['created']),
                 'updated': len(results['updated']),
                 'unchanged': len(results['unchanged']),
+                'pruned': len(results.get('pruned', [])),
                 'errors': len(results['errors'])
-            }
+            },
+            'message': f"Synced {len(results['created'])} new users, pruned {len(results.get('pruned', []))} orphaned records."
         })
 
     except Exception as e:
