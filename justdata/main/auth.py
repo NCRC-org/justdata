@@ -1512,6 +1512,7 @@ def update_user(uid: str):
 
 
 @auth_bp.route('/resync', methods=['POST'])
+@login_required
 def resync_user():
     """
     Resync current user's Firestore document.
@@ -2052,6 +2053,7 @@ def get_membership_status():
 # ========================================
 
 @auth_bp.route('/member-request/status', methods=['GET'])
+@login_required
 def get_member_request_status():
     """
     Return member-request status in the shape expected by member_request_modal.html.
@@ -2116,6 +2118,7 @@ def get_member_request_status():
 
 
 @auth_bp.route('/member-request/dismiss-prompt', methods=['POST'])
+@login_required
 def dismiss_member_prompt():
     """No-op for 'Continue as guest'; prevents 404 when modal dismisses."""
     return jsonify({'ok': True})

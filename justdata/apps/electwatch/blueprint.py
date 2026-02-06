@@ -10,7 +10,7 @@ import json
 import logging
 import threading
 
-from justdata.main.auth import get_user_type, login_required
+from justdata.main.auth import get_user_type, login_required, require_access, admin_required, staff_required
 
 logger = logging.getLogger(__name__)
 
@@ -178,6 +178,8 @@ def index():
 
 
 @electwatch_bp.route('/official/<official_id>')
+@login_required
+@require_access('electwatch', 'full')
 def official_profile(official_id):
     """Individual official profile page."""
     breadcrumb_items = [
@@ -194,6 +196,8 @@ def official_profile(official_id):
 
 
 @electwatch_bp.route('/firm/<firm_id>')
+@login_required
+@require_access('electwatch', 'full')
 def firm_view(firm_id):
     """Firm view page."""
     # URL decode the firm_id to get the firm name
@@ -212,6 +216,8 @@ def firm_view(firm_id):
 
 
 @electwatch_bp.route('/industry/<industry_code>')
+@login_required
+@require_access('electwatch', 'full')
 def industry_view(industry_code):
     """Industry view page."""
     try:
@@ -235,6 +241,8 @@ def industry_view(industry_code):
 
 
 @electwatch_bp.route('/committee/<committee_id>')
+@login_required
+@require_access('electwatch', 'full')
 def committee_view(committee_id):
     """Committee view page."""
     breadcrumb_items = [
@@ -251,6 +259,8 @@ def committee_view(committee_id):
 
 
 @electwatch_bp.route('/bill/<bill_id>')
+@login_required
+@require_access('electwatch', 'full')
 def bill_view(bill_id):
     """Bill view page."""
     breadcrumb_items = [
@@ -271,6 +281,8 @@ def bill_view(bill_id):
 # =============================================================================
 
 @electwatch_bp.route('/api/officials')
+@login_required
+@require_access('electwatch', 'full')
 def api_officials():
     """
     Officials API endpoint with filtering support.
@@ -332,6 +344,8 @@ def api_officials():
 
 
 @electwatch_bp.route('/api/official/<official_id>')
+@login_required
+@require_access('electwatch', 'full')
 def api_official(official_id):
     """Single official API endpoint."""
     try:
@@ -345,6 +359,8 @@ def api_official(official_id):
 
 
 @electwatch_bp.route('/api/official/<official_id>/trends')
+@login_required
+@require_access('electwatch', 'full')
 def api_official_trends(official_id):
     """
     Get time-series trend data for a specific official.
@@ -406,6 +422,8 @@ def api_official_trends(official_id):
 
 
 @electwatch_bp.route('/api/firm/<firm_name>')
+@login_required
+@require_access('electwatch', 'full')
 def api_firm(firm_name):
     """
     Single firm API endpoint.
@@ -774,6 +792,8 @@ def api_firm(firm_name):
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @electwatch_bp.route('/api/firms')
+@login_required
+@require_access('electwatch', 'full')
 def api_firms():
     """Firms API endpoint."""
     try:
@@ -789,6 +809,8 @@ def api_firms():
 
 
 @electwatch_bp.route('/api/sectors')
+@login_required
+@require_access('electwatch', 'full')
 def api_sectors():
     """Sectors API endpoint - returns industry sectors with stats."""
     sectors = _get_sectors()
@@ -798,6 +820,8 @@ def api_sectors():
 
 
 @electwatch_bp.route('/api/industry/<industry_code>')
+@login_required
+@require_access('electwatch', 'full')
 def api_industry(industry_code):
     """
     Industry detail API endpoint.
@@ -1110,6 +1134,8 @@ def _get_industry_legislation(sector_code: str) -> list:
 
 
 @electwatch_bp.route('/api/committees')
+@login_required
+@require_access('electwatch', 'full')
 def api_committees():
     """Committees API endpoint."""
     try:
@@ -1121,6 +1147,8 @@ def api_committees():
 
 
 @electwatch_bp.route('/api/committee/<committee_id>')
+@login_required
+@require_access('electwatch', 'full')
 def api_committee(committee_id):
     """Get detailed information for a specific committee."""
     try:
@@ -1376,6 +1404,8 @@ def api_committee(committee_id):
 
 
 @electwatch_bp.route('/api/freshness')
+@login_required
+@require_access('electwatch', 'full')
 def api_freshness():
     """Data freshness API endpoint."""
     try:
@@ -1387,6 +1417,8 @@ def api_freshness():
 
 
 @electwatch_bp.route('/api/trends/aggregate')
+@login_required
+@require_access('electwatch', 'full')
 def api_aggregate_trends():
     """
     Get aggregate trend data across all officials for dashboard charts.
@@ -1484,6 +1516,8 @@ def api_aggregate_trends():
 
 
 @electwatch_bp.route('/api/insights')
+@login_required
+@require_access('electwatch', 'full')
 def api_insights():
     """Insights API endpoint."""
     try:
@@ -1495,6 +1529,8 @@ def api_insights():
 
 
 @electwatch_bp.route('/api/refresh-data', methods=['POST'])
+@login_required
+@staff_required
 def api_refresh_data():
     """
     Trigger a refresh of the ElectWatch data store (staff/admin only).
@@ -1643,6 +1679,8 @@ def fetch_bill_from_congress_api(bill_id: str):
 
 
 @electwatch_bp.route('/api/bill/search')
+@login_required
+@require_access('electwatch', 'full')
 def api_bill_search():
     """Search for a bill by number."""
     query = request.args.get('q', '').strip()
@@ -1663,6 +1701,8 @@ def api_bill_search():
 
 
 @electwatch_bp.route('/api/key-bills')
+@login_required
+@require_access('electwatch', 'full')
 def api_key_bills():
     """Get the list of key finance bills."""
     key_bills_file = APP_DIR / 'data' / 'current' / 'key_bills.json'
@@ -1676,6 +1716,8 @@ def api_key_bills():
 
 
 @electwatch_bp.route('/api/bill/save-key-bill', methods=['POST'])
+@login_required
+@staff_required
 def api_save_key_bill():
     """Save a bill to the Key Finance Bills list (staff/admin only)."""
     from datetime import datetime
@@ -1730,6 +1772,8 @@ def api_save_key_bill():
 
 
 @electwatch_bp.route('/api/bill/remove-key-bill', methods=['POST'])
+@login_required
+@staff_required
 def api_remove_key_bill():
     """Remove a bill from the Key Finance Bills list (staff/admin only)."""
     from datetime import datetime
@@ -1765,22 +1809,20 @@ def api_remove_key_bill():
 # =============================================================================
 
 @electwatch_bp.route('/api/admin/mappings/officials')
+@login_required
+@admin_required
 def api_admin_get_official_merges():
     """Get all official merge mappings (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     from justdata.apps.electwatch.services.mapping_store import get_official_merges
     return jsonify({'merges': get_official_merges()})
 
 
 @electwatch_bp.route('/api/admin/mappings/officials/merge', methods=['POST'])
+@login_required
+@admin_required
 def api_admin_merge_official():
     """Add an alias to a canonical official (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     data = request.get_json()
     canonical = data.get('canonical')
@@ -1795,11 +1837,10 @@ def api_admin_merge_official():
 
 
 @electwatch_bp.route('/api/admin/mappings/officials/unmerge', methods=['POST'])
+@login_required
+@admin_required
 def api_admin_unmerge_official():
     """Remove an alias from a canonical official (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     data = request.get_json()
     canonical = data.get('canonical')
@@ -1811,11 +1852,10 @@ def api_admin_unmerge_official():
 
 
 @electwatch_bp.route('/api/admin/mappings/officials/delete', methods=['POST'])
+@login_required
+@admin_required
 def api_admin_delete_official_merge():
     """Delete all aliases for a canonical official (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     data = request.get_json()
     canonical = data.get('canonical')
@@ -1826,15 +1866,14 @@ def api_admin_delete_official_merge():
 
 
 @electwatch_bp.route('/api/admin/mappings/officials/potential-duplicates')
+@login_required
+@staff_required
 def api_admin_potential_duplicate_officials():
     """
     Find potential duplicate officials - officials with the same last name but different first names.
     This helps identify cases like "Rick Allen" vs "Allen, Rick" that may need to be confirmed as
     the same or different people.
     """
-    user_type = get_user_type()
-    if user_type not in ('admin', 'staff'):
-        return jsonify({'error': 'Admin/staff access required'}), 403
 
     from justdata.apps.electwatch.services.data_store import get_officials
     from justdata.apps.electwatch.services.mapping_store import get_official_merges, get_distinct_officials
@@ -1959,14 +1998,13 @@ def api_admin_potential_duplicate_officials():
 
 
 @electwatch_bp.route('/api/admin/mappings/officials/mark-distinct', methods=['POST'])
+@login_required
+@staff_required
 def api_admin_mark_officials_distinct():
     """
     Mark two officials as distinct (confirmed different people, not duplicates).
     This prevents them from being shown as potential duplicates in the future.
     """
-    user_type = get_user_type()
-    if user_type not in ('admin', 'staff'):
-        return jsonify({'error': 'Admin/staff access required'}), 403
 
     data = request.get_json()
     official1 = data.get('official1')
@@ -1981,33 +2019,30 @@ def api_admin_mark_officials_distinct():
 
 
 @electwatch_bp.route('/api/admin/mappings/firms')
+@login_required
+@admin_required
 def api_admin_get_firms():
     """Get custom firm definitions (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     from justdata.apps.electwatch.services.mapping_store import get_custom_firms
     return jsonify({'firms': get_custom_firms()})
 
 
 @electwatch_bp.route('/api/admin/mappings/firms/all')
+@login_required
+@admin_required
 def api_admin_get_all_firms():
     """Get all firms (built-in + custom) for dropdown (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     from justdata.apps.electwatch.services.mapping_store import get_all_firms
     return jsonify({'firms': get_all_firms()})
 
 
 @electwatch_bp.route('/api/admin/mappings/firms', methods=['POST'])
+@login_required
+@admin_required
 def api_admin_add_firm():
     """Add a custom firm definition (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     data = request.get_json()
     name = data.get('name')
@@ -2023,11 +2058,10 @@ def api_admin_add_firm():
 
 
 @electwatch_bp.route('/api/admin/mappings/firms/delete', methods=['POST'])
+@login_required
+@admin_required
 def api_admin_delete_firm():
     """Delete a custom firm (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     data = request.get_json()
     name = data.get('name')
@@ -2038,22 +2072,20 @@ def api_admin_delete_firm():
 
 
 @electwatch_bp.route('/api/admin/mappings/firms/<firm_id>/aliases')
+@login_required
+@admin_required
 def api_admin_get_firm_aliases(firm_id):
     """Get employer aliases for a firm (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     from justdata.apps.electwatch.services.mapping_store import get_firm_employer_aliases
     return jsonify({'aliases': get_firm_employer_aliases(firm_id)})
 
 
 @electwatch_bp.route('/api/admin/mappings/employers', methods=['POST'])
+@login_required
+@admin_required
 def api_admin_add_employer_alias():
     """Add an employer alias to a firm (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     data = request.get_json()
     firm_id = data.get('firm_id')
@@ -2068,11 +2100,10 @@ def api_admin_add_employer_alias():
 
 
 @electwatch_bp.route('/api/admin/mappings/employers/delete', methods=['POST'])
+@login_required
+@admin_required
 def api_admin_remove_employer_alias():
     """Remove an employer alias from a firm (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     data = request.get_json()
     firm_id = data.get('firm_id')
@@ -2084,11 +2115,10 @@ def api_admin_remove_employer_alias():
 
 
 @electwatch_bp.route('/api/admin/employers/unmatched')
+@login_required
+@admin_required
 def api_admin_get_unmatched_employers():
     """Get unmatched employers from FEC data (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     limit = request.args.get('limit', 50, type=int)
 
@@ -2097,11 +2127,10 @@ def api_admin_get_unmatched_employers():
 
 
 @electwatch_bp.route('/api/admin/employers/search')
+@login_required
+@admin_required
 def api_admin_search_employers():
     """Search for employer names in FEC data (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     query = request.args.get('q', '')
     limit = request.args.get('limit', 20, type=int)
@@ -2111,22 +2140,20 @@ def api_admin_search_employers():
 
 
 @electwatch_bp.route('/api/admin/unmatched/pacs')
+@login_required
+@admin_required
 def api_admin_get_unmatched_pacs():
     """Get unmatched PAC names that couldn't be mapped to companies (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     from justdata.apps.electwatch.services.mapping_store import get_unmatched_pacs
     return jsonify({'pacs': get_unmatched_pacs()})
 
 
 @electwatch_bp.route('/api/admin/unmatched/tickers')
+@login_required
+@admin_required
 def api_admin_get_unmatched_tickers():
     """Get stock tickers that haven't been categorized into an industry (admin only)."""
-    user_type = get_user_type()
-    if user_type != 'admin':
-        return jsonify({'error': 'Admin access required'}), 403
 
     from justdata.apps.electwatch.services.mapping_store import get_uncategorized_tickers
     return jsonify({'tickers': get_uncategorized_tickers()})

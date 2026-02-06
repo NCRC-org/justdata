@@ -262,6 +262,7 @@ def view_report(report_id: str):
 
 
 @lenderprofile_bp.route('/progress/<job_id>', methods=['GET'])
+@login_required
 def progress(job_id):
     """Get progress of report generation."""
     from justdata.shared.utils.progress_tracker import get_progress

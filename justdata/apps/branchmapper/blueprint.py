@@ -82,6 +82,8 @@ def index():
 
 
 @branchmapper_bp.route('/counties')
+@login_required
+@require_access('branchmapper', 'partial')
 def counties():
     """Return a list of all available counties"""
     try:
@@ -94,6 +96,8 @@ def counties():
 
 
 @branchmapper_bp.route('/states')
+@login_required
+@require_access('branchmapper', 'partial')
 def states():
     """Return a list of all available states"""
     try:
@@ -106,6 +110,8 @@ def states():
 
 
 @branchmapper_bp.route('/metro-areas')
+@login_required
+@require_access('branchmapper', 'partial')
 def metro_areas():
     """Return a list of all available metro areas (CBSAs)"""
     try:
@@ -118,6 +124,8 @@ def metro_areas():
 
 
 @branchmapper_bp.route('/counties-by-state/<state_code>')
+@login_required
+@require_access('branchmapper', 'partial')
 def counties_by_state(state_code):
     """Return a list of counties for a specific state"""
     try:
@@ -130,6 +138,8 @@ def counties_by_state(state_code):
 
 
 @branchmapper_bp.route('/api/census-tracts/<county>')
+@login_required
+@require_access('branchmapper', 'partial')
 def api_census_tracts(county):
     """Return census tract boundaries with income and/or minority data for a county"""
     try:
@@ -325,6 +335,8 @@ def api_census_tracts(county):
 
 
 @branchmapper_bp.route('/api/branches')
+@login_required
+@require_access('branchmapper', 'partial')
 def api_branches():
     """Return branch data with coordinates for map display"""
     try:

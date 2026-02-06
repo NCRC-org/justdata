@@ -6,7 +6,8 @@ Serves as the central entry point with all sub-apps as blueprints.
 from flask import Flask, render_template, session, request, jsonify, send_from_directory, redirect, make_response
 from justdata.main.auth import (
     get_user_type, set_user_type, get_app_access, get_user_permissions,
-    auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user
+    auth_bp, init_firebase, get_current_user, is_authenticated, is_privileged_user,
+    login_required, admin_required
 )
 from justdata.main.config import MainConfig
 from jinja2 import Environment, FileSystemLoader, select_autoescape
@@ -20,7 +21,6 @@ EXEMPT_PATHS = [
     '/static/',
     '/shared/',
     '/api/auth/',  # Auth routes for login/logout
-    '/api/set-user-type',  # Allow setting user type for testing/auth flow
     '/api/platform-stats',  # Public homepage stats (no auth; avoids 127.0.0.1 vs localhost cookie mismatch)
 ]
 
@@ -254,8 +254,10 @@ def create_app():
     
     # API endpoint to set user type (for testing/demo)
     @app.route('/api/set-user-type', methods=['POST'])
+    @login_required
+    @admin_required
     def api_set_user_type():
-        """Set user type (for demo/testing purposes)."""
+        """Set user type (admin only - prevents privilege escalation)."""
         data = request.get_json() or {}
         user_type = data.get('user_type', 'public')
         try:
@@ -416,6 +418,8 @@ def create_app():
 
     # Admin Users Dashboard
     @app.route('/admin/users')
+    @login_required
+    @admin_required
     def admin_users():
         """Admin user management page - requires admin access."""
         from justdata.main.auth import VALID_USER_TYPES
@@ -423,11 +427,6 @@ def create_app():
         from flask import url_for
 
         user_type = get_user_type()
-
-        # Check admin access
-        if user_type != 'admin':
-            from flask import flash
-            return redirect(url_for('landing'))
 
         permissions = get_user_permissions(user_type)
 

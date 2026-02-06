@@ -554,6 +554,7 @@ def api_generate_lender_report():
 
 
 @dataexplorer_bp.route('/progress/<job_id>', methods=['GET'])
+@login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events."""
     from justdata.shared.utils.progress_tracker import get_progress

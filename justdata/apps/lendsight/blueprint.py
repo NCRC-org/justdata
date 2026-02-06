@@ -156,6 +156,7 @@ def index():
 
 
 @lendsight_bp.route('/progress/<job_id>')
+@login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
     def event_stream():
@@ -696,6 +697,8 @@ def download():
 
 
 @lendsight_bp.route('/data')
+@login_required
+@require_access('lendsight', 'partial')
 def data():
     """Return data for the application"""
     # To be implemented
@@ -703,6 +706,8 @@ def data():
 
 
 @lendsight_bp.route('/counties')
+@login_required
+@require_access('lendsight', 'partial')
 def counties():
     """Return a list of available counties for lending analysis"""
     try:
@@ -735,6 +740,8 @@ def counties():
 
 
 @lendsight_bp.route('/states')
+@login_required
+@require_access('lendsight', 'partial')
 def states():
     """Return a list of available states for lending analysis"""
     try:
@@ -750,6 +757,8 @@ def states():
 
 
 @lendsight_bp.route('/metro-areas')
+@login_required
+@require_access('lendsight', 'partial')
 def metro_areas():
     """Return a list of available metro areas for lending analysis"""
     # TODO: Implement HMDA metro area data lookup
@@ -757,6 +766,8 @@ def metro_areas():
 
 
 @lendsight_bp.route('/counties-by-state/<state_code>')
+@login_required
+@require_access('lendsight', 'partial')
 def counties_by_state(state_code):
     """Return a list of counties for a specific state.
 
@@ -859,6 +870,8 @@ def counties_by_state(state_code):
 
 
 @lendsight_bp.route('/years')
+@login_required
+@require_access('lendsight', 'partial')
 def years():
     """Return available years dynamically from HMDA data"""
     try:

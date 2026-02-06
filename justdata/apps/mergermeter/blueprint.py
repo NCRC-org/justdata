@@ -106,6 +106,7 @@ def goals_calculator():
 
 
 @mergermeter_bp.route('/progress/<job_id>')
+@login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
     def event_stream():

@@ -82,6 +82,7 @@ def index():
 
 
 @branchsight_bp.route('/progress/<job_id>')
+@login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events"""
     def event_stream():
@@ -433,6 +434,8 @@ def download_zip(report_data, metadata):
 
 
 @branchsight_bp.route('/counties')
+@login_required
+@require_access('branchsight', 'partial')
 def counties():
     """Return a list of all available counties"""
     try:
@@ -448,6 +451,8 @@ def counties():
 
 
 @branchsight_bp.route('/states')
+@login_required
+@require_access('branchsight', 'partial')
 def states():
     """Return a list of all available states"""
     try:
@@ -463,6 +468,8 @@ def states():
 
 
 @branchsight_bp.route('/metro-areas')
+@login_required
+@require_access('branchsight', 'partial')
 def metro_areas():
     """Return a list of all available metro areas (CBSAs)"""
     try:
@@ -477,6 +484,8 @@ def metro_areas():
 
 
 @branchsight_bp.route('/counties-by-state/<state_code>')
+@login_required
+@require_access('branchsight', 'partial')
 def counties_by_state(state_code):
     """Get list of counties for a specific state.
 

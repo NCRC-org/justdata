@@ -97,6 +97,7 @@ def index():
 
 
 @bizsight_bp.route('/progress/<job_id>')
+@login_required
 def progress_handler(job_id):
     """Progress tracking endpoint using Server-Sent Events."""
     def event_stream():
@@ -414,6 +415,8 @@ def analyze():
 
 
 @bizsight_bp.route('/data', methods=['GET'])
+@login_required
+@require_access('bizsight', 'partial')
 def data():
     """Return data for the application (counties, years)."""
     try:
@@ -429,6 +432,8 @@ def data():
 
 
 @bizsight_bp.route('/api/states', methods=['GET'])
+@login_required
+@require_access('bizsight', 'partial')
 def get_states():
     """Get list of available states."""
     try:
@@ -442,6 +447,8 @@ def get_states():
 
 
 @bizsight_bp.route('/api/counties-by-state/<state_code>', methods=['GET'])
+@login_required
+@require_access('bizsight', 'partial')
 def get_counties_by_state(state_code):
     """Get counties for a specific state.
 
@@ -551,6 +558,8 @@ def get_counties_by_state(state_code):
 
 
 @bizsight_bp.route('/api/county-boundaries', methods=['GET'])
+@login_required
+@require_access('bizsight', 'partial')
 def get_county_boundaries():
     """Get county boundaries for mapping."""
     try:
@@ -565,6 +574,8 @@ def get_county_boundaries():
 
 
 @bizsight_bp.route('/api/state-boundaries', methods=['GET'])
+@login_required
+@require_access('bizsight', 'partial')
 def get_state_boundaries():
     """Get state boundaries for mapping."""
     try:
@@ -579,6 +590,8 @@ def get_state_boundaries():
 
 
 @bizsight_bp.route('/api/tract-boundaries/<geoid5>', methods=['GET'])
+@login_required
+@require_access('bizsight', 'partial')
 def get_tract_boundaries_endpoint(geoid5):
     """Get census tract boundaries for a county."""
     try:

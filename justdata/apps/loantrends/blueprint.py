@@ -86,6 +86,7 @@ def analyze():
 
 
 @loantrends_bp.route('/progress/<job_id>')
+@login_required
 def progress(job_id):
     """Get progress of analysis."""
     from justdata.shared.utils.progress_tracker import get_progress
