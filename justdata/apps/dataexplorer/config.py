@@ -49,7 +49,7 @@ MAX_LENDERS = 50  # Maximum lenders for peer comparison
 # Default Filters
 DEFAULT_ACTION_TAKEN = ['1']  # Only originations (FIXED from v1)
 DEFAULT_EXCLUDE_REVERSE_MORTGAGES = True  # Exclude reverse mortgages
-DEFAULT_EXCLUDE_REVERSE_MORTGAGE_CODES = ['1', '1111']  # Both codes (FIXED from v1)
+DEFAULT_EXCLUDE_REVERSE_MORTGAGE_CODES = ['1']  # Only exclude actual reverse mortgages (1111 = exempt, should be included)
 
 # Loan Purpose Codes
 LOAN_PURPOSE_PURCHASE = '1'

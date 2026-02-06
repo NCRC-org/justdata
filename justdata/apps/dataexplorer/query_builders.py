@@ -50,7 +50,7 @@ def build_hmda_query(
     
     FIXED ISSUES FROM V1:
     - Action taken filter now uses = '1' for originations only (not IN ('1','2','3','4','5'))
-    - Reverse mortgage filter excludes both '1' and '1111' codes
+    - Reverse mortgage filter excludes '1' (reverse mortgages); '1111' (exempt) is included
     - All string values properly escaped for SQL injection protection
     
     Args:
@@ -98,7 +98,7 @@ def build_hmda_query(
             escaped_codes = [f"'{escape_sql_string(str(code))}'" for code in action_taken]
             where_clauses.append(f"action_taken IN ({','.join(escaped_codes)})")
     
-    # Reverse mortgage filter - FIXED: Exclude both '1' and '1111'
+    # Reverse mortgage filter: Exclude only '1' (reverse mortgages); '1111' (exempt) is included
     if exclude_reverse_mortgages:
         excluded_codes = [f"'{escape_sql_string(str(code))}'" for code in DEFAULT_EXCLUDE_REVERSE_MORTGAGE_CODES]
         where_clauses.append(f"reverse_mortgage NOT IN ({','.join(excluded_codes)})")
