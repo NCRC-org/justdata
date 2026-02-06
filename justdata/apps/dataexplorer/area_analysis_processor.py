@@ -43,6 +43,8 @@ def process_hmda_area_analysis(
             action_taken=filters.get('action_taken'),
             loan_purpose=filters.get('loan_purpose'),
             occupancy=filters.get('occupancy'),
+            total_units=filters.get('total_units'),
+            construction=filters.get('construction'),
             property_type=filters.get('property_type'),
             exclude_reverse_mortgages=filters.get('exclude_reverse_mortgages', True),
             min_loan_amount=filters.get('min_loan_amount'),

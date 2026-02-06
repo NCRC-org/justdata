@@ -39,6 +39,8 @@ def build_hmda_query(
     action_taken: List[str] = None,
     loan_purpose: List[str] = None,
     occupancy: List[str] = None,
+    total_units: List[str] = None,
+    construction: List[str] = None,
     property_type: List[str] = None,
     exclude_reverse_mortgages: bool = True,
     lender_id: str = None,
@@ -47,82 +49,106 @@ def build_hmda_query(
 ) -> str:
     """
     Build HMDA query with proper filters and SQL injection protection.
-    
-    FIXED ISSUES FROM V1:
-    - Action taken filter now uses = '1' for originations only (not IN ('1','2','3','4','5'))
-    - Reverse mortgage filter excludes '1' (reverse mortgages); '1111' (exempt) is included
-    - All string values properly escaped for SQL injection protection
-    
+
+    Default filters match the mortgage_report.sql template:
+    - action_taken = '1' (originations only)
+    - occupancy_type = '1' (owner-occupied)
+    - total_units IN ('1','2','3','4') (1-4 family)
+    - construction_method = '1' (site-built)
+    - reverse_mortgage != '1' (exclude reverse mortgages)
+
     Args:
         geoids: List of GEOIDs (county FIPS codes)
         years: List of years
         action_taken: List of action taken codes (default: ['1'] for originations only)
         loan_purpose: List of loan purpose codes
-        occupancy: List of occupancy codes
+        occupancy: List of occupancy codes (default: ['1'] for owner-occupied)
+        total_units: List of total unit codes (default: ['1','2','3','4'] for 1-4 family)
+        construction: List of construction method codes (default: ['1'] for site-built)
         property_type: List of property type codes
         exclude_reverse_mortgages: Whether to exclude reverse mortgages
-        lender_id: Optional lender RSSD ID to filter by
+        lender_id: Optional lender LEI to filter by
         min_loan_amount: Minimum loan amount filter
         max_loan_amount: Maximum loan amount filter
-        
+
     Returns:
         SQL query string
     """
     # Validate inputs
     validate_inputs(years=years, geoids=geoids)
-    
-    # Default to originations only (FIXED from v1)
+
+    # Default to originations only
     if action_taken is None:
         action_taken = DEFAULT_ACTION_TAKEN
-    
+
+    # Default to owner-occupied
+    if occupancy is None:
+        occupancy = ['1']
+
+    # Default to 1-4 family
+    if total_units is None:
+        total_units = ['1', '2', '3', '4']
+
+    # Default to site-built
+    if construction is None:
+        construction = ['1']
+
     # Build WHERE clauses
     where_clauses = []
-    
+
     # GEOID filter (properly escaped)
     if geoids:
         escaped_geoids = [f"'{escape_sql_string(str(geoid))}'" for geoid in geoids]
         where_clauses.append(f"county_code IN ({','.join(escaped_geoids)})")
-    
+
     # Year filter
     if years:
         year_list = ','.join([str(int(year)) for year in years])
         where_clauses.append(f"activity_year IN ({year_list})")
-    
-    # Action taken filter - FIXED: Use = '1' for originations only
+
+    # Action taken filter
     if action_taken:
         if len(action_taken) == 1 and action_taken[0] == '1':
-            # Only originations - use equality for better performance
             where_clauses.append("action_taken = '1'")
         else:
-            # Multiple action taken codes
             escaped_codes = [f"'{escape_sql_string(str(code))}'" for code in action_taken]
             where_clauses.append(f"action_taken IN ({','.join(escaped_codes)})")
-    
+
     # Reverse mortgage filter: Exclude only '1' (reverse mortgages); '1111' (exempt) is included
     if exclude_reverse_mortgages:
         excluded_codes = [f"'{escape_sql_string(str(code))}'" for code in DEFAULT_EXCLUDE_REVERSE_MORTGAGE_CODES]
         where_clauses.append(f"reverse_mortgage NOT IN ({','.join(excluded_codes)})")
-    
+
     # Loan purpose filter
     if loan_purpose:
         escaped_purposes = [f"'{escape_sql_string(str(purpose))}'" for purpose in loan_purpose]
         where_clauses.append(f"loan_purpose IN ({','.join(escaped_purposes)})")
-    
+
     # Occupancy filter
     if occupancy:
         escaped_occupancy = [f"'{escape_sql_string(str(occ))}'" for occ in occupancy]
         where_clauses.append(f"occupancy_type IN ({','.join(escaped_occupancy)})")
-    
+
+    # Total units filter
+    if total_units:
+        escaped_units = [f"'{escape_sql_string(str(u))}'" for u in total_units]
+        where_clauses.append(f"total_units IN ({','.join(escaped_units)})")
+
+    # Construction method filter
+    if construction:
+        escaped_construction = [f"'{escape_sql_string(str(c))}'" for c in construction]
+        where_clauses.append(f"construction_method IN ({','.join(escaped_construction)})")
+
     # Property type filter
     if property_type:
         escaped_property_types = [f"'{escape_sql_string(str(pt))}'" for pt in property_type]
         where_clauses.append(f"property_type IN ({','.join(escaped_property_types)})")
-    
+
     # Lender filter
     if lender_id:
         escaped_lender_id = escape_sql_string(str(lender_id))
         where_clauses.append(f"lei = '{escaped_lender_id}'")
-    
+
     # Loan amount filters
     if min_loan_amount is not None:
         where_clauses.append(f"loan_amount >= {float(min_loan_amount)}")
