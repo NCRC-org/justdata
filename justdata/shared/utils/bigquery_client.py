@@ -126,10 +126,12 @@ def _get_credentials_from_env(app_name: Optional[str] = None) -> Optional[tuple]
     env_var_names = []
     
     # If app_name is provided, check for app-specific credentials first
+    # Check both naming conventions: {APP}_CREDENTIALS_JSON and {APP}_BIGQUERY_CREDENTIALS_JSON
     if app_name:
         app_name_upper = app_name.upper()
         if app_name_upper in VALID_APP_NAMES:
             env_var_names.append(f"{app_name_upper}_CREDENTIALS_JSON")
+            env_var_names.append(f"{app_name_upper}_BIGQUERY_CREDENTIALS_JSON")
     
     # Then check shared/fallback credentials
     env_var_names.extend([

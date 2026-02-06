@@ -47,7 +47,10 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
         project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 
     # Check for app-specific credentials first, then fall back to shared
-    creds_json = os.getenv('BIZSIGHT_CREDENTIALS_JSON') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+    # Support both naming conventions used across environments
+    creds_json = (os.getenv('BIZSIGHT_CREDENTIALS_JSON')
+                  or os.getenv('BIZSIGHT_BIGQUERY_CREDENTIALS_JSON')
+                  or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON'))
     if creds_json:
         try:
             creds_dict = json.loads(creds_json)
@@ -126,19 +129,22 @@ class BigQueryClient:
     """Wrapper class for BigQuery operations."""
 
     def __init__(self, project_id: str = None, credentials_path: str = None):
-        """Initialize BigQuery client."""
-        self.client = get_bigquery_client(project_id, credentials_path)
-        # If local client init returned None, try the shared client with app_name
+        """Initialize BigQuery client using shared client (same pattern as LendSight)."""
+        self.client = None
+        resolved_project = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+        # Use shared client as primary path (handles per-app credentials consistently)
+        try:
+            from justdata.shared.utils.bigquery_client import get_bigquery_client as shared_get_bigquery_client
+            self.client = shared_get_bigquery_client(
+                project_id=resolved_project,
+                app_name='bizsight'
+            )
+        except Exception as e:
+            logger.warning(f"Shared client init failed: {e}")
+        # Fallback to local client if shared client unavailable
         if self.client is None:
-            try:
-                from justdata.shared.utils.bigquery_client import get_bigquery_client as shared_get_bigquery_client
-                logger.info("Local credentials failed, falling back to shared client with app_name='bizsight'")
-                self.client = shared_get_bigquery_client(
-                    project_id=project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc'),
-                    app_name='bizsight'
-                )
-            except Exception as e:
-                logger.error(f"Shared client fallback also failed: {e}")
+            logger.info("Falling back to local BigQuery client init")
+            self.client = get_bigquery_client(project_id, credentials_path)
         self.project_id = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         # New optimized project with summary tables
         self.summary_project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
