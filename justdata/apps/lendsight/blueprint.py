@@ -17,6 +17,9 @@ from pathlib import Path
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
+
+# In-memory fallback for when BigQuery cache store fails
+_result_fallback = {}
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.core.config.app_config import LendSightConfig
 from .core import run_analysis, parse_web_parameters
@@ -414,7 +417,7 @@ def analyze():
                         'census_data': result.get('metadata', {}).get('census_data', None),
                         'generated_at': datetime.now().isoformat()
                     }
-                    
+
                     store_cached_result(
                         app_name='lendsight',
                         params=cache_params,
@@ -423,14 +426,14 @@ def analyze():
                         user_type=user_type,
                         metadata=metadata
                     )
-                    # Mark analysis as completed only if cache store succeeded
                     progress_tracker.complete(success=True)
                 except Exception as cache_error:
-                    print(f"ERROR: Failed to store in cache: {cache_error}")
-                    progress_tracker.complete(
-                        success=False,
-                        error="Analysis completed but results could not be saved. Please try again."
-                    )
+                    print(f"WARNING: Failed to store in BigQuery cache: {cache_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Store result in-memory fallback so user can still see results
+                    _result_fallback[job_id] = result
+                    progress_tracker.complete(success=True)
                 
                 # Log usage (cache miss, new analysis)
                 response_time_ms = int((time_module.time() - start_time) * 1000)
@@ -542,8 +545,11 @@ def report_data():
                 'error': 'No analysis session found. Please run an analysis first.'
             }), 400
         
-        # Retrieve from BigQuery only (no in-memory storage)
+        # Retrieve from BigQuery cache, with in-memory fallback
         analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.pop(job_id)
+            print(f"[INFO] Using in-memory fallback for job_id={job_id}")
         if not analysis_result:
             # Check progress to see if analysis is still running
             progress = get_progress(job_id)
@@ -631,8 +637,11 @@ def download():
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400
         
-        # Retrieve from BigQuery only (no in-memory storage)
+        # Retrieve from BigQuery cache, with in-memory fallback
         analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.get(job_id)
+            print(f"[INFO] Using in-memory fallback for download job_id={job_id}")
         if not analysis_result:
             return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 400
         

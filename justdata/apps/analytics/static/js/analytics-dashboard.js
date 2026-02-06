@@ -481,8 +481,8 @@ function renderAppUsage(appUsage) {
         'branchmapper_report': 'BranchMapper',
         'mergermeter_report': 'MergerMeter',
         'dataexplorer_report': 'DataExplorer',
-        'dataexplorer_area_report': 'DataExplorer',
-        'dataexplorer_lender_report': 'DataExplorer',
+        'dataexplorer_area_report': 'DE Area Report',
+        'dataexplorer_lender_report': 'DE Lender Report',
         'lenderprofile_view': 'LenderProfile'
     };
 

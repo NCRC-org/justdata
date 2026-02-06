@@ -1637,13 +1637,13 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
 
     app_usage_query = f"""
         SELECT
-            CASE WHEN event_name LIKE 'dataexplorer_%' THEN 'dataexplorer_report' ELSE event_name END AS event_name,
+            event_name,
             COUNT(*) AS event_count,
             COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
             {date_filter}
-        GROUP BY 1
+        GROUP BY event_name
         ORDER BY event_count DESC
     """
 

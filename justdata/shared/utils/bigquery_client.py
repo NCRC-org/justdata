@@ -11,6 +11,7 @@ import os
 import json
 import tempfile
 import logging
+import concurrent.futures
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from typing import List, Dict, Any, Optional
@@ -313,14 +314,17 @@ def execute_query(client: bigquery.Client, sql: str, timeout: int = 120) -> List
         # Wait for results with timeout
         try:
             results = query_job.result(timeout=timeout)
-        except Exception as timeout_error:
-            # Try to cancel the job if it times out
+        except concurrent.futures.TimeoutError as timeout_error:
+            # Only catch actual timeouts, not query errors
             try:
                 query_job.cancel()
                 logger.warning("Query cancelled due to timeout")
             except:
                 pass
             raise Exception(f"Query timed out after {timeout} seconds: {timeout_error}")
+        except Exception as query_error:
+            # Re-raise query errors (syntax, missing tables, etc.) with their real message
+            raise Exception(f"BigQuery query error: {query_error}")
         
         # Convert to list of dictionaries
         data = [dict(row.items()) for row in results]

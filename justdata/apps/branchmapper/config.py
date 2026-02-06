@@ -19,9 +19,13 @@ else:
     TEMPLATES_DIR = SHARED_TEMPLATES_DIR
 STATIC_DIR = os.path.join(BASE_DIR, 'shared', 'web', 'static')
 
-# Ensure output directory exists
+# Ensure output directory exists (with fallback for read-only Cloud Run filesystem)
 OUTPUT_DIR = os.path.join(DATA_DIR, 'reports', 'branchmapper')
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+try:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+except (PermissionError, OSError):
+    OUTPUT_DIR = os.path.join('/tmp', 'branchmapper_reports')
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')

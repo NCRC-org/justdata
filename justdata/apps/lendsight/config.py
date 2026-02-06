@@ -27,9 +27,13 @@ if os.path.exists(LENDSIGHT_STATIC_DIR):
 else:
     STATIC_DIR = SHARED_STATIC_DIR
 
-# Ensure output directory exists
+# Ensure output directory exists (with fallback for read-only Cloud Run filesystem)
 OUTPUT_DIR = os.path.join(DATA_DIR, 'reports', 'lendsight')
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+try:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+except (PermissionError, OSError):
+    OUTPUT_DIR = os.path.join('/tmp', 'lendsight_reports')
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")  # Options: "gpt-4", "claude"
