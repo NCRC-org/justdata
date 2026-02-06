@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 BigQuery-based branch data client for Summary of Deposits (SOD) data.
-Uses branches.sod, branches.sod_legacy, and branches.sod25 tables.
+Uses branches.sod and branches.sod_legacy tables.
 """
 
 import os
@@ -36,7 +36,7 @@ class BigQueryBranchClient:
         """
         Get branch locations for an institution by RSSD and year from BigQuery SOD tables.
         
-        Queries branches.sod, branches.sod_legacy, and branches.sod25 tables.
+        Queries branches.sod and branches.sod_legacy tables.
         
         Args:
             rssd: RSSD ID (Federal Reserve identifier)
@@ -47,7 +47,7 @@ class BigQueryBranchClient:
         """
         try:
             # Determine which table(s) to query based on year
-            # sod25 is for 2025, sod_legacy for older years, sod for intermediate years
+            # sod has 2025 data, sod_legacy has 2017-2024 data
             # We'll query all three and let UNION handle it
             
             # RSSD in SOD tables is stored as STRING - try both padded and unpadded formats
