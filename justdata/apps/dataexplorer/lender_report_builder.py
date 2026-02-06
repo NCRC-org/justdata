@@ -1124,11 +1124,10 @@ def build_lender_report(
         # We need to query shared.cbsa_to_county to get CBSA codes and names
         try:
             from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
-            from justdata.shared.utils.unified_env import get_unified_config
-            
-            config = get_unified_config(load_env=False, verbose=False)
-            PROJECT_ID = config.get('GCP_PROJECT_ID')
-            client = get_bigquery_client(PROJECT_ID)
+            import os
+
+            PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+            client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
             
             # Convert all_metros_data to DataFrame if provided (shows ALL metros, not just selected geography)
             # Otherwise fall back to subject_df (limited to selected geography)
