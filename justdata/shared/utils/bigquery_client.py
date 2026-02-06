@@ -209,7 +209,7 @@ def get_bigquery_client(project_id: str = None, app_name: str = None):
         
         # Get project ID from env if not provided
         if not project_id:
-            project_id = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+            project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         
         # Try to get credentials from environment variables
         cred_result = _get_credentials_from_env(app_name_key)

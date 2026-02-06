@@ -34,7 +34,7 @@ def ensure_aggregates_table_exists():
         from justdata.shared.utils.bigquery_client import get_bigquery_client
         from google.cloud import bigquery
 
-        client = get_bigquery_client()
+        client = get_bigquery_client('justdata-ncrc', app_name='analytics')
         if not client:
             return False
 
@@ -225,7 +225,7 @@ def _aggregate_daily_metrics(start_dt: datetime, end_dt: datetime) -> dict:
 
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        client = get_bigquery_client()
+        client = get_bigquery_client('justdata-ncrc', app_name='analytics')
         if not client:
             logger.warning("BigQuery client not available for aggregation")
             return metrics
@@ -354,7 +354,7 @@ def _store_aggregated_metrics(date, metrics: dict):
         from justdata.shared.utils.bigquery_client import get_bigquery_client
         import json
 
-        client = get_bigquery_client()
+        client = get_bigquery_client('justdata-ncrc', app_name='analytics')
         if not client:
             logger.warning("BigQuery client not available for storing metrics")
             return
