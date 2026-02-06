@@ -39,7 +39,7 @@ GPT_MODEL = "gpt-4"
 # BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')  # New optimized project
-DATASET_ID = "branches"
+DATASET_ID = "branchsight"
 TABLE_ID = "sod"
 
 # Report Configuration

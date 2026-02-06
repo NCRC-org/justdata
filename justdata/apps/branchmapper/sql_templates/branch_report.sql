@@ -20,7 +20,7 @@ SELECT
     MAX(s.longitude) as longitude,
     MAX(s.rssd) as rssd,
     MAX(s.assets_000s) as assets_000s
-FROM branches.sod s
+FROM branchsight.sod s
 LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county
@@ -49,7 +49,7 @@ SELECT
     MAX(s.longitude) as longitude,
     MAX(s.rssd) as rssd,
     MAX(s.assets_000s) as assets_000s
-FROM branches.sod_legacy s
+FROM branchsight.sod_legacy s
 LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county
@@ -78,7 +78,7 @@ SELECT
     MAX(s.longitude) as longitude,
     MAX(s.rssd) as rssd,
     MAX(s.assets_000s) as assets_000s
-FROM branches.sod25 s
+FROM branchsight.sod25 s
 LEFT JOIN shared.cbsa_to_county c
     USING(geoid5)
 WHERE c.county_state = @county

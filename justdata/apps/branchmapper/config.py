@@ -25,7 +25,7 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
-DATASET_ID = "branches"
+DATASET_ID = "branchsight"
 TABLE_ID = "sod"
 
 # Load environment variables from .env if available
