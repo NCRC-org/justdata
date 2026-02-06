@@ -15,7 +15,7 @@ from google.cloud import bigquery
 from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 # Project and dataset
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 DATASET_ID = 'cache'
 
 # Table names
@@ -551,8 +551,8 @@ def get_cached_result(app_name: str, params: Dict[str, Any],
     Returns None if cache miss, or dict with 'job_id', 'result_data', 'cache_key' if cache hit.
     """
     cache_key = generate_cache_key(app_name, params)
-    client = get_bigquery_client(PROJECT_ID)
-    
+    client = get_bigquery_client(PROJECT_ID, app_name=app_name)
+
     # Check cache
     cache_query = f"""
     SELECT 
@@ -690,8 +690,8 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
     Returns None if not found, or dict with 'report_data', 'ai_insights', 'metadata' if found.
     This is the primary method for retrieving results - BigQuery-only, no in-memory storage.
     """
-    client = get_bigquery_client(PROJECT_ID)
-    
+    client = get_bigquery_client(PROJECT_ID, app_name='cache')
+
     # Query BigQuery for this job_id
     query = f"""
     SELECT 
@@ -895,7 +895,7 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
     """
     cache_key = generate_cache_key(app_name, params)
     normalized_params = normalize_parameters(app_name, params)
-    client = get_bigquery_client(PROJECT_ID)
+    client = get_bigquery_client(PROJECT_ID, app_name=app_name)
 
     # Delete any existing cache entry with the same cache_key (for force_refresh scenarios)
     # This also requires deleting associated results and sections to maintain referential integrity
@@ -1115,9 +1115,9 @@ def log_usage(user_type: str, app_name: str, params: Dict[str, Any],
     """
     if request_id is None:
         request_id = str(uuid.uuid4())
-    
-    client = get_bigquery_client(PROJECT_ID)
-    
+
+    client = get_bigquery_client(PROJECT_ID, app_name=app_name)
+
     costs = costs or {}
     
     insert_query = f"""
