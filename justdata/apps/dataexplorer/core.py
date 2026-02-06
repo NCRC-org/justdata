@@ -503,12 +503,12 @@ def run_area_analysis(
             
             # Query each county/year combination
             all_results = []
+            query_errors = []  # Track errors to surface meaningful messages
             total_queries = len(county_names_list) * len(validated_years)
             query_index = 0
             
-            config = get_unified_config(load_env=False, verbose=False)
-            PROJECT_ID = config.get('GCP_PROJECT_ID')
-            client = get_bigquery_client(PROJECT_ID)
+            from justdata.apps.dataexplorer.config import PROJECT_ID
+            client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
             
             for county_name in county_names_list:
                 for year in validated_years:
@@ -549,10 +549,22 @@ def run_area_analysis(
                         
                     except Exception as e:
                         logger.error(f"Error querying {county_name} {year}: {e}", exc_info=True)
+                        query_errors.append(str(e))
                         query_index += 1
                         continue
-            
+
             if not all_results:
+                # Surface actual errors instead of generic "no data found"
+                if query_errors:
+                    if any('403' in err or 'Access Denied' in err for err in query_errors):
+                        return {
+                            'success': False,
+                            'error': 'Data access temporarily unavailable. Please try again later or contact support.'
+                        }
+                    return {
+                        'success': False,
+                        'error': f'Query error: {query_errors[0]}'
+                    }
                 return {
                     'success': False,
                     'error': 'No HMDA data found for the selected counties and years.'

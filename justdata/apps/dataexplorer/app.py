@@ -579,7 +579,7 @@ def get_states():
         ORDER BY State
         """
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
         results = execute_query(client, query)
         
         return jsonify({
@@ -651,7 +651,7 @@ def get_metros():
         ORDER BY name
         """
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
         results = execute_query(client, query)
         
         return jsonify({
@@ -697,7 +697,7 @@ def get_counties_by_metro(cbsa_code):
         ORDER BY State, County
         """
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
         results = execute_query(client, query)
         
         return jsonify({
@@ -747,7 +747,7 @@ def get_counties():
         ORDER BY County
         """
         
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
         results = execute_query(client, query)
         
         return jsonify({
@@ -918,9 +918,8 @@ def test_lender_analysis():
         
         def run_job():
             try:
-                config = get_unified_config(load_env=False, verbose=False)
-                PROJECT_ID = config.get('GCP_PROJECT_ID')
-                client = get_bigquery_client(PROJECT_ID)
+                from justdata.apps.dataexplorer.config import PROJECT_ID
+                client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
                 sql_template = load_sql_template()
                 
                 if progress_tracker:
@@ -1741,7 +1740,7 @@ def get_bigquery_job_history():
         lei_filter = request.args.get('lei', None)  # Optional LEI filter
         
         # Get BigQuery client
-        client = get_bigquery_client()
+        client = get_bigquery_client(app_name='dataexplorer')
         if not client:
             return jsonify({'success': False, 'error': 'BigQuery client not available'}), 500
         
@@ -1754,7 +1753,7 @@ def get_bigquery_job_history():
         
         # Query the INFORMATION_SCHEMA for query history
         # This is more reliable than listing jobs
-        project_id = config.get('GCP_PROJECT_ID', 'justdata-ncrc')
+        project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         
         # Query job history from INFORMATION_SCHEMA
         query = f"""

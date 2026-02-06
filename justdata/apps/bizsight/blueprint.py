@@ -24,6 +24,9 @@ from justdata.apps.bizsight.utils.progress_tracker import (
     get_progress, update_progress, create_progress_tracker
 )
 
+# In-memory fallback for when BigQuery cache storage fails
+_result_fallback = {}
+
 # Get shared templates directory
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
@@ -308,12 +311,15 @@ def analyze():
                 # Store in BigQuery cache BEFORE marking as complete
                 # This ensures report-data can retrieve the data
                 print(f"[DEBUG] Starting storage for job_id: {job_id}")
-                storage_success = False
                 try:
                     metadata = {
                         'counties': [county_data] if not isinstance(county_data, list) else county_data,
                         'years': years,
-                        'duration_seconds': time_module.time() - start_time
+                        'duration_seconds': time_module.time() - start_time,
+                        'total_records': result.get('metadata', {}).get('total_records', 0) if isinstance(result.get('metadata'), dict) else 0,
+                        'loan_purpose': result.get('metadata', {}).get('loan_purpose', ['purchase']) if isinstance(result.get('metadata'), dict) else ['purchase'],
+                        'census_data': result.get('metadata', {}).get('census_data', None) if isinstance(result.get('metadata'), dict) else None,
+                        'generated_at': datetime.now().isoformat()
                     }
 
                     store_cached_result(
@@ -325,35 +331,15 @@ def analyze():
                         metadata=metadata
                     )
                     print(f"[DEBUG] Storage completed successfully for job_id: {job_id}")
-                    storage_success = True
+                    progress_tracker.complete(success=True)
                 except Exception as cache_error:
-                    print(f"[ERROR] Failed to store in cache: {cache_error}")
+                    print(f"WARNING: Failed to store in BigQuery cache: {cache_error}")
                     import traceback
                     traceback.print_exc()
-                    # Mark as failed if storage fails - this is critical!
-                    progress_tracker.complete(success=False, error=f"Failed to store analysis results: {str(cache_error)}")
+                    # Store result in-memory fallback so user can still see results
+                    _result_fallback[job_id] = result
+                    progress_tracker.complete(success=True)
 
-                    # Log failed storage
-                    response_time_ms = int((time_module.time() - start_time) * 1000)
-                    cache_key = generate_cache_key('bizsight', cache_params)
-                    log_usage(
-                        user_type=user_type,
-                        app_name='bizsight',
-                        params=cache_params,
-                        cache_key=cache_key,
-                        cache_hit=False,
-                        job_id=job_id,
-                        response_time_ms=response_time_ms,
-                        error_message=f"Storage failed: {str(cache_error)}",
-                        request_id=request_id,
-                        user_id=user_id,
-                        user_email=user_email
-                    )
-                    return
-
-                # Mark as complete ONLY if storage succeeded
-                print(f"[DEBUG] Marking progress complete for job_id: {job_id}")
-                progress_tracker.complete(success=True)
                 print(f"[DEBUG] Progress marked complete for job_id: {job_id}")
                 
                 # Log usage (cache miss, new analysis)
@@ -470,7 +456,7 @@ def get_counties_by_state(state_code):
         state_code = unquote(str(state_code)).strip()
         print(f"[DEBUG] bizsight/api/counties-by-state called with state_code: '{state_code}'")
 
-        client = get_bigquery_client(BizSightConfig.GCP_PROJECT_ID)
+        client = get_bigquery_client(BizSightConfig.GCP_PROJECT_ID, app_name='bizsight')
 
         # Check if state_code is a numeric FIPS code (2 digits) or a state name
         is_numeric_code = state_code.isdigit() and len(state_code) <= 2
@@ -645,8 +631,11 @@ def report_data():
                 'error': 'No analysis session found. Please run an analysis first.'
             }), 400
 
-        # Retrieve from BigQuery only (no in-memory storage)
+        # Retrieve from BigQuery cache, with in-memory fallback
         analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.pop(job_id)
+            print(f"[INFO] Using in-memory fallback for job_id={job_id}")
         if not analysis_result:
             # Check progress to see if analysis is still running
             progress = get_progress(job_id)

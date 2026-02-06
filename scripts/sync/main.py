@@ -59,7 +59,11 @@ SYNC_SQL = {
             SUM(CASE WHEN d.income_group_total IN ('1', '2') THEN d.num_under_100k + d.num_100k_250k + d.num_250k_1m ELSE 0 END) as lmi_tract_loans,
             SUM(CASE WHEN d.income_group_total = '1' THEN d.num_under_100k + d.num_100k_250k + d.num_250k_1m ELSE 0 END) as low_income_loans,
             SUM(CASE WHEN d.income_group_total = '2' THEN d.num_under_100k + d.num_100k_250k + d.num_250k_1m ELSE 0 END) as moderate_income_loans,
-            SUM(CASE WHEN d.income_group_total IN ('3', '4') THEN d.num_under_100k + d.num_100k_250k + d.num_250k_1m ELSE 0 END) as midu_income_loans
+            SUM(CASE WHEN d.income_group_total IN ('3', '4') THEN d.num_under_100k + d.num_100k_250k + d.num_250k_1m ELSE 0 END) as midu_income_loans,
+            SUM(CASE WHEN d.income_group_total IN ('1', '2') THEN d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m ELSE 0 END) as lmi_tract_amount,
+            SUM(CASE WHEN d.income_group_total = '1' THEN d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m ELSE 0 END) as low_income_amount,
+            SUM(CASE WHEN d.income_group_total = '2' THEN d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m ELSE 0 END) as moderate_income_amount,
+            SUM(CASE WHEN d.income_group_total IN ('3', '4') THEN d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m ELSE 0 END) as midu_income_amount
         FROM `{source_project}.sb.disclosure` d
         LEFT JOIN `{source_project}.sb.lenders` l 
             ON d.respondent_id = l.sb_resid AND d.year = l.sb_year

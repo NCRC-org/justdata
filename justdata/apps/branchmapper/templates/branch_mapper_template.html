@@ -6,9 +6,9 @@
     <title>BranchMapper - Bank Branch Location Map</title>
     <meta name="description" content="Interactive map showing bank branch locations with demographic and deposit data.">
     
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     <!-- Font Awesome for icons -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1901,90 +1901,105 @@
         function updateBankLegend() {
             const legend = document.getElementById('bankLegend');
             const selectedBanks = getSelectedBanks();
-            
-            // Only show legend when multiple banks are selected (more than 1)
-            if (selectedBanks === 'all' || selectedBanks.length <= 1 || Object.keys(bankColors).length === 0) {
+
+            // Show legend when banks are selected
+            if (selectedBanks === 'all' || Object.keys(bankColors).length === 0) {
                 legend.classList.remove('active');
                 return;
             }
-            
+
             legend.innerHTML = '<strong>Bank Colors:</strong>';
-            
+
             Object.entries(bankColors).forEach(([bankName, color]) => {
                 const legendItem = document.createElement('div');
                 legendItem.className = 'legend-item';
                 legendItem.innerHTML = `
-                    <div class="legend-color" style="background: ${color};"></div>
+                    <div class="legend-color" style="background: ${color}; border: 1px solid #fff;"></div>
                     <span>${bankName}</span>
                 `;
                 legend.appendChild(legendItem);
             });
-            
+
+            // Add "Other Banks" grey entry
+            const otherItem = document.createElement('div');
+            otherItem.className = 'legend-item';
+            otherItem.innerHTML = `
+                <div class="legend-color" style="background: #cccccc; border: 1px solid #fff; opacity: 0.6;"></div>
+                <span>Other Banks</span>
+            `;
+            legend.appendChild(otherItem);
+
             legend.classList.add('active');
         }
         
         // Update map markers based on bank selection
         function updateMapMarkers() {
             clearMarkers();
-            
+
             const selectedBanks = getSelectedBanks();
-            
-            // Filter branches by selected banks
-            let branchesToShow = allBranches;
-            if (selectedBanks !== 'all') {
-                branchesToShow = allBranches.filter(b => selectedBanks.includes(b.bank_name));
-            }
-            
+
             // Assign colors to selected banks
             assignBankColors(selectedBanks);
-            
-            if (branchesToShow.length === 0) {
-                updateInfoPanel('No branches match the selected banks.');
+
+            if (allBranches.length === 0) {
+                updateInfoPanel('No branches to display.');
                 return;
             }
-            
-            // Add markers
-            addMarkersToMap(branchesToShow);
-            
-            updateInfoPanel(`Displaying ${branchesToShow.length} branches from ${selectedBanks === 'all' ? 'all banks' : selectedBanks.length + ' selected bank(s)'}`);
+
+            // Always show all branches - selected banks get colors, others get grey background
+            addMarkersToMap(allBranches);
+
+            const selectedCount = selectedBanks === 'all' ? allBranches.length : allBranches.filter(b => selectedBanks.includes(b.bank_name)).length;
+            updateInfoPanel(`Displaying ${allBranches.length} branches${selectedBanks !== 'all' ? ` (${selectedCount} from ${selectedBanks.length} selected bank(s))` : ' from all banks'}`);
         }
         
         // Add markers to map using GeoJSON layers (much faster than HTML markers)
         function addMarkersToMap(branches) {
             // Clear existing layers first
             clearMarkers();
-            
+
+            const selectedBanks = getSelectedBanks();
+            const hasSelection = selectedBanks !== 'all';
             const bounds = new mapboxgl.LngLatBounds();
             const features = [];
-            
+
             // Store branch data for popup lookups
             window.branchDataMap = {};
-            
+
             branches.forEach(branch => {
                 // Parse coordinates - ensure they're numbers
                 let lat = branch.latitude;
                 let lng = branch.longitude;
-                
+
                 // Handle string or number coordinates
                 if (typeof lat === 'string') lat = parseFloat(lat);
                 if (typeof lng === 'string') lng = parseFloat(lng);
-                
+
                 // Validate coordinates
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
                     console.warn('Invalid coordinates for branch:', branch.branch_name, 'lat:', lat, 'lng:', lng);
                     return;
                 }
-                
-                // Get color for this bank
+
                 const bankName = branch.bank_name || 'Unknown';
-                const markerColor = bankColors[bankName] || '#000000';
-                
+                const isSelected = !hasSelection || selectedBanks.includes(bankName);
+
+                // Color logic: black by default, colored when bank is selected, grey for unselected
+                let markerColor;
+                if (!hasSelection) {
+                    markerColor = '#000000'; // Black for all when no selection
+                } else if (isSelected) {
+                    markerColor = bankColors[bankName] || '#000000';
+                } else {
+                    markerColor = '#cccccc'; // Light grey for unselected
+                }
+
                 // Create unique ID for this branch
                 const branchId = `${branch.uninumbr || ''}_${lat}_${lng}`;
-                
+
                 // Store branch data for popup
                 window.branchDataMap[branchId] = branch;
-                
+
                 // Create GeoJSON feature
                 features.push({
                     type: 'Feature',
@@ -1993,6 +2008,7 @@
                         bank_name: bankName,
                         branch_name: branch.branch_name || 'Branch',
                         color: markerColor,
+                        selected: isSelected ? 1 : 0,
                         lmict: branch.lmict ? 1 : 0,
                         mmct: branch.mmct ? 1 : 0
                     },
@@ -2001,100 +2017,53 @@
                         coordinates: [lng, lat]
                     }
                 });
-                
+
                 bounds.extend([lng, lat]);
             });
-            
+
             if (features.length === 0) {
                 console.warn('No valid branch features to display');
                 return;
             }
-            
-            // Add GeoJSON source with clustering
+
+            // Add GeoJSON source (no clustering - show individual branches at all zoom levels)
             branchMap.addSource('branch-markers', {
                 type: 'geojson',
                 data: {
                     type: 'FeatureCollection',
                     features: features
-                },
-                cluster: true,
-                clusterMaxZoom: 14,
-                clusterRadius: 50
-            });
-            
-            // Add cluster circles
-            branchMap.addLayer({
-                id: 'branch-clusters',
-                type: 'circle',
-                source: 'branch-markers',
-                filter: ['has', 'point_count'],
-                paint: {
-                    'circle-color': '#0d4a7c',
-                    'circle-radius': [
-                        'step', ['get', 'point_count'],
-                        15, 10,
-                        20, 50,
-                        25, 100,
-                        30
-                    ],
-                    'circle-stroke-width': 3,
-                    'circle-stroke-color': '#ffffff'
                 }
             });
-            
-            // Add cluster count labels
-            branchMap.addLayer({
-                id: 'branch-cluster-count',
-                type: 'symbol',
-                source: 'branch-markers',
-                filter: ['has', 'point_count'],
-                layout: {
-                    'text-field': '{point_count_abbreviated}',
-                    'text-font': ['DIN Pro Medium', 'Arial Unicode MS Bold'],
-                    'text-size': 12
-                },
-                paint: {
-                    'text-color': '#ffffff'
-                }
-            });
-            
-            // Add white stroke behind individual markers
-            branchMap.addLayer({
-                id: 'branch-markers-stroke',
-                type: 'circle',
-                source: 'branch-markers',
-                filter: ['!', ['has', 'point_count']],
-                paint: {
-                    'circle-radius': 10,
-                    'circle-color': '#ffffff'
-                }
-            });
-            
-            // Add individual branch markers (colored by bank)
+
+            if (hasSelection) {
+                // BACKGROUND LAYER: unselected branches (light grey, rendered first / behind)
+                branchMap.addLayer({
+                    id: 'branch-markers-bg',
+                    type: 'circle',
+                    source: 'branch-markers',
+                    filter: ['==', ['get', 'selected'], 0],
+                    paint: {
+                        'circle-radius': 5,
+                        'circle-color': '#cccccc',
+                        'circle-stroke-width': 1,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-opacity': 0.6
+                    }
+                });
+            }
+
+            // FOREGROUND LAYER: selected (or all) branches
             branchMap.addLayer({
                 id: 'branch-markers-fill',
                 type: 'circle',
                 source: 'branch-markers',
-                filter: ['!', ['has', 'point_count']],
+                filter: hasSelection ? ['==', ['get', 'selected'], 1] : ['literal', true],
                 paint: {
-                    'circle-radius': 8,
+                    'circle-radius': 6,
                     'circle-color': ['get', 'color'],
-                    'circle-stroke-width': 2,
+                    'circle-stroke-width': 1,
                     'circle-stroke-color': '#ffffff'
                 }
-            });
-            
-            // Click handler for clusters - zoom in
-            branchMap.on('click', 'branch-clusters', function(e) {
-                const features = branchMap.queryRenderedFeatures(e.point, { layers: ['branch-clusters'] });
-                const clusterId = features[0].properties.cluster_id;
-                branchMap.getSource('branch-markers').getClusterExpansionZoom(clusterId, function(err, zoom) {
-                    if (err) return;
-                    branchMap.easeTo({
-                        center: features[0].geometry.coordinates,
-                        zoom: zoom
-                    });
-                });
             });
             
             // Click handler for individual markers - show popup
@@ -2121,7 +2090,7 @@
                         <div class="bank-name-header">${props.bank_name}</div>
                         <div class="branch-info">
                             <strong>Branch:</strong> ${props.branch_name}<br>
-                            ${branch.branch_type ? `<strong>Branch Type:</strong> ${branch.branch_type}<br>` : ''}
+                            ${branch.branch_type ? `<strong>Type:</strong> ${branch.branch_type.length > 25 ? branch.branch_type.substring(0, 25) + '...' : branch.branch_type}<br>` : ''}
                             ${branch.total_deposits ? `<strong>Deposits:</strong> ${formatDeposits(branch.total_deposits)}<br>` : ''}
                             <strong>Address:</strong> ${branch.address || ''}<br>
                             ${branch.city || ''}, ${branch.state_abbrv || branch.state || ''} ${branch.zip || ''}
@@ -2142,18 +2111,51 @@
                     .addTo(branchMap);
             });
             
-            // Change cursor on hover
-            branchMap.on('mouseenter', 'branch-clusters', function() {
-                branchMap.getCanvas().style.cursor = 'pointer';
+            // Change cursor on hover for both layers
+            ['branch-markers-fill', 'branch-markers-bg'].forEach(layerId => {
+                branchMap.on('mouseenter', layerId, function() {
+                    branchMap.getCanvas().style.cursor = 'pointer';
+                });
+                branchMap.on('mouseleave', layerId, function() {
+                    branchMap.getCanvas().style.cursor = '';
+                });
             });
-            branchMap.on('mouseleave', 'branch-clusters', function() {
-                branchMap.getCanvas().style.cursor = '';
-            });
-            branchMap.on('mouseenter', 'branch-markers-fill', function() {
-                branchMap.getCanvas().style.cursor = 'pointer';
-            });
-            branchMap.on('mouseleave', 'branch-markers-fill', function() {
-                branchMap.getCanvas().style.cursor = '';
+
+            // Click handler for background (unselected) markers - same popup
+            branchMap.on('click', 'branch-markers-bg', function(e) {
+                if (!e.features || e.features.length === 0) return;
+                const feature = e.features[0];
+                const coords = feature.geometry.coordinates.slice();
+                const props = feature.properties;
+                const branch = window.branchDataMap[props.id] || {};
+                const tags = [];
+                if (branch.lmict) tags.push('<span class="tag lmi">LMI</span>');
+                if (branch.mmct) tags.push('<span class="tag minority">Minority</span>');
+                const formatDeposits = (deposits) => {
+                    if (!deposits) return 'N/A';
+                    return '$' + Number(deposits).toLocaleString('en-US');
+                };
+                const popupContent = `
+                    <div class="popup-content">
+                        <div class="bank-name-header">${props.bank_name}</div>
+                        <div class="branch-info">
+                            <strong>Branch:</strong> ${props.branch_name}<br>
+                            ${branch.branch_type ? `<strong>Type:</strong> ${branch.branch_type.length > 25 ? branch.branch_type.substring(0, 25) + '...' : branch.branch_type}<br>` : ''}
+                            ${branch.total_deposits ? `<strong>Deposits:</strong> ${formatDeposits(branch.total_deposits)}<br>` : ''}
+                            <strong>Address:</strong> ${branch.address || ''}<br>
+                            ${branch.city || ''}, ${branch.state_abbrv || branch.state || ''} ${branch.zip || ''}
+                        </div>
+                        ${tags.length > 0 ? `<div class="branch-tags">${tags.join('')}</div>` : ''}
+                        <a href="#" class="report-problem-btn" onclick="openSlackSupport(event)">
+                            <i class="fab fa-slack"></i> Get Support
+                        </a>
+                    </div>
+                `;
+                if (currentPopup) currentPopup.remove();
+                currentPopup = new mapboxgl.Popup({ maxWidth: '300px' })
+                    .setLngLat(coords)
+                    .setHTML(popupContent)
+                    .addTo(branchMap);
             });
             
             // Fit map to show all markers
@@ -2167,7 +2169,7 @@
         
         // Clear markers (remove GeoJSON layers and source)
         function clearMarkers() {
-            const layerIds = ['branch-clusters', 'branch-cluster-count', 'branch-markers-stroke', 'branch-markers-fill'];
+            const layerIds = ['branch-markers-bg', 'branch-markers-fill'];
             layerIds.forEach(id => {
                 if (branchMap.getLayer(id)) branchMap.removeLayer(id);
             });

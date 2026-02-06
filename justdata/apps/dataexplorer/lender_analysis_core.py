@@ -136,6 +136,7 @@ def _generate_peer_data_sheet_for_excel(
             return []
         
         years_str = "', '".join(map(str, years))
+        years_int_str = ", ".join(map(str, years))  # Unquoted for INT64 columns (de_hmda)
         peer_leis_str = "', '".join([escape_sql_string(lei) for lei in peer_leis])
         
         # Build filter clauses
@@ -219,7 +220,7 @@ def _generate_peer_data_sheet_for_excel(
             ON h.lei = l.lei
         WHERE CAST(c.geoid5 AS STRING) IN ('{counties_list}')
           AND h.lei IN ('{peer_leis_str}')
-          AND h.activity_year IN ('{years_str}')
+          AND h.activity_year IN ({years_int_str})
           AND {action_taken_clause}
           AND {occupancy_clause}
           AND {total_units_clause}
@@ -491,12 +492,11 @@ def check_lender_has_data(
             year_range = ''
 
         # Get BigQuery client
-        config = get_unified_config(load_env=False, verbose=False)
-        PROJECT_ID = config.get('GCP_PROJECT_ID')
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
 
         subject_lei = lender_info.get('lei')
         years_str = "', '".join(map(str, validated_years))
+        years_int_str = ", ".join(map(str, validated_years))  # Unquoted for INT64 columns (de_hmda)
 
         # Build filter clauses from query_filters
         action_taken = query_filters.get('action_taken', ['1'])
@@ -566,7 +566,7 @@ def check_lender_has_data(
             SELECT COUNT(*) as loan_count
             FROM `{PROJECT_ID}.shared.de_hmda` h
             WHERE h.lei = '{escape_sql_string(subject_lei)}'
-              AND h.activity_year IN ('{years_str}')
+              AND h.activity_year IN ({years_int_str})
               AND CAST(h.county_code AS STRING) IN ('{geoids_str}')
               AND {action_taken_clause}
               AND {occupancy_clause}
@@ -583,7 +583,7 @@ def check_lender_has_data(
             SELECT COUNT(*) as loan_count, COUNT(DISTINCT county_code) as county_count
             FROM `{PROJECT_ID}.shared.de_hmda` h
             WHERE h.lei = '{escape_sql_string(subject_lei)}'
-              AND h.activity_year IN ('{years_str}')
+              AND h.activity_year IN ({years_int_str})
               AND {action_taken_clause}
               AND {occupancy_clause}
               AND {total_units_clause}
@@ -679,9 +679,7 @@ def run_lender_analysis(
             progress_tracker.update_progress('connecting_db', 10, 'Connecting to database...')
         
         # Get configuration
-        config = get_unified_config(load_env=False, verbose=False)
-        PROJECT_ID = config.get('GCP_PROJECT_ID')
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
         sql_template_base = load_sql_template()
         
         # Apply query filters to SQL template
@@ -746,8 +744,9 @@ def run_lender_analysis(
         
         elif geography_scope == 'all_cbsas':
             # Query all counties where the lender has loans matching the selected filters
-            # Note: This queries hmda.hmda (not de_hmda), so activity_year is STRING
+            # Note: de_hmda activity_year is INT64, use unquoted integers
             years_str = "', '".join(map(str, validated_years))
+            years_int_str = ", ".join(map(str, validated_years))
             
             # Build filter clauses to match the data query
             action_taken = query_filters.get('action_taken', ['1'])
@@ -819,7 +818,7 @@ def run_lender_analysis(
                 AND h.census_tract IS NOT NULL
                 AND SUBSTR(LPAD(CAST(h.census_tract AS STRING), 11, '0'), 6, 6) = SUBSTR(LPAD(CAST(ct_tract.geoid AS STRING), 11, '0'), 6, 6)
             WHERE h.lei = '{escape_sql_string(subject_lei)}'
-              AND h.activity_year IN ('{years_str}')
+              AND h.activity_year IN ({years_int_str})
               AND {action_taken_clause}
               AND {occupancy_clause}
               AND {total_units_clause}
@@ -1063,6 +1062,7 @@ def run_lender_analysis(
         elif geography_scope == 'loan_cbsas':
             # Query counties where the lender has >1% of loans
             years_str = "', '".join(map(str, validated_years))
+            years_int_str = ", ".join(map(str, validated_years))
             
             # Build filter clauses from query_filters
             action_taken = query_filters.get('action_taken', ['1'])
@@ -1128,8 +1128,9 @@ def run_lender_analysis(
             
             # Get lender loans per CBSA (aggregate at CBSA level, not county level)
             # Join to cbsa_to_county to get CBSA for each county, then aggregate by CBSA
-            # Note: This queries hmda.hmda (not de_hmda), so activity_year is STRING
+            # Note: de_hmda activity_year is INT64, use unquoted integers
             years_str = "', '".join(map(str, validated_years))
+            years_int_str = ", ".join(map(str, validated_years))
             lender_loans_query = f"""
             SELECT
                 CAST(c.cbsa_code AS STRING) as cbsa_code,
@@ -1154,7 +1155,7 @@ def run_lender_analysis(
                     CAST(h.county_code AS STRING)
                 ) = CAST(c.geoid5 AS STRING)
             WHERE h.lei = '{escape_sql_string(subject_lei)}'
-              AND h.activity_year IN ('{years_str}')
+              AND h.activity_year IN ({years_int_str})
               AND {action_taken_clause}
               AND {occupancy_clause}
               AND {total_units_clause}
@@ -1392,6 +1393,7 @@ def run_lender_analysis(
         
         # Query aggregated volumes for all lenders to find peers
         years_str = "', '".join(map(str, validated_years))
+        years_int_str = ", ".join(map(str, validated_years))  # Unquoted for INT64 columns (de_hmda)
         # Batch counties into chunks to avoid very long IN clauses
         counties_escaped = [escape_sql_string(c) for c in target_counties]
         # Use smaller batch size for volume query to avoid SQL string length issues
@@ -1501,7 +1503,7 @@ def run_lender_analysis(
                     -- For 2024: Use planning region code directly from county_code
                     CAST(h.county_code AS STRING)
                 ) IN UNNEST([{geoids_array}])
-              AND h.activity_year IN ('{years_str}')
+              AND h.activity_year IN ({years_int_str})
               AND {action_taken_clause}
               AND {occupancy_clause}
               AND {total_units_clause}
@@ -1688,7 +1690,7 @@ def run_lender_analysis(
                         sql = sql.replace('@year', years_int_str)
                 else:
                     # For old hmda.hmda table: activity_year is STRING, use quoted strings
-                    sql = sql.replace("AND h.activity_year = @year", f"AND h.activity_year IN ('{years_str}')")
+                    sql = sql.replace("AND h.activity_year = @year", f"AND h.activity_year IN ({years_int_str})")
                     if '@year' in sql:
                         sql = sql.replace('@year', f"'{years_str}'")
                 sql = sql.replace('@loan_purpose', "'all'")
@@ -1791,7 +1793,7 @@ def run_lender_analysis(
                     sql = sql.replace('@year', years_int_str)
             else:
                 # For old hmda.hmda table: activity_year is STRING, use quoted strings
-                sql = sql.replace("AND h.activity_year = @year", f"AND h.activity_year IN ('{years_str}')")
+                sql = sql.replace("AND h.activity_year = @year", f"AND h.activity_year IN ({years_int_str})")
                 if '@year' in sql:
                     sql = sql.replace('@year', f"'{years_str}'")
             sql = sql.replace('@loan_purpose', "'all'")
@@ -1913,7 +1915,7 @@ def run_lender_analysis(
                             sql = sql.replace('@year', years_int_str)
                     else:
                         # For old hmda.hmda table: activity_year is STRING, use quoted strings
-                        sql = sql.replace("AND h.activity_year = @year", f"AND h.activity_year IN ('{years_str}')")
+                        sql = sql.replace("AND h.activity_year = @year", f"AND h.activity_year IN ({years_int_str})")
                         if '@year' in sql:
                             sql = sql.replace('@year', f"'{years_str}'")
                     sql = sql.replace('@loan_purpose', "'all'")

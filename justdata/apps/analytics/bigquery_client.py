@@ -487,6 +487,43 @@ _last_sync_check = None
 SYNC_CHECK_INTERVAL_SECONDS = 3600  # Only check/sync once per hour
 
 
+def get_valid_user_filter(table_alias: str = '') -> str:
+    """
+    Returns a SQL WHERE clause fragment to filter out invalid/test users.
+
+    Filters out:
+    - NULL user_id
+    - Empty user_id
+    - Anonymous user emails
+    - Test user emails
+    - GA4 client IDs (format: numbers.numbers) which are anonymous
+
+    Args:
+        table_alias: Optional table alias prefix (e.g., 'e.' for 'e.user_id')
+
+    Returns:
+        SQL WHERE clause fragment (without leading AND)
+
+    Usage:
+        query = f'''
+            SELECT * FROM events e
+            WHERE {get_valid_user_filter('e.')}
+            AND other_conditions
+        '''
+    """
+    prefix = f"{table_alias}" if table_alias else ""
+    return f"""
+        {prefix}user_id IS NOT NULL
+        AND {prefix}user_id != ''
+        AND ({prefix}user_email IS NULL OR (
+            {prefix}user_email NOT LIKE '%test%'
+            AND {prefix}user_email NOT LIKE '%anonymous%'
+            AND {prefix}user_email != 'anonymous'
+        ))
+        AND NOT REGEXP_CONTAINS({prefix}user_id, r'^[0-9]+\\.[0-9]+$')
+    """.strip()
+
+
 def get_bigquery_client():
     """Get or create BigQuery client for Analytics app.
     
@@ -1300,6 +1337,9 @@ def get_lender_interest(
     # GA4 captures user location via IP automatically
     date_filter_ga4 = f"AND TIMESTAMP_MICROS(ga.event_timestamp) >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
     
+    # Apply valid user filter to exclude test/anonymous users
+    user_filter = get_valid_user_filter()
+
     query = f"""
         WITH merger_events AS (
             SELECT
@@ -1314,8 +1354,9 @@ def get_lender_interest(
             FROM `justdata-ncrc.cache.usage_log`
             WHERE app_name = 'mergermeter'
                 AND error_message IS NULL
-                AND (JSON_VALUE(parameters_json, '$.acquirer_lei') IS NOT NULL 
+                AND (JSON_VALUE(parameters_json, '$.acquirer_lei') IS NOT NULL
                      OR JSON_VALUE(parameters_json, '$.target_lei') IS NOT NULL)
+                AND {user_filter}
                 {date_filter}
                 {user_type_filter}
         ),
@@ -1450,7 +1491,7 @@ def get_coalition_opportunities(
                 'lender' AS entity_type,
                 lender_id AS entity_id,
                 lender_name AS entity_name,
-                COALESCE(user_id, event_id) AS user_id,
+                user_id,
                 CAST(NULL AS STRING) AS user_organization,
                 state AS researcher_state,
                 event_timestamp
@@ -1467,7 +1508,7 @@ def get_coalition_opportunities(
                 'county' AS entity_type,
                 county_fips AS entity_id,
                 CONCAT(county_name, ', ', state) AS entity_name,
-                COALESCE(user_id, event_id) AS user_id,
+                user_id,
                 CAST(NULL AS STRING) AS user_organization,
                 state AS researcher_state,
                 event_timestamp
@@ -1550,6 +1591,8 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
 
     # Build date filter
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+
+    # NOTE: Don't filter users here - we want to count ALL events for dashboard metrics
 
     # Define all queries
     totals_query = f"""
@@ -1650,8 +1693,13 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     if data_needing_names:
         top_counties = _enrich_with_county_names(client, top_counties)
 
-    # Process top lenders
+    # Process top lenders - resolve LEI codes to human-readable names
     top_lenders = [dict(row) for row in results.get('top_lenders', [])]
+    for lender in top_lenders:
+        if lender.get('lender_id'):
+            name = _lookup_single_lender_name(lender['lender_id'])
+            if name:
+                lender['lender_name'] = name
 
     # Process app usage
     app_usage = [dict(row) for row in results.get('app_usage', [])]
@@ -1700,6 +1748,9 @@ def get_users(
     if search:
         search_filter = f"AND user_id LIKE '%{search}%'"
 
+    # Apply valid user filter to exclude test/anonymous users
+    user_filter = get_valid_user_filter()
+
     query = f"""
         SELECT
             user_id,
@@ -1711,7 +1762,7 @@ def get_users(
             ARRAY_AGG(DISTINCT event_name ORDER BY event_name) AS apps_used
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
-            AND user_id IS NOT NULL
+            AND {user_filter}
             {date_filter}
             {search_filter}
         GROUP BY user_id
@@ -1879,6 +1930,9 @@ def get_entity_users(
     target_apps_str = "', '".join(TARGET_APPS)
     date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
+    # Apply valid user filter to exclude test/anonymous users
+    user_filter = get_valid_user_filter()
+
     # Build entity filter based on type
     if entity_type == 'county':
         entity_filter = f"AND county_fips = '{entity_id}'"
@@ -1889,15 +1943,16 @@ def get_entity_users(
 
     query = f"""
         SELECT
-            COALESCE(user_id, 'test_user') AS user_id,
+            user_id,
             COUNT(*) AS report_count,
             MAX(event_timestamp) AS last_activity,
             MIN(event_timestamp) AS first_activity
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
+            AND {user_filter}
             {entity_filter}
             {date_filter}
-        GROUP BY COALESCE(user_id, 'test_user')
+        GROUP BY user_id
         ORDER BY report_count DESC
         LIMIT 50
     """
@@ -2019,13 +2074,25 @@ def get_lender_detail(
 
     date_filter = f"AND timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
+    # User filter for usage_log table (uses different column names than events table)
+    user_filter_usage = """
+        user_id IS NOT NULL
+        AND user_id != ''
+        AND (user_email IS NULL OR (
+            user_email NOT LIKE '%test%'
+            AND user_email NOT LIKE '%anonymous%'
+            AND user_email != 'anonymous'
+        ))
+        AND NOT REGEXP_CONTAINS(user_id, r'^[0-9]+\\.[0-9]+$')
+    """
+
     # Query the usage_log table for MergerMeter events for this lender
     # MergerMeter events store lender_id in parameters_json as acquirer_lei or target_lei
     summary_query = f"""
         SELECT
             '{lender_id}' AS lender_id,
             COUNT(*) AS total_reports,
-            COUNT(DISTINCT COALESCE(user_id, user_email, CAST(timestamp AS STRING))) AS unique_researchers,
+            COUNT(DISTINCT user_id) AS unique_researchers,
             MIN(timestamp) AS first_activity,
             MAX(timestamp) AS last_activity
         FROM `justdata-ncrc.cache.usage_log`
@@ -2033,6 +2100,7 @@ def get_lender_detail(
             AND error_message IS NULL
             AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
                  OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
+            AND {user_filter_usage}
             {date_filter}
     """
 
@@ -2045,13 +2113,14 @@ def get_lender_detail(
             JSON_VALUE(parameters_json, '$.target_name') AS target_name,
             JSON_VALUE(parameters_json, '$.acquirer_lei') AS acquirer_lei,
             JSON_VALUE(parameters_json, '$.target_lei') AS target_lei,
-            COALESCE(user_id, user_email) AS user_id,
+            user_id,
             user_email
         FROM `justdata-ncrc.cache.usage_log`
         WHERE app_name = 'mergermeter'
             AND error_message IS NULL
             AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
                  OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
+            AND {user_filter_usage}
             {date_filter}
         ORDER BY timestamp DESC
         LIMIT 500
@@ -2060,7 +2129,7 @@ def get_lender_detail(
     # Get researchers for this lender
     researchers_query = f"""
         SELECT
-            COALESCE(user_id, user_email) AS user_id,
+            user_id,
             user_email,
             COUNT(*) AS report_count,
             MAX(timestamp) AS last_activity,
@@ -2070,9 +2139,9 @@ def get_lender_detail(
             AND error_message IS NULL
             AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
                  OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
-            AND (user_id IS NOT NULL OR user_email IS NOT NULL)
+            AND {user_filter_usage}
             {date_filter}
-        GROUP BY COALESCE(user_id, user_email), user_email
+        GROUP BY user_id, user_email
         ORDER BY report_count DESC
         LIMIT 100
     """
@@ -2123,14 +2192,15 @@ def get_user_activity_timeline(days: int = 30) -> List[Dict[str, Any]]:
 
     client = get_bigquery_client()
 
-    date_filter = f"WHERE event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
+    date_filter = f"AND event_timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {days} DAY)" if days > 0 else ""
 
     query = f"""
         SELECT
             DATE(event_timestamp) AS date,
             COUNT(*) AS event_count,
-            COUNT(DISTINCT COALESCE(user_id, event_id)) AS unique_users
+            COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
+        WHERE 1=1
         {date_filter}
         GROUP BY date
         ORDER BY date ASC

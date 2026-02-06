@@ -43,10 +43,14 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
         logger.debug("Could not import unified_env, continuing with local config")
 
     if not project_id:
-        project_id = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+        # Use JUSTDATA_PROJECT_ID (where bizsight tables live), not GCP_PROJECT_ID (hdma1-242116)
+        project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 
     # Check for app-specific credentials first, then fall back to shared
-    creds_json = os.getenv('BIZSIGHT_CREDENTIALS_JSON') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
+    # Support both naming conventions used across environments
+    creds_json = (os.getenv('BIZSIGHT_CREDENTIALS_JSON')
+                  or os.getenv('BIZSIGHT_BIGQUERY_CREDENTIALS_JSON')
+                  or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON'))
     if creds_json:
         try:
             creds_dict = json.loads(creds_json)
@@ -123,11 +127,25 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
 
 class BigQueryClient:
     """Wrapper class for BigQuery operations."""
-    
+
     def __init__(self, project_id: str = None, credentials_path: str = None):
-        """Initialize BigQuery client."""
-        self.client = get_bigquery_client(project_id, credentials_path)
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+        """Initialize BigQuery client using shared client (same pattern as LendSight)."""
+        self.client = None
+        resolved_project = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+        # Use shared client as primary path (handles per-app credentials consistently)
+        try:
+            from justdata.shared.utils.bigquery_client import get_bigquery_client as shared_get_bigquery_client
+            self.client = shared_get_bigquery_client(
+                project_id=resolved_project,
+                app_name='bizsight'
+            )
+        except Exception as e:
+            logger.warning(f"Shared client init failed: {e}")
+        # Fallback to local client if shared client unavailable
+        if self.client is None:
+            logger.info("Falling back to local BigQuery client init")
+            self.client = get_bigquery_client(project_id, credentials_path)
+        self.project_id = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         # New optimized project with summary tables
         self.summary_project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         self.use_summary_tables = os.getenv('USE_SUMMARY_TABLES', 'false').lower() == 'true'
@@ -178,7 +196,11 @@ class BigQueryClient:
                 lmi_tract_loans,
                 low_income_loans,
                 moderate_income_loans,
-                midu_income_loans
+                midu_income_loans,
+                lmi_tract_amount,
+                low_income_amount,
+                moderate_income_amount,
+                midu_income_amount
             FROM `{self.summary_project_id}.bizsight.sb_county_summary`
             WHERE geoid5 = '{geoid5_padded}'
                 {year_filter}
@@ -210,26 +232,22 @@ class BigQueryClient:
             year_list = ", ".join(str(y) for y in years)
             year_filter = f"AND CAST(a.year AS INT64) IN ({year_list})"
         
-        # Note: bizsight.sb_county_summary is county-level data (geoid5), not tract-level (geoid10)
-        # This function now returns county-level data instead of tract-level
-        # Note: income_group_total indicates tract income level with these known values:
-        #   3-digit codes: 101=Low, 102=Moderate, 103=Middle, 104=Upper
-        #   Single-digit codes: 1-8 are all considered LMI (Low/Moderate Income)
-        # LMI tracts = Low (101, 1-8) + Moderate (102)
-        # Note: income_group_total may be STRING or INT64, so we cast to STRING first
+        # Note: bizsight.sb_county_summary has pre-computed income columns per row:
+        # low_income_loans, moderate_income_loans, midu_income_loans (mid+upper combined)
+        # Each row = one lender in one county for one year, with all income breakdowns as columns
         sql = f"""
         SELECT
             a.*,
             g.county_state,
             g.county as county_name,
             g.state as state_name,
-            g.geoid5,
-            -- Use geoid5 + year + income_group_total as unique identifier for grouping
-            CONCAT(CAST(a.geoid5 AS STRING), '_', CAST(a.year AS STRING), '_', COALESCE(CAST(a.income_group_total AS STRING), '0')) as census_tract_geoid,
+            g.geoid5 as geo_geoid5,
+            -- Unique identifier for grouping
+            CONCAT(CAST(a.geoid5 AS STRING), '_', CAST(a.year AS STRING), '_', COALESCE(a.respondent_id, '0')) as census_tract_geoid,
             -- Calculate loan_count and loan_amount from num_* and amt_* fields
             COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
             COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-            -- Census tract-level demographics not available, but we can derive income level
+            -- Census tract-level demographics not available at county level
             NULL as tract_to_msa_income_percentage,
             NULL as tract_median_income,
             NULL as tract_population,
@@ -239,29 +257,10 @@ class BigQueryClient:
             NULL as tract_asian_percent,
             NULL as tract_other_race_percent,
             NULL as tract_minority_population_percent,
-            -- Income category derived from income_group_total
-            -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
-            CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 'Low Income'
-                WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 'Moderate Income'
-                WHEN CAST(a.income_group_total AS STRING) = '103' THEN 'Middle Income'
-                WHEN CAST(a.income_group_total AS STRING) = '104' THEN 'Upper Income'
-                ELSE 'Unknown'
-            END as income_category,
-            -- LMI tract = Low Income or Moderate Income
-            -- Includes: 101, 102, 001-008 (zero-padded in database)
-            CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
-                ELSE 0
-            END as is_lmi_tract,
-            -- Income level as numeric (1=Low, 2=Moderate, 3=Middle, 4=Upper)
-            CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
-                WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
-                WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
-                WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
-                ELSE 0
-            END as income_level
+            -- Income category label for display
+            'County Aggregate' as income_category,
+            -- LMI flag: use low_income_loans + moderate_income_loans (lmi_tract_loans contains zeros)
+            CASE WHEN (COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) > 0 THEN 1 ELSE 0 END as is_lmi_tract
         FROM `{self.project_id}.bizsight.sb_county_summary` a
         JOIN `{self.project_id}.shared.cbsa_to_county` g
             ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
@@ -329,48 +328,43 @@ class BigQueryClient:
             year_list = ", ".join(str(y) for y in years)
             year_filter = f"AND CAST(a.year AS INT64) IN ({year_list})"
 
+        # Derive income breakdowns from income_group_total column
         sql = f"""
-        WITH county_data AS (
-            SELECT
-                a.*,
-                CAST(a.geoid5 AS STRING) as tract_geoid,
-                COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
-                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total
-                -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
-                CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
-                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
-                    WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
-                    WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
-                    ELSE 0
-                END as income_level,
-                -- LMI flag for direct use
-                CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
-                    ELSE 0
-                END as is_lmi
-            FROM `{self.project_id}.bizsight.sb_county_summary` a
-            JOIN `{self.project_id}.shared.cbsa_to_county` g
-                ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
-            WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
-                {year_filter}
-        )
         SELECT
-            COUNT(DISTINCT tract_geoid) as total_tracts,
-            SUM(loan_count) as total_loans,
-            SUM(loan_amount) as total_loan_amount,
-            -- LMI tract loans (using is_lmi flag)
-            SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END) as lmi_tract_amount,
+            COUNT(DISTINCT CAST(a.geoid5 AS STRING)) as total_tracts,
+            SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
+            SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_loan_amount,
+            -- LMI tract loans: sum low_income_loans + moderate_income_loans
+            SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
+            SUM(COALESCE(a.lmi_tract_amount, 0)) as lmi_tract_amount,
             -- LMI borrower metrics (not available - small business data doesn't have borrower income)
             0 as lmi_borrower_loans,
             0 as lmi_borrower_amount,
             -- Calculate percentages
-            SAFE_DIVIDE(SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END), SUM(loan_count)) * 100 as pct_loans_to_lmi_tracts,
-            SAFE_DIVIDE(SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END), SUM(loan_amount)) * 100 as pct_dollars_to_lmi_tracts,
-            0 as pct_loans_to_lmi_borrowers
-        FROM county_data
+            SAFE_DIVIDE(
+                SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)),
+                SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0))
+            ) * 100 as pct_loans_to_lmi_tracts,
+            SAFE_DIVIDE(
+                SUM(COALESCE(a.lmi_tract_amount, 0)),
+                SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0))
+            ) * 100 as pct_dollars_to_lmi_tracts,
+            0 as pct_loans_to_lmi_borrowers,
+            -- Income category breakdowns - counts
+            SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
+            SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
+            0 as middle_income_loans,
+            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
+            -- Income category breakdowns - amounts
+            SUM(COALESCE(a.low_income_amount, 0)) as low_income_amount,
+            SUM(COALESCE(a.moderate_income_amount, 0)) as moderate_income_amount,
+            0 as middle_income_amount,
+            SUM(COALESCE(a.midu_income_amount, 0)) as upper_income_amount
+        FROM `{self.project_id}.bizsight.sb_county_summary` a
+        JOIN `{self.project_id}.shared.cbsa_to_county` g
+            ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
+        WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
+            {year_filter}
         """
 
         return self.query(sql)
@@ -516,56 +510,36 @@ class BigQueryClient:
         """
         state_fips_padded = str(state_fips).zfill(2)
 
+        # Use pre-computed columns directly instead of deriving from income_group_total
         sql = f"""
-        WITH county_data AS (
-            SELECT
-                a.*,
-                COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
-                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total
-                -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
-                CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
-                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
-                    WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
-                    WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
-                    ELSE 0
-                END as income_level,
-                -- LMI flag for direct use
-                CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
-                    ELSE 0
-                END as is_lmi
-            FROM `{self.project_id}.bizsight.sb_county_summary` a
-            JOIN `{self.project_id}.shared.cbsa_to_county` g
-                ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
-            WHERE SUBSTR(LPAD(CAST(g.geoid5 AS STRING), 5, '0'), 1, 2) = '{state_fips_padded}'
-                AND CAST(a.year AS INT64) = {year}
-        )
         SELECT
-            SUM(loan_count) as total_loans,
-            SUM(loan_amount) as total_amount,
-            -- LMI tract loans (using is_lmi flag)
-            SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END) as lmi_tract_amount,
-            -- Income category breakdowns by number of loans
-            SUM(CASE WHEN income_level = 1 THEN loan_count ELSE 0 END) as low_income_loans,
-            SUM(CASE WHEN income_level = 2 THEN loan_count ELSE 0 END) as moderate_income_loans,
-            SUM(CASE WHEN income_level = 3 THEN loan_count ELSE 0 END) as middle_income_loans,
-            SUM(CASE WHEN income_level = 4 THEN loan_count ELSE 0 END) as upper_income_loans,
-            -- Income category breakdowns by loan amount
-            SUM(CASE WHEN income_level = 1 THEN loan_amount ELSE 0 END) as low_income_amount,
-            SUM(CASE WHEN income_level = 2 THEN loan_amount ELSE 0 END) as moderate_income_amount,
-            SUM(CASE WHEN income_level = 3 THEN loan_amount ELSE 0 END) as middle_income_amount,
-            SUM(CASE WHEN income_level = 4 THEN loan_amount ELSE 0 END) as upper_income_amount,
-            SUM(COALESCE(num_under_100k, 0)) as num_under_100k,
-            SUM(COALESCE(num_100k_250k, 0)) as num_100k_250k,
-            SUM(COALESCE(num_250k_1m, 0)) as num_250k_1m,
-            SUM(COALESCE(amt_under_100k, 0)) as amt_under_100k,
-            SUM(COALESCE(amt_250k_1m, 0)) as amt_250k_1m,
-            SUM(COALESCE(numsb_under_1m, 0)) as numsb_under_1m,
-            SUM(COALESCE(amtsb_under_1m, 0)) as amtsb_under_1m
-        FROM county_data
+            SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
+            SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_amount,
+            -- LMI tract loans/amounts
+            SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
+            SUM(COALESCE(a.lmi_tract_amount, 0)) as lmi_tract_amount,
+            -- Income category breakdowns - counts
+            SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
+            SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
+            0 as middle_income_loans,
+            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
+            -- Income category breakdowns - amounts
+            SUM(COALESCE(a.low_income_amount, 0)) as low_income_amount,
+            SUM(COALESCE(a.moderate_income_amount, 0)) as moderate_income_amount,
+            0 as middle_income_amount,
+            SUM(COALESCE(a.midu_income_amount, 0)) as upper_income_amount,
+            SUM(COALESCE(a.num_under_100k, 0)) as num_under_100k,
+            SUM(COALESCE(a.num_100k_250k, 0)) as num_100k_250k,
+            SUM(COALESCE(a.num_250k_1m, 0)) as num_250k_1m,
+            SUM(COALESCE(a.amt_under_100k, 0)) as amt_under_100k,
+            SUM(COALESCE(a.amt_250k_1m, 0)) as amt_250k_1m,
+            SUM(COALESCE(a.numsbrev_under_1m, 0)) as numsb_under_1m,
+            SUM(COALESCE(a.amtsbrev_under_1m, 0)) as amtsb_under_1m
+        FROM `{self.project_id}.bizsight.sb_county_summary` a
+        JOIN `{self.project_id}.shared.cbsa_to_county` g
+            ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
+        WHERE SUBSTR(LPAD(CAST(g.geoid5 AS STRING), 5, '0'), 1, 2) = '{state_fips_padded}'
+            AND CAST(a.year AS INT64) = {year}
         """
 
         return self.query(sql)
@@ -581,52 +555,31 @@ class BigQueryClient:
             Query job result with national-level statistics
         """
         sql = f"""
-        WITH county_data AS (
-            SELECT
-                a.*,
-                COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) as loan_count,
-                COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) as loan_amount,
-                -- Derive income level from income_group_total
-                -- Note: Single-digit codes are zero-padded (001, 002, etc.) in the database
-                CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
-                    WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
-                    WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
-                    WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
-                    ELSE 0
-                END as income_level,
-                -- LMI flag for direct use
-                CASE
-                    WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
-                    ELSE 0
-                END as is_lmi
-            FROM `{self.project_id}.bizsight.sb_county_summary` a
-            WHERE CAST(a.year AS INT64) = {year}
-        )
         SELECT
-            SUM(loan_count) as total_loans,
-            SUM(loan_amount) as total_amount,
-            -- LMI tract loans (using is_lmi flag)
-            SUM(CASE WHEN is_lmi = 1 THEN loan_count ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN is_lmi = 1 THEN loan_amount ELSE 0 END) as lmi_tract_amount,
-            -- Income category breakdowns by number of loans
-            SUM(CASE WHEN income_level = 1 THEN loan_count ELSE 0 END) as low_income_loans,
-            SUM(CASE WHEN income_level = 2 THEN loan_count ELSE 0 END) as moderate_income_loans,
-            SUM(CASE WHEN income_level = 3 THEN loan_count ELSE 0 END) as middle_income_loans,
-            SUM(CASE WHEN income_level = 4 THEN loan_count ELSE 0 END) as upper_income_loans,
-            -- Income category breakdowns by loan amount
-            SUM(CASE WHEN income_level = 1 THEN loan_amount ELSE 0 END) as low_income_amount,
-            SUM(CASE WHEN income_level = 2 THEN loan_amount ELSE 0 END) as moderate_income_amount,
-            SUM(CASE WHEN income_level = 3 THEN loan_amount ELSE 0 END) as middle_income_amount,
-            SUM(CASE WHEN income_level = 4 THEN loan_amount ELSE 0 END) as upper_income_amount,
-            SUM(COALESCE(num_under_100k, 0)) as num_under_100k,
-            SUM(COALESCE(num_100k_250k, 0)) as num_100k_250k,
-            SUM(COALESCE(num_250k_1m, 0)) as num_250k_1m,
-            SUM(COALESCE(amt_under_100k, 0)) as amt_under_100k,
-            SUM(COALESCE(amt_250k_1m, 0)) as amt_250k_1m,
-            SUM(COALESCE(numsb_under_1m, 0)) as numsb_under_1m,
-            SUM(COALESCE(amtsb_under_1m, 0)) as amtsb_under_1m
-        FROM county_data
+            SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
+            SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_amount,
+            -- LMI tract loans/amounts
+            SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
+            SUM(COALESCE(a.lmi_tract_amount, 0)) as lmi_tract_amount,
+            -- Income category breakdowns - counts
+            SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
+            SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
+            0 as middle_income_loans,
+            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
+            -- Income category breakdowns - amounts
+            SUM(COALESCE(a.low_income_amount, 0)) as low_income_amount,
+            SUM(COALESCE(a.moderate_income_amount, 0)) as moderate_income_amount,
+            0 as middle_income_amount,
+            SUM(COALESCE(a.midu_income_amount, 0)) as upper_income_amount,
+            SUM(COALESCE(a.num_under_100k, 0)) as num_under_100k,
+            SUM(COALESCE(a.num_100k_250k, 0)) as num_100k_250k,
+            SUM(COALESCE(a.num_250k_1m, 0)) as num_250k_1m,
+            SUM(COALESCE(a.amt_under_100k, 0)) as amt_under_100k,
+            SUM(COALESCE(a.amt_250k_1m, 0)) as amt_250k_1m,
+            SUM(COALESCE(a.numsbrev_under_1m, 0)) as numsb_under_1m,
+            SUM(COALESCE(a.amtsbrev_under_1m, 0)) as amtsb_under_1m
+        FROM `{self.project_id}.bizsight.sb_county_summary` a
+        WHERE CAST(a.year AS INT64) = {year}
         """
 
         return self.query(sql)

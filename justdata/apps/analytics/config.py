@@ -13,7 +13,7 @@ class AnalyticsConfig:
     APP_DESCRIPTION = "Internal analytics dashboard for JustData usage patterns"
 
     # BigQuery configuration
-    BIGQUERY_PROJECT = os.environ.get('GCP_PROJECT_ID', 'justdata-ncrc')
+    BIGQUERY_PROJECT = os.environ.get('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
     ANALYTICS_DATASET = 'firebase_analytics'
 
     # Firebase configuration

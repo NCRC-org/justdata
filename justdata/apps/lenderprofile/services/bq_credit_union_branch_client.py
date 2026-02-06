@@ -22,7 +22,7 @@ class BigQueryCreditUnionBranchClient:
         Args:
             project_id: GCP project ID (defaults to environment variable)
         """
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+        self.project_id = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         self.client = None
     
     def _get_client(self):

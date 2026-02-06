@@ -141,6 +141,7 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
         all_results = []
         total_queries = len(clarified_counties) * len(years)
         query_index = 0
+        query_errors = []  # Track errors to surface meaningful messages
 
         for county in clarified_counties:
             for year in years:
@@ -156,11 +157,23 @@ def run_analysis(counties_str: str, years_str: str, run_id: str = None, progress
                         progress_tracker.update_query_progress(query_index, total_queries)
 
                 except Exception as e:
-                    print(f"    Error querying {county} {year}: {e}")
+                    error_str = str(e)
+                    print(f"    Error querying {county} {year}: {error_str}")
+                    query_errors.append(error_str)
                     query_index += 1
                     continue
 
+        # If all queries failed, surface the error instead of "no data found"
         if not all_results:
+            # Check for permission errors (403)
+            if query_errors:
+                if any('403' in err or 'Access Denied' in err for err in query_errors):
+                    return {'success': False, 'error': 'Data access temporarily unavailable. Please try again later or contact support.'}
+                # Return the first unique error
+                unique_errors = list(set(query_errors))
+                if len(unique_errors) == 1:
+                    return {'success': False, 'error': f'Query error: {unique_errors[0]}'}
+                return {'success': False, 'error': f'Multiple query errors occurred. First error: {query_errors[0]}'}
             return {'success': False, 'error': 'No data found for the specified parameters'}
 
         # Build report

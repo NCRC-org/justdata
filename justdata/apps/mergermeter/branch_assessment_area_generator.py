@@ -14,7 +14,7 @@ import os
 
 # Get PROJECT_ID - handle both relative and absolute imports
 # PROJECT_ID is also available via environment variable
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 # Try to import from config if available (for consistency with other modules)
 try:
     import sys

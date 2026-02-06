@@ -105,6 +105,23 @@ const STATE_NAMES = {
     'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
 };
 
+// State FIPS code to full name mapping (2-digit FIPS codes)
+const STATE_FIPS_TO_NAME = {
+    '01': 'Alabama', '02': 'Alaska', '04': 'Arizona', '05': 'Arkansas',
+    '06': 'California', '08': 'Colorado', '09': 'Connecticut', '10': 'Delaware',
+    '11': 'District of Columbia', '12': 'Florida', '13': 'Georgia', '15': 'Hawaii',
+    '16': 'Idaho', '17': 'Illinois', '18': 'Indiana', '19': 'Iowa',
+    '20': 'Kansas', '21': 'Kentucky', '22': 'Louisiana', '23': 'Maine',
+    '24': 'Maryland', '25': 'Massachusetts', '26': 'Michigan', '27': 'Minnesota',
+    '28': 'Mississippi', '29': 'Missouri', '30': 'Montana', '31': 'Nebraska',
+    '32': 'Nevada', '33': 'New Hampshire', '34': 'New Jersey', '35': 'New Mexico',
+    '36': 'New York', '37': 'North Carolina', '38': 'North Dakota', '39': 'Ohio',
+    '40': 'Oklahoma', '41': 'Oregon', '42': 'Pennsylvania', '44': 'Rhode Island',
+    '45': 'South Carolina', '46': 'South Dakota', '47': 'Tennessee', '48': 'Texas',
+    '49': 'Utah', '50': 'Vermont', '51': 'Virginia', '53': 'Washington',
+    '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming', '72': 'Puerto Rico'
+};
+
 // State center coordinates
 const STATE_CENTERS = {
     'Alabama': { lat: 32.806671, lng: -86.791130 },
@@ -649,18 +666,72 @@ function aggregateByCounty(data) {
  * Format county name with state
  */
 function formatCountyName(countyName, state) {
-    if (!countyName) return state || 'Unknown';
+    if (!countyName) return getFullStateName(state) || 'Unknown';
 
-    const statePattern = new RegExp(',\\s*' + state + '$', 'i');
+    // Convert state to full name (handles abbreviations, FIPS codes, and full names)
+    const fullStateName = getFullStateName(state);
+
+    // Check if county name already ends with a valid state name
+    const statePattern = new RegExp(',\\s*(' + fullStateName + '|' + state + ')$', 'i');
     if (state && statePattern.test(countyName)) {
+        // Replace abbreviation/FIPS with full name if needed
+        if (fullStateName && countyName.match(/, [A-Z]{2}$|, \d{2}$/)) {
+            return countyName.replace(/, [A-Z]{2}$|, \d{2}$/, ', ' + fullStateName);
+        }
         return countyName;
     }
 
-    if (countyName.includes(', ') && countyName.match(/, [A-Z]{2}$/)) {
-        return countyName;
+    // If county name ends with 2-letter abbrev, convert to full name
+    if (countyName.match(/, [A-Z]{2}$/)) {
+        const abbrev = countyName.slice(-2);
+        const stateName = STATE_NAMES[abbrev];
+        if (stateName) {
+            return countyName.slice(0, -2) + stateName;
+        }
     }
 
-    return state ? countyName + ', ' + state : countyName;
+    // If county name ends with 2-digit FIPS, convert to full name
+    if (countyName.match(/, \d{2}$/)) {
+        const fips = countyName.slice(-2);
+        const stateName = STATE_FIPS_TO_NAME[fips];
+        if (stateName) {
+            return countyName.slice(0, -2) + stateName;
+        }
+    }
+
+    return fullStateName ? countyName + ', ' + fullStateName : countyName;
+}
+
+/**
+ * Convert state identifier to full state name
+ * Handles: 2-letter abbreviation (CA), FIPS code (06), or full name (California)
+ */
+function getFullStateName(state) {
+    if (!state) return null;
+
+    // Already a full state name (check if it's a known state)
+    if (Object.values(STATE_NAMES).includes(state) || Object.values(STATE_FIPS_TO_NAME).includes(state)) {
+        return state;
+    }
+
+    // Check if it's a 2-letter abbreviation
+    if (STATE_NAMES[state]) {
+        return STATE_NAMES[state];
+    }
+
+    // Check if it's a 2-digit FIPS code
+    if (STATE_FIPS_TO_NAME[state]) {
+        return STATE_FIPS_TO_NAME[state];
+    }
+
+    // Check if it's a FIPS code without leading zero (e.g., "6" for California)
+    const paddedFips = state.toString().padStart(2, '0');
+    if (STATE_FIPS_TO_NAME[paddedFips]) {
+        return STATE_FIPS_TO_NAME[paddedFips];
+    }
+
+    // Return original if no match (might be a partial state name or typo)
+    return state;
 }
 
 /**

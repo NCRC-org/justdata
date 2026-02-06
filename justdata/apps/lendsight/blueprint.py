@@ -17,6 +17,9 @@ from pathlib import Path
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required, get_current_user
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.analysis_cache import get_cached_result, store_cached_result, log_usage, generate_cache_key, get_analysis_result_by_job_id
+
+# In-memory fallback for when BigQuery cache store fails
+_result_fallback = {}
 from justdata.shared.utils.bigquery_client import escape_sql_string
 from justdata.core.config.app_config import LendSightConfig
 from .core import run_analysis, parse_web_parameters
@@ -414,7 +417,7 @@ def analyze():
                         'census_data': result.get('metadata', {}).get('census_data', None),
                         'generated_at': datetime.now().isoformat()
                     }
-                    
+
                     store_cached_result(
                         app_name='lendsight',
                         params=cache_params,
@@ -423,11 +426,14 @@ def analyze():
                         user_type=user_type,
                         metadata=metadata
                     )
+                    progress_tracker.complete(success=True)
                 except Exception as cache_error:
-                    print(f"Warning: Failed to store in cache: {cache_error}")
-                
-                # Mark analysis as completed
-                progress_tracker.complete(success=True)
+                    print(f"WARNING: Failed to store in BigQuery cache: {cache_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Store result in-memory fallback so user can still see results
+                    _result_fallback[job_id] = result
+                    progress_tracker.complete(success=True)
                 
                 # Log usage (cache miss, new analysis)
                 response_time_ms = int((time_module.time() - start_time) * 1000)
@@ -539,8 +545,11 @@ def report_data():
                 'error': 'No analysis session found. Please run an analysis first.'
             }), 400
         
-        # Retrieve from BigQuery only (no in-memory storage)
+        # Retrieve from BigQuery cache, with in-memory fallback
         analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.pop(job_id)
+            print(f"[INFO] Using in-memory fallback for job_id={job_id}")
         if not analysis_result:
             # Check progress to see if analysis is still running
             progress = get_progress(job_id)
@@ -628,8 +637,11 @@ def download():
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400
         
-        # Retrieve from BigQuery only (no in-memory storage)
+        # Retrieve from BigQuery cache, with in-memory fallback
         analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.get(job_id)
+            print(f"[INFO] Using in-memory fallback for download job_id={job_id}")
         if not analysis_result:
             return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 400
         
@@ -696,7 +708,8 @@ def counties():
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
         
-        client = get_bigquery_client(LendSightConfig.PROJECT_ID)
+        # Use justdata-ncrc project with lendsight credentials
+        client = get_bigquery_client(project_id='justdata-ncrc', app_name='lendsight')
         query = """
         SELECT DISTINCT county_state
         FROM `justdata-ncrc.shared.cbsa_to_county`
@@ -757,7 +770,8 @@ def counties_by_state(state_code):
         state_code = unquote(str(state_code)).strip()
         print(f"[DEBUG] lendsight/counties-by-state called with state_code: '{state_code}'")
 
-        client = get_bigquery_client(LendSightConfig.PROJECT_ID)
+        # Use justdata-ncrc project with lendsight credentials
+        client = get_bigquery_client(project_id='justdata-ncrc', app_name='lendsight')
 
         # Check if state_code is a numeric FIPS code (2 digits) or a state name
         is_numeric_code = state_code.isdigit() and len(state_code) <= 2
@@ -766,13 +780,14 @@ def counties_by_state(state_code):
             # Use geoid5 to match by state FIPS code (first 2 digits of geoid5)
             state_code_padded = state_code.zfill(2)
             print(f"[DEBUG] Using state FIPS code: {state_code_padded}")
+            # Use justdata-ncrc for shared tables (cbsa_to_county is always in justdata-ncrc)
             query = f"""
             SELECT DISTINCT
                 county_state,
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{LendSightConfig.PROJECT_ID}.shared.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE geoid5 IS NOT NULL
                 AND SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) = '{state_code_padded}'
                 AND county_state IS NOT NULL
@@ -783,13 +798,14 @@ def counties_by_state(state_code):
             # Use state name to match
             print(f"[DEBUG] Using state name: {state_code}")
             escaped_state_code = escape_sql_string(state_code)
+            # Use justdata-ncrc for shared tables (cbsa_to_county is always in justdata-ncrc)
             query = f"""
             SELECT DISTINCT
                 county_state,
                 geoid5,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 1, 2) as state_fips,
                 SUBSTR(LPAD(CAST(geoid5 AS STRING), 5, '0'), 3, 3) as county_fips
-            FROM `{LendSightConfig.PROJECT_ID}.shared.cbsa_to_county`
+            FROM `justdata-ncrc.shared.cbsa_to_county`
             WHERE LOWER(TRIM(SPLIT(county_state, ',')[SAFE_OFFSET(1)])) = LOWER('{escaped_state_code}')
                 AND county_state IS NOT NULL
                 AND TRIM(county_state) != ''
@@ -848,7 +864,8 @@ def years():
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
         
-        client = get_bigquery_client(LendSightConfig.PROJECT_ID)
+        # Use justdata-ncrc project with lendsight credentials
+        client = get_bigquery_client(project_id='justdata-ncrc', app_name='lendsight')
         # Query HMDA table for available years (using activity_year field)
         query = """
         SELECT DISTINCT CAST(activity_year AS INT64) as year

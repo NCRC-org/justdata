@@ -27,9 +27,13 @@ if os.path.exists(BRANCHSIGHT_STATIC_DIR):
 else:
     STATIC_DIR = SHARED_STATIC_DIR
 
-# Ensure output directory exists
+# Ensure output directory exists (with fallback for read-only Cloud Run filesystem)
 OUTPUT_DIR = os.path.join(DATA_DIR, 'reports')
-os.makedirs(OUTPUT_DIR, exist_ok=True)
+try:
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+except (PermissionError, OSError):
+    OUTPUT_DIR = os.path.join('/tmp', 'branchsight_reports')
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # AI Configuration
 AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")  # Options: "gpt-4", "claude"
@@ -39,7 +43,7 @@ GPT_MODEL = "gpt-4"
 # BigQuery Configuration - Use JUSTDATA_PROJECT_ID since tables are in justdata-ncrc
 PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')  # New optimized project
-DATASET_ID = "branches"
+DATASET_ID = "branchsight"
 TABLE_ID = "sod"
 
 # Report Configuration

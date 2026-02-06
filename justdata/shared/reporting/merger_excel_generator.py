@@ -415,7 +415,78 @@ def _create_notes_sheet(
 
     ws.cell(row, 1, "Baseline Years for Goals Calculations:")
     ws.cell(row, 2, f"Baseline formulas use data from years {hmda_years_str} (2-year average).")
+    row += 2
+
+    # Small Business Methodology Section
+    ws.cell(row, 1, "Small Business Lending Methodology")
+    ws.cell(row, 1).font = Font(bold=True, size=12)
     row += 1
+
+    ws.cell(row, 1, "Data Source:")
+    ws.cell(row, 2, "FFIEC CRA Small Business Loan Data (loans under $1 million to businesses with revenues under $1 million)")
+    row += 1
+
+    ws.cell(row, 1, "Goal Calculation Formula:")
+    row += 1
+
+    ws.cell(row, 1, "  1. Baseline:")
+    ws.cell(row, 2, "Sum of loans/amounts from the baseline years (e.g., 2022-2023)")
+    row += 1
+
+    ws.cell(row, 1, "  2. Annualize:")
+    ws.cell(row, 2, "Baseline / Number of years = Annual average")
+    row += 1
+
+    ws.cell(row, 1, "  3. Apply Improvement:")
+    ws.cell(row, 2, "Annual average x (1 + Improvement %) = Target annual amount")
+    row += 1
+
+    ws.cell(row, 1, "  4. Calculate Goal:")
+    ws.cell(row, 2, "Target annual amount x Agreement length (years) = Goal")
+    row += 1
+
+    ws.cell(row, 1, "Example Calculation:")
+    ws.cell(row, 2, "If baseline = 1,000 loans over 2 years, improvement = 5%, agreement = 5 years:")
+    row += 1
+
+    ws.cell(row, 1, "")
+    ws.cell(row, 2, "Annual avg = 1,000/2 = 500 loans/year")
+    row += 1
+
+    ws.cell(row, 1, "")
+    ws.cell(row, 2, "With 5% increase = 500 x 1.05 = 525 loans/year")
+    row += 1
+
+    ws.cell(row, 1, "")
+    ws.cell(row, 2, "5-Year Goal = 525 x 5 = 2,625 loans")
+    row += 1
+
+    ws.cell(row, 1, "SB Metrics Included:")
+    row += 1
+
+    ws.cell(row, 1, "  - Total SB Loans:")
+    ws.cell(row, 2, "All small business loans originated in assessment areas")
+    row += 1
+
+    ws.cell(row, 1, "  - SB LMI Tract Loans:")
+    ws.cell(row, 2, "Loans in low-to-moderate income census tracts (tract income <80% of area median)")
+    row += 1
+
+    ws.cell(row, 1, "  - SB Minority Tract Loans:")
+    ws.cell(row, 2, "Loans in census tracts where minority population exceeds 50%")
+    row += 1
+
+    ws.cell(row, 1, "Important Caveats:")
+    row += 1
+
+    ws.cell(row, 1, "  - Only banks with assets > $1.564B are required to report CRA SB data")
+    row += 1
+
+    ws.cell(row, 1, "  - SB data is reported by Respondent ID (RSSD), which may differ from the HMDA LEI")
+    row += 1
+
+    ws.cell(row, 1, "  - Goals are calculated for assessment areas where BOTH banks have operations")
+    row += 2
 
     ws.cell(row, 1, "Excel Format:")
     ws.cell(row, 2, "Null/missing values displayed as '--'. All calculations use raw decimal percentages.")
@@ -682,8 +753,10 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                     ws.cell(row, 6, f'=D{row}-E{row}')
 
                 # Apply number formatting based on metric
-                if 'Avg' in metric or '$' in metric:
-                    # Dollar format for average amounts
+                # Note: Only 'Avg' metrics are dollar amounts. "Loans Rev Under $1m" is a count
+                # (the $1m refers to the revenue threshold, not the format)
+                if 'Avg' in metric:
+                    # Dollar format for average amounts only
                     for col in [3, 4, 5, 6]:
                         ws.cell(row, col).number_format = '$#,##0'
                 else:
@@ -722,8 +795,9 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                         ws.cell(row, 6, f'=D{row}-E{row}')
 
                     # Apply number formatting based on metric
-                    if 'Avg' in metric or '$' in metric:
-                        # Dollar format for average amounts
+                    # Note: Only 'Avg' metrics are dollar amounts. "Loans Rev Under $1m" is a count
+                    if 'Avg' in metric:
+                        # Dollar format for average amounts only
                         for col in [3, 4, 5, 6]:
                             ws.cell(row, col).number_format = '$#,##0'
                     else:
@@ -882,16 +956,18 @@ def _create_sb_data_sheet(
         _write_sb_metric_new_format(ws, row, 3, metric, grand_total)
         if peer_grand_total:
             _write_sb_metric_new_format(ws, row, 4, metric, peer_grand_total)
-        # Difference column - show "--" for SB Loans, calculate difference for others
+        # Difference column - show "--" for SB Loans, percentage point diff for count metrics, dollar diff for averages
         if metric == 'SB Loans':
             ws.cell(row, 5, '--')
-        else:
+        elif metric in ['#LMICT', 'Loans Rev Under $1m']:
+            # Percentage point difference: (Bank count / Bank SB Loans) - (Peer count / Peer SB Loans)
+            sb_loans_row = row - metrics.index(metric)
+            diff_cell = ws.cell(row, 5, f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)')
+            diff_cell.number_format = '0.00%'
+        elif 'Avg' in metric:
+            # Dollar difference for average amounts
             diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
-            # Apply dollar format for average amount metrics
-            if 'Avg' in metric:
-                diff_cell.number_format = '$#,##0'
-            else:
-                diff_cell.number_format = '#,##0'
+            diff_cell.number_format = '$#,##0'
         row += 1
 
     # Write CBSA-level data
@@ -915,14 +991,18 @@ def _create_sb_data_sheet(
                 _write_sb_metric_new_format(ws, row, 3, metric, cbsa_total)
                 if peer_cbsa_total:
                     _write_sb_metric_new_format(ws, row, 4, metric, peer_cbsa_total)
+                # Difference column - show "--" for SB Loans, percentage point diff for count metrics, dollar diff for averages
                 if metric == 'SB Loans':
                     ws.cell(row, 5, '--')
-                else:
+                elif metric in ['#LMICT', 'Loans Rev Under $1m']:
+                    # Percentage point difference: (Bank count / Bank SB Loans) - (Peer count / Peer SB Loans)
+                    sb_loans_row = row - metrics.index(metric)
+                    diff_cell = ws.cell(row, 5, f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)')
+                    diff_cell.number_format = '0.00%'
+                elif 'Avg' in metric:
+                    # Dollar difference for average amounts
                     diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
-                    if 'Avg' in metric:
-                        diff_cell.number_format = '$#,##0'
-                    else:
-                        diff_cell.number_format = '#,##0'
+                    diff_cell.number_format = '$#,##0'
                 row += 1
 
     # Adjust column widths

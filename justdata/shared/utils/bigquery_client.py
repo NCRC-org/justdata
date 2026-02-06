@@ -11,6 +11,7 @@ import os
 import json
 import tempfile
 import logging
+import concurrent.futures
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from typing import List, Dict, Any, Optional
@@ -125,10 +126,12 @@ def _get_credentials_from_env(app_name: Optional[str] = None) -> Optional[tuple]
     env_var_names = []
     
     # If app_name is provided, check for app-specific credentials first
+    # Check both naming conventions: {APP}_CREDENTIALS_JSON and {APP}_BIGQUERY_CREDENTIALS_JSON
     if app_name:
         app_name_upper = app_name.upper()
         if app_name_upper in VALID_APP_NAMES:
             env_var_names.append(f"{app_name_upper}_CREDENTIALS_JSON")
+            env_var_names.append(f"{app_name_upper}_BIGQUERY_CREDENTIALS_JSON")
     
     # Then check shared/fallback credentials
     env_var_names.extend([
@@ -208,7 +211,7 @@ def get_bigquery_client(project_id: str = None, app_name: str = None):
         
         # Get project ID from env if not provided
         if not project_id:
-            project_id = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+            project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         
         # Try to get credentials from environment variables
         cred_result = _get_credentials_from_env(app_name_key)
@@ -313,14 +316,17 @@ def execute_query(client: bigquery.Client, sql: str, timeout: int = 120) -> List
         # Wait for results with timeout
         try:
             results = query_job.result(timeout=timeout)
-        except Exception as timeout_error:
-            # Try to cancel the job if it times out
+        except concurrent.futures.TimeoutError as timeout_error:
+            # Only catch actual timeouts, not query errors
             try:
                 query_job.cancel()
                 logger.warning("Query cancelled due to timeout")
             except:
                 pass
             raise Exception(f"Query timed out after {timeout} seconds: {timeout_error}")
+        except Exception as query_error:
+            # Re-raise query errors (syntax, missing tables, etc.) with their real message
+            raise Exception(f"BigQuery query error: {query_error}")
         
         # Convert to list of dictionaries
         data = [dict(row.items()) for row in results]

@@ -15,7 +15,7 @@ from google.cloud import bigquery
 from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 # Project and dataset
-PROJECT_ID = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 DATASET_ID = 'cache'
 
 # Table names
@@ -551,8 +551,8 @@ def get_cached_result(app_name: str, params: Dict[str, Any],
     Returns None if cache miss, or dict with 'job_id', 'result_data', 'cache_key' if cache hit.
     """
     cache_key = generate_cache_key(app_name, params)
-    client = get_bigquery_client(PROJECT_ID)
-    
+    client = get_bigquery_client(PROJECT_ID, app_name=app_name)
+
     # Check cache
     cache_query = f"""
     SELECT 
@@ -690,8 +690,8 @@ def get_analysis_result_by_job_id(job_id: str) -> Optional[Dict[str, Any]]:
     Returns None if not found, or dict with 'report_data', 'ai_insights', 'metadata' if found.
     This is the primary method for retrieving results - BigQuery-only, no in-memory storage.
     """
-    client = get_bigquery_client(PROJECT_ID)
-    
+    client = get_bigquery_client(PROJECT_ID, app_name='cache')
+
     # Query BigQuery for this job_id
     query = f"""
     SELECT 
@@ -895,7 +895,7 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
     """
     cache_key = generate_cache_key(app_name, params)
     normalized_params = normalize_parameters(app_name, params)
-    client = get_bigquery_client(PROJECT_ID)
+    client = get_bigquery_client(PROJECT_ID, app_name=app_name)
 
     # Delete any existing cache entry with the same cache_key (for force_refresh scenarios)
     # This also requires deleting associated results and sections to maintain referential integrity
@@ -1034,13 +1034,10 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
     )
     
     try:
-        # Insert cache entry
-        client.query(cache_insert, job_config=job_config_cache).result()
-        
-        # Insert result summary
-        client.query(results_insert, job_config=job_config_results).result()
-        
-        # Insert each section
+        # IMPORTANT: Insert sections FIRST, before the results row.
+        # The results row has status='completed' which makes data visible to the
+        # report-data endpoint. If we insert results first, the frontend can query
+        # via LEFT JOIN and get partial data before all sections are stored.
         print(f"[DEBUG] Storing {len(sections)} sections to BigQuery...")
         for idx, section in enumerate(sections):
             section_id = str(uuid.uuid4())
@@ -1050,10 +1047,10 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
              section_data, section_metadata, display_order, created_at, updated_at)
             VALUES
             (@section_id, @job_id, @app_name, @section_type, @section_name, @section_category,
-             PARSE_JSON(@section_data), PARSE_JSON(@section_metadata), @display_order, 
+             PARSE_JSON(@section_data), PARSE_JSON(@section_metadata), @display_order,
              CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP())
             """
-            
+
             section_config = bigquery.QueryJobConfig(
                 query_parameters=[
                     bigquery.ScalarQueryParameter("section_id", "STRING", section_id),
@@ -1067,13 +1064,19 @@ def store_cached_result(app_name: str, params: Dict[str, Any],
                     bigquery.ScalarQueryParameter("display_order", "INT64", section.get('display_order', 0)),
                 ]
             )
-            
+
             try:
                 client.query(section_insert, job_config=section_config).result()
                 print(f"  [OK] Stored section {idx+1}/{len(sections)}: {section['section_name']}")
             except Exception as section_error:
                 print(f"  [ERROR] Failed to store section {section['section_name']}: {section_error}")
                 raise
+
+        # Now insert result summary (with status='completed') - all sections exist at this point
+        client.query(results_insert, job_config=job_config_results).result()
+
+        # Insert cache entry last (maps cache_key -> job_id for cache lookups)
+        client.query(cache_insert, job_config=job_config_cache).result()
 
         print(f"[OK] Stored cache entry, result summary, and {len(sections)} sections for job_id: {job_id}")
 
@@ -1115,9 +1118,9 @@ def log_usage(user_type: str, app_name: str, params: Dict[str, Any],
     """
     if request_id is None:
         request_id = str(uuid.uuid4())
-    
-    client = get_bigquery_client(PROJECT_ID)
-    
+
+    client = get_bigquery_client(PROJECT_ID, app_name=app_name)
+
     costs = costs or {}
     
     insert_query = f"""
