@@ -1350,9 +1350,10 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         print(f"DEBUG: top_lenders_table length: {len(result['top_lenders_table'])}")
         print(f"{'='*80}\n")
         
+        # The blueprint.py will call progress_tracker.complete() AFTER storing results to BigQuery
         if progress_tracker:
-            progress_tracker.complete(success=True)
-        
+            progress_tracker.update_progress('saving', 95, 'Saving results...')
+
         return result
         
     except Exception as e:
