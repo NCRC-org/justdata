@@ -228,9 +228,9 @@ class BigQueryClient:
             year_list = ", ".join(str(y) for y in years)
             year_filter = f"AND CAST(a.year AS INT64) IN ({year_list})"
         
-        # Note: bizsight.sb_county_summary is county-level data (geoid5), not tract-level
-        # Each row has income_group_total (101/102/103/104) identifying the tract income category
-        # We derive income_level, income_category, and is_lmi_tract from income_group_total
+        # Note: bizsight.sb_county_summary has pre-computed income columns per row:
+        # low_income_loans, moderate_income_loans, midu_income_loans (mid+upper combined)
+        # Each row = one lender in one county for one year, with all income breakdowns as columns
         sql = f"""
         SELECT
             a.*,
@@ -253,27 +253,8 @@ class BigQueryClient:
             NULL as tract_asian_percent,
             NULL as tract_other_race_percent,
             NULL as tract_minority_population_percent,
-            -- Income category derived from income_group_total
-            CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 'Low Income'
-                WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 'Moderate Income'
-                WHEN CAST(a.income_group_total AS STRING) = '103' THEN 'Middle Income'
-                WHEN CAST(a.income_group_total AS STRING) = '104' THEN 'Upper Income'
-                ELSE 'Unknown'
-            END as income_category,
-            -- LMI flag derived from income_group_total (low + moderate)
-            CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008') THEN 1
-                ELSE 0
-            END as is_lmi_tract,
-            -- Income level code derived from income_group_total
-            CASE
-                WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005') THEN 1
-                WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008') THEN 2
-                WHEN CAST(a.income_group_total AS STRING) = '103' THEN 3
-                WHEN CAST(a.income_group_total AS STRING) = '104' THEN 4
-                ELSE 0
-            END as income_level
+            -- LMI flag: use low_income_loans + moderate_income_loans (lmi_tract_loans contains zeros)
+            CASE WHEN (COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) > 0 THEN 1 ELSE 0 END as is_lmi_tract
         FROM `{self.project_id}.bizsight.sb_county_summary` a
         JOIN `{self.project_id}.shared.cbsa_to_county` g
             ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
@@ -347,35 +328,24 @@ class BigQueryClient:
             COUNT(DISTINCT CAST(a.geoid5 AS STRING)) as total_tracts,
             SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
             SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_loan_amount,
-            -- LMI tract loans derived from income_group_total (low + moderate)
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as lmi_tract_amount,
+            -- LMI tract loans: sum low_income_loans + moderate_income_loans (lmi_tract_loans column contains zeros)
+            SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
+            0 as lmi_tract_amount,
             -- LMI borrower metrics (not available - small business data doesn't have borrower income)
             0 as lmi_borrower_loans,
             0 as lmi_borrower_amount,
             -- Calculate percentages
             SAFE_DIVIDE(
-                SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                    THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END),
+                SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)),
                 SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0))
             ) * 100 as pct_loans_to_lmi_tracts,
-            SAFE_DIVIDE(
-                SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                    THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END),
-                SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0))
-            ) * 100 as pct_dollars_to_lmi_tracts,
+            0 as pct_dollars_to_lmi_tracts,
             0 as pct_loans_to_lmi_borrowers,
-            -- Income category breakdowns derived from income_group_total
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as low_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as moderate_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '103'
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as middle_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '104'
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as upper_income_loans
+            -- Income category breakdowns (pre-computed in table)
+            SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
+            SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
+            0 as middle_income_loans,
+            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans
         FROM `{self.project_id}.bizsight.sb_county_summary` a
         JOIN `{self.project_id}.shared.cbsa_to_county` g
             ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
@@ -531,29 +501,19 @@ class BigQueryClient:
         SELECT
             SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
             SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_amount,
-            -- LMI tract loans derived from income_group_total
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as lmi_tract_amount,
-            -- Income category breakdowns derived from income_group_total
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as low_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as moderate_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '103'
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as middle_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '104'
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as upper_income_loans,
-            -- Income category breakdowns by loan amount
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005')
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as low_income_amount,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008')
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as moderate_income_amount,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '103'
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as middle_income_amount,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '104'
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as upper_income_amount,
+            -- LMI tract loans: sum low + moderate (lmi_tract_loans column contains zeros)
+            SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
+            0 as lmi_tract_amount,
+            -- Income category breakdowns (pre-computed; midu = mid+upper combined)
+            SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
+            SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
+            0 as middle_income_loans,
+            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
+            -- Income category amounts not available in summary table
+            0 as low_income_amount,
+            0 as moderate_income_amount,
+            0 as middle_income_amount,
+            0 as upper_income_amount,
             SUM(COALESCE(a.num_under_100k, 0)) as num_under_100k,
             SUM(COALESCE(a.num_100k_250k, 0)) as num_100k_250k,
             SUM(COALESCE(a.num_250k_1m, 0)) as num_250k_1m,
@@ -585,29 +545,19 @@ class BigQueryClient:
         SELECT
             SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
             SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_amount,
-            -- LMI tract loans derived from income_group_total
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as lmi_tract_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '102', '001', '002', '003', '004', '005', '006', '007', '008')
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as lmi_tract_amount,
-            -- Income category breakdowns derived from income_group_total
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as low_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008')
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as moderate_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '103'
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as middle_income_loans,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '104'
-                THEN COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0) ELSE 0 END) as upper_income_loans,
-            -- Income category breakdowns by loan amount
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('101', '001', '002', '003', '004', '005')
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as low_income_amount,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) IN ('102', '006', '007', '008')
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as moderate_income_amount,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '103'
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as middle_income_amount,
-            SUM(CASE WHEN CAST(a.income_group_total AS STRING) = '104'
-                THEN COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0) ELSE 0 END) as upper_income_amount,
+            -- LMI tract loans: sum low + moderate (lmi_tract_loans column contains zeros)
+            SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
+            0 as lmi_tract_amount,
+            -- Income category breakdowns (pre-computed; midu = mid+upper combined)
+            SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
+            SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
+            0 as middle_income_loans,
+            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
+            -- Income category amounts not available in summary table
+            0 as low_income_amount,
+            0 as moderate_income_amount,
+            0 as middle_income_amount,
+            0 as upper_income_amount,
             SUM(COALESCE(a.num_under_100k, 0)) as num_under_100k,
             SUM(COALESCE(a.num_100k_250k, 0)) as num_100k_250k,
             SUM(COALESCE(a.num_250k_1m, 0)) as num_250k_1m,

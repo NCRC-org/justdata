@@ -92,11 +92,10 @@ def create_county_summary_table(df: pd.DataFrame, years: List[int]) -> pd.DataFr
         num_total = num_under_100k + num_100k_250k + num_250k_1m
         amt_total = amt_under_100k + amt_100k_250k + amt_250k_1m
         
-        # Calculate LMI Tract percentage
-        if 'is_lmi_tract' in year_data.columns:
-            lmi_mask = (year_data['is_lmi_tract'] == 1) | (year_data['is_lmi_tract'] == True) | (year_data['is_lmi_tract'].astype(str) == '1')
-            lmi_tract_loans = safe_int(year_data[lmi_mask].get('loan_count', pd.Series([0])).sum())
-            lmi_tract_amount = safe_float(year_data[lmi_mask].get('loan_amount', pd.Series([0.0])).sum())
+        # Calculate LMI Tract percentage from pre-computed columns (low + moderate)
+        if 'low_income_loans' in year_data.columns:
+            lmi_tract_loans = safe_int(year_data['low_income_loans'].fillna(0).sum()) + safe_int(year_data['moderate_income_loans'].fillna(0).sum() if 'moderate_income_loans' in year_data.columns else 0)
+            lmi_tract_amount = 0.0  # Amount not available per-income-category in summary table
         else:
             lmi_tract_loans = 0
             lmi_tract_amount = 0.0
@@ -245,14 +244,13 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     num_total = num_under_100k + num_100k_250k + num_250k_1m
     amt_total = amt_under_100k + amt_100k_250k + amt_250k_1m
     
-    # Calculate LMI tract loans
-    if 'is_lmi_tract' in county_2024.columns:
-        lmi_mask = (county_2024['is_lmi_tract'] == 1) | (county_2024['is_lmi_tract'] == True) | (county_2024['is_lmi_tract'].astype(str) == '1')
-        lmi_tract_loans = safe_int(county_2024[lmi_mask].get('loan_count', pd.Series([0])).sum())
+    # Calculate LMI tract loans from pre-computed columns (low + moderate)
+    if 'low_income_loans' in county_2024.columns:
+        lmi_tract_loans = safe_int(county_2024['low_income_loans'].fillna(0).sum()) + safe_int(county_2024['moderate_income_loans'].fillna(0).sum() if 'moderate_income_loans' in county_2024.columns else 0)
     else:
         lmi_tract_loans = 0
     
-    # Calculate income category breakdowns for county 2024
+    # Calculate income category breakdowns for county 2024 from pre-computed columns
     county_low_income_loans = 0
     county_moderate_income_loans = 0
     county_middle_income_loans = 0
@@ -261,37 +259,12 @@ def create_comparison_table(county_df: pd.DataFrame, state_benchmarks: Dict, nat
     county_moderate_income_amount = 0.0
     county_middle_income_amount = 0.0
     county_upper_income_amount = 0.0
-    
-    if 'income_level' in county_2024.columns:
-        low_mask = county_2024['income_level'].fillna(0) == 1
-        moderate_mask = county_2024['income_level'].fillna(0) == 2
-        middle_mask = county_2024['income_level'].fillna(0) == 3
-        upper_mask = county_2024['income_level'].fillna(0) == 4
-        
-        county_low_income_loans = int(county_2024[low_mask].get('loan_count', pd.Series([0])).sum())
-        county_moderate_income_loans = int(county_2024[moderate_mask].get('loan_count', pd.Series([0])).sum())
-        county_middle_income_loans = int(county_2024[middle_mask].get('loan_count', pd.Series([0])).sum())
-        county_upper_income_loans = int(county_2024[upper_mask].get('loan_count', pd.Series([0])).sum())
-        
-        county_low_income_amount = float(county_2024[low_mask].get('loan_amount', pd.Series([0.0])).sum())
-        county_moderate_income_amount = float(county_2024[moderate_mask].get('loan_amount', pd.Series([0.0])).sum())
-        county_middle_income_amount = float(county_2024[middle_mask].get('loan_amount', pd.Series([0.0])).sum())
-        county_upper_income_amount = float(county_2024[upper_mask].get('loan_amount', pd.Series([0.0])).sum())
-    elif 'income_category' in county_2024.columns:
-        low_mask = county_2024['income_category'].str.contains('Low Income', na=False)
-        moderate_mask = county_2024['income_category'].str.contains('Moderate Income', na=False)
-        middle_mask = county_2024['income_category'].str.contains('Middle Income', na=False)
-        upper_mask = county_2024['income_category'].str.contains('Upper Income', na=False)
-        
-        county_low_income_loans = int(county_2024[low_mask].get('loan_count', pd.Series([0])).sum())
-        county_moderate_income_loans = int(county_2024[moderate_mask].get('loan_count', pd.Series([0])).sum())
-        county_middle_income_loans = int(county_2024[middle_mask].get('loan_count', pd.Series([0])).sum())
-        county_upper_income_loans = int(county_2024[upper_mask].get('loan_count', pd.Series([0])).sum())
-        
-        county_low_income_amount = float(county_2024[low_mask].get('loan_amount', pd.Series([0.0])).sum())
-        county_moderate_income_amount = float(county_2024[moderate_mask].get('loan_amount', pd.Series([0.0])).sum())
-        county_middle_income_amount = float(county_2024[middle_mask].get('loan_amount', pd.Series([0.0])).sum())
-        county_upper_income_amount = float(county_2024[upper_mask].get('loan_amount', pd.Series([0.0])).sum())
+
+    if 'low_income_loans' in county_2024.columns:
+        county_low_income_loans = int(county_2024['low_income_loans'].fillna(0).sum())
+        county_moderate_income_loans = int(county_2024['moderate_income_loans'].fillna(0).sum()) if 'moderate_income_loans' in county_2024.columns else 0
+        county_middle_income_loans = 0  # midu_income_loans = mid+upper combined
+        county_upper_income_loans = int(county_2024['midu_income_loans'].fillna(0).sum()) if 'midu_income_loans' in county_2024.columns else 0
     
     # Calculate percentages
     county_pct_under_100k = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
