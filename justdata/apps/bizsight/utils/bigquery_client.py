@@ -253,6 +253,8 @@ class BigQueryClient:
             NULL as tract_asian_percent,
             NULL as tract_other_race_percent,
             NULL as tract_minority_population_percent,
+            -- Income category label for display
+            'County Aggregate' as income_category,
             -- LMI flag: use low_income_loans + moderate_income_loans (lmi_tract_loans contains zeros)
             CASE WHEN (COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) > 0 THEN 1 ELSE 0 END as is_lmi_tract
         FROM `{self.project_id}.bizsight.sb_county_summary` a
