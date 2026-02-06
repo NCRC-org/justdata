@@ -196,7 +196,11 @@ class BigQueryClient:
                 lmi_tract_loans,
                 low_income_loans,
                 moderate_income_loans,
-                midu_income_loans
+                midu_income_loans,
+                lmi_tract_amount,
+                low_income_amount,
+                moderate_income_amount,
+                midu_income_amount
             FROM `{self.summary_project_id}.bizsight.sb_county_summary`
             WHERE geoid5 = '{geoid5_padded}'
                 {year_filter}
@@ -330,9 +334,9 @@ class BigQueryClient:
             COUNT(DISTINCT CAST(a.geoid5 AS STRING)) as total_tracts,
             SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
             SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_loan_amount,
-            -- LMI tract loans: sum low_income_loans + moderate_income_loans (lmi_tract_loans column contains zeros)
+            -- LMI tract loans: sum low_income_loans + moderate_income_loans
             SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
-            0 as lmi_tract_amount,
+            SUM(COALESCE(a.lmi_tract_amount, 0)) as lmi_tract_amount,
             -- LMI borrower metrics (not available - small business data doesn't have borrower income)
             0 as lmi_borrower_loans,
             0 as lmi_borrower_amount,
@@ -341,13 +345,21 @@ class BigQueryClient:
                 SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)),
                 SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0))
             ) * 100 as pct_loans_to_lmi_tracts,
-            0 as pct_dollars_to_lmi_tracts,
+            SAFE_DIVIDE(
+                SUM(COALESCE(a.lmi_tract_amount, 0)),
+                SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0))
+            ) * 100 as pct_dollars_to_lmi_tracts,
             0 as pct_loans_to_lmi_borrowers,
-            -- Income category breakdowns (pre-computed in table)
+            -- Income category breakdowns - counts
             SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
             SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
             0 as middle_income_loans,
-            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans
+            SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
+            -- Income category breakdowns - amounts
+            SUM(COALESCE(a.low_income_amount, 0)) as low_income_amount,
+            SUM(COALESCE(a.moderate_income_amount, 0)) as moderate_income_amount,
+            0 as middle_income_amount,
+            SUM(COALESCE(a.midu_income_amount, 0)) as upper_income_amount
         FROM `{self.project_id}.bizsight.sb_county_summary` a
         JOIN `{self.project_id}.shared.cbsa_to_county` g
             ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
@@ -503,19 +515,19 @@ class BigQueryClient:
         SELECT
             SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
             SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_amount,
-            -- LMI tract loans: sum low + moderate (lmi_tract_loans column contains zeros)
+            -- LMI tract loans/amounts
             SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
-            0 as lmi_tract_amount,
-            -- Income category breakdowns (pre-computed; midu = mid+upper combined)
+            SUM(COALESCE(a.lmi_tract_amount, 0)) as lmi_tract_amount,
+            -- Income category breakdowns - counts
             SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
             SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
             0 as middle_income_loans,
             SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
-            -- Income category amounts not available in summary table
-            0 as low_income_amount,
-            0 as moderate_income_amount,
+            -- Income category breakdowns - amounts
+            SUM(COALESCE(a.low_income_amount, 0)) as low_income_amount,
+            SUM(COALESCE(a.moderate_income_amount, 0)) as moderate_income_amount,
             0 as middle_income_amount,
-            0 as upper_income_amount,
+            SUM(COALESCE(a.midu_income_amount, 0)) as upper_income_amount,
             SUM(COALESCE(a.num_under_100k, 0)) as num_under_100k,
             SUM(COALESCE(a.num_100k_250k, 0)) as num_100k_250k,
             SUM(COALESCE(a.num_250k_1m, 0)) as num_250k_1m,
@@ -542,24 +554,23 @@ class BigQueryClient:
         Returns:
             Query job result with national-level statistics
         """
-        # Use pre-computed columns directly instead of deriving from income_group_total
         sql = f"""
         SELECT
             SUM(COALESCE(a.num_under_100k, 0) + COALESCE(a.num_100k_250k, 0) + COALESCE(a.num_250k_1m, 0)) as total_loans,
             SUM(COALESCE(a.amt_under_100k, 0) + COALESCE(a.amt_100k_250k, 0) + COALESCE(a.amt_250k_1m, 0)) as total_amount,
-            -- LMI tract loans: sum low + moderate (lmi_tract_loans column contains zeros)
+            -- LMI tract loans/amounts
             SUM(COALESCE(a.low_income_loans, 0) + COALESCE(a.moderate_income_loans, 0)) as lmi_tract_loans,
-            0 as lmi_tract_amount,
-            -- Income category breakdowns (pre-computed; midu = mid+upper combined)
+            SUM(COALESCE(a.lmi_tract_amount, 0)) as lmi_tract_amount,
+            -- Income category breakdowns - counts
             SUM(COALESCE(a.low_income_loans, 0)) as low_income_loans,
             SUM(COALESCE(a.moderate_income_loans, 0)) as moderate_income_loans,
             0 as middle_income_loans,
             SUM(COALESCE(a.midu_income_loans, 0)) as upper_income_loans,
-            -- Income category amounts not available in summary table
-            0 as low_income_amount,
-            0 as moderate_income_amount,
+            -- Income category breakdowns - amounts
+            SUM(COALESCE(a.low_income_amount, 0)) as low_income_amount,
+            SUM(COALESCE(a.moderate_income_amount, 0)) as moderate_income_amount,
             0 as middle_income_amount,
-            0 as upper_income_amount,
+            SUM(COALESCE(a.midu_income_amount, 0)) as upper_income_amount,
             SUM(COALESCE(a.num_under_100k, 0)) as num_under_100k,
             SUM(COALESCE(a.num_100k_250k, 0)) as num_100k_250k,
             SUM(COALESCE(a.num_250k_1m, 0)) as num_250k_1m,

@@ -466,6 +466,11 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                     county_2020_moderate_income_loans = int(county_2020_df['moderate_income_loans'].fillna(0).sum()) if 'moderate_income_loans' in county_2020_df.columns else 0
                     county_2020_middle_income_loans = 0
                     county_2020_upper_income_loans = int(county_2020_df['midu_income_loans'].fillna(0).sum()) if 'midu_income_loans' in county_2020_df.columns else 0
+                if 'low_income_amount' in county_2020_df.columns:
+                    county_2020_low_income_amount = float(county_2020_df['low_income_amount'].fillna(0).sum())
+                    county_2020_moderate_income_amount = float(county_2020_df['moderate_income_amount'].fillna(0).sum()) if 'moderate_income_amount' in county_2020_df.columns else 0.0
+                    county_2020_middle_income_amount = 0.0
+                    county_2020_upper_income_amount = float(county_2020_df['midu_income_amount'].fillna(0).sum()) if 'midu_income_amount' in county_2020_df.columns else 0.0
                 
                 county_2020_total_loans = county_2020_num_under_100k + county_2020_num_100k_250k + county_2020_num_250k_1m
                 county_2020_amt_100k_250k = float(county_2020_df.get('amt_100k_250k', pd.Series([0.0])).sum())
@@ -903,10 +908,15 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             if 'low_income_loans' in summary_2024_df.columns:
                 summary_low_income_loans = int(summary_2024_df['low_income_loans'].fillna(0).sum())
                 summary_moderate_income_loans = int(summary_2024_df['moderate_income_loans'].fillna(0).sum()) if 'moderate_income_loans' in summary_2024_df.columns else 0
-                # midu_income_loans = mid+upper combined (no separate middle/upper in this table)
                 summary_middle_income_loans = 0
                 summary_upper_income_loans = int(summary_2024_df['midu_income_loans'].fillna(0).sum()) if 'midu_income_loans' in summary_2024_df.columns else 0
-                print(f"DEBUG: Income breakdown from pre-computed columns - Low: {summary_low_income_loans}, Moderate: {summary_moderate_income_loans}, Mid+Upper: {summary_upper_income_loans}")
+            if 'low_income_amount' in summary_2024_df.columns:
+                summary_low_income_amount = float(summary_2024_df['low_income_amount'].fillna(0).sum())
+                summary_moderate_income_amount = float(summary_2024_df['moderate_income_amount'].fillna(0).sum()) if 'moderate_income_amount' in summary_2024_df.columns else 0.0
+                summary_middle_income_amount = 0.0
+                summary_upper_income_amount = float(summary_2024_df['midu_income_amount'].fillna(0).sum()) if 'midu_income_amount' in summary_2024_df.columns else 0.0
+                print(f"DEBUG: Income breakdown - Loans: Low={summary_low_income_loans}, Mod={summary_moderate_income_loans}, MidU={summary_upper_income_loans}")
+                print(f"DEBUG: Income breakdown - Amounts: Low={summary_low_income_amount}, Mod={summary_moderate_income_amount}, MidU={summary_upper_income_amount}")
         
         # Calculate percentage for amtsb_under_1m (for JavaScript fallback)
         pct_amount_sb_under_1m = 0.0
@@ -918,7 +928,8 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         lmi_tract_amount_calculated = 0.0
         if not summary_2024_df.empty and 'low_income_loans' in summary_2024_df.columns:
             lmi_tract_loans_calculated = summary_low_income_loans + summary_moderate_income_loans
-            print(f"DEBUG: LMI tract data from pre-computed columns: loans={lmi_tract_loans_calculated}")
+            lmi_tract_amount_calculated = summary_low_income_amount + summary_moderate_income_amount
+            print(f"DEBUG: LMI tract data: loans={lmi_tract_loans_calculated}, amount={lmi_tract_amount_calculated}")
 
         # Calculate LMI percentages
         pct_loans_to_lmi = (lmi_tract_loans_calculated / summary_total_loans * 100) if summary_total_loans > 0 else 0.0
