@@ -95,19 +95,37 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             progress_tracker.update_progress('connecting_db', 20, 'Connecting to BigQuery... Time to tap into that data goldmine! 💎')
         
         bq_client = BigQueryClient()
-        
+        query_errors = []  # Track errors to surface meaningful messages
+
         # Fetch aggregate data with census demographics
         if progress_tracker:
-            progress_tracker.update_progress('fetching_data', 30, 
+            progress_tracker.update_progress('fetching_data', 30,
                 'Fetching tract-level lending data with census demographics... Digging deep for insights! ⛏️')
-        
+
         print(f"DEBUG: Starting BigQuery aggregate query for GEOID5: {geoid5}, years: {years}")
-        aggregate_query = bq_client.get_aggregate_data_with_census(geoid5, years)
-        print(f"DEBUG: Aggregate query completed, converting to DataFrame...")
-        aggregate_df = aggregate_query.to_dataframe()
-        print(f"DEBUG: Aggregate DataFrame created: {len(aggregate_df)} rows")
-        
+        try:
+            aggregate_query = bq_client.get_aggregate_data_with_census(geoid5, years)
+            print(f"DEBUG: Aggregate query completed, converting to DataFrame...")
+            aggregate_df = aggregate_query.to_dataframe()
+            print(f"DEBUG: Aggregate DataFrame created: {len(aggregate_df)} rows")
+        except Exception as e:
+            error_str = str(e)
+            print(f"ERROR: BigQuery aggregate query failed: {error_str}")
+            query_errors.append(error_str)
+            aggregate_df = pd.DataFrame()
+
         if aggregate_df.empty:
+            # Surface actual errors instead of generic "no data found"
+            if query_errors:
+                if any('403' in err or 'Access Denied' in err for err in query_errors):
+                    return {
+                        'success': False,
+                        'error': 'Data access temporarily unavailable. Please try again later or contact support.'
+                    }
+                return {
+                    'success': False,
+                    'error': f'Query error: {query_errors[0]}'
+                }
             return {
                 'success': False,
                 'error': f'No small business lending data found for {county_name}'
@@ -119,10 +137,15 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
                 'Fetching lender-level disclosure data... Who\'s lending where? Let\'s find out! 🏦')
         
         print(f"DEBUG: Starting BigQuery disclosure query for GEOID5: {geoid5}, year: 2024, is_planning_region: {is_planning_region}")
-        disclosure_query_2024 = bq_client.get_disclosure_data(geoid5, [2024], is_planning_region=is_planning_region)
-        print(f"DEBUG: Disclosure query completed, converting to DataFrame...")
-        disclosure_df = disclosure_query_2024.to_dataframe()
-        print(f"DEBUG: Disclosure DataFrame created: {len(disclosure_df)} rows")
+        try:
+            disclosure_query_2024 = bq_client.get_disclosure_data(geoid5, [2024], is_planning_region=is_planning_region)
+            print(f"DEBUG: Disclosure query completed, converting to DataFrame...")
+            disclosure_df = disclosure_query_2024.to_dataframe()
+            print(f"DEBUG: Disclosure DataFrame created: {len(disclosure_df)} rows")
+        except Exception as e:
+            print(f"ERROR: BigQuery disclosure query failed: {e}")
+            query_errors.append(str(e))
+            disclosure_df = pd.DataFrame()
         
         # Verify that disclosure_df only contains 2024 data
         if 'year' in disclosure_df.columns:
@@ -136,10 +159,15 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
         
         # Also fetch disclosure data for all years for HHI by year calculation
         print(f"DEBUG: Starting BigQuery disclosure query for all years: {years}, is_planning_region: {is_planning_region}")
-        disclosure_query_all = bq_client.get_disclosure_data(geoid5, years, is_planning_region=is_planning_region)
-        print(f"DEBUG: Disclosure query for all years completed, converting to DataFrame...")
-        disclosure_df_all_years = disclosure_query_all.to_dataframe()
-        print(f"DEBUG: Disclosure DataFrame for all years created: {len(disclosure_df_all_years)} rows")
+        try:
+            disclosure_query_all = bq_client.get_disclosure_data(geoid5, years, is_planning_region=is_planning_region)
+            print(f"DEBUG: Disclosure query for all years completed, converting to DataFrame...")
+            disclosure_df_all_years = disclosure_query_all.to_dataframe()
+            print(f"DEBUG: Disclosure DataFrame for all years created: {len(disclosure_df_all_years)} rows")
+        except Exception as e:
+            print(f"ERROR: BigQuery disclosure all-years query failed: {e}")
+            query_errors.append(str(e))
+            disclosure_df_all_years = pd.DataFrame()
         
         # Build county summary table (Section 2) - most recent 5 years
         if progress_tracker:

@@ -123,10 +123,21 @@ def get_bigquery_client(project_id: str = None, credentials_path: str = None):
 
 class BigQueryClient:
     """Wrapper class for BigQuery operations."""
-    
+
     def __init__(self, project_id: str = None, credentials_path: str = None):
         """Initialize BigQuery client."""
         self.client = get_bigquery_client(project_id, credentials_path)
+        # If local client init returned None, try the shared client with app_name
+        if self.client is None:
+            try:
+                from justdata.shared.utils.bigquery_client import get_bigquery_client as shared_get_bigquery_client
+                logger.info("Local credentials failed, falling back to shared client with app_name='bizsight'")
+                self.client = shared_get_bigquery_client(
+                    project_id=project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc'),
+                    app_name='bizsight'
+                )
+            except Exception as e:
+                logger.error(f"Shared client fallback also failed: {e}")
         self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
         # New optimized project with summary tables
         self.summary_project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')

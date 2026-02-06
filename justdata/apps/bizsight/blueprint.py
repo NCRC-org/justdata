@@ -470,7 +470,7 @@ def get_counties_by_state(state_code):
         state_code = unquote(str(state_code)).strip()
         print(f"[DEBUG] bizsight/api/counties-by-state called with state_code: '{state_code}'")
 
-        client = get_bigquery_client(BizSightConfig.GCP_PROJECT_ID)
+        client = get_bigquery_client(BizSightConfig.GCP_PROJECT_ID, app_name='bizsight')
 
         # Check if state_code is a numeric FIPS code (2 digits) or a state name
         is_numeric_code = state_code.isdigit() and len(state_code) <= 2
