@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Deployment Rules
+
+- Default deploy target is **justdata-test** only
+- NEVER deploy to production (justdata) unless explicitly instructed by the user with the exact words "deploy to production"
+- Always use `--source .` deploys to justdata-test for testing
+- Production deploys happen via GitHub Actions on main branch merge only
+- If unsure whether a deploy target is test or production, STOP and ask
+- Never run `gcloud run deploy justdata` directly — use the deploy script which defaults to test
+
 ## Project Overview
 
 JustData is a financial data analysis platform built for NCRC (National Community Reinvestment Coalition). It provides AI-powered insights across banking, mortgage, and small business domains using data from FDIC, HMDA, and other regulatory sources.
