@@ -507,8 +507,7 @@ def run_area_analysis(
             total_queries = len(county_names_list) * len(validated_years)
             query_index = 0
             
-            config = get_unified_config(load_env=False, verbose=False)
-            PROJECT_ID = config.get('GCP_PROJECT_ID')
+            from justdata.apps.dataexplorer.config import PROJECT_ID
             client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
             
             for county_name in county_names_list:

@@ -1126,8 +1126,7 @@ def execute_mortgage_query_with_filters(
         from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
         from justdata.shared.utils.unified_env import get_unified_config
         
-        config = get_unified_config(load_env=False, verbose=False)
-        PROJECT_ID = config.get('GCP_PROJECT_ID')
+        from justdata.apps.dataexplorer.config import PROJECT_ID
         client = get_bigquery_client(PROJECT_ID, app_name=APP_NAME)
         
         # Find the exact county match from the database

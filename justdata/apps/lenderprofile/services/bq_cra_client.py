@@ -26,7 +26,7 @@ class BigQueryCRAClient:
 
     def __init__(self, project_id: str = None):
         """Initialize BigQuery CRA client."""
-        self.project_id = project_id or os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+        self.project_id = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         self.client = self._get_client()
 
     def _get_client(self):

@@ -45,13 +45,13 @@ from typing import List, Dict, Any, Optional
 from google.cloud import bigquery
 
 # Source project (JustData app data)
-SOURCE_PROJECT = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+SOURCE_PROJECT = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 SOURCE_DATASET = 'cache'
 
 # Target project/dataset for backfilled analytics
 # Using same project as source since credentials work there
 # All analytics data goes to firebase_analytics dataset for unified queries
-TARGET_PROJECT = os.getenv('GCP_PROJECT_ID', 'justdata-ncrc')
+TARGET_PROJECT = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
 TARGET_DATASET = 'firebase_analytics'
 
 

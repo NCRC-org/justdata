@@ -918,8 +918,7 @@ def test_lender_analysis():
         
         def run_job():
             try:
-                config = get_unified_config(load_env=False, verbose=False)
-                PROJECT_ID = config.get('GCP_PROJECT_ID')
+                from justdata.apps.dataexplorer.config import PROJECT_ID
                 client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
                 sql_template = load_sql_template()
                 
@@ -1754,7 +1753,7 @@ def get_bigquery_job_history():
         
         # Query the INFORMATION_SCHEMA for query history
         # This is more reliable than listing jobs
-        project_id = config.get('GCP_PROJECT_ID', 'justdata-ncrc')
+        project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
         
         # Query job history from INFORMATION_SCHEMA
         query = f"""

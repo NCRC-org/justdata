@@ -491,9 +491,7 @@ def check_lender_has_data(
             year_range = ''
 
         # Get BigQuery client
-        config = get_unified_config(load_env=False, verbose=False)
-        PROJECT_ID = config.get('GCP_PROJECT_ID')
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
 
         subject_lei = lender_info.get('lei')
         years_str = "', '".join(map(str, validated_years))
@@ -679,9 +677,7 @@ def run_lender_analysis(
             progress_tracker.update_progress('connecting_db', 10, 'Connecting to database...')
         
         # Get configuration
-        config = get_unified_config(load_env=False, verbose=False)
-        PROJECT_ID = config.get('GCP_PROJECT_ID')
-        client = get_bigquery_client(PROJECT_ID)
+        client = get_bigquery_client(PROJECT_ID, app_name='dataexplorer')
         sql_template_base = load_sql_template()
         
         # Apply query filters to SQL template
