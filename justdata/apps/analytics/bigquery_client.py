@@ -1637,13 +1637,13 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
 
     app_usage_query = f"""
         SELECT
-            event_name,
+            CASE WHEN event_name LIKE 'dataexplorer_%' THEN 'dataexplorer_report' ELSE event_name END AS event_name,
             COUNT(*) AS event_count,
             COUNT(DISTINCT user_id) AS unique_users
         FROM `{EVENTS_TABLE}`
         WHERE event_name IN ('{target_apps_str}')
             {date_filter}
-        GROUP BY event_name
+        GROUP BY 1
         ORDER BY event_count DESC
     """
 
@@ -1693,8 +1693,13 @@ def get_summary(days: int = 90) -> Dict[str, Any]:
     if data_needing_names:
         top_counties = _enrich_with_county_names(client, top_counties)
 
-    # Process top lenders
+    # Process top lenders - resolve LEI codes to human-readable names
     top_lenders = [dict(row) for row in results.get('top_lenders', [])]
+    for lender in top_lenders:
+        if lender.get('lender_id'):
+            name = _lookup_single_lender_name(lender['lender_id'])
+            if name:
+                lender['lender_name'] = name
 
     # Process app usage
     app_usage = [dict(row) for row in results.get('app_usage', [])]
