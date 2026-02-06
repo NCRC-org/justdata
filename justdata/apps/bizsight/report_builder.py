@@ -644,44 +644,9 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         num_total = num_under_100k + num_100k_250k + num_250k_1m
         amt_total = amt_under_100k + amt_100k_250k + amt_250k_1m
         
-        # Calculate LMI Tract percentage using income_group_total
-        # LMI = Low Income + Moderate Income (consistent with MergerMeter and SQL queries)
-        # Known values: 101=Low, 102=Moderate, 103=Middle, 104=Upper
-        # Single digits 1-8 are all LMI categories
+        # Calculate LMI and income category breakdowns from pre-computed columns
         lmi_tract_pct = 0.0
         lmi_tract_amt_pct = 0.0
-        if actual_fields['income_group_total'] in lender_df.columns:
-            income_group_str = lender_df[actual_fields['income_group_total']].astype(str)
-            # LMI codes: 101, 102, and zero-padded 001-008 (as stored in database)
-            lmi_codes = ['101', '102', '001', '002', '003', '004', '005', '006', '007', '008']
-            lmi_mask = income_group_str.isin(lmi_codes)
-
-            # Calculate LMI loans and amounts
-            lmi_num = 0
-            lmi_amt = 0.0
-            if actual_fields['num_under_100k'] in lender_df.columns:
-                lmi_num += safe_int(lender_df[lmi_mask][actual_fields['num_under_100k']].sum())
-            if actual_fields['num_100k_250k'] in lender_df.columns:
-                lmi_num += safe_int(lender_df[lmi_mask][actual_fields['num_100k_250k']].sum())
-            if actual_fields['num_250k_1m'] in lender_df.columns:
-                lmi_num += safe_int(lender_df[lmi_mask][actual_fields['num_250k_1m']].sum())
-
-            if actual_fields['amt_under_100k'] in lender_df.columns:
-                lmi_amt += safe_float(lender_df[lmi_mask][actual_fields['amt_under_100k']].sum())
-            if actual_fields['amt_100k_250k'] in lender_df.columns:
-                lmi_amt += safe_float(lender_df[lmi_mask][actual_fields['amt_100k_250k']].sum())
-            if actual_fields['amt_250k_1m'] in lender_df.columns:
-                lmi_amt += safe_float(lender_df[lmi_mask][actual_fields['amt_250k_1m']].sum())
-
-            lmi_tract_pct = (lmi_num / num_total * 100) if num_total > 0 else 0.0
-            lmi_tract_amt_pct = (lmi_amt / amt_total * 100) if amt_total > 0 else 0.0
-
-        # Calculate income category breakdowns (consistent with SQL queries)
-        # Low Income: 101, 1, 2, 3, 4, 5
-        # Moderate Income: 102, 6, 7, 8
-        # Middle Income: 103
-        # Upper Income: 104
-        # Unknown: All others
         low_income_num = 0
         moderate_income_num = 0
         middle_income_num = 0
@@ -691,35 +656,13 @@ def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame
         middle_income_amt = 0.0
         upper_income_amt = 0.0
 
-        if actual_fields['income_group_total'] in lender_df.columns:
-            income_group_str = lender_df[actual_fields['income_group_total']].astype(str)
-
-            # Low Income: 101 and zero-padded 001-005 (as stored in database)
-            low_mask = income_group_str.isin(['101', '001', '002', '003', '004', '005'])
-
-            # Moderate Income: 102 and zero-padded 006-008 (as stored in database)
-            moderate_mask = income_group_str.isin(['102', '006', '007', '008'])
-
-            # Middle Income: 103
-            middle_mask = income_group_str.isin(['103'])
-
-            # Upper Income: 104
-            upper_mask = income_group_str.isin(['104'])
-            
-            # Calculate counts and amounts for each category
-            for field in ['num_under_100k', 'num_100k_250k', 'num_250k_1m']:
-                if actual_fields[field] in lender_df.columns:
-                    low_income_num += safe_int(lender_df[low_mask][actual_fields[field]].sum())
-                    moderate_income_num += safe_int(lender_df[moderate_mask][actual_fields[field]].sum())
-                    middle_income_num += safe_int(lender_df[middle_mask][actual_fields[field]].sum())
-                    upper_income_num += safe_int(lender_df[upper_mask][actual_fields[field]].sum())
-            
-            for field in ['amt_under_100k', 'amt_100k_250k', 'amt_250k_1m']:
-                if actual_fields[field] in lender_df.columns:
-                    low_income_amt += safe_float(lender_df[low_mask][actual_fields[field]].sum())
-                    moderate_income_amt += safe_float(lender_df[moderate_mask][actual_fields[field]].sum())
-                    middle_income_amt += safe_float(lender_df[middle_mask][actual_fields[field]].sum())
-                    upper_income_amt += safe_float(lender_df[upper_mask][actual_fields[field]].sum())
+        if 'low_income_loans' in lender_df.columns:
+            low_income_num = safe_int(lender_df['low_income_loans'].fillna(0).sum())
+            moderate_income_num = safe_int(lender_df['moderate_income_loans'].fillna(0).sum()) if 'moderate_income_loans' in lender_df.columns else 0
+            middle_income_num = 0  # midu_income_loans = mid+upper combined
+            upper_income_num = safe_int(lender_df['midu_income_loans'].fillna(0).sum()) if 'midu_income_loans' in lender_df.columns else 0
+            lmi_num = low_income_num + moderate_income_num
+            lmi_tract_pct = (lmi_num / num_total * 100) if num_total > 0 else 0.0
         
         # Calculate percentages
         num_under_100k_pct = (num_under_100k / num_total * 100) if num_total > 0 else 0.0
