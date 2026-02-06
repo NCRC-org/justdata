@@ -24,9 +24,6 @@ from justdata.apps.bizsight.utils.progress_tracker import (
     get_progress, update_progress, create_progress_tracker
 )
 
-# In-memory fallback for when BigQuery cache store fails
-_result_fallback = {}
-
 # In-memory fallback for when BigQuery cache storage fails
 _result_fallback = {}
 
