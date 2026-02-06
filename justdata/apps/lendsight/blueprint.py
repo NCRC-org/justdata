@@ -423,11 +423,14 @@ def analyze():
                         user_type=user_type,
                         metadata=metadata
                     )
+                    # Mark analysis as completed only if cache store succeeded
+                    progress_tracker.complete(success=True)
                 except Exception as cache_error:
-                    print(f"Warning: Failed to store in cache: {cache_error}")
-                
-                # Mark analysis as completed
-                progress_tracker.complete(success=True)
+                    print(f"ERROR: Failed to store in cache: {cache_error}")
+                    progress_tracker.complete(
+                        success=False,
+                        error="Analysis completed but results could not be saved. Please try again."
+                    )
                 
                 # Log usage (cache miss, new analysis)
                 response_time_ms = int((time_module.time() - start_time) * 1000)
