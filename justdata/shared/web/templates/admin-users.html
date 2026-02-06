@@ -1016,7 +1016,7 @@
     // Update stats
     function updateStats() {
         document.getElementById('totalUsers').textContent = allUsers.length;
-        document.getElementById('staffCount').textContent = allUsers.filter(u => u.userType === 'staff' || u.userType === 'admin').length;
+        document.getElementById('staffCount').textContent = allUsers.filter(u => ['staff', 'admin', 'senior_executive'].includes(u.userType)).length;
         document.getElementById('memberCount').textContent = allUsers.filter(u => u.userType === 'member' || u.userType === 'member_premium').length;
         document.getElementById('pendingCount').textContent = allUsers.filter(u => u.pendingActivation).length;
     }
