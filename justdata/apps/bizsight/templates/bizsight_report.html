@@ -1121,6 +1121,15 @@
                     <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
                 </ul>
 
+                <h4 style="margin-top: 15px; color: #333;">Income Tract Data Encoding</h4>
+                <p>The FFIEC CRA disclosure data reports lending by census tract income category using three different encoding formats, depending on the reporting institution and data year:</p>
+                <ul style="padding-left: 20px;">
+                    <li><strong>Summary codes:</strong> A single row per income category (Low, Moderate, Middle, Upper, Unknown)</li>
+                    <li><strong>Subcategory codes:</strong> Granular rows representing 10-percentage-point bands of area median income (e.g., 0&ndash;10%, 10&ndash;20%, through 120%+), which map to the standard income categories above</li>
+                    <li><strong>Legacy codes:</strong> Simplified single-digit identifiers used by some institutions in earlier reporting years</li>
+                </ul>
+                <p>A given institution, county, and year combination uses only one encoding format. NCRC maps all three formats to the consistent income categories listed above.</p>
+
                 <h4 style="margin-top: 15px; color: #333;">Table Column Definitions</h4>
                 <ul style="padding-left: 20px;">
                     <li><strong>Total:</strong> Total number or amount of small business loans</li>
@@ -1132,7 +1141,9 @@
 
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Calculations</h3>
 
-                <p><strong>Percentage Calculations:</strong> All percentages are calculated as: (category value / total value) × 100. For example, the percentage of loans under $100K equals (number of loans under $100K / total number of loans) × 100.</p>
+                <p><strong>Percentage Calculations:</strong> All percentages are calculated as: (category value / total value) &times; 100. For example, the percentage of loans under $100K equals (number of loans under $100K / total number of loans) &times; 100.</p>
+
+                <p><strong>Income Tract Percentage Calculations:</strong> For percentages by census tract income category (Low, Moderate, Middle, Upper, and LMI), the denominator excludes loans where the tract income classification is unknown or unavailable. Some census tracts lack income classifications due to data suppression, boundary changes, or other Census Bureau limitations. Including these unclassified loans in the denominator would artificially deflate all income category percentages. The formula used is: (income category loans / total loans with known tract income classification) &times; 100. Total loan counts and dollar amounts reported elsewhere in this report include all loans regardless of tract income classification.</p>
 
                 <p><strong>Change Over Time:</strong> Change is calculated as the difference between the final year value and the baseline year value. For percentages, change is expressed in percentage points (pp). Positive changes are displayed in blue; negative changes in red.</p>
 
@@ -1140,7 +1151,7 @@
 
                 <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
                 <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
-                <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+                <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = &Sigma;(market share<sub>i</sub>)<sup>2</sup></p>
                 <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
                 <p><strong>Concentration Levels:</strong></p>
                 <ul style="padding-left: 20px;">
@@ -1168,10 +1179,15 @@
                 </ul>
 
                 <h3 style="color: var(--ncrc-primary-blue); margin-top: 20px;">Data Quality and AI Disclosure</h3>
-                <p style="font-style: italic; color: #666;">[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]</p>
-                <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-                <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
-                <p style="font-style: italic; color: #666;">[END LOREM IPSUM PLACEHOLDER]</p>
+                <p><strong>Data Validation:</strong> NCRC performs systematic quality assurance on all data used in this report, including cross-verification of loan counts and amounts against FFIEC published aggregate totals. Income tract classifications are validated against FFIEC Census tract income level designations.</p>
+
+                <p><strong>AI-Generated Narrative Content:</strong> The analytical narrative sections of this report (Sections 1 and 5) are generated using artificial intelligence (Claude, developed by Anthropic) based on the underlying data tables and calculations. All AI-generated narratives are reviewed for accuracy against the source data. The data tables, calculations, and statistical measures presented in this report are computed directly from FFIEC CRA disclosure data and are not AI-generated.</p>
+
+                <p><strong>Limitations:</strong> CRA data reflects lending reported by covered depository institutions and may not capture all small business lending activity in a market. Lending by non-bank lenders, credit unions below the reporting threshold, and fintech companies is generally not included. Market share calculations and HHI values should be interpreted in this context.</p>
+
+                <p><strong>Suggested Citation:</strong> National Community Reinvestment Coalition. (2026). <em>BizSight Small Business Lending Report: [County Name], [State].</em> Washington, DC: NCRC. Data source: FFIEC CRA Small Business Lending Data.</p>
+
+                <p style="margin-top: 20px; text-align: center; color: #666;">&copy; 2026 National Community Reinvestment Coalition</p>
             </div>
         </div>
     </div>

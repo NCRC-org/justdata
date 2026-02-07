@@ -534,7 +534,9 @@ class BigQueryClient:
             SUM(COALESCE(a.amt_under_100k, 0)) as amt_under_100k,
             SUM(COALESCE(a.amt_250k_1m, 0)) as amt_250k_1m,
             SUM(COALESCE(a.numsbrev_under_1m, 0)) as numsb_under_1m,
-            SUM(COALESCE(a.amtsbrev_under_1m, 0)) as amtsb_under_1m
+            SUM(COALESCE(a.amtsbrev_under_1m, 0)) as amtsb_under_1m,
+            SUM(COALESCE(a.unknown_income_loans, 0)) as unknown_income_loans,
+            SUM(COALESCE(a.unknown_income_amount, 0)) as unknown_income_amount
         FROM `{self.project_id}.bizsight.sb_county_summary` a
         JOIN `{self.project_id}.shared.cbsa_to_county` g
             ON LPAD(CAST(a.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
@@ -543,7 +545,7 @@ class BigQueryClient:
         """
 
         return self.query(sql)
-    
+
     def get_national_benchmarks(self, year: int = 2024):
         """
         Get national-level benchmark statistics for comparison.
@@ -577,7 +579,9 @@ class BigQueryClient:
             SUM(COALESCE(a.amt_under_100k, 0)) as amt_under_100k,
             SUM(COALESCE(a.amt_250k_1m, 0)) as amt_250k_1m,
             SUM(COALESCE(a.numsbrev_under_1m, 0)) as numsb_under_1m,
-            SUM(COALESCE(a.amtsbrev_under_1m, 0)) as amtsb_under_1m
+            SUM(COALESCE(a.amtsbrev_under_1m, 0)) as amtsb_under_1m,
+            SUM(COALESCE(a.unknown_income_loans, 0)) as unknown_income_loans,
+            SUM(COALESCE(a.unknown_income_amount, 0)) as unknown_income_amount
         FROM `{self.project_id}.bizsight.sb_county_summary` a
         WHERE CAST(a.year AS INT64) = {year}
         """
