@@ -558,6 +558,11 @@ def run_analysis(county_data: dict, years_str: str, job_id: str = None,
             else:
                 disclosure_2024 = disclosure_df.copy()
             
+            # Deduplicate by respondent_id to avoid inflated amounts from JOIN
+            if 'respondent_id' in disclosure_2024.columns:
+                disclosure_2024 = disclosure_2024.drop_duplicates(subset=['respondent_id'], keep='first')
+                print(f"DEBUG: After dedup by respondent_id: {len(disclosure_2024)} rows")
+
             # Get total loan amounts by lender
             if 'lender_name' in disclosure_2024.columns:
                 # Sum all amount fields for each lender

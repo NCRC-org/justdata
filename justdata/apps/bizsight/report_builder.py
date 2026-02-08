@@ -784,7 +784,11 @@ def calculate_hhi_for_lenders(disclosure_df: pd.DataFrame, year: int = 2024) -> 
     
     if year_df.empty or 'lender_name' not in year_df.columns:
         return None
-    
+
+    # Deduplicate by respondent_id to avoid inflated amounts from JOIN
+    if 'respondent_id' in year_df.columns:
+        year_df = year_df.drop_duplicates(subset=['respondent_id'], keep='first')
+
     # Sum all amount fields for each lender
     amt_fields = ['amt_under_100k', 'amt_100k_250k', 'amt_250k_1m']
     lender_amounts = {}

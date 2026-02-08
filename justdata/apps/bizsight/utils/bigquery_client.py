@@ -291,7 +291,7 @@ class BigQueryClient:
             year_filter = f"AND CAST(d.year AS INT64) IN ({year_list})"
         
         sql = f"""
-        SELECT 
+        SELECT
             d.*,
             l.sb_lender as lender_name,
             g.county_state,
@@ -299,9 +299,12 @@ class BigQueryClient:
             g.state as state_name,
             g.geoid5
         FROM `{self.project_id}.bizsight.sb_county_summary` d
-        JOIN `{self.project_id}.bizsight.sb_lenders` l 
-            ON d.respondent_id = l.sb_resid
-        JOIN `{self.project_id}.shared.cbsa_to_county` g 
+        JOIN (
+            SELECT sb_resid, sb_lender,
+            ROW_NUMBER() OVER (PARTITION BY sb_resid ORDER BY sb_year DESC) as rn
+            FROM `{self.project_id}.bizsight.sb_lenders`
+        ) l ON d.respondent_id = l.sb_resid AND l.rn = 1
+        JOIN `{self.project_id}.shared.cbsa_to_county` g
             ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = LPAD(CAST(g.geoid5 AS STRING), 5, '0')
         WHERE LPAD(CAST(g.geoid5 AS STRING), 5, '0') = '{geoid5_padded}'
             {year_filter}
