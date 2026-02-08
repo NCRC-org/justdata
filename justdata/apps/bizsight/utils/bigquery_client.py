@@ -292,12 +292,11 @@ class BigQueryClient:
         
         sql = f"""
         SELECT
-            d.*,
+            d.* EXCEPT(lender_name),
             l.sb_lender as lender_name,
             g.county_state,
             g.county as county_name,
-            g.state as state_name,
-            g.geoid5
+            g.state as state_name
         FROM `{self.project_id}.bizsight.sb_county_summary` d
         JOIN (
             SELECT sb_resid, sb_lender,
