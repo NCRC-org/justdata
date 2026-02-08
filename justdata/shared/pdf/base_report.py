@@ -8,12 +8,13 @@ Provides MagazineDocTemplate with four page templates:
   landscape   — 11x8.5 single-frame with header/footer
 """
 
+import os
 from io import BytesIO
 from datetime import datetime
 
 from reportlab.lib.pagesizes import letter, landscape as landscape_size
 from reportlab.lib.units import inch
-from reportlab.lib.colors import white
+from reportlab.lib.colors import white, Color
 from reportlab.platypus import (
     BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer,
     NextPageTemplate, PageBreak, CondPageBreak,
@@ -25,6 +26,10 @@ from justdata.shared.pdf.styles import (
     COVER_TITLE, COVER_SUBTITLE, COVER_DATE, COVER_META, COVER_DISCLAIMER,
     BODY_FONT, BODY_FONT_BOLD, HEADLINE_FONT_BOLD,
 )
+
+# Logo path
+ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'assets')
+LOGO_WHITE_PATH = os.path.join(ASSETS_DIR, 'justdata_logo_white.png')
 
 # ---------------------------------------------------------------------------
 # Page geometry — letter portrait (per v2 spec Section 2)
@@ -99,17 +104,113 @@ def _draw_header_footer(canvas, doc):
 
 
 def _draw_cover(canvas, doc):
-    """Draw cover page background — no running header/footer."""
+    """Draw cover page with gradient background, centered text, and logo."""
     canvas.saveState()
-    # Full navy band across top 45%
-    band_height = PAGE_H * 0.45
-    canvas.setFillColor(DARK_NAVY)
-    canvas.rect(0, PAGE_H - band_height, PAGE_W, band_height, fill=1, stroke=0)
 
-    # Thin accent line at bottom of band
-    canvas.setStrokeColor(NAVY)
-    canvas.setLineWidth(3)
-    canvas.line(0, PAGE_H - band_height, PAGE_W, PAGE_H - band_height)
+    # --- Gradient background ---
+    # Top 58%: teal → navy → dark navy gradient
+    # Bottom 42%: solid dark navy
+    teal = (0 / 255, 164 / 255, 214 / 255)
+    navy_rgb = (30 / 255, 58 / 255, 95 / 255)
+    dark_navy_rgb = (13 / 255, 31 / 255, 51 / 255)
+
+    gradient_height = PAGE_H * 0.58
+    gradient_bottom = PAGE_H - gradient_height
+
+    # Bottom solid area (dark navy)
+    canvas.setFillColor(Color(*dark_navy_rgb))
+    canvas.rect(0, 0, PAGE_W, gradient_bottom, fill=1, stroke=0)
+
+    # Gradient area with horizontal strips
+    n_strips = 40
+    strip_h = gradient_height / n_strips
+    for i in range(n_strips):
+        t = i / max(n_strips - 1, 1)  # 0 at top, 1 at bottom
+        if t < 0.55:
+            s = t / 0.55
+            r = teal[0] + (navy_rgb[0] - teal[0]) * s
+            g = teal[1] + (navy_rgb[1] - teal[1]) * s
+            b = teal[2] + (navy_rgb[2] - teal[2]) * s
+        else:
+            s = (t - 0.55) / 0.45
+            r = navy_rgb[0] + (dark_navy_rgb[0] - navy_rgb[0]) * s
+            g = navy_rgb[1] + (dark_navy_rgb[1] - navy_rgb[1]) * s
+            b = navy_rgb[2] + (dark_navy_rgb[2] - navy_rgb[2]) * s
+        canvas.setFillColor(Color(r, g, b))
+        y = PAGE_H - (i + 1) * strip_h
+        canvas.rect(0, y, PAGE_W, strip_h + 0.5, fill=1, stroke=0)
+
+    # --- Logo (top left) ---
+    try:
+        if os.path.exists(LOGO_WHITE_PATH):
+            logo_w = 1.4 * inch
+            logo_h = logo_w / 4.5  # approximate aspect ratio
+            canvas.drawImage(
+                LOGO_WHITE_PATH,
+                MARGIN_LEFT, PAGE_H - 28 - logo_h,
+                width=logo_w, height=logo_h,
+                mask='auto',
+            )
+    except Exception:
+        pass  # graceful fallback if logo missing
+
+    # --- Centered cover text ---
+    cx = PAGE_W / 2
+
+    # "LendSight Report" label
+    y = PAGE_H * 0.78
+    canvas.setFont(BODY_FONT, 11)
+    canvas.setFillColor(Color(1, 1, 1, 0.6))
+    canvas.drawCentredString(cx, y, 'LendSight Report')
+
+    # Main title
+    title = getattr(doc, 'cover_title', 'Mortgage Lending Analysis')
+    y -= 30
+    canvas.setFont(HEADLINE_FONT_BOLD, 28)
+    canvas.setFillColor(white)
+    # Handle multi-line title
+    for line in title.split('\n'):
+        canvas.drawCentredString(cx, y, line)
+        y -= 34
+
+    # Subtitle (county/location)
+    subtitle = getattr(doc, 'cover_subtitle', '')
+    if subtitle:
+        y -= 2
+        canvas.setFont(HEADLINE_FONT_BOLD, 17)
+        canvas.setFillColor(Color(1, 1, 1, 0.9))
+        canvas.drawCentredString(cx, y, subtitle)
+        y -= 24
+
+    # Teal accent line
+    canvas.setStrokeColor(Color(*teal))
+    canvas.setLineWidth(2)
+    canvas.line(cx - 25, y, cx + 25, y)
+    y -= 18
+
+    # Date range
+    date_range = getattr(doc, 'cover_date_range', '')
+    if date_range:
+        canvas.setFont(BODY_FONT, 12)
+        canvas.setFillColor(Color(1, 1, 1, 0.75))
+        canvas.drawCentredString(cx, y, date_range)
+        y -= 18
+
+    # Loan purpose
+    loan_purpose = getattr(doc, 'cover_loan_purpose', '')
+    if loan_purpose:
+        canvas.setFont(BODY_FONT, 10)
+        canvas.setFillColor(Color(1, 1, 1, 0.55))
+        canvas.drawCentredString(cx, y, f'Loan Purpose: {loan_purpose}')
+
+    # --- Bottom metadata ---
+    gen_date = datetime.now().strftime('%B %d, %Y')
+    canvas.setFont(BODY_FONT, 8)
+    canvas.setFillColor(Color(1, 1, 1, 0.4))
+    canvas.drawCentredString(cx, 50, f'Generated {gen_date}')
+    canvas.setFont(BODY_FONT, 7)
+    canvas.setFillColor(Color(1, 1, 1, 0.3))
+    canvas.drawCentredString(cx, 36, 'NCRC JustData Platform \u2014 justdata.org')
 
     canvas.restoreState()
 
