@@ -5,6 +5,7 @@ Defines all ParagraphStyle, TableStyle, color constants, and font constants
 used by the shared PDF report framework.
 """
 
+import re
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
 from reportlab.lib.colors import HexColor, white, black
@@ -17,9 +18,9 @@ from reportlab.platypus import TableStyle
 NAVY = HexColor('#1e3a5f')
 DARK_NAVY = HexColor('#0f2440')
 BODY_COLOR = HexColor('#333333')
+DARK_GRAY = HexColor('#666666')
 LIGHT_GRAY = HexColor('#f5f6f8')
 MEDIUM_GRAY = HexColor('#e0e0e0')
-DARK_GRAY = HexColor('#666666')
 ACCENT_BLUE = HexColor('#1a8fc9')
 MUTED_GREEN = HexColor('#2d8659')
 HEADER_BG = HexColor('#1e3a5f')
@@ -60,7 +61,9 @@ def _style(name, **kw):
     return ParagraphStyle(name, **defaults)
 
 
-# Cover page
+# ---------------------------------------------------------------------------
+# Cover page styles
+# ---------------------------------------------------------------------------
 COVER_TITLE = _style(
     'CoverTitle',
     fontName=HEADLINE_FONT_BOLD,
@@ -74,24 +77,46 @@ COVER_TITLE = _style(
 COVER_SUBTITLE = _style(
     'CoverSubtitle',
     fontName=BODY_FONT,
-    fontSize=14,
-    leading=20,
+    fontSize=16,
+    leading=22,
     textColor=HexColor('#c0d0e0'),
     alignment=TA_LEFT,
     spaceAfter=8,
 )
 
-COVER_META = _style(
-    'CoverMeta',
+COVER_DATE = _style(
+    'CoverDate',
     fontName=BODY_FONT,
-    fontSize=11,
+    fontSize=12,
     leading=16,
     textColor=HexColor('#a0b8d0'),
     alignment=TA_LEFT,
     spaceAfter=4,
 )
 
+COVER_META = _style(
+    'CoverMeta',
+    fontName=BODY_FONT,
+    fontSize=10,
+    leading=14,
+    textColor=DARK_GRAY,
+    alignment=TA_CENTER,
+    spaceAfter=4,
+)
+
+COVER_DISCLAIMER = _style(
+    'CoverDisclaimer',
+    fontName=BODY_FONT,
+    fontSize=8,
+    leading=10,
+    textColor=HexColor('#888888'),
+    alignment=TA_CENTER,
+    spaceAfter=0,
+)
+
+# ---------------------------------------------------------------------------
 # Section headings
+# ---------------------------------------------------------------------------
 HEADING_1 = _style(
     'MagHeading1',
     fontName=HEADLINE_FONT_BOLD,
@@ -122,7 +147,9 @@ HEADING_3 = _style(
     spaceAfter=6,
 )
 
+# ---------------------------------------------------------------------------
 # Body text
+# ---------------------------------------------------------------------------
 BODY_TEXT = _style(
     'MagBody',
     fontName=BODY_FONT,
@@ -143,7 +170,36 @@ BODY_TEXT_SMALL = _style(
     spaceAfter=4,
 )
 
+# ---------------------------------------------------------------------------
+# AI narrative label
+# ---------------------------------------------------------------------------
+AI_LABEL = _style(
+    'AILabel',
+    fontName=BODY_FONT_BOLD,
+    fontSize=9,
+    leading=12,
+    textColor=ACCENT_BLUE,
+    spaceAfter=6,
+    spaceBefore=4,
+)
+
+# ---------------------------------------------------------------------------
+# Key findings style
+# ---------------------------------------------------------------------------
+KEY_FINDING = _style(
+    'KeyFinding',
+    fontName=BODY_FONT,
+    fontSize=9.5,
+    leading=13,
+    textColor=BODY_COLOR,
+    alignment=TA_LEFT,
+    spaceAfter=4,
+    leftIndent=12,
+)
+
+# ---------------------------------------------------------------------------
 # Callout / findings
+# ---------------------------------------------------------------------------
 CALLOUT_TEXT = _style(
     'CalloutText',
     fontName=BODY_FONT,
@@ -163,7 +219,9 @@ CALLOUT_TITLE = _style(
     spaceAfter=4,
 )
 
+# ---------------------------------------------------------------------------
 # Source / caption
+# ---------------------------------------------------------------------------
 SOURCE_CAPTION = _style(
     'SourceCaption',
     fontName=BODY_FONT_ITALIC,
@@ -173,11 +231,22 @@ SOURCE_CAPTION = _style(
     spaceAfter=8,
 )
 
+TABLE_CAPTION = _style(
+    'TableCaption',
+    fontName=BODY_FONT_ITALIC,
+    fontSize=7.5,
+    leading=10,
+    textColor=SOURCE_COLOR,
+    spaceAfter=8,
+)
+
+# ---------------------------------------------------------------------------
 # Table header / cell text
+# ---------------------------------------------------------------------------
 TABLE_HEADER_TEXT = _style(
     'TableHeaderText',
     fontName=BODY_FONT_BOLD,
-    fontSize=8,
+    fontSize=7.5,
     leading=10,
     textColor=white,
     alignment=TA_CENTER,
@@ -201,7 +270,18 @@ TABLE_CELL_NUMBER = _style(
     alignment=TA_RIGHT,
 )
 
+LENDER_NAME_STYLE = _style(
+    'LenderName',
+    fontName=BODY_FONT_BOLD,
+    fontSize=7.5,
+    leading=9,
+    textColor=DARK_GRAY,
+    alignment=TA_LEFT,
+)
+
+# ---------------------------------------------------------------------------
 # Footer / header
+# ---------------------------------------------------------------------------
 RUNNING_HEADER = _style(
     'RunningHeader',
     fontName=BODY_FONT,
@@ -218,7 +298,9 @@ RUNNING_FOOTER = _style(
     textColor=SOURCE_COLOR,
 )
 
+# ---------------------------------------------------------------------------
 # Methods section
+# ---------------------------------------------------------------------------
 METHODS_TEXT = _style(
     'MethodsText',
     fontName=BODY_FONT,
@@ -243,22 +325,13 @@ def build_table_style(
 ):
     """
     Build a ReportLab TableStyle for magazine-style tables.
-
-    Parameters
-    ----------
-    header_bg : Color for the header row background.
-    header_text : Color for the header row text.
-    alt_row_bg : Color for alternating data rows.
-    grid_color : Color for grid lines.
-    has_total_row : If True, bold the last row.
-    num_rows : Total number of rows (including header) — needed for total-row styling.
     """
     cmds = [
         # Header row
         ('BACKGROUND', (0, 0), (-1, 0), header_bg),
         ('TEXTCOLOR', (0, 0), (-1, 0), header_text),
         ('FONTNAME', (0, 0), (-1, 0), BODY_FONT_BOLD),
-        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('FONTSIZE', (0, 0), (-1, 0), 7.5),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
         ('TOPPADDING', (0, 0), (-1, 0), 6),
 
@@ -286,13 +359,43 @@ def build_table_style(
         for i in range(2, num_rows, 2):
             cmds.append(('BACKGROUND', (0, i), (-1, i), alt_row_bg))
 
-    # Total row
+    # Total row (first data row after header, typically row index 1)
     if has_total_row and num_rows > 1:
-        last = num_rows - 1
         cmds.extend([
-            ('FONTNAME', (0, last), (-1, last), BODY_FONT_BOLD),
-            ('LINEABOVE', (0, last), (-1, last), 1.0, header_bg),
-            ('BACKGROUND', (0, last), (-1, last), HexColor('#e8ecf1')),
+            ('FONTNAME', (0, 1), (-1, 1), BODY_FONT_BOLD),
+            ('LINEBELOW', (0, 1), (-1, 1), 2.0, header_bg),
         ])
 
     return TableStyle(cmds)
+
+
+# ---------------------------------------------------------------------------
+# Markdown to ReportLab markup converter
+# ---------------------------------------------------------------------------
+def markdown_to_reportlab(text):
+    """
+    Convert basic markdown to ReportLab paragraph markup.
+    Handles: **bold**, *italic*, bullet lists, ## headers, [links](url)
+    """
+    if not text:
+        return ''
+
+    # Remove ## headers (we add section titles separately)
+    text = re.sub(r'^##\s+.*', '', text, flags=re.MULTILINE)
+
+    # Bold: **text** → <b>text</b>
+    text = re.sub(r'\*\*(.+?)\*\*', r'<b>\1</b>', text)
+
+    # Italic: *text* → <i>text</i>
+    text = re.sub(r'\*(.+?)\*', r'<i>\1</i>', text)
+
+    # Links: [text](url) → <a href="url">text</a>
+    text = re.sub(r'\[([^\]]+)\]\(([^)]+)\)', r'<a href="\2" color="#1a8fc9">\1</a>', text)
+
+    # Bullet points: lines starting with "• " or "- " or "* "
+    text = re.sub(r'^[\-\*•]\s+', '&bull; ', text, flags=re.MULTILINE)
+
+    # Clean up extra whitespace
+    text = text.strip()
+
+    return text

@@ -2,9 +2,11 @@
 Reusable PDF flowable components for magazine-style reports.
 
 Provides styled tables, callout boxes, source captions,
-keep-together wrappers, and section headers.
+keep-together wrappers, section headers, data tables with
+explicit column ordering, key findings, and AI narrative rendering.
 """
 
+import re
 from reportlab.platypus import (
     Table, Paragraph, Spacer, KeepTogether, Flowable,
 )
@@ -13,15 +15,17 @@ from reportlab.lib.colors import HexColor
 
 from justdata.shared.pdf.styles import (
     HEADING_1, HEADING_2, HEADING_3,
-    BODY_TEXT, BODY_TEXT_SMALL, SOURCE_CAPTION,
+    BODY_TEXT, BODY_TEXT_SMALL, SOURCE_CAPTION, TABLE_CAPTION,
     CALLOUT_TEXT, CALLOUT_TITLE,
     TABLE_HEADER_TEXT, TABLE_CELL_TEXT, TABLE_CELL_NUMBER,
+    KEY_FINDING, AI_LABEL, LENDER_NAME_STYLE,
     NAVY, CALLOUT_BG, CALLOUT_BORDER,
     CENSUS_CALLOUT_BG, CENSUS_CALLOUT_BORDER,
     LIGHT_GRAY, MEDIUM_GRAY,
     BODY_FONT, BODY_FONT_BOLD,
-    build_table_style,
+    build_table_style, markdown_to_reportlab,
 )
+from justdata.shared.pdf.base_report import USABLE_WIDTH
 
 
 # ---------------------------------------------------------------------------
@@ -35,34 +39,75 @@ def section_header(text, level=1):
 
 
 # ---------------------------------------------------------------------------
-# Styled data table
+# Data table with explicit column ordering (v2 spec Section 7)
+# ---------------------------------------------------------------------------
+def build_data_table(data_rows, col_order, col_widths, header_labels=None,
+                     use_paragraph_col0=False, repeat_header=True,
+                     has_total_row=False):
+    """
+    Build a ReportLab Table with explicit column order and widths.
+
+    Args:
+        data_rows: list of dicts (keys match col_order entries)
+        col_order: list of column key names in display order
+        col_widths: list of floats (points) matching col_order length
+        header_labels: optional list of display names (if different from col_order)
+        use_paragraph_col0: if True, wrap first column values in Paragraph() for word wrap
+        repeat_header: if True, repeat header row on page splits
+        has_total_row: if True, bold the first data row and add bottom border
+    """
+    if not data_rows:
+        return Spacer(1, 0)
+
+    headers = header_labels or col_order
+
+    # Build header row
+    header_row = [Paragraph(str(h), TABLE_HEADER_TEXT) for h in headers]
+
+    # Build data rows IN THE ORDER SPECIFIED
+    table_data = [header_row]
+    for row_dict in data_rows:
+        row = []
+        for i, col_key in enumerate(col_order):
+            value = row_dict.get(col_key, '')
+            if value is None:
+                value = ''
+            if i == 0 and use_paragraph_col0:
+                row.append(Paragraph(str(value), TABLE_CELL_TEXT))
+            else:
+                row.append(str(value))
+        table_data.append(row)
+
+    num_rows = len(table_data)
+
+    table = Table(
+        table_data,
+        colWidths=col_widths,
+        repeatRows=1 if repeat_header else 0,
+        hAlign='LEFT',
+    )
+    table.setStyle(build_table_style(
+        has_total_row=has_total_row,
+        num_rows=num_rows,
+    ))
+
+    return table
+
+
+# ---------------------------------------------------------------------------
+# Legacy styled table (kept for backward compat)
 # ---------------------------------------------------------------------------
 def build_styled_table(headers, rows, col_widths=None, has_total_row=False,
                        number_cols=None, right_align_from=1):
-    """
-    Build a ReportLab Table with magazine-style formatting.
-
-    Parameters
-    ----------
-    headers : list[str]
-    rows : list[list[str]]
-    col_widths : list[float] or None — explicit column widths in points
-    has_total_row : bool — if True, bold/separate the last row
-    number_cols : set[int] or None — column indices to right-align
-    right_align_from : int — auto right-align columns from this index onward
-                       (ignored if number_cols is provided)
-    """
+    """Build a ReportLab Table with magazine-style formatting."""
     if not rows:
         return Spacer(1, 0)
 
-    # Wrap header text
     header_cells = [Paragraph(str(h), TABLE_HEADER_TEXT) for h in headers]
 
-    # Determine which columns are numeric
     if number_cols is None:
         number_cols = set(range(right_align_from, len(headers)))
 
-    # Wrap data cells
     data_rows = []
     for row in rows:
         cells = []
@@ -87,11 +132,7 @@ def build_styled_table(headers, rows, col_widths=None, has_total_row=False,
 # Callout box
 # ---------------------------------------------------------------------------
 class CalloutBox(Flowable):
-    """
-    A flowable that renders a colored box with a left accent border.
-
-    Styles: 'findings' (blue) or 'census' (green).
-    """
+    """A flowable that renders a colored box with a left accent border."""
 
     def __init__(self, content_flowables, style='findings', width=None):
         super().__init__()
@@ -110,7 +151,6 @@ class CalloutBox(Flowable):
         self._frame_width = self._width or availWidth
         inner_w = self._frame_width - 18  # 4px border + 14px padding
 
-        # Wrap each flowable to compute height
         total_h = 16  # top + bottom padding
         for f in self.content_flowables:
             w, h = f.wrap(inner_w, availHeight)
@@ -143,27 +183,89 @@ class CalloutBox(Flowable):
 
 
 def build_callout_box(content, title=None, style='findings', width=None):
-    """
-    Build a callout box from text content.
-
-    Parameters
-    ----------
-    content : str — the text body (may contain simple HTML tags)
-    title : str or None — optional bold title
-    style : 'findings' or 'census'
-    width : float or None — explicit width; defaults to available frame width
-    """
+    """Build a callout box from text content."""
     flowables = []
     if title:
         flowables.append(Paragraph(title, CALLOUT_TITLE))
     if content:
-        # Split on double newlines to create paragraphs
         for para in str(content).split('\n\n'):
             para = para.strip()
             if para:
                 flowables.append(Paragraph(para, CALLOUT_TEXT))
 
     return CalloutBox(flowables, style=style, width=width)
+
+
+# ---------------------------------------------------------------------------
+# Key Findings rendering (v2 spec Section 9)
+# ---------------------------------------------------------------------------
+def build_key_findings(findings_text):
+    """Build Key Findings callout box with proper markdown rendering."""
+    if not findings_text:
+        return Spacer(1, 0)
+
+    lines = findings_text.strip().split('\n')
+    finding_flowables = []
+
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        # Strip bullet markers
+        line = re.sub(r'^[\-\*•]\s*', '', line)
+        # Strip numbered list markers (1. 2. etc.)
+        line = re.sub(r'^\d+\.\s*', '', line)
+        # Convert markdown
+        line = markdown_to_reportlab(line)
+        if line:
+            finding_flowables.append(
+                Paragraph(f'&bull; {line}', KEY_FINDING)
+            )
+
+    if not finding_flowables:
+        return Spacer(1, 0)
+
+    from reportlab.platypus import TableStyle as TS
+    callout = Table(
+        [[finding_flowables]],
+        colWidths=[USABLE_WIDTH - 18],
+        style=TS([
+            ('BACKGROUND', (0, 0), (-1, -1), CALLOUT_BG),
+            ('LEFTPADDING', (0, 0), (-1, -1), 16),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('LINEBEFORE', (0, 0), (0, -1), 4, NAVY),
+        ])
+    )
+    return callout
+
+
+# ---------------------------------------------------------------------------
+# AI narrative rendering (v2 spec Section 8)
+# ---------------------------------------------------------------------------
+def ai_narrative_to_flowables(narrative_text, style=None):
+    """Convert AI narrative text into list of Paragraph flowables."""
+    if not narrative_text:
+        return []
+
+    style = style or BODY_TEXT
+    flowables = []
+
+    # Split on double newline (paragraph breaks)
+    paragraphs = re.split(r'\n\s*\n', narrative_text)
+
+    for para in paragraphs:
+        para = para.strip()
+        if not para:
+            continue
+        converted = markdown_to_reportlab(para)
+        if converted:
+            # Convert single newlines to <br/> for readability
+            converted = converted.replace('\n', '<br/>')
+            flowables.append(Paragraph(converted, style))
+
+    return flowables
 
 
 # ---------------------------------------------------------------------------
@@ -183,13 +285,10 @@ def keep_together_block(elements):
 
 
 # ---------------------------------------------------------------------------
-# Narrative text helper
+# Narrative text helper (legacy, uses markdown conversion now)
 # ---------------------------------------------------------------------------
 def narrative_paragraphs(text, style=None):
-    """
-    Convert a block of text (possibly with newlines) into a list
-    of Paragraph flowables.
-    """
+    """Convert a block of text into a list of Paragraph flowables."""
     if not text:
         return []
     style = style or BODY_TEXT
@@ -197,7 +296,7 @@ def narrative_paragraphs(text, style=None):
     for para in str(text).split('\n\n'):
         para = para.strip()
         if para:
-            # Convert single newlines to <br/> for readability
-            para = para.replace('\n', '<br/>')
-            paragraphs.append(Paragraph(para, style))
+            converted = markdown_to_reportlab(para)
+            converted = converted.replace('\n', '<br/>')
+            paragraphs.append(Paragraph(converted, style))
     return paragraphs

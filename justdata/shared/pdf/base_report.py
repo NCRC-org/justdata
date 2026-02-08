@@ -5,7 +5,7 @@ Provides MagazineDocTemplate with four page templates:
   cover       — full-width, no header/footer
   two_column  — two-column text flow with header/footer
   full_width  — single-frame full-width with header/footer
-  landscape   — 11×8.5 single-frame with header/footer
+  landscape   — 11x8.5 single-frame with header/footer
 """
 
 from io import BytesIO
@@ -18,37 +18,39 @@ from reportlab.platypus import (
     BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer,
     NextPageTemplate, PageBreak, CondPageBreak,
 )
-from reportlab.lib.enums import TA_LEFT
+from reportlab.lib.enums import TA_LEFT, TA_CENTER
 
 from justdata.shared.pdf.styles import (
     NAVY, DARK_NAVY, RULE_COLOR, SOURCE_COLOR, DARK_GRAY,
-    COVER_TITLE, COVER_SUBTITLE, COVER_META,
+    COVER_TITLE, COVER_SUBTITLE, COVER_DATE, COVER_META, COVER_DISCLAIMER,
     BODY_FONT, BODY_FONT_BOLD, HEADLINE_FONT_BOLD,
 )
 
 # ---------------------------------------------------------------------------
-# Page geometry — letter portrait
+# Page geometry — letter portrait (per v2 spec Section 2)
 # ---------------------------------------------------------------------------
-PAGE_W, PAGE_H = letter  # 612 × 792
-MARGIN_LEFT = 0.65 * inch
+PAGE_W, PAGE_H = letter  # 612 x 792 pt
+MARGIN_LEFT = 0.65 * inch    # 46.8 pt
 MARGIN_RIGHT = 0.65 * inch
-MARGIN_TOP = 0.75 * inch
-MARGIN_BOTTOM = 0.70 * inch
-GUTTER = 0.30 * inch
+MARGIN_TOP = 0.6 * inch      # 43.2 pt
+MARGIN_BOTTOM = 0.6 * inch
+HEADER_HEIGHT = 0.45 * inch  # 32.4 pt
+FOOTER_HEIGHT = 0.35 * inch  # 25.2 pt
+GUTTER = 0.25 * inch         # 18 pt
 
-CONTENT_W = PAGE_W - MARGIN_LEFT - MARGIN_RIGHT
-COL_W = (CONTENT_W - GUTTER) / 2.0
-
-HEADER_Y = PAGE_H - 0.50 * inch
-FOOTER_Y = 0.45 * inch
+USABLE_WIDTH = PAGE_W - MARGIN_LEFT - MARGIN_RIGHT  # ~518.4 pt
+CONTENT_W = USABLE_WIDTH  # alias for backward compat
+CONTENT_HEIGHT = PAGE_H - MARGIN_TOP - MARGIN_BOTTOM - HEADER_HEIGHT - FOOTER_HEIGHT
+COL_W = (USABLE_WIDTH - GUTTER) / 2.0  # ~250.2 pt
 
 # Landscape geometry
-L_PAGE_W, L_PAGE_H = landscape_size(letter)  # 792 × 612
-L_CONTENT_W = L_PAGE_W - MARGIN_LEFT - MARGIN_RIGHT
+L_PAGE_W, L_PAGE_H = landscape_size(letter)  # 792 x 612
+L_CONTENT_W = L_PAGE_W - MARGIN_LEFT - MARGIN_RIGHT  # ~698.4 pt
+L_USABLE_WIDTH = L_CONTENT_W  # alias
 
 
 # ---------------------------------------------------------------------------
-# Header / footer drawing
+# Header / footer drawing (per v2 spec Section 4)
 # ---------------------------------------------------------------------------
 def _draw_header_footer(canvas, doc):
     """Draw running header and footer on non-cover pages."""
@@ -59,33 +61,39 @@ def _draw_header_footer(canvas, doc):
     m_left = MARGIN_LEFT
     m_right = MARGIN_RIGHT
 
-    # Header rule
-    header_y = page_h - 0.50 * inch
-    canvas.setStrokeColor(RULE_COLOR)
-    canvas.setLineWidth(0.5)
-    canvas.line(m_left, header_y, page_w - m_right, header_y)
+    # --- Header ---
+    header_text_y = page_h - MARGIN_TOP + 4
+    header_rule_y = header_text_y - 6
 
     # Header text
-    canvas.setFont(BODY_FONT_BOLD, 8)
+    canvas.setFont(BODY_FONT, 8)
     canvas.setFillColor(DARK_GRAY)
     app_name = getattr(doc, 'app_name', 'LendSight')
-    canvas.drawString(m_left, header_y + 4, app_name)
+    canvas.drawString(m_left, header_text_y, app_name)
+    canvas.drawRightString(page_w - m_right, header_text_y, 'NCRC')
 
-    canvas.setFont(BODY_FONT, 7)
-    canvas.drawRightString(page_w - m_right, header_y + 4, 'NCRC')
+    # Header rule
+    canvas.setStrokeColor(RULE_COLOR)
+    canvas.setLineWidth(0.5)
+    canvas.line(m_left, header_rule_y, page_w - m_right, header_rule_y)
+
+    # --- Footer ---
+    footer_rule_y = MARGIN_BOTTOM + FOOTER_HEIGHT - 12 + 14
+    footer_text_y = MARGIN_BOTTOM + FOOTER_HEIGHT - 12
 
     # Footer rule
-    footer_y = 0.50 * inch
-    canvas.line(m_left, footer_y, page_w - m_right, footer_y)
+    canvas.line(m_left, footer_rule_y, page_w - m_right, footer_rule_y)
 
     # Footer text
-    canvas.setFont(BODY_FONT, 7)
-    canvas.setFillColor(SOURCE_COLOR)
+    canvas.setFont(BODY_FONT, 8)
+    canvas.setFillColor(DARK_GRAY)
     source = getattr(doc, 'footer_source', 'Source: HMDA, U.S. Census Bureau')
-    canvas.drawString(m_left, footer_y - 10, source)
+    canvas.drawString(m_left, footer_text_y, source)
 
-    page_num = canvas.getPageNumber()
-    canvas.drawRightString(page_w - m_right, footer_y - 10, f'Page {page_num}')
+    # Page number: doc.page - 1 so first content page shows "Page 1"
+    page_num = doc.page - 1
+    if page_num > 0:
+        canvas.drawRightString(page_w - m_right, footer_text_y, f'Page {page_num}')
 
     canvas.restoreState()
 
@@ -94,7 +102,7 @@ def _draw_cover(canvas, doc):
     """Draw cover page background — no running header/footer."""
     canvas.saveState()
     # Full navy band across top 45%
-    band_height = PAGE_H * 0.50
+    band_height = PAGE_H * 0.45
     canvas.setFillColor(DARK_NAVY)
     canvas.rect(0, PAGE_H - band_height, PAGE_W, band_height, fill=1, stroke=0)
 
@@ -103,11 +111,6 @@ def _draw_cover(canvas, doc):
     canvas.setLineWidth(3)
     canvas.line(0, PAGE_H - band_height, PAGE_W, PAGE_H - band_height)
 
-    # Footer on cover: just the date
-    canvas.setFont(BODY_FONT, 7)
-    canvas.setFillColor(SOURCE_COLOR)
-    canvas.drawString(MARGIN_LEFT, 0.45 * inch,
-                      f'Generated {datetime.now().strftime("%B %d, %Y")}')
     canvas.restoreState()
 
 
@@ -117,12 +120,6 @@ def _draw_cover(canvas, doc):
 class MagazineDocTemplate(BaseDocTemplate):
     """
     Multi-template document for magazine-style PDF reports.
-
-    Usage:
-        buf = BytesIO()
-        doc = MagazineDocTemplate(buf, app_name='LendSight')
-        doc.build(story)
-        pdf_bytes = buf.getvalue()
     """
 
     def __init__(self, filename_or_buf, app_name='LendSight',
@@ -143,11 +140,10 @@ class MagazineDocTemplate(BaseDocTemplate):
 
     def _build_templates(self):
         """Create the four page templates."""
-        # Frame IDs help debugging
-        # --- Cover (single full-width frame, placed in the navy band area) ---
+        # --- Cover (single full-width frame) ---
         cover_frame = Frame(
             MARGIN_LEFT, MARGIN_BOTTOM,
-            CONTENT_W, PAGE_H - MARGIN_TOP - MARGIN_BOTTOM,
+            USABLE_WIDTH, PAGE_H - MARGIN_TOP - MARGIN_BOTTOM,
             id='cover_frame',
             leftPadding=0, rightPadding=0,
             topPadding=0, bottomPadding=0,
@@ -160,18 +156,20 @@ class MagazineDocTemplate(BaseDocTemplate):
         )
 
         # --- Two-column ---
-        frame_top = PAGE_H - MARGIN_TOP - 14  # leave room below header rule
-        frame_h = frame_top - MARGIN_BOTTOM
+        # Frame starts below header, ends above footer
+        frame_top = PAGE_H - MARGIN_TOP - HEADER_HEIGHT
+        frame_bottom = MARGIN_BOTTOM + FOOTER_HEIGHT
+        frame_h = frame_top - frame_bottom
 
         left_frame = Frame(
-            MARGIN_LEFT, MARGIN_BOTTOM,
+            MARGIN_LEFT, frame_bottom,
             COL_W, frame_h,
             id='left_col',
             leftPadding=0, rightPadding=4,
             topPadding=0, bottomPadding=0,
         )
         right_frame = Frame(
-            MARGIN_LEFT + COL_W + GUTTER, MARGIN_BOTTOM,
+            MARGIN_LEFT + COL_W + GUTTER, frame_bottom,
             COL_W, frame_h,
             id='right_col',
             leftPadding=4, rightPadding=0,
@@ -186,8 +184,8 @@ class MagazineDocTemplate(BaseDocTemplate):
 
         # --- Full-width ---
         full_frame = Frame(
-            MARGIN_LEFT, MARGIN_BOTTOM,
-            CONTENT_W, frame_h,
+            MARGIN_LEFT, frame_bottom,
+            USABLE_WIDTH, frame_h,
             id='full_frame',
             leftPadding=0, rightPadding=0,
             topPadding=0, bottomPadding=0,
@@ -200,10 +198,11 @@ class MagazineDocTemplate(BaseDocTemplate):
         )
 
         # --- Landscape ---
-        l_frame_top = L_PAGE_H - MARGIN_TOP - 14
-        l_frame_h = l_frame_top - MARGIN_BOTTOM
+        l_frame_top = L_PAGE_H - MARGIN_TOP - HEADER_HEIGHT
+        l_frame_bottom = MARGIN_BOTTOM + FOOTER_HEIGHT
+        l_frame_h = l_frame_top - l_frame_bottom
         landscape_frame = Frame(
-            MARGIN_LEFT, MARGIN_BOTTOM,
+            MARGIN_LEFT, l_frame_bottom,
             L_CONTENT_W, l_frame_h,
             id='landscape_frame',
             leftPadding=0, rightPadding=0,
@@ -220,43 +219,44 @@ class MagazineDocTemplate(BaseDocTemplate):
 
 
 # ---------------------------------------------------------------------------
-# Cover page flowables builder
+# Cover page flowables builder (per v2 spec Section 5)
 # ---------------------------------------------------------------------------
 def build_cover_page(title, subtitle='', date_range='', metadata=None):
     """
     Return a list of flowables for the cover page.
-
-    Parameters
-    ----------
-    title : str — main report title (e.g. "Mortgage Lending Analysis")
-    subtitle : str — e.g. county names
-    date_range : str — e.g. "2019 – 2023"
-    metadata : dict — optional extra info (loan_purpose, etc.)
     """
     story = []
 
     # Push content down into the navy band area
-    story.append(Spacer(1, PAGE_H * 0.15))
+    story.append(Spacer(1, 2.8 * inch))
 
     story.append(Paragraph(title, COVER_TITLE))
     if subtitle:
-        story.append(Spacer(1, 6))
         story.append(Paragraph(subtitle, COVER_SUBTITLE))
     if date_range:
         story.append(Spacer(1, 8))
-        story.append(Paragraph(date_range, COVER_META))
+        story.append(Paragraph(date_range, COVER_DATE))
 
     if metadata:
-        story.append(Spacer(1, 12))
         loan_purpose = metadata.get('loan_purpose', '')
         if isinstance(loan_purpose, list):
             loan_purpose = ', '.join(str(lp).replace('_', ' ').title() for lp in loan_purpose)
         if loan_purpose:
-            story.append(Paragraph(f'Loan Purpose: {loan_purpose}', COVER_META))
+            story.append(Paragraph(f'Loan Purpose: {loan_purpose}', COVER_DATE))
 
-        counties = metadata.get('counties', [])
-        if isinstance(counties, list) and len(counties) > 1:
-            story.append(Paragraph(f'Counties: {len(counties)}', COVER_META))
+    # White area below the navy band
+    story.append(Spacer(1, 2.0 * inch))
+    gen_date = datetime.now().strftime('%B %d, %Y')
+    story.append(Paragraph(f'Generated {gen_date}', COVER_META))
+    story.append(Paragraph('NCRC JustData Platform — justdata.org', COVER_META))
+
+    story.append(Spacer(1, 0.5 * inch))
+    disclaimer = (
+        "This report was generated by NCRC's JustData platform using publicly available "
+        "Home Mortgage Disclosure Act (HMDA) data. AI-generated narrative analysis is produced "
+        "by Anthropic's Claude. All quantitative data is derived directly from federal sources."
+    )
+    story.append(Paragraph(disclaimer, COVER_DISCLAIMER))
 
     # Push to next page after cover
     story.append(NextPageTemplate('full_width'))

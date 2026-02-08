@@ -15,21 +15,12 @@ from reportlab.lib.units import inch
 
 
 # ---------------------------------------------------------------------------
-# Muted, print-friendly color palette
+# Chart color palettes (v2 spec Section 10)
 # ---------------------------------------------------------------------------
-CHART_COLORS = [
-    '#1a8fc9',  # JustData blue
-    '#2d8659',  # muted green
-    '#d4783c',  # burnt orange
-    '#7b5ea7',  # muted purple
-    '#c94c4c',  # muted red
-    '#4a7c8f',  # teal
-    '#8c8c3e',  # olive
-]
-
+CENSUS_COLORS = ['#4472C4', '#548235', '#ED7D31', '#A5A5A5', '#FFC000', '#5B9BD5']
 BAR_COLOR = '#1a8fc9'
-HHI_MODERATE_COLOR = '#e8a838'
-HHI_HIGH_COLOR = '#c94c4c'
+HHI_MODERATE_COLOR = '#e67e22'
+HHI_HIGH_COLOR = '#e74c3c'
 
 
 def _apply_base_style(ax, fig):
@@ -38,13 +29,13 @@ def _apply_base_style(ax, fig):
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(0.5)
     ax.spines['bottom'].set_linewidth(0.5)
-    ax.tick_params(axis='both', labelsize=7, length=3, width=0.5)
+    ax.tick_params(axis='both', labelsize=8, length=3, width=0.5)
     fig.patch.set_facecolor('white')
     ax.set_facecolor('white')
 
 
 # ---------------------------------------------------------------------------
-# Census demographics grouped bar chart
+# Census demographics grouped bar chart (v2 spec Section 10.1)
 # ---------------------------------------------------------------------------
 def render_census_demographics_chart(census_data, counties=None):
     """
@@ -59,12 +50,11 @@ def render_census_demographics_chart(census_data, counties=None):
 
     Returns
     -------
-    BytesIO — PNG image buffer, or None if no data.
+    BytesIO -- PNG image buffer, or None if no data.
     """
     if not census_data:
         return None
 
-    # Collect data across counties and time periods
     race_keys = [
         ('white_percentage', 'White'),
         ('black_percentage', 'Black'),
@@ -75,7 +65,7 @@ def render_census_demographics_chart(census_data, counties=None):
     ]
 
     # Build period labels and data
-    period_data = {}  # {period_label: {race: avg_pct}}
+    period_data = {}  # {period_label: {race: [values across counties]}}
     period_order = ['2010 Census', '2020 Census']  # Prefer this order
 
     target_counties = counties or list(census_data.keys())
@@ -106,7 +96,7 @@ def render_census_demographics_chart(census_data, counties=None):
         return None
 
     race_labels = [rk[1] for rk in race_keys]
-    avg_data = {}  # {period: [avg for each race]}
+    avg_data = {}
     for period in periods_to_plot:
         avgs = []
         for race in race_labels:
@@ -129,31 +119,39 @@ def render_census_demographics_chart(census_data, counties=None):
 
     # Plot
     import numpy as np
-    fig, ax = plt.subplots(figsize=(7.0, 3.2), dpi=150)
+    fig, ax = plt.subplots(figsize=(7.2, 3.5), dpi=150)
     _apply_base_style(ax, fig)
 
     x = np.arange(len(race_labels))
     n_periods = len(periods_to_plot)
-    width = 0.7 / max(n_periods, 1)
+    bar_width = 0.25
+
+    offsets = [i - (n_periods - 1) / 2 for i in range(n_periods)]
 
     for i, period in enumerate(periods_to_plot):
-        offset = (i - (n_periods - 1) / 2) * width
-        bars = ax.bar(x + offset, avg_data[period], width,
-                      label=period, color=CHART_COLORS[i % len(CHART_COLORS)],
-                      edgecolor='white', linewidth=0.3)
+        bars = ax.bar(x + offsets[i] * bar_width, avg_data[period], bar_width,
+                      label=period, color=CENSUS_COLORS[i % len(CENSUS_COLORS)],
+                      edgecolor='none')
         # Value labels on bars
         for bar in bars:
             h = bar.get_height()
-            if h > 2:
-                ax.text(bar.get_x() + bar.get_width() / 2, h + 0.5,
-                        f'{h:.1f}%', ha='center', va='bottom', fontsize=6)
+            if h > 0:
+                ax.text(bar.get_x() + bar.get_width() / 2, h + 0.3,
+                        f'{h:.1f}%', ha='center', va='bottom', fontsize=6.5)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(race_labels, fontsize=7)
-    ax.set_ylabel('Population Share (%)', fontsize=7)
-    ax.set_title('Population Demographics by Race/Ethnicity', fontsize=9, fontweight='bold', pad=8)
+    ax.set_xticklabels(race_labels, fontsize=8)
+    ax.set_ylabel('Population Share (%)', fontsize=8)
+    ax.set_title('Population Demographics by Race/Ethnicity', fontsize=10,
+                 fontweight='bold', pad=10)
     ax.legend(fontsize=7, loc='upper right', framealpha=0.9)
+
+    # Set y-axis ceiling
+    all_vals = [v for p in periods_to_plot for v in avg_data[p] if v > 0]
+    if all_vals:
+        ax.set_ylim(0, max(all_vals) * 1.15)
     ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
+    ax.grid(axis='y', alpha=0.3)
 
     plt.tight_layout()
     buf = BytesIO()
@@ -165,7 +163,7 @@ def render_census_demographics_chart(census_data, counties=None):
 
 
 # ---------------------------------------------------------------------------
-# HHI market concentration bar chart
+# HHI market concentration bar chart (v2 spec Section 10.2)
 # ---------------------------------------------------------------------------
 def render_hhi_chart(market_concentration_data):
     """
@@ -179,7 +177,7 @@ def render_hhi_chart(market_concentration_data):
 
     Returns
     -------
-    BytesIO — PNG image buffer, or None if no data.
+    BytesIO -- PNG image buffer, or None if no data.
     """
     if not market_concentration_data:
         return None
@@ -193,49 +191,54 @@ def render_hhi_chart(market_concentration_data):
     if not year_cols:
         return None
 
-    purposes = [row.get('Loan Purpose', row.get('loan_purpose', 'Unknown'))
-                for row in market_concentration_data]
+    # Try to find "All Loans" row, otherwise use first row
+    all_loans_row = None
+    for row in market_concentration_data:
+        purpose = row.get('Loan Purpose', row.get('loan_purpose', ''))
+        if 'all' in str(purpose).lower():
+            all_loans_row = row
+            break
+    if all_loans_row is None:
+        all_loans_row = market_concentration_data[0]
+
+    values = []
+    for yr in year_cols:
+        v = all_loans_row.get(yr, 0)
+        try:
+            values.append(float(v) if v else 0)
+        except (ValueError, TypeError):
+            values.append(0)
 
     fig, ax = plt.subplots(figsize=(6.0, 3.0), dpi=150)
     _apply_base_style(ax, fig)
 
-    n_purposes = len(purposes)
-    n_years = len(year_cols)
-    x = np.arange(n_years)
-    width = 0.7 / max(n_purposes, 1)
+    x = np.arange(len(year_cols))
 
-    for i, row in enumerate(market_concentration_data):
-        purpose = purposes[i]
-        vals = []
-        for yr in year_cols:
-            v = row.get(yr, 0)
-            try:
-                vals.append(float(v) if v else 0)
-            except (ValueError, TypeError):
-                vals.append(0)
-
-        offset = (i - (n_purposes - 1) / 2) * width
-        color = CHART_COLORS[i % len(CHART_COLORS)]
-        ax.bar(x + offset, vals, width, label=purpose, color=color,
-               edgecolor='white', linewidth=0.3)
+    ax.bar(x, values, color=BAR_COLOR, width=0.5, edgecolor='none')
 
     # Threshold lines
     ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=1, alpha=0.8)
     ax.axhline(y=2500, color=HHI_HIGH_COLOR, linestyle='--', linewidth=1, alpha=0.8)
 
     # Threshold labels
-    x_max = len(year_cols) - 1
-    ax.text(x_max + 0.4, 1500, 'Moderate (1500)', fontsize=6,
-            color=HHI_MODERATE_COLOR, va='center')
-    ax.text(x_max + 0.4, 2500, 'High (2500)', fontsize=6,
-            color=HHI_HIGH_COLOR, va='center')
+    ax.text(len(year_cols) - 0.5, 1520, 'Moderate (1,500)', fontsize=7,
+            color=HHI_MODERATE_COLOR, ha='right')
+    ax.text(len(year_cols) - 0.5, 2520, 'High (2,500)', fontsize=7,
+            color=HHI_HIGH_COLOR, ha='right')
+
+    # Value labels on bars
+    for i, v in enumerate(values):
+        if v > 0:
+            ax.text(i, v + 20, str(int(v)), ha='center', fontsize=7)
 
     ax.set_xticks(x)
-    ax.set_xticklabels(year_cols, fontsize=7)
-    ax.set_ylabel('HHI Index', fontsize=7)
-    ax.set_title('Market Concentration (HHI) by Year', fontsize=9, fontweight='bold', pad=8)
-    if n_purposes > 1:
-        ax.legend(fontsize=7, loc='upper left', framealpha=0.9)
+    ax.set_xticklabels([str(yr) for yr in year_cols], fontsize=8)
+    ax.set_ylabel('HHI Index', fontsize=8)
+    ax.set_ylim(0, max(max(values) * 1.15, 2700) if values else 2700)
+    ax.set_title('Market Concentration (HHI) by Year', fontsize=10,
+                 fontweight='bold', pad=10)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
 
     plt.tight_layout()
     buf = BytesIO()
@@ -247,23 +250,20 @@ def render_hhi_chart(market_concentration_data):
 
 
 # ---------------------------------------------------------------------------
-# Helper: BytesIO → ReportLab Image
+# Helper: BytesIO -> ReportLab Image
 # ---------------------------------------------------------------------------
-def chart_to_image(buf, width_inches=6.5, height_inches=3.0):
+def chart_to_image(buf, width=None, height=None,
+                   width_inches=None, height_inches=None):
     """
     Convert a PNG BytesIO buffer to a ReportLab Image flowable.
 
-    Parameters
-    ----------
-    buf : BytesIO — PNG image data
-    width_inches : float
-    height_inches : float
-
-    Returns
-    -------
-    reportlab.platypus.Image or None
+    Accepts either point values (width/height) or inch values (width_inches/height_inches).
     """
     if buf is None:
         return None
     buf.seek(0)
-    return Image(buf, width=width_inches * inch, height=height_inches * inch)
+
+    w = width if width is not None else (width_inches * inch if width_inches else 6.5 * inch)
+    h = height if height is not None else (height_inches * inch if height_inches else 3.0 * inch)
+
+    return Image(buf, width=w, height=h)
