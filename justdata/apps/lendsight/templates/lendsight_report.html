@@ -344,6 +344,11 @@
         #downloadExcelBtn:hover {
             background: #218838 !important;
         }
+
+        /* PDF export button hover */
+        #downloadPdfBtn:hover {
+            background: #0f2440 !important;
+        }
         
         .dropdown {
             position: relative;
@@ -733,8 +738,11 @@
     {% include "shared_header.html" %}
 
     <div class="report-container">
-        <!-- Header Actions Row - Excel export only -->
-        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+        <!-- Header Actions Row -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-bottom: 20px; padding: 10px 0;">
+            <a href="{{ app_base_url|default('/lendsight') }}/download?format=pdf" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-file-pdf"></i> Download PDF Report
+            </a>
             <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
                 <i class="fas fa-file-excel"></i> Export Full Report to Excel
             </a>
