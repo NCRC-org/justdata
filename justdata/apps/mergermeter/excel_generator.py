@@ -645,6 +645,9 @@ def create_merger_excel(
     if transformed_mortgage_goals:
         logger.info(f"Transformed mortgage_goals_data: {len(transformed_mortgage_goals.get('by_state', {}))} states, grand_total has {len(transformed_mortgage_goals.get('grand_total', {}))} loan types")
 
+    # Determine if single bank mode from metadata
+    single_bank_mode = metadata.get('single_bank_mode', False) if metadata else False
+
     # Call shared generator
     shared_create_merger_excel(
         output_path=output_path,
@@ -678,7 +681,8 @@ def create_merger_excel(
         occupancy_type=occupancy_type,
         total_units=total_units,
         construction_method=construction_method,
-        not_reverse=not_reverse
+        not_reverse=not_reverse,
+        single_bank_mode=single_bank_mode
     )
     
     logger.info(f"Excel workbook saved to: {output_path}")

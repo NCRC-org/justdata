@@ -466,11 +466,29 @@
                         // Build data tables section from Excel data
                         const dataTablesHTML = buildDataTablesSection(data);
 
-                        // Format the complete report with introduction, HHI table, and data tables
+                        // Format the complete report with introduction, HHI table, data tables, and disclaimers
                         const reportHTML = `
                             ${introHTML}
                             ${hhiHTML}
                             ${dataTablesHTML}
+
+                            <div class="sb-lmict-note" style="background: #fff8e1; padding: 24px 30px; border-radius: 8px; border-left: 4px solid #ff9800; margin-top: 30px; margin-bottom: 30px;">
+                                <h3 style="color: #e65100; margin: 0 0 12px 0; font-size: 1.1rem;">Note on Small Business LMI Tract Lending Estimates</h3>
+                                <p style="margin: 0 0 12px 0; color: #333; line-height: 1.7; font-size: 0.9rem;">
+                                    Small business lending data, as reported to federal regulators, is provided at the county level in three loan size buckets: under $100,000, $100,000&ndash;$250,000, and $250,000&ndash;$1,000,000. For each bucket, only the number of loans and the total dollar amount are disclosed &mdash; individual loan amounts are not available. The number of loans made in low-to-moderate income (LMI) census tracts is reported as a single count across all buckets, without a dollar amount breakdown.
+                                </p>
+                                <p style="margin: 0 0 8px 0; color: #333; line-height: 1.7; font-size: 0.9rem;"><strong>To estimate LMI tract lending amounts, this report uses the following method:</strong></p>
+                                <ol style="margin: 0 0 12px 20px; color: #333; line-height: 1.8; font-size: 0.9rem;">
+                                    <li>Calculate the LMI tract share: LMI Tract Loan Count &divide; Total Loan Count</li>
+                                    <li>Multiply: LMI Tract Share &times; Total Amount (all buckets) = Estimated LMI Tract Amount</li>
+                                </ol>
+                                <p style="margin: 0 0 12px 0; color: #555; line-height: 1.7; font-size: 0.85rem; font-style: italic;">
+                                    Example: If a county has 1,000 total small business loans totaling $50 million, and 200 of those loans are in LMI tracts, then: LMI Share = 200 &divide; 1,000 = 20%, and Estimated LMI Amount = 20% &times; $50M = $10 million.
+                                </p>
+                                <p style="margin: 0; color: #333; line-height: 1.7; font-size: 0.9rem;">
+                                    This calculation is performed per county, then summed to the CBSA level. This is an approximation. Because individual loan amounts within each bucket are unknown (e.g., 5 loans in the $100,000&ndash;$250,000 bucket could each be $100,000 or each be $250,000), and because LMI tract loans may not be evenly distributed across buckets, the estimated dollar amount may differ from calculations that use a different order of operations or methodology.
+                                </p>
+                            </div>
 
                             <div class="download-section" style="margin-top: 30px; text-align: center; padding: 20px; background: #f8f9fa; border-radius: 8px;">
                                 <p style="margin: 0 0 15px 0; color: #666;">For detailed data tables and analysis, download the full Excel report:</p>

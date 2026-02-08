@@ -3268,6 +3268,7 @@ def goals_calculator():
                          bank_info=bank_info,
                          data_years=data_years,
                          single_bank_mode=single_bank_mode,
+                         job_id=job_id,
                          version=__version__,
                          app_name='MergerMeter',
                          breadcrumb_items=[
