@@ -1121,6 +1121,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     # Section 1: Race & Ethnicity
     s1_table, s1_has_data = _build_section1_table(demo_df)
     if s1_has_data:
+        # KeepTogether only on title+intro (table may be too tall for one page)
         story.append(KeepTogether([
             _h1('Section 1: Race &amp; Ethnicity in Mortgage Lending'),
             Paragraph(
@@ -1132,9 +1133,9 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
                 'report, with positive changes displayed in blue and negative changes in red.',
                 _TABLE_INTRO,
             ),
-            s1_table,
-            _caption('Source: Home Mortgage Disclosure Act (HMDA) data'),
         ]))
+        story.append(s1_table)
+        story.append(_caption('Source: Home Mortgage Disclosure Act (HMDA) data'))
 
     # Section 1 AI narrative
     s1_narrative = ai.get('demographic_overview_discussion', '')
@@ -1165,9 +1166,9 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
                 'of the county residents that are in each income bracket as of 2020.',
                 _TABLE_INTRO,
             ),
-            s2t1,
-            _caption('Source: HMDA data'),
         ]))
+        story.append(s2t1)
+        story.append(_caption('Source: HMDA data'))
 
     # ==================================================================
     # SECTION 2 AI + TABLES 2 & 3 (flows naturally)
@@ -1205,9 +1206,9 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
                 'AMFI) census tracts.',
                 _TABLE_INTRO,
             ),
-            s2t2,
-            _caption('Source: HMDA data'),
         ]))
+        story.append(s2t2)
+        story.append(_caption('Source: HMDA data'))
 
     # Section 2c: Minority Tracts
     minority_tracts = report_data.get('minority_tracts')
@@ -1223,12 +1224,14 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
                 'different stories in different geographies, this table also divides tracts '
                 'into four quartile groups based on the actual distribution of minority '
                 'population percentages across all census tracts in the CBSA. Quartile '
-                'boundaries are specific to this geography.',
+                'boundaries are specific to this geography. Note: Between 2021 and 2022, '
+                'shifting census boundaries resulted in a ~30% increase in majority-minority '
+                'census tract designations nationally.',
                 _TABLE_INTRO,
             ),
-            s2t3,
-            _caption('Source: HMDA data'),
         ]))
+        story.append(s2t3)
+        story.append(_caption('Source: HMDA data'))
 
     # Combined Section 2 AI narrative
     s2_narrative_keys = ['income_tracts_discussion', 'minority_tracts_discussion',
@@ -1524,12 +1527,23 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         'source data.',
         _METHODS_COMPACT))
 
-    # Render as two-column layout
+    # KeepTogether ONLY on heading + first subsection header
+    # (full methodology is ~744pt, exceeds frame height ~648pt)
+    story.append(KeepTogether([
+        meth_heading,
+        Spacer(1, 4),
+        Paragraph('Data Sources', _meth_h3),
+    ]))
+
+    # Strip the duplicate "Data Sources" heading from meth_elements
+    meth_elements = meth_elements[1:]  # first element was "Data Sources"
+
+    # Render remaining methodology as two-column layout (flows normally)
+    gap = 14
+    col_w = (USABLE_WIDTH - gap) / 2
     half = len(meth_elements) // 2
     left_col = meth_elements[:half]
     right_col = meth_elements[half:]
-    gap = 14
-    col_w = (USABLE_WIDTH - gap) / 2
     meth_table = Table(
         [[left_col, right_col]],
         colWidths=[col_w, col_w],
@@ -1543,8 +1557,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    # KeepTogether ensures heading + body stay on same page
-    story.append(KeepTogether([meth_heading, Spacer(1, 4), meth_table]))
+    story.append(meth_table)
 
     # Horizontal rule before About
     story.append(Spacer(1, 4))
