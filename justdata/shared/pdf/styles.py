@@ -121,7 +121,7 @@ HEADING_1 = _style(
     'MagHeading1',
     fontName=HEADLINE_FONT_BOLD,
     fontSize=20,
-    leading=26,
+    leading=24,
     textColor=NAVY,
     spaceBefore=18,
     spaceAfter=10,
@@ -131,7 +131,7 @@ HEADING_2 = _style(
     'MagHeading2',
     fontName=HEADLINE_FONT_BOLD,
     fontSize=15,
-    leading=20,
+    leading=19,
     textColor=NAVY,
     spaceBefore=14,
     spaceAfter=8,
@@ -153,8 +153,8 @@ HEADING_3 = _style(
 BODY_TEXT = _style(
     'MagBody',
     fontName=BODY_FONT,
-    fontSize=9.5,
-    leading=13.5,
+    fontSize=12,
+    leading=16,
     textColor=BODY_COLOR,
     alignment=TA_JUSTIFY,
     spaceAfter=6,
@@ -163,8 +163,8 @@ BODY_TEXT = _style(
 BODY_TEXT_SMALL = _style(
     'MagBodySmall',
     fontName=BODY_FONT,
-    fontSize=8.5,
-    leading=12,
+    fontSize=10,
+    leading=13.5,
     textColor=BODY_COLOR,
     alignment=TA_JUSTIFY,
     spaceAfter=4,
@@ -189,8 +189,8 @@ AI_LABEL = _style(
 KEY_FINDING = _style(
     'KeyFinding',
     fontName=BODY_FONT,
-    fontSize=9.5,
-    leading=13,
+    fontSize=13,
+    leading=17,
     textColor=BODY_COLOR,
     alignment=TA_LEFT,
     spaceAfter=4,
@@ -225,8 +225,8 @@ CALLOUT_TITLE = _style(
 SOURCE_CAPTION = _style(
     'SourceCaption',
     fontName=BODY_FONT_ITALIC,
-    fontSize=7.5,
-    leading=10,
+    fontSize=9,
+    leading=12,
     textColor=SOURCE_COLOR,
     spaceAfter=8,
 )
@@ -234,8 +234,8 @@ SOURCE_CAPTION = _style(
 TABLE_CAPTION = _style(
     'TableCaption',
     fontName=BODY_FONT_ITALIC,
-    fontSize=7.5,
-    leading=10,
+    fontSize=9,
+    leading=12,
     textColor=SOURCE_COLOR,
     spaceAfter=8,
 )
@@ -246,8 +246,8 @@ TABLE_CAPTION = _style(
 TABLE_HEADER_TEXT = _style(
     'TableHeaderText',
     fontName=BODY_FONT_BOLD,
-    fontSize=7.5,
-    leading=10,
+    fontSize=10,
+    leading=12,
     textColor=white,
     alignment=TA_CENTER,
 )
@@ -255,8 +255,8 @@ TABLE_HEADER_TEXT = _style(
 TABLE_CELL_TEXT = _style(
     'TableCellText',
     fontName=BODY_FONT,
-    fontSize=8,
-    leading=10,
+    fontSize=9.5,
+    leading=12,
     textColor=BODY_COLOR,
     alignment=TA_LEFT,
 )
@@ -264,8 +264,8 @@ TABLE_CELL_TEXT = _style(
 TABLE_CELL_NUMBER = _style(
     'TableCellNumber',
     fontName=BODY_FONT,
-    fontSize=8,
-    leading=10,
+    fontSize=9.5,
+    leading=12,
     textColor=BODY_COLOR,
     alignment=TA_RIGHT,
 )
@@ -273,8 +273,8 @@ TABLE_CELL_NUMBER = _style(
 LENDER_NAME_STYLE = _style(
     'LenderName',
     fontName=BODY_FONT_BOLD,
-    fontSize=7.5,
-    leading=9,
+    fontSize=9.5,
+    leading=12,
     textColor=DARK_GRAY,
     alignment=TA_LEFT,
 )
@@ -293,8 +293,8 @@ RUNNING_HEADER = _style(
 RUNNING_FOOTER = _style(
     'RunningFooter',
     fontName=BODY_FONT,
-    fontSize=7.5,
-    leading=10,
+    fontSize=8.5,
+    leading=11,
     textColor=SOURCE_COLOR,
 )
 
@@ -304,8 +304,8 @@ RUNNING_FOOTER = _style(
 METHODS_TEXT = _style(
     'MethodsText',
     fontName=BODY_FONT,
-    fontSize=8.5,
-    leading=12,
+    fontSize=10,
+    leading=13.5,
     textColor=DARK_GRAY,
     alignment=TA_JUSTIFY,
     spaceAfter=4,
@@ -331,13 +331,13 @@ def build_table_style(
         ('BACKGROUND', (0, 0), (-1, 0), header_bg),
         ('TEXTCOLOR', (0, 0), (-1, 0), header_text),
         ('FONTNAME', (0, 0), (-1, 0), BODY_FONT_BOLD),
-        ('FONTSIZE', (0, 0), (-1, 0), 7.5),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
         ('TOPPADDING', (0, 0), (-1, 0), 6),
 
         # Data rows
         ('FONTNAME', (0, 1), (-1, -1), BODY_FONT),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 9.5),
         ('TOPPADDING', (0, 1), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
         ('LEFTPADDING', (0, 0), (-1, -1), 6),

@@ -75,7 +75,7 @@ def _draw_header_footer(canvas, doc):
     header_rule_y = header_text_y - 6
 
     # Header text
-    canvas.setFont(BODY_FONT, 8)
+    canvas.setFont(BODY_FONT, 8.5)
     canvas.setFillColor(DARK_GRAY)
     app_name = getattr(doc, 'app_name', 'LendSight')
     canvas.drawString(m_left, header_text_y, app_name)
@@ -94,7 +94,7 @@ def _draw_header_footer(canvas, doc):
     canvas.line(m_left, footer_rule_y, page_w - m_right, footer_rule_y)
 
     # Footer text
-    canvas.setFont(BODY_FONT, 8)
+    canvas.setFont(BODY_FONT, 8.5)
     canvas.setFillColor(DARK_GRAY)
     source = getattr(doc, 'footer_source', 'Source: HMDA, U.S. Census Bureau')
     canvas.drawString(m_left, footer_text_y, source)
@@ -397,23 +397,23 @@ def build_team_page():
     Returns a list of flowables for page 2 of any JustData PDF report.
     """
     _TEAM_HEADING = ParagraphStyle(
-        'TeamHeading', fontName=HEADLINE_FONT_BOLD, fontSize=15,
-        leading=19, textColor=NAVY, spaceBefore=6, spaceAfter=6,
+        'TeamHeading', fontName=HEADLINE_FONT_BOLD, fontSize=20,
+        leading=24, textColor=NAVY, spaceBefore=6, spaceAfter=6,
     )
     _TEAM_BODY = ParagraphStyle(
-        'TeamBody', fontName=BODY_FONT, fontSize=7.5, leading=11,
+        'TeamBody', fontName=BODY_FONT, fontSize=12, leading=16,
         textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=5,
     )
     _TEAM_BIO = ParagraphStyle(
-        'TeamBio', fontName=BODY_FONT, fontSize=7, leading=10,
+        'TeamBio', fontName=BODY_FONT, fontSize=11, leading=14.5,
         textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=4,
     )
     _TEAM_H2 = ParagraphStyle(
-        'TeamH2', fontName=HEADLINE_FONT_BOLD, fontSize=11, leading=14,
+        'TeamH2', fontName=HEADLINE_FONT_BOLD, fontSize=15, leading=19,
         textColor=NAVY, spaceBefore=8, spaceAfter=4,
     )
     _TEAM_CONTACT = ParagraphStyle(
-        'TeamContact', fontName=BODY_FONT, fontSize=7.5, leading=11,
+        'TeamContact', fontName=BODY_FONT, fontSize=12, leading=16,
         textColor=HexColor('#333333'), spaceAfter=2,
     )
 
@@ -465,7 +465,7 @@ def build_team_page():
         left_content.append(Paragraph(bio, _TEAM_BIO))
 
     # Photo on right (if available) — preserve original aspect ratio
-    photo_w = 2.5 * inch
+    photo_w = 3.0 * inch
     right_content = []
     if os.path.exists(TEAM_PHOTO_PATH):
         try:

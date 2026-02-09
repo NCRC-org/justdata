@@ -98,7 +98,7 @@ def render_pop_vs_lending_bars(pop_share, lending_share, width=100, height=26):
 # Change column with colored arrows
 # ---------------------------------------------------------------------------
 _CHANGE_STYLE = ParagraphStyle(
-    'ChangeCell', fontName='Helvetica', fontSize=7, leading=9,
+    'ChangeCell', fontName='Helvetica', fontSize=9.5, leading=12,
     alignment=TA_CENTER,
 )
 
