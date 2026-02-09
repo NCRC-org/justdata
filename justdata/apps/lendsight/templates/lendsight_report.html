@@ -344,6 +344,11 @@
         #downloadExcelBtn:hover {
             background: #218838 !important;
         }
+
+        /* PDF export button hover */
+        #downloadPdfBtn:hover {
+            background: #0f2440 !important;
+        }
         
         .dropdown {
             position: relative;
@@ -600,6 +605,7 @@
         
         .table-container {
             position: relative;
+            overflow-x: auto;
         }
         
         .table-header {
@@ -724,6 +730,174 @@
                 padding: 8px;
             }
         }
+
+        /* ========== Unified Data Table Component ========== */
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+        }
+        .unified-table th {
+            background: #2C5F8A;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #1E3D5C;
+            white-space: nowrap;
+        }
+        .unified-table th:first-child {
+            text-align: left;
+        }
+        .unified-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 0.85rem;
+            vertical-align: middle;
+        }
+        .unified-table td:first-child {
+            text-align: left;
+            white-space: nowrap;
+        }
+        .unified-table tr:hover {
+            background-color: rgba(26, 143, 201, 0.04);
+        }
+        .unified-table .total-row {
+            background: #f0f0f0 !important;
+            font-weight: 600;
+            border-bottom: 2px solid #CBD5E1;
+        }
+        .unified-table .total-row:hover {
+            background: #e8e8e8 !important;
+        }
+        .unified-table .aggregate-row {
+            background: #F0F4F8 !important;
+            font-weight: 600;
+            border-top: 2px solid #CBD5E1;
+        }
+        .unified-table .aggregate-row:hover {
+            background: #e4ebf1 !important;
+        }
+        .unified-table .aggregate-row td:first-child {
+            padding-left: 10px;
+        }
+        .unified-table .detail-row td:first-child {
+            padding-left: 24px;
+            position: relative;
+        }
+        .unified-table .detail-row td:first-child::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(26, 143, 201, 0.3);
+        }
+        .unified-table .census-boundary {
+            border-left: 2px solid rgba(51, 51, 51, 0.4) !important;
+        }
+        .unified-table .census-label-row th {
+            background: transparent !important;
+            color: #666;
+            font-size: 0.7em;
+            font-weight: normal;
+            padding: 2px 4px;
+            border: none;
+            border-bottom: none;
+        }
+        .unified-table .sparkline-cell {
+            padding: 4px 6px;
+            vertical-align: middle;
+        }
+        .unified-table .change-cell {
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .unified-table .change-positive { color: #2E7D32; }
+        .unified-table .change-negative { color: #C62828; }
+        .unified-table .change-neutral { color: #666; }
+        .unified-table .share-bar-cell {
+            padding: 4px 8px;
+            min-width: 170px;
+        }
+        .share-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            width: 170px;
+        }
+        .share-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .share-bar {
+            height: 14px;
+            border-radius: 3px;
+            min-width: 2px;
+        }
+        .share-bar-label {
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Mobile responsive - simplified view below 1024px portrait */
+        @media (max-width: 1024px) and (orientation: portrait) {
+            .unified-table .year-col:not(.year-latest) {
+                display: none;
+            }
+            .unified-table .pop-share-col {
+                display: none;
+            }
+            .unified-table .share-bar-cell,
+            .unified-table th.share-bar-col {
+                display: none;
+            }
+            .unified-table .census-label-row {
+                display: none;
+            }
+            .unified-table th,
+            .unified-table td {
+                padding: 8px 6px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Print: show all unified table columns */
+        @media print {
+            .unified-table th {
+                background-color: #f5f5f5 !important;
+                color: #333 !important;
+            }
+            .unified-table .year-col:not(.year-latest),
+            .unified-table .pop-share-col,
+            .unified-table .share-bar-cell,
+            .unified-table th.share-bar-col {
+                display: table-cell !important;
+            }
+        }
+
+        /* Tab/Overview CSS removed — report loads directly into full view */
+
+        /* Top Lenders table — force uniform header alignment */
+        #topLendersDetailedTable th {
+            vertical-align: middle !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            line-height: 1.2 !important;
+        }
+
+        /* Header logo replacement — now in shared style.css */
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light);">
@@ -733,8 +907,11 @@
     {% include "shared_header.html" %}
 
     <div class="report-container">
-        <!-- Header Actions Row - Excel export only -->
-        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
+        <!-- Header Actions Row -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-bottom: 20px; padding: 10px 0;">
+            <a href="{{ app_base_url|default('/lendsight') }}/download?format=pdf" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-file-pdf"></i> Download PDF Report
+            </a>
             <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
                 <i class="fas fa-file-excel"></i> Export Full Report to Excel
             </a>
@@ -761,6 +938,8 @@
         
             <!-- Report Content -->
             <main id="main-content" style="display: none;" role="main">
+
+            <!-- Report Content (no tabs — loads directly) -->
             <!-- Intro Paragraph and Census Chart - Side by Side -->
             <div class="report-section print-break" id="introAndCensusSection" style="display: none;">
                 <div style="display: flex; gap: 20px; align-items: flex-start;">
@@ -832,35 +1011,27 @@
             <div class="report-section print-break">
                 <h2 class="section-title">Section 1: Loans by Race and Ethnicity</h2>
                 <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Loans by Race and Ethnicity</h3>
-                <div style="display: flex; gap: 20px; align-items: flex-start;">
-                    <!-- Intro Text - 25% width -->
-                    <div style="flex: 0 0 25%;">
-                        <div class="ai-insight-card">
-                            <div class="ai-content" id="demographicOverviewIntro">
-                                <!-- Introduction will be populated by JavaScript -->
-                            </div>
-                        </div>
+                <p class="table-introduction" id="demographicOverviewIntro" style="margin-bottom: 20px; max-width: 100%;">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container" style="width: 100%;">
+                    <table class="data-table" id="demographicOverviewTable" role="table" aria-label="Demographic Overview Lending Data">
+                        <thead>
+                            <tr role="row">
+                                <th style="text-align: left; width: 240px;" role="columnheader" scope="col">Race / Ethnicity</th>
+                            </tr>
+                        </thead>
+                        <tbody role="rowgroup">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 6px; font-size: 0.8em; color: #666;">
+                        <span style="display: inline-block; width: 10px; height: 10px; background: #E07C39; border-radius: 2px; vertical-align: middle; margin-right: 3px;"></span> Population Share
+                        <span style="display: inline-block; width: 10px; height: 10px; background: #1a8fc9; border-radius: 2px; vertical-align: middle; margin-left: 12px; margin-right: 3px;"></span> Lending Share
                     </div>
-
-                    <!-- Table - 75% width -->
-                    <div style="flex: 0 0 75%;">
-                        <div class="table-container">
-                            <table class="data-table" id="demographicOverviewTable" role="table" aria-label="Demographic Overview Lending Data">
-                                <thead>
-                                    <tr role="row">
-                                        <th style="text-align: left; white-space: nowrap;" role="columnheader" scope="col">Metric</th>
-                                        <!-- Year columns will be added dynamically by JavaScript -->
-                                    </tr>
-                                </thead>
-                                <tbody role="rowgroup">
-                                    <!-- Data will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                            <p class="table-caption" id="demographicOverviewCaption">
-                                <!-- Caption will be populated by JavaScript -->
-                            </p>
-                        </div>
-                    </div>
+                    <p class="table-caption" id="demographicOverviewCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
                 </div>
                 <div class="table-narrative" id="demographicOverviewDiscussion">
                     <!-- Discussion will be populated by JavaScript -->
@@ -883,7 +1054,7 @@
                     <table class="data-table" id="incomeBorrowersTable">
                         <thead>
                             <tr>
-                                <th style="text-align: left; white-space: nowrap; min-width: 280px;">Metric</th>
+                                <th style="text-align: left; width: 240px;">Borrower Income</th>
                                 <!-- Year columns will be added dynamically by JavaScript -->
                             </tr>
                         </thead>
@@ -908,7 +1079,7 @@
                     <table class="data-table" id="incomeTractsTable">
                         <thead>
                             <tr>
-                                <th style="text-align: left; white-space: nowrap; min-width: 350px;">Metric</th>
+                                <th style="text-align: left; width: 240px;">Tract Median Income</th>
                                 <!-- Year columns will be added dynamically by JavaScript -->
                             </tr>
                         </thead>
@@ -927,13 +1098,13 @@
                 <!-- Table 3: Lending to Census Tracts by Minority Population -->
                 <h3 style="margin-top: 40px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 3: Lending to Census Tracts by Minority Population</h3>
                 <p class="table-introduction" id="minorityTractsIntro" style="margin-bottom: 20px; max-width: 100%;">
-                    This table shows lending activity by census tract minority population quartiles over the selected time period. Minority population quartiles are calculated based on the distribution of minority population percentages across all census tracts in the CBSA. The table shows lending to Majority Minority Census Tracts (≥50% minority population) and their quartile breakdown (Low, Moderate, Middle, and High minority tracts). <strong>Note:</strong> Between 2021 and 2022, boundary changes dramatically increased the number of tracts with higher minority populations.
+                    This table shows lending activity by census tract minority population. "Majority-Minority" tracts have more than 50% residents of color — this is a fixed national threshold. Because that single threshold tells very different stories in different geographies (nearly all tracts qualify in South Florida; almost none in rural Iowa), this table also divides tracts into four quartile groups based on the actual distribution of minority population percentages across all census tracts in the CBSA. Quartile boundaries are specific to this geography. <strong>Note:</strong> Between 2021 and 2022, shifting census boundaries resulted in a ~30% increase in majority-minority census tract designations nationally.
                 </p>
                 <div class="table-container" style="width: 100%;">
                     <table class="data-table" id="minorityTractsTable">
                         <thead>
                             <tr>
-                                <th style="text-align: left; white-space: nowrap; min-width: 350px;">Metric</th>
+                                <th style="text-align: left; width: 240px;">Tract Minority Population</th>
                                 <!-- Year columns will be added dynamically by JavaScript -->
                             </tr>
                         </thead>
@@ -954,9 +1125,12 @@
                     <strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Census tract income classifications from HUD. <strong>Methodology:</strong> Borrower income is compared to FFIEC median family income for the MSA/MD. Census tract income is compared to area median family income. Minority quartiles are calculated from the distribution of minority population percentages across all census tracts in the CBSA. <strong>Note:</strong> The Change column indicates the change over time since 2020 through 2024. The Population Share (%) column shows the percentage of the population (for borrower income) or census tracts (for tract income and minority) in each category. <span id="section2AsteriskNote" style="display: none;"></span>
                 </p>
 
-                <!-- Section 2 Combined AI Discussion -->
-                <div class="table-narrative" id="incomeNeighborhoodDiscussion" style="margin-top: 20px;">
-                    <!-- AI narrative for Income and Neighborhood Indicators will be populated by JavaScript -->
+                <!-- Section 2 Combined AI Discussion - "Neighborhood Overview" -->
+                <div id="incomeNeighborhoodDiscussion" style="margin-top: 30px; padding: 20px; background: #F8FAFB; border-left: 4px solid #1a8fc9; border-radius: 4px;">
+                    <h4 style="margin: 0 0 12px 0; color: #1e3a5f; font-size: 1.05em; font-weight: 600;">Neighborhood Overview</h4>
+                    <div class="table-narrative" id="incomeNeighborhoodDiscussionContent">
+                        <!-- AI narrative for Income and Neighborhood Indicators will be populated by JavaScript -->
+                    </div>
                 </div>
                 <p id="incomeNeighborhoodAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
                     Above text is AI generated from NCRC data and analysis
@@ -967,8 +1141,8 @@
             <div class="report-section print-break">
                 <h2 class="section-title">Section 3: Top Lenders by Total Loans</h2>
                 <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Top Lenders by Total Loans</h3>
-                <p class="table-introduction" id="topLendersDetailedIntro">
-                    <!-- Introduction will be populated by JavaScript -->
+                <p class="table-introduction" id="topLendersDetailedIntro" style="margin-bottom: 20px; max-width: 100%;">
+                    This table ranks the largest mortgage lenders by total loan originations in the most recent year. Market share is calculated as each lender's originations divided by total market originations. Race/ethnicity percentages use loans with demographic data as the denominator; income and neighborhood indicators use each lender's total loans.
                 </p>
                 <p style="margin-bottom: 10px; font-size: 0.9em; color: #666; font-style: italic;">
                     <strong>Note:</strong> Click on any column header to sort the table. All data columns are in percentages.
@@ -1003,6 +1177,9 @@
                     <p class="table-caption" id="topLendersDetailedCaption">
                         <!-- Caption will be populated by JavaScript -->
                     </p>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666; font-style: italic;">
+                        For the complete lender list, download the Excel export.
+                    </p>
                 </div>
                 <div class="table-narrative" id="topLendersDetailedDiscussion">
                     <!-- Discussion will be populated by JavaScript -->
@@ -1026,23 +1203,10 @@
                         </div>
                     </div>
                     
-                    <!-- Chart and Table - 2/3 width -->
+                    <!-- Chart - 2/3 width -->
                     <div style="flex: 0 0 66.667%;">
-                        <div class="chart-container" style="height: 400px; margin-bottom: 20px;">
+                        <div class="chart-container" style="height: 400px;">
                             <canvas id="hhiChart"></canvas>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table" id="marketConcentrationTable">
-                                <thead>
-                                    <tr>
-                                        <th style="text-align: left;">Year</th>
-                                        <th style="text-align: center;">HHI</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be populated by JavaScript -->
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -1084,6 +1248,8 @@
                                 <li>1-4 unit properties (total_units IN ('1','2','3','4'))</li>
                             </ul>
                         </p>
+
+                        <p><strong>Data Cleaning:</strong> Loan amounts below the 1st percentile and above the 99th percentile within each county-year are excluded (&lt;1% of records). This outlier removal prevents extreme values from distorting market share and HHI calculations.</p>
 
                         <h3>Definitions</h3>
 
@@ -1142,12 +1308,12 @@
 
                         <p><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100. Loans without race/ethnicity data are excluded from the denominator. Income and neighborhood indicator percentages use total loans as the denominator. Only groups representing ≥1% of loans are displayed in tables.</p>
 
-                        <p><strong>Change Over Time:</strong> The difference between values in the first and final year of the analysis period. Positive changes are displayed in blue; negative changes in red. Changes for percentages are shown in percentage points (pp).</p>
+                        <p><strong>Change Over Time:</strong> For percentage shares, Change = Last Year Share − First Year Share, expressed in percentage points (pp). For total counts, Change = ((Last − First) / First) × 100, expressed as a percentage. Positive changes are displayed in blue; negative changes in red.</p>
 
                         <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
                         <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
                         <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
-                        <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
+                        <p>Market shares are based on total loan origination amounts (not count). The sum includes all lenders in the market. Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
                         <p><strong>Concentration Levels:</strong></p>
                         <ul style="padding-left: 20px;">
                             <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
@@ -1157,7 +1323,17 @@
 
                         <p><strong>Top Lenders:</strong> Lenders ranked by total loan originations in the most recent year. Race/ethnicity percentages use loans with demographic data as denominator; income and neighborhood indicators use total loans as denominator.</p>
 
-                        <p><strong>Minority Population Quartiles:</strong> Census tracts are divided into quartiles based on the distribution of minority population percentages across all census tracts in the Core Based Statistical Area (CBSA). Quartile boundaries are calculated from the actual distribution in each CBSA.</p>
+                        <h4 style="margin-top: 15px; color: #333;">Minority Population Quartile Calculation</h4>
+                        <p>Census tracts are divided into quartiles based on the distribution of minority population percentages across all census tracts in the Core Based Statistical Area (CBSA). Quartile boundaries are calculated from the actual distribution in each CBSA:</p>
+                        <ol style="padding-left: 20px;">
+                            <li><strong>Step 1:</strong> For each census tract in the CBSA, obtain the minority population percentage.</li>
+                            <li><strong>Step 2:</strong> Calculate the 25th, 50th, and 75th percentiles across all tracts.</li>
+                            <li><strong>Step 3:</strong> Classify each tract — ≤25th percentile = Low Minority, 25th–50th = Moderate, 50th–75th = Middle, &gt;75th = High.</li>
+                            <li><strong>Step 4:</strong> For each year, calculate the share of originations in tracts within each category.</li>
+                        </ol>
+                        <div id="methodologyQuartileValues" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none;">
+                            <!-- Dynamic quartile values will be populated by JavaScript from API response -->
+                        </div>
 
                         <h3>Abbreviations</h3>
                         <ul>
@@ -1179,19 +1355,25 @@
                         </ul>
 
                         <h3>Data Quality and AI Disclosure</h3>
-                        <p style="font-style: italic; color: #666;">[LOREM IPSUM PLACEHOLDER - TO BE REPLACED]</p>
-                        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
-                        <p>Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
-                        <p style="font-style: italic; color: #666;">[END LOREM IPSUM PLACEHOLDER]</p>
+                        <div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">
+                            <p style="font-style: italic; color: #856404; margin-bottom: 8px;"><strong>AI Disclosure — Placeholder</strong></p>
+                            <p style="color: #856404;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                            <p style="color: #856404;">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+                            <p style="font-style: italic; color: #856404; margin-bottom: 0;">[This disclosure text will be provided by Rose/Legal]</p>
+                        </div>
+
+                        <p id="lendsightVersionNumber" style="margin-top: 20px; font-size: 0.85em; color: #999; text-align: right;">
+                            <!-- LendSight version will be populated by JavaScript -->
+                        </p>
                     </div>
                 </div>
             </div>
-            
+            <!-- end report sections -->
 
-            
+        </main>
         </div>
     </div>
-    
+
     <script>
         // Update download links with job_id from URL
         function updateDownloadLinks() {
@@ -1384,6 +1566,9 @@
                 yearsEl.textContent = 'N/A';
             }
             
+            // Populate overview tab
+            // populateOverview removed
+
             // Populate intro paragraph and demographics chart (always show these)
             generateIntroParagraph(metadata);
             populatePopulationDemographicsChart(metadata);
@@ -1529,6 +1714,48 @@
                 }
             } else if (censusDataSourceText) {
                 censusDataSourceText.textContent = 'Population demographic data from the U.S. Census Bureau was not available for the selected geography.';
+            }
+
+            // Populate dynamic quartile values in methodology
+            // Extract from minority_tracts metric labels (e.g., "Low Minority Census Tracts (0-22.8%)")
+            const quartileValuesEl = document.getElementById('methodologyQuartileValues');
+            if (quartileValuesEl) {
+                // Try to extract from the report data that's been loaded
+                try {
+                    const mainContent = document.getElementById('main-content');
+                    const minorityTable = document.getElementById('minorityTractsTable');
+                    if (minorityTable) {
+                        const rows = minorityTable.querySelectorAll('tbody tr');
+                        const quartileLabels = [];
+                        rows.forEach(row => {
+                            const text = row.querySelector('td')?.textContent || '';
+                            const match = text.match(/\(([0-9.]+%?)-([0-9.]+%?)\)/);
+                            if (match) {
+                                quartileLabels.push({ text, low: match[1], high: match[2] });
+                            }
+                        });
+                        if (quartileLabels.length >= 3) {
+                            // Extract q25 from Low Minority high bound, q50 from Moderate high bound, q75 from Middle high bound
+                            const q25 = quartileLabels[0]?.high?.replace('%', '') || '';
+                            const q50 = quartileLabels[1]?.high?.replace('%', '') || '';
+                            const q75 = quartileLabels[2]?.high?.replace('%', '') || '';
+                            if (q25 && q50 && q75) {
+                                quartileValuesEl.innerHTML = `<p style="margin: 0; font-size: 0.9em;"><strong>Quartile breakpoints for this geography:</strong> ` +
+                                    `25th percentile = ${q25}%, 50th percentile = ${q50}%, 75th percentile = ${q75}%</p>`;
+                                quartileValuesEl.style.display = 'block';
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Could not extract quartile values for methodology:', e);
+                }
+            }
+
+            // Populate LendSight version number
+            const versionEl = document.getElementById('lendsightVersionNumber');
+            if (versionEl) {
+                const version = metadata.lendsight_version || '1.0.0';
+                versionEl.textContent = `LendSight v${version}`;
             }
         }
         
@@ -2091,56 +2318,32 @@
             // No fallback - combined discussion appears only in incomeNeighborhoodDiscussion section
 
             // Combined income and neighborhood indicators discussion (Section 2)
-            // Only show combined discussion if individual table narratives are NOT available
-            const hasIndividualSection2Narratives = aiInsights.income_borrowers_discussion ||
-                                                     aiInsights.income_tracts_discussion ||
-                                                     aiInsights.minority_tracts_discussion;
-
-            if (hasIndividualSection2Narratives) {
-                // Hide the combined narrative container since individual narratives are shown
-                const combinedDiscussionEl = document.getElementById('incomeNeighborhoodDiscussion');
-                if (combinedDiscussionEl) {
-                    combinedDiscussionEl.style.display = 'none';
+            // Always show the combined "Neighborhood Overview" narrative below individual table narratives
+            if (aiInsights.income_neighborhood_discussion) {
+                const discussionContentEl = document.getElementById('incomeNeighborhoodDiscussionContent');
+                const discussionContainerEl = document.getElementById('incomeNeighborhoodDiscussion');
+                if (discussionContentEl) {
+                    discussionContentEl.innerHTML = formatMarkdownContent(aiInsights.income_neighborhood_discussion);
                 }
-                const combinedAICaption = document.getElementById('incomeNeighborhoodAICaption');
-                if (combinedAICaption) {
-                    combinedAICaption.style.display = 'none';
+                if (discussionContainerEl) {
+                    discussionContainerEl.style.display = 'block';
                 }
-            } else if (aiInsights.income_neighborhood_discussion) {
-                // Fall back to combined discussion if no individual narratives
-                const discussionEl = document.getElementById('incomeNeighborhoodDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = formatMarkdownContent(aiInsights.income_neighborhood_discussion);
-                    discussionEl.style.display = 'block';
-                    const aiCaption = document.getElementById('incomeNeighborhoodAICaption');
-                    if (aiCaption) {
-                        aiCaption.style.display = 'block';
-                    }
+                const aiCaption = document.getElementById('incomeNeighborhoodAICaption');
+                if (aiCaption) {
+                    aiCaption.style.display = 'block';
                 }
             } else if (aiDisabled) {
-                const discussionEl = document.getElementById('incomeNeighborhoodDiscussion');
-                if (discussionEl) {
-                    discussionEl.innerHTML = getAIDisabledMessage();
-                    discussionEl.style.display = 'block';
+                const discussionContentEl = document.getElementById('incomeNeighborhoodDiscussionContent');
+                const discussionContainerEl = document.getElementById('incomeNeighborhoodDiscussion');
+                if (discussionContentEl) {
+                    discussionContentEl.innerHTML = getAIDisabledMessage();
+                }
+                if (discussionContainerEl) {
+                    discussionContainerEl.style.display = 'block';
                 }
             }
             
-            // Populate top lenders detailed intro (hardcoded two sentences) and discussion
-            const topLendersDetailedIntroEl = document.getElementById('topLendersDetailedIntro');
-            if (topLendersDetailedIntroEl && metadata && metadata.years && metadata.years.length > 0) {
-                const latestYear = Math.max(...metadata.years);
-                let introText = `This table shows the top lenders by total number of loans or applications in ${latestYear} (the most recent year in the report), displayed in descending order by total loans. For each lender, the table shows the share of loans to each race and ethnic group, as well as income and neighborhood indicator variables (LMIB, LMICT, MMCT), using the same calculation methods as the tables above. All columns in this table are sortable by clicking on the column headers.`;
-                
-                // Add HHI information if available
-                if (metadata.hhi && metadata.hhi.hhi !== null && metadata.hhi.hhi !== undefined) {
-                    const hhiValue = Math.round(metadata.hhi.hhi);
-                    const concentrationLevel = metadata.hhi.concentration_level || 'Unknown';
-                    const hhiYear = metadata.hhi.year || latestYear;
-                    introText += ` The Herfindahl-Hirschman Index (HHI) for this area in ${hhiYear} is ${hhiValue}, indicating ${concentrationLevel.toLowerCase()}.`;
-                }
-                
-                topLendersDetailedIntroEl.textContent = introText;
-            }
+            // Top lenders intro is now static in the HTML template — no JS overwrite needed
             
             if (aiInsights.top_lenders_detailed_discussion) {
                 console.log('[DEBUG] Found top_lenders_detailed_discussion, length:', aiInsights.top_lenders_detailed_discussion.length);
@@ -2559,175 +2762,246 @@
             }
         }
         
-        function populateDemographicOverviewTable(data, metadata) {
-            if (!data || data.length === 0) return;
-            
-            console.log('populateDemographicOverviewTable called with:', {
-                dataLength: data.length,
-                firstRow: data[0],
-                hasMetadata: !!metadata,
-                hasCensusData: metadata ? !!metadata.census_data : false
+        // ========== Unified Data Table Component ==========
+        function parsePercentageValue(val) {
+            if (val === null || val === undefined || val === '') return NaN;
+            const str = String(val).trim();
+            if (str.endsWith('%')) return parseFloat(str.replace('%', ''));
+            return NaN;
+        }
+
+        function parseChangeValue(val) {
+            if (val === null || val === undefined || val === '') return null;
+            const str = String(val).trim();
+            const match = str.match(/^([+-]?)(\d+\.?\d*)\s*(pp|%)?$/);
+            if (!match) return { value: 0, positive: false, unit: 'pp', display: str };
+            const sign = match[1];
+            const num = parseFloat(match[2]);
+            const unit = match[3] || 'pp';
+            const value = sign === '-' ? -num : num;
+            return { value, positive: value > 0, unit, display: str };
+        }
+
+        function createSparklineSVG(values, isPositiveTrend) {
+            if (!values || values.length < 2) return '';
+            const w = 60, h = 18, p = 2;
+            const pw = w - p * 2, ph = h - p * 2;
+            const mn = Math.min(...values), mx = Math.max(...values);
+            const rng = mx - mn || 1;
+            const pts = values.map((v, i) => {
+                const x = p + (i / (values.length - 1)) * pw;
+                const y = p + ph - ((v - mn) / rng) * ph;
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
             });
-            
-            const table = document.getElementById('demographicOverviewTable');
-            if (!table) {
-                console.warn('[WARNING] demographicOverviewTable not found, skipping population');
-                return;
-            }
-            
+            const color = isPositiveTrend ? '#1a8fc9' : '#DC2626';
+            const lx = (p + pw).toFixed(1);
+            const ly = (p + ph - ((values[values.length - 1] - mn) / rng) * ph).toFixed(1);
+            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="vertical-align:middle;"><polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${lx}" cy="${ly}" r="2.5" fill="${color}"/></svg>`;
+        }
+
+        function createChangeArrow(changeStr) {
+            const parsed = parseChangeValue(changeStr);
+            if (!parsed) return '<span class="change-neutral">&mdash;</span>';
+            if (Math.abs(parsed.value) < 0.05) return `<span class="change-neutral">0.0${parsed.unit}</span>`;
+            const arrow = parsed.positive ? '&#9650;' : '&#9660;';
+            const cls = parsed.positive ? 'change-positive' : 'change-negative';
+            return `<span class="${cls}">${arrow} ${parsed.display}</span>`;
+        }
+
+        function createShareBar(popShare, lendShare, maxValue) {
+            if (isNaN(popShare) && isNaN(lendShare)) return '';
+            const safeMax = maxValue || 100;
+            const scale = 100 / (safeMax * 1.5);
+            const pw = isNaN(popShare) ? 0 : Math.max(popShare * scale, 0.5);
+            const lw = isNaN(lendShare) ? 0 : Math.max(lendShare * scale, 0.5);
+            const pl = isNaN(popShare) ? '' : popShare.toFixed(1);
+            const ll = isNaN(lendShare) ? '' : lendShare.toFixed(1);
+            return `<div class="share-bar-container"><div class="share-bar-row"><div class="share-bar" style="width:${pw}%;background:#E07C39;"></div><span class="share-bar-label" style="color:#E07C39;">${pl}</span></div><div class="share-bar-row"><div class="share-bar" style="width:${lw}%;background:#1a8fc9;"></div><span class="share-bar-label" style="color:#1a8fc9;">${ll}</span></div></div>`;
+        }
+
+        function getHeatMapColor(value, min, max) {
+            if (isNaN(value) || min === max) return 'transparent';
+            const norm = Math.max(0, Math.min(1, (value - min) / (max - min)));
+            const alpha = 0.06 + (norm * 0.22);
+            return `rgba(26,143,201,${alpha.toFixed(3)})`;
+        }
+
+        function renderUnifiedTable(tableId, data, opts, metadata) {
+            if (!data || data.length === 0) return;
+            const table = document.getElementById(tableId);
+            if (!table) { console.warn('[renderUnifiedTable] ' + tableId + ' not found'); return; }
+            table.classList.remove('data-table');
+            table.classList.add('unified-table');
             const thead = table.querySelector('thead');
             const tbody = table.querySelector('tbody');
-            
-            if (!thead || !tbody) {
-                console.warn('[WARNING] demographicOverviewTable missing thead or tbody, skipping population');
-                return;
-            }
-            
-            // Get all column names (Metric + years + Population Share + Change column)
-            const columns = Object.keys(data[0]);
+            if (!thead || !tbody) return;
+
+            const mode = opts.mode || 'optionC';
+            const isAgg = opts.isAggregateRow || (() => false);
+            const isDet = opts.isDetailRow || (() => false);
+            const mw = opts.metricMinWidth || '200px';
+
+            const cols = Object.keys(data[0]);
             const metricCol = 'Metric';
-            const populationShareCol = 'Population Share (%)';
-            
-            console.log('Table columns:', columns);
-            console.log('Has Population Share column:', columns.includes(populationShareCol));
-            
-            // Separate columns into categories
-            const yearCols = columns.filter(col => {
-                return col !== metricCol && 
-                       col !== populationShareCol && 
-                       !col.startsWith('Change Over Time') &&
-                       !isNaN(parseInt(col));
-            }).sort((a, b) => parseInt(a) - parseInt(b));
-            
-            const changeCol = columns.find(col => col.startsWith('Change Over Time'));
-            const hasPopulationShare = columns.includes(populationShareCol);
-            
-            // Build header row with column width styles
-            // Metric column: auto-width, no wrapping
-            // Population Share column: between Metric and year columns
-            // Other columns: fixed width (100px)
-            let headerRow = `<tr><th style="text-align: left; white-space: nowrap; width: auto; min-width: 0;">${metricCol}</th>`;
-            // Add Population Share column (if available) BETWEEN Metric and year columns
-            if (hasPopulationShare) {
-                headerRow += `<th style="text-align: center; width: 120px; min-width: 120px;">${populationShareCol}</th>`;
-            }
-            // Add year columns
-            yearCols.forEach(year => {
-                headerRow += `<th style="text-align: center; width: 100px; min-width: 100px;">${year}</th>`;
-            });
-            // Add Change column at the end
-            if (changeCol) {
-                // Shorten column header to just "Change"
-                headerRow += `<th style="text-align: center; width: 100px; min-width: 100px;">Change</th>`;
-            }
-            headerRow += '</tr>';
-            thead.innerHTML = headerRow;
-            
-            // Build table rows
-            // Data format: Total Loans row has integers, race/ethnicity rows have percentages only
-            const rowsHtml = data.map((row, rowIndex) => {
-                const metric = row[metricCol];
-                const isTotalLoans = metric === 'Total Loans';
-                
-                // Metric column: auto-width, no wrapping
-                let cells = `<td style="text-align: left; font-weight: ${isTotalLoans ? '600' : '500'}; white-space: nowrap; width: auto; min-width: 0;">${metric}</td>`;
-                
-                // Add Population Share column (if available) BEFORE year columns
-                if (hasPopulationShare) {
-                    let popValue = row[populationShareCol];
-                    if (popValue === null || popValue === undefined || popValue === '') {
-                        popValue = '';
-                    } else if (typeof popValue === 'number') {
-                        // Format as percentage if it's a number
-                        popValue = popValue.toFixed(1) + '%';
-                    }
-                    cells += `<td style="text-align: center; ${isTotalLoans ? 'font-weight: 600;' : ''} width: 120px; min-width: 120px;">${popValue}</td>`;
-                }
-                
-                // Add year columns with fixed width
-                yearCols.forEach(year => {
-                    let value = row[year];
-                    if (value === null || value === undefined) {
-                        value = isTotalLoans ? '0' : '0.0%';
-                    }
-                    
-                    // Year columns: Total Loans shows integer, others show percentage
-                    if (isTotalLoans) {
-                        cells += `<td style="text-align: center; font-weight: 600; width: 100px; min-width: 100px;">${value}</td>`;
-                    } else {
-                        cells += `<td style="text-align: center; width: 100px; min-width: 100px;">${value}</td>`;
-                    }
+            const popShareCol = 'Population Share (%)';
+            const hidePopShare = opts.hidePopShare || false;
+            const hasPop = cols.includes(popShareCol) && !hidePopShare;
+            const changeCol = cols.find(c => c === 'Change' || c.startsWith('Change Over Time'));
+            const yearCols = cols.filter(c => c !== metricCol && c !== popShareCol && c !== changeCol && !c.startsWith('Change') && !isNaN(parseInt(c))).sort((a, b) => parseInt(a) - parseInt(b));
+            const latestYear = yearCols[yearCols.length - 1];
+            const has2022 = yearCols.includes('2022');
+
+            // Heat map range (percentage rows only)
+            let hMin = Infinity, hMax = -Infinity;
+            data.forEach(row => {
+                if (row[metricCol] === 'Total Loans') return;
+                yearCols.forEach(y => {
+                    const v = parsePercentageValue(row[y]);
+                    if (!isNaN(v)) { if (v < hMin) hMin = v; if (v > hMax) hMax = v; }
                 });
-                
-                // Add Change Over Time column (if available) with fixed width
-                if (changeCol) {
-                    let value = row[changeCol];
-                    if (value === null || value === undefined) {
-                        value = isTotalLoans ? '0.0%' : '0.0pp';
-                    }
-                    
-                    // For Total Loans, ensure it's formatted as percentage if it's not already
-                    if (isTotalLoans && value && !String(value).includes('%')) {
-                        // If it's a number, format as percentage
-                        const numValue = parseFloat(value);
-                        if (!isNaN(numValue)) {
-                            value = numValue > 0 ? `+${numValue.toFixed(1)}%` : `${numValue.toFixed(1)}%`;
-                        }
-                    }
-                    
-                    // Apply color coding for Change Over Time column
-                    const changeStr = String(value);
-                    const isPositive = changeStr.startsWith('+');
-                    const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
-                    
-                    // NCRC light blue for positive, red for negative
-                    const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
-                    cells += `<td style="text-align: center; color: ${color}; font-weight: 600; width: 100px; min-width: 100px;">${value}</td>`;
-                }
-                
-                // Add border styling for Total Loans row
-                let rowStyle = '';
-                if (isTotalLoans) {
-                    rowStyle = 'border-bottom: 2px solid #e0e0e0;';
-                }
-                
-                return `<tr style="${rowStyle}">${cells}</tr>`;
-            }).join('');
-            
-            tbody.innerHTML = rowsHtml;
-            
-            // Show the demographic overview section
-            const section = document.getElementById('demographicOverviewTableSection');
-            if (section) {
-                section.style.display = 'block';
+            });
+            if (hMin === Infinity) hMin = 0;
+            if (hMax === -Infinity) hMax = 100;
+
+            // Share bar max (Option A)
+            let sbMax = 0;
+            if (mode === 'optionA') {
+                data.forEach(row => {
+                    if (row[metricCol] === 'Total Loans') return;
+                    const p = parsePercentageValue(row[popShareCol]);
+                    const l = parsePercentageValue(row[latestYear]);
+                    if (!isNaN(p) && p > sbMax) sbMax = p;
+                    if (!isNaN(l) && l > sbMax) sbMax = l;
+                });
             }
-            
-            // Populate caption with data source and methodology (moved to left under demographic overview)
+
+            // ===== THEAD =====
+            let hdrHtml = '';
+            if (has2022) {
+                let lr = '<tr class="census-label-row">';
+                lr += '<th></th>';
+                if (hasPop) lr += '<th></th>';
+                if (mode === 'optionA') lr += '<th></th>';
+                yearCols.forEach(y => {
+                    lr += y === '2022'
+                        ? '<th class="census-boundary" style="white-space:nowrap;font-size:11px;">New Census Boundaries</th>'
+                        : '<th></th>';
+                });
+                lr += '<th></th>';
+                if (changeCol) lr += '<th></th>';
+                lr += '</tr>';
+                hdrHtml += lr;
+            }
+            let mh = '<tr>';
+            const metricLabel = opts.metricLabel || 'Metric';
+            mh += `<th style="text-align:left;width:240px;">${metricLabel}</th>`;
+            if (hasPop) mh += '<th class="pop-share-col">Pop.&nbsp;Share</th>';
+            if (mode === 'optionA') mh += '<th class="share-bar-col">Pop.&nbsp;vs&nbsp;Lending</th>';
+            yearCols.forEach(y => {
+                const cls = ['year-col'];
+                if (y === latestYear) cls.push('year-latest');
+                if (y === '2022') cls.push('census-boundary');
+                mh += `<th class="${cls.join(' ')}">${y}</th>`;
+            });
+            mh += '<th class="year-col year-latest" style="min-width:65px;">Trend</th>';
+            if (changeCol) mh += '<th class="year-col year-latest" style="min-width:80px;">Change</th>';
+            mh += '</tr>';
+            hdrHtml += mh;
+            thead.innerHTML = hdrHtml;
+
+            // ===== TBODY =====
+            const shortenLabel = opts.shortenLabel || (m => m);
+            const bodyHtml = data.map(row => {
+                const metric = row[metricCol];
+                const displayMetric = shortenLabel(metric);
+                const isTotal = metric === 'Total Loans';
+                const agg = isAgg(metric);
+                const det = isDet(metric);
+                const rc = isTotal ? 'total-row' : (agg ? 'aggregate-row' : (det ? 'detail-row' : ''));
+                let cells = '';
+
+                cells += `<td style="text-align:left;width:240px;">${displayMetric}</td>`;
+
+                if (hasPop) {
+                    let pv = row[popShareCol];
+                    if (pv === null || pv === undefined || pv === '') pv = '';
+                    cells += `<td class="pop-share-col" style="text-align:center;">${pv}</td>`;
+                }
+
+                if (mode === 'optionA') {
+                    if (isTotal) {
+                        cells += '<td class="share-bar-cell"></td>';
+                    } else {
+                        const pn = parsePercentageValue(row[popShareCol]);
+                        const ln = parsePercentageValue(row[latestYear]);
+                        cells += `<td class="share-bar-cell">${createShareBar(pn, ln, sbMax)}</td>`;
+                    }
+                }
+
+                const sparkVals = [];
+                yearCols.forEach(y => {
+                    let val = row[y];
+                    if (val === null || val === undefined) val = isTotal ? '0' : '0.0%';
+                    const isLat = y === latestYear;
+                    const is22 = y === '2022';
+                    const cls = ['year-col'];
+                    if (isLat) cls.push('year-latest');
+                    if (is22) cls.push('census-boundary');
+                    const pv = parsePercentageValue(val);
+                    if (!isTotal && !isNaN(pv)) {
+                        sparkVals.push(pv);
+                    } else if (isTotal) {
+                        const cv = parseInt(String(val).replace(/,/g, ''));
+                        if (!isNaN(cv)) sparkVals.push(cv);
+                    }
+                    let bg = '';
+                    if (!isTotal && !isNaN(pv)) bg = `background-color:${getHeatMapColor(pv, hMin, hMax)};`;
+                    const fw = isTotal ? 'font-weight:600;' : '';
+                    cells += `<td class="${cls.join(' ')} heatmap-cell" style="text-align:center;${bg}${fw}">${val}</td>`;
+                });
+
+                const trend = sparkVals.length >= 2 ? sparkVals[sparkVals.length - 1] >= sparkVals[0] : true;
+                cells += `<td class="sparkline-cell year-col year-latest">${createSparklineSVG(sparkVals, trend)}</td>`;
+
+                if (changeCol) {
+                    cells += `<td class="change-cell year-col year-latest">${createChangeArrow(row[changeCol])}</td>`;
+                }
+
+                return `<tr class="${rc}">${cells}</tr>`;
+            }).join('');
+            tbody.innerHTML = bodyHtml;
+        }
+
+        function populateDemographicOverviewTable(data, metadata) {
+            if (!data || data.length === 0) return;
+            console.log('populateDemographicOverviewTable called with:', { dataLength: data.length });
+
+            renderUnifiedTable('demographicOverviewTable', data, {
+                mode: 'optionA',
+                hidePopShare: true,
+                metricLabel: 'Race / Ethnicity',
+                isAggregateRow: () => false,
+                isDetailRow: () => false
+            }, metadata);
+
+            // Show section
+            const section = document.getElementById('demographicOverviewTableSection');
+            if (section) section.style.display = 'block';
+
+            // Populate caption
             if (metadata) {
                 const caption = document.getElementById('demographicOverviewCaption');
                 if (caption) {
                     const counties = metadata.counties || [];
                     const years = metadata.years || [];
-                    const yearRange = years.length > 1 
-                        ? `${Math.min(...years)}-${Math.max(...years)}`
-                        : years[0] ? years[0].toString() : '';
+                    const yearRange = years.length > 1 ? `${Math.min(...years)}-${Math.max(...years)}` : (years[0] ? years[0].toString() : '');
                     const firstYear = years.length > 0 ? Math.min(...years) : '';
                     const lastYear = years.length > 0 ? Math.max(...years) : '';
-                    
                     let captionText = '<strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC\'s curated databases. ';
-                    captionText += '<strong>Methodology:</strong> Percentages are calculated as (group loans / loans with demographic data) × 100, where loans with demographic data = total loans minus loans without race/ethnicity data. ';
-                    captionText += 'Groups representing less than 1% of overall loans are excluded from this table. ';
-                    if (firstYear && lastYear) {
-                        captionText += `<strong>Note:</strong> The Change column indicates the change over time since ${firstYear} through ${lastYear}.`;
-                    }
-                    
-                    if (counties.length > 0) {
-                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
-                    }
-                    if (yearRange) {
-                        captionText += ` | <strong>Years:</strong> ${yearRange}`;
-                    }
-                    
+                    captionText += '<strong>Methodology:</strong> Percentages are calculated as (group loans / loans with demographic data) × 100. Groups < 1% excluded. ';
+                    if (firstYear && lastYear) captionText += `<strong>Note:</strong> Change column shows ${firstYear} through ${lastYear}. `;
+                    if (counties.length > 0) captionText += `| <strong>Counties:</strong> ${counties.join(', ')} `;
+                    if (yearRange) captionText += `| <strong>Years:</strong> ${yearRange}`;
                     caption.innerHTML = captionText;
                 }
             }
@@ -2737,217 +3011,30 @@
 
         function populateIncomeBorrowersTable(data, metadata) {
             if (!data || data.length === 0) return;
-            
-            const table = document.getElementById('incomeBorrowersTable');
-            if (!table) {
-                console.warn('[WARNING] incomeBorrowersTable not found, skipping population');
-                return;
-            }
-            
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            
-            if (!thead || !tbody) {
-                console.warn('[WARNING] incomeBorrowersTable missing thead or tbody, skipping population');
-                return;
-            }
-            
-            // Get all column names (Metric + Population Share + years + Change column)
-            const columns = Object.keys(data[0]);
-            const metricCol = 'Metric';
-            const popShareCol = 'Population Share (%)';
-            const hasPopShare = columns.includes(popShareCol);
-            
-            const yearCols = columns.filter(col => col !== metricCol && col !== popShareCol).sort((a, b) => {
-                // Put "Change" at the end
-                if (a === 'Change') return 1;
-                if (b === 'Change') return -1;
-                // Sort numeric years
-                return parseInt(a) - parseInt(b);
-            });
-            
-            // Build header row: Metric | Population Share (%) | Years | Change
-            let headerRow = `<tr><th style="text-align: left; white-space: nowrap; min-width: 280px;">${metricCol}</th>`;
-            if (hasPopShare) {
-                headerRow += `<th style="text-align: center; width: 120px; min-width: 120px;">${popShareCol}</th>`;
-            }
-            yearCols.forEach((year, index) => {
-                const headerText = year === 'Change' ? 'Change' : year;
-                // Add vertical line before 2022 column (after 2021) with 50% opacity
-                const is2022 = year === '2022' || (parseInt(year) === 2022);
-                const borderLeft = is2022 ? 'border-left: 3px solid rgba(51, 51, 51, 0.5);' : '';
-                headerRow += `<th style="text-align: center; width: 100px; min-width: 100px; ${borderLeft}">${headerText}</th>`;
-            });
-            headerRow += '</tr>';
-            // Add label row above header if 2022 column exists
-            const has2022 = yearCols.some(year => year === '2022' || parseInt(year) === 2022);
-            if (has2022) {
-                let labelRow = `<tr><th colspan="${hasPopShare ? 2 : 1}" style="border: none; height: 20px;"></th>`;
-                yearCols.forEach((year, index) => {
-                    const is2022 = year === '2022' || (parseInt(year) === 2022);
-                    if (is2022) {
-                        labelRow += `<th colspan="1" style="text-align: center; font-size: 0.75em; color: #666; font-weight: normal; padding-bottom: 5px; border-left: 3px solid rgba(51, 51, 51, 0.5); white-space: nowrap;">New Census Boundaries</th>`;
-                    } else {
-                        labelRow += `<th style="border: none;"></th>`;
-                    }
-                });
-                labelRow += '</tr>';
-                thead.innerHTML = labelRow + headerRow;
-            } else {
-                thead.innerHTML = headerRow;
-            }
-            
-            // Build data rows
-            tbody.innerHTML = data.map((row) => {
-                const metric = row[metricCol];
-                const isTotalLoans = metric === 'Total Loans';
-                let cells = `<td style="text-align: left; font-weight: 600; white-space: nowrap; min-width: 280px;">${metric}</td>`;
-                
-                // Add Population Share column if present
-                if (hasPopShare) {
-                    const popShare = row[popShareCol] || '';
-                    cells += `<td style="text-align: center; width: 120px; min-width: 120px;">${popShare}</td>`;
-                }
-                
-                yearCols.forEach((year, index) => {
-                    let value = row[year];
-                    if (value === null || value === undefined) {
-                        value = isTotalLoans ? '0' : '0.0%';
-                    }
-                    
-                    // Add vertical line before 2022 column (after 2021) with 50% opacity
-                    const is2022 = year === '2022' || (parseInt(year) === 2022);
-                    const borderLeft = is2022 ? 'border-left: 3px solid rgba(51, 51, 51, 0.5);' : '';
-                    
-                    // Apply color coding for Change column
-                    if (year === 'Change') {
-                        const changeStr = String(value);
-                        const isPositive = changeStr.startsWith('+');
-                        const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
-                        const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
-                        cells += `<td style="text-align: center; color: ${color}; font-weight: 600; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                    } else {
-                        // Total Loans row shows integers, other rows show percentages
-                        if (isTotalLoans && !value.toString().includes('%')) {
-                            // Already formatted as integer with commas
-                            cells += `<td style="text-align: center; font-weight: 600; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                        } else {
-                            cells += `<td style="text-align: center; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                        }
-                    }
-                });
-                
-                return `<tr>${cells}</tr>`;
-            }).join('');
+
+            renderUnifiedTable('incomeBorrowersTable', data, {
+                mode: 'optionC',
+                metricLabel: 'Borrower Income',
+                isAggregateRow: m => m.includes('Low-to-Moderate') || m.includes('Low to Moderate'),
+                isDetailRow: m => /^(Low|Moderate)\s+Income\s+Borrower/i.test(m),
+                shortenLabel: m => m.replace(/\s+Income\s+Borrowers?/i, '').replace('Low-to-Moderate', 'Low to Moderate')
+            }, metadata);
         }
         
         function populateIncomeTractsTable(data, metadata) {
             if (!data || data.length === 0) return;
-            
-            const table = document.getElementById('incomeTractsTable');
-            if (!table) return;
-            
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            
-            // Get all column names (Metric + Population Share + years + Change column)
-            const columns = Object.keys(data[0]);
-            const metricCol = 'Metric';
-            const popShareCol = 'Population Share (%)';
-            const hasPopShare = columns.includes(popShareCol);
-            
-            const yearCols = columns.filter(col => col !== metricCol && col !== popShareCol).sort((a, b) => {
-                // Put "Change" at the end
-                if (a === 'Change') return 1;
-                if (b === 'Change') return -1;
-                // Sort numeric years
-                return parseInt(a) - parseInt(b);
-            });
-            
-            // Build header row: Metric | Population Share (%) | Years | Change
-            let headerRow = `<tr><th style="text-align: left; white-space: nowrap; min-width: 350px;">${metricCol}</th>`;
-            if (hasPopShare) {
-                headerRow += `<th style="text-align: center; width: 120px; min-width: 120px;">${popShareCol}</th>`;
-            }
-            yearCols.forEach((year, index) => {
-                const headerText = year === 'Change' ? 'Change' : year;
-                // Add vertical line before 2022 column (after 2021) with 50% opacity
-                const is2022 = year === '2022' || (parseInt(year) === 2022);
-                const borderLeft = is2022 ? 'border-left: 3px solid rgba(51, 51, 51, 0.5);' : '';
-                headerRow += `<th style="text-align: center; width: 100px; min-width: 100px; ${borderLeft}">${headerText}</th>`;
-            });
-            headerRow += '</tr>';
-            // Add label row above header if 2022 column exists
-            const has2022 = yearCols.some(year => year === '2022' || parseInt(year) === 2022);
-            if (has2022) {
-                let labelRow = `<tr><th colspan="${hasPopShare ? 2 : 1}" style="border: none; height: 20px;"></th>`;
-                yearCols.forEach((year, index) => {
-                    const is2022 = year === '2022' || (parseInt(year) === 2022);
-                    if (is2022) {
-                        labelRow += `<th colspan="1" style="text-align: center; font-size: 0.75em; color: #666; font-weight: normal; padding-bottom: 5px; border-left: 3px solid rgba(51, 51, 51, 0.5); white-space: nowrap;">New Census Boundaries</th>`;
-                    } else {
-                        labelRow += `<th style="border: none;"></th>`;
-                    }
-                });
-                labelRow += '</tr>';
-                thead.innerHTML = labelRow + headerRow;
-            } else {
-                thead.innerHTML = headerRow;
-            }
-            
-            // Track if we need to add asterisk note to caption
-            let hasLowIncomeAsterisk = false;
-            
-            // Build data rows
-            tbody.innerHTML = data.map((row) => {
-                const metric = row[metricCol];
-                const isTotalLoans = metric === 'Total Loans';
-                // Check if metric has asterisk (indicates missing tracts)
-                if (metric.includes('Low Income Census Tracts*')) {
-                    hasLowIncomeAsterisk = true;
-                }
-                
-                let cells = `<td style="text-align: left; font-weight: 600; white-space: nowrap; min-width: 350px;">${metric}</td>`;
-                
-                // Add Population Share column if present
-                if (hasPopShare) {
-                    const popShare = row[popShareCol] || '';
-                    cells += `<td style="text-align: center; width: 120px; min-width: 120px;">${popShare}</td>`;
-                }
-                
-                yearCols.forEach((year, index) => {
-                    let value = row[year];
-                    if (value === null || value === undefined) {
-                        value = isTotalLoans ? '0' : '0.0%';
-                    }
-                    
-                    // Add vertical line before 2022 column (after 2021) with 50% opacity
-                    const is2022 = year === '2022' || (parseInt(year) === 2022);
-                    const borderLeft = is2022 ? 'border-left: 3px solid rgba(51, 51, 51, 0.5);' : '';
-                    
-                    // Apply color coding for Change column
-                    if (year === 'Change') {
-                        const changeStr = String(value);
-                        const isPositive = changeStr.startsWith('+');
-                        const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
-                        const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
-                        cells += `<td style="text-align: center; color: ${color}; font-weight: 600; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                    } else {
-                        // Total Loans row shows integers, other rows show percentages
-                        if (isTotalLoans && !value.toString().includes('%')) {
-                            // Already formatted as integer with commas
-                            cells += `<td style="text-align: center; font-weight: 600; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                        } else {
-                            cells += `<td style="text-align: center; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                        }
-                    }
-                });
-                
-                return `<tr>${cells}</tr>`;
-            }).join('');
-            
-            // Update caption with asterisk note if needed
-            if (hasLowIncomeAsterisk && metadata && metadata.counties && metadata.counties.length > 0) {
+
+            renderUnifiedTable('incomeTractsTable', data, {
+                mode: 'optionC',
+                metricLabel: 'Tract Median Income',
+                isAggregateRow: m => m.includes('Low-to-Moderate') || m.includes('Low to Moderate'),
+                isDetailRow: m => /^(Low|Moderate)\s+Income\s+Census/i.test(m),
+                shortenLabel: m => m.replace(/\s+Income\s+Census\s+Tracts?\*?/i, '').replace('Low-to-Moderate', 'Low to Moderate')
+            }, metadata);
+
+            // Check for asterisk note
+            const hasAsterisk = data.some(row => row['Metric'] && row['Metric'].includes('Low Income Census Tracts*'));
+            if (hasAsterisk && metadata && metadata.counties && metadata.counties.length > 0) {
                 const countyName = metadata.counties[0];
                 const asteriskNote = document.getElementById('section2AsteriskNote');
                 if (asteriskNote) {
@@ -2959,111 +3046,26 @@
         
         function populateMinorityTractsTable(data, metadata) {
             if (!data || data.length === 0) return;
-            
-            const table = document.getElementById('minorityTractsTable');
-            if (!table) return;
-            
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            
-            // Get all column names (Metric + Population Share + years + Change column)
-            const columns = Object.keys(data[0]);
-            const metricCol = 'Metric';
-            const popShareCol = 'Population Share (%)';
-            const hasPopShare = columns.includes(popShareCol);
-            
-            const yearCols = columns.filter(col => col !== metricCol && col !== popShareCol).sort((a, b) => {
-                // Put "Change" at the end
-                if (a === 'Change') return 1;
-                if (b === 'Change') return -1;
-                // Sort numeric years
-                return parseInt(a) - parseInt(b);
-            });
-            
-            // Build header row: Metric | Population Share (%) | Years | Change
-            let headerRow = `<tr><th style="text-align: left; white-space: nowrap; min-width: 350px;">${metricCol}</th>`;
-            if (hasPopShare) {
-                headerRow += `<th style="text-align: center; width: 120px; min-width: 120px;">${popShareCol}</th>`;
-            }
-            yearCols.forEach((year, index) => {
-                const headerText = year === 'Change' ? 'Change' : year;
-                // Add vertical line before 2022 column (after 2021) with 50% opacity
-                const is2022 = year === '2022' || (parseInt(year) === 2022);
-                const borderLeft = is2022 ? 'border-left: 3px solid rgba(51, 51, 51, 0.5);' : '';
-                headerRow += `<th style="text-align: center; width: 100px; min-width: 100px; ${borderLeft}">${headerText}</th>`;
-            });
-            headerRow += '</tr>';
-            // Add label row above header if 2022 column exists
-            const has2022 = yearCols.some(year => year === '2022' || parseInt(year) === 2022);
-            if (has2022) {
-                let labelRow = `<tr><th colspan="${hasPopShare ? 2 : 1}" style="border: none; height: 20px;"></th>`;
-                yearCols.forEach((year, index) => {
-                    const is2022 = year === '2022' || (parseInt(year) === 2022);
-                    if (is2022) {
-                        labelRow += `<th colspan="1" style="text-align: center; font-size: 0.75em; color: #666; font-weight: normal; padding-bottom: 5px; border-left: 3px solid rgba(51, 51, 51, 0.5); white-space: nowrap;">New Census Boundaries</th>`;
-                    } else {
-                        labelRow += `<th style="border: none;"></th>`;
+
+            renderUnifiedTable('minorityTractsTable', data, {
+                mode: 'optionC',
+                metricLabel: 'Tract Minority Population',
+                isAggregateRow: m => m.includes('Majority Minority'),
+                isDetailRow: m => /^(Low|Moderate|Middle|High)\s+Minority/i.test(m),
+                shortenLabel: m => {
+                    if (m.includes('Majority Minority')) {
+                        return 'Majority Minority (\u226550%)';
                     }
-                });
-                labelRow += '</tr>';
-                thead.innerHTML = labelRow + headerRow;
-            } else {
-                thead.innerHTML = headerRow;
-            }
-            
-            // Track if we need to add asterisk note to caption
-            let hasMMCTAsterisk = false;
-            
-            // Build data rows
-            tbody.innerHTML = data.map((row) => {
-                const metric = row[metricCol];
-                const isTotalLoans = metric === 'Total Loans';
-                // Check if metric has asterisk (indicates missing tracts)
-                if (metric.includes('Majority Minority Census Tracts*')) {
-                    hasMMCTAsterisk = true;
+                    // "Low Minority Census Tracts (0-45.8%)" → "Low (0-45.8%)"
+                    const match = m.match(/^(\w+)\s+Minority\s+Census\s+Tracts?\s*(\(.*\))?/i);
+                    if (match) return match[1] + (match[2] ? ' ' + match[2] : '');
+                    return m;
                 }
-                
-                let cells = `<td style="text-align: left; font-weight: 600; white-space: nowrap; min-width: 350px;">${metric}</td>`;
-                
-                // Add Population Share column if present
-                if (hasPopShare) {
-                    const popShare = row[popShareCol] || '';
-                    cells += `<td style="text-align: center; width: 120px; min-width: 120px;">${popShare}</td>`;
-                }
-                
-                yearCols.forEach((year, index) => {
-                    let value = row[year];
-                    if (value === null || value === undefined) {
-                        value = isTotalLoans ? '0' : '0.0%';
-                    }
-                    
-                    // Add vertical line before 2022 column (after 2021) with 50% opacity
-                    const is2022 = year === '2022' || (parseInt(year) === 2022);
-                    const borderLeft = is2022 ? 'border-left: 3px solid rgba(51, 51, 51, 0.5);' : '';
-                    
-                    // Apply color coding for Change column
-                    if (year === 'Change') {
-                        const changeStr = String(value);
-                        const isPositive = changeStr.startsWith('+');
-                        const isNegative = changeStr.startsWith('-') && !changeStr.startsWith('+');
-                        const color = isPositive ? '#2fade3' : (isNegative ? 'red' : 'black');
-                        cells += `<td style="text-align: center; color: ${color}; font-weight: 600; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                    } else {
-                        // Total Loans row shows integers, other rows show percentages
-                        if (isTotalLoans && !value.toString().includes('%')) {
-                            // Already formatted as integer with commas
-                            cells += `<td style="text-align: center; font-weight: 600; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                        } else {
-                            cells += `<td style="text-align: center; width: 100px; min-width: 100px; ${borderLeft}">${value}</td>`;
-                        }
-                    }
-                });
-                
-                return `<tr>${cells}</tr>`;
-            }).join('');
-            
-            // Update caption with asterisk note if needed
-            if (hasMMCTAsterisk && metadata && metadata.counties && metadata.counties.length > 0) {
+            }, metadata);
+
+            // Check for MMCT asterisk note
+            const hasAsterisk = data.some(row => row['Metric'] && row['Metric'].includes('Majority Minority Census Tracts*'));
+            if (hasAsterisk && metadata && metadata.counties && metadata.counties.length > 0) {
                 const countyName = metadata.counties[0];
                 const asteriskNote = document.getElementById('section2AsteriskNote');
                 if (asteriskNote) {
@@ -3134,10 +3136,10 @@
             // Lender Name column: narrower but still fits long names like "UNITED SHORE FINANCIAL SERVICES" (35 chars)
             // Using smaller font or tighter spacing, but keeping white-space: nowrap
             let headerRow = `<tr>
-                <th style="text-align: left; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px; max-width: 280px; width: 280px; font-size: 0.9em;" onclick="sortTable('topLendersDetailedTable', 0, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 0, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Name">
+                <th style="text-align: left; vertical-align: middle; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px; max-width: 280px; width: 280px; font-size: 0.9em;" onclick="sortTable('topLendersDetailedTable', 0, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 0, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Name">
                     Lender Name <span class="sort-indicator" id="sort-indicator-0"></span>
                 </th>
-                <th style="text-align: center; cursor: pointer; user-select: none; width: 90px; min-width: 90px; max-width: 90px; white-space: nowrap;" onclick="sortTable('topLendersDetailedTable', 1, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 1, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Type">
+                <th style="text-align: center; vertical-align: middle; cursor: pointer; user-select: none; width: 90px; min-width: 90px; max-width: 90px; white-space: nowrap;" onclick="sortTable('topLendersDetailedTable', 1, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 1, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Type">
                     Type <span class="sort-indicator" id="sort-indicator-1"></span>
                 </th>
                 <th style="text-align: center; cursor: pointer; user-select: none; vertical-align: middle; width: 90px; min-width: 90px; max-width: 90px;" onclick="sortTable('topLendersDetailedTable', 2, 'number')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 2, 'number');}" tabindex="0" role="button" aria-label="Sort by Total Loans">
@@ -3404,178 +3406,166 @@
                 section.style.display = 'block';
             }
 
-            // Find "All Loans" row or use first row
-            const allLoansRow = data.find(row => row['Loan Purpose'] === 'All Loans') || data[0];
-            if (!allLoansRow) {
-                console.error('No market concentration row found');
-                return;
-            }
-            
-            const table = document.getElementById('marketConcentrationTable');
-            if (!table) {
-                console.warn('[WARNING] marketConcentrationTable not found, skipping population');
-                return;
-            }
-            
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            
-            if (!thead || !tbody) {
-                console.warn('[WARNING] marketConcentrationTable missing thead or tbody, skipping population');
-                return;
-            }
-            
-            const years = metadata && metadata.years ? metadata.years : [];
-            if (years.length === 0) {
-                console.warn('No years in metadata for market concentration');
-                return;
+            // Determine which loan purposes to show based on user selection
+            const loanPurposes = metadata.loan_purpose
+                ? (Array.isArray(metadata.loan_purpose) ? metadata.loan_purpose : [metadata.loan_purpose])
+                : ['all'];
+
+            // Map metadata purpose values to data row names
+            const purposeMap = {
+                'purchase': 'Home Purchase',
+                'refinance': 'Refinance',
+                'equity': 'Home Equity'
+            };
+            const purposeColors = {
+                'All Loans': '#1e3a5f',
+                'Home Purchase': '#1a8fc9',
+                'Refinance': '#E07C39',
+                'Home Equity': '#0d7377'
+            };
+
+            // Determine which rows to show
+            const selectedPurposes = loanPurposes.filter(p => p !== 'all');
+            const showAll = loanPurposes.includes('all') ||
+                (selectedPurposes.includes('purchase') && selectedPurposes.includes('refinance') && selectedPurposes.includes('equity'));
+
+            let displayRows;
+            if (showAll) {
+                // Show all 4 rows
+                displayRows = data.filter(row => ['All Loans', 'Home Purchase', 'Refinance', 'Home Equity'].includes(row['Loan Purpose']));
+            } else if (selectedPurposes.length === 1) {
+                // Single purpose - show just that row
+                const rowName = purposeMap[selectedPurposes[0]];
+                const matchedRow = data.find(row => row['Loan Purpose'] === rowName);
+                displayRows = matchedRow ? [matchedRow] : [data[0]];
+            } else {
+                // Multiple but not all - show selected rows
+                const rowNames = selectedPurposes.map(p => purposeMap[p]).filter(Boolean);
+                displayRows = data.filter(row => rowNames.includes(row['Loan Purpose']));
+                if (displayRows.length === 0) displayRows = [data[0]];
             }
 
-            // Sort years numerically
+            const years = metadata && metadata.years ? metadata.years : [];
+            if (years.length === 0) return;
             const sortedYears = [...years].sort((a, b) => a - b);
 
-            // Transform data to Year | HHI format (like Branch Report)
-            // The data structure has year columns as strings (e.g., '2020', '2021')
-            const hhiByYear = sortedYears.map(year => {
-                const yearStr = year.toString();
-                const hhiValue = allLoansRow[yearStr] !== undefined ? allLoansRow[yearStr] : (allLoansRow[year] !== undefined ? allLoansRow[year] : 0);
-                return {
-                    year: yearStr,
-                    hhi_value: hhiValue
-                };
-            });
-            
-            // Populate the HHI table (reuse existing tbody variable)
-            if (tbody) {
-                tbody.innerHTML = hhiByYear.map(item => {
-                    const hhiNum = parseFloat(item.hhi_value) || 0;
-                    return `<tr>
-                        <td style="text-align: left;">${item.year}</td>
-                        <td style="text-align: center;">${Math.round(hhiNum).toLocaleString()}</td>
-                    </tr>`;
-                }).join('');
+            // Populate table if it exists (may have been removed)
+            const table = document.getElementById('marketConcentrationTable');
+            if (table) {
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
+                if (thead && tbody) {
+                    if (displayRows.length === 1) {
+                        thead.innerHTML = '<tr><th style="text-align:left;">Year</th><th style="text-align:center;">HHI</th></tr>';
+                        tbody.innerHTML = sortedYears.map(year => {
+                            const yearStr = year.toString();
+                            const val = displayRows[0][yearStr] !== undefined ? displayRows[0][yearStr] : (displayRows[0][year] !== undefined ? displayRows[0][year] : 0);
+                            return `<tr><td style="text-align:left;">${yearStr}</td><td style="text-align:center;">${Math.round(parseFloat(val) || 0).toLocaleString()}</td></tr>`;
+                        }).join('');
+                    } else {
+                        let hdrRow = '<tr><th style="text-align:left;">Loan Purpose</th>';
+                        sortedYears.forEach(y => { hdrRow += `<th style="text-align:center;">${y}</th>`; });
+                        hdrRow += '</tr>';
+                        thead.innerHTML = hdrRow;
+
+                        tbody.innerHTML = displayRows.map(row => {
+                            let cells = `<td style="text-align:left;font-weight:600;">${row['Loan Purpose']}</td>`;
+                            sortedYears.forEach(year => {
+                                const yearStr = year.toString();
+                                const val = row[yearStr] !== undefined ? row[yearStr] : (row[year] !== undefined ? row[year] : 0);
+                                cells += `<td style="text-align:center;">${Math.round(parseFloat(val) || 0).toLocaleString()}</td>`;
+                            });
+                            return `<tr>${cells}</tr>`;
+                        }).join('');
+                    }
+                }
             }
 
             // Create Chart.js bar chart with threshold lines
             const hhiCanvas = document.getElementById('hhiChart');
             if (hhiCanvas && typeof Chart !== 'undefined') {
                 const ctx = hhiCanvas.getContext('2d');
-
-                // Destroy existing chart if it exists
                 if (hhiChartInstance) {
                     hhiChartInstance.destroy();
                 }
 
-                const yearsLabels = hhiByYear.map(d => d.year);
-                // Ensure HHI values are actual numbers, not percentages
-                const hhiValues = hhiByYear.map(d => {
-                    let value = parseFloat(d.hhi_value || 0);
-                    // If value is > 100, it's likely already in HHI format (0-10,000)
-                    // If value is <= 100, it might be a percentage - convert to HHI (multiply by 100)
-                    // But actually, HHI should already be in 0-10,000 format from backend
-                    // So we just ensure it's a number
-                    return isNaN(value) ? 0 : value;
+                const yearsLabels = sortedYears.map(y => y.toString());
+
+                // Build datasets - one per displayed loan purpose
+                const datasets = displayRows.map(row => {
+                    const purpose = row['Loan Purpose'];
+                    const values = sortedYears.map(year => {
+                        const yearStr = year.toString();
+                        const val = parseFloat(row[yearStr] !== undefined ? row[yearStr] : (row[year] || 0));
+                        return isNaN(val) ? 0 : val;
+                    });
+                    return {
+                        label: purpose,
+                        data: values,
+                        backgroundColor: purposeColors[purpose] || '#1e3a5f',
+                        borderColor: purposeColors[purpose] || '#1e3a5f',
+                        borderWidth: 1
+                    };
                 });
 
-                // Calculate max value for y-axis range
-                const maxHHI = Math.max(...hhiValues, 2500); // Ensure we show at least up to 2,500
-                const yMax = Math.min(Math.max(maxHHI * 1.15, 3000), 10000); // Cap at 10,000 (max HHI value)
+                // Calculate y-axis max
+                let maxHHI = 2500;
+                datasets.forEach(ds => { ds.data.forEach(v => { if (v > maxHHI) maxHHI = v; }); });
+                const yMax = Math.min(Math.max(maxHHI * 1.15, 3000), 10000);
 
                 // Register annotation plugin if available
                 if (typeof Chart !== 'undefined' && Chart.register) {
                     try {
                         const annotationPlugin = window.chartjsPluginAnnotation;
-                        if (annotationPlugin) {
-                            Chart.register(annotationPlugin);
-                        }
+                        if (annotationPlugin) Chart.register(annotationPlugin);
                     } catch (e) {
                         console.warn('Chart.js annotation plugin not available');
                     }
                 }
 
+                const chartTitle = displayRows.length === 1
+                    ? `Market Concentration (HHI) — ${displayRows[0]['Loan Purpose']}`
+                    : 'Market Concentration (HHI) by Loan Purpose';
+
                 hhiChartInstance = new Chart(ctx, {
                     type: 'bar',
-                    data: {
-                        labels: yearsLabels,
-                        datasets: [{
-                            label: 'HHI',
-                            data: hhiValues,
-                            backgroundColor: '#1e3a5f', // Standard Navy
-                            borderColor: '#1e3a5f',
-                            borderWidth: 1
-                        }]
-                    },
+                    data: { labels: yearsLabels, datasets: datasets },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        layout: {
-                            padding: {
-                                top: 10,
-                                bottom: 10,
-                                left: 10,
-                                right: 10
-                            }
-                        },
+                        layout: { padding: { top: 10, bottom: 10, left: 10, right: 10 } },
                         plugins: {
-                            legend: {
-                                display: false
-                            },
+                            legend: { display: displayRows.length > 1, position: 'top' },
                             title: {
                                 display: true,
-                                text: 'Market Concentration (HHI) by Year',
-                                font: {
-                                    size: 14,
-                                    weight: 'bold'
-                                }
+                                text: chartTitle,
+                                font: { size: 14, weight: 'bold' }
                             },
                             tooltip: {
                                 callbacks: {
                                     label: function(context) {
                                         const value = context.parsed.y;
-                                        return 'HHI: ' + Math.round(value).toLocaleString();
+                                        const prefix = displayRows.length > 1 ? context.dataset.label + ': ' : '';
+                                        return prefix + 'HHI: ' + Math.round(value).toLocaleString();
                                     }
                                 }
                             },
                             annotation: {
                                 annotations: {
                                     moderateLine: {
-                                        type: 'line',
-                                        yMin: 1500,
-                                        yMax: 1500,
-                                        borderColor: 'rgba(255, 165, 0, 0.8)', // Orange for moderate
-                                        borderWidth: 2,
-                                        borderDash: [5, 5],
-                                        label: {
-                                            content: 'Moderate (1,500)',
-                                            enabled: true,
-                                            position: 'end',
-                                            backgroundColor: 'rgba(255, 165, 0, 0.9)',
-                                            color: 'white',
-                                            font: {
-                                                size: 11,
-                                                weight: 'bold'
-                                            },
-                                            padding: 4
+                                        type: 'line', yMin: 1500, yMax: 1500,
+                                        borderColor: 'rgba(255, 165, 0, 0.8)', borderWidth: 2, borderDash: [5, 5],
+                                        label: { content: 'Moderate (1,500)', enabled: true, position: 'end',
+                                            backgroundColor: 'rgba(255, 165, 0, 0.9)', color: 'white',
+                                            font: { size: 11, weight: 'bold' }, padding: 4
                                         }
                                     },
                                     highLine: {
-                                        type: 'line',
-                                        yMin: 2500,
-                                        yMax: 2500,
-                                        borderColor: 'rgba(255, 0, 0, 0.8)', // Red for high
-                                        borderWidth: 2,
-                                        borderDash: [5, 5],
-                                        label: {
-                                            content: 'High (2,500)',
-                                            enabled: true,
-                                            position: 'end',
-                                            backgroundColor: 'rgba(255, 0, 0, 0.9)',
-                                            color: 'white',
-                                            font: {
-                                                size: 11,
-                                                weight: 'bold'
-                                            },
-                                            padding: 4
+                                        type: 'line', yMin: 2500, yMax: 2500,
+                                        borderColor: 'rgba(255, 0, 0, 0.8)', borderWidth: 2, borderDash: [5, 5],
+                                        label: { content: 'High (2,500)', enabled: true, position: 'end',
+                                            backgroundColor: 'rgba(255, 0, 0, 0.9)', color: 'white',
+                                            font: { size: 11, weight: 'bold' }, padding: 4
                                         }
                                     }
                                 }
@@ -3583,53 +3573,20 @@
                         },
                         scales: {
                             y: {
-                                beginAtZero: true,
-                                max: yMax,
-                                title: {
-                                    display: true,
-                                    text: 'HHI',
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                },
-                                ticks: {
-                                    callback: function(value) {
-                                        return value.toLocaleString();
-                                    },
-                                    font: {
-                                        size: 10
-                                    }
-                                },
-                                grid: {
-                                    drawOnChartArea: true
-                                }
+                                beginAtZero: true, max: yMax,
+                                title: { display: true, text: 'HHI', font: { size: 12, weight: 'bold' } },
+                                ticks: { callback: function(value) { return value.toLocaleString(); }, font: { size: 10 } },
+                                grid: { drawOnChartArea: true }
                             },
                             x: {
-                                title: {
-                                    display: true,
-                                    text: 'Year',
-                                    font: {
-                                        size: 12,
-                                        weight: 'bold'
-                                    }
-                                },
-                                ticks: {
-                                    font: {
-                                        size: 10
-                                    }
-                                }
+                                title: { display: true, text: 'Year', font: { size: 12, weight: 'bold' } },
+                                ticks: { font: { size: 10 } }
                             }
                         }
                     }
                 });
             }
-            
-            // Remove the table (no longer needed) - reuse existing table variable
-            if (table && table.parentElement) {
-                table.parentElement.remove();
-            }
-            
+
             // Populate AI discussion if available
             const aiInsights = metadata.ai_insights;
             const aiDisabled = metadata && metadata.ai_insights_enabled === false;
@@ -3734,6 +3691,10 @@
             console.log('Print button available - use browser Print for PDF export');
         }
         
+        // Tab navigation removed — report loads directly
+
+        // populateOverview removed — Overview tab deleted
+
         // Load report data when page loads
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', loadReportData);

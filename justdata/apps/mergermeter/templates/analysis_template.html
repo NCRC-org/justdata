@@ -612,7 +612,8 @@
                         </div>
                     </div>
 
-                    <!-- Force Refresh Option -->
+                    <!-- Force Refresh Option - Senior Executives and Admins Only -->
+                    {% if permissions and permissions.get('executive_tools') %}
                     <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
                         <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer; width: 18px; height: 18px; accent-color: #ff9800;">
                         <label for="forceRefreshCheckbox" style="cursor: pointer; font-size: 0.85rem; color: #666;">
@@ -620,6 +621,7 @@
                             Force refresh (bypass cache)
                         </label>
                     </div>
+                    {% endif %}
 
                     <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your merger analysis. Make sure you've entered bank information and uploaded the required files.">
                         <i class="fas fa-magic"></i>

@@ -395,46 +395,22 @@ def download_excel(report_data, metadata):
 
 
 def download_pdf(report_data, metadata):
-    """Download PDF file"""
+    """Download magazine-style PDF file using ReportLab."""
     try:
         from flask import send_file
-        from weasyprint import HTML, CSS
-
         from justdata.shared.utils.progress_tracker import get_analysis_result
+        from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
+
         job_id = request.args.get('job_id') or session.get('job_id')
         analysis_result = get_analysis_result(job_id) if job_id else {}
         ai_insights = analysis_result.get('ai_insights', {})
 
-        # Serialize report data
-        serialized_data = {}
-        for key, df in report_data.items():
-            if hasattr(df, 'to_dict'):
-                import numpy as np
-                df_clean = df.replace({np.nan: None})
-                serialized_data[key] = df_clean.to_dict('records')
-            else:
-                serialized_data[key] = df
+        pdf_buf = generate_lendsight_pdf(report_data, metadata, ai_insights)
 
         tmp_fd, tmp_path = tempfile.mkstemp(suffix='.pdf')
         os.close(tmp_fd)
-
-        html_content = render_template(
-            'pdf_report_template.html',
-            report_data=serialized_data,
-            metadata=metadata,
-            ai_insights=ai_insights
-        )
-
-        pdf_css = CSS(string='''
-            @page { size: letter; margin: 0.5in 0.6in 0.75in 0.6in; }
-            body { font-family: Arial, Helvetica, sans-serif; font-size: 10pt; }
-            table { width: 100%; border-collapse: collapse; font-size: 9pt; }
-            th, td { border: 1px solid #ddd; padding: 6px 8px; }
-            th { background-color: #f5f5f5 !important; }
-        ''')
-
-        html_doc = HTML(string=html_content, base_url=request.url_root)
-        html_doc.write_pdf(tmp_path, stylesheets=[pdf_css])
+        with open(tmp_path, 'wb') as f:
+            f.write(pdf_buf.getvalue())
 
         filename = generate_filename(metadata, '.pdf')
 

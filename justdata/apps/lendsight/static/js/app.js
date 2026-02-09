@@ -494,12 +494,6 @@ function validateInput(input, type) {
     return isValid;
 }
 
-
-
-
-    }, 200);
-}
-
 // Add input validation listeners
 $(document).ready(function() {
     // Initialize DOM elements first

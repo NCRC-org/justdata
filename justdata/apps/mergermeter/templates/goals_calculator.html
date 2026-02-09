@@ -152,29 +152,16 @@
         var defaultDataYears = {{ data_years | default(3) | tojson | safe }};
         var singleBankMode = {{ single_bank_mode | default(false) | tojson | safe }};
 
-        // Export handler
+        // Job ID from Flask backend (for full report download)
+        var jobId = {{ job_id | tojson | safe }};
+
+        // Export handler - downloads the full MergerMeter Excel report
         function handleExport(config) {
-            var form = document.createElement('form');
-            form.method = 'POST';
-            form.action = '/mergermeter/api/export-goals';
-
-            var fields = {
-                'config': JSON.stringify(config),
-                'mortgage_data': JSON.stringify(mortgageData),
-                'sb_data': JSON.stringify(sbData),
-                'bank_name': bankName
-            };
-
-            for (var name in fields) {
-                var input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = name;
-                input.value = fields[name];
-                form.appendChild(input);
+            if (jobId) {
+                window.location.href = '/mergermeter/download?job_id=' + encodeURIComponent(jobId);
+            } else {
+                alert('No analysis job found. Please run a merger analysis first.');
             }
-
-            document.body.appendChild(form);
-            form.submit();
         }
 
         // Save handler

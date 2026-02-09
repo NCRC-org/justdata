@@ -605,9 +605,11 @@ def report_data():
             else:
                 converted_report_data[key] = value
         
-        # Include ai_insights in metadata for frontend compatibility
+        # Include ai_insights and version in metadata for frontend compatibility
+        from ..lendsight.version import __version__ as lendsight_version
         metadata_with_ai = metadata.copy()
         metadata_with_ai['ai_insights'] = ai_insights
+        metadata_with_ai['lendsight_version'] = lendsight_version
         
         return jsonify({
             'success': True,
@@ -683,7 +685,27 @@ def download():
                 mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             )
         elif format_type == 'pdf':
-            return jsonify({'error': 'PDF export not yet implemented'}), 501
+            from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
+            import tempfile
+            import os
+
+            ai_insights = analysis_result.get('ai_insights', {})
+            pdf_buf = generate_lendsight_pdf(report_data, metadata, ai_insights)
+
+            tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+            tmp_path = tmp_file.name
+            tmp_file.close()
+            with open(tmp_path, 'wb') as f:
+                f.write(pdf_buf.getvalue())
+
+            filename = generate_export_filename(metadata, 'pdf')
+
+            return send_file(
+                tmp_path,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/pdf'
+            )
         else:
             return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel, pdf'}), 400
             

@@ -171,7 +171,8 @@ def create_merger_excel(
     occupancy_type: str = "",
     total_units: str = "",
     construction_method: str = "",
-    not_reverse: str = ""
+    not_reverse: str = "",
+    single_bank_mode: bool = False
 ):
     """
     Create Excel workbook with merger analysis data.
@@ -207,6 +208,7 @@ def create_merger_excel(
         total_units: HMDA total units filter
         construction_method: HMDA construction method filter
         not_reverse: HMDA reverse mortgage filter
+        single_bank_mode: Whether this is a single-bank analysis
     """
     logger.info(f"Creating merger Excel report: {output_path}")
 
@@ -226,7 +228,8 @@ def create_merger_excel(
         bank_a_sb_id, bank_b_sb_id,
         loan_purpose, action_taken,
         occupancy_type, total_units,
-        construction_method, not_reverse
+        construction_method, not_reverse,
+        single_bank_mode=single_bank_mode
     )
 
     # Create Assessment Areas sheet
@@ -304,7 +307,8 @@ def _create_notes_sheet(
     occupancy_type: str,
     total_units: str,
     construction_method: str,
-    not_reverse: str
+    not_reverse: str,
+    single_bank_mode: bool = False
 ):
     """Create Notes sheet with methodology and data sources."""
     ws = wb.create_sheet("Notes", 0)
@@ -406,11 +410,17 @@ def _create_notes_sheet(
     row += 1
 
     ws.cell(row, 1, "Mortgage Goals Sheet:")
-    ws.cell(row, 2, "Grand Total rows include data ONLY from states where both banks have assessment areas.")
+    if single_bank_mode:
+        ws.cell(row, 2, "Grand Total rows include data from all states where the bank has assessment areas.")
+    else:
+        ws.cell(row, 2, "Grand Total rows include data from all states where EITHER bank has assessment areas.")
     row += 1
 
     ws.cell(row, 1, "SB Goals Sheet:")
-    ws.cell(row, 2, "Grand Total rows include data ONLY from states where both banks have assessment areas.")
+    if single_bank_mode:
+        ws.cell(row, 2, "Grand Total rows include data from all states where the bank has assessment areas.")
+    else:
+        ws.cell(row, 2, "Grand Total rows include data from all states where EITHER bank has assessment areas.")
     row += 1
 
     ws.cell(row, 1, "Baseline Years for Goals Calculations:")
@@ -485,7 +495,45 @@ def _create_notes_sheet(
     ws.cell(row, 1, "  - SB data is reported by Respondent ID (RSSD), which may differ from the HMDA LEI")
     row += 1
 
-    ws.cell(row, 1, "  - Goals are calculated for assessment areas where BOTH banks have operations")
+    if single_bank_mode:
+        ws.cell(row, 1, "  - Goals are calculated for all assessment areas where the bank has operations")
+    else:
+        ws.cell(row, 1, "  - Goals are calculated for assessment areas where EITHER bank has operations")
+    row += 2
+
+    # SB LMICT Estimation Methodology
+    ws.cell(row, 1, "Note on Small Business LMI Tract Lending Estimates")
+    ws.cell(row, 1).font = Font(bold=True, size=12)
+    row += 1
+
+    ws.cell(row, 1, "Small business lending data, as reported to federal regulators, is provided at the county level in three loan size")
+    row += 1
+    ws.cell(row, 1, "buckets: under $100,000, $100,000-$250,000, and $250,000-$1,000,000. For each bucket, only the number of loans and the")
+    row += 1
+    ws.cell(row, 1, "total dollar amount are disclosed - individual loan amounts are not available. The number of loans made in low-to-moderate")
+    row += 1
+    ws.cell(row, 1, "income (LMI) census tracts is reported as a single count across all buckets, without a dollar amount breakdown.")
+    row += 2
+
+    ws.cell(row, 1, "To estimate LMI tract lending amounts, this report uses the following method:")
+    row += 1
+    ws.cell(row, 1, "  1. Calculate the LMI tract share: LMI Tract Loan Count / Total Loan Count")
+    row += 1
+    ws.cell(row, 1, "  2. Multiply: LMI Tract Share x Total Amount (all buckets) = Estimated LMI Tract Amount")
+    row += 2
+
+    ws.cell(row, 1, "Example: If a county has 1,000 total small business loans totaling $50 million, and 200 of those loans are in LMI tracts,")
+    row += 1
+    ws.cell(row, 1, "then: LMI Share = 200 / 1,000 = 20%, and Estimated LMI Amount = 20% x $50M = $10 million.")
+    row += 2
+
+    ws.cell(row, 1, "This calculation is performed per county, then summed to the CBSA level. This is an approximation. Because individual loan")
+    row += 1
+    ws.cell(row, 1, "amounts within each bucket are unknown (e.g., 5 loans in the $100,000-$250,000 bucket could each be $100,000 or each be")
+    row += 1
+    ws.cell(row, 1, "$250,000), and because LMI tract loans may not be evenly distributed across buckets, the estimated dollar amount may differ")
+    row += 1
+    ws.cell(row, 1, "from calculations that use a different order of operations or methodology.")
     row += 2
 
     ws.cell(row, 1, "Excel Format:")
