@@ -141,11 +141,29 @@ body {
 }
 
 
+/* Landing page — replace LENDSIGHT text with logo image */
 .header-title-section h1 {
     font-size: 2.5rem;
     font-weight: 700;
     color: white;
     margin: 0;
+    visibility: hidden;
+    position: relative;
+    display: inline-block;
+    width: 220px;
+    height: 55px;
+}
+.header-title-section h1::before {
+    visibility: visible;
+    content: '';
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 0;
+    display: block;
+    width: 220px;
+    height: 55px;
+    background: url('/static/img/app-logos/lendsight-white.png') no-repeat center / contain;
 }
 
 .just-data-subtitle {
@@ -1459,4 +1477,25 @@ body {
     .submit-btn {
         padding: 15px 20px;
     }
-} 
+}
+
+/* Shared header (report pages) — replace app-name text with logo image */
+.app-branding .app-name {
+    visibility: hidden;
+    position: relative;
+    display: inline-block;
+    width: 140px;
+    height: 30px;
+    vertical-align: middle;
+}
+.app-branding .app-name::before {
+    visibility: visible;
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    width: 140px;
+    height: 30px;
+    background: url('/static/img/app-logos/lendsight-white.png') no-repeat center / contain;
+}

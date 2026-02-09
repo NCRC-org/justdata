@@ -897,26 +897,7 @@
             line-height: 1.2 !important;
         }
 
-        /* Header logo replacement — hide text, show logo via ::before */
-        .app-branding .app-name {
-            visibility: hidden;
-            position: relative;
-            display: inline-block;
-            width: 140px;
-            height: 30px;
-            vertical-align: middle;
-        }
-        .app-branding .app-name::before {
-            visibility: visible;
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            display: block;
-            width: 140px;
-            height: 30px;
-            background: url('/static/img/app-logos/lendsight-white.png') no-repeat center / contain;
-        }
+        /* Header logo replacement — now in shared style.css */
     </style>
 </head>
 <body style="background: var(--ncrc-gray-light);">
