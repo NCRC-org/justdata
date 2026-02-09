@@ -1,19 +1,21 @@
 """
-LendSight magazine-style PDF report generator (v3 compact layout).
+LendSight magazine-style PDF report generator (v4 overhaul).
 
-Generates a compact ~7-page PDF with:
+Generates a ~8-page PDF with:
   Page 1: Cover (gradient with logo)
-  Page 2: Census chart + Key Findings + mini trend/gap charts
-  Page 3: Section 1 table + inline AI narrative + Section 2a table
-  Page 4: Section 2 AI + mini charts + Section 2b + 2c tables + AI
-  Page 5: Top 25 Lenders (landscape)
-  Page 6: Lender AI + mini charts + HHI table + narrative
-  Page 7: Trends + Methods + About
+  Page 2: About the NCRC Research Team
+  Page 3: Census chart + Key Findings + mini trend/gap charts
+  Page 4: Section 1 table + AI narrative + Section 2a table
+  Page 5: Section 2 AI + income chart + Section 2b + 2c tables + AI
+  Page N: Section 3: Top 20 Lenders (landscape, one page)
+  Page N+1: Section 4: HHI chart + table + AI narrative (portrait)
+  Page N+2: Methodology (comprehensive) + About
 
 Key technique: Inline two-column narratives via Table flowables
 instead of switching to two_column PageTemplate (which forced page breaks).
 """
 
+import os
 from io import BytesIO
 from datetime import datetime
 
@@ -313,6 +315,92 @@ def _compact_key_findings(findings_text):
         ]),
     )
     return callout
+
+
+# ---------------------------------------------------------------------------
+# Team page builder
+# ---------------------------------------------------------------------------
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__)))), 'shared', 'pdf', 'assets')
+TEAM_PHOTO_PATH = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)), 'static', 'img', 'team_photo.png')
+
+
+def _build_team_page():
+    """Build the NCRC Research Team page (Page 2)."""
+    elements = []
+
+    elements.append(_h1('About the NCRC Research Team'))
+    elements.append(Spacer(1, 8))
+
+    mission = (
+        "The National Community Reinvestment Coalition (NCRC) is a network of more than "
+        "600 community-based organizations dedicated to creating a nation where access "
+        "to credit and capital for underserved populations is a right, not a privilege. "
+        "NCRC's research team provides data-driven analysis to support fair lending, "
+        "community reinvestment, and economic justice."
+    )
+    mission_box = Table(
+        [[Paragraph(mission, _COMPACT_BODY)]],
+        colWidths=[USABLE_WIDTH - 16],
+        style=TS([
+            ('BACKGROUND', (0, 0), (-1, -1), HexColor('#f0f4f8')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 14),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (-1, -1), 12),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('LINEBEFORE', (0, 0), (0, -1), 3, NAVY),
+        ]),
+    )
+    elements.append(mission_box)
+    elements.append(Spacer(1, 12))
+
+    # Team photo (if available)
+    if os.path.exists(TEAM_PHOTO_PATH):
+        try:
+            img = Image(TEAM_PHOTO_PATH, width=USABLE_WIDTH, height=USABLE_WIDTH * 0.5)
+            elements.append(img)
+            elements.append(Spacer(1, 8))
+        except Exception:
+            pass
+
+    # JustData platform description
+    elements.append(_h2('The JustData Platform'))
+
+    platform_text = (
+        "JustData is NCRC\u2019s comprehensive data analysis platform providing "
+        "AI-powered insights across banking, mortgage, and small business lending. "
+        "The platform leverages public data from the Home Mortgage Disclosure Act (HMDA), "
+        "FDIC Summary of Deposits, and U.S. Census Bureau to deliver actionable "
+        "market intelligence for community organizations, researchers, and policymakers."
+    )
+    elements.append(Paragraph(platform_text, _COMPACT_BODY))
+    elements.append(Spacer(1, 8))
+
+    tools = [
+        ('<b>LendSight</b> \u2014 Mortgage lending analysis by race, income, and neighborhood'),
+        ('<b>BizSight</b> \u2014 Small business lending patterns and disparities'),
+        ('<b>BranchSight</b> \u2014 Bank branch network analysis and deposit market share'),
+        ('<b>DataExplorer</b> \u2014 Interactive HMDA data exploration and custom queries'),
+        ('<b>MergerMeter</b> \u2014 Bank merger and acquisition community impact analysis'),
+    ]
+    for tool in tools:
+        elements.append(Paragraph(f'&bull; {tool}', _COMPACT_FINDING))
+
+    elements.append(Spacer(1, 16))
+
+    _contact = ParagraphStyle(
+        'ContactText', fontName='Helvetica', fontSize=8,
+        leading=12, textColor=HexColor('#666666'),
+    )
+    elements.append(Paragraph(
+        '<b>National Community Reinvestment Coalition</b><br/>'
+        '740 15th St NW, Suite 400, Washington DC 20005<br/>'
+        'ncrc.org \u00b7 justdata.org',
+        _contact,
+    ))
+
+    return elements
 
 
 # ---------------------------------------------------------------------------
@@ -646,12 +734,12 @@ def _build_section2_minority_tracts_table(data):
 
 
 def _build_top_lenders_table(data):
-    """Build Section 3: Top 25 Lenders table (landscape)."""
+    """Build Section 3: Top 20 Lenders table (landscape, fits one page)."""
     rows = _df_to_dicts(data)
     if not rows:
         return Spacer(1, 0), False
 
-    rows = sorted(rows, key=lambda x: float(x.get('Total Loans', 0) or 0), reverse=True)[:25]
+    rows = sorted(rows, key=lambda x: float(x.get('Total Loans', 0) or 0), reverse=True)[:20]
 
     all_possible_cols = [
         'Lender Name', 'Lender Type', 'Total Loans',
@@ -660,13 +748,13 @@ def _build_top_lenders_table(data):
         'LMIB (%)', 'LMICT (%)', 'MMCT (%)',
     ]
     all_display_headers = [
-        'Lender Name', 'Type', 'Total', 'Hispanic', 'Black', 'White',
-        'Asian', 'Native Am.', 'Multi-Racial', 'LMIB', 'LMICT', 'MMCT',
+        'Lender Name', 'Type', 'Total', 'Hisp.', 'Black', 'White',
+        'Asian', 'Nat. Am.', 'Multi-R.', 'LMIB', 'LMICT', 'MMCT',
     ]
     all_widths = [
-        2.2 * inch, 0.6 * inch, 0.5 * inch,
-        0.6 * inch, 0.55 * inch, 0.55 * inch, 0.55 * inch,
-        0.6 * inch, 0.7 * inch,
+        2.4 * inch, 0.55 * inch, 0.55 * inch,
+        0.5 * inch, 0.5 * inch, 0.5 * inch, 0.5 * inch,
+        0.55 * inch, 0.55 * inch,
         0.5 * inch, 0.5 * inch, 0.5 * inch,
     ]
 
@@ -708,7 +796,7 @@ def _build_top_lenders_table(data):
 
 
 def _build_hhi_table(data):
-    """Build Section 4: HHI table."""
+    """Build Section 4: HHI table. Filters out rows with all-zero values."""
     rows = _df_to_dicts(data)
     if not rows:
         return Spacer(1, 0), False
@@ -728,11 +816,29 @@ def _build_hhi_table(data):
     if not year_cols:
         return Spacer(1, 0), False
 
+    # Filter out rows where all year values are 0 or empty
+    filtered_rows = []
+    for row in rows:
+        has_data = False
+        for col in year_cols:
+            val = row.get(col, '')
+            try:
+                if val and float(val) > 0:
+                    has_data = True
+                    break
+            except (ValueError, TypeError):
+                pass
+        if has_data:
+            filtered_rows.append(row)
+
+    if not filtered_rows:
+        return Spacer(1, 0), False
+
     col_order = ['Loan Purpose'] + year_cols
     header_labels = ['Loan Purpose'] + year_cols
     widths = [2.0 * inch] + [0.8 * inch] * len(year_cols)
 
-    sorted_rows = _sort_rows(rows, HHI_ROW_ORDER)
+    sorted_rows = _sort_rows(filtered_rows, HHI_ROW_ORDER)
 
     for row in sorted_rows:
         for col in year_cols:
@@ -752,7 +858,7 @@ def _build_hhi_table(data):
 
 
 # ---------------------------------------------------------------------------
-# Main PDF generator (compact v3 layout)
+# Main PDF generator (v4 overhaul)
 # ---------------------------------------------------------------------------
 def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     """Generate a compact magazine-style PDF report and return as BytesIO."""
@@ -809,7 +915,14 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     story.append(PageBreak())
 
     # ==================================================================
-    # PAGE 2: CENSUS CHART + KEY FINDINGS + MINI CHARTS
+    # PAGE 2: ABOUT THE NCRC RESEARCH TEAM
+    # ==================================================================
+    story.extend(_build_team_page())
+    story.append(NextPageTemplate('full_width'))
+    story.append(PageBreak())
+
+    # ==================================================================
+    # PAGE 3: CENSUS CHART + KEY FINDINGS + MINI CHARTS
     # ==================================================================
     census_data = metadata.get('census_data', {}) or report_data.get('census_data', {})
 
@@ -847,7 +960,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(_side_by_side(left, right))
 
     # ==================================================================
-    # PAGE 3: SECTION 1 TABLE + AI + SECTION 2A TABLE
+    # PAGE 4: SECTION 1 TABLE + AI + SECTION 2A TABLE
     # ==================================================================
     story.append(CondPageBreak(3 * inch))
 
@@ -877,7 +990,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(_caption('Source: HMDA data'))
 
     # ==================================================================
-    # PAGE 4: SECTION 2 AI + MINI CHARTS + SECTION 2B + 2C + AI
+    # PAGE 5: SECTION 2 AI + INCOME CHART + SECTION 2B + 2C + AI
     # ==================================================================
     story.append(CondPageBreak(3 * inch))
 
@@ -887,7 +1000,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(_ai_tag())
         story.append(_inline_two_col(ib_narrative))
 
-    # Mini charts: Income Share and HHI side-by-side
+    # Mini chart: Income Share (full-width)
     income_borrowers_data = _df_to_dicts(income_borrowers)
     income_share_buf = render_income_share_chart(income_borrowers_data)
     income_share_img = _mini_img(income_share_buf, aspect_w=3.3, aspect_h=1.5)
@@ -896,14 +1009,9 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if isinstance(market_conc, pd.DataFrame):
         market_conc = market_conc.to_dict('records') if not market_conc.empty else []
 
-    hhi_mini_buf = render_hhi_chart(market_conc)
-    hhi_mini_img = _mini_img(hhi_mini_buf)
-
-    if income_share_img or hhi_mini_img:
+    if income_share_img:
         story.append(Spacer(1, 6))
-        left = [income_share_img] if income_share_img else [Spacer(1, 1)]
-        right = [hhi_mini_img] if hhi_mini_img else [Spacer(1, 1)]
-        story.append(_side_by_side(left, right))
+        story.append(income_share_img)
 
     # Section 2b: Census Tract Income
     income_tracts = report_data.get('income_tracts')
@@ -939,7 +1047,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(_inline_two_col(s2_narrative))
 
     # ==================================================================
-    # PAGE 5: TOP LENDERS (LANDSCAPE)
+    # PAGE N: SECTION 3 — TOP LENDERS (LANDSCAPE)
     # ==================================================================
     lenders_df = report_data.get('top_lenders_detailed')
     s3_table, s3_has = _build_top_lenders_table(lenders_df)
@@ -949,110 +1057,241 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(PageBreak())
         story.append(_h1('Section 3: Top Mortgage Lenders'))
         story.append(Paragraph(
-            'Top 25 lenders by total loan volume. Demographic columns show % of each '
+            'Top 20 lenders by total loan volume. Demographic columns show % of each '
             'lender\u2019s originations. Full lender list available in Excel export.',
             _COMPACT_CAPTION,
         ))
         story.append(Spacer(1, 4))
         story.append(s3_table)
-        story.append(_caption('Source: HMDA data. Full lender list in Excel export.'))
+        story.append(_caption('Source: HMDA data. Complete lender list available in Excel export.'))
 
     # ==================================================================
-    # PAGE 6: LENDER AI + MINI CHARTS + HHI TABLE
+    # PAGE N+1: SECTION 4 — MARKET CONCENTRATION (PORTRAIT)
     # ==================================================================
     story.append(NextPageTemplate('full_width'))
     story.append(PageBreak())
 
-    # Lender AI narrative (inline two-column)
-    lender_narrative = ai.get('top_lenders_detailed_discussion', '')
-    if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
-        story.append(_ai_tag())
-        story.append(_inline_two_col(lender_narrative))
+    story.append(_h1('Section 4: Market Concentration'))
 
-    # Mini charts: Lender bars and HHI
-    lender_data = _df_to_dicts(lenders_df)
-    lender_bars_buf = render_lender_bars_chart(lender_data)
-    lender_bars_img = _mini_img(lender_bars_buf, aspect_w=3.3, aspect_h=2.0)
-
-    # Re-render HHI for this position (or reuse hhi_mini_img)
-    hhi_chart_buf2 = render_hhi_chart(market_conc)
-    hhi_img2 = _mini_img(hhi_chart_buf2)
-
-    if lender_bars_img or hhi_img2:
-        story.append(Spacer(1, 8))
-        left = [lender_bars_img] if lender_bars_img else [Spacer(1, 1)]
-        right = [hhi_img2] if hhi_img2 else [Spacer(1, 1)]
-        story.append(_side_by_side(left, right))
-
-    # HHI table + inline narrative
-    s4_table, s4_has = _build_hhi_table(market_conc)
-    hhi_narrative = ai.get('market_concentration_discussion', '')
-
-    if s4_has or (hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip()):
-        story.append(Spacer(1, 8))
-        story.append(_h2('Section 4: Market Concentration'))
-
-    if s4_has and hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():
-        # Side-by-side: table (55%) | narrative (45%)
-        narrative_paras = ai_narrative_to_flowables(hhi_narrative, style=_INLINE_NARRATIVE)
-        story.append(_side_by_side_uneven([s4_table], narrative_paras, left_pct=0.55))
+    # Full-width HHI chart
+    hhi_full_buf = render_hhi_chart(market_conc)
+    hhi_full_img = chart_to_image(hhi_full_buf, width=USABLE_WIDTH, height_inches=2.8)
+    if hhi_full_img:
+        story.append(hhi_full_img)
         story.append(_caption(
             'Source: HMDA data. HHI &lt;1,500 = Competitive, '
             '1,500\u20132,500 = Moderate, &gt;2,500 = Concentrated'
         ))
-    elif s4_has:
+        story.append(Spacer(1, 8))
+
+    # HHI table
+    s4_table, s4_has = _build_hhi_table(market_conc)
+    if s4_has:
         story.append(s4_table)
         story.append(_caption('Source: HMDA data'))
-    elif hhi_narrative:
+        story.append(Spacer(1, 8))
+
+    # HHI AI narrative (inline two-column)
+    hhi_narrative = ai.get('market_concentration_discussion', '')
+    if hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():
         story.append(_ai_tag())
         story.append(_inline_two_col(hhi_narrative))
 
-    # ==================================================================
-    # PAGE 7: TRENDS + METHODS + ABOUT
-    # ==================================================================
-    story.append(CondPageBreak(3 * inch))
+    # Lender AI narrative
+    lender_narrative = ai.get('top_lenders_detailed_discussion', '')
+    if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
+        story.append(Spacer(1, 8))
+        story.append(_h2('Lender Analysis'))
+        story.append(_ai_tag())
+        story.append(_inline_two_col(lender_narrative))
 
-    # Trends Analysis
+    # Mini chart: Top lenders bar chart
+    lender_data = _df_to_dicts(lenders_df)
+    lender_bars_buf = render_lender_bars_chart(lender_data)
+    lender_bars_img = _mini_img(lender_bars_buf, aspect_w=3.3, aspect_h=2.0)
+    if lender_bars_img:
+        story.append(Spacer(1, 6))
+        story.append(lender_bars_img)
+
+    # ==================================================================
+    # METHODOLOGY PAGE
+    # ==================================================================
+    story.append(NextPageTemplate('full_width'))
+    story.append(PageBreak())
+
+    # Trends Analysis (if available, placed before methodology)
     trends_text = ai.get('trends_analysis', '')
     if trends_text and isinstance(trends_text, str) and trends_text.strip():
         story.append(_h1('Trends Analysis'))
         story.append(_ai_tag())
         story.append(_inline_two_col(trends_text))
         story.append(Spacer(1, 8))
+        story.append(HRFlowable(
+            width='100%', thickness=0.5, color=RULE_COLOR,
+            spaceAfter=8, spaceBefore=4,
+        ))
 
-    # Horizontal rule before Methods
-    story.append(HRFlowable(
-        width='100%', thickness=0.5, color=RULE_COLOR,
-        spaceAfter=8, spaceBefore=4,
-    ))
-
-    # Methods
+    # Methods — comprehensive methodology matching web report
     story.append(_h1('Methodology'))
 
-    methods_text = (
-        "This report analyzes Home Mortgage Disclosure Act (HMDA) data "
-        "collected under Regulation C. HMDA requires most mortgage lenders "
-        "to report detailed information about lending activity, including "
-        "loan disposition, amounts, borrower demographics, property location, "
-        "and lender information.\n\n"
-
-        "The Herfindahl-Hirschman Index (HHI) measures market concentration. "
-        "Below 1,500 indicates competitive markets; 1,500\u20132,500 moderate "
-        "concentration; above 2,500 high concentration. HHI equals the sum "
-        "of squared market shares across all lenders.\n\n"
-
-        "Census data is from the 2010 and 2020 Decennial Census and the "
-        "American Community Survey 5-year estimates. Income classifications "
-        "follow HUD definitions: LMI borrowers have income below 80% of area "
-        "median income. LMI census tracts have median family income below 80% "
-        "of area median. Majority-minority tracts have over 50% minority population.\n\n"
-
-        "AI-generated narrative analysis is produced by Anthropic's Claude "
-        "language model. All quantitative data is derived directly from HMDA "
-        "and Census sources. AI narratives provide contextual interpretation "
-        "and should be verified against source data."
+    _meth_h3 = ParagraphStyle(
+        'MethH3', fontName=BODY_FONT_BOLD, fontSize=8, leading=11,
+        textColor=NAVY, spaceBefore=6, spaceAfter=3,
     )
-    story.append(_inline_two_col(methods_text, style=_METHODS_COMPACT))
+    _meth_h4 = ParagraphStyle(
+        'MethH4', fontName=BODY_FONT_BOLD, fontSize=7, leading=10,
+        textColor=HexColor('#333333'), spaceBefore=4, spaceAfter=2,
+    )
+    _meth_bullet = ParagraphStyle(
+        'MethBullet', fontName='Helvetica', fontSize=6.5, leading=9,
+        textColor=HexColor('#666666'), leftIndent=10, spaceAfter=1,
+    )
+
+    meth_elements = []
+
+    # Data Sources
+    meth_elements.append(Paragraph('Data Sources', _meth_h3))
+    meth_elements.append(Paragraph(
+        '<b>HMDA Data:</b> This report uses data from the Home Mortgage Disclosure Act '
+        '(HMDA), which requires financial institutions to report information about mortgage '
+        'loan applications and originations. HMDA data is collected and made publicly available '
+        'by the Consumer Financial Protection Bureau (CFPB). The data used in this report is '
+        'sourced from NCRC\u2019s curated HMDA databases, compiled and maintained by NCRC '
+        'Research staff.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>HMDA Data Coverage:</b> This analysis includes mortgage loan originations '
+        '(action taken = 1) for owner-occupied, site-built, 1\u20134 unit properties. '
+        'Reverse mortgages are excluded from the analysis.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>Census Data:</b> Population demographic data is sourced from the U.S. Census '
+        'Bureau, including the 2010 Decennial Census, 2020 Decennial Census, and American '
+        'Community Survey (ACS) 5-year estimates.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>HUD Data:</b> Income category population shares are sourced from the U.S. '
+        'Department of Housing and Urban Development (HUD) Low-Mod Summary Data, which shows '
+        'the percentage of county residents in each income bracket based on 2020 ACS data.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>Data Filters Applied:</b> Originations only (action taken = 1); Site-built '
+        'properties (construction method = 1); Owner-occupied (occupancy type = 1); '
+        'Forward loans (excludes reverse mortgages); 1\u20134 unit properties.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>Data Cleaning:</b> Loan amounts below the 1st percentile and above the 99th '
+        'percentile within each county-year are excluded (&lt;1% of records). This outlier '
+        'removal prevents extreme values from distorting market share and HHI calculations.',
+        _METHODS_COMPACT))
+
+    # Definitions
+    meth_elements.append(Paragraph('Definitions', _meth_h3))
+    meth_elements.append(Paragraph(
+        '<b>Loan Originations:</b> Completed mortgage loans where action taken = 1. '
+        'Excludes applications, denials, and withdrawn/incomplete applications.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>Low-to-Moderate Income Borrower (LMIB):</b> Borrowers whose income is at or '
+        'below 80% of Area Median Family Income (AMFI) for the MSA or MD where the '
+        'property is located.',
+        _METHODS_COMPACT))
+
+    meth_elements.append(Paragraph('Borrower Income Categories', _meth_h4))
+    for line in [
+        'Low Income: \u226450% of AMFI',
+        'Moderate Income: &gt;50% to \u226480% of AMFI',
+        'Middle Income: &gt;80% to \u2264120% of AMFI',
+        'Upper Income: &gt;120% of AMFI',
+    ]:
+        meth_elements.append(Paragraph(f'&bull; {line}', _meth_bullet))
+
+    meth_elements.append(Paragraph('Census Tract Income Categories', _meth_h4))
+    for line in [
+        'Low Income Tract: Median family income \u226450% of AMFI',
+        'Moderate Income Tract: &gt;50% to \u226480% of AMFI',
+        'Middle Income Tract: &gt;80% to \u2264120% of AMFI',
+        'Upper Income Tract: &gt;120% of AMFI',
+        'LMI Census Tract (LMICT): \u226480% of AMFI (Low + Moderate combined)',
+    ]:
+        meth_elements.append(Paragraph(f'&bull; {line}', _meth_bullet))
+
+    meth_elements.append(Paragraph(
+        '<b>Majority-Minority Census Tract (MMCT):</b> Tracts where minority populations '
+        'represent more than 50% of the total population.',
+        _METHODS_COMPACT))
+
+    # Calculations
+    meth_elements.append(Paragraph('Calculations', _meth_h3))
+    meth_elements.append(Paragraph(
+        '<b>Race/Ethnicity Classification:</b> Hispanic if any ethnicity field indicates '
+        'Hispanic (codes 1, 11\u201314), regardless of race. Non-Hispanic race determined '
+        'from the first valid race code.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>Percentages:</b> Race/ethnicity = group loans / loans with demographic data '
+        '\u00d7 100. Income and neighborhood indicators use total loans as the denominator. '
+        'Only groups representing \u22651% of loans are displayed.',
+        _METHODS_COMPACT))
+    meth_elements.append(Paragraph(
+        '<b>Change Over Time:</b> For shares: Last Year \u2212 First Year, expressed in '
+        'percentage points (pp). For counts: ((Last \u2212 First) / First) \u00d7 100. '
+        'Positive changes shown in blue; negative in red.',
+        _METHODS_COMPACT))
+
+    meth_elements.append(Paragraph('Herfindahl-Hirschman Index (HHI)', _meth_h4))
+    meth_elements.append(Paragraph(
+        'A standard measure of market concentration. HHI = \u03a3(market share)<sup>2</sup>. '
+        'Based on total loan origination amounts. Ranges 0\u201310,000. '
+        '&lt;1,500 = Competitive; 1,500\u20132,500 = Moderate; &gt;2,500 = Concentrated.',
+        _METHODS_COMPACT))
+
+    # Abbreviations
+    meth_elements.append(Paragraph('Abbreviations', _meth_h3))
+    abbrevs = [
+        'ACS: American Community Survey',
+        'AMFI: Area Median Family Income',
+        'CBSA: Core Based Statistical Area',
+        'CFPB: Consumer Financial Protection Bureau',
+        'HHI: Herfindahl-Hirschman Index',
+        'HMDA: Home Mortgage Disclosure Act',
+        'HUD: U.S. Dept. of Housing and Urban Development',
+        'LMIB: Low-to-Moderate Income Borrower',
+        'LMICT: Low-to-Moderate Income Census Tract',
+        'MMCT: Majority-Minority Census Tract',
+    ]
+    for a in abbrevs:
+        meth_elements.append(Paragraph(f'&bull; {a}', _meth_bullet))
+
+    # AI Disclosure
+    meth_elements.append(Paragraph('AI Disclosure', _meth_h3))
+    meth_elements.append(Paragraph(
+        'AI-generated narrative analysis is produced by Anthropic\u2019s Claude language '
+        'model. All quantitative data is derived directly from HMDA and Census sources. '
+        'AI narratives provide contextual interpretation and should be verified against '
+        'source data.',
+        _METHODS_COMPACT))
+
+    # Render as two-column layout
+    half = len(meth_elements) // 2
+    left_col = meth_elements[:half]
+    right_col = meth_elements[half:]
+    gap = 14
+    col_w = (USABLE_WIDTH - gap) / 2
+    meth_table = Table(
+        [[left_col, right_col]],
+        colWidths=[col_w, col_w],
+    )
+    meth_table.setStyle(TS([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING', (0, 0), (0, 0), 0),
+        ('RIGHTPADDING', (0, 0), (0, 0), gap // 2),
+        ('LEFTPADDING', (1, 0), (1, 0), gap // 2),
+        ('RIGHTPADDING', (1, 0), (1, 0), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    story.append(meth_table)
 
     # Horizontal rule before About
     story.append(Spacer(1, 4))

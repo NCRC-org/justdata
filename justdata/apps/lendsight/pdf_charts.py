@@ -104,7 +104,7 @@ def render_census_demographics_chart(census_data, counties=None):
         avg_data[period] = avgs
 
     non_zero_mask = [i for i, race in enumerate(race_labels)
-                     if any(avg_data[p][i] > 0.1 for p in periods_to_plot)]
+                     if any(avg_data[p][i] >= 1.0 for p in periods_to_plot)]
     race_labels = [race_labels[i] for i in non_zero_mask]
     for p in periods_to_plot:
         avg_data[p] = [avg_data[p][i] for i in non_zero_mask]
