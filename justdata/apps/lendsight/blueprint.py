@@ -605,9 +605,11 @@ def report_data():
             else:
                 converted_report_data[key] = value
         
-        # Include ai_insights in metadata for frontend compatibility
+        # Include ai_insights and version in metadata for frontend compatibility
+        from ..lendsight.version import __version__ as lendsight_version
         metadata_with_ai = metadata.copy()
         metadata_with_ai['ai_insights'] = ai_insights
+        metadata_with_ai['lendsight_version'] = lendsight_version
         
         return jsonify({
             'success': True,
