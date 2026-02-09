@@ -108,100 +108,57 @@ def _draw_header_footer(canvas, doc):
 
 
 def _draw_cover(canvas, doc):
-    """Draw cover page with gradient background, centered text, and logo."""
+    """Draw ink-friendly cover: dark blue header band + white page."""
     canvas.saveState()
 
-    # --- Gradient background ---
-    # Top 58%: teal → navy → dark navy gradient
-    # Bottom 42%: solid dark navy
-    teal = (0 / 255, 164 / 255, 214 / 255)
     navy_rgb = (30 / 255, 58 / 255, 95 / 255)
-    dark_navy_rgb = (13 / 255, 31 / 255, 51 / 255)
+    teal = (0 / 255, 164 / 255, 214 / 255)
+    band_height = 1.5 * inch
+    band_top = PAGE_H
+    band_bottom = PAGE_H - band_height
 
-    gradient_height = PAGE_H * 0.58
-    gradient_bottom = PAGE_H - gradient_height
+    # --- Dark blue header band (for white logos) ---
+    canvas.setFillColor(Color(*navy_rgb))
+    canvas.rect(0, band_bottom, PAGE_W, band_height, fill=1, stroke=0)
 
-    # Bottom solid area (dark navy)
-    canvas.setFillColor(Color(*dark_navy_rgb))
-    canvas.rect(0, 0, PAGE_W, gradient_bottom, fill=1, stroke=0)
+    # --- Logo (left — JustData) in the band ---
+    def _draw_logo(path, x, target_w):
+        try:
+            if os.path.exists(path):
+                try:
+                    from PIL import Image as PILImage
+                    pil_img = PILImage.open(path)
+                    ow, oh = pil_img.size
+                    pil_img.close()
+                    h = target_w * (oh / ow)
+                except Exception:
+                    h = target_w / 4.5
+                logo_y = band_bottom + (band_height - h) / 2
+                canvas.drawImage(path, x, logo_y, width=target_w, height=h,
+                                 mask='auto')
+        except Exception:
+            pass
 
-    # Gradient area with horizontal strips
-    n_strips = 40
-    strip_h = gradient_height / n_strips
-    for i in range(n_strips):
-        t = i / max(n_strips - 1, 1)  # 0 at top, 1 at bottom
-        if t < 0.55:
-            s = t / 0.55
-            r = teal[0] + (navy_rgb[0] - teal[0]) * s
-            g = teal[1] + (navy_rgb[1] - teal[1]) * s
-            b = teal[2] + (navy_rgb[2] - teal[2]) * s
-        else:
-            s = (t - 0.55) / 0.45
-            r = navy_rgb[0] + (dark_navy_rgb[0] - navy_rgb[0]) * s
-            g = navy_rgb[1] + (dark_navy_rgb[1] - navy_rgb[1]) * s
-            b = navy_rgb[2] + (dark_navy_rgb[2] - navy_rgb[2]) * s
-        canvas.setFillColor(Color(r, g, b))
-        y = PAGE_H - (i + 1) * strip_h
-        canvas.rect(0, y, PAGE_W, strip_h + 0.5, fill=1, stroke=0)
+    _draw_logo(LOGO_WHITE_PATH, MARGIN_LEFT, 1.4 * inch)
+    _draw_logo(NCRC_LOGO_WHITE_PATH, PAGE_W - MARGIN_RIGHT - 1.3 * inch, 1.3 * inch)
 
-    # --- Logo (top left — JustData) ---
-    try:
-        if os.path.exists(LOGO_WHITE_PATH):
-            logo_w = 1.4 * inch
-            try:
-                from PIL import Image as PILImage
-                pil_img = PILImage.open(LOGO_WHITE_PATH)
-                orig_w, orig_h = pil_img.size
-                pil_img.close()
-                logo_h = logo_w * (orig_h / orig_w)
-            except Exception:
-                logo_h = logo_w / 4.5
-            canvas.drawImage(
-                LOGO_WHITE_PATH,
-                MARGIN_LEFT, PAGE_H - 28 - logo_h,
-                width=logo_w, height=logo_h,
-                mask='auto',
-            )
-    except Exception:
-        pass  # graceful fallback if logo missing
+    # --- White background below band (implicit — page is already white) ---
 
-    # --- Logo (top right — NCRC) ---
-    try:
-        if os.path.exists(NCRC_LOGO_WHITE_PATH):
-            ncrc_w = 1.3 * inch
-            try:
-                from PIL import Image as PILImage
-                pil_img = PILImage.open(NCRC_LOGO_WHITE_PATH)
-                orig_w, orig_h = pil_img.size
-                pil_img.close()
-                ncrc_h = ncrc_w * (orig_h / orig_w)
-            except Exception:
-                ncrc_h = ncrc_w / 4.5
-            canvas.drawImage(
-                NCRC_LOGO_WHITE_PATH,
-                PAGE_W - MARGIN_RIGHT - ncrc_w,
-                PAGE_H - 28 - ncrc_h,
-                width=ncrc_w, height=ncrc_h,
-                mask='auto',
-            )
-    except Exception:
-        pass
-
-    # --- Centered cover text ---
+    # --- Centered cover text (black on white) ---
     cx = PAGE_W / 2
+    text_color = Color(*navy_rgb)
 
     # "LendSight Report" label
-    y = PAGE_H * 0.78
+    y = band_bottom - 50
     canvas.setFont(BODY_FONT, 11)
-    canvas.setFillColor(Color(1, 1, 1, 0.6))
+    canvas.setFillColor(HexColor('#666666'))
     canvas.drawCentredString(cx, y, 'LendSight Report')
 
     # Main title
     title = getattr(doc, 'cover_title', 'Mortgage Lending Analysis')
     y -= 30
     canvas.setFont(HEADLINE_FONT_BOLD, 28)
-    canvas.setFillColor(white)
-    # Handle multi-line title
+    canvas.setFillColor(text_color)
     for line in title.split('\n'):
         canvas.drawCentredString(cx, y, line)
         y -= 34
@@ -211,7 +168,7 @@ def _draw_cover(canvas, doc):
     if subtitle:
         y -= 2
         canvas.setFont(HEADLINE_FONT_BOLD, 17)
-        canvas.setFillColor(Color(1, 1, 1, 0.9))
+        canvas.setFillColor(text_color)
         canvas.drawCentredString(cx, y, subtitle)
         y -= 24
 
@@ -225,7 +182,7 @@ def _draw_cover(canvas, doc):
     date_range = getattr(doc, 'cover_date_range', '')
     if date_range:
         canvas.setFont(BODY_FONT, 12)
-        canvas.setFillColor(Color(1, 1, 1, 0.75))
+        canvas.setFillColor(HexColor('#333333'))
         canvas.drawCentredString(cx, y, date_range)
         y -= 18
 
@@ -233,16 +190,16 @@ def _draw_cover(canvas, doc):
     loan_purpose = getattr(doc, 'cover_loan_purpose', '')
     if loan_purpose:
         canvas.setFont(BODY_FONT, 10)
-        canvas.setFillColor(Color(1, 1, 1, 0.55))
+        canvas.setFillColor(HexColor('#666666'))
         canvas.drawCentredString(cx, y, f'Loan Purpose: {loan_purpose}')
 
-    # --- Bottom metadata ---
+    # --- Bottom metadata (black on white) ---
     gen_date = datetime.now().strftime('%B %d, %Y')
     canvas.setFont(BODY_FONT, 8)
-    canvas.setFillColor(Color(1, 1, 1, 0.4))
+    canvas.setFillColor(HexColor('#999999'))
     canvas.drawCentredString(cx, 50, f'Generated {gen_date}')
     canvas.setFont(BODY_FONT, 7)
-    canvas.setFillColor(Color(1, 1, 1, 0.3))
+    canvas.setFillColor(HexColor('#aaaaaa'))
     canvas.drawCentredString(cx, 36, 'NCRC JustData Platform \u2014 justdata.org')
 
     canvas.restoreState()
@@ -468,19 +425,19 @@ def build_team_page():
         "analysis of community investment patterns.",
     ]
 
-    # Build left-column content: paragraphs + bios
-    left_content = []
+    # Build text content: paragraphs + bios
+    text_content = []
     for para in body_paras:
-        left_content.append(Paragraph(para, _TEAM_BODY))
+        text_content.append(Paragraph(para, _TEAM_BODY))
 
-    left_content.append(Spacer(1, 4))
-    left_content.append(Paragraph('Research Team', _TEAM_H2))
+    text_content.append(Spacer(1, 4))
+    text_content.append(Paragraph('Research Team', _TEAM_H2))
     for bio in bios:
-        left_content.append(Paragraph(bio, _TEAM_BIO))
+        text_content.append(Paragraph(bio, _TEAM_BIO))
 
-    # Photo on right (if available) — preserve original aspect ratio
-    photo_w = 3.0 * inch
-    right_content = []
+    # Photo on right — text wraps beside it, then continues below
+    photo_w = 3.6 * inch
+    photo_img = None
     if os.path.exists(TEAM_PHOTO_PATH):
         try:
             from PIL import Image as PILImage
@@ -489,61 +446,43 @@ def build_team_page():
             pil_img.close()
             aspect = orig_h / orig_w
             photo_h = photo_w * aspect
-            img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_h)
-            right_content.append(img)
+            photo_img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_h)
         except Exception:
             try:
-                img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_w)
-                right_content.append(img)
+                photo_img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_w)
             except Exception:
                 pass
 
-    if right_content:
-        gap = 18  # increased gutter to prevent text overlap
-        left_w = USABLE_WIDTH - photo_w - gap
-        layout = Table(
-            [[left_content, right_content]],
-            colWidths=[left_w, photo_w],
+    if photo_img:
+        from reportlab.platypus.flowables import ImageAndFlowables
+        iaf = ImageAndFlowables(
+            photo_img, text_content,
+            imageLeftPadding=14, imageRightPadding=0,
+            imageTopPadding=0, imageBottomPadding=14,
+            imageSide='right',
         )
-        layout.setStyle(TS([
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        elements.append(layout)
+        elements.append(iaf)
     else:
-        elements.extend(left_content)
+        elements.extend(text_content)
 
-    elements.append(Spacer(1, 4))
+    elements.append(Spacer(1, 6))
 
-    # Member Services callout box
+    # Member Services callout box (no street address, just email)
     callout_text = (
         "<b>NCRC Member Services</b> \u2014 NCRC members receive priority access to "
         "custom data analysis, research consultation, and JustData platform features. "
         "Contact research@ncrc.org for more information."
     )
-    contact_text = (
-        "National Community Reinvestment Coalition \u00b7 "
-        "740 15th St NW, Suite 400, Washington DC 20005 \u00b7 "
-        "ncrc.org \u00b7 justdata.org"
-    )
 
     callout = Table(
-        [[[
-            Paragraph(callout_text, _TEAM_BODY),
-            Spacer(1, 4),
-            Paragraph(contact_text, _TEAM_CONTACT),
-        ]]],
-        colWidths=[USABLE_WIDTH - 16],
+        [[[Paragraph(callout_text, _TEAM_BODY)]]],
+        colWidths=[USABLE_WIDTH],
         style=TS([
             ('BACKGROUND', (0, 0), (-1, -1), HexColor('#f0f4f8')),
-            ('LEFTPADDING', (0, 0), (-1, -1), 14),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
             ('TOPPADDING', (0, 0), (-1, -1), 10),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-            ('LINEBEFORE', (0, 0), (0, -1), 3, NAVY),
         ]),
     )
     elements.append(callout)

@@ -5,12 +5,33 @@ Defines all ParagraphStyle, TableStyle, color constants, and font constants
 used by the shared PDF report framework.
 """
 
+import os
 import re
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
 from reportlab.lib.colors import HexColor, white, black
 from reportlab.lib.units import inch
 from reportlab.platypus import TableStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# ---------------------------------------------------------------------------
+# Georgia font registration (embedded TrueType)
+# ---------------------------------------------------------------------------
+_FONT_DIR = os.path.join(os.path.dirname(__file__), 'fonts')
+
+pdfmetrics.registerFont(TTFont('Georgia', os.path.join(_FONT_DIR, 'georgia.ttf')))
+pdfmetrics.registerFont(TTFont('Georgia-Bold', os.path.join(_FONT_DIR, 'georgiab.ttf')))
+pdfmetrics.registerFont(TTFont('Georgia-Italic', os.path.join(_FONT_DIR, 'georgiai.ttf')))
+pdfmetrics.registerFont(TTFont('Georgia-BoldItalic', os.path.join(_FONT_DIR, 'georgiaz.ttf')))
+
+pdfmetrics.registerFontFamily(
+    'Georgia',
+    normal='Georgia',
+    bold='Georgia-Bold',
+    italic='Georgia-Italic',
+    boldItalic='Georgia-BoldItalic',
+)
 
 # ---------------------------------------------------------------------------
 # Color palette
@@ -33,14 +54,14 @@ RULE_COLOR = HexColor('#cccccc')
 SOURCE_COLOR = HexColor('#999999')
 
 # ---------------------------------------------------------------------------
-# Font constants
+# Font constants (Georgia throughout for print-quality embedding)
 # ---------------------------------------------------------------------------
-HEADLINE_FONT = 'Times-Roman'
-HEADLINE_FONT_BOLD = 'Times-Bold'
-BODY_FONT = 'Helvetica'
-BODY_FONT_BOLD = 'Helvetica-Bold'
-BODY_FONT_ITALIC = 'Helvetica-Oblique'
-BODY_FONT_BOLD_ITALIC = 'Helvetica-BoldOblique'
+HEADLINE_FONT = 'Georgia'
+HEADLINE_FONT_BOLD = 'Georgia-Bold'
+BODY_FONT = 'Georgia'
+BODY_FONT_BOLD = 'Georgia-Bold'
+BODY_FONT_ITALIC = 'Georgia-Italic'
+BODY_FONT_BOLD_ITALIC = 'Georgia-BoldItalic'
 
 # ---------------------------------------------------------------------------
 # Paragraph styles

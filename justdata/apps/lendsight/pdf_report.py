@@ -64,7 +64,7 @@ from justdata.apps.lendsight.version import __version__
 # ---------------------------------------------------------------------------
 _COMPACT_BODY = ParagraphStyle(
     'CompactBody',
-    fontName='Helvetica',
+    fontName='Georgia',
     fontSize=12,
     leading=16,
     textColor=HexColor('#333333'),
@@ -74,7 +74,7 @@ _COMPACT_BODY = ParagraphStyle(
 
 _AI_TAG = ParagraphStyle(
     'AITag',
-    fontName='Helvetica-Oblique',
+    fontName='Georgia-Italic',
     fontSize=9,
     leading=12,
     textColor=HexColor('#aaaaaa'),
@@ -83,7 +83,7 @@ _AI_TAG = ParagraphStyle(
 
 _COMPACT_CAPTION = ParagraphStyle(
     'CompactCaption',
-    fontName='Helvetica-Oblique',
+    fontName='Georgia-Italic',
     fontSize=9,
     leading=12,
     textColor=HexColor('#999999'),
@@ -92,7 +92,7 @@ _COMPACT_CAPTION = ParagraphStyle(
 
 _COMPACT_FINDING = ParagraphStyle(
     'CompactFinding',
-    fontName='Helvetica',
+    fontName='Georgia',
     fontSize=13,
     leading=17,
     textColor=HexColor('#333333'),
@@ -124,7 +124,7 @@ _COMPACT_H2 = ParagraphStyle(
 
 _INLINE_NARRATIVE = ParagraphStyle(
     'InlineNarrative',
-    fontName='Helvetica',
+    fontName='Georgia',
     fontSize=12,
     leading=16,
     textColor=HexColor('#333333'),
@@ -134,7 +134,7 @@ _INLINE_NARRATIVE = ParagraphStyle(
 
 _METHODS_COMPACT = ParagraphStyle(
     'MethodsCompact',
-    fontName='Helvetica',
+    fontName='Georgia',
     fontSize=10,
     leading=13.5,
     textColor=HexColor('#666666'),
@@ -144,7 +144,7 @@ _METHODS_COMPACT = ParagraphStyle(
 
 _TABLE_INTRO = ParagraphStyle(
     'TableIntro',
-    fontName='Helvetica',
+    fontName='Georgia',
     fontSize=12,
     leading=16,
     textColor=HexColor('#444444'),
@@ -154,7 +154,7 @@ _TABLE_INTRO = ParagraphStyle(
 
 _AI_DISCLAIMER = ParagraphStyle(
     'AIDisclaimer',
-    fontName='Helvetica-Oblique',
+    fontName='Georgia-Italic',
     fontSize=9,
     leading=12,
     textColor=HexColor('#aaaaaa'),
@@ -334,19 +334,46 @@ def _compact_key_findings(findings_text):
 
     callout = Table(
         [[finding_flowables]],
-        colWidths=[USABLE_WIDTH - 16],
+        colWidths=[USABLE_WIDTH],
         style=TS([
             ('BACKGROUND', (0, 0), (-1, -1), HexColor('#f0f7ff')),
-            ('LEFTPADDING', (0, 0), (-1, -1), 14),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-            ('LINEBEFORE', (0, 0), (0, -1), 3, NAVY),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
         ]),
     )
     return callout
 
 
+def _ai_narrative_block(narrative_text):
+    """Wrap AI narrative in a light gray background box.
+
+    Returns a list of flowables: [gray_box_table] that contains
+    the AI tag, narrative paragraphs, and disclaimer.
+    """
+    if not narrative_text or not isinstance(narrative_text, str) or not narrative_text.strip():
+        return []
+
+    inner = [_ai_tag()]
+    inner.extend(ai_narrative_to_flowables(narrative_text, style=_INLINE_NARRATIVE))
+    inner.append(Paragraph(
+        'Above text is AI generated from NCRC data and analysis.',
+        _AI_DISCLAIMER,
+    ))
+
+    box = Table(
+        [[inner]],
+        colWidths=[USABLE_WIDTH - 8],
+        style=TS([
+            ('BACKGROUND', (0, 0), (-1, -1), HexColor('#F0F0F0')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+        ]),
+    )
+    return [box]
 
 
 # ---------------------------------------------------------------------------
@@ -674,13 +701,19 @@ def _build_visual_table(data, row_order, metric_label='Metric',
                     tbl_col = year_start_col + ci
                     heat_map_commands.append((tbl_col, tbl_row, bg))
 
-        # Sparkline column
+        # Sparkline column — red for downward trends, blue for upward
         spark_vals = raw_year_vals[ri]
+        # Determine direction from change column
+        _change_raw = row_dict.get(change_col, '') if change_col else ''
+        _change_num = _parse_float(_change_raw)
+        _spark_down = (_change_num is not None and _change_num < 0) if _change_num is not None else None
+
         if not is_total and any(v is not None for v in spark_vals):
             spark_buf = render_sparkline(
                 [v if v is not None else 0 for v in spark_vals],
                 width_inches=trend_width / 72 * 0.85,
                 height_inches=0.2,
+                is_downward=_spark_down,
             )
             if spark_buf:
                 cells.append(Image(spark_buf,
@@ -727,10 +760,10 @@ def _build_visual_table(data, row_order, metric_label='Metric',
         # Header row
         ('BACKGROUND', (0, 0), (-1, 0), VT_HEADER),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Georgia-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         # Data rows
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Georgia'),
         ('FONTSIZE', (0, 1), (-1, -1), 9.5),
         # Alignment
         ('ALIGN', (0, 0), (0, -1), 'LEFT'),
@@ -745,9 +778,13 @@ def _build_visual_table(data, row_order, metric_label='Metric',
         ('GRID', (0, 0), (-1, -1), 0.5, HexColor('#E0E0E0')),
         ('LINEBELOW', (0, 0), (-1, 0), 1, VT_HEADER),
         # Total Loans row (first data row) — bold + separator
-        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, 1), 'Georgia-Bold'),
         ('LINEBELOW', (0, 1), (-1, 1), 1.5, VT_HEADER),
     ]
+
+    # Add left padding to Pop vs Lending column so bars don't touch gridline
+    if show_pop_bars or pop_share_col:
+        style_cmds.append(('LEFTPADDING', (1, 0), (1, -1), 6))
 
     style = TS(style_cmds)
 
@@ -864,14 +901,33 @@ def _build_top_lenders_table(data, max_rows=20):
     if not col_order:
         return Spacer(1, 0), False
 
+    # Dynamically size Lender Name column based on longest name
+    if 'Lender Name' in col_order:
+        from reportlab.lib.utils import stringWidth
+        lender_names = [str(r.get('Lender Name', '')) for r in rows]
+        longest = max(lender_names, key=len) if lender_names else ''
+        measured_w = stringWidth(longest, 'Georgia', 9.5) + 24  # padding
+        name_idx = col_order.index('Lender Name')
+        old_name_w = widths[name_idx]
+        new_name_w = max(120, min(measured_w, old_name_w))  # clamp
+        saved = old_name_w - new_name_w
+        widths[name_idx] = new_name_w
+        # Distribute recovered space to data columns (skip Name and Type)
+        data_cols = [i for i, k in enumerate(col_order)
+                     if k not in ('Lender Name', 'Lender Type')]
+        if data_cols and saved > 0:
+            extra_each = saved / len(data_cols)
+            for i in data_cols:
+                widths[i] += extra_each
+
     # Lender-name paragraph style (readable for landscape)
     _lender_name = ParagraphStyle(
-        'LenderNameCompact', fontName='Helvetica', fontSize=9.5,
+        'LenderNameCompact', fontName='Georgia', fontSize=9.5,
         leading=12, textColor=HexColor('#333333'),
     )
     # Header text style (white on dark blue)
     _hdr = ParagraphStyle(
-        'LenderHeader', fontName='Helvetica-Bold', fontSize=10,
+        'LenderHeader', fontName='Georgia-Bold', fontSize=10,
         leading=12, textColor=white, alignment=TA_CENTER,
     )
 
@@ -905,11 +961,11 @@ def _build_top_lenders_table(data, max_rows=20):
         # Header row
         ('BACKGROUND', (0, 0), (-1, 0), VT_HEADER),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Georgia-Bold'),
         ('FONTSIZE', (0, 0), (-1, 0), 10),
         # Data rows
         ('FONTSIZE', (0, 1), (-1, -1), 9.5),
-        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Georgia'),
         # Default alignment
         ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
         # Name + Type columns left-aligned
@@ -1142,12 +1198,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     s1_narrative = ai.get('demographic_overview_discussion', '')
     if s1_narrative and isinstance(s1_narrative, str) and s1_narrative.strip():
         story.append(Spacer(1, 6))
-        story.append(_ai_tag())
-        story.extend(ai_narrative_to_flowables(s1_narrative, style=_INLINE_NARRATIVE))
-        story.append(Paragraph(
-            'Above text is AI generated from NCRC data and analysis.',
-            _AI_DISCLAIMER,
-        ))
+        story.extend(_ai_narrative_block(s1_narrative))
 
     # Section 2 header + first sub-table (Borrower Income)
     income_borrowers = report_data.get('income_borrowers')
@@ -1179,12 +1230,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     # Income borrowers AI narrative
     ib_narrative = ai.get('income_borrowers_discussion', '')
     if ib_narrative and isinstance(ib_narrative, str) and ib_narrative.strip():
-        story.append(_ai_tag())
-        story.extend(ai_narrative_to_flowables(ib_narrative, style=_INLINE_NARRATIVE))
-        story.append(Paragraph(
-            'Above text is AI generated from NCRC data and analysis.',
-            _AI_DISCLAIMER,
-        ))
+        story.extend(_ai_narrative_block(ib_narrative))
 
     market_conc = report_data.get('market_concentration', [])
     if isinstance(market_conc, pd.DataFrame):
@@ -1246,12 +1292,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
 
     if s2_narrative:
         story.append(Spacer(1, 4))
-        story.append(_ai_tag())
-        story.extend(ai_narrative_to_flowables(s2_narrative, style=_INLINE_NARRATIVE))
-        story.append(Paragraph(
-            'Above text is AI generated from NCRC data and analysis.',
-            _AI_DISCLAIMER,
-        ))
+        story.extend(_ai_narrative_block(s2_narrative))
 
     # ==================================================================
     # SECTION 3: TOP LENDERS (LANDSCAPE) — PageBreak #3 and #4
@@ -1282,12 +1323,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     lender_narrative = ai.get('top_lenders_detailed_discussion', '')
     if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
         story.append(_h2('Lender Analysis'))
-        story.append(_ai_tag())
-        story.extend(ai_narrative_to_flowables(lender_narrative, style=_INLINE_NARRATIVE))
-        story.append(Paragraph(
-            'Above text is AI generated from NCRC data and analysis.',
-            _AI_DISCLAIMER,
-        ))
+        story.extend(_ai_narrative_block(lender_narrative))
 
     # ==================================================================
     # SECTION 4: MARKET CONCENTRATION (flows naturally)
@@ -1309,7 +1345,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         'Range: 0\u201310,000.'
     )
     _hhi_info_style = ParagraphStyle(
-        'HHIInfo', fontName='Helvetica', fontSize=10, leading=13.5,
+        'HHIInfo', fontName='Georgia', fontSize=10, leading=13.5,
         textColor=HexColor('#444444'),
     )
     hhi_info_box = Table(
@@ -1359,12 +1395,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     hhi_narrative = ai.get('market_concentration_discussion', '')
     if hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():
         story.append(Spacer(1, 8))
-        story.append(_ai_tag())
-        story.extend(ai_narrative_to_flowables(hhi_narrative, style=_INLINE_NARRATIVE))
-        story.append(Paragraph(
-            'Above text is AI generated from NCRC data and analysis.',
-            _AI_DISCLAIMER,
-        ))
+        story.extend(_ai_narrative_block(hhi_narrative))
 
     # ==================================================================
     # TRENDS ANALYSIS (flows naturally after Section 4)
@@ -1373,12 +1404,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if trends_text and isinstance(trends_text, str) and trends_text.strip():
         story.append(Spacer(1, 24))
         story.append(_h1('Trends Analysis'))
-        story.append(_ai_tag())
-        story.extend(ai_narrative_to_flowables(trends_text, style=_INLINE_NARRATIVE))
-        story.append(Paragraph(
-            'Above text is AI generated from NCRC data and analysis.',
-            _AI_DISCLAIMER,
-        ))
+        story.extend(_ai_narrative_block(trends_text))
 
     # ==================================================================
     # METHODOLOGY (flows naturally)
@@ -1399,7 +1425,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         textColor=HexColor('#333333'), spaceBefore=4, spaceAfter=2,
     )
     _meth_bullet = ParagraphStyle(
-        'MethBullet', fontName='Helvetica', fontSize=9.5, leading=12.5,
+        'MethBullet', fontName='Georgia', fontSize=9.5, leading=12.5,
         textColor=HexColor('#666666'), leftIndent=10, spaceAfter=1,
     )
 
@@ -1552,11 +1578,11 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     # About (compact single line)
     gen_date = datetime.now().strftime('%B %d, %Y')
     about_style = ParagraphStyle(
-        'AboutText', fontName='Helvetica', fontSize=10,
+        'AboutText', fontName='Georgia', fontSize=10,
         leading=13.5, textColor=HexColor('#333333'),
     )
     about_meta = ParagraphStyle(
-        'AboutMeta', fontName='Helvetica', fontSize=9,
+        'AboutMeta', fontName='Georgia', fontSize=9,
         leading=12, textColor=HexColor('#666666'), spaceAfter=0,
     )
     story.append(Paragraph(

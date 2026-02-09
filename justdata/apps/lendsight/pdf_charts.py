@@ -275,7 +275,7 @@ def render_gap_chart(data):
     if not plot_data:
         return None
 
-    fig, ax = plt.subplots(figsize=(3.3, 1.8), dpi=150)
+    fig, ax = plt.subplots(figsize=(3.3, 2.2), dpi=150)  # 20% taller
     _apply_mini_style(ax, fig)
 
     labels = [d[0] for d in plot_data]
@@ -287,8 +287,10 @@ def render_gap_chart(data):
         gap = lend - pop
         color = GREEN if gap >= 0 else RED
         ax.barh(i, lend, height=0.5, color=color, alpha=0.3, zorder=1)
-        ax.plot(pop, i, 'D', color=ORANGE, markersize=5, zorder=3)
-        ax.plot(lend, i, 'o', color=color, markersize=5, zorder=3)
+        ax.plot(pop, i, 'D', color=ORANGE, markersize=5, zorder=3,
+                label='Population Share' if i == 0 else '')
+        ax.plot(lend, i, 'o', color=color, markersize=5, zorder=3,
+                label='Lending Share' if i == 0 else '')
         ax.text(max(lend, pop) + 1, i, f'{gap:+.1f}pp', fontsize=5,
                 color=color, fontweight='bold', va='center')
 
@@ -296,7 +298,9 @@ def render_gap_chart(data):
     ax.set_yticklabels(labels, fontsize=5.5)
     ax.set_title(f'Lending vs. Population Share ({latest_year})', fontsize=7,
                  fontweight='bold', color=NAVY, pad=4)
-    ax.set_xlabel('%', fontsize=5.5)
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
+    ax.tick_params(axis='x', labelsize=5.5)
+    ax.legend(fontsize=5, loc='lower right', framealpha=0.9)
     ax.invert_yaxis()
     ax.grid(axis='x', alpha=0.2)
 
@@ -512,14 +516,16 @@ def render_hhi_chart(market_concentration_data):
 # ---------------------------------------------------------------------------
 # Sparkline for table cells
 # ---------------------------------------------------------------------------
-def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc9'):
+def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc9',
+                     is_downward=None):
     """Render a tiny sparkline as PNG BytesIO for embedding in a ReportLab table cell.
 
     Args:
         values: list of numeric values (one per year)
         width_inches: figure width
         height_inches: figure height
-        color: line color
+        color: line color (overridden by is_downward if provided)
+        is_downward: if True, use red; if False, use blue; if None, auto-detect
 
     Returns:
         BytesIO containing PNG image bytes, or None if insufficient data.
@@ -534,6 +540,11 @@ def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc
         except (ValueError, TypeError):
             clean.append(0)
 
+    # Determine line color from trend direction
+    if is_downward is None:
+        is_downward = clean[-1] < clean[0]
+    line_color = '#C62828' if is_downward else '#1a8fc9'
+
     fig, ax = plt.subplots(figsize=(width_inches, height_inches))
     ax.axis('off')
     ax.set_xlim(-0.2, len(clean) - 0.8)
@@ -546,10 +557,11 @@ def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc
     ax.set_ylim(y_min - y_padding, y_max + y_padding)
 
     x = range(len(clean))
-    ax.plot(x, clean, color=color, linewidth=1.2, solid_capstyle='round')
-    ax.fill_between(x, clean, y_min - y_padding, alpha=0.1, color=color)
+    ax.plot(x, clean, color=line_color, linewidth=1.2, solid_capstyle='round')
+    # Light gray fill under all sparklines
+    ax.fill_between(x, clean, y_min - y_padding, alpha=0.2, color='#E0E0E0')
     ax.scatter([0, len(clean) - 1], [clean[0], clean[-1]],
-              color=color, s=6, zorder=5)
+              color=line_color, s=6, zorder=5)
 
     buf = BytesIO()
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight',

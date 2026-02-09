@@ -98,7 +98,7 @@ def render_pop_vs_lending_bars(pop_share, lending_share, width=100, height=26):
 # Change column with colored arrows
 # ---------------------------------------------------------------------------
 _CHANGE_STYLE = ParagraphStyle(
-    'ChangeCell', fontName='Helvetica', fontSize=9.5, leading=12,
+    'ChangeCell', fontName='Georgia', fontSize=9.5, leading=12,
     alignment=TA_CENTER,
 )
 
@@ -331,14 +331,13 @@ def build_key_findings(findings_text):
     from reportlab.platypus import TableStyle as TS
     callout = Table(
         [[finding_flowables]],
-        colWidths=[USABLE_WIDTH - 18],
+        colWidths=[USABLE_WIDTH],
         style=TS([
             ('BACKGROUND', (0, 0), (-1, -1), CALLOUT_BG),
-            ('LEFTPADDING', (0, 0), (-1, -1), 16),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
-            ('TOPPADDING', (0, 0), (-1, -1), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-            ('LINEBEFORE', (0, 0), (0, -1), 4, NAVY),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
         ])
     )
     return callout
