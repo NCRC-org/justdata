@@ -1528,36 +1528,18 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         _METHODS_COMPACT))
 
     # KeepTogether ONLY on heading + first subsection header
-    # (full methodology is ~744pt, exceeds frame height ~648pt)
     story.append(KeepTogether([
         meth_heading,
         Spacer(1, 4),
         Paragraph('Data Sources', _meth_h3),
     ]))
 
-    # Strip the duplicate "Data Sources" heading from meth_elements
-    meth_elements = meth_elements[1:]  # first element was "Data Sources"
+    # Strip the duplicate "Data Sources" heading — already in KeepTogether above
+    meth_elements = meth_elements[1:]
 
-    # Render remaining methodology as two-column layout (flows normally)
-    gap = 14
-    col_w = (USABLE_WIDTH - gap) / 2
-    half = len(meth_elements) // 2
-    left_col = meth_elements[:half]
-    right_col = meth_elements[half:]
-    meth_table = Table(
-        [[left_col, right_col]],
-        colWidths=[col_w, col_w],
-    )
-    meth_table.setStyle(TS([
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('LEFTPADDING', (0, 0), (0, 0), 0),
-        ('RIGHTPADDING', (0, 0), (0, 0), gap // 2),
-        ('LEFTPADDING', (1, 0), (1, 0), gap // 2),
-        ('RIGHTPADDING', (1, 0), (1, 0), 0),
-        ('TOPPADDING', (0, 0), (-1, -1), 0),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-    ]))
-    story.append(meth_table)
+    # Render remaining methodology as flat flowables (NOT a two-column Table,
+    # which is unsplittable and crashes when content exceeds frame height)
+    story.extend(meth_elements)
 
     # Horizontal rule before About
     story.append(Spacer(1, 4))
