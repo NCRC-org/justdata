@@ -903,7 +903,7 @@ def _build_top_lenders_table(data, max_rows=20):
 
     # Dynamically size Lender Name column based on longest name
     if 'Lender Name' in col_order:
-        from reportlab.lib.utils import stringWidth
+        from reportlab.pdfbase.pdfmetrics import stringWidth
         lender_names = [str(r.get('Lender Name', '')) for r in rows]
         longest = max(lender_names, key=len) if lender_names else ''
         measured_w = stringWidth(longest, 'Georgia', 9.5) + 24  # padding
