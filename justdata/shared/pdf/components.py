@@ -50,10 +50,10 @@ def get_heat_color(value, min_val, max_val):
     intensity = (v - min_val) / (max_val - min_val)
     intensity = max(0.0, min(1.0, intensity))
 
-    # Interpolate white -> light blue (#D6EAF8) -> medium blue (#85C1E9)
-    r = 1.0 - (intensity * 0.35)
-    g = 1.0 - (intensity * 0.20)
-    b = 1.0 - (intensity * 0.05)
+    # Interpolate white -> soft blue (#B8D9EC)
+    r = 1.0 - (intensity * 0.28)
+    g = 1.0 - (intensity * 0.15)
+    b = 1.0 - (intensity * 0.07)
     return Color(r, g, b)
 
 

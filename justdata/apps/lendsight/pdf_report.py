@@ -35,7 +35,7 @@ from justdata.shared.pdf.base_report import (
 from justdata.shared.pdf.styles import (
     HEADING_2, HEADING_3, BODY_TEXT, BODY_TEXT_SMALL,
     SOURCE_CAPTION, TABLE_CAPTION, LENDER_NAME_STYLE,
-    TABLE_HEADER_TEXT, TABLE_CELL_TEXT,
+    TABLE_HEADER_TEXT,
     NAVY, RULE_COLOR, BODY_FONT, BODY_FONT_BOLD, BODY_FONT_ITALIC,
     HEADLINE_FONT_BOLD, HEADER_BG, ALT_ROW_BG, MEDIUM_GRAY,
     build_table_style, markdown_to_reportlab,
@@ -147,14 +147,18 @@ _CHANGE_NEG = ParagraphStyle(
     textColor=HexColor('#C62828'), alignment=TA_CENTER,
 )
 
-# Metric cell variants for parent-child hierarchy
+# Metric cell variants for parent-child hierarchy (7pt to match visual table rows)
 _METRIC_AGG = ParagraphStyle(
-    'MetricAgg', fontName=BODY_FONT_BOLD, fontSize=8,
-    leading=10, textColor=HexColor('#333333'),
+    'MetricAgg', fontName=BODY_FONT_BOLD, fontSize=7,
+    leading=9, textColor=HexColor('#1e3a5f'),
 )
 _METRIC_INDENT = ParagraphStyle(
-    'MetricIndent', fontName=BODY_FONT, fontSize=8,
-    leading=10, textColor=HexColor('#333333'), leftIndent=12,
+    'MetricIndent', fontName=BODY_FONT, fontSize=7,
+    leading=9, textColor=HexColor('#333333'),
+)
+_METRIC_CELL = ParagraphStyle(
+    'MetricCell', fontName=BODY_FONT, fontSize=7,
+    leading=9, textColor=HexColor('#333333'),
 )
 
 
@@ -611,7 +615,7 @@ def _build_visual_table(data, row_order, metric_label='Metric',
         elif is_indent:
             cells.append(Paragraph(display, _METRIC_INDENT))
         else:
-            cells.append(Paragraph(display, TABLE_CELL_TEXT))
+            cells.append(Paragraph(display, _METRIC_CELL))
 
         # Pop column: bars (Section 1) or text (Section 2)
         if show_pop_bars and not is_total:
@@ -622,13 +626,20 @@ def _build_visual_table(data, row_order, metric_label='Metric',
         elif show_pop_bars and is_total:
             cells.append('')   # no bars for total row
         elif pop_share_col:
-            pv = row_dict.get(pop_share_col, '')
-            cells.append(_fmt_val(pv))
+            pv = _parse_float(row_dict.get(pop_share_col, ''))
+            if pv is not None and not is_total:
+                cells.append(f'{pv:.1f}%')
+            else:
+                cells.append(_fmt_val(row_dict.get(pop_share_col, ''), is_total_row=is_total))
 
         # Year columns (formatted text; heat map applied via style)
         for ci, yc in enumerate(year_cols):
-            val = row_dict.get(yc, '')
-            cells.append(_fmt_val(val, is_total_row=is_total))
+            if is_total:
+                v = _parse_float(row_dict.get(yc, ''))
+                cells.append(f'{int(v):,}' if v is not None else '0')
+            else:
+                v = raw_year_vals[ri][ci]
+                cells.append(f'{v:.1f}%' if v is not None else '\u2014')
             # Heat map color (skip total row)
             if not is_total:
                 v = raw_year_vals[ri][ci]
@@ -685,29 +696,48 @@ def _build_visual_table(data, row_order, metric_label='Metric',
     num_rows = len(table_data)
     table = Table(table_data, colWidths=widths, repeatRows=1, hAlign='LEFT')
 
-    style = build_table_style(has_total_row=True, num_rows=num_rows)
+    # Custom visual table style (matches web report design)
+    VT_HEADER = HexColor('#2C5F8A')
+    style_cmds = [
+        # Header row
+        ('BACKGROUND', (0, 0), (-1, 0), VT_HEADER),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 7),
+        # Data rows
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 1), (-1, -1), 7),
+        # Alignment
+        ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+        ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        # Padding
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        # Grid
+        ('GRID', (0, 0), (-1, -1), 0.5, HexColor('#E0E0E0')),
+        ('LINEBELOW', (0, 0), (-1, 0), 1, VT_HEADER),
+        # Total Loans row (first data row) — bold + separator
+        ('FONTNAME', (0, 1), (-1, 1), 'Helvetica-Bold'),
+        ('LINEBELOW', (0, 1), (-1, 1), 1.5, VT_HEADER),
+    ]
+
+    style = TS(style_cmds)
 
     # Apply heat map per-cell backgrounds
     for col_idx, row_idx, bg_color in heat_map_commands:
         style.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx), bg_color)
 
-    # Center-align year, trend, and change columns
-    trend_col = year_start_col + n_years
-    change_col_idx = trend_col + 1 if change_col else None
-    style.add('ALIGN', (year_start_col, 0), (trend_col, -1), 'CENTER')
-    if change_col_idx is not None:
-        style.add('ALIGN', (change_col_idx, 0), (change_col_idx, -1), 'CENTER')
-
-    # Vertical center for sparkline/bar cells
-    style.add('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
-
-    # Aggregate row styling
+    # Aggregate (parent) row styling
     agg_bg = HexColor('#EEF2F6')
     for idx in agg_row_indices:
         style.add('BACKGROUND', (0, idx), (-1, idx), agg_bg)
         style.add('FONTNAME', (0, idx), (-1, idx), BODY_FONT_BOLD)
+        style.add('TEXTCOLOR', (0, idx), (-1, idx), HexColor('#1e3a5f'))
 
-    # Child row left indent via padding (indent_metrics already handle via _METRIC_INDENT style)
+    # Child row left indent via cell padding
     for ri, row_dict in enumerate(sorted_rows):
         metric_val = str(row_dict.get('Metric', ''))
         if _matches_patterns(metric_val, indent_patterns):
