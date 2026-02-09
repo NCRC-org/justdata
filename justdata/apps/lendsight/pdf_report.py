@@ -795,45 +795,59 @@ def _build_section2_minority_tracts_table(data):
     )
 
 
-def _build_top_lenders_table(data):
-    """Build Section 3: Top 20 Lenders table (landscape, fits one page)."""
+def _build_top_lenders_table(data, max_rows=20):
+    """Build Section 3: Top Lenders table (landscape, one page).
+
+    Uses abbreviated headers and compact styling to fit on a single
+    landscape page.  *max_rows* is dynamically lowered if the table
+    would overflow.
+    """
     rows = _df_to_dicts(data)
     if not rows:
         return Spacer(1, 0), False
 
-    rows = sorted(rows, key=lambda x: float(x.get('Total Loans', 0) or 0), reverse=True)[:20]
+    rows = sorted(rows, key=lambda x: float(x.get('Total Loans', 0) or 0),
+                  reverse=True)[:max_rows]
 
-    all_possible_cols = [
-        'Lender Name', 'Lender Type', 'Total Loans',
-        'Hispanic (%)', 'Black (%)', 'White (%)', 'Asian (%)',
-        'Native American (%)', 'Multi-Racial (%)',
-        'LMIB (%)', 'LMICT (%)', 'MMCT (%)',
-    ]
-    all_display_headers = [
-        'Lender Name', 'Type', 'Total', 'Hisp.', 'Black', 'White',
-        'Asian', 'Nat. Am.', 'Multi-R.', 'LMIB', 'LMICT', 'MMCT',
-    ]
-    all_widths = [
-        2.4 * inch, 0.55 * inch, 0.55 * inch,
-        0.5 * inch, 0.5 * inch, 0.5 * inch, 0.5 * inch,
-        0.55 * inch, 0.55 * inch,
-        0.5 * inch, 0.5 * inch, 0.5 * inch,
+    # Column definitions: (data_key, header_label, width_pt, align)
+    _COL_DEFS = [
+        ('Lender Name',        'Lender Name', 180, 'LEFT'),
+        ('Lender Type',        'Type',         55, 'LEFT'),
+        ('Total Loans',        'Total',        42, 'RIGHT'),
+        ('Hispanic (%)',       'Hisp.',        40, 'RIGHT'),
+        ('Black (%)',          'Black',        40, 'RIGHT'),
+        ('White (%)',          'White',        40, 'RIGHT'),
+        ('Asian (%)',          'Asian',        40, 'RIGHT'),
+        ('Multi-Racial (%)',   'Multi-R.',     44, 'RIGHT'),
+        ('LMIB (%)',           'LMIB',         40, 'RIGHT'),
+        ('LMICT (%)',          'LMICT',        40, 'RIGHT'),
+        ('MMCT (%)',           'MMCT',         40, 'RIGHT'),
     ]
 
     sample = rows[0]
-    col_order = []
-    display_headers = []
-    widths = []
-    for col, header, w in zip(all_possible_cols, all_display_headers, all_widths):
-        if col in sample:
-            col_order.append(col)
+    col_order, display_headers, widths, aligns = [], [], [], []
+    for key, header, w, align in _COL_DEFS:
+        if key in sample:
+            col_order.append(key)
             display_headers.append(header)
             widths.append(w)
+            aligns.append(align)
 
     if not col_order:
         return Spacer(1, 0), False
 
-    header_row = [Paragraph(str(h), TABLE_HEADER_TEXT) for h in display_headers]
+    # Lender-name paragraph style (compact for landscape)
+    _lender_name = ParagraphStyle(
+        'LenderNameCompact', fontName='Helvetica', fontSize=6.5,
+        leading=8, textColor=HexColor('#333333'),
+    )
+    # Header text style (white on dark blue)
+    _hdr = ParagraphStyle(
+        'LenderHeader', fontName='Helvetica-Bold', fontSize=7,
+        leading=9, textColor=white, alignment=TA_CENTER,
+    )
+
+    header_row = [Paragraph(str(h), _hdr) for h in display_headers]
     table_data = [header_row]
 
     for row in rows:
@@ -843,16 +857,55 @@ def _build_top_lenders_table(data):
             if val is None:
                 val = ''
             if col == 'Lender Name':
-                cells.append(Paragraph(str(val), LENDER_NAME_STYLE))
+                cells.append(Paragraph(str(val), _lender_name))
             elif col == 'Total Loans':
                 cells.append(_fmt_val(val, is_total_row=True))
-            else:
+            elif col == 'Lender Type':
                 cells.append(str(val))
+            else:
+                # Demographic percentage — show one decimal
+                try:
+                    cells.append(f'{float(val):.1f}%')
+                except (ValueError, TypeError):
+                    cells.append(str(val))
         table_data.append(cells)
 
     num_rows = len(table_data)
+    VT_HEADER = HexColor('#2C5F8A')
+
+    style_cmds = [
+        # Header row
+        ('BACKGROUND', (0, 0), (-1, 0), VT_HEADER),
+        ('TEXTCOLOR', (0, 0), (-1, 0), white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 7),
+        # Data rows
+        ('FONTSIZE', (0, 1), (-1, -1), 6.5),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        # Default alignment
+        ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+        # Name + Type columns left-aligned
+        ('ALIGN', (0, 0), (1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        # Compact padding
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        # Grid
+        ('GRID', (0, 0), (-1, -1), 0.4, HexColor('#E0E0E0')),
+        ('LINEBELOW', (0, 0), (-1, 0), 1, VT_HEADER),
+    ]
+
+    # Alternating row backgrounds
+    for i in range(1, num_rows):
+        if i % 2 == 0:
+            style_cmds.append(
+                ('BACKGROUND', (0, i), (-1, i), HexColor('#F8FAFB'))
+            )
+
     table = Table(table_data, colWidths=widths, repeatRows=1, hAlign='LEFT')
-    table.setStyle(build_table_style(num_rows=num_rows))
+    table.setStyle(TS(style_cmds))
 
     return table, True
 
@@ -895,6 +948,18 @@ def _build_hhi_table(data):
 
     if not filtered_rows:
         return Spacer(1, 0), False
+
+    # Single-purpose dedup: if only 2 rows remain and their values match,
+    # drop the "All Loans" row to avoid redundancy
+    if len(filtered_rows) == 2:
+        def _row_vals(r):
+            return tuple(r.get(c, '') for c in year_cols)
+        if _row_vals(filtered_rows[0]) == _row_vals(filtered_rows[1]):
+            # Keep the more specific row (not "All Loans")
+            filtered_rows = [
+                r for r in filtered_rows
+                if 'all' not in str(r.get('Loan Purpose', '')).lower()
+            ] or filtered_rows[:1]
 
     col_order = ['Loan Purpose'] + year_cols
     header_labels = ['Loan Purpose'] + year_cols
@@ -1112,14 +1177,16 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     # PAGE N: SECTION 3 — TOP LENDERS (LANDSCAPE)
     # ==================================================================
     lenders_df = report_data.get('top_lenders_detailed')
-    s3_table, s3_has = _build_top_lenders_table(lenders_df)
+    lender_rows = _df_to_dicts(lenders_df)
+    lender_count = min(20, len(lender_rows)) if lender_rows else 0
+    s3_table, s3_has = _build_top_lenders_table(lenders_df, max_rows=lender_count)
 
     if s3_has:
         story.append(NextPageTemplate('landscape'))
         story.append(PageBreak())
         story.append(_h1('Section 3: Top Mortgage Lenders'))
         story.append(Paragraph(
-            'Top 20 lenders by total loan volume. Demographic columns show % of each '
+            f'Top {lender_count} lenders by total loan volume. Demographic columns show % of each '
             'lender\u2019s originations. Full lender list available in Excel export.',
             _COMPACT_CAPTION,
         ))
@@ -1127,7 +1194,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(s3_table)
         story.append(_caption('Source: HMDA data. Complete lender list available in Excel export.'))
 
-        # Lender AI narrative (immediately after lender table)
+        # Lender AI narrative immediately after table (landscape or next portrait page)
         lender_narrative = ai.get('top_lenders_detailed_discussion', '')
         if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
             story.append(Spacer(1, 8))
