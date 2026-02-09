@@ -37,7 +37,8 @@ try:
     GPT_MODEL = os.getenv("GPT_MODEL", GPT_MODEL)
     CLAUDE_API_KEY = os.getenv("CLAUDE_API_KEY")
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-    PROJECT_ID = os.getenv("GCP_PROJECT_ID", PROJECT_ID)
+    # Use JUSTDATA_PROJECT_ID for data queries (justdata-ncrc), NOT GCP_PROJECT_ID (hdma1-242116 hosting project)
+    PROJECT_ID = os.getenv("JUSTDATA_PROJECT_ID", PROJECT_ID)
 except ImportError:
     pass
 

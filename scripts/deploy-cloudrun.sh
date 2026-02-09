@@ -115,6 +115,8 @@ load_env_vars() {
     first=false
     echo ",\"GCP_PROJECT_ID\": \"${PROJECT_ID}\"" >> "$env_file"
     echo "GCP_PROJECT_ID" >> "$added_keys_file"
+    echo ",\"JUSTDATA_PROJECT_ID\": \"justdata-ncrc\"" >> "$env_file"
+    echo "JUSTDATA_PROJECT_ID" >> "$added_keys_file"
     echo ",\"DEBUG\": \"false\"" >> "$env_file"
     echo "DEBUG" >> "$added_keys_file"
     echo ",\"LOG_LEVEL\": \"INFO\"" >> "$env_file"
