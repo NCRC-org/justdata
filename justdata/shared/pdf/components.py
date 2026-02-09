@@ -8,10 +8,13 @@ explicit column ordering, key findings, and AI narrative rendering.
 
 import re
 from reportlab.platypus import (
-    Table, Paragraph, Spacer, KeepTogether, Flowable,
+    Table, Paragraph, Spacer, KeepTogether, Flowable, Image,
 )
 from reportlab.lib.units import inch
-from reportlab.lib.colors import HexColor
+from reportlab.lib.colors import HexColor, white, Color
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_CENTER
+from reportlab.graphics.shapes import Drawing, Rect, String
 
 from justdata.shared.pdf.styles import (
     HEADING_1, HEADING_2, HEADING_3,
@@ -26,6 +29,106 @@ from justdata.shared.pdf.styles import (
     build_table_style, markdown_to_reportlab,
 )
 from justdata.shared.pdf.base_report import USABLE_WIDTH
+
+
+# ---------------------------------------------------------------------------
+# Heat map cell backgrounds
+# ---------------------------------------------------------------------------
+def get_heat_color(value, min_val, max_val):
+    """Return a ReportLab Color for heat map background.
+
+    Lighter values (low %) -> white/very light blue
+    Higher values (high %) -> deeper blue
+    """
+    if value is None or max_val == min_val:
+        return white
+    try:
+        v = float(value)
+    except (ValueError, TypeError):
+        return white
+
+    intensity = (v - min_val) / (max_val - min_val)
+    intensity = max(0.0, min(1.0, intensity))
+
+    # Interpolate white -> light blue (#D6EAF8) -> medium blue (#85C1E9)
+    r = 1.0 - (intensity * 0.35)
+    g = 1.0 - (intensity * 0.20)
+    b = 1.0 - (intensity * 0.05)
+    return Color(r, g, b)
+
+
+# ---------------------------------------------------------------------------
+# Pop vs Lending dual bars (Section 1 only)
+# ---------------------------------------------------------------------------
+def render_pop_vs_lending_bars(pop_share, lending_share, width=100, height=26):
+    """Create a Drawing with two horizontal bars: orange=pop, blue=lending.
+
+    Returns a ReportLab Drawing that can be placed in a Table cell.
+    """
+    d = Drawing(width, height)
+
+    max_val = max(pop_share or 0, lending_share or 0, 1)
+    bar_max_w = width - 32
+    bar_h = 9
+
+    # Orange bar (population) — top
+    pop_w = (pop_share / max_val) * bar_max_w if pop_share else 0
+    if pop_w > 0:
+        d.add(Rect(0, height - bar_h - 2, pop_w, bar_h,
+                    fillColor=HexColor('#E8883C'), strokeColor=None))
+    if pop_share is not None:
+        d.add(String(max(pop_w + 2, 0), height - bar_h - 1,
+                      f'{pop_share:.1f}', fontSize=5.5,
+                      fillColor=HexColor('#E8883C')))
+
+    # Blue bar (lending) — bottom
+    lend_w = (lending_share / max_val) * bar_max_w if lending_share else 0
+    if lend_w > 0:
+        d.add(Rect(0, 2, lend_w, bar_h,
+                    fillColor=HexColor('#1a8fc9'), strokeColor=None))
+    if lending_share is not None:
+        d.add(String(max(lend_w + 2, 0), 3,
+                      f'{lending_share:.1f}', fontSize=5.5,
+                      fillColor=HexColor('#1a8fc9')))
+
+    return d
+
+
+# ---------------------------------------------------------------------------
+# Change column with colored arrows
+# ---------------------------------------------------------------------------
+_CHANGE_STYLE = ParagraphStyle(
+    'ChangeCell', fontName='Helvetica', fontSize=7, leading=9,
+    alignment=TA_CENTER,
+)
+
+
+def format_change_cell(value, is_total_row=False):
+    """Return a Paragraph with colored arrow + value for the Change column.
+
+    For percentage rows: shows ▲/▼ +X.Xpp
+    For total rows: shows ▲/▼ +X.X%
+    """
+    if value is None or value == '':
+        return Paragraph('\u2014', _CHANGE_STYLE)  # em dash
+
+    val_str = str(value).strip()
+    cleaned = val_str.replace('%', '').replace('pp', '').replace('+', '').strip()
+    try:
+        num = float(cleaned)
+    except (ValueError, TypeError):
+        return Paragraph(val_str, _CHANGE_STYLE)
+
+    suffix = '%' if is_total_row else 'pp'
+
+    if abs(num) < 0.05:
+        return Paragraph('0.0' + suffix, _CHANGE_STYLE)
+    elif num > 0:
+        text = f'<font color="#2196F3"><b>\u25b2</b> +{num:.1f}{suffix}</font>'
+    else:
+        text = f'<font color="#F44336"><b>\u25bc</b> \u2212{abs(num):.1f}{suffix}</font>'
+
+    return Paragraph(text, _CHANGE_STYLE)
 
 
 # ---------------------------------------------------------------------------

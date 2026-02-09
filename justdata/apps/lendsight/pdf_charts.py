@@ -505,6 +505,50 @@ def render_hhi_chart(market_concentration_data):
 
 
 # ---------------------------------------------------------------------------
+# Sparkline for table cells
+# ---------------------------------------------------------------------------
+def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc9'):
+    """Render a tiny sparkline as PNG BytesIO for embedding in a ReportLab table cell.
+
+    Args:
+        values: list of numeric values (one per year)
+        width_inches: figure width
+        height_inches: figure height
+        color: line color
+
+    Returns:
+        BytesIO containing PNG image bytes, or None if insufficient data.
+    """
+    if not values or len(values) < 2:
+        return None
+
+    clean = []
+    for v in values:
+        try:
+            clean.append(float(v) if v is not None and v != '' else 0)
+        except (ValueError, TypeError):
+            clean.append(0)
+
+    fig, ax = plt.subplots(figsize=(width_inches, height_inches))
+    ax.axis('off')
+    ax.set_xlim(-0.2, len(clean) - 0.8)
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+
+    x = range(len(clean))
+    ax.plot(x, clean, color=color, linewidth=1.2, solid_capstyle='round')
+    ax.fill_between(x, clean, alpha=0.1, color=color)
+    ax.scatter([0, len(clean) - 1], [clean[0], clean[-1]],
+              color=color, s=6, zorder=5)
+
+    buf = BytesIO()
+    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight',
+                pad_inches=0.01, transparent=True)
+    plt.close(fig)
+    buf.seek(0)
+    return buf
+
+
+# ---------------------------------------------------------------------------
 # Helper: BytesIO -> ReportLab Image
 # ---------------------------------------------------------------------------
 def chart_to_image(buf, width=None, height=None,

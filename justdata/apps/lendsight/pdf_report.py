@@ -30,7 +30,7 @@ from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_JUSTIFY, TA_CENTER
 
 from justdata.shared.pdf.base_report import (
-    MagazineDocTemplate, USABLE_WIDTH, L_USABLE_WIDTH,
+    MagazineDocTemplate, USABLE_WIDTH, L_USABLE_WIDTH, build_team_page,
 )
 from justdata.shared.pdf.styles import (
     HEADING_2, HEADING_3, BODY_TEXT, BODY_TEXT_SMALL,
@@ -44,12 +44,13 @@ from justdata.shared.pdf.components import (
     build_data_table, build_key_findings,
     build_source_caption,
     ai_narrative_to_flowables,
+    get_heat_color, render_pop_vs_lending_bars, format_change_cell,
 )
 from justdata.apps.lendsight.pdf_charts import (
     render_census_demographics_chart, render_hhi_chart,
     render_trend_line_chart, render_gap_chart,
     render_lender_bars_chart, render_income_share_chart,
-    chart_to_image,
+    render_sparkline, chart_to_image,
 )
 from justdata.apps.lendsight.version import __version__
 
@@ -317,90 +318,6 @@ def _compact_key_findings(findings_text):
     return callout
 
 
-# ---------------------------------------------------------------------------
-# Team page builder
-# ---------------------------------------------------------------------------
-ASSETS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(
-    os.path.abspath(__file__)))), 'shared', 'pdf', 'assets')
-TEAM_PHOTO_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), 'static', 'img', 'team_photo.png')
-
-
-def _build_team_page():
-    """Build the NCRC Research Team page (Page 2)."""
-    elements = []
-
-    elements.append(_h1('About the NCRC Research Team'))
-    elements.append(Spacer(1, 8))
-
-    mission = (
-        "The National Community Reinvestment Coalition (NCRC) is a network of more than "
-        "600 community-based organizations dedicated to creating a nation where access "
-        "to credit and capital for underserved populations is a right, not a privilege. "
-        "NCRC's research team provides data-driven analysis to support fair lending, "
-        "community reinvestment, and economic justice."
-    )
-    mission_box = Table(
-        [[Paragraph(mission, _COMPACT_BODY)]],
-        colWidths=[USABLE_WIDTH - 16],
-        style=TS([
-            ('BACKGROUND', (0, 0), (-1, -1), HexColor('#f0f4f8')),
-            ('LEFTPADDING', (0, 0), (-1, -1), 14),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
-            ('TOPPADDING', (0, 0), (-1, -1), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-            ('LINEBEFORE', (0, 0), (0, -1), 3, NAVY),
-        ]),
-    )
-    elements.append(mission_box)
-    elements.append(Spacer(1, 12))
-
-    # Team photo (if available)
-    if os.path.exists(TEAM_PHOTO_PATH):
-        try:
-            img = Image(TEAM_PHOTO_PATH, width=USABLE_WIDTH, height=USABLE_WIDTH * 0.5)
-            elements.append(img)
-            elements.append(Spacer(1, 8))
-        except Exception:
-            pass
-
-    # JustData platform description
-    elements.append(_h2('The JustData Platform'))
-
-    platform_text = (
-        "JustData is NCRC\u2019s comprehensive data analysis platform providing "
-        "AI-powered insights across banking, mortgage, and small business lending. "
-        "The platform leverages public data from the Home Mortgage Disclosure Act (HMDA), "
-        "FDIC Summary of Deposits, and U.S. Census Bureau to deliver actionable "
-        "market intelligence for community organizations, researchers, and policymakers."
-    )
-    elements.append(Paragraph(platform_text, _COMPACT_BODY))
-    elements.append(Spacer(1, 8))
-
-    tools = [
-        ('<b>LendSight</b> \u2014 Mortgage lending analysis by race, income, and neighborhood'),
-        ('<b>BizSight</b> \u2014 Small business lending patterns and disparities'),
-        ('<b>BranchSight</b> \u2014 Bank branch network analysis and deposit market share'),
-        ('<b>DataExplorer</b> \u2014 Interactive HMDA data exploration and custom queries'),
-        ('<b>MergerMeter</b> \u2014 Bank merger and acquisition community impact analysis'),
-    ]
-    for tool in tools:
-        elements.append(Paragraph(f'&bull; {tool}', _COMPACT_FINDING))
-
-    elements.append(Spacer(1, 16))
-
-    _contact = ParagraphStyle(
-        'ContactText', fontName='Helvetica', fontSize=8,
-        leading=12, textColor=HexColor('#666666'),
-    )
-    elements.append(Paragraph(
-        '<b>National Community Reinvestment Coalition</b><br/>'
-        '740 15th St NW, Suite 400, Washington DC 20005<br/>'
-        'ncrc.org \u00b7 justdata.org',
-        _contact,
-    ))
-
-    return elements
 
 
 # ---------------------------------------------------------------------------
@@ -583,30 +500,26 @@ def _matches_patterns(val, patterns):
     return False
 
 
-def _fmt_change_cell(val):
-    """Format a change value as a color-coded Paragraph."""
+def _parse_float(val):
+    """Safely parse a value to float, returning None on failure."""
     if val is None or val == '':
-        return ''
-    val_str = str(val).strip()
-    cleaned = val_str.replace('%', '').replace('pp', '').replace('+', '').strip()
+        return None
     try:
-        num = float(cleaned)
+        return float(str(val).replace(',', '').replace('%', '').strip())
     except (ValueError, TypeError):
-        return val_str
-    if abs(num) < 0.05:
-        return Paragraph('0.0 pp', _CHANGE_POS)
-    elif num > 0:
-        return Paragraph(f'+{num:.1f} pp', _CHANGE_POS)
-    else:
-        return Paragraph(f'\u2212{abs(num):.1f} pp', _CHANGE_NEG)
+        return None
 
 
-def _build_standard_table(data, row_order, metric_width_inches,
-                          pop_share_inches=0.7, year_col_default=0.65,
-                          change_inches=0.65, metric_label='Metric',
-                          shorten_labels=None, aggregate_metrics=None,
-                          indent_metrics=None):
-    """Build a standard section table with custom headers, label shortening, and hierarchy."""
+def _build_visual_table(data, row_order, metric_label='Metric',
+                        metric_width=90, pop_col_width=45, year_col_width=42,
+                        trend_width=55, change_width=55,
+                        shorten_labels=None, aggregate_metrics=None,
+                        indent_metrics=None, show_pop_bars=False):
+    """Build a section table with heat maps, sparklines, change arrows,
+    and optional Pop vs Lending bars (Section 1 only).
+
+    All widths are in points (not inches).
+    """
     rows = _df_to_dicts(data)
     if not rows:
         return Spacer(1, 0), False
@@ -616,121 +529,240 @@ def _build_standard_table(data, row_order, metric_width_inches,
     change_col = _find_change_col(sample)
     pop_share_col = _find_pop_share_col(sample)
     n_years = len(year_cols)
-
-    col_order = _build_col_order(year_cols, pop_share_col, change_col)
-
-    header_labels = [metric_label]
-    if pop_share_col:
-        header_labels.append('Pop.')
-    header_labels.extend(year_cols)
-    if change_col:
-        header_labels.append('Chg')
-
-    year_w = _adaptive_year_col_width(n_years, year_col_default)
-    widths = [metric_width_inches * inch]
-    if pop_share_col:
-        widths.append(pop_share_inches * inch)
-    widths.extend([year_w] * n_years)
-    if change_col:
-        widths.append(change_inches * inch)
+    if not year_cols:
+        return Spacer(1, 0), False
 
     sorted_rows = _sort_rows(rows, row_order)
     shorten = shorten_labels or {}
     agg_patterns = aggregate_metrics or []
     indent_patterns = indent_metrics or []
 
-    # Format numeric values
+    # --- Gather raw numeric values for heat map + sparkline ---
+    # Store raw floats per row per year (before formatting)
+    raw_year_vals = []   # list of lists, one per sorted row
     for row in sorted_rows:
-        metric = str(row.get('Metric', '')).lower()
-        is_total = 'total' in metric
-        for col in col_order:
-            if col == 'Metric':
-                continue
-            val = row.get(col, '')
-            row[col] = _fmt_val(val, is_total_row=is_total)
+        vals = []
+        for yc in year_cols:
+            vals.append(_parse_float(row.get(yc, '')))
+        raw_year_vals.append(vals)
 
-    # Build header row
+    # Per-column min/max for heat map (exclude Total Loans row)
+    col_min = [None] * n_years
+    col_max = [None] * n_years
+    for ri, row in enumerate(sorted_rows):
+        metric = str(row.get('Metric', '')).lower()
+        if 'total' in metric:
+            continue  # skip totals for heat map range
+        for ci in range(n_years):
+            v = raw_year_vals[ri][ci]
+            if v is not None:
+                if col_min[ci] is None or v < col_min[ci]:
+                    col_min[ci] = v
+                if col_max[ci] is None or v > col_max[ci]:
+                    col_max[ci] = v
+
+    # Fill None mins/maxes with 0
+    col_min = [m if m is not None else 0 for m in col_min]
+    col_max = [m if m is not None else 1 for m in col_max]
+
+    # --- Build header row ---
+    header_labels = [metric_label]
+    if show_pop_bars:
+        header_labels.append('Pop. vs Lending')
+    elif pop_share_col:
+        header_labels.append('Pop.')
+    header_labels.extend(year_cols)
+    header_labels.append('Trend')
+    if change_col:
+        header_labels.append('Change')
+
     header_row = [Paragraph(str(h), TABLE_HEADER_TEXT) for h in header_labels]
+
+    # --- Build column widths ---
+    widths = [metric_width]
+    if show_pop_bars:
+        widths.append(100)
+    elif pop_share_col:
+        widths.append(pop_col_width)
+    widths.extend([year_col_width] * n_years)
+    widths.append(trend_width)
+    if change_col:
+        widths.append(change_width)
+
+    # Track column index offsets for heat map styling
+    year_start_col = len([metric_label]) + (1 if (show_pop_bars or pop_share_col) else 0)
+
+    # --- Build data rows ---
     table_data = [header_row]
     agg_row_indices = []
+    heat_map_commands = []   # (col, row, color) for per-cell heat map
 
-    for row_dict in sorted_rows:
+    for ri, row_dict in enumerate(sorted_rows):
         cells = []
         metric_val = str(row_dict.get('Metric', ''))
         is_agg = _matches_patterns(metric_val, agg_patterns)
         is_indent = _matches_patterns(metric_val, indent_patterns)
+        is_total = 'total' in metric_val.lower()
         display = _shorten_label(metric_val, shorten)
 
-        for col_key in col_order:
-            if col_key == 'Metric':
-                if is_agg:
-                    cells.append(Paragraph(display, _METRIC_AGG))
-                elif is_indent:
-                    cells.append(Paragraph(display, _METRIC_INDENT))
-                else:
-                    cells.append(Paragraph(display, TABLE_CELL_TEXT))
-            elif col_key == change_col and change_col:
-                cells.append(_fmt_change_cell(row_dict.get(col_key, '')))
-            else:
-                cells.append(str(row_dict.get(col_key, '')))
-
-        row_idx = len(table_data)
+        # Metric column
         if is_agg:
-            agg_row_indices.append(row_idx)
+            cells.append(Paragraph(display, _METRIC_AGG))
+        elif is_indent:
+            cells.append(Paragraph(display, _METRIC_INDENT))
+        else:
+            cells.append(Paragraph(display, TABLE_CELL_TEXT))
+
+        # Pop column: bars (Section 1) or text (Section 2)
+        if show_pop_bars and not is_total:
+            pop_val = _parse_float(row_dict.get(pop_share_col, '')) if pop_share_col else None
+            # Use latest year value as lending share
+            lend_val = raw_year_vals[ri][-1] if raw_year_vals[ri] else None
+            cells.append(render_pop_vs_lending_bars(pop_val, lend_val))
+        elif show_pop_bars and is_total:
+            cells.append('')   # no bars for total row
+        elif pop_share_col:
+            pv = row_dict.get(pop_share_col, '')
+            cells.append(_fmt_val(pv))
+
+        # Year columns (formatted text; heat map applied via style)
+        for ci, yc in enumerate(year_cols):
+            val = row_dict.get(yc, '')
+            cells.append(_fmt_val(val, is_total_row=is_total))
+            # Heat map color (skip total row)
+            if not is_total:
+                v = raw_year_vals[ri][ci]
+                if v is not None:
+                    bg = get_heat_color(v, col_min[ci], col_max[ci])
+                    tbl_row = ri + 1   # +1 for header
+                    tbl_col = year_start_col + ci
+                    heat_map_commands.append((tbl_col, tbl_row, bg))
+
+        # Sparkline column
+        spark_vals = raw_year_vals[ri]
+        if not is_total and any(v is not None for v in spark_vals):
+            spark_buf = render_sparkline(
+                [v if v is not None else 0 for v in spark_vals],
+                width_inches=trend_width / 72 * 0.85,
+                height_inches=0.2,
+            )
+            if spark_buf:
+                cells.append(Image(spark_buf,
+                                   width=trend_width * 0.85,
+                                   height=0.2 * inch))
+            else:
+                cells.append('')
+        else:
+            # Total row: sparkline of counts
+            count_vals = [_parse_float(row_dict.get(yc, '')) for yc in year_cols]
+            if any(v is not None for v in count_vals):
+                spark_buf = render_sparkline(
+                    [v if v is not None else 0 for v in count_vals],
+                    width_inches=trend_width / 72 * 0.85,
+                    height_inches=0.2,
+                    color='#666666',
+                )
+                if spark_buf:
+                    cells.append(Image(spark_buf,
+                                       width=trend_width * 0.85,
+                                       height=0.2 * inch))
+                else:
+                    cells.append('')
+            else:
+                cells.append('')
+
+        # Change column with colored arrows
+        if change_col:
+            change_val = row_dict.get(change_col, '')
+            cells.append(format_change_cell(change_val, is_total_row=is_total))
+
+        tbl_row_idx = len(table_data)
+        if is_agg:
+            agg_row_indices.append(tbl_row_idx)
         table_data.append(cells)
 
+    # --- Create table ---
     num_rows = len(table_data)
     table = Table(table_data, colWidths=widths, repeatRows=1, hAlign='LEFT')
 
     style = build_table_style(has_total_row=True, num_rows=num_rows)
-    # Aggregate row styling — light background + bold
-    agg_bg = HexColor('#e8ecf0')
+
+    # Apply heat map per-cell backgrounds
+    for col_idx, row_idx, bg_color in heat_map_commands:
+        style.add('BACKGROUND', (col_idx, row_idx), (col_idx, row_idx), bg_color)
+
+    # Center-align year, trend, and change columns
+    trend_col = year_start_col + n_years
+    change_col_idx = trend_col + 1 if change_col else None
+    style.add('ALIGN', (year_start_col, 0), (trend_col, -1), 'CENTER')
+    if change_col_idx is not None:
+        style.add('ALIGN', (change_col_idx, 0), (change_col_idx, -1), 'CENTER')
+
+    # Vertical center for sparkline/bar cells
+    style.add('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
+
+    # Aggregate row styling
+    agg_bg = HexColor('#EEF2F6')
     for idx in agg_row_indices:
         style.add('BACKGROUND', (0, idx), (-1, idx), agg_bg)
         style.add('FONTNAME', (0, idx), (-1, idx), BODY_FONT_BOLD)
-    table.setStyle(style)
 
+    # Child row left indent via padding (indent_metrics already handle via _METRIC_INDENT style)
+    for ri, row_dict in enumerate(sorted_rows):
+        metric_val = str(row_dict.get('Metric', ''))
+        if _matches_patterns(metric_val, indent_patterns):
+            style.add('LEFTPADDING', (0, ri + 1), (0, ri + 1), 18)
+
+    table.setStyle(style)
     return table, True
 
 
 def _build_section1_table(data):
-    return _build_standard_table(data, SECTION1_ROW_ORDER, metric_width_inches=2.0,
-                                  metric_label='Race / Ethnicity')
+    """Section 1: Race/Ethnicity with Pop vs Lending bars."""
+    return _build_visual_table(
+        data, SECTION1_ROW_ORDER,
+        metric_label='Race / Ethnicity',
+        metric_width=90, year_col_width=42,
+        trend_width=55, change_width=55,
+        show_pop_bars=True,
+    )
 
 
 def _build_section2_income_borrowers_table(data):
-    return _build_standard_table(data, SECTION2_T1_ROW_ORDER,
-                                 metric_width_inches=2.4, pop_share_inches=0.6,
-                                 year_col_default=0.6, change_inches=0.6,
-                                 metric_label='Borrower Income',
-                                 shorten_labels=SECTION2_T1_LABELS,
-                                 aggregate_metrics=['Low to Moderate Income Borrowers'],
-                                 indent_metrics=['Low Income Borrowers',
-                                                 'Moderate Income Borrowers'])
+    return _build_visual_table(
+        data, SECTION2_T1_ROW_ORDER,
+        metric_label='Borrower Income',
+        metric_width=110, pop_col_width=45, year_col_width=50,
+        trend_width=55, change_width=55,
+        shorten_labels=SECTION2_T1_LABELS,
+        aggregate_metrics=['Low to Moderate Income Borrowers'],
+        indent_metrics=['Low Income Borrowers', 'Moderate Income Borrowers'],
+    )
 
 
 def _build_section2_income_tracts_table(data):
-    return _build_standard_table(data, SECTION2_T2_ROW_ORDER,
-                                 metric_width_inches=2.6, pop_share_inches=0.55,
-                                 year_col_default=0.55, change_inches=0.55,
-                                 metric_label='Tract Median Income',
-                                 shorten_labels=SECTION2_T2_LABELS,
-                                 aggregate_metrics=['Low to Moderate Income Census Tracts'],
-                                 indent_metrics=['Low Income Census Tracts',
-                                                 'Moderate Income Census Tracts'])
+    return _build_visual_table(
+        data, SECTION2_T2_ROW_ORDER,
+        metric_label='Tract Median Income',
+        metric_width=110, pop_col_width=45, year_col_width=50,
+        trend_width=55, change_width=55,
+        shorten_labels=SECTION2_T2_LABELS,
+        aggregate_metrics=['Low to Moderate Income Census Tracts'],
+        indent_metrics=['Low Income Census Tracts', 'Moderate Income Census Tracts'],
+    )
 
 
 def _build_section2_minority_tracts_table(data):
-    return _build_standard_table(data, SECTION2_T3_ROW_ORDER,
-                                 metric_width_inches=2.6, pop_share_inches=0.55,
-                                 year_col_default=0.55, change_inches=0.55,
-                                 metric_label='Tract Minority Pop.',
-                                 shorten_labels=SECTION2_T3_LABELS,
-                                 aggregate_metrics=['Majority Minority Census Tracts'],
-                                 indent_metrics=['Low Minority Census Tracts',
-                                                 'Moderate Minority Census Tracts',
-                                                 'Middle Minority Census Tracts',
-                                                 'High Minority Census Tracts'])
+    return _build_visual_table(
+        data, SECTION2_T3_ROW_ORDER,
+        metric_label='Tract Minority Pop.',
+        metric_width=110, pop_col_width=45, year_col_width=50,
+        trend_width=55, change_width=55,
+        shorten_labels=SECTION2_T3_LABELS,
+        aggregate_metrics=['Majority Minority Census Tracts'],
+        indent_metrics=['Low Minority Census Tracts', 'Moderate Minority Census Tracts',
+                        'Middle Minority Census Tracts', 'High Minority Census Tracts'],
+    )
 
 
 def _build_top_lenders_table(data):
@@ -917,7 +949,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     # ==================================================================
     # PAGE 2: ABOUT THE NCRC RESEARCH TEAM
     # ==================================================================
-    story.extend(_build_team_page())
+    story.extend(build_team_page())
     story.append(NextPageTemplate('full_width'))
     story.append(PageBreak())
 
@@ -1065,6 +1097,14 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(s3_table)
         story.append(_caption('Source: HMDA data. Complete lender list available in Excel export.'))
 
+        # Lender AI narrative (immediately after lender table)
+        lender_narrative = ai.get('top_lenders_detailed_discussion', '')
+        if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
+            story.append(Spacer(1, 8))
+            story.append(_h2('Lender Analysis'))
+            story.append(_ai_tag())
+            story.append(_inline_two_col(lender_narrative))
+
     # ==================================================================
     # PAGE N+1: SECTION 4 — MARKET CONCENTRATION (PORTRAIT)
     # ==================================================================
@@ -1089,29 +1129,13 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if s4_has:
         story.append(s4_table)
         story.append(_caption('Source: HMDA data'))
-        story.append(Spacer(1, 8))
+        story.append(Spacer(1, 12))
 
     # HHI AI narrative (inline two-column)
     hhi_narrative = ai.get('market_concentration_discussion', '')
     if hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():
         story.append(_ai_tag())
         story.append(_inline_two_col(hhi_narrative))
-
-    # Lender AI narrative
-    lender_narrative = ai.get('top_lenders_detailed_discussion', '')
-    if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
-        story.append(Spacer(1, 8))
-        story.append(_h2('Lender Analysis'))
-        story.append(_ai_tag())
-        story.append(_inline_two_col(lender_narrative))
-
-    # Mini chart: Top lenders bar chart
-    lender_data = _df_to_dicts(lenders_df)
-    lender_bars_buf = render_lender_bars_chart(lender_data)
-    lender_bars_img = _mini_img(lender_bars_buf, aspect_w=3.3, aspect_h=2.0)
-    if lender_bars_img:
-        story.append(Spacer(1, 6))
-        story.append(lender_bars_img)
 
     # ==================================================================
     # METHODOLOGY PAGE

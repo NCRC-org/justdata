@@ -26,6 +26,22 @@
 
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
     <style>
+        /* Header logo replacement */
+        .app-branding .app-name {
+            visibility: hidden;
+            position: relative;
+            width: 140px;
+            height: 30px;
+        }
+        .app-branding .app-name::before {
+            visibility: visible;
+            content: '';
+            display: inline-block;
+            width: 140px;
+            height: 30px;
+            background: url('/static/img/app-logos/lendsight-white.png') no-repeat center / contain;
+        }
+
         /* Constrain the analysis card width with side buffers */
         .analysis-card {
             max-width: 700px;

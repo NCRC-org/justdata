@@ -18,8 +18,11 @@ from reportlab.lib.colors import white, Color
 from reportlab.platypus import (
     BaseDocTemplate, Frame, PageTemplate, Paragraph, Spacer,
     NextPageTemplate, PageBreak, CondPageBreak,
+    Table, TableStyle as TS, Image,
 )
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.colors import HexColor
 
 from justdata.shared.pdf.styles import (
     NAVY, DARK_NAVY, RULE_COLOR, SOURCE_COLOR, DARK_GRAY,
@@ -364,3 +367,145 @@ def build_cover_page(title, subtitle='', date_range='', metadata=None):
     story.append(PageBreak())
 
     return story
+
+
+# ---------------------------------------------------------------------------
+# Team page flowables builder (shared across all JustData reports)
+# ---------------------------------------------------------------------------
+TEAM_PHOTO_PATH = os.path.join(ASSETS_DIR, 'team_photo.png')
+
+
+def build_team_page():
+    """
+    Build the NCRC Research Team page with photo, bios, and member services callout.
+    Returns a list of flowables for page 2 of any JustData PDF report.
+    """
+    _TEAM_HEADING = ParagraphStyle(
+        'TeamHeading', fontName=HEADLINE_FONT_BOLD, fontSize=15,
+        leading=19, textColor=NAVY, spaceBefore=6, spaceAfter=6,
+    )
+    _TEAM_BODY = ParagraphStyle(
+        'TeamBody', fontName=BODY_FONT, fontSize=7.5, leading=11,
+        textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=5,
+    )
+    _TEAM_BIO = ParagraphStyle(
+        'TeamBio', fontName=BODY_FONT, fontSize=7, leading=10,
+        textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=4,
+    )
+    _TEAM_H2 = ParagraphStyle(
+        'TeamH2', fontName=HEADLINE_FONT_BOLD, fontSize=11, leading=14,
+        textColor=NAVY, spaceBefore=8, spaceAfter=4,
+    )
+    _TEAM_CONTACT = ParagraphStyle(
+        'TeamContact', fontName=BODY_FONT, fontSize=7.5, leading=11,
+        textColor=HexColor('#333333'), spaceAfter=2,
+    )
+
+    elements = []
+    elements.append(Paragraph('About the NCRC Research Team', _TEAM_HEADING))
+    elements.append(Spacer(1, 6))
+
+    body_paras = [
+        "The NCRC Research Department produces original research and supports advocacy "
+        "organizations with data analysis, visualization, report production, and mapping. "
+        "Our work spans redlining, the racial wealth gap, public health, segregation, "
+        "bank branches, mortgage and small business lending, gentrification, and displacement.",
+
+        "We help nonprofits, advocates, and local leaders use data to drive change \u2014 "
+        "understanding who is lending in your community, who is being left out, and how "
+        "lending and access shape local outcomes.",
+
+        "Our services include custom reports on banking and lending activity, data "
+        "consultation, contract research at member pricing, and support for organizations "
+        "working toward economic and racial equity.",
+    ]
+
+    bios = [
+        "<b>Jason Richardson</b> \u2014 Senior Director of Research. Geographer. "
+        "Leads development of the JustData data platform and directs the research "
+        "team\u2019s analytical work on lending, community investment, and economic equity.",
+
+        "<b>Bruce Mitchell, PhD</b> \u2014 Principal Researcher. Geographer. "
+        "Conducts original research on redlining, segregation, public health outcomes, "
+        "and neighborhood-level economic analysis.",
+
+        "<b>Jad Edlebi</b> \u2014 GIS Data Engineer. Urban Planner. "
+        "Manages data infrastructure, production systems, geospatial analysis, "
+        "and platform deployment.",
+
+        "<b>Joseph Dean</b> \u2014 Researcher. Economist. "
+        "Focuses on racial economic equity, lending disparities, and quantitative "
+        "analysis of community investment patterns.",
+    ]
+
+    # Build left-column content: paragraphs + bios
+    left_content = []
+    for para in body_paras:
+        left_content.append(Paragraph(para, _TEAM_BODY))
+
+    left_content.append(Spacer(1, 4))
+    left_content.append(Paragraph('Research Team', _TEAM_H2))
+    for bio in bios:
+        left_content.append(Paragraph(bio, _TEAM_BIO))
+
+    # Photo on right (if available)
+    photo_w = 2.5 * inch
+    right_content = []
+    if os.path.exists(TEAM_PHOTO_PATH):
+        try:
+            img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_w * 0.75)
+            right_content.append(img)
+        except Exception:
+            pass
+
+    if right_content:
+        gap = 12
+        left_w = USABLE_WIDTH - photo_w - gap
+        layout = Table(
+            [[left_content, right_content]],
+            colWidths=[left_w, photo_w],
+        )
+        layout.setStyle(TS([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(layout)
+    else:
+        elements.extend(left_content)
+
+    elements.append(Spacer(1, 12))
+
+    # Member Services callout box
+    callout_text = (
+        "<b>NCRC Member Services</b> \u2014 NCRC members receive priority access to "
+        "custom data analysis, research consultation, and JustData platform features. "
+        "Contact research@ncrc.org for more information."
+    )
+    contact_text = (
+        "National Community Reinvestment Coalition \u00b7 "
+        "740 15th St NW, Suite 400, Washington DC 20005 \u00b7 "
+        "ncrc.org \u00b7 justdata.org"
+    )
+
+    callout = Table(
+        [[[
+            Paragraph(callout_text, _TEAM_BODY),
+            Spacer(1, 4),
+            Paragraph(contact_text, _TEAM_CONTACT),
+        ]]],
+        colWidths=[USABLE_WIDTH - 16],
+        style=TS([
+            ('BACKGROUND', (0, 0), (-1, -1), HexColor('#f0f4f8')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 14),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LINEBEFORE', (0, 0), (0, -1), 3, NAVY),
+        ]),
+    )
+    elements.append(callout)
+
+    return elements
