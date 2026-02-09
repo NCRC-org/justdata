@@ -789,7 +789,17 @@
             padding-left: 10px;
         }
         .unified-table .detail-row td:first-child {
-            padding-left: 22px;
+            padding-left: 24px;
+            position: relative;
+        }
+        .unified-table .detail-row td:first-child::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(26, 143, 201, 0.3);
         }
         .unified-table .census-boundary {
             border-left: 2px solid rgba(51, 51, 51, 0.4) !important;
@@ -822,8 +832,8 @@
         .share-bar-container {
             display: flex;
             flex-direction: column;
-            gap: 2px;
-            width: 110px;
+            gap: 3px;
+            width: 130px;
         }
         .share-bar-row {
             display: flex;
@@ -831,12 +841,13 @@
             gap: 4px;
         }
         .share-bar {
-            height: 6px;
-            border-radius: 2px;
+            height: 14px;
+            border-radius: 3px;
             min-width: 2px;
         }
         .share-bar-label {
-            font-size: 10px;
+            font-size: 11px;
+            font-weight: 600;
             white-space: nowrap;
         }
 
@@ -876,152 +887,19 @@
             }
         }
 
-        /* ========== Tab Navigation ========== */
-        .report-tabs {
-            display: flex;
-            gap: 0;
-            margin-bottom: 0;
-            border-bottom: 2px solid #e0e0e0;
-        }
-        .tab-btn {
-            padding: 12px 24px;
-            background: transparent;
-            border: none;
-            border-bottom: 3px solid transparent;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 500;
-            color: #666;
-            transition: all 0.2s ease;
-            margin-bottom: -2px;
-        }
-        .tab-btn:hover {
-            color: #1e3a5f;
-            background: #f8f9fa;
-        }
-        .tab-btn.active {
-            color: #1e3a5f;
-            border-bottom-color: #1a8fc9;
-            font-weight: 600;
-        }
-        .tab-panel {
-            display: none;
-            padding-top: 20px;
-        }
-        .tab-panel.active {
-            display: block;
-        }
+        /* Tab/Overview CSS removed — report loads directly into full view */
 
-        /* Overview Section */
-        .overview-stat-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 16px;
-            margin-bottom: 30px;
+        /* Header logo replacement */
+        .app-branding .app-name {
+            font-size: 0;
+            line-height: 0;
         }
-        .overview-stat-card {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-        .overview-stat-card .stat-value {
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #1e3a5f;
-            margin: 0 0 4px 0;
-        }
-        .overview-stat-card .stat-label {
-            font-size: 0.85rem;
-            color: #666;
-            margin: 0;
-        }
-        .overview-stat-card .stat-change {
-            font-size: 0.8rem;
-            margin-top: 4px;
-        }
-        .overview-pop-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .overview-pop-label {
-            min-width: 100px;
-            font-size: 0.85rem;
-            color: #333;
-            text-align: right;
-        }
-        .overview-pop-bar-track {
-            flex: 1;
-            height: 22px;
-            background: #f0f0f0;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .overview-pop-bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            display: flex;
-            align-items: center;
-            padding-left: 6px;
-            font-size: 0.75rem;
-            color: white;
-            font-weight: 600;
-            min-width: 30px;
-        }
-        .overview-pop-change {
-            min-width: 60px;
-            font-size: 0.8rem;
-            font-weight: 600;
-        }
-        .glossary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 12px;
-        }
-        .glossary-item {
-            padding: 10px 12px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            border-left: 3px solid #1a8fc9;
-        }
-        .glossary-item dt {
-            font-weight: 600;
-            color: #1e3a5f;
-            font-size: 0.9rem;
-            margin-bottom: 2px;
-        }
-        .glossary-item dd {
-            margin: 0;
-            font-size: 0.85rem;
-            color: #555;
-            line-height: 1.4;
-        }
-        .overview-key-finding {
-            padding: 12px 16px;
-            border-left: 4px solid #1a8fc9;
-            margin-bottom: 12px;
-            background: #f8fafb;
-            border-radius: 0 6px 6px 0;
-        }
-        .overview-key-finding h4 {
-            margin: 0 0 4px 0;
-            font-size: 0.95rem;
-            color: #1e3a5f;
-        }
-        .overview-key-finding p {
-            margin: 0;
-            font-size: 0.85rem;
-            color: #555;
-            line-height: 1.5;
-        }
-
-        @media print {
-            .report-tabs { display: none !important; }
-            .tab-panel { display: block !important; }
+        .app-branding .app-name::before {
+            content: '';
+            display: inline-block;
+            width: 140px;
+            height: 30px;
+            background: url('/static/img/app-logos/lendsight-white.png') no-repeat center / contain;
         }
     </style>
 </head>
@@ -1064,71 +942,7 @@
             <!-- Report Content -->
             <main id="main-content" style="display: none;" role="main">
 
-            <!-- Tab Navigation -->
-            <div class="report-tabs no-print">
-                <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
-                <button class="tab-btn" data-tab="report" onclick="switchTab('report')">Full Report</button>
-            </div>
-
-            <!-- Overview Tab Panel -->
-            <div class="tab-panel active" id="tab-overview">
-                <!-- Community Profile -->
-                <div class="report-section" id="communityProfileSection">
-                    <h2 class="section-title">Community Profile</h2>
-                    <div class="overview-stat-cards" id="overviewStatCards">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                </div>
-
-                <!-- Population by Race - Horizontal Bar Chart -->
-                <div class="report-section" id="overviewPopulationSection" style="display: none;">
-                    <h2 class="section-title">Population by Race &amp; Ethnicity</h2>
-                    <div id="overviewPopBars" style="max-width: 700px;">
-                        <!-- Populated by JavaScript -->
-                    </div>
-                    <p style="margin-top: 8px; font-size: 0.8em; color: #888;">Source: U.S. Census Bureau, American Community Survey 5-year estimates</p>
-                </div>
-
-                <!-- About This Report -->
-                <div class="report-section">
-                    <h2 class="section-title">About This Report</h2>
-                    <div class="ai-insight-card">
-                        <div class="ai-content">
-                            <p><strong>What is HMDA data?</strong> The Home Mortgage Disclosure Act (HMDA) requires financial institutions to report information about mortgage loan applications and originations. This data, collected by the Consumer Financial Protection Bureau (CFPB), is one of the most comprehensive sources of information about mortgage lending patterns in the United States.</p>
-                            <p id="overviewLoanPurposeText"><strong>What loan purposes does this report cover?</strong> This report covers home purchase loans. The analysis includes only completed loans (originations) for owner-occupied, site-built, 1-4 unit properties. Reverse mortgages are excluded.</p>
-                            <p><strong>What does this report show?</strong> This report analyzes mortgage lending patterns across race/ethnicity, borrower income, neighborhood characteristics, and market concentration. It identifies trends over time and highlights disparities in lending.</p>
-                            <p><strong>What this report does NOT show:</strong> This report does not measure lending discrimination or credit quality. Differences in lending patterns may reflect factors not captured in HMDA data, including credit scores, debt-to-income ratios, and property values.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Glossary -->
-                <div class="report-section">
-                    <h2 class="section-title">Key Terms &amp; Glossary</h2>
-                    <div class="glossary-grid">
-                        <div class="glossary-item"><dl><dt>HMDA</dt><dd>Home Mortgage Disclosure Act — federal law requiring mortgage lenders to report loan data publicly.</dd></dl></div>
-                        <div class="glossary-item"><dl><dt>AMFI</dt><dd>Area Median Family Income — the median income for a metropolitan area, used as a benchmark for income classifications.</dd></dl></div>
-                        <div class="glossary-item"><dl><dt>LMI / LMIB</dt><dd>Low-to-Moderate Income / LMI Borrower — borrowers earning ≤80% of the Area Median Family Income.</dd></dl></div>
-                        <div class="glossary-item"><dl><dt>LMICT</dt><dd>Low-to-Moderate Income Census Tract — a tract where median family income is ≤80% of area median.</dd></dl></div>
-                        <div class="glossary-item"><dl><dt>MMCT</dt><dd>Majority-Minority Census Tract — a tract where more than 50% of residents are people of color.</dd></dl></div>
-                        <div class="glossary-item"><dl><dt>HHI</dt><dd>Herfindahl-Hirschman Index — a measure of market concentration (0-10,000). Higher values = less competitive.</dd></dl></div>
-                    </div>
-                </div>
-
-                <!-- Key Findings (moved to overview) -->
-                <div class="report-section" id="overviewKeyFindingsSection" style="display: none;">
-                    <h2 class="section-title">Key Findings</h2>
-                    <div id="overviewKeyFindingsContent">
-                        <!-- Populated by JavaScript from AI insights -->
-                    </div>
-                    <p style="margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
-                        Above text is AI generated from NCRC data and analysis
-                    </p>
-                </div>
-            </div>
-
-            <!-- Full Report Tab Panel -->
-            <div class="tab-panel" id="tab-report">
+            <!-- Report Content (no tabs — loads directly) -->
             <!-- Intro Paragraph and Census Chart - Side by Side -->
             <div class="report-section print-break" id="introAndCensusSection" style="display: none;">
                 <div style="display: flex; gap: 20px; align-items: flex-start;">
@@ -1207,7 +1021,7 @@
                     <table class="data-table" id="demographicOverviewTable" role="table" aria-label="Demographic Overview Lending Data">
                         <thead>
                             <tr role="row">
-                                <th style="text-align: left;" role="columnheader" scope="col">Metric</th>
+                                <th style="text-align: left; width: 240px;" role="columnheader" scope="col">Race / Ethnicity</th>
                             </tr>
                         </thead>
                         <tbody role="rowgroup">
@@ -1243,7 +1057,7 @@
                     <table class="data-table" id="incomeBorrowersTable">
                         <thead>
                             <tr>
-                                <th style="text-align: left; white-space: nowrap; min-width: 280px;">Metric</th>
+                                <th style="text-align: left; width: 240px;">Borrower Income</th>
                                 <!-- Year columns will be added dynamically by JavaScript -->
                             </tr>
                         </thead>
@@ -1268,7 +1082,7 @@
                     <table class="data-table" id="incomeTractsTable">
                         <thead>
                             <tr>
-                                <th style="text-align: left; white-space: nowrap; min-width: 350px;">Metric</th>
+                                <th style="text-align: left; width: 240px;">Tract Median Income</th>
                                 <!-- Year columns will be added dynamically by JavaScript -->
                             </tr>
                         </thead>
@@ -1293,7 +1107,7 @@
                     <table class="data-table" id="minorityTractsTable">
                         <thead>
                             <tr>
-                                <th style="text-align: left; white-space: nowrap; min-width: 350px;">Metric</th>
+                                <th style="text-align: left; width: 240px;">Tract Minority Population</th>
                                 <!-- Year columns will be added dynamically by JavaScript -->
                             </tr>
                         </thead>
@@ -1392,23 +1206,10 @@
                         </div>
                     </div>
                     
-                    <!-- Chart and Table - 2/3 width -->
+                    <!-- Chart - 2/3 width -->
                     <div style="flex: 0 0 66.667%;">
-                        <div class="chart-container" style="height: 400px; margin-bottom: 20px;">
+                        <div class="chart-container" style="height: 400px;">
                             <canvas id="hhiChart"></canvas>
-                        </div>
-                        <div class="table-container">
-                            <table class="data-table" id="marketConcentrationTable">
-                                <thead>
-                                    <tr>
-                                        <th style="text-align: left;">Year</th>
-                                        <th style="text-align: center;">HHI</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be populated by JavaScript -->
-                                </tbody>
-                            </table>
                         </div>
                     </div>
                 </div>
@@ -1570,9 +1371,9 @@
                     </div>
                 </div>
             </div>
-            </div> <!-- /tab-report -->
+            <!-- end report sections -->
 
-
+        </main>
         </div>
     </div>
 
@@ -1769,7 +1570,7 @@
             }
             
             // Populate overview tab
-            populateOverview(metadata);
+            // populateOverview removed
 
             // Populate intro paragraph and demographics chart (always show these)
             generateIntroParagraph(metadata);
@@ -3085,7 +2886,7 @@
                 if (mode === 'optionA') lr += '<th></th>';
                 yearCols.forEach(y => {
                     lr += y === '2022'
-                        ? '<th class="census-boundary" style="white-space:nowrap;">New Census<br>Boundaries</th>'
+                        ? '<th class="census-boundary" style="white-space:nowrap;font-size:11px;">New Census Boundaries</th>'
                         : '<th></th>';
                 });
                 lr += '<th></th>';
@@ -3094,7 +2895,8 @@
                 hdrHtml += lr;
             }
             let mh = '<tr>';
-            mh += `<th style="text-align:left;min-width:${mw};">Metric</th>`;
+            const metricLabel = opts.metricLabel || 'Metric';
+            mh += `<th style="text-align:left;width:240px;">${metricLabel}</th>`;
             if (hasPop) mh += '<th class="pop-share-col">Pop.&nbsp;Share</th>';
             if (mode === 'optionA') mh += '<th class="share-bar-col">Pop.&nbsp;vs&nbsp;Lending</th>';
             yearCols.forEach(y => {
@@ -3110,15 +2912,17 @@
             thead.innerHTML = hdrHtml;
 
             // ===== TBODY =====
+            const shortenLabel = opts.shortenLabel || (m => m);
             const bodyHtml = data.map(row => {
                 const metric = row[metricCol];
+                const displayMetric = shortenLabel(metric);
                 const isTotal = metric === 'Total Loans';
                 const agg = isAgg(metric);
                 const det = isDet(metric);
                 const rc = isTotal ? 'total-row' : (agg ? 'aggregate-row' : (det ? 'detail-row' : ''));
                 let cells = '';
 
-                cells += `<td style="text-align:left;min-width:${mw};">${metric}</td>`;
+                cells += `<td style="text-align:left;width:240px;">${displayMetric}</td>`;
 
                 if (hasPop) {
                     let pv = row[popShareCol];
@@ -3176,7 +2980,7 @@
 
             renderUnifiedTable('demographicOverviewTable', data, {
                 mode: 'optionA',
-                metricMinWidth: '180px',
+                metricLabel: 'Race / Ethnicity',
                 isAggregateRow: () => false,
                 isDetailRow: () => false
             }, metadata);
@@ -3211,9 +3015,10 @@
 
             renderUnifiedTable('incomeBorrowersTable', data, {
                 mode: 'optionC',
-                metricMinWidth: '280px',
-                isAggregateRow: m => m.startsWith('LMI Borrower') || m.includes('Low-to-Moderate Income Borrower'),
-                isDetailRow: m => m.startsWith('Low Income Borrower') || m.startsWith('Moderate Income Borrower')
+                metricLabel: 'Borrower Income',
+                isAggregateRow: m => m.includes('Low-to-Moderate') || m.includes('Low to Moderate'),
+                isDetailRow: m => /^(Low|Moderate)\s+Income\s+Borrower/i.test(m),
+                shortenLabel: m => m.replace(/\s+Income\s+Borrowers?/i, '').replace('Low-to-Moderate', 'Low to Moderate')
             }, metadata);
         }
         
@@ -3222,9 +3027,10 @@
 
             renderUnifiedTable('incomeTractsTable', data, {
                 mode: 'optionC',
-                metricMinWidth: '350px',
-                isAggregateRow: m => m.startsWith('LMI Census') || m.includes('Low-to-Moderate Income Census'),
-                isDetailRow: m => m.startsWith('Low Income Census') || m.startsWith('Moderate Income Census')
+                metricLabel: 'Tract Median Income',
+                isAggregateRow: m => m.includes('Low-to-Moderate') || m.includes('Low to Moderate'),
+                isDetailRow: m => /^(Low|Moderate)\s+Income\s+Census/i.test(m),
+                shortenLabel: m => m.replace(/\s+Income\s+Census\s+Tracts?\*?/i, '').replace('Low-to-Moderate', 'Low to Moderate')
             }, metadata);
 
             // Check for asterisk note
@@ -3244,9 +3050,18 @@
 
             renderUnifiedTable('minorityTractsTable', data, {
                 mode: 'optionC',
-                metricMinWidth: '350px',
+                metricLabel: 'Tract Minority Population',
                 isAggregateRow: m => m.includes('Majority Minority'),
-                isDetailRow: m => m.includes('Low Minority') || m.includes('Moderate Minority') || m.includes('Middle Minority') || m.includes('High Minority')
+                isDetailRow: m => /^(Low|Moderate|Middle|High)\s+Minority/i.test(m),
+                shortenLabel: m => {
+                    if (m.includes('Majority Minority')) {
+                        return 'Majority Minority (\u226550%)';
+                    }
+                    // "Low Minority Census Tracts (0-45.8%)" → "Low (0-45.8%)"
+                    const match = m.match(/^(\w+)\s+Minority\s+Census\s+Tracts?\s*(\(.*\))?/i);
+                    if (match) return match[1] + (match[2] ? ' ' + match[2] : '');
+                    return m;
+                }
             }, metadata);
 
             // Check for MMCT asterisk note
@@ -3322,10 +3137,10 @@
             // Lender Name column: narrower but still fits long names like "UNITED SHORE FINANCIAL SERVICES" (35 chars)
             // Using smaller font or tighter spacing, but keeping white-space: nowrap
             let headerRow = `<tr>
-                <th style="text-align: left; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px; max-width: 280px; width: 280px; font-size: 0.9em;" onclick="sortTable('topLendersDetailedTable', 0, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 0, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Name">
+                <th style="text-align: left; vertical-align: middle; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px; max-width: 280px; width: 280px; font-size: 0.9em;" onclick="sortTable('topLendersDetailedTable', 0, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 0, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Name">
                     Lender Name <span class="sort-indicator" id="sort-indicator-0"></span>
                 </th>
-                <th style="text-align: center; cursor: pointer; user-select: none; width: 90px; min-width: 90px; max-width: 90px; white-space: nowrap;" onclick="sortTable('topLendersDetailedTable', 1, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 1, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Type">
+                <th style="text-align: center; vertical-align: middle; cursor: pointer; user-select: none; width: 90px; min-width: 90px; max-width: 90px; white-space: nowrap;" onclick="sortTable('topLendersDetailedTable', 1, 'text')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 1, 'text');}" tabindex="0" role="button" aria-label="Sort by Lender Type">
                     Type <span class="sort-indicator" id="sort-indicator-1"></span>
                 </th>
                 <th style="text-align: center; cursor: pointer; user-select: none; vertical-align: middle; width: 90px; min-width: 90px; max-width: 90px;" onclick="sortTable('topLendersDetailedTable', 2, 'number')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();sortTable('topLendersDetailedTable', 2, 'number');}" tabindex="0" role="button" aria-label="Sort by Total Loans">
@@ -3880,159 +3695,9 @@
             console.log('Print button available - use browser Print for PDF export');
         }
         
-        // ========== Tab Navigation ==========
-        function switchTab(tabName) {
-            // Update tab buttons
-            document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.dataset.tab === tabName);
-            });
-            // Update tab panels
-            document.querySelectorAll('.tab-panel').forEach(panel => {
-                panel.classList.toggle('active', panel.id === 'tab-' + tabName);
-            });
-        }
+        // Tab navigation removed — report loads directly
 
-        // Populate Overview tab content
-        function populateOverview(metadata) {
-            if (!metadata) return;
-
-            // Community Profile stat cards
-            const cardsEl = document.getElementById('overviewStatCards');
-            if (cardsEl && metadata.census_data) {
-                const censusData = metadata.census_data;
-                const counties = Object.keys(censusData);
-                if (counties.length > 0) {
-                    const countyData = censusData[counties[0]];
-                    const timePeriods = countyData.time_periods || {};
-
-                    // Get population from ACS (most recent) and Census 2020
-                    const acsPop = timePeriods.acs?.demographics?.total_population || 0;
-                    const census2020Pop = timePeriods.census2020?.demographics?.total_population || 0;
-                    const census2010Pop = timePeriods.census2010?.demographics?.total_population || 0;
-
-                    // Calculate change
-                    let popChange = '';
-                    let popChangeClass = '';
-                    if (acsPop && census2020Pop) {
-                        const pctChange = ((acsPop - census2020Pop) / census2020Pop * 100).toFixed(1);
-                        const sign = pctChange > 0 ? '+' : '';
-                        popChange = `${sign}${pctChange}% since 2020 Census`;
-                        popChangeClass = pctChange >= 0 ? 'change-positive' : 'change-negative';
-                    }
-
-                    const acsLabel = timePeriods.acs?.year || 'ACS';
-
-                    let cards = `
-                        <div class="overview-stat-card">
-                            <p class="stat-value">${acsPop ? acsPop.toLocaleString() : 'N/A'}</p>
-                            <p class="stat-label">Population (${acsLabel})</p>
-                            ${popChange ? `<p class="stat-change ${popChangeClass}">${popChange}</p>` : ''}
-                        </div>`;
-
-                    // Minority percentage
-                    const acsDemo = timePeriods.acs?.demographics || {};
-                    const minorityPct = acsDemo.total_population ? (100 - (acsDemo.white_percentage || 0)).toFixed(1) : null;
-                    if (minorityPct !== null) {
-                        cards += `
-                        <div class="overview-stat-card">
-                            <p class="stat-value">${minorityPct}%</p>
-                            <p class="stat-label">People of Color</p>
-                        </div>`;
-                    }
-
-                    // Years and counties in analysis
-                    const years = metadata.years || [];
-                    cards += `
-                        <div class="overview-stat-card">
-                            <p class="stat-value">${years.length > 1 ? Math.min(...years) + '\u2013' + Math.max(...years) : (years[0] || 'N/A')}</p>
-                            <p class="stat-label">Analysis Period</p>
-                        </div>
-                        <div class="overview-stat-card">
-                            <p class="stat-value">${(metadata.counties || []).length}</p>
-                            <p class="stat-label">${(metadata.counties || []).length === 1 ? 'County' : 'Counties'} Analyzed</p>
-                        </div>`;
-
-                    cardsEl.innerHTML = cards;
-                }
-            }
-
-            // Population by Race horizontal bars
-            const popBarsEl = document.getElementById('overviewPopBars');
-            const popSection = document.getElementById('overviewPopulationSection');
-            if (popBarsEl && metadata.census_data) {
-                const censusData = metadata.census_data;
-                const counties = Object.keys(censusData);
-                if (counties.length > 0) {
-                    const countyData = censusData[counties[0]];
-                    const tp = countyData.time_periods || {};
-                    const acsDemo = tp.acs?.demographics || {};
-                    const census2020Demo = tp.census2020?.demographics || {};
-
-                    const raceGroups = [
-                        { key: 'white_percentage', label: 'White', color: '#4169E1' },
-                        { key: 'black_percentage', label: 'Black', color: '#228B22' },
-                        { key: 'hispanic_percentage', label: 'Hispanic', color: '#FF8C00' },
-                        { key: 'asian_percentage', label: 'Asian', color: '#DC143C' },
-                        { key: 'native_american_percentage', label: 'Native Am.', color: '#9467BD' },
-                        { key: 'hopi_percentage', label: 'Hawaiian/PI', color: '#17BECF' },
-                        { key: 'multi_racial_percentage', label: 'Multi-Racial', color: '#BCBD22' }
-                    ];
-
-                    let barsHtml = '';
-                    raceGroups.forEach(group => {
-                        const acsVal = acsDemo[group.key] || 0;
-                        if (acsVal < 1) return; // Skip groups < 1%
-
-                        const census2020Val = census2020Demo[group.key] || 0;
-                        const change = acsVal - census2020Val;
-                        const changeStr = change >= 0 ? `+${change.toFixed(1)}pp` : `${change.toFixed(1)}pp`;
-                        const changeClass = change >= 0 ? 'change-positive' : 'change-negative';
-
-                        barsHtml += `<div class="overview-pop-bar">
-                            <span class="overview-pop-label">${group.label}</span>
-                            <div class="overview-pop-bar-track">
-                                <div class="overview-pop-bar-fill" style="width:${Math.max(acsVal, 2)}%;background:${group.color};">${acsVal.toFixed(1)}%</div>
-                            </div>
-                            <span class="overview-pop-change ${changeClass}">${changeStr}</span>
-                        </div>`;
-                    });
-
-                    popBarsEl.innerHTML = barsHtml;
-                    if (popSection) popSection.style.display = 'block';
-                }
-            }
-
-            // Update "About This Report" loan purpose text
-            const loanPurposeText = document.getElementById('overviewLoanPurposeText');
-            if (loanPurposeText && metadata.loan_purpose) {
-                const purposeMap = {
-                    'purchase': 'home purchase loans',
-                    'refinance': 'refinance and cash-out refinance loans',
-                    'equity': 'home equity lending'
-                };
-                const purposes = Array.isArray(metadata.loan_purpose) ? metadata.loan_purpose : [metadata.loan_purpose];
-                const selected = purposes.filter(p => p !== 'all');
-                let purposeStr = 'all loan purposes';
-                if (selected.length === 1) {
-                    purposeStr = purposeMap[selected[0]] || selected[0];
-                } else if (selected.length > 0 && selected.length < 3) {
-                    const names = selected.map(p => purposeMap[p] || p);
-                    purposeStr = names.join(' and ');
-                }
-                loanPurposeText.innerHTML = `<strong>What loan purposes does this report cover?</strong> This report covers ${purposeStr}. The analysis includes only completed loans (originations) for owner-occupied, site-built, 1-4 unit properties. Reverse mortgages are excluded.`;
-            }
-
-            // Key Findings in Overview
-            if (metadata.ai_insights && metadata.ai_insights.key_findings) {
-                const content = metadata.ai_insights.key_findings;
-                const overviewKF = document.getElementById('overviewKeyFindingsContent');
-                const overviewKFSection = document.getElementById('overviewKeyFindingsSection');
-                if (overviewKF) {
-                    overviewKF.innerHTML = formatMarkdownContent(content);
-                    if (overviewKFSection) overviewKFSection.style.display = 'block';
-                }
-            }
-        }
+        // populateOverview removed — Overview tab deleted
 
         // Load report data when page loads
         if (document.readyState === 'loading') {
