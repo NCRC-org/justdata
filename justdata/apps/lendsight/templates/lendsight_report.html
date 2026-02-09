@@ -827,13 +827,13 @@
         .unified-table .change-neutral { color: #666; }
         .unified-table .share-bar-cell {
             padding: 4px 8px;
-            min-width: 120px;
+            min-width: 170px;
         }
         .share-bar-container {
             display: flex;
             flex-direction: column;
             gap: 3px;
-            width: 130px;
+            width: 170px;
         }
         .share-bar-row {
             display: flex;
@@ -889,14 +889,30 @@
 
         /* Tab/Overview CSS removed — report loads directly into full view */
 
-        /* Header logo replacement */
+        /* Top Lenders table — force uniform header alignment */
+        #topLendersDetailedTable th {
+            vertical-align: middle !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            line-height: 1.2 !important;
+        }
+
+        /* Header logo replacement — hide text, show logo via ::before */
         .app-branding .app-name {
-            font-size: 0;
-            line-height: 0;
+            visibility: hidden;
+            position: relative;
+            display: inline-block;
+            width: 140px;
+            height: 30px;
+            vertical-align: middle;
         }
         .app-branding .app-name::before {
+            visibility: visible;
             content: '';
-            display: inline-block;
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: block;
             width: 140px;
             height: 30px;
             background: url('/static/img/app-logos/lendsight-white.png') no-repeat center / contain;
@@ -2847,7 +2863,8 @@
             const cols = Object.keys(data[0]);
             const metricCol = 'Metric';
             const popShareCol = 'Population Share (%)';
-            const hasPop = cols.includes(popShareCol);
+            const hidePopShare = opts.hidePopShare || false;
+            const hasPop = cols.includes(popShareCol) && !hidePopShare;
             const changeCol = cols.find(c => c === 'Change' || c.startsWith('Change Over Time'));
             const yearCols = cols.filter(c => c !== metricCol && c !== popShareCol && c !== changeCol && !c.startsWith('Change') && !isNaN(parseInt(c))).sort((a, b) => parseInt(a) - parseInt(b));
             const latestYear = yearCols[yearCols.length - 1];
@@ -2980,6 +2997,7 @@
 
             renderUnifiedTable('demographicOverviewTable', data, {
                 mode: 'optionA',
+                hidePopShare: true,
                 metricLabel: 'Race / Ethnicity',
                 isAggregateRow: () => false,
                 isDetailRow: () => false
@@ -3446,43 +3464,40 @@
                 if (displayRows.length === 0) displayRows = [data[0]];
             }
 
-            const table = document.getElementById('marketConcentrationTable');
-            if (!table) {
-                console.warn('[WARNING] marketConcentrationTable not found');
-                return;
-            }
-            const thead = table.querySelector('thead');
-            const tbody = table.querySelector('tbody');
-            if (!thead || !tbody) return;
-
             const years = metadata && metadata.years ? metadata.years : [];
             if (years.length === 0) return;
             const sortedYears = [...years].sort((a, b) => a - b);
 
-            if (displayRows.length === 1) {
-                // Single purpose - Year | HHI format
-                thead.innerHTML = '<tr><th style="text-align:left;">Year</th><th style="text-align:center;">HHI</th></tr>';
-                tbody.innerHTML = sortedYears.map(year => {
-                    const yearStr = year.toString();
-                    const val = displayRows[0][yearStr] !== undefined ? displayRows[0][yearStr] : (displayRows[0][year] !== undefined ? displayRows[0][year] : 0);
-                    return `<tr><td style="text-align:left;">${yearStr}</td><td style="text-align:center;">${Math.round(parseFloat(val) || 0).toLocaleString()}</td></tr>`;
-                }).join('');
-            } else {
-                // Multiple purposes - Loan Purpose | Year1 | Year2... format
-                let hdrRow = '<tr><th style="text-align:left;">Loan Purpose</th>';
-                sortedYears.forEach(y => { hdrRow += `<th style="text-align:center;">${y}</th>`; });
-                hdrRow += '</tr>';
-                thead.innerHTML = hdrRow;
+            // Populate table if it exists (may have been removed)
+            const table = document.getElementById('marketConcentrationTable');
+            if (table) {
+                const thead = table.querySelector('thead');
+                const tbody = table.querySelector('tbody');
+                if (thead && tbody) {
+                    if (displayRows.length === 1) {
+                        thead.innerHTML = '<tr><th style="text-align:left;">Year</th><th style="text-align:center;">HHI</th></tr>';
+                        tbody.innerHTML = sortedYears.map(year => {
+                            const yearStr = year.toString();
+                            const val = displayRows[0][yearStr] !== undefined ? displayRows[0][yearStr] : (displayRows[0][year] !== undefined ? displayRows[0][year] : 0);
+                            return `<tr><td style="text-align:left;">${yearStr}</td><td style="text-align:center;">${Math.round(parseFloat(val) || 0).toLocaleString()}</td></tr>`;
+                        }).join('');
+                    } else {
+                        let hdrRow = '<tr><th style="text-align:left;">Loan Purpose</th>';
+                        sortedYears.forEach(y => { hdrRow += `<th style="text-align:center;">${y}</th>`; });
+                        hdrRow += '</tr>';
+                        thead.innerHTML = hdrRow;
 
-                tbody.innerHTML = displayRows.map(row => {
-                    let cells = `<td style="text-align:left;font-weight:600;">${row['Loan Purpose']}</td>`;
-                    sortedYears.forEach(year => {
-                        const yearStr = year.toString();
-                        const val = row[yearStr] !== undefined ? row[yearStr] : (row[year] !== undefined ? row[year] : 0);
-                        cells += `<td style="text-align:center;">${Math.round(parseFloat(val) || 0).toLocaleString()}</td>`;
-                    });
-                    return `<tr>${cells}</tr>`;
-                }).join('');
+                        tbody.innerHTML = displayRows.map(row => {
+                            let cells = `<td style="text-align:left;font-weight:600;">${row['Loan Purpose']}</td>`;
+                            sortedYears.forEach(year => {
+                                const yearStr = year.toString();
+                                const val = row[yearStr] !== undefined ? row[yearStr] : (row[year] !== undefined ? row[year] : 0);
+                                cells += `<td style="text-align:center;">${Math.round(parseFloat(val) || 0).toLocaleString()}</td>`;
+                            });
+                            return `<tr>${cells}</tr>`;
+                        }).join('');
+                    }
+                }
             }
 
             // Create Chart.js bar chart with threshold lines
