@@ -906,7 +906,7 @@ def _build_top_lenders_table(data, max_rows=20):
         from reportlab.pdfbase.pdfmetrics import stringWidth
         lender_names = [str(r.get('Lender Name', '')) for r in rows]
         longest = max(lender_names, key=len) if lender_names else ''
-        measured_w = stringWidth(longest, 'Georgia', 9.5) + 24  # padding
+        measured_w = stringWidth(longest, 'Georgia', 9.5) + 20  # padding
         name_idx = col_order.index('Lender Name')
         old_name_w = widths[name_idx]
         new_name_w = max(120, min(measured_w, old_name_w))  # clamp
@@ -966,8 +966,8 @@ def _build_top_lenders_table(data, max_rows=20):
         # Data rows
         ('FONTSIZE', (0, 1), (-1, -1), 9.5),
         ('FONTNAME', (0, 1), (-1, -1), 'Georgia'),
-        # Default alignment
-        ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
+        # Default alignment: center for data columns
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         # Name + Type columns left-aligned
         ('ALIGN', (0, 0), (1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -1328,7 +1328,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     # ==================================================================
     # SECTION 4: MARKET CONCENTRATION (flows naturally)
     # ==================================================================
-    story.append(Spacer(1, 24))
+    story.append(Spacer(1, 12))
 
     story.append(_h1('Section 4: Market Concentration'))
 
@@ -1350,27 +1350,26 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     )
     hhi_info_box = Table(
         [[[Paragraph(hhi_info_text, _hhi_info_style)]]],
-        colWidths=[USABLE_WIDTH * 0.32 - 7],
+        colWidths=[USABLE_WIDTH * 0.34 - 7],
         style=TS([
             ('BACKGROUND', (0, 0), (-1, -1), HexColor('#f5f5f5')),
             ('LEFTPADDING', (0, 0), (-1, -1), 10),
             ('RIGHTPADDING', (0, 0), (-1, -1), 10),
-            ('TOPPADDING', (0, 0), (-1, -1), 10),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
-            ('LINEBEFORE', (0, 0), (0, -1), 3, HexColor('#1a8fc9')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ]),
     )
 
-    # Full-width HHI chart (taller)
+    # Full-width HHI chart
     hhi_full_buf = render_hhi_chart(market_conc)
-    chart_w = USABLE_WIDTH * 0.65
-    hhi_full_img = chart_to_image(hhi_full_buf, width=chart_w, height_inches=3.0)
+    chart_w = USABLE_WIDTH * 0.63
+    hhi_full_img = chart_to_image(hhi_full_buf, width=chart_w, height_inches=2.6)
 
     if hhi_full_img:
-        # Side-by-side: info box (left 1/3) + chart (right 2/3)
+        # Side-by-side: info box (left ~1/3) + chart (right ~2/3)
         gap = 14
-        left_w = USABLE_WIDTH * 0.32 - gap // 2
-        right_w = USABLE_WIDTH * 0.68 - gap // 2
+        left_w = USABLE_WIDTH * 0.34 - gap // 2
+        right_w = USABLE_WIDTH * 0.66 - gap // 2
         hhi_layout = Table(
             [[[hhi_info_box], [hhi_full_img]]],
             colWidths=[left_w, right_w],
@@ -1394,7 +1393,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     # HHI AI narrative
     hhi_narrative = ai.get('market_concentration_discussion', '')
     if hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():
-        story.append(Spacer(1, 8))
+        story.append(Spacer(1, 4))
         story.extend(_ai_narrative_block(hhi_narrative))
 
     # ==================================================================

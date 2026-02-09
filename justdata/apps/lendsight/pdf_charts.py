@@ -5,15 +5,31 @@ Uses matplotlib to produce print-friendly PNG images returned as BytesIO buffers
 Includes both full-size charts and compact mini-charts for inline use.
 """
 
+import os
 from io import BytesIO
 
 import matplotlib
 matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.font_manager as fm
 import numpy as np
 from reportlab.platypus import Image
 from reportlab.lib.units import inch
+
+# ---------------------------------------------------------------------------
+# Register Georgia fonts with matplotlib so charts use Georgia instead of
+# Helvetica/Times (Type1). Goal: zero non-Georgia fonts in the final PDF.
+# ---------------------------------------------------------------------------
+_FONT_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'pdf', 'fonts')
+for _fname in ('georgia.ttf', 'georgiab.ttf', 'georgiai.ttf', 'georgiaz.ttf'):
+    _fpath = os.path.join(_FONT_DIR, _fname)
+    if os.path.exists(_fpath):
+        fm.fontManager.addfont(_fpath)
+
+matplotlib.rcParams['font.family'] = 'Georgia'
+matplotlib.rcParams['font.sans-serif'] = ['Georgia']
+matplotlib.rcParams['font.serif'] = ['Georgia']
 
 
 # ---------------------------------------------------------------------------
