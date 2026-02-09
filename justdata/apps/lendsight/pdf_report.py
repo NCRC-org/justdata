@@ -89,11 +89,11 @@ _COMPACT_CAPTION = ParagraphStyle(
 _COMPACT_FINDING = ParagraphStyle(
     'CompactFinding',
     fontName='Helvetica',
-    fontSize=7,
-    leading=10,
+    fontSize=12,
+    leading=15,
     textColor=HexColor('#333333'),
     alignment=TA_LEFT,
-    spaceAfter=4,
+    spaceAfter=6,
     leftIndent=8,
 )
 
@@ -135,6 +135,26 @@ _METHODS_COMPACT = ParagraphStyle(
     textColor=HexColor('#666666'),
     alignment=TA_JUSTIFY,
     spaceAfter=4,
+)
+
+_TABLE_INTRO = ParagraphStyle(
+    'TableIntro',
+    fontName='Helvetica',
+    fontSize=7.5,
+    leading=11,
+    textColor=HexColor('#444444'),
+    alignment=TA_JUSTIFY,
+    spaceAfter=6,
+)
+
+_AI_DISCLAIMER = ParagraphStyle(
+    'AIDisclaimer',
+    fontName='Helvetica-Oblique',
+    fontSize=6,
+    leading=8,
+    textColor=HexColor('#aaaaaa'),
+    spaceBefore=4,
+    spaceAfter=6,
 )
 
 # Change column color-coded styles
@@ -737,10 +757,11 @@ def _build_visual_table(data, row_order, metric_label='Metric',
         style.add('FONTNAME', (0, idx), (-1, idx), BODY_FONT_BOLD)
         style.add('TEXTCOLOR', (0, idx), (-1, idx), HexColor('#1e3a5f'))
 
-    # Child row left indent via cell padding
+    # Child row left indent via cell padding (skip aggregate/parent rows)
     for ri, row_dict in enumerate(sorted_rows):
         metric_val = str(row_dict.get('Metric', ''))
-        if _matches_patterns(metric_val, indent_patterns):
+        is_agg_row = _matches_patterns(metric_val, agg_patterns)
+        if not is_agg_row and _matches_patterns(metric_val, indent_patterns):
             style.add('LEFTPADDING', (0, ri + 1), (0, ri + 1), 18)
 
     table.setStyle(style)
@@ -810,18 +831,19 @@ def _build_top_lenders_table(data, max_rows=20):
                   reverse=True)[:max_rows]
 
     # Column definitions: (data_key, header_label, width_pt, align)
+    # Widths sized to fill ~680pt landscape width at 8pt data font
     _COL_DEFS = [
-        ('Lender Name',        'Lender Name', 180, 'LEFT'),
-        ('Lender Type',        'Type',         55, 'LEFT'),
-        ('Total Loans',        'Total',        42, 'RIGHT'),
-        ('Hispanic (%)',       'Hisp.',        40, 'RIGHT'),
-        ('Black (%)',          'Black',        40, 'RIGHT'),
-        ('White (%)',          'White',        40, 'RIGHT'),
-        ('Asian (%)',          'Asian',        40, 'RIGHT'),
-        ('Multi-Racial (%)',   'Multi-R.',     44, 'RIGHT'),
-        ('LMIB (%)',           'LMIB',         40, 'RIGHT'),
-        ('LMICT (%)',          'LMICT',        40, 'RIGHT'),
-        ('MMCT (%)',           'MMCT',         40, 'RIGHT'),
+        ('Lender Name',        'Lender Name', 230, 'LEFT'),
+        ('Lender Type',        'Type',         65, 'LEFT'),
+        ('Total Loans',        'Total',        50, 'RIGHT'),
+        ('Hispanic (%)',       'Hisp.',        45, 'RIGHT'),
+        ('Black (%)',          'Black',        45, 'RIGHT'),
+        ('White (%)',          'White',        45, 'RIGHT'),
+        ('Asian (%)',          'Asian',        45, 'RIGHT'),
+        ('Multi-Racial (%)',   'Multi-R.',     50, 'RIGHT'),
+        ('LMIB (%)',           'LMIB',         45, 'RIGHT'),
+        ('LMICT (%)',          'LMICT',        45, 'RIGHT'),
+        ('MMCT (%)',           'MMCT',         45, 'RIGHT'),
     ]
 
     sample = rows[0]
@@ -836,15 +858,15 @@ def _build_top_lenders_table(data, max_rows=20):
     if not col_order:
         return Spacer(1, 0), False
 
-    # Lender-name paragraph style (compact for landscape)
+    # Lender-name paragraph style (readable for landscape)
     _lender_name = ParagraphStyle(
-        'LenderNameCompact', fontName='Helvetica', fontSize=6.5,
-        leading=8, textColor=HexColor('#333333'),
+        'LenderNameCompact', fontName='Helvetica', fontSize=8,
+        leading=10, textColor=HexColor('#333333'),
     )
     # Header text style (white on dark blue)
     _hdr = ParagraphStyle(
-        'LenderHeader', fontName='Helvetica-Bold', fontSize=7,
-        leading=9, textColor=white, alignment=TA_CENTER,
+        'LenderHeader', fontName='Helvetica-Bold', fontSize=8,
+        leading=10, textColor=white, alignment=TA_CENTER,
     )
 
     header_row = [Paragraph(str(h), _hdr) for h in display_headers]
@@ -878,20 +900,20 @@ def _build_top_lenders_table(data, max_rows=20):
         ('BACKGROUND', (0, 0), (-1, 0), VT_HEADER),
         ('TEXTCOLOR', (0, 0), (-1, 0), white),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 7),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
         # Data rows
-        ('FONTSIZE', (0, 1), (-1, -1), 6.5),
+        ('FONTSIZE', (0, 1), (-1, -1), 7.5),
         ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
         # Default alignment
         ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
         # Name + Type columns left-aligned
         ('ALIGN', (0, 0), (1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        # Compact padding
-        ('TOPPADDING', (0, 0), (-1, -1), 2),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
-        ('LEFTPADDING', (0, 0), (-1, -1), 3),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        # Padding
+        ('TOPPADDING', (0, 0), (-1, -1), 3),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+        ('LEFTPADDING', (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
         # Grid
         ('GRID', (0, 0), (-1, -1), 0.4, HexColor('#E0E0E0')),
         ('LINEBELOW', (0, 0), (-1, 0), 1, VT_HEADER),
@@ -1095,15 +1117,28 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     s1_table, s1_has_data = _build_section1_table(demo_df)
     if s1_has_data:
         story.append(_h1('Section 1: Race &amp; Ethnicity in Mortgage Lending'))
+        story.append(Paragraph(
+            'This table shows the racial and ethnic composition of mortgage borrowers, '
+            'compared to the population composition of the county. The Population Share '
+            'column reflects the most recent ACS estimates. Year columns show the percentage '
+            'of loans going to each group. The Trend column provides a visual indicator of '
+            'the increase or decrease of each group over the entire span of years in the '
+            'report, with positive changes displayed in blue and negative changes in red.',
+            _TABLE_INTRO,
+        ))
         story.append(s1_table)
         story.append(_caption('Source: Home Mortgage Disclosure Act (HMDA) data'))
 
-    # Section 1 AI narrative (inline two-column)
+    # Section 1 AI narrative
     s1_narrative = ai.get('demographic_overview_discussion', '')
     if s1_narrative and isinstance(s1_narrative, str) and s1_narrative.strip():
         story.append(Spacer(1, 6))
         story.append(_ai_tag())
         story.append(_inline_two_col(s1_narrative))
+        story.append(Paragraph(
+            'Above text is AI generated from NCRC data and analysis.',
+            _AI_DISCLAIMER,
+        ))
 
     # Section 2 header + first sub-table (Borrower Income)
     income_borrowers = report_data.get('income_borrowers')
@@ -1112,12 +1147,21 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if s2t1_has:
         story.append(Spacer(1, 8))
         story.append(_h2('Section 2: Income &amp; Neighborhood Analysis'))
-        story.append(_h2('Lending by Borrower Income'))
+        story.append(_h2('Table 1: Lending to Income Borrowers'))
+        story.append(Paragraph(
+            'This table shows lending activity by borrower income level over the selected '
+            'time period. Borrower income is classified relative to the area median family '
+            'income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan '
+            'Division (MD) in which the property is located. Income thresholds are determined '
+            'using FFIEC median family income data. Population share refers to the percentage '
+            'of the county residents that are in each income bracket as of 2020.',
+            _TABLE_INTRO,
+        ))
         story.append(s2t1)
         story.append(_caption('Source: HMDA data'))
 
     # ==================================================================
-    # PAGE 5: SECTION 2 AI + INCOME CHART + SECTION 2B + 2C + AI
+    # PAGE 5: SECTION 2 AI + SECTION 2B + 2C + AI
     # ==================================================================
     story.append(CondPageBreak(3 * inch))
 
@@ -1126,26 +1170,31 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if ib_narrative and isinstance(ib_narrative, str) and ib_narrative.strip():
         story.append(_ai_tag())
         story.append(_inline_two_col(ib_narrative))
-
-    # Mini chart: Income Share (full-width)
-    income_borrowers_data = _df_to_dicts(income_borrowers)
-    income_share_buf = render_income_share_chart(income_borrowers_data)
-    income_share_img = _mini_img(income_share_buf, aspect_w=3.3, aspect_h=1.5)
+        story.append(Paragraph(
+            'Above text is AI generated from NCRC data and analysis.',
+            _AI_DISCLAIMER,
+        ))
 
     market_conc = report_data.get('market_concentration', [])
     if isinstance(market_conc, pd.DataFrame):
         market_conc = market_conc.to_dict('records') if not market_conc.empty else []
-
-    if income_share_img:
-        story.append(Spacer(1, 6))
-        story.append(income_share_img)
 
     # Section 2b: Census Tract Income
     income_tracts = report_data.get('income_tracts')
     s2t2, s2t2_has = _build_section2_income_tracts_table(income_tracts)
     if s2t2_has:
         story.append(Spacer(1, 8))
-        story.append(_h2('Lending to Census Tracts by Income'))
+        story.append(_h2('Table 2: Lending to Census Tracts by Income'))
+        story.append(Paragraph(
+            'This table shows lending activity by census tract income level over the '
+            'selected time period. Census tract income is classified relative to the area '
+            'median family income, as defined by HUD. The table shows lending to Low to '
+            'Moderate Income Census Tracts (\u226480% of AMFI) and their breakdown by Low '
+            'Income (\u226450% of AMFI), Moderate Income (&gt;50% and \u226480% of AMFI), '
+            'Middle Income (&gt;80% and \u2264120% of AMFI), and Upper Income (&gt;120% of '
+            'AMFI) census tracts.',
+            _TABLE_INTRO,
+        ))
         story.append(s2t2)
         story.append(_caption('Source: HMDA data'))
 
@@ -1154,7 +1203,17 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     s2t3, s2t3_has = _build_section2_minority_tracts_table(minority_tracts)
     if s2t3_has:
         story.append(Spacer(1, 6))
-        story.append(_h2('Lending to Census Tracts by Minority Population'))
+        story.append(_h2('Table 3: Lending to Census Tracts by Minority Population'))
+        story.append(Paragraph(
+            'This table shows lending activity by census tract minority population. '
+            '"Majority-Minority" tracts have more than 50% residents of color \u2014 this '
+            'is a fixed national threshold. Because that single threshold tells very '
+            'different stories in different geographies, this table also divides tracts '
+            'into four quartile groups based on the actual distribution of minority '
+            'population percentages across all census tracts in the CBSA. Quartile '
+            'boundaries are specific to this geography.',
+            _TABLE_INTRO,
+        ))
         story.append(s2t3)
         story.append(_caption('Source: HMDA data'))
 
@@ -1172,6 +1231,10 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(Spacer(1, 4))
         story.append(_ai_tag())
         story.append(_inline_two_col(s2_narrative))
+        story.append(Paragraph(
+            'Above text is AI generated from NCRC data and analysis.',
+            _AI_DISCLAIMER,
+        ))
 
     # ==================================================================
     # PAGE N: SECTION 3 — TOP LENDERS (LANDSCAPE)
@@ -1194,13 +1257,18 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(s3_table)
         story.append(_caption('Source: HMDA data. Complete lender list available in Excel export.'))
 
-        # Lender AI narrative immediately after table (landscape or next portrait page)
+        # Lender AI narrative on next portrait page
         lender_narrative = ai.get('top_lenders_detailed_discussion', '')
         if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
-            story.append(Spacer(1, 8))
+            story.append(NextPageTemplate('full_width'))
+            story.append(PageBreak())
             story.append(_h2('Lender Analysis'))
             story.append(_ai_tag())
             story.append(_inline_two_col(lender_narrative))
+            story.append(Paragraph(
+                'Above text is AI generated from NCRC data and analysis.',
+                _AI_DISCLAIMER,
+            ))
 
     # ==================================================================
     # PAGE N+1: SECTION 4 — MARKET CONCENTRATION (PORTRAIT)
@@ -1210,29 +1278,75 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
 
     story.append(_h1('Section 4: Market Concentration'))
 
-    # Full-width HHI chart
-    hhi_full_buf = render_hhi_chart(market_conc)
-    hhi_full_img = chart_to_image(hhi_full_buf, width=USABLE_WIDTH, height_inches=2.8)
-    if hhi_full_img:
-        story.append(hhi_full_img)
-        story.append(_caption(
-            'Source: HMDA data. HHI &lt;1,500 = Competitive, '
-            '1,500\u20132,500 = Moderate, &gt;2,500 = Concentrated'
-        ))
-        story.append(Spacer(1, 8))
+    # HHI info box + chart side by side
+    hhi_info_text = (
+        '<b>Herfindahl-Hirschman Index (HHI)</b><br/><br/>'
+        'The HHI is a standard measure of market concentration calculated by '
+        'summing the squares of each lender\u2019s market share.<br/><br/>'
+        '<b>How to read:</b><br/>'
+        '&bull; &lt;1,500 = Competitive market<br/>'
+        '&bull; 1,500\u20132,500 = Moderately concentrated<br/>'
+        '&bull; &gt;2,500 = Highly concentrated<br/><br/>'
+        'Based on total loan origination amounts (dollars). '
+        'Range: 0\u201310,000.'
+    )
+    _hhi_info_style = ParagraphStyle(
+        'HHIInfo', fontName='Helvetica', fontSize=7.5, leading=11,
+        textColor=HexColor('#444444'),
+    )
+    hhi_info_box = Table(
+        [[[Paragraph(hhi_info_text, _hhi_info_style)]]],
+        colWidths=[USABLE_WIDTH * 0.32 - 7],
+        style=TS([
+            ('BACKGROUND', (0, 0), (-1, -1), HexColor('#f5f5f5')),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
+            ('LINEBEFORE', (0, 0), (0, -1), 3, HexColor('#1a8fc9')),
+        ]),
+    )
 
-    # HHI table
-    s4_table, s4_has = _build_hhi_table(market_conc)
-    if s4_has:
-        story.append(s4_table)
-        story.append(_caption('Source: HMDA data'))
-        story.append(Spacer(1, 12))
+    # Full-width HHI chart (taller)
+    hhi_full_buf = render_hhi_chart(market_conc)
+    chart_w = USABLE_WIDTH * 0.65
+    hhi_full_img = chart_to_image(hhi_full_buf, width=chart_w, height_inches=3.0)
+
+    if hhi_full_img:
+        # Side-by-side: info box (left 1/3) + chart (right 2/3)
+        gap = 14
+        left_w = USABLE_WIDTH * 0.32 - gap // 2
+        right_w = USABLE_WIDTH * 0.68 - gap // 2
+        hhi_layout = Table(
+            [[[hhi_info_box], [hhi_full_img]]],
+            colWidths=[left_w, right_w],
+        )
+        hhi_layout.setStyle(TS([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        story.append(hhi_layout)
+    else:
+        story.append(hhi_info_box)
+
+    story.append(_caption(
+        'Source: HMDA data. HHI &lt;1,500 = Competitive, '
+        '1,500\u20132,500 = Moderate, &gt;2,500 = Concentrated'
+    ))
+    story.append(Spacer(1, 12))
 
     # HHI AI narrative (inline two-column)
     hhi_narrative = ai.get('market_concentration_discussion', '')
     if hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():
         story.append(_ai_tag())
         story.append(_inline_two_col(hhi_narrative))
+        story.append(Paragraph(
+            'Above text is AI generated from NCRC data and analysis.',
+            _AI_DISCLAIMER,
+        ))
 
     # ==================================================================
     # METHODOLOGY PAGE
@@ -1253,7 +1367,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         ))
 
     # Methods — comprehensive methodology matching web report
-    story.append(_h1('Methodology'))
+    meth_heading = _h1('Methodology')
 
     _meth_h3 = ParagraphStyle(
         'MethH3', fontName=BODY_FONT_BOLD, fontSize=8, leading=11,
@@ -1412,7 +1526,8 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         ('TOPPADDING', (0, 0), (-1, -1), 0),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
     ]))
-    story.append(meth_table)
+    # KeepTogether ensures heading + body stay on same page
+    story.append(KeepTogether([meth_heading, Spacer(1, 4), meth_table]))
 
     # Horizontal rule before About
     story.append(Spacer(1, 4))

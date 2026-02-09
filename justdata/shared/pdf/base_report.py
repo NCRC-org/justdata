@@ -30,9 +30,10 @@ from justdata.shared.pdf.styles import (
     BODY_FONT, BODY_FONT_BOLD, HEADLINE_FONT_BOLD,
 )
 
-# Logo path
+# Logo paths
 ASSETS_DIR = os.path.join(os.path.dirname(__file__), 'assets')
 LOGO_WHITE_PATH = os.path.join(ASSETS_DIR, 'justdata_logo_white.png')
+NCRC_LOGO_WHITE_PATH = os.path.join(ASSETS_DIR, 'ncrc_logo_white.png')
 
 # ---------------------------------------------------------------------------
 # Page geometry — letter portrait (per v2 spec Section 2)
@@ -143,7 +144,7 @@ def _draw_cover(canvas, doc):
         y = PAGE_H - (i + 1) * strip_h
         canvas.rect(0, y, PAGE_W, strip_h + 0.5, fill=1, stroke=0)
 
-    # --- Logo (top left) ---
+    # --- Logo (top left — JustData) ---
     try:
         if os.path.exists(LOGO_WHITE_PATH):
             logo_w = 1.4 * inch
@@ -156,6 +157,21 @@ def _draw_cover(canvas, doc):
             )
     except Exception:
         pass  # graceful fallback if logo missing
+
+    # --- Logo (top right — NCRC) ---
+    try:
+        if os.path.exists(NCRC_LOGO_WHITE_PATH):
+            ncrc_w = 1.3 * inch
+            ncrc_h = ncrc_w / 4.5
+            canvas.drawImage(
+                NCRC_LOGO_WHITE_PATH,
+                PAGE_W - MARGIN_RIGHT - ncrc_w,
+                PAGE_H - 28 - ncrc_h,
+                width=ncrc_w, height=ncrc_h,
+                mask='auto',
+            )
+    except Exception:
+        pass
 
     # --- Centered cover text ---
     cx = PAGE_W / 2
@@ -448,18 +464,28 @@ def build_team_page():
     for bio in bios:
         left_content.append(Paragraph(bio, _TEAM_BIO))
 
-    # Photo on right (if available)
+    # Photo on right (if available) — preserve original aspect ratio
     photo_w = 2.5 * inch
     right_content = []
     if os.path.exists(TEAM_PHOTO_PATH):
         try:
-            img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_w * 0.75)
+            from PIL import Image as PILImage
+            pil_img = PILImage.open(TEAM_PHOTO_PATH)
+            orig_w, orig_h = pil_img.size
+            pil_img.close()
+            aspect = orig_h / orig_w
+            photo_h = photo_w * aspect
+            img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_h)
             right_content.append(img)
         except Exception:
-            pass
+            try:
+                img = Image(TEAM_PHOTO_PATH, width=photo_w, height=photo_w)
+                right_content.append(img)
+            except Exception:
+                pass
 
     if right_content:
-        gap = 12
+        gap = 18  # increased gutter to prevent text overlap
         left_w = USABLE_WIDTH - photo_w - gap
         layout = Table(
             [[left_content, right_content]],

@@ -132,15 +132,17 @@ def render_census_demographics_chart(census_data, counties=None):
 
     ax.set_xticks(x)
     ax.set_xticklabels(race_labels, fontsize=7)
-    ax.set_ylabel('Population Share (%)', fontsize=7)
     ax.set_title('Population Demographics by Race/Ethnicity', fontsize=9,
                  fontweight='bold', pad=8)
     ax.legend(fontsize=6, loc='upper right', framealpha=0.9)
     all_vals = [v for p in periods_to_plot for v in avg_data[p] if v > 0]
     if all_vals:
         ax.set_ylim(0, max(all_vals) * 1.15)
-    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
-    ax.grid(axis='y', alpha=0.3)
+    # Clean chart: no gridlines, no Y-axis — data labels on bars suffice
+    ax.grid(False)
+    ax.spines['left'].set_visible(False)
+    ax.yaxis.set_visible(False)
+    ax.spines['bottom'].set_color('#cccccc')
 
     plt.tight_layout()
     buf = BytesIO()
@@ -471,8 +473,8 @@ def render_hhi_chart(market_concentration_data):
         except (ValueError, TypeError):
             values.append(0)
 
-    fig, ax = plt.subplots(figsize=(3.3, 1.8), dpi=150)
-    _apply_mini_style(ax, fig)
+    fig, ax = plt.subplots(figsize=(5.0, 3.0), dpi=150)
+    _apply_base_style(ax, fig)
 
     x = np.arange(len(year_cols))
     ax.bar(x, values, color=BAR_COLOR, width=0.5, edgecolor='none')
@@ -480,21 +482,22 @@ def render_hhi_chart(market_concentration_data):
     # Threshold lines — always show both for context
     max_val = max(values) if values else 500
     y_max = max(max_val * 1.3, 2800)
-    ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=0.8, alpha=0.6)
-    ax.text(len(year_cols) - 0.5, 1520, 'Moderate (1,500)', fontsize=5, color=HHI_MODERATE_COLOR, ha='right')
-    ax.axhline(y=2500, color=HHI_HIGH_COLOR, linestyle='--', linewidth=0.8, alpha=0.6)
-    ax.text(len(year_cols) - 0.5, 2520, 'Concentrated (2,500)', fontsize=5, color=HHI_HIGH_COLOR, ha='right')
+    ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=1.0, alpha=0.7)
+    ax.text(len(year_cols) - 0.5, 1530, 'Moderate (1,500)', fontsize=7, color=HHI_MODERATE_COLOR, ha='right')
+    ax.axhline(y=2500, color=HHI_HIGH_COLOR, linestyle='--', linewidth=1.0, alpha=0.7)
+    ax.text(len(year_cols) - 0.5, 2530, 'Concentrated (2,500)', fontsize=7, color=HHI_HIGH_COLOR, ha='right')
 
     # Value labels on bars
     for i, v in enumerate(values):
         if v > 0:
-            ax.text(i, v + max_val * 0.03, str(int(v)), ha='center', fontsize=5.5)
+            ax.text(i, v + max_val * 0.03, str(int(v)), ha='center', fontsize=8, fontweight='bold')
 
     ax.set_xticks(x)
-    ax.set_xticklabels([str(yr) for yr in year_cols], fontsize=6)
-    ax.set_title('Market Concentration (HHI)', fontsize=7, fontweight='bold', color=NAVY, pad=4)
+    ax.set_xticklabels([str(yr) for yr in year_cols], fontsize=8)
+    ax.set_title('Market Concentration (HHI)', fontsize=10, fontweight='bold', color=NAVY, pad=6)
     ax.set_ylim(0, y_max)
     ax.yaxis.set_visible(False)
+    ax.grid(False)
 
     plt.tight_layout()
     buf = BytesIO()
@@ -534,9 +537,15 @@ def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc
     ax.set_xlim(-0.2, len(clean) - 0.8)
     fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
+    # Auto-scale Y-axis to data range (do NOT include zero)
+    y_min = min(clean)
+    y_max = max(clean)
+    y_padding = (y_max - y_min) * 0.15 if y_max != y_min else 1.0
+    ax.set_ylim(y_min - y_padding, y_max + y_padding)
+
     x = range(len(clean))
     ax.plot(x, clean, color=color, linewidth=1.2, solid_capstyle='round')
-    ax.fill_between(x, clean, alpha=0.1, color=color)
+    ax.fill_between(x, clean, y_min - y_padding, alpha=0.1, color=color)
     ax.scatter([0, len(clean) - 1], [clean[0], clean[-1]],
               color=color, s=6, zorder=5)
 
