@@ -109,6 +109,7 @@ _COMPACT_H1 = ParagraphStyle(
     textColor=NAVY,
     spaceBefore=6,
     spaceAfter=6,
+    keepWithNext=True,
 )
 
 _COMPACT_H2 = ParagraphStyle(
@@ -518,12 +519,12 @@ def _shorten_label(val, label_map):
 
 
 def _matches_patterns(val, patterns):
-    """Case-insensitive fuzzy match against a list of patterns."""
+    """Case-insensitive match: True if any pattern is a substring of val."""
     if not patterns:
         return False
     val_lower = val.lower().strip()
     for p in patterns:
-        if p.lower() in val_lower or val_lower in p.lower():
+        if p.lower() in val_lower:
             return True
     return False
 
@@ -914,9 +915,9 @@ def _build_top_lenders_table(data, max_rows=20):
         # Name + Type columns left-aligned
         ('ALIGN', (0, 0), (1, -1), 'LEFT'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        # Padding
-        ('TOPPADDING', (0, 0), (-1, -1), 4),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        # Padding — compact to fit 20 rows on one landscape page
+        ('TOPPADDING', (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
         ('LEFTPADDING', (0, 0), (-1, -1), 5),
         ('RIGHTPADDING', (0, 0), (-1, -1), 5),
         # Grid
@@ -1142,7 +1143,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if s1_narrative and isinstance(s1_narrative, str) and s1_narrative.strip():
         story.append(Spacer(1, 6))
         story.append(_ai_tag())
-        story.append(_inline_two_col(s1_narrative))
+        story.extend(ai_narrative_to_flowables(s1_narrative, style=_INLINE_NARRATIVE))
         story.append(Paragraph(
             'Above text is AI generated from NCRC data and analysis.',
             _AI_DISCLAIMER,
@@ -1179,7 +1180,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     ib_narrative = ai.get('income_borrowers_discussion', '')
     if ib_narrative and isinstance(ib_narrative, str) and ib_narrative.strip():
         story.append(_ai_tag())
-        story.append(_inline_two_col(ib_narrative))
+        story.extend(ai_narrative_to_flowables(ib_narrative, style=_INLINE_NARRATIVE))
         story.append(Paragraph(
             'Above text is AI generated from NCRC data and analysis.',
             _AI_DISCLAIMER,
@@ -1246,7 +1247,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if s2_narrative:
         story.append(Spacer(1, 4))
         story.append(_ai_tag())
-        story.append(_inline_two_col(s2_narrative))
+        story.extend(ai_narrative_to_flowables(s2_narrative, style=_INLINE_NARRATIVE))
         story.append(Paragraph(
             'Above text is AI generated from NCRC data and analysis.',
             _AI_DISCLAIMER,
@@ -1282,7 +1283,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     if lender_narrative and isinstance(lender_narrative, str) and lender_narrative.strip():
         story.append(_h2('Lender Analysis'))
         story.append(_ai_tag())
-        story.append(_inline_two_col(lender_narrative))
+        story.extend(ai_narrative_to_flowables(lender_narrative, style=_INLINE_NARRATIVE))
         story.append(Paragraph(
             'Above text is AI generated from NCRC data and analysis.',
             _AI_DISCLAIMER,
@@ -1354,12 +1355,12 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         '1,500\u20132,500 = Moderate, &gt;2,500 = Concentrated'
     ))
 
-    # HHI AI narrative (inline two-column)
+    # HHI AI narrative
     hhi_narrative = ai.get('market_concentration_discussion', '')
     if hhi_narrative and isinstance(hhi_narrative, str) and hhi_narrative.strip():
         story.append(Spacer(1, 8))
         story.append(_ai_tag())
-        story.append(_inline_two_col(hhi_narrative))
+        story.extend(ai_narrative_to_flowables(hhi_narrative, style=_INLINE_NARRATIVE))
         story.append(Paragraph(
             'Above text is AI generated from NCRC data and analysis.',
             _AI_DISCLAIMER,
@@ -1373,7 +1374,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
         story.append(Spacer(1, 24))
         story.append(_h1('Trends Analysis'))
         story.append(_ai_tag())
-        story.append(_inline_two_col(trends_text))
+        story.extend(ai_narrative_to_flowables(trends_text, style=_INLINE_NARRATIVE))
         story.append(Paragraph(
             'Above text is AI generated from NCRC data and analysis.',
             _AI_DISCLAIMER,

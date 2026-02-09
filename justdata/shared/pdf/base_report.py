@@ -148,7 +148,14 @@ def _draw_cover(canvas, doc):
     try:
         if os.path.exists(LOGO_WHITE_PATH):
             logo_w = 1.4 * inch
-            logo_h = logo_w / 4.5  # approximate aspect ratio
+            try:
+                from PIL import Image as PILImage
+                pil_img = PILImage.open(LOGO_WHITE_PATH)
+                orig_w, orig_h = pil_img.size
+                pil_img.close()
+                logo_h = logo_w * (orig_h / orig_w)
+            except Exception:
+                logo_h = logo_w / 4.5
             canvas.drawImage(
                 LOGO_WHITE_PATH,
                 MARGIN_LEFT, PAGE_H - 28 - logo_h,
@@ -162,7 +169,14 @@ def _draw_cover(canvas, doc):
     try:
         if os.path.exists(NCRC_LOGO_WHITE_PATH):
             ncrc_w = 1.3 * inch
-            ncrc_h = ncrc_w / 4.5
+            try:
+                from PIL import Image as PILImage
+                pil_img = PILImage.open(NCRC_LOGO_WHITE_PATH)
+                orig_w, orig_h = pil_img.size
+                pil_img.close()
+                ncrc_h = ncrc_w * (orig_h / orig_w)
+            except Exception:
+                ncrc_h = ncrc_w / 4.5
             canvas.drawImage(
                 NCRC_LOGO_WHITE_PATH,
                 PAGE_W - MARGIN_RIGHT - ncrc_w,
@@ -401,12 +415,12 @@ def build_team_page():
         leading=24, textColor=NAVY, spaceBefore=6, spaceAfter=6,
     )
     _TEAM_BODY = ParagraphStyle(
-        'TeamBody', fontName=BODY_FONT, fontSize=12, leading=16,
-        textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=5,
+        'TeamBody', fontName=BODY_FONT, fontSize=11, leading=14.5,
+        textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=4,
     )
     _TEAM_BIO = ParagraphStyle(
-        'TeamBio', fontName=BODY_FONT, fontSize=11, leading=14.5,
-        textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=4,
+        'TeamBio', fontName=BODY_FONT, fontSize=10.5, leading=14,
+        textColor=HexColor('#333333'), alignment=TA_JUSTIFY, spaceAfter=3,
     )
     _TEAM_H2 = ParagraphStyle(
         'TeamH2', fontName=HEADLINE_FONT_BOLD, fontSize=15, leading=19,
@@ -502,7 +516,7 @@ def build_team_page():
     else:
         elements.extend(left_content)
 
-    elements.append(Spacer(1, 12))
+    elements.append(Spacer(1, 4))
 
     # Member Services callout box
     callout_text = (

@@ -138,11 +138,13 @@ def render_census_demographics_chart(census_data, counties=None):
     all_vals = [v for p in periods_to_plot for v in avg_data[p] if v > 0]
     if all_vals:
         ax.set_ylim(0, max(all_vals) * 1.15)
-    # Clean chart: no gridlines, no Y-axis — data labels on bars suffice
+    # Clean chart: no gridlines, no Y-axis, no tick marks — data labels on bars suffice
     ax.grid(False)
     ax.spines['left'].set_visible(False)
     ax.yaxis.set_visible(False)
     ax.spines['bottom'].set_color('#cccccc')
+    ax.tick_params(axis='x', length=0)
+    ax.tick_params(axis='y', length=0)
 
     plt.tight_layout()
     buf = BytesIO()
