@@ -49,6 +49,7 @@ from justdata.apps.lendsight.pdf_charts import (
     render_lender_bars_chart, render_income_share_chart,
     chart_to_image,
 )
+from justdata.apps.lendsight.version import __version__
 
 
 # ---------------------------------------------------------------------------
@@ -131,6 +132,26 @@ _METHODS_COMPACT = ParagraphStyle(
     textColor=HexColor('#666666'),
     alignment=TA_JUSTIFY,
     spaceAfter=4,
+)
+
+# Change column color-coded styles
+_CHANGE_POS = ParagraphStyle(
+    'ChangePos', fontName=BODY_FONT, fontSize=7.5, leading=10,
+    textColor=HexColor('#1a8fc9'), alignment=TA_CENTER,
+)
+_CHANGE_NEG = ParagraphStyle(
+    'ChangeNeg', fontName=BODY_FONT, fontSize=7.5, leading=10,
+    textColor=HexColor('#C62828'), alignment=TA_CENTER,
+)
+
+# Metric cell variants for parent-child hierarchy
+_METRIC_AGG = ParagraphStyle(
+    'MetricAgg', fontName=BODY_FONT_BOLD, fontSize=8,
+    leading=10, textColor=HexColor('#333333'),
+)
+_METRIC_INDENT = ParagraphStyle(
+    'MetricIndent', fontName=BODY_FONT, fontSize=8,
+    leading=10, textColor=HexColor('#333333'), leftIndent=12,
 )
 
 
@@ -425,11 +446,79 @@ SECTION2_T3_ROW_ORDER = [
 
 HHI_ROW_ORDER = ['All Loans', 'Home Purchase', 'Refinance', 'Home Equity']
 
+# Short display labels for PDF tables (matching web report)
+SECTION2_T1_LABELS = {
+    'Low to Moderate Income Borrowers': 'LMI Borrowers',
+    'Low Income Borrowers': 'Low',
+    'Moderate Income Borrowers': 'Moderate',
+    'Middle Income Borrowers': 'Middle',
+    'Upper Income Borrowers': 'Upper',
+}
+SECTION2_T2_LABELS = {
+    'Low to Moderate Income Census Tracts': 'LMI Tracts',
+    'Low Income Census Tracts': 'Low',
+    'Moderate Income Census Tracts': 'Moderate',
+    'Middle Income Census Tracts': 'Middle',
+    'Upper Income Census Tracts': 'Upper',
+}
+SECTION2_T3_LABELS = {
+    'Majority Minority Census Tracts': 'MMCT',
+    'Low Minority Census Tracts': 'Low',
+    'Moderate Minority Census Tracts': 'Moderate',
+    'Middle Minority Census Tracts': 'Middle',
+    'High Minority Census Tracts': 'High',
+}
+
+
+def _shorten_label(val, label_map):
+    """Shorten a metric label using case-insensitive fuzzy matching."""
+    if not label_map:
+        return val
+    v = val.strip()
+    if v in label_map:
+        return label_map[v]
+    v_lower = v.lower()
+    for full, short in label_map.items():
+        if full.lower() in v_lower or v_lower in full.lower():
+            return short
+    return v
+
+
+def _matches_patterns(val, patterns):
+    """Case-insensitive fuzzy match against a list of patterns."""
+    if not patterns:
+        return False
+    val_lower = val.lower().strip()
+    for p in patterns:
+        if p.lower() in val_lower or val_lower in p.lower():
+            return True
+    return False
+
+
+def _fmt_change_cell(val):
+    """Format a change value as a color-coded Paragraph."""
+    if val is None or val == '':
+        return ''
+    val_str = str(val).strip()
+    cleaned = val_str.replace('%', '').replace('pp', '').replace('+', '').strip()
+    try:
+        num = float(cleaned)
+    except (ValueError, TypeError):
+        return val_str
+    if abs(num) < 0.05:
+        return Paragraph('0.0 pp', _CHANGE_POS)
+    elif num > 0:
+        return Paragraph(f'+{num:.1f} pp', _CHANGE_POS)
+    else:
+        return Paragraph(f'\u2212{abs(num):.1f} pp', _CHANGE_NEG)
+
 
 def _build_standard_table(data, row_order, metric_width_inches,
                           pop_share_inches=0.7, year_col_default=0.65,
-                          change_inches=0.65):
-    """Build a standard section table with hardcoded column order."""
+                          change_inches=0.65, metric_label='Metric',
+                          shorten_labels=None, aggregate_metrics=None,
+                          indent_metrics=None):
+    """Build a standard section table with custom headers, label shortening, and hierarchy."""
     rows = _df_to_dicts(data)
     if not rows:
         return Spacer(1, 0), False
@@ -442,7 +531,7 @@ def _build_standard_table(data, row_order, metric_width_inches,
 
     col_order = _build_col_order(year_cols, pop_share_col, change_col)
 
-    header_labels = ['Metric']
+    header_labels = [metric_label]
     if pop_share_col:
         header_labels.append('Pop.')
     header_labels.extend(year_cols)
@@ -458,7 +547,11 @@ def _build_standard_table(data, row_order, metric_width_inches,
         widths.append(change_inches * inch)
 
     sorted_rows = _sort_rows(rows, row_order)
+    shorten = shorten_labels or {}
+    agg_patterns = aggregate_metrics or []
+    indent_patterns = indent_metrics or []
 
+    # Format numeric values
     for row in sorted_rows:
         metric = str(row.get('Metric', '')).lower()
         is_total = 'total' in metric
@@ -468,36 +561,88 @@ def _build_standard_table(data, row_order, metric_width_inches,
             val = row.get(col, '')
             row[col] = _fmt_val(val, is_total_row=is_total)
 
-    table = build_data_table(
-        sorted_rows, col_order, widths,
-        header_labels=header_labels,
-        use_paragraph_col0=True,
-        has_total_row=True,
-    )
+    # Build header row
+    header_row = [Paragraph(str(h), TABLE_HEADER_TEXT) for h in header_labels]
+    table_data = [header_row]
+    agg_row_indices = []
+
+    for row_dict in sorted_rows:
+        cells = []
+        metric_val = str(row_dict.get('Metric', ''))
+        is_agg = _matches_patterns(metric_val, agg_patterns)
+        is_indent = _matches_patterns(metric_val, indent_patterns)
+        display = _shorten_label(metric_val, shorten)
+
+        for col_key in col_order:
+            if col_key == 'Metric':
+                if is_agg:
+                    cells.append(Paragraph(display, _METRIC_AGG))
+                elif is_indent:
+                    cells.append(Paragraph(display, _METRIC_INDENT))
+                else:
+                    cells.append(Paragraph(display, TABLE_CELL_TEXT))
+            elif col_key == change_col and change_col:
+                cells.append(_fmt_change_cell(row_dict.get(col_key, '')))
+            else:
+                cells.append(str(row_dict.get(col_key, '')))
+
+        row_idx = len(table_data)
+        if is_agg:
+            agg_row_indices.append(row_idx)
+        table_data.append(cells)
+
+    num_rows = len(table_data)
+    table = Table(table_data, colWidths=widths, repeatRows=1, hAlign='LEFT')
+
+    style = build_table_style(has_total_row=True, num_rows=num_rows)
+    # Aggregate row styling — light background + bold
+    agg_bg = HexColor('#e8ecf0')
+    for idx in agg_row_indices:
+        style.add('BACKGROUND', (0, idx), (-1, idx), agg_bg)
+        style.add('FONTNAME', (0, idx), (-1, idx), BODY_FONT_BOLD)
+    table.setStyle(style)
 
     return table, True
 
 
 def _build_section1_table(data):
-    return _build_standard_table(data, SECTION1_ROW_ORDER, metric_width_inches=2.0)
+    return _build_standard_table(data, SECTION1_ROW_ORDER, metric_width_inches=2.0,
+                                  metric_label='Race / Ethnicity')
 
 
 def _build_section2_income_borrowers_table(data):
     return _build_standard_table(data, SECTION2_T1_ROW_ORDER,
                                  metric_width_inches=2.4, pop_share_inches=0.6,
-                                 year_col_default=0.6, change_inches=0.6)
+                                 year_col_default=0.6, change_inches=0.6,
+                                 metric_label='Borrower Income',
+                                 shorten_labels=SECTION2_T1_LABELS,
+                                 aggregate_metrics=['Low to Moderate Income Borrowers'],
+                                 indent_metrics=['Low Income Borrowers',
+                                                 'Moderate Income Borrowers'])
 
 
 def _build_section2_income_tracts_table(data):
     return _build_standard_table(data, SECTION2_T2_ROW_ORDER,
                                  metric_width_inches=2.6, pop_share_inches=0.55,
-                                 year_col_default=0.55, change_inches=0.55)
+                                 year_col_default=0.55, change_inches=0.55,
+                                 metric_label='Tract Median Income',
+                                 shorten_labels=SECTION2_T2_LABELS,
+                                 aggregate_metrics=['Low to Moderate Income Census Tracts'],
+                                 indent_metrics=['Low Income Census Tracts',
+                                                 'Moderate Income Census Tracts'])
 
 
 def _build_section2_minority_tracts_table(data):
     return _build_standard_table(data, SECTION2_T3_ROW_ORDER,
                                  metric_width_inches=2.6, pop_share_inches=0.55,
-                                 year_col_default=0.55, change_inches=0.55)
+                                 year_col_default=0.55, change_inches=0.55,
+                                 metric_label='Tract Minority Pop.',
+                                 shorten_labels=SECTION2_T3_LABELS,
+                                 aggregate_metrics=['Majority Minority Census Tracts'],
+                                 indent_metrics=['Low Minority Census Tracts',
+                                                 'Moderate Minority Census Tracts',
+                                                 'Middle Minority Census Tracts',
+                                                 'High Minority Census Tracts'])
 
 
 def _build_top_lenders_table(data):
@@ -928,7 +1073,7 @@ def generate_lendsight_pdf(report_data, metadata, ai_insights=None):
     )
     story.append(Paragraph(
         f'<b><font color="#1e3a5f">About This Report</font></b> \u2014 '
-        f'Generated by NCRC LendSight, {gen_date}. Part of the JustData platform.',
+        f'Generated by NCRC LendSight v{__version__}, {gen_date}. Part of the JustData platform.',
         about_style,
     ))
     story.append(Paragraph(

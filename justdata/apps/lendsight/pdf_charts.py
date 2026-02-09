@@ -477,11 +477,13 @@ def render_hhi_chart(market_concentration_data):
     x = np.arange(len(year_cols))
     ax.bar(x, values, color=BAR_COLOR, width=0.5, edgecolor='none')
 
-    # Threshold lines
+    # Threshold lines — always show both for context
     max_val = max(values) if values else 500
-    if max_val < 1500:
-        ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=0.8, alpha=0.6)
-        ax.text(len(year_cols) - 0.5, 1520, 'Moderate', fontsize=5, color=HHI_MODERATE_COLOR, ha='right')
+    y_max = max(max_val * 1.3, 2800)
+    ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=0.8, alpha=0.6)
+    ax.text(len(year_cols) - 0.5, 1520, 'Moderate (1,500)', fontsize=5, color=HHI_MODERATE_COLOR, ha='right')
+    ax.axhline(y=2500, color=HHI_HIGH_COLOR, linestyle='--', linewidth=0.8, alpha=0.6)
+    ax.text(len(year_cols) - 0.5, 2520, 'Concentrated (2,500)', fontsize=5, color=HHI_HIGH_COLOR, ha='right')
 
     # Value labels on bars
     for i, v in enumerate(values):
@@ -491,7 +493,7 @@ def render_hhi_chart(market_concentration_data):
     ax.set_xticks(x)
     ax.set_xticklabels([str(yr) for yr in year_cols], fontsize=6)
     ax.set_title('Market Concentration (HHI)', fontsize=7, fontweight='bold', color=NAVY, pad=4)
-    ax.set_ylim(0, max(max_val * 1.3, 1700))
+    ax.set_ylim(0, y_max)
     ax.yaxis.set_visible(False)
 
     plt.tight_layout()
