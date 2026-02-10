@@ -14,7 +14,7 @@ env:
   PROJECT_ID: justdata-ncrc
   REGION: us-east1
   JOB_NAME: electwatch-weekly-update
-  IMAGE_REPO: hdma1-242116
+  IMAGE_REPO: justdata-ncrc
   IMAGE_NAME: electwatch-job
 
 jobs:

@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-PROJECT_ID="hdma1-242116"
+PROJECT_ID="justdata-ncrc"
 REGION="us-east1"
 SERVICE_NAME="justdata"
 IMAGE_REPO="us-docker.pkg.dev/${PROJECT_ID}/justdata-repo/${SERVICE_NAME}"

@@ -1,266 +1,227 @@
-# JustData - Financial Data Analysis Platform
+# JustData
 
-A comprehensive data analysis platform providing insights across three key financial domains: banking, mortgage, and small business. Built with modern Python architecture and AI-powered analytics.
+A financial data analysis platform built for [NCRC](https://ncrc.org) (National Community Reinvestment Coalition). JustData provides AI-powered insights across banking, mortgage, small business, and congressional finance domains using data from FDIC, HMDA, SEC, FEC, and other regulatory sources.
 
-## 🎯 Overview
-
-JustData is a unified platform that consolidates three specialized financial analysis modules:
-
-- **BranchSight** - Banking market intelligence and branch network analysis ✅ **FULLY FUNCTIONAL**
-- **LendSight** - Mortgage lending patterns and market trends 🏗️ *Framework Ready*
-- **BizSight** - Small business lending and economic indicators 🏗️ *Framework Ready*
-
-## 📚 Documentation
-
-- **[DEPENDENCIES.md](DEPENDENCIES.md)** - Complete guide to dependencies, data sources, and report generation flows
-- **[CACHE_IMPLEMENTATION.md](CACHE_IMPLEMENTATION.md)** - BigQuery-based caching system documentation
-- **[HUBSPOT_SETUP.md](HUBSPOT_SETUP.md)** - HubSpot CLI installation and integration guide
-- **[HUBSPOT_DEVELOPER_PROJECTS.md](HUBSPOT_DEVELOPER_PROJECTS.md)** - HubSpot Developer Projects integration approach
-
-### App-Specific Documentation
-- **BranchSight**: [SERVICE_TYPE_DEFINITIONS.md](justdata/apps/branchsight/SERVICE_TYPE_DEFINITIONS.md) - Service type reference
-- **MergerMeter**: [README.md](justdata/apps/mergermeter/README.md) - App-specific documentation
-- **Shared Utils**: [BIGQUERY_QUERIES.md](justdata/shared/utils/BIGQUERY_QUERIES.md) - BigQuery query reference
-
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-```bash
-cd /Users/jadedlebi/justdata
-pip install -r requirements.txt
-```
-
-### 2. Set Up Environment Variables
-Create a `.env` file in the project root:
-```bash
-# Required for all apps
-AI_PROVIDER=claude
-CLAUDE_API_KEY=sk-ant-xxx
-GCP_PROJECT_ID=your-gcp-project-here
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/gcp-credentials.json
-SECRET_KEY=your-random-secret-key
-
-# Optional
-OPENAI_API_KEY=sk-xxx
-```
-
-### 3. Run an Application
-
-#### Unified JustData Platform - READY TO USE ✅
-```bash
-python run_justdata.py
-```
-Then open: http://localhost:8000
-
-All applications are accessible from the unified landing page:
-- **BranchSight**: http://localhost:8000/branchsight/
-- **LendSight**: http://localhost:8000/lendsight/
-- **BizSight**: http://localhost:8000/bizsight/
-- **MergerMeter**: http://localhost:8000/mergermeter/
-- **BranchMapper**: http://localhost:8000/branchmapper/
-
-**Features:**
-- Analyze bank branches by county and year
-- AI-powered insights using Claude 4 Sonnet
-- Interactive web reports with collapsible tables
-- Excel, CSV, JSON, and ZIP export options
-- Real-time progress tracking with substeps
-
-All applications are now unified under a single entry point. Use `run_justdata.py` to start all applications.
-
-## 🏗️ Project Structure
-
-```
-justdata/
-├── run_justdata.py           # ← Run this for unified platform
-├── requirements.txt          # ← Install these packages
-├── .env                      # ← Your API keys (create this)
-│
-├── justdata/
-│   ├── shared/               # ← Code used by ALL apps
-│   │   ├── analysis/         #    AI analysis (Claude 4 integration)
-│   │   ├── reporting/        #    Report generation (Excel, PDF)
-│   │   ├── utils/            #    Utilities (BigQuery, progress tracking)
-│   │   └── web/              #    Templates, CSS, JS
-│   │
-│   ├── apps/                 # ← Individual apps
-│   │   ├── branchsight/     #    FDIC analyzer (FULL)
-│   │   ├── bizsight/         #    Business (SKELETON)
-│   │   └── lendsight/        #    Lending (SKELETON)
-│   │
-│   └── core/
-│       └── config/           # ← App configurations
-│
-└── data/                     # ← Generated reports go here
-    └── reports/
-        ├── branchsight/
-        ├── bizsight/
-        └── lendsight/
-```
-
-## 📊 BranchSight Features
-
-### Data Analysis
-- **FDIC Summary of Deposits (SOD)** data analysis
-- County and year-based filtering
-- Market concentration analysis
-- LMI (Low-to-Moderate Income) and MMCT (Majority-Minority Census Tract) analysis
-- Year-over-year trend analysis
-
-### AI-Powered Insights
-- **Executive Summary** - High-level market overview
-- **Key Findings** - Bullet-pointed insights
-- **Trends Analysis** - Year-over-year patterns
-- **Bank Strategies** - Market concentration patterns
-- **Community Impact** - LMI/MMCT access patterns
-
-### Reporting & Export
-- **Interactive Web Reports** - Primary output format
-- **Export Options**: Excel (.xlsx), CSV, JSON, ZIP
-- **Print-Friendly** - Optimized for printing
-- **Collapsible Tables** - Auto-collapse after 10 rows with preview
-- **Real-time Progress** - Detailed substeps for AI generation
-
-### Technical Features
-- **Real-time Progress Tracking** - Server-sent events
-- **Background Processing** - Non-blocking analysis
-- **Error Handling** - Graceful failure recovery
-- **Responsive Design** - Mobile-friendly interface
-
-## 🌐 API Endpoints
-
-All applications use consistent routing patterns:
-
-| URL | What It Does |
-|-----|--------------|
-| `GET /` | Main page with analysis form |
-| `POST /analyze` | Start new analysis |
-| `GET /progress/<job_id>` | Real-time progress updates |
-| `GET /report` | View interactive web report |
-| `GET /report-data` | Get report data (JSON) |
-| `GET /download` | Download ZIP of reports |
-| `GET /download?format=excel` | Download Excel file |
-| `GET /download?format=csv` | Download CSV file |
-| `GET /download?format=json` | Download JSON file |
-| `GET /data` | Get app data (counties, etc.) |
-| `GET /health` | Health check |
-
-## 🛠️ Technology Stack
-
-### Backend
-- **Python 3.11+** - Core runtime
-- **Flask** - Web framework
-- **pandas** - Data manipulation
-- **BigQuery** - Cloud data warehouse
-
-### AI/ML
-- **Anthropic Claude 4 Sonnet** - Primary AI engine
-- **OpenAI GPT-4** - Secondary AI engine (fallback)
-
-### Frontend
-- **HTML5/CSS3/JavaScript** - Web interface
-- **Server-Sent Events** - Real-time updates
-- **Responsive Design** - Mobile-friendly
-
-### Infrastructure
-- **Docker** - Containerization
-- **Google Cloud Platform** - Data and deployment
-- **BigQuery** - Data warehouse
-
-## 🔧 Development
-
-### Running Locally
-```bash
-# Start BranchSight
-# Start unified JustData platform (all apps)
-python run_justdata.py
-```
-
-### Environment Variables
-```env
-# AI Services
-CLAUDE_API_KEY=sk-ant-xxx
-OPENAI_API_KEY=sk-xxx
-
-# Data Sources
-GCP_PROJECT_ID=hdma1-242116
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/credentials.json
-
-# Application Settings
-SECRET_KEY=your-random-secret-key
-DEBUG=True
-```
-
-## 🚧 Roadmap
-
-### Completed ✅
-- **BranchSight** - Fully functional banking analysis
-- **Shared Infrastructure** - Common utilities and templates
-- **AI Integration** - Claude 4 Sonnet with fallback
-- **Web Interface** - Interactive reports with export options
-- **Progress Tracking** - Real-time updates with substeps
-
-### In Progress 🏗️
-- **LendSight** - HMDA lending data analysis
-- **BizSight** - Small business lending analysis
-
-### Future Plans 📋
-- **Authentication** - User management and access control
-- **Advanced Analytics** - Statistical analysis tools
-- **Real-time Data** - Streaming data processing
-- **Mobile App** - Native mobile interface
-
-## 🔐 Security Considerations
-
-### Data Protection
-- Encrypted data transmission
-- Secure API endpoints
-- Environment variable management
-- Audit logging for all operations
-
-### AI Safety
-- Objective, third-person analysis only
-- No speculation about strategic implications
-- Factual pattern reporting without cause attribution
-- Professional, analytical tone enforcement
-
-## 📚 Documentation
-
-### Available Documentation
-- **README.md** - This document (project overview and quick start)
-- **justdata/CLAUDE.md** - HubSpot development guidelines and Claude AI integration notes
-
-### Code Documentation
-- Inline docstrings and type hints throughout
-- Consistent naming conventions
-- Modular architecture for easy extension
-
-## 🤝 Contributing
-
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Submit a pull request
-
-### Code Standards
-- Black for code formatting
-- Type hints for all functions
-- Comprehensive error handling
-- Consistent naming conventions
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) for details.
-
-## 👥 Team
-
-- **Jad Edlebi** - Lead Developer (jedlebi@ncrc.org)
-- **Jason Richardson** - Project Lead (jrichardson@ncrc.org)
+**Production:** [justdata.org](https://justdata.org)
 
 ---
 
-**JustData** - Making financial data analysis accessible and insightful.
+## Applications
 
-*This platform provides a solid foundation for comprehensive financial analysis across banking, mortgage, and small business domains.*
+JustData runs as a unified platform with 10 specialized applications:
+
+| App | Domain | Data Sources | Status |
+|-----|--------|-------------|--------|
+| **BranchSight** | FDIC branch analysis | Summary of Deposits, Census ACS | Fully functional |
+| **LendSight** | Mortgage lending analysis | HMDA, Census ACS | Fully functional |
+| **BizSight** | Small business lending | Section 1071, Census ACS | Fully functional |
+| **MergerMeter** | Bank merger analysis | FDIC, HMDA, SOD | Fully functional |
+| **LenderProfile** | Lender corporate analysis | SEC EDGAR, GLEIF, FDIC | Fully functional |
+| **DataExplorer** | Data exploration tool | HMDA, Census, FDIC | Fully functional |
+| **ElectWatch** | Congressional financial tracking | FEC, Congress.gov, STOCK Act | Fully functional |
+| **BranchMapper** | Branch network mapping | FDIC SOD, Mapbox | Fully functional |
+| **MemberView** | Member dashboard | Internal data | In development |
+| **LoanTrends** | Loan trend analysis | HMDA | In development |
+
+All apps are accessible from the unified landing page at `http://localhost:8000` when running locally.
+
+---
+
+## Quick Start
+
+### 1. Clone and install
+
+```bash
+git clone https://github.com/jadedlebi/justdata.git
+cd justdata
+pip install -r requirements.txt
+```
+
+### 2. Configure environment
+
+```bash
+cp env.example .env
+# Edit .env with your API keys and credentials
+```
+
+Required environment variables:
+
+- `CLAUDE_API_KEY` or `ANTHROPIC_API_KEY` -- Claude AI API key
+- `GCP_PROJECT_ID` -- Google Cloud project ID
+- `GOOGLE_APPLICATION_CREDENTIALS_JSON` -- BigQuery credentials (JSON string)
+- `SECRET_KEY` -- Flask session secret
+
+See [env.example](env.example) for the full list.
+
+### 3. Run
+
+```bash
+python run_justdata.py
+```
+
+Open http://localhost:8000. All applications are available from the landing page.
+
+To run individual apps:
+
+```bash
+python justdata/apps/branchsight/run.py   # Port 8080
+python justdata/apps/lendsight/run.py      # Port 8082
+python justdata/apps/bizsight/run.py       # Port 8081
+python justdata/apps/mergermeter/run.py    # Port 8083
+python justdata/apps/lenderprofile/run.py  # Port 8086
+python justdata/apps/dataexplorer/run.py   # Port 8085
+```
+
+---
+
+## Project Structure
+
+```
+justdata/
+├── justdata/
+│   ├── apps/                   # Flask applications
+│   │   ├── branchsight/        # FDIC branch analysis
+│   │   ├── lendsight/          # HMDA mortgage analysis
+│   │   ├── bizsight/           # Small business lending
+│   │   ├── mergermeter/        # Bank merger analysis
+│   │   ├── lenderprofile/      # Lender corporate analysis
+│   │   ├── dataexplorer/       # Data exploration
+│   │   ├── electwatch/         # Congressional tracking
+│   │   ├── branchmapper/       # Branch network mapping
+│   │   ├── memberview/         # Member dashboard
+│   │   └── loantrends/         # Loan trend analysis
+│   ├── shared/                 # Shared modules
+│   │   ├── analysis/           # AI integration (Claude, OpenAI)
+│   │   ├── utils/              # BigQuery, env config, progress tracking
+│   │   ├── reporting/          # Report generation (Excel, PDF, PowerPoint)
+│   │   ├── services/           # Business logic services
+│   │   ├── web/                # Web framework utilities
+│   │   └── pdf/                # PDF report engine
+│   └── core/                   # Core infrastructure and config
+├── tests/                      # Test suite (pytest)
+├── docs/                       # Internal documentation
+├── scripts/                    # Deployment and utility scripts
+├── .github/workflows/          # CI/CD pipelines
+├── run_justdata.py             # Unified platform entry point
+└── requirements.txt            # Python dependencies
+```
+
+### App Structure Pattern
+
+Each app in `justdata/apps/` follows a consistent layout:
+
+- `app.py` -- Flask application with routes
+- `run.py` -- Entry point (exposes `application` for Gunicorn)
+- `analysis.py` -- Data analysis and AI narrative generation
+- `core.py` -- Core business logic
+- `config.py` -- App-specific configuration
+- `templates/` -- Jinja2 HTML templates
+- `static/` -- CSS, JS, images
+
+---
+
+## API Endpoints
+
+All apps use a consistent routing pattern:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` | GET | Main page with analysis form |
+| `/analyze` | POST | Start new analysis |
+| `/progress/<job_id>` | GET | Real-time progress updates (SSE) |
+| `/report` | GET | View interactive web report |
+| `/report-data` | GET | Report data as JSON |
+| `/download` | GET | Download reports (Excel, CSV, JSON, ZIP) |
+| `/health` | GET | Health check |
+
+---
+
+## Technology
+
+- **Backend:** Python 3.11+, Flask, pandas
+- **AI:** Anthropic Claude (primary), OpenAI GPT-4 (fallback)
+- **Data:** Google BigQuery, Census API, FDIC API, HMDA, FEC
+- **Frontend:** HTML5, CSS3, JavaScript, Server-Sent Events
+- **PDF Reports:** ReportLab, Playwright
+- **Infrastructure:** Docker, Google Cloud Run, GitHub Actions
+- **Maps:** Mapbox GL JS
+
+---
+
+## Development
+
+### Run tests
+
+```bash
+pytest tests/ -v --cov=justdata
+pytest tests/ -m "not slow"           # Skip slow tests
+```
+
+### Lint and format
+
+```bash
+black justdata/ tests/
+isort justdata/ tests/
+flake8 justdata/ tests/
+```
+
+### Deploy
+
+Deployments are managed via GitHub Actions. Pushing to `main` triggers a production deploy; pushing to `staging` triggers a test deploy.
+
+For manual deploys:
+
+```bash
+bash scripts/deploy-cloudrun.sh
+```
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for full deployment documentation.
+
+---
+
+## Documentation
+
+Detailed documentation lives in the [docs/](docs/) directory:
+
+- [DEPLOYMENT.md](docs/DEPLOYMENT.md) -- Deployment guide
+- [CACHE_IMPLEMENTATION.md](docs/CACHE_IMPLEMENTATION.md) -- BigQuery caching system
+- [DEPENDENCIES.md](DEPENDENCIES.md) -- Dependencies and data source reference
+- [docs/dataexplorer/](docs/dataexplorer/) -- DataExplorer implementation notes
+- [docs/lenderprofile/](docs/lenderprofile/) -- LenderProfile implementation notes
+
+Each app also has its own `README.md` with app-specific documentation.
+
+---
+
+## Contributing
+
+### Branch Flow
+
+```
+jad_test / jay_test  -->  test  -->  staging  -->  main
+         (1 approval)   (1 approval)  (2 approvals)
+```
+
+1. Create a feature branch from `test` (e.g., `jad_test`)
+2. Open a PR to `test` -- requires 1 approval
+3. PR from `test` to `staging` -- requires 1 approval; auto-deploys to test environment
+4. PR from `staging` to `main` -- requires 2 approvals; auto-deploys to production
+
+### Code Standards
+
+- Format with [Black](https://github.com/psf/black) and [isort](https://pycqa.github.io/isort/)
+- Type hints for function signatures
+- Consistent error handling
+
+---
+
+## Team
+
+- **Jad Edlebi** -- Lead Developer (jedlebi@ncrc.org)
+- **Jason Richardson** -- Project Lead (jrichardson@ncrc.org)
+
+---
+
+## License
+
+MIT License -- see [LICENSE](LICENSE) for details.

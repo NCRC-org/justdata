@@ -21,7 +21,7 @@ PROJECT_ID="justdata-ncrc"
 REGION="us-east1"
 JOB_NAME="electwatch-weekly-update"
 SCHEDULER_NAME="electwatch-weekly-trigger"
-IMAGE_NAME="us-east1-docker.pkg.dev/hdma1-242116/justdata-repo/electwatch-job:latest"
+IMAGE_NAME="us-east1-docker.pkg.dev/justdata-ncrc/justdata-repo/electwatch-job:latest"
 
 # Colors for output
 RED='\033[0;31m'
@@ -83,16 +83,16 @@ echo -e "${YELLOW}Step 2: Building and pushing Docker image (Cloud Build)...${NC
 cat > /tmp/cloudbuild-electwatch.yaml << 'EOF'
 steps:
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-f', 'Dockerfile.electwatch-job', '-t', 'us-east1-docker.pkg.dev/hdma1-242116/justdata-repo/electwatch-job:latest', '.']
+    args: ['build', '-f', 'Dockerfile.electwatch-job', '-t', 'us-east1-docker.pkg.dev/justdata-ncrc/justdata-repo/electwatch-job:latest', '.']
 images:
-  - 'us-east1-docker.pkg.dev/hdma1-242116/justdata-repo/electwatch-job:latest'
+  - 'us-east1-docker.pkg.dev/justdata-ncrc/justdata-repo/electwatch-job:latest'
 timeout: '1200s'
 EOF
 
 # Use Cloud Build to build and push (no local Docker needed)
 echo "Submitting build to Cloud Build..."
 gcloud builds submit \
-    --project=hdma1-242116 \
+    --project=justdata-ncrc \
     --config=/tmp/cloudbuild-electwatch.yaml \
     .
 

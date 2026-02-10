@@ -199,5 +199,13 @@ justdata/apps/electwatch/data/review_queue.json
 justdata/apps/electwatch/data/trend_snapshots.json
 justdata/apps/electwatch/data/*_cache.json
 
+# BizSight benchmark data (generated from BigQuery via generate_benchmarks.py)
+justdata/apps/bizsight/data/*.json
+justdata/apps/bizsight/data/cbsa/
+justdata/apps/bizsight/data/benchmarks/
+
 # Never commit backup files
 *_backup_*.html
+
+# Test output
+test_results.txt

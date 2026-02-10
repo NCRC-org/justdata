@@ -14,7 +14,7 @@ else
 fi
 
 # Configuration
-PROJECT_ID="${GCP_PROJECT_ID:-hdma1-242116}"
+PROJECT_ID="${GCP_PROJECT_ID:-justdata-ncrc}"
 REGION="${GCP_REGION:-us-east1}"
 SERVICE_NAME="${SERVICE_NAME:-justdata-test}"
 IMAGE_REPO="us-east1-docker.pkg.dev/${PROJECT_ID}/justdata-repo/${SERVICE_NAME}"

@@ -2,14 +2,33 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Repository
+
+- **GitHub:** https://github.com/NCRC-git/justdata
+- **GCP Hosting Project:** `justdata-ncrc`
+- **GCP Data Source Project:** `hdma1-242116` (BigQuery source data, do not modify)
+
 ## Deployment Rules
 
 - Default deploy target is **justdata-test** only
 - NEVER deploy to production (justdata) unless explicitly instructed by the user with the exact words "deploy to production"
 - Always use `--source .` deploys to justdata-test for testing
-- Production deploys happen via GitHub Actions on main branch merge only
+- Production deploys happen via GitHub Actions on merge to `main`
+- Staging deploys happen via GitHub Actions on merge to `staging`
 - If unsure whether a deploy target is test or production, STOP and ask
 - Never run `gcloud run deploy justdata` directly — use the deploy script which defaults to test
+
+## Branch Strategy
+
+```
+jad_test / jay_test  -->  test  -->  staging  -->  main
+         (1 approval)   (1 approval)  (2 approvals)
+```
+
+- `jad_test` / `jay_test` -- developer branches, PR to `test` (1 approval)
+- `test` -- integration branch, PR to `staging` (1 approval)
+- `staging` -- pre-production, auto-deploys `justdata-test` Cloud Run service, PR to `main` (2 approvals)
+- `main` -- production, auto-deploys `justdata` Cloud Run service
 
 ## Project Overview
 
@@ -148,7 +167,7 @@ All apps use consistent routing:
 
 Required (set in `.env` for local dev, or Cloud Run environment for production):
 - `CLAUDE_API_KEY` or `ANTHROPIC_API_KEY` - Claude AI API key
-- `GCP_PROJECT_ID` - Google Cloud project (default: hdma1-242116)
+- `GCP_PROJECT_ID` - Google Cloud project (default: justdata-ncrc)
 - `GOOGLE_APPLICATION_CREDENTIALS_JSON` - BigQuery credentials as JSON string
 - `CENSUS_API_KEY` - US Census API key
 - **Firebase Auth (Google sign-in):** `FIREBASE_CREDENTIALS_JSON` (service account JSON string) or `FIREBASE_CREDENTIALS` (path to JSON file). Get from Firebase Console → Project settings → Service accounts → Generate new private key. If unset, backend returns 503 and login fails with "Firebase credentials not set."
@@ -246,18 +265,19 @@ gcloud logging read 'resource.type=cloud_run_job AND resource.labels.job_name=el
 
 ### Google Cloud Run
 
+**GCP Project:** `justdata-ncrc`
+
 **Environments:**
-- **Production:** `justdata` service at https://justdata-892833260112.us-east1.run.app
-- **Test:** `justdata-test` service at https://justdata-test-892833260112.us-east1.run.app
+- **Production:** `justdata` service on `justdata-ncrc` (deploys on merge to `main`)
+- **Test:** `justdata-test` service on `justdata-ncrc` (deploys on merge to `staging`)
 
 **Deploy commands:**
 ```bash
-# Build and deploy to test
+# Build and deploy to test (manual)
 bash scripts/deploy-cloudrun.sh
-gcloud run deploy justdata-test --image us-east1-docker.pkg.dev/hdma1-242116/justdata-repo/justdata:latest --region us-east1
 
-# Deploy to production (after testing)
-gcloud run deploy justdata --image us-east1-docker.pkg.dev/hdma1-242116/justdata-repo/justdata:latest --region us-east1
+# Deploy to production (manual, after testing)
+SERVICE_NAME=justdata bash scripts/deploy-cloudrun.sh
 ```
 
 ### Docker

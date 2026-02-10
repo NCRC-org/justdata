@@ -4,11 +4,11 @@ on:
   push:
     branches:
       - main
-      - Jason_TestApps
+      - staging
   workflow_dispatch:  # Allow manual trigger
 
 env:
-  PROJECT_ID: hdma1-242116
+  PROJECT_ID: justdata-ncrc
   REGION: us-east1
   REPOSITORY: justdata-repo
 
@@ -70,7 +70,6 @@ jobs:
             --max-instances 10 \
             --min-instances 0 \
             --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
-            --set-env-vars "JUSTDATA_PROJECT_ID=justdata-ncrc" \
             --set-env-vars "USE_SUMMARY_TABLES=false" \
             --set-env-vars "PYTHONPATH=/app" \
             --set-env-vars "MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg" \

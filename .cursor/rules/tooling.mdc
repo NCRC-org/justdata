@@ -1,0 +1,8 @@
+---
+description: Available CLI tools and their locations on this machine
+alwaysApply: true
+---
+
+# CLI Tooling
+
+- **GitHub CLI (`gh`)** is installed at `/opt/homebrew/bin/gh` and authenticated. Use it for all GitHub operations (PRs, issues, checks, releases).
