@@ -32,7 +32,7 @@ All apps are accessible from the unified landing page at `http://localhost:8000`
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/jadedlebi/justdata.git
+git clone https://github.com/NCRC-org/justdata.git
 cd justdata
 pip install -r requirements.txt
 ```

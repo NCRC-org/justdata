@@ -332,5 +332,5 @@ For HubSpot-specific issues:
 
 For JustData integration issues:
 - Contact: jedlebi@ncrc.org
-- Project Repository: https://github.com/jadedlebi/justdata
+- Project Repository: https://github.com/NCRC-org/justdata
 

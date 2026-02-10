@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository
 
-- **GitHub:** https://github.com/NCRC-git/justdata
+- **GitHub:** https://github.com/NCRC-org/justdata
 - **GCP Hosting Project:** `justdata-ncrc`
 - **GCP Data Source Project:** `hdma1-242116` (BigQuery source data, do not modify)
 

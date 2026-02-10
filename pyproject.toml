@@ -106,10 +106,10 @@ justdata = "justdata.cli.main:main"
 justdata-api = "justdata.api.main:main"
 
 [project.urls]
-Homepage = "https://github.com/NCRC-git/justdata"
-Documentation = "https://github.com/NCRC-git/justdata/blob/main/README.md"
-Repository = "https://github.com/NCRC-git/justdata"
-"Bug Tracker" = "https://github.com/NCRC-git/justdata/issues"
+Homepage = "https://github.com/NCRC-org/justdata"
+Documentation = "https://github.com/NCRC-org/justdata/blob/main/README.md"
+Repository = "https://github.com/NCRC-org/justdata"
+"Bug Tracker" = "https://github.com/NCRC-org/justdata/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
