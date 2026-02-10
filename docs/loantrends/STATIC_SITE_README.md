@@ -80,7 +80,7 @@ apps/loantrends/
 │       ├── chart_data.json
 │       ├── metadata.json
 │       └── graph_data.json
-└── STATIC_SITE_README.md     # This file
+└── (see docs/loantrends/STATIC_SITE_README.md)
 ```
 
 ## Features

@@ -122,7 +122,6 @@ The fallback county list was last updated: **November 19, 2025**
 
 To update the fallback list, run:
 ```bash
-cd /Users/jadedlebi/justdata
 python3 scripts/update_geo_fallback.py
 ```
 

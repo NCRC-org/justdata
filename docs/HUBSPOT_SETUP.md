@@ -27,7 +27,6 @@ After fixing the permissions, you have two installation options:
 Install HubSpot CLI as a project dependency:
 
 ```bash
-cd /Users/jadedlebi/justdata
 npm install --save-dev @hubspot/cli
 ```
 
