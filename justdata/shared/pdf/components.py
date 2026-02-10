@@ -14,7 +14,7 @@ from reportlab.lib.units import inch
 from reportlab.lib.colors import HexColor, white, Color
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_CENTER
-from reportlab.graphics.shapes import Drawing, Rect, String
+from reportlab.graphics.shapes import Drawing, Rect, String, Polygon
 
 from justdata.shared.pdf.styles import (
     HEADING_1, HEADING_2, HEADING_3,
@@ -98,16 +98,36 @@ def render_pop_vs_lending_bars(pop_share, lending_share, width=100, height=26):
 # Change column with colored arrows
 # ---------------------------------------------------------------------------
 _CHANGE_STYLE = ParagraphStyle(
-    'ChangeCell', fontName='Helvetica', fontSize=7, leading=9,
+    'ChangeCell', fontName='Georgia', fontSize=9.5, leading=12,
     alignment=TA_CENTER,
 )
 
 
-def format_change_cell(value, is_total_row=False):
-    """Return a Paragraph with colored arrow + value for the Change column.
+def _make_arrow_drawing(up=True, color=HexColor('#2196F3')):
+    """Create a small centered triangle Drawing (drawing primitive, not text)."""
+    d_w, d_h = 14, 8
+    d = Drawing(d_w, d_h)
+    cx = d_w / 2
+    tri_half = 3.5
+    if up:
+        d.add(Polygon(
+            points=[cx - tri_half, 0, cx + tri_half, 0, cx, d_h],
+            fillColor=color, strokeColor=None,
+        ))
+    else:
+        d.add(Polygon(
+            points=[cx - tri_half, d_h, cx + tri_half, d_h, cx, 0],
+            fillColor=color, strokeColor=None,
+        ))
+    d.hAlign = 'CENTER'
+    return d
 
-    For percentage rows: shows ▲/▼ +X.Xpp
-    For total rows: shows ▲/▼ +X.X%
+
+def format_change_cell(value, is_total_row=False):
+    """Return a list of [arrow Drawing, value Paragraph] for the Change column.
+
+    Uses drawn triangle shapes instead of Unicode characters to avoid
+    missing-glyph boxes in Georgia font.
     """
     if value is None or value == '':
         return Paragraph('\u2014', _CHANGE_STYLE)  # em dash
@@ -124,11 +144,15 @@ def format_change_cell(value, is_total_row=False):
     if abs(num) < 0.05:
         return Paragraph('0.0' + suffix, _CHANGE_STYLE)
     elif num > 0:
-        text = f'<font color="#2196F3"><b>\u25b2</b> +{num:.1f}{suffix}</font>'
+        color = HexColor('#2196F3')
+        arrow = _make_arrow_drawing(up=True, color=color)
+        text = f'<font color="#2196F3">+{num:.1f}{suffix}</font>'
     else:
-        text = f'<font color="#F44336"><b>\u25bc</b> \u2212{abs(num):.1f}{suffix}</font>'
+        color = HexColor('#F44336')
+        arrow = _make_arrow_drawing(up=False, color=color)
+        text = f'<font color="#F44336">\u2212{abs(num):.1f}{suffix}</font>'
 
-    return Paragraph(text, _CHANGE_STYLE)
+    return [arrow, Paragraph(text, _CHANGE_STYLE)]
 
 
 # ---------------------------------------------------------------------------
@@ -331,14 +355,13 @@ def build_key_findings(findings_text):
     from reportlab.platypus import TableStyle as TS
     callout = Table(
         [[finding_flowables]],
-        colWidths=[USABLE_WIDTH - 18],
+        colWidths=[USABLE_WIDTH],
         style=TS([
             ('BACKGROUND', (0, 0), (-1, -1), CALLOUT_BG),
-            ('LEFTPADDING', (0, 0), (-1, -1), 16),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 14),
-            ('TOPPADDING', (0, 0), (-1, -1), 12),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
-            ('LINEBEFORE', (0, 0), (0, -1), 4, NAVY),
+            ('LEFTPADDING', (0, 0), (-1, -1), 12),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 12),
+            ('TOPPADDING', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 10),
         ])
     )
     return callout

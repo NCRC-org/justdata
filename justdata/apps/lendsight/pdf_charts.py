@@ -5,15 +5,31 @@ Uses matplotlib to produce print-friendly PNG images returned as BytesIO buffers
 Includes both full-size charts and compact mini-charts for inline use.
 """
 
+import os
 from io import BytesIO
 
 import matplotlib
 matplotlib.use('Agg')  # Non-interactive backend
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import matplotlib.font_manager as fm
 import numpy as np
 from reportlab.platypus import Image
 from reportlab.lib.units import inch
+
+# ---------------------------------------------------------------------------
+# Register Georgia fonts with matplotlib so charts use Georgia instead of
+# Helvetica/Times (Type1). Goal: zero non-Georgia fonts in the final PDF.
+# ---------------------------------------------------------------------------
+_FONT_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'shared', 'pdf', 'fonts')
+for _fname in ('georgia.ttf', 'georgiab.ttf', 'georgiai.ttf', 'georgiaz.ttf'):
+    _fpath = os.path.join(_FONT_DIR, _fname)
+    if os.path.exists(_fpath):
+        fm.fontManager.addfont(_fpath)
+
+matplotlib.rcParams['font.family'] = 'Georgia'
+matplotlib.rcParams['font.sans-serif'] = ['Georgia']
+matplotlib.rcParams['font.serif'] = ['Georgia']
 
 
 # ---------------------------------------------------------------------------
@@ -132,15 +148,19 @@ def render_census_demographics_chart(census_data, counties=None):
 
     ax.set_xticks(x)
     ax.set_xticklabels(race_labels, fontsize=7)
-    ax.set_ylabel('Population Share (%)', fontsize=7)
     ax.set_title('Population Demographics by Race/Ethnicity', fontsize=9,
                  fontweight='bold', pad=8)
     ax.legend(fontsize=6, loc='upper right', framealpha=0.9)
     all_vals = [v for p in periods_to_plot for v in avg_data[p] if v > 0]
     if all_vals:
         ax.set_ylim(0, max(all_vals) * 1.15)
-    ax.yaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
-    ax.grid(axis='y', alpha=0.3)
+    # Clean chart: no gridlines, no Y-axis, no tick marks — data labels on bars suffice
+    ax.grid(False)
+    ax.spines['left'].set_visible(False)
+    ax.yaxis.set_visible(False)
+    ax.spines['bottom'].set_color('#cccccc')
+    ax.tick_params(axis='x', length=0)
+    ax.tick_params(axis='y', length=0)
 
     plt.tight_layout()
     buf = BytesIO()
@@ -271,7 +291,7 @@ def render_gap_chart(data):
     if not plot_data:
         return None
 
-    fig, ax = plt.subplots(figsize=(3.3, 1.8), dpi=150)
+    fig, ax = plt.subplots(figsize=(3.3, 2.2), dpi=150)  # 20% taller
     _apply_mini_style(ax, fig)
 
     labels = [d[0] for d in plot_data]
@@ -283,8 +303,10 @@ def render_gap_chart(data):
         gap = lend - pop
         color = GREEN if gap >= 0 else RED
         ax.barh(i, lend, height=0.5, color=color, alpha=0.3, zorder=1)
-        ax.plot(pop, i, 'D', color=ORANGE, markersize=5, zorder=3)
-        ax.plot(lend, i, 'o', color=color, markersize=5, zorder=3)
+        ax.plot(pop, i, 'D', color=ORANGE, markersize=5, zorder=3,
+                label='Population Share' if i == 0 else '')
+        ax.plot(lend, i, 'o', color=color, markersize=5, zorder=3,
+                label='Lending Share' if i == 0 else '')
         ax.text(max(lend, pop) + 1, i, f'{gap:+.1f}pp', fontsize=5,
                 color=color, fontweight='bold', va='center')
 
@@ -292,7 +314,9 @@ def render_gap_chart(data):
     ax.set_yticklabels(labels, fontsize=5.5)
     ax.set_title(f'Lending vs. Population Share ({latest_year})', fontsize=7,
                  fontweight='bold', color=NAVY, pad=4)
-    ax.set_xlabel('%', fontsize=5.5)
+    ax.xaxis.set_major_formatter(ticker.FormatStrFormatter('%.0f%%'))
+    ax.tick_params(axis='x', labelsize=5.5)
+    ax.legend(fontsize=5, loc='lower right', framealpha=0.9)
     ax.invert_yaxis()
     ax.grid(axis='x', alpha=0.2)
 
@@ -471,8 +495,8 @@ def render_hhi_chart(market_concentration_data):
         except (ValueError, TypeError):
             values.append(0)
 
-    fig, ax = plt.subplots(figsize=(3.3, 1.8), dpi=150)
-    _apply_mini_style(ax, fig)
+    fig, ax = plt.subplots(figsize=(5.0, 3.0), dpi=150)
+    _apply_base_style(ax, fig)
 
     x = np.arange(len(year_cols))
     ax.bar(x, values, color=BAR_COLOR, width=0.5, edgecolor='none')
@@ -480,21 +504,22 @@ def render_hhi_chart(market_concentration_data):
     # Threshold lines — always show both for context
     max_val = max(values) if values else 500
     y_max = max(max_val * 1.3, 2800)
-    ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=0.8, alpha=0.6)
-    ax.text(len(year_cols) - 0.5, 1520, 'Moderate (1,500)', fontsize=5, color=HHI_MODERATE_COLOR, ha='right')
-    ax.axhline(y=2500, color=HHI_HIGH_COLOR, linestyle='--', linewidth=0.8, alpha=0.6)
-    ax.text(len(year_cols) - 0.5, 2520, 'Concentrated (2,500)', fontsize=5, color=HHI_HIGH_COLOR, ha='right')
+    ax.axhline(y=1500, color=HHI_MODERATE_COLOR, linestyle='--', linewidth=1.0, alpha=0.7)
+    ax.text(len(year_cols) - 0.5, 1530, 'Moderate (1,500)', fontsize=7, color=HHI_MODERATE_COLOR, ha='right')
+    ax.axhline(y=2500, color=HHI_HIGH_COLOR, linestyle='--', linewidth=1.0, alpha=0.7)
+    ax.text(len(year_cols) - 0.5, 2530, 'Concentrated (2,500)', fontsize=7, color=HHI_HIGH_COLOR, ha='right')
 
     # Value labels on bars
     for i, v in enumerate(values):
         if v > 0:
-            ax.text(i, v + max_val * 0.03, str(int(v)), ha='center', fontsize=5.5)
+            ax.text(i, v + max_val * 0.03, str(int(v)), ha='center', fontsize=8, fontweight='bold')
 
     ax.set_xticks(x)
-    ax.set_xticklabels([str(yr) for yr in year_cols], fontsize=6)
-    ax.set_title('Market Concentration (HHI)', fontsize=7, fontweight='bold', color=NAVY, pad=4)
+    ax.set_xticklabels([str(yr) for yr in year_cols], fontsize=8)
+    ax.set_title('Market Concentration (HHI)', fontsize=10, fontweight='bold', color=NAVY, pad=6)
     ax.set_ylim(0, y_max)
     ax.yaxis.set_visible(False)
+    ax.grid(False)
 
     plt.tight_layout()
     buf = BytesIO()
@@ -507,14 +532,16 @@ def render_hhi_chart(market_concentration_data):
 # ---------------------------------------------------------------------------
 # Sparkline for table cells
 # ---------------------------------------------------------------------------
-def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc9'):
+def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc9',
+                     is_downward=None):
     """Render a tiny sparkline as PNG BytesIO for embedding in a ReportLab table cell.
 
     Args:
         values: list of numeric values (one per year)
         width_inches: figure width
         height_inches: figure height
-        color: line color
+        color: line color (overridden by is_downward if provided)
+        is_downward: if True, use red; if False, use blue; if None, auto-detect
 
     Returns:
         BytesIO containing PNG image bytes, or None if insufficient data.
@@ -529,16 +556,28 @@ def render_sparkline(values, width_inches=0.9, height_inches=0.22, color='#1a8fc
         except (ValueError, TypeError):
             clean.append(0)
 
+    # Determine line color from trend direction
+    if is_downward is None:
+        is_downward = clean[-1] < clean[0]
+    line_color = '#C62828' if is_downward else '#1a8fc9'
+
     fig, ax = plt.subplots(figsize=(width_inches, height_inches))
     ax.axis('off')
     ax.set_xlim(-0.2, len(clean) - 0.8)
     fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
+    # Auto-scale Y-axis to data range (do NOT include zero)
+    y_min = min(clean)
+    y_max = max(clean)
+    y_padding = (y_max - y_min) * 0.15 if y_max != y_min else 1.0
+    ax.set_ylim(y_min - y_padding, y_max + y_padding)
+
     x = range(len(clean))
-    ax.plot(x, clean, color=color, linewidth=1.2, solid_capstyle='round')
-    ax.fill_between(x, clean, alpha=0.1, color=color)
+    ax.plot(x, clean, color=line_color, linewidth=1.2, solid_capstyle='round')
+    # Light gray fill under all sparklines
+    ax.fill_between(x, clean, y_min - y_padding, alpha=0.2, color='#E0E0E0')
     ax.scatter([0, len(clean) - 1], [clean[0], clean[-1]],
-              color=color, s=6, zorder=5)
+              color=line_color, s=6, zorder=5)
 
     buf = BytesIO()
     fig.savefig(buf, format='png', dpi=150, bbox_inches='tight',

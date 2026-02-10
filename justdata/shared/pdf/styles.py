@@ -5,12 +5,33 @@ Defines all ParagraphStyle, TableStyle, color constants, and font constants
 used by the shared PDF report framework.
 """
 
+import os
 import re
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
 from reportlab.lib.colors import HexColor, white, black
 from reportlab.lib.units import inch
 from reportlab.platypus import TableStyle
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# ---------------------------------------------------------------------------
+# Georgia font registration (embedded TrueType)
+# ---------------------------------------------------------------------------
+_FONT_DIR = os.path.join(os.path.dirname(__file__), 'fonts')
+
+pdfmetrics.registerFont(TTFont('Georgia', os.path.join(_FONT_DIR, 'georgia.ttf')))
+pdfmetrics.registerFont(TTFont('Georgia-Bold', os.path.join(_FONT_DIR, 'georgiab.ttf')))
+pdfmetrics.registerFont(TTFont('Georgia-Italic', os.path.join(_FONT_DIR, 'georgiai.ttf')))
+pdfmetrics.registerFont(TTFont('Georgia-BoldItalic', os.path.join(_FONT_DIR, 'georgiaz.ttf')))
+
+pdfmetrics.registerFontFamily(
+    'Georgia',
+    normal='Georgia',
+    bold='Georgia-Bold',
+    italic='Georgia-Italic',
+    boldItalic='Georgia-BoldItalic',
+)
 
 # ---------------------------------------------------------------------------
 # Color palette
@@ -33,14 +54,14 @@ RULE_COLOR = HexColor('#cccccc')
 SOURCE_COLOR = HexColor('#999999')
 
 # ---------------------------------------------------------------------------
-# Font constants
+# Font constants (Georgia throughout for print-quality embedding)
 # ---------------------------------------------------------------------------
-HEADLINE_FONT = 'Times-Roman'
-HEADLINE_FONT_BOLD = 'Times-Bold'
-BODY_FONT = 'Helvetica'
-BODY_FONT_BOLD = 'Helvetica-Bold'
-BODY_FONT_ITALIC = 'Helvetica-Oblique'
-BODY_FONT_BOLD_ITALIC = 'Helvetica-BoldOblique'
+HEADLINE_FONT = 'Georgia'
+HEADLINE_FONT_BOLD = 'Georgia-Bold'
+BODY_FONT = 'Georgia'
+BODY_FONT_BOLD = 'Georgia-Bold'
+BODY_FONT_ITALIC = 'Georgia-Italic'
+BODY_FONT_BOLD_ITALIC = 'Georgia-BoldItalic'
 
 # ---------------------------------------------------------------------------
 # Paragraph styles
@@ -121,7 +142,7 @@ HEADING_1 = _style(
     'MagHeading1',
     fontName=HEADLINE_FONT_BOLD,
     fontSize=20,
-    leading=26,
+    leading=24,
     textColor=NAVY,
     spaceBefore=18,
     spaceAfter=10,
@@ -131,7 +152,7 @@ HEADING_2 = _style(
     'MagHeading2',
     fontName=HEADLINE_FONT_BOLD,
     fontSize=15,
-    leading=20,
+    leading=19,
     textColor=NAVY,
     spaceBefore=14,
     spaceAfter=8,
@@ -153,8 +174,8 @@ HEADING_3 = _style(
 BODY_TEXT = _style(
     'MagBody',
     fontName=BODY_FONT,
-    fontSize=9.5,
-    leading=13.5,
+    fontSize=12,
+    leading=16,
     textColor=BODY_COLOR,
     alignment=TA_JUSTIFY,
     spaceAfter=6,
@@ -163,8 +184,8 @@ BODY_TEXT = _style(
 BODY_TEXT_SMALL = _style(
     'MagBodySmall',
     fontName=BODY_FONT,
-    fontSize=8.5,
-    leading=12,
+    fontSize=10,
+    leading=13.5,
     textColor=BODY_COLOR,
     alignment=TA_JUSTIFY,
     spaceAfter=4,
@@ -189,8 +210,8 @@ AI_LABEL = _style(
 KEY_FINDING = _style(
     'KeyFinding',
     fontName=BODY_FONT,
-    fontSize=9.5,
-    leading=13,
+    fontSize=13,
+    leading=17,
     textColor=BODY_COLOR,
     alignment=TA_LEFT,
     spaceAfter=4,
@@ -225,8 +246,8 @@ CALLOUT_TITLE = _style(
 SOURCE_CAPTION = _style(
     'SourceCaption',
     fontName=BODY_FONT_ITALIC,
-    fontSize=7.5,
-    leading=10,
+    fontSize=9,
+    leading=12,
     textColor=SOURCE_COLOR,
     spaceAfter=8,
 )
@@ -234,8 +255,8 @@ SOURCE_CAPTION = _style(
 TABLE_CAPTION = _style(
     'TableCaption',
     fontName=BODY_FONT_ITALIC,
-    fontSize=7.5,
-    leading=10,
+    fontSize=9,
+    leading=12,
     textColor=SOURCE_COLOR,
     spaceAfter=8,
 )
@@ -246,8 +267,8 @@ TABLE_CAPTION = _style(
 TABLE_HEADER_TEXT = _style(
     'TableHeaderText',
     fontName=BODY_FONT_BOLD,
-    fontSize=7.5,
-    leading=10,
+    fontSize=10,
+    leading=12,
     textColor=white,
     alignment=TA_CENTER,
 )
@@ -255,8 +276,8 @@ TABLE_HEADER_TEXT = _style(
 TABLE_CELL_TEXT = _style(
     'TableCellText',
     fontName=BODY_FONT,
-    fontSize=8,
-    leading=10,
+    fontSize=9.5,
+    leading=12,
     textColor=BODY_COLOR,
     alignment=TA_LEFT,
 )
@@ -264,8 +285,8 @@ TABLE_CELL_TEXT = _style(
 TABLE_CELL_NUMBER = _style(
     'TableCellNumber',
     fontName=BODY_FONT,
-    fontSize=8,
-    leading=10,
+    fontSize=9.5,
+    leading=12,
     textColor=BODY_COLOR,
     alignment=TA_RIGHT,
 )
@@ -273,8 +294,8 @@ TABLE_CELL_NUMBER = _style(
 LENDER_NAME_STYLE = _style(
     'LenderName',
     fontName=BODY_FONT_BOLD,
-    fontSize=7.5,
-    leading=9,
+    fontSize=9.5,
+    leading=12,
     textColor=DARK_GRAY,
     alignment=TA_LEFT,
 )
@@ -293,8 +314,8 @@ RUNNING_HEADER = _style(
 RUNNING_FOOTER = _style(
     'RunningFooter',
     fontName=BODY_FONT,
-    fontSize=7.5,
-    leading=10,
+    fontSize=8.5,
+    leading=11,
     textColor=SOURCE_COLOR,
 )
 
@@ -304,8 +325,8 @@ RUNNING_FOOTER = _style(
 METHODS_TEXT = _style(
     'MethodsText',
     fontName=BODY_FONT,
-    fontSize=8.5,
-    leading=12,
+    fontSize=10,
+    leading=13.5,
     textColor=DARK_GRAY,
     alignment=TA_JUSTIFY,
     spaceAfter=4,
@@ -331,13 +352,13 @@ def build_table_style(
         ('BACKGROUND', (0, 0), (-1, 0), header_bg),
         ('TEXTCOLOR', (0, 0), (-1, 0), header_text),
         ('FONTNAME', (0, 0), (-1, 0), BODY_FONT_BOLD),
-        ('FONTSIZE', (0, 0), (-1, 0), 7.5),
+        ('FONTSIZE', (0, 0), (-1, 0), 10),
         ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
         ('TOPPADDING', (0, 0), (-1, 0), 6),
 
         # Data rows
         ('FONTNAME', (0, 1), (-1, -1), BODY_FONT),
-        ('FONTSIZE', (0, 1), (-1, -1), 8),
+        ('FONTSIZE', (0, 1), (-1, -1), 9.5),
         ('TOPPADDING', (0, 1), (-1, -1), 4),
         ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
         ('LEFTPADDING', (0, 0), (-1, -1), 6),
