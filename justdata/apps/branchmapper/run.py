@@ -16,6 +16,18 @@ APP_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(REPO_ROOT))
 sys.path.insert(0, str(APP_DIR))
 
+# Load .env from repo root for local development (same as run_justdata.py)
+try:
+    from dotenv import load_dotenv
+    env_path = REPO_ROOT / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+        print(f"Loaded .env from: {env_path}")
+    else:
+        print(f"No .env file found at {env_path}")
+except ImportError:
+    pass
+
 # Verify shared module exists
 justdata_path = REPO_ROOT / 'justdata'
 if not justdata_path.exists():

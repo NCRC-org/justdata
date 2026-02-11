@@ -478,8 +478,8 @@
                 <span class="hamburger-line"></span>
             </button>
             <div class="app-branding">
-                {% if app_icon %}<span class="app-icon">{{ app_icon }}</span>{% endif %}
-                <h1 class="app-name">{{ app_name }}</h1>
+                {% if app_logo %}<img src="{{ app_logo }}" alt="{{ app_name }}" class="app-logo" style="height: 32px; width: auto;">{% elif app_icon %}<span class="app-icon">{{ app_icon }}</span>{% endif %}
+                {% if not app_logo %}<h1 class="app-name">{{ app_name }}</h1>{% endif %}
             </div>
         </div>
 
