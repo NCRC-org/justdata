@@ -1158,10 +1158,367 @@ def get_tract_boundaries_geojson(state_fips: str, county_fips: str) -> Optional[
         return None
 
 
+def get_state_minority_percentage(state_fips: str, api_key: Optional[str] = None) -> Optional[float]:
+    """
+    Get minority population percentage for a state from Census API.
+
+    Minority = Total population - Non-Hispanic White alone
+    Uses ACS 5-Year Estimates. Results are cached for 24 hours.
+
+    Args:
+        state_fips: 2-digit state FIPS code
+        api_key: Census API key (if None, tries CENSUS_API_KEY env var)
+
+    Returns:
+        Minority population percentage (0-100), or None if unavailable
+    """
+    cache_key = f"state_minority_{state_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached state minority % for {state_fips}: {cached:.1f}%")
+        return cached
+
+    if api_key is None:
+        api_key = get_census_api_key()
+
+    if not api_key:
+        print("Warning: No Census API key found. Set CENSUS_API_KEY environment variable.")
+        return None
+
+    try:
+        acs_year = "2022"
+
+        # B01003_001E = Total population
+        # B03002_003E = White alone, not Hispanic or Latino
+        url = f"https://api.census.gov/data/{acs_year}/acs/acs5"
+        params = {
+            'get': 'NAME,B01003_001E,B03002_003E',
+            'for': f'state:{state_fips}',
+            'key': api_key
+        }
+
+        print(f"Fetching state minority data from Census API for state={state_fips}")
+
+        response = make_census_api_request(url, params, timeout=30)
+
+        if response.status_code != 200:
+            print(f"Census API error response: {response.text[:500]}")
+            return None
+
+        try:
+            data = response.json()
+        except Exception as json_err:
+            print(f"[ERROR] Census API returned non-JSON response: {response.text[:500]}")
+            return None
+
+        if len(data) > 1 and len(data[1]) > 2:
+            total_pop = data[1][1]  # B01003_001E
+            white_non_hisp = data[1][2]  # B03002_003E
+
+            if total_pop and white_non_hisp and total_pop != '-888888888' and white_non_hisp != '-888888888':
+                try:
+                    total = float(total_pop)
+                    white = float(white_non_hisp)
+                    if total > 0:
+                        minority = total - white
+                        percentage = (minority / total) * 100
+                        print(f"[OK] State minority percentage: {percentage:.1f}%")
+                        _set_cached(cache_key, percentage)
+                        return percentage
+                    else:
+                        print(f"[ERROR] Total population is 0 or negative: {total}")
+                except (ValueError, TypeError) as ve:
+                    print(f"[ERROR] Could not convert population values to float: {ve}")
+            else:
+                print(f"[ERROR] Invalid population data - Total: '{total_pop}', White: '{white_non_hisp}'")
+        else:
+            print(f"[ERROR] Unexpected response format. Expected at least 2 rows with 3 columns, got {len(data)} rows")
+
+        return None
+
+    except requests.exceptions.RequestException as e:
+        print(f"[ERROR] HTTP error fetching state minority percentage: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+    except Exception as e:
+        print(f"[ERROR] Error fetching state minority percentage: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def get_tract_boundaries_by_state(state_fips: str) -> Optional[Dict]:
+    """
+    Fetch census tract boundaries as GeoJSON for an entire state from Census TIGER/Line files.
+
+    Uses the Census Bureau's TIGERweb service to get tract boundaries.
+    Results are cached for 24 hours since boundary data rarely changes.
+
+    Args:
+        state_fips: 2-digit state FIPS code
+
+    Returns:
+        GeoJSON dictionary with tract boundaries, or None if unavailable
+    """
+    cache_key = f"boundaries_state_{state_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached state tract boundaries for {state_fips} ({len(cached.get('features', []))} features)")
+        return cached
+
+    try:
+        url = f"https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/tigerWMS_Current/MapServer/8/query"
+
+        params = {
+            'where': f"STATE='{state_fips}'",
+            'outFields': 'GEOID,NAME,STATE,COUNTY,TRACT',
+            'f': 'geojson',
+            'outSR': '4326'
+        }
+
+        response = make_census_api_request(url, params, timeout=120)
+
+        geojson = response.json()
+
+        if 'features' in geojson and len(geojson['features']) > 0:
+            print(f"Fetched {len(geojson['features'])} state tract boundaries for {state_fips}")
+            _set_cached(cache_key, geojson)
+            return geojson
+
+        return None
+
+    except Exception as e:
+        print(f"Error fetching state tract boundaries: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+def get_tract_income_data_by_state(state_fips: str, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Get median family income for all census tracts in a state from Census API.
+
+    Results are cached for 24 hours.
+
+    Args:
+        state_fips: 2-digit state FIPS code
+        api_key: Census API key (if None, tries CENSUS_API_KEY env var)
+
+    Returns:
+        List of dictionaries with tract data including:
+        - tract_geoid: 11-digit census tract GEOID
+        - tract_name: Tract name
+        - median_family_income: Median family income in dollars
+    """
+    cache_key = f"tract_income_state_{state_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached state tract income data for {state_fips} ({len(cached)} tracts)")
+        return cached
+
+    if api_key is None:
+        api_key = get_census_api_key()
+
+    if not api_key:
+        print("Warning: No Census API key found. Set CENSUS_API_KEY environment variable.")
+        return []
+
+    try:
+        acs_year = "2022"
+
+        # B19113_001E = Median Family Income
+        url = f"https://api.census.gov/data/{acs_year}/acs/acs5"
+        params = {
+            'get': 'NAME,B19113_001E,GEO_ID',
+            'for': f'tract:*',
+            'in': f'state:{state_fips}',
+            'key': api_key
+        }
+
+        response = make_census_api_request(url, params, timeout=60)
+
+        data = response.json()
+
+        if len(data) < 2:
+            return []
+
+        headers = data[0]
+        name_idx = headers.index('NAME')
+        income_idx = headers.index('B19113_001E')
+        geo_id_idx = headers.index('GEO_ID')
+        tract_idx = headers.index('tract')
+        county_idx = headers.index('county')
+
+        tracts = []
+        for row in data[1:]:
+            tract_name = row[name_idx]
+            income_str = row[income_idx]
+            geo_id = row[geo_id_idx]
+            tract_code = row[tract_idx]
+            county_code = row[county_idx]
+
+            # Create 11-digit GEOID: state (2) + county (3) + tract (6)
+            tract_geoid = f"{state_fips}{county_code}{tract_code.zfill(6)}"
+
+            # Parse income (Census uses -888888888 for nulls/errors, also -666666666 for other errors)
+            median_income = None
+            if income_str:
+                invalid_values = ['-888888888', '-666666666', '-999999999', 'null', 'None', '']
+                if income_str not in invalid_values:
+                    try:
+                        income_value = float(income_str)
+                        if income_value > 0:
+                            median_income = income_value
+                    except ValueError:
+                        pass
+
+            if median_income is not None:
+                tracts.append({
+                    'tract_geoid': tract_geoid,
+                    'tract_name': tract_name,
+                    'tract_code': tract_code,
+                    'median_family_income': median_income
+                })
+
+        print(f"Fetched state income data: {len(tracts)} valid tracts for state {state_fips}")
+        _set_cached(cache_key, tracts)
+        return tracts
+
+    except Exception as e:
+        print(f"Error fetching state tract income data: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
+def get_tract_minority_data_by_state(state_fips: str, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Get minority population data for all census tracts in a state from Census API.
+
+    Minority = Total population - Non-Hispanic White alone
+    Results are cached for 24 hours.
+
+    Args:
+        state_fips: 2-digit state FIPS code
+        api_key: Census API key (if None, tries CENSUS_API_KEY env var)
+
+    Returns:
+        List of dictionaries with tract data including:
+        - tract_geoid: 11-digit census tract GEOID
+        - tract_name: Tract name
+        - total_population: Total population
+        - minority_population: Minority population (non-Hispanic white excluded)
+        - minority_percentage: Percentage of minority population
+    """
+    cache_key = f"tract_minority_state_{state_fips}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached state tract minority data for {state_fips} ({len(cached)} tracts)")
+        return cached
+
+    if api_key is None:
+        api_key = get_census_api_key()
+
+    if not api_key:
+        print("Warning: No Census API key found. Set CENSUS_API_KEY environment variable.")
+        return []
+
+    try:
+        acs_year = "2022"
+
+        # B01003_001E = Total population
+        # B03002_003E = White alone, not Hispanic or Latino
+        url = f"https://api.census.gov/data/{acs_year}/acs/acs5"
+        params = {
+            'get': 'NAME,B01003_001E,B03002_003E,GEO_ID',
+            'for': f'tract:*',
+            'in': f'state:{state_fips}',
+            'key': api_key
+        }
+
+        response = make_census_api_request(url, params, timeout=60)
+
+        data = response.json()
+
+        if len(data) < 2:
+            return []
+
+        headers = data[0]
+        name_idx = headers.index('NAME')
+        total_pop_idx = headers.index('B01003_001E')
+        white_non_hisp_idx = headers.index('B03002_003E')
+        geo_id_idx = headers.index('GEO_ID')
+        tract_idx = headers.index('tract')
+        county_idx = headers.index('county')
+
+        invalid_values = ['-888888888', '-666666666', '-999999999', 'null', 'None', '']
+
+        tracts = []
+        for row in data[1:]:
+            tract_name = row[name_idx]
+            total_pop_str = row[total_pop_idx]
+            white_non_hisp_str = row[white_non_hisp_idx]
+            geo_id = row[geo_id_idx]
+            tract_code = row[tract_idx]
+            county_code = row[county_idx]
+
+            # Create 11-digit GEOID: state (2) + county (3) + tract (6)
+            tract_geoid = f"{state_fips}{county_code}{tract_code.zfill(6)}"
+
+            # Parse population data
+            total_pop = None
+            white_non_hisp = None
+            minority_percentage = None
+
+            if total_pop_str and total_pop_str not in invalid_values:
+                try:
+                    pop_value = float(total_pop_str)
+                    if pop_value > 0:
+                        total_pop = pop_value
+                except ValueError:
+                    pass
+
+            if white_non_hisp_str and white_non_hisp_str not in invalid_values:
+                try:
+                    white_value = float(white_non_hisp_str)
+                    if white_value >= 0:
+                        white_non_hisp = white_value
+                except ValueError:
+                    pass
+
+            # Calculate minority percentage only if we have valid data
+            minority_pop = None
+            if total_pop and total_pop > 0 and white_non_hisp is not None and white_non_hisp >= 0:
+                minority_pop = total_pop - white_non_hisp
+                if minority_pop >= 0:
+                    minority_percentage = (minority_pop / total_pop) * 100
+
+            if total_pop is not None and total_pop > 0 and white_non_hisp is not None and minority_percentage is not None:
+                tracts.append({
+                    'tract_geoid': tract_geoid,
+                    'tract_name': tract_name,
+                    'tract_code': tract_code,
+                    'total_population': total_pop,
+                    'minority_population': minority_pop,
+                    'minority_percentage': minority_percentage
+                })
+
+        print(f"Fetched state minority data: {len(tracts)} valid tracts for state {state_fips}")
+        _set_cached(cache_key, tracts)
+        return tracts
+
+    except Exception as e:
+        print(f"Error fetching state tract minority data: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
 def categorize_income_level(tract_income: float, county_income: float) -> str:
     """
     Categorize a census tract's income level relative to county median income.
-    
+
     Categories:
     - Low: ≤50% of county median
     - Moderate: ≤80% of county median

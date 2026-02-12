@@ -5,6 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Repository
 
 - **GitHub:** https://github.com/NCRC-org/justdata
+- **IMPORTANT:** The old repo (`github.com/jadedlebi/justdata` and `github.com/NCRC-git/justdata`) are DEPRECATED. All work happens on `NCRC-org/justdata`. Do NOT push to, pull from, or reference the old repos.
+- **Local path:** `C:\Code\justdata`
 - **GCP Hosting Project:** `justdata-ncrc`
 - **GCP Data Source Project:** `hdma1-242116` (BigQuery source data, do not modify)
 
@@ -29,6 +31,29 @@ jad_test / jay_test  -->  test  -->  staging  -->  main
 - `test` -- integration branch, PR to `staging` (1 approval)
 - `staging` -- pre-production, auto-deploys `justdata-test` Cloud Run service, PR to `main` (2 approvals)
 - `main` -- production, auto-deploys `justdata` Cloud Run service
+
+## Recent Work (Feb 2026)
+
+### BranchMapper Overhaul (committed to `jay_test`)
+- Census tract overlays using Mapbox tileset (`editengine.census-tracts`, 60,648 features)
+- Replaced ZIP export with multi-sheet XLSX export (Notes, Bank Branches, Changes sheets) via SheetJS
+- Export respects drawn polygon area filter and "Show All Banks" mode
+- Blueprint refactor, improved data_utils, census_tract_utils enhancements
+- BranchMapper logo added
+
+### FDIC OSCR History Client (committed to `jay_test`)
+- New `justdata/apps/lenderprofile/services/fdic_client.py`
+- Supports branch events, merger events, name changes via `https://api.fdic.gov/banks/history`
+- Schema analysis documented in `justdata/apps/lenderprofile/FDIC_OSCR_SCHEMA_ANALYSIS.md`
+
+### Shared UI Updates
+- White app logos for all apps added to `justdata/shared/web/static/img/app-logos/`
+- Shared header template updated
+
+### Supporting Scripts & Docs
+- Census tileset generation scripts in `scripts/`
+- Candid API reference in `docs/candid-api-reference.md`
+- Executive user type doc in `docs/ADD_EXECUTIVE_USER_TYPE.md`
 
 ## Project Overview
 
@@ -100,7 +125,7 @@ justdata/
 │   ├── bizsight/            # Small business lending
 │   ├── mergermeter/         # Bank merger analysis
 │   ├── electwatch/          # Congressional financial tracking
-│   ├── branchmapper/        # Branch network mapping
+│   ├── branchmapper/        # Branch network mapping (major overhaul Feb 2026)
 │   ├── loantrends/          # Loan trend analysis
 │   └── memberview/          # Member dashboard
 ├── shared/                  # Shared modules used by all apps
@@ -179,7 +204,7 @@ Optional:
 - `PORT` - Server port (defaults vary by app)
 
 ### Firebase Auth (Google sign-in)
-Google sign-in requires the app’s domain to be **authorized** in Firebase:
+Google sign-in requires the app's domain to be **authorized** in Firebase:
 1. [Firebase Console](https://console.firebase.google.com) → project **justdata-ncrc**
 2. **Authentication** → **Settings** → **Authorized domains**
 3. **Add domain** with the **hostname only** (no `https://` or port), e.g.:
@@ -191,6 +216,7 @@ If the domain is missing, users see "Domain not authorized" or "The requested ac
 ## Data Sources
 
 - **FDIC Summary of Deposits (SOD)** - Bank branch data (BigQuery: `fdic_data`)
+- **FDIC OSCR History** - Branch events, mergers, name changes (`https://api.fdic.gov/banks/history`)
 - **HMDA** - Mortgage lending data (BigQuery)
 - **Section 1071** - Small business lending data
 - **Census ACS** - Demographic data via Census API
@@ -258,7 +284,7 @@ gcloud logging read 'resource.type=cloud_run_job AND resource.labels.job_name=el
 ### Required Secrets (in Secret Manager for Cloud Run Job)
 - `electwatch-credentials` - BigQuery credentials JSON
 - `fec-api-key` - FEC API key
-- `congress-gov-api-key` - Congress.gov API key  
+- `congress-gov-api-key` - Congress.gov API key
 - `claude-api-key` - Claude API key
 
 ## Deployment

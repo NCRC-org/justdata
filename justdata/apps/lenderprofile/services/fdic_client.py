@@ -457,3 +457,191 @@ class FDICClient:
             logger.error(f"Error processing FDIC branch data: {e}", exc_info=True)
             return [], {'total_available': 0, 'returned': 0, 'hit_limit': False}
 
+    # ---------------------------------------------------------------
+    # FDIC OSCR History/Events endpoint
+    # ---------------------------------------------------------------
+
+    # Field sets per query type — only request fields that are populated
+    # for the event category.  See FDIC_OSCR_SCHEMA_ANALYSIS.md for the
+    # full 235-field data dictionary and live-vs-dormant annotations.
+    HISTORY_FIELD_SETS = {
+        'branches': (
+            'CERT,INSTNAME,OFF_NAME,OFF_NUM,OFF_PCITY,OFF_PSTALP,OFF_PSTATE,'
+            'OFF_CNTYNUM,OFF_CNTYNAME,OFF_PADDR,OFF_PZIP5,OFF_SERVTYPE,'
+            'OFF_SERVTYPE_DESC,OFF_EFFDATE,'
+            'CHANGECODE,CHANGECODE_DESC,EFFDATE,ENDDATE,ENDEFYMD,'
+            'ORG_ROLE_CDE,TRANSNUM'
+        ),
+        'mergers': (
+            'CERT,INSTNAME,CLASS,CHARTAGENT,PSTALP,CNTYNUM,CNTYNAME,'
+            'CHANGECODE,CHANGECODE_DESC,EFFDATE,ENDDATE,ENDEFYMD,'
+            'ACQ_CERT,ACQ_INSTNAME,ACQ_CLASS,ACQ_PSTALP,ACQ_CNTYNUM,'
+            'OUT_CERT,OUT_INSTNAME,OUT_CLASS,OUT_PSTALP,OUT_CNTYNUM,'
+            'SUR_CERT,SUR_INSTNAME,SUR_CLASS,SUR_PSTALP,SUR_CNTYNUM,'
+            'ORG_ROLE_CDE,TRANSNUM'
+        ),
+        'name_changes': (
+            'CERT,INSTNAME,CLASS,CHARTAGENT,PSTALP,'
+            'CHANGECODE,CHANGECODE_DESC,EFFDATE,ENDDATE,'
+            'FRM_CERT,FRM_INSTNAME,FRM_CLASS,FRM_CHARTAGENT,FRM_PSTALP,'
+            'ORG_ROLE_CDE,TRANSNUM'
+        ),
+        'full': (
+            'CERT,INSTNAME,OFF_NAME,OFF_NUM,OFF_PCITY,OFF_PSTALP,'
+            'OFF_CNTYNUM,OFF_SERVTYPE,OFF_SERVTYPE_DESC,OFF_EFFDATE,'
+            'CHANGECODE,CHANGECODE_DESC,EFFDATE,ENDDATE,ENDEFYMD,'
+            'ORG_ROLE_CDE,TRANSNUM,ACTIVE'
+        ),
+    }
+
+    def get_history(
+        self,
+        cert: str,
+        query_type: str = 'full',
+        role: Optional[str] = None,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        limit: int = 10000,
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Get structural event history from the FDIC OSCR /history endpoint.
+
+        Returns every recorded structural change for an institution:
+        branch opens/closes, mergers, acquisitions, name changes, charter
+        conversions, relocations, etc.  Each record carries a CHANGECODE
+        that identifies the event type.
+
+        Field selection is driven by *query_type* so we only request fields
+        that are actually populated for the event category, keeping response
+        size small.
+
+        Args:
+            cert:        FDIC certificate number.
+            query_type:  One of 'branches', 'mergers', 'name_changes', 'full'.
+                         Controls which fields are requested.
+            role:        Filter by ORG_ROLE_CDE:
+                           'FI' = institution-level events only,
+                           'BR' = branch-level events only,
+                           None  = all events.
+            date_from:   Earliest EFFDATE to include (YYYY-MM-DD or MM/DD/YYYY).
+            date_to:     Latest EFFDATE to include  (YYYY-MM-DD or MM/DD/YYYY).
+            limit:       Max records to return (API cap is 10 000).
+
+        Returns:
+            Tuple of (list of event dicts, metadata dict).
+            metadata keys: total_available, returned, hit_limit, query_type.
+        """
+        try:
+            url = f'{self.base_url}/history'
+
+            # Build filter string
+            filters = [f'CERT:{cert}']
+            if role:
+                filters.append(f'ORG_ROLE_CDE:"{role}"')
+            if date_from:
+                filters.append(f'EFFDATE:["{date_from}" TO *]')
+            if date_to:
+                filters.append(f'EFFDATE:[* TO "{date_to}"]')
+            filter_str = ' AND '.join(filters)
+
+            # Select field set
+            fields = self.HISTORY_FIELD_SETS.get(query_type)
+            if fields is None:
+                logger.warning(
+                    f"Unknown query_type '{query_type}', falling back to 'full'"
+                )
+                fields = self.HISTORY_FIELD_SETS['full']
+
+            params = {
+                'filters': filter_str,
+                'fields': fields,
+                'sort_by': 'EFFDATE',
+                'sort_order': 'ASC',
+                'limit': min(limit, 10000),
+                'format': 'json',
+            }
+
+            logger.info(
+                f"FDIC History API: cert={cert}, type={query_type}, "
+                f"role={role}, dates={date_from}→{date_to}, limit={params['limit']}"
+            )
+            response = requests.get(url, params=params, timeout=self.timeout)
+            response.raise_for_status()
+
+            data = response.json()
+            raw_results = data.get('data', [])
+
+            # Flatten nested {data: {…}, score: …} wrapper
+            events = []
+            for r in raw_results:
+                if isinstance(r, dict) and 'data' in r:
+                    events.append(r['data'])
+                else:
+                    events.append(r)
+
+            total = data.get('totals', {}).get('count', len(events))
+            metadata = {
+                'total_available': total,
+                'returned': len(events),
+                'hit_limit': len(events) >= min(limit, 10000),
+                'query_type': query_type,
+            }
+
+            logger.info(
+                f"FDIC History API: {len(events)} events returned "
+                f"(total available: {total}) for cert {cert}"
+            )
+            return events, metadata
+
+        except requests.exceptions.RequestException as e:
+            logger.error(f"FDIC History API error for cert {cert}: {e}")
+            return [], {
+                'total_available': 0, 'returned': 0,
+                'hit_limit': False, 'query_type': query_type,
+            }
+
+    # ---- Convenience wrappers ----
+
+    def get_branch_events(
+        self,
+        cert: str,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        limit: int = 10000,
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Get branch-level structural events (opens, closes, relocations).
+
+        Single API call replacement for the multi-year snapshot diffing
+        approach used by branch_network_analyzer.
+
+        Returns:
+            Tuple of (list of branch event dicts, metadata).
+        """
+        return self.get_history(
+            cert, query_type='branches', role='BR',
+            date_from=date_from, date_to=date_to, limit=limit,
+        )
+
+    def get_merger_events(
+        self,
+        cert: str,
+        date_from: Optional[str] = None,
+        date_to: Optional[str] = None,
+        limit: int = 10000,
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+        """
+        Get M&A event chain for an institution.
+
+        Returns acquiring, outgoing, and surviving entity details for
+        every merger/acquisition/conversion event.  One call gives the
+        full corporate lineage.
+
+        Returns:
+            Tuple of (list of merger event dicts, metadata).
+        """
+        return self.get_history(
+            cert, query_type='mergers', role='FI',
+            date_from=date_from, date_to=date_to, limit=limit,
+        )
+
