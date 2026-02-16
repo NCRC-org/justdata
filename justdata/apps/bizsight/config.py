@@ -97,7 +97,7 @@ class BizSightConfig:
     GPT_MODEL = os.getenv('GPT_MODEL', 'gpt-4')
     
     # Flask Configuration
-    SECRET_KEY = os.getenv('SECRET_KEY', 'bizsight-secret-key-change-in-production')
+    SECRET_KEY = os.getenv('SECRET_KEY') or __import__('secrets').token_hex(32)
     DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
     PORT = int(os.getenv('PORT', 8081))
     HOST = os.getenv('HOST', '0.0.0.0')
