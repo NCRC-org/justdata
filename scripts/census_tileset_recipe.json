@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "layers": {
+    "census_tracts": {
+      "source": "mapbox://tileset-source/editengine/census-tracts",
+      "minzoom": 5,
+      "maxzoom": 12,
+      "features": {
+        "attributes": {
+          "allowed_output": [
+            "GEOID", "NAME", "STATE", "COUNTY",
+            "median_family_income", "income_category", "income_ratio",
+            "baseline_median_income", "baseline_type",
+            "minority_percentage", "minority_category",
+            "total_population", "minority_population"
+          ]
+        }
+      }
+    }
+  }
+}

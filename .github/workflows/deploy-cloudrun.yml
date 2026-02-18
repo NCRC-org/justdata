@@ -72,8 +72,8 @@ jobs:
             --set-env-vars "GCP_PROJECT_ID=${{ env.PROJECT_ID }}" \
             --set-env-vars "USE_SUMMARY_TABLES=false" \
             --set-env-vars "PYTHONPATH=/app" \
-            --set-env-vars "MAPBOX_ACCESS_TOKEN=pk.eyJ1IjoiamVkbGViaSIsImEiOiJjanhhc3M4NnYwMmxsM3lyODlxYTFhOGRxIn0.746AmyW45uwRPeUy1PczOg" \
-            --set-env-vars "MAPBOX_STYLE=mapbox://styles/jedlebi/cltg2vre600wz01p02c3jf3h3" \
+            --set-env-vars "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" \
+            --set-env-vars "MAPBOX_STYLE=${{ secrets.MAPBOX_STYLE }}" \
             --update-secrets "CLAUDE_API_KEY=claude-api-key:latest" \
             --update-secrets "ANTHROPIC_API_KEY=claude-api-key:latest" \
             --update-secrets "CENSUS_API_KEY=census-api-key:latest" \
