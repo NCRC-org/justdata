@@ -49,5 +49,5 @@ DEBUG_MODE = os.getenv('DEBUG_MODE', 'false').lower() == 'true'
 LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO')
 
 # Flask Configuration
-SECRET_KEY = os.getenv('SECRET_KEY', 'lenderprofile-secret-key-change-in-production')
+SECRET_KEY = os.getenv('SECRET_KEY') or __import__('secrets').token_hex(32)
 

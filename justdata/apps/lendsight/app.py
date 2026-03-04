@@ -45,7 +45,7 @@ app = create_app(
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 
 # Configure cache-busting
-app.config['DEBUG'] = True
+app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', 'false').lower() == 'true'
 app.config['TEMPLATES_AUTO_RELOAD'] = True
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
@@ -611,4 +611,4 @@ def report_data_route():
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8082))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=os.environ.get('FLASK_DEBUG', 'false').lower() == 'true', host='0.0.0.0', port=port)
