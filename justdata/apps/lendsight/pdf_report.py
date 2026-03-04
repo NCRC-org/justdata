@@ -870,7 +870,7 @@ def _build_top_lenders_table(data, max_rows=20):
     if not rows:
         return Spacer(1, 0), False
 
-    rows = sorted(rows, key=lambda x: float(x.get('Total Loans', 0) or 0),
+    rows = sorted(rows, key=lambda x: _parse_float(x.get('Total Loans', 0)) or 0,
                   reverse=True)[:max_rows]
 
     # Column definitions: (data_key, header_label, width_pt, align)
