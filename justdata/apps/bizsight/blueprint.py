@@ -769,8 +769,17 @@ def download():
             from justdata.apps.bizsight.excel_export import download_excel
             return download_excel(result, metadata)
         elif format_type == 'pdf':
-            from justdata.apps.bizsight.app import download_pdf_report
-            return download_pdf_report(result, metadata, job_id)
+            from justdata.apps.bizsight.pdf_report import generate_bizsight_pdf
+            pdf_buf = generate_bizsight_pdf(result, metadata)
+            county_data = metadata.get('county_data', {})
+            county_name = county_data.get('name', 'County') if isinstance(county_data, dict) else str(county_data) if county_data else 'County'
+            safe_name = county_name.replace(',', '').replace(' ', '_')[:50]
+            filename = f'BizSight_{safe_name}.pdf'
+            return Response(
+                pdf_buf.getvalue(),
+                mimetype='application/pdf',
+                headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+            )
         elif format_type == 'powerpoint':
             # PowerPoint export would go here
             return jsonify({'error': 'PowerPoint export not yet implemented'}), 501
