@@ -284,6 +284,8 @@ def download():
             return download_csv(report_data, metadata)
         elif format_type == 'json':
             return download_json(report_data, metadata)
+        elif format_type == 'pdf':
+            return download_pdf(report_data, metadata, analysis_result)
         elif format_type == 'zip':
             return download_zip(report_data, metadata)
         else:
@@ -327,6 +329,47 @@ def download_excel(report_data, metadata):
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Excel export failed: {str(e)}'}), 500
+
+
+def download_pdf(report_data, metadata, analysis_result):
+    """Download PDF report"""
+    try:
+        from justdata.apps.branchsight.pdf_report import generate_branchsight_pdf
+
+        ai_insights = analysis_result.get('ai_insights', {})
+        pdf_buf = generate_branchsight_pdf(report_data, metadata, ai_insights)
+
+        tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        tmp_path = tmp_file.name
+        tmp_file.close()
+
+        with open(tmp_path, 'wb') as f:
+            f.write(pdf_buf.getvalue())
+
+        counties = metadata.get('counties', [])
+        county_slug = str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
+        filename = f'branchsight_{county_slug}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+
+        response = send_file(
+            tmp_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+        @response.call_on_close
+        def cleanup():
+            try:
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+            except:
+                pass
+
+        return response
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'PDF export failed: {str(e)}'}), 500
 
 
 def download_csv(report_data, metadata):
