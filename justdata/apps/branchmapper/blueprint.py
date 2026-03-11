@@ -3,7 +3,7 @@ BranchMapper Blueprint for main JustData app.
 Converts the standalone BranchMapper app into a blueprint.
 """
 
-from flask import Blueprint, render_template, request, jsonify, url_for, current_app
+from flask import Blueprint, render_template, request, jsonify, url_for, current_app, Response
 from jinja2 import ChoiceLoader, FileSystemLoader
 import os
 import numpy as np
@@ -984,6 +984,25 @@ def api_oscr_events_in_bounds():
         'relocation_pairs': len(result['relocation_pairs']),
         'date_range': {'start': start_date, 'end': end_date}
     })
+
+
+@branchmapper_bp.route('/export/methods-pdf')
+@login_required
+@require_access('branchmapper', 'partial')
+def export_methods_pdf():
+    """Generate and return the BranchMapper Methods & Definitions PDF."""
+    geography = request.args.get('geography', 'Selected area')
+
+    from justdata.apps.branchmapper.pdf_methods import generate_methods_pdf
+    pdf_buffer = generate_methods_pdf(geography)
+
+    return Response(
+        pdf_buffer.getvalue(),
+        mimetype='application/pdf',
+        headers={
+            'Content-Disposition': 'attachment; filename=BranchMapper_Methods_and_Definitions.pdf'
+        }
+    )
 
 
 @branchmapper_bp.route('/health')

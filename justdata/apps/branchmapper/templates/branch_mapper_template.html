@@ -761,7 +761,7 @@
                             <button onclick="resetMap()" class="secondary" style="flex: 1;">
                                 <i class="fas fa-undo"></i> Reset
                             </button>
-                            <button onclick="exportMapAndData()" class="secondary" style="flex: 1;">
+                            <button onclick="exportBranchMapperBundle()" class="secondary" style="flex: 1;">
                                 <i class="fas fa-download"></i> Export
                             </button>
                         </div>
@@ -2590,7 +2590,8 @@
                 container: 'branchMap',
                 style: MAPBOX_STYLE,
                 center: [-98.5, 38.0], // [lng, lat] centered to show all US including Hawaii/Alaska
-                zoom: 3 // Show full US including Hawaii and Alaska
+                zoom: 3, // Show full US including Hawaii and Alaska
+                preserveDrawingBuffer: true  // Required for canvas.toDataURL() map capture
             });
             
             // Add navigation controls
@@ -3379,285 +3380,327 @@
             return '$' + deposits.toLocaleString('en-US');
         }
         
-        // Export map and data as multi-sheet Excel workbook
-        async function exportMapAndData() {
-            if (!branchMap) {
-                alert('No map loaded.');
-                return;
+        // Collect all visible branch data (shared by export functions)
+        async function collectExportData() {
+            const loadPromises = [];
+            for (const bank of selectedBanks) {
+                if (bank.branches.length === 0) loadPromises.push(loadBankBranches(bank));
+                if (bank.oscrEvents.length === 0) loadPromises.push(loadBankOSCREvents(bank));
             }
 
+            let allBanksBranches = [];
+            let allBanksOscrData = [];
+            if (showAllBanksActive) {
+                const bounds = branchMap.getBounds();
+                const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
+                const latPad = (ne.lat - sw.lat) * 0.1, lngPad = (ne.lng - sw.lng) * 0.1;
+                const params = `sw_lat=${sw.lat - latPad}&sw_lng=${sw.lng - lngPad}&ne_lat=${ne.lat + latPad}&ne_lng=${ne.lng + lngPad}`;
+                const dateRange = getOSCRDateRange();
+                loadPromises.push(
+                    fetch(`${APP_BASE_URL}/api/branches-in-bounds?${params}&year=2025`)
+                        .then(r => r.json()).then(d => { if (d.success) allBanksBranches = d.branches || []; }).catch(() => {})
+                );
+                loadPromises.push(
+                    fetch(`${APP_BASE_URL}/api/oscr-events-in-bounds?${params}&start_date=${dateRange.start}&end_date=${dateRange.end}`)
+                        .then(r => r.json()).then(d => { if (d.success) allBanksOscrData = d.events || []; }).catch(() => {})
+                );
+            }
+
+            if (loadPromises.length > 0) await Promise.all(loadPromises);
+
+            let allBranches = [];
+            let allOscrEvents = [];
+            selectedBanks.forEach(b => { allBranches.push(...b.branches); allOscrEvents.push(...b.oscrEvents); });
+            if (showAllBanksActive) { allBranches.push(...allBanksBranches); allOscrEvents.push(...allBanksOscrData); }
+
+            if (activeDrawFilter) {
+                const polyGeom = activeDrawFilter.type === 'Feature' ? activeDrawFilter : { type: 'Feature', geometry: activeDrawFilter, properties: {} };
+                allBranches = allBranches.filter(b => {
+                    const lat = parseFloat(b.latitude), lng = parseFloat(b.longitude);
+                    return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), polyGeom);
+                });
+                allOscrEvents = allOscrEvents.filter(e => {
+                    const lat = parseFloat(e.latitude), lng = parseFloat(e.longitude);
+                    return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), polyGeom);
+                });
+            }
+
+            // Deduplicate branches
+            const seen = new Set();
+            const unique = [];
+            allBranches.forEach(branch => {
+                const key = [(branch.bank_name || '').toLowerCase().trim(), (branch.branch_name || '').toLowerCase().trim(), branch.latitude || '', branch.longitude || ''].join('|');
+                if (!seen.has(key)) { seen.add(key); unique.push(branch); }
+            });
+            unique.sort((a, b) => {
+                const c1 = (a.bank_name || '').localeCompare(b.bank_name || '');
+                if (c1 !== 0) return c1;
+                const c2 = (a.state_abbrv || a.state || '').localeCompare(b.state_abbrv || b.state || '');
+                if (c2 !== 0) return c2;
+                return (a.city || '').localeCompare(b.city || '');
+            });
+
+            return { branches: unique, oscrEvents: allOscrEvents };
+        }
+
+        // Get geography name for filenames and context
+        function getGeographyName() {
+            const bankNames = selectedBanks.map(b => b.name).join(', ');
+            if (bankNames) return bankNames;
+            if (showAllBanksActive) return 'All Banks';
+            return 'BranchMap';
+        }
+
+        // Capture the map as a JPG blob
+        async function captureMapAsJPG() {
+            const mapCanvas = branchMap.getCanvas();
+
+            // Force a fresh render
+            branchMap.triggerRepaint();
+            await new Promise(resolve => { branchMap.once('render', resolve); });
+
+            let mapDataUrl;
             try {
-                updateInfoPanel('Loading data for export...');
+                mapDataUrl = mapCanvas.toDataURL('image/jpeg', 0.92);
+            } catch (e) {
+                console.error('Canvas capture failed:', e);
+                throw new Error('Map capture failed. Please try again.');
+            }
 
-                // Ensure both SOD branches AND OSCR events are loaded for each selected bank
-                const loadPromises = [];
-                for (const bank of selectedBanks) {
-                    if (bank.branches.length === 0) {
-                        loadPromises.push(loadBankBranches(bank));
-                    }
-                    if (bank.oscrEvents.length === 0) {
-                        loadPromises.push(loadBankOSCREvents(bank));
-                    }
-                }
+            const container = branchMap.getContainer();
+            const width = container.offsetWidth;
+            const height = container.offsetHeight;
 
-                // For "Show All Banks" mode, load both views for current bounds
-                let allBanksBranches = [];
-                let allBanksOscrData = [];
-                if (showAllBanksActive) {
-                    const bounds = branchMap.getBounds();
-                    const sw = bounds.getSouthWest(), ne = bounds.getNorthEast();
-                    const latPad = (ne.lat - sw.lat) * 0.1, lngPad = (ne.lng - sw.lng) * 0.1;
-                    const params = `sw_lat=${sw.lat - latPad}&sw_lng=${sw.lng - lngPad}&ne_lat=${ne.lat + latPad}&ne_lng=${ne.lng + lngPad}`;
+            const composite = document.createElement('canvas');
+            composite.width = width * 2;
+            composite.height = height * 2;
+            const ctx = composite.getContext('2d');
+            ctx.scale(2, 2);
 
-                    // Load SOD branches for bounds
-                    loadPromises.push(
-                        fetch(`${APP_BASE_URL}/api/branches-in-bounds?${params}&year=2025`)
-                            .then(r => r.json())
-                            .then(d => { if (d.success) allBanksBranches = d.branches || []; })
-                            .catch(() => {})
-                    );
-                    // Load OSCR events for bounds
-                    const dateRange = getOSCRDateRange();
-                    loadPromises.push(
-                        fetch(`${APP_BASE_URL}/api/oscr-events-in-bounds?${params}&start_date=${dateRange.start}&end_date=${dateRange.end}`)
-                            .then(r => r.json())
-                            .then(d => { if (d.success) allBanksOscrData = d.events || []; })
-                            .catch(() => {})
-                    );
-                }
+            // Draw the map
+            const mapImg = new Image();
+            mapImg.src = mapDataUrl;
+            await new Promise((resolve, reject) => { mapImg.onload = resolve; mapImg.onerror = reject; });
+            ctx.drawImage(mapImg, 0, 0, width, height);
 
-                if (loadPromises.length > 0) {
-                    await Promise.all(loadPromises);
-                }
-
-                // Collect all data
-                let allBranches = [];
-                let allOscrEvents = [];
-                selectedBanks.forEach(b => {
-                    allBranches.push(...b.branches);
-                    allOscrEvents.push(...b.oscrEvents);
-                });
-                // Merge "Show All Banks" data
-                if (showAllBanksActive) {
-                    allBranches.push(...allBanksBranches);
-                    allOscrEvents.push(...allBanksOscrData);
-                }
-
-                if (allBranches.length === 0 && allOscrEvents.length === 0) {
-                    alert('No data to export. Please load branch data or OSCR events first.');
-                    return;
-                }
-
-                // Filter to drawn polygon area if active
-                if (activeDrawFilter) {
-                    const polyGeom = activeDrawFilter.type === 'Feature' ? activeDrawFilter : { type: 'Feature', geometry: activeDrawFilter, properties: {} };
-                    allBranches = allBranches.filter(b => {
-                        const lat = parseFloat(b.latitude), lng = parseFloat(b.longitude);
-                        return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), polyGeom);
+            // Try to capture HTML overlays (markers, popups)
+            const markerOverlay = container.querySelector('.mapboxgl-canvas-container');
+            if (markerOverlay) {
+                try {
+                    const overlayCanvas = await html2canvas(markerOverlay, {
+                        backgroundColor: null, scale: 1, logging: false, useCORS: true, width, height
                     });
-                    allOscrEvents = allOscrEvents.filter(e => {
-                        const lat = parseFloat(e.latitude), lng = parseFloat(e.longitude);
-                        return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), polyGeom);
-                    });
+                    ctx.drawImage(overlayCanvas, 0, 0, width, height);
+                } catch (e) {
+                    console.log('Overlay capture skipped:', e);
                 }
+            }
 
-                updateInfoPanel('Exporting Excel workbook...');
+            // Add branded footer bar
+            const footerHeight = 36;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+            ctx.fillRect(0, height - footerHeight, width, footerHeight);
+            ctx.fillStyle = '#333333';
+            ctx.font = '12px Georgia, serif';
+            ctx.fillText('Source: FDIC Summary of Deposits | NCRC JustData BranchMapper', 12, height - 12);
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const dateWidth = ctx.measureText(dateStr).width;
+            ctx.fillText(dateStr, width - dateWidth - 12, height - 12);
 
-                // Filename
-                const bankNames = selectedBanks.map(b => b.name).join('_') || (showAllBanksActive ? 'AllBanks' : 'Unknown');
-                const contextSlug = bankNames.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 80);
-                const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-                const filename = `BranchMapper_${contextSlug}_${timestamp}.xlsx`;
+            return new Promise(resolve => {
+                composite.toBlob(blob => resolve(blob), 'image/jpeg', 0.92);
+            });
+        }
 
-                const wb = XLSX.utils.book_new();
-
-                // --- Sheet 1: Notes ---
-                const notesData = [
-                    ['BranchMapper Export'],
-                    [''],
-                    ['DATA SOURCES'],
-                    ['FDIC Summary of Deposits (SOD)', 'Annual survey of branch-level deposit data for all FDIC-insured institutions. Published June 30 each year.'],
-                    ['FDIC OSCR (Office of Supervisory Changes Report)', 'Records branch openings (711/713) and closings (721/722) reported to the FDIC.'],
-                    ['Census ACS Tract Classifications', 'Tract-level income and demographic data from the American Community Survey, used for LMI and majority-minority flags.'],
-                    [''],
-                    ['REPORT CONFIGURATION'],
-                    ['Selected Banks', selectedBanks.map(b => b.name).join(', ')],
-                    ['SOD Year', '2025'],
-                    ['OSCR Date Range', (() => { try { const dr = getOSCRDateRange(); return dr.start + ' to ' + dr.end; } catch(e) { return 'N/A'; } })()],
-                    ['Export Timestamp', new Date().toISOString()],
-                    ['Area Filter', activeDrawFilter ? 'Yes — exported data filtered to drawn polygon' : 'None — all branches/events exported'],
-                    ['Total SOD Branches', String(allBranches.length)],
-                    ['Total OSCR Events', String(allOscrEvents.length)],
-                    [''],
-                    ['INCOME CLASSIFICATIONS'],
-                    ['Low Income', 'Tract median family income < 50% of area median'],
-                    ['Moderate Income', 'Tract median family income 50-79% of area median'],
-                    ['Middle Income', 'Tract median family income 80-119% of area median'],
-                    ['Upper Income', 'Tract median family income >= 120% of area median'],
-                    ['LMI Tract', 'Low or Moderate income tract (< 80% of area median family income)'],
-                    [''],
-                    ['MINORITY CLASSIFICATIONS'],
-                    ['Majority-Minority Tract', 'Census tract where > 50% of the population identifies as a racial or ethnic minority'],
-                    [''],
-                    ['OSCR CHANGE CODES'],
-                    ['711', 'Branch opening (new)'],
-                    ['713', 'Branch opening (relocation — new site of a relocated branch)'],
-                    ['721', 'Branch closing (permanent)'],
-                    ['722', 'Branch closing (relocation — former site of a relocated branch)'],
-                    [''],
-                    ['SERVICE TYPES'],
-                    ['11', 'Full Service, brick and mortar office'],
-                    ['12', 'Full Service, retail office'],
-                    ['13', 'Full Service, cyber office'],
-                    ['21', 'Limited Service, administrative office'],
-                    ['22', 'Limited Service, military facility'],
-                    ['23', 'Limited Service, drive-through facility'],
-                    ['24', 'Limited Service, loan production office'],
-                    ['25', 'Limited Service, consumer credit office'],
-                    ['26', 'Limited Service, contractual office'],
-                    ['27', 'Limited Service, messenger office'],
-                    ['28', 'Limited Service, retail office'],
-                    ['29', 'Limited Service, mobile/seasonal office'],
-                    ['30', 'Limited Service, trust office'],
-                    [''],
-                    ['RELOCATION INFERENCE'],
-                    ['Method', 'Relocations are inferred by matching a closing and an opening for the same CERT within 90 days and 2 miles, at different addresses.']
-                ];
-                const wsNotes = XLSX.utils.aoa_to_sheet(notesData);
-                wsNotes['!cols'] = [{ wch: 35 }, { wch: 90 }];
-                XLSX.utils.book_append_sheet(wb, wsNotes, 'Notes');
-
-                // --- Sheet 2: Bank Branches ---
-                // Deduplicate
-                const seenBranches = new Set();
-                const uniqueBranches = [];
-                allBranches.forEach(branch => {
-                    const key = [
-                        (branch.bank_name || '').toLowerCase().trim(),
-                        (branch.branch_name || '').toLowerCase().trim(),
-                        branch.latitude || '',
-                        branch.longitude || ''
-                    ].join('|');
-                    if (!seenBranches.has(key)) {
-                        seenBranches.add(key);
-                        uniqueBranches.push(branch);
-                    }
-                });
-
-                // Sort by bank name → state → city
-                uniqueBranches.sort((a, b) => {
-                    const cmp1 = (a.bank_name || '').localeCompare(b.bank_name || '');
-                    if (cmp1 !== 0) return cmp1;
-                    const cmp2 = (a.state_abbrv || a.state || '').localeCompare(b.state_abbrv || b.state || '');
-                    if (cmp2 !== 0) return cmp2;
-                    return (a.city || '').localeCompare(b.city || '');
-                });
-
-                const branchHeaders = [
-                    'Bank Name', 'Branch Name', 'Address', 'City', 'State', 'ZIP',
-                    'County', 'Latitude', 'Longitude', 'Total Deposits ($)',
-                    'Assets ($000s)', 'Service Type', 'RSSD', 'UNINUMBR',
-                    'LMI Tract', 'Majority-Minority Tract'
-                ];
-                const branchRows = uniqueBranches.map(b => [
-                    b.bank_name || '',
-                    b.branch_name || '',
-                    b.address || '',
-                    b.city || '',
-                    b.state_abbrv || b.state || '',
-                    b.zip || '',
-                    b.county || '',
-                    b.latitude != null ? Number(b.latitude) : '',
-                    b.longitude != null ? Number(b.longitude) : '',
-                    b.total_deposits != null ? Number(b.total_deposits) : '',
-                    b.assets_000s != null ? Number(b.assets_000s) : '',
-                    b.service_type || '',
+        // Generate branch data CSV
+        function generateBranchCSV(branches) {
+            const headers = [
+                'institution_name', 'branch_name', 'address', 'city', 'state', 'zip',
+                'county', 'latitude', 'longitude', 'total_deposits', 'assets_000s',
+                'service_type', 'rssd', 'uninumbr', 'lmi_tract', 'majority_minority_tract'
+            ];
+            let csv = headers.join(',') + '\n';
+            branches.forEach(b => {
+                const row = [
+                    escapeCSV(b.bank_name || ''),
+                    escapeCSV(b.branch_name || ''),
+                    escapeCSV(b.address || ''),
+                    escapeCSV(b.city || ''),
+                    escapeCSV(b.state_abbrv || b.state || ''),
+                    escapeCSV(b.zip || ''),
+                    escapeCSV(b.county || ''),
+                    b.latitude != null ? b.latitude : '',
+                    b.longitude != null ? b.longitude : '',
+                    b.total_deposits != null ? b.total_deposits : '',
+                    b.assets_000s != null ? b.assets_000s : '',
+                    escapeCSV(b.service_type || ''),
                     b.rssd || '',
                     b.uninumbr || '',
                     b.lmict ? 'Yes' : 'No',
                     b.mmct ? 'Yes' : 'No'
-                ]);
-
-                const wsBranches = XLSX.utils.aoa_to_sheet([branchHeaders, ...branchRows]);
-                wsBranches['!cols'] = [
-                    { wch: 30 }, { wch: 30 }, { wch: 35 }, { wch: 18 }, { wch: 6 }, { wch: 10 },
-                    { wch: 20 }, { wch: 12 }, { wch: 12 }, { wch: 18 },
-                    { wch: 15 }, { wch: 14 }, { wch: 12 }, { wch: 12 },
-                    { wch: 10 }, { wch: 22 }
                 ];
-                XLSX.utils.book_append_sheet(wb, wsBranches, 'Bank Branches');
+                csv += row.join(',') + '\n';
+            });
+            return csv;
+        }
 
-                // --- Sheet 3: Changes (OSCR Events) ---
-                const allEvents = allOscrEvents;
+        // Generate AI-ready markdown
+        function generateAIMarkdown(branches) {
+            const geography = getGeographyName();
+            const totalBranches = branches.length;
+            const institutions = [...new Set(branches.map(b => b.bank_name || 'Unknown'))];
+            const totalDeposits = branches.reduce((sum, b) => sum + (parseFloat(b.total_deposits) || 0), 0);
 
-                const eventHeaders = [
-                    'Institution', 'CERT', 'Branch Name', 'Event Type', 'Is Relocation',
-                    'Change Code', 'Effective Date', 'Processed Date',
-                    'Address', 'City', 'State', 'ZIP', 'County',
-                    'Latitude', 'Longitude', 'Service Type', 'Bank Class',
-                    'Former Branch Name', 'Former Address', 'Former City', 'Former State', 'Former ZIP',
-                    'Former Latitude', 'Former Longitude',
-                    'Relocation Partner Address', 'Relocation Distance (mi)'
-                ];
+            // Count by institution
+            const instCounts = {};
+            branches.forEach(b => {
+                const name = b.bank_name || 'Unknown';
+                instCounts[name] = (instCounts[name] || 0) + 1;
+            });
+            const sorted = Object.entries(instCounts).sort((a, b) => b[1] - a[1]);
 
-                let eventRows;
-                if (allEvents.length > 0) {
-                    eventRows = allEvents.map(e => [
-                        e.institution || '',
-                        e.cert || '',
-                        e.branch_name || '',
-                        e.display_type === 'opening' ? 'Opening' : e.display_type === 'closing' ? 'Closing' : (e.display_type || ''),
-                        e.is_relocation ? 'Yes' : 'No',
-                        e.changecode || '',
-                        e.effective_date || '',
-                        e.processed_date || '',
-                        e.address || '',
-                        e.city || '',
-                        e.state || '',
-                        e.zip || '',
-                        e.county || '',
-                        e.latitude != null ? Number(e.latitude) : '',
-                        e.longitude != null ? Number(e.longitude) : '',
-                        e.service_type || '',
-                        e.bank_class || '',
-                        e.frm_branch_name || '',
-                        e.frm_address || '',
-                        e.frm_city || '',
-                        e.frm_state || '',
-                        e.frm_zip || '',
-                        e.frm_latitude != null ? Number(e.frm_latitude) : '',
-                        e.frm_longitude != null ? Number(e.frm_longitude) : '',
-                        e.relocation_pair_address || '',
-                        e.relocation_distance_miles != null ? Number(e.relocation_distance_miles) : ''
-                    ]);
-                } else {
-                    eventRows = [['No OSCR events loaded. Switch to OSCR view mode and load events for selected banks, then re-export.']];
+            const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            let md = `# BranchMapper data export: ${geography}\n\n`;
+            md += `**Exported:** ${dateStr}\n`;
+            md += `**Source:** FDIC Summary of Deposits, compiled by NCRC JustData\n\n`;
+
+            md += `## Summary\n\n`;
+            md += `- **Total branches in view:** ${totalBranches.toLocaleString()}\n`;
+            md += `- **Number of institutions:** ${institutions.length}\n`;
+            md += `- **Total deposits:** $${(totalDeposits / 1000000).toFixed(1)}M\n\n`;
+
+            md += `## Branches by institution\n\n`;
+            md += `| Institution | Branches | Share |\n`;
+            md += `|-------------|----------|-------|\n`;
+            sorted.forEach(([name, count]) => {
+                const share = ((count / totalBranches) * 100).toFixed(1);
+                md += `| ${name} | ${count} | ${share}% |\n`;
+            });
+            md += `\n`;
+
+            // LMI summary
+            const lmiCount = branches.filter(b => b.lmict).length;
+            if (lmiCount > 0) {
+                const lmiPct = ((lmiCount / totalBranches) * 100).toFixed(1);
+                md += `## Branch location demographics\n\n`;
+                md += `- **Branches in LMI census tracts:** ${lmiCount} (${lmiPct}%)\n`;
+                md += `- **Branches in non-LMI tracts:** ${totalBranches - lmiCount} (${(100 - parseFloat(lmiPct)).toFixed(1)}%)\n`;
+                const mmctCount = branches.filter(b => b.mmct).length;
+                if (mmctCount > 0) {
+                    const mmctPct = ((mmctCount / totalBranches) * 100).toFixed(1);
+                    md += `- **Branches in majority-minority tracts:** ${mmctCount} (${mmctPct}%)\n`;
+                }
+                md += `\n`;
+            }
+
+            md += `## Full branch list\n\n`;
+            md += `| Institution | Branch | Address | City | State | Deposits ($) |\n`;
+            md += `|-------------|--------|---------|------|-------|--------------|\n`;
+
+            const display = branches.slice(0, 200);
+            display.forEach(b => {
+                md += `| ${b.bank_name || ''} `;
+                md += `| ${b.branch_name || ''} `;
+                md += `| ${b.address || ''} `;
+                md += `| ${b.city || ''} `;
+                md += `| ${b.state_abbrv || b.state || ''} `;
+                md += `| ${b.total_deposits != null ? Number(b.total_deposits).toLocaleString() : ''} |\n`;
+            });
+
+            if (branches.length > 200) {
+                md += `\n*Showing first 200 of ${branches.length} branches. Full data available in the CSV file.*\n`;
+            }
+
+            md += `\n---\n\n`;
+            md += `## Instructions for AI analysis\n\n`;
+            md += `You are analyzing bank branch data for ${geography} from the FDIC Summary of Deposits. `;
+            md += `This data was exported from NCRC's BranchMapper tool on ${dateStr}.\n\n`;
+            md += `Please provide a plain-language analysis covering:\n\n`;
+            md += `1. **Market structure:** Which institutions dominate this market? How concentrated is branch presence? Is this a competitive market or dominated by a few large banks?\n`;
+            md += `2. **Community access:** If LMI tract data is available, are low and moderate income communities adequately served by bank branches? Are there potential "banking deserts" where branch access is limited?\n`;
+            md += `3. **Deposit concentration:** How are deposits distributed across institutions? Does any single institution hold a disproportionate share?\n`;
+            md += `4. **Notable patterns:** Are there any geographic clusters, institutional patterns or access gaps worth highlighting?\n\n`;
+            md += `Keep the analysis factual and descriptive. Use phrases like "the data indicates" or "the distribution shows" rather than making causal claims. `;
+            md += `Present disparities as "gaps" rather than "discrimination." Note that this data represents a single point in time and may not capture recent changes.\n`;
+
+            return md;
+        }
+
+        // Export ZIP bundle with JPG, PDF, CSV, and Markdown
+        async function exportBranchMapperBundle() {
+            if (!branchMap) { alert('No map loaded.'); return; }
+
+            const exportBtn = document.querySelector('[onclick="exportBranchMapperBundle()"]');
+            const originalHTML = exportBtn ? exportBtn.innerHTML : '';
+
+            try {
+                if (exportBtn) { exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Preparing...'; exportBtn.disabled = true; }
+                updateInfoPanel('Loading data for export...');
+
+                const { branches, oscrEvents } = await collectExportData();
+                if (branches.length === 0 && oscrEvents.length === 0) {
+                    alert('No data to export. Please load branch data or OSCR events first.');
+                    return;
                 }
 
-                const wsChanges = XLSX.utils.aoa_to_sheet([eventHeaders, ...eventRows]);
-                wsChanges['!cols'] = [
-                    { wch: 30 }, { wch: 10 }, { wch: 30 }, { wch: 12 }, { wch: 14 },
-                    { wch: 12 }, { wch: 14 }, { wch: 14 },
-                    { wch: 35 }, { wch: 18 }, { wch: 6 }, { wch: 10 }, { wch: 20 },
-                    { wch: 12 }, { wch: 12 }, { wch: 14 }, { wch: 12 },
-                    { wch: 25 }, { wch: 35 }, { wch: 18 }, { wch: 6 }, { wch: 10 },
-                    { wch: 12 }, { wch: 12 },
-                    { wch: 40 }, { wch: 20 }
-                ];
-                XLSX.utils.book_append_sheet(wb, wsChanges, 'Changes');
+                // 1. Capture map as JPG
+                updateInfoPanel('Capturing map image...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Capturing map...';
+                const mapBlob = await captureMapAsJPG();
 
-                // Write and download
-                XLSX.writeFile(wb, filename);
+                // 2. Generate CSV
+                updateInfoPanel('Building data files...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Building data...';
+                const csvContent = generateBranchCSV(branches);
 
-                console.log(`Export: ${uniqueBranches.length} branches, ${allEvents.length} OSCR events`);
-                updateInfoPanel(`Export complete! Downloaded ${filename}`);
+                // 3. Generate Markdown
+                const mdContent = generateAIMarkdown(branches);
+
+                // 4. Fetch methods PDF from server
+                updateInfoPanel('Generating methods PDF...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating PDF...';
+                const geographyName = getGeographyName();
+                const pdfResponse = await fetch(`${APP_BASE_URL}/export/methods-pdf?geography=${encodeURIComponent(geographyName)}`);
+                if (!pdfResponse.ok) throw new Error('Failed to generate methods PDF');
+                const pdfBlob = await pdfResponse.blob();
+
+                // 5. Assemble ZIP
+                updateInfoPanel('Creating download package...');
+                if (exportBtn) exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Zipping...';
+                const zip = new JSZip();
+
+                const safeName = geographyName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 80);
+                const dateStr = new Date().toISOString().split('T')[0];
+
+                zip.file(`BranchMapper_${safeName}_${dateStr}.jpg`, mapBlob);
+                zip.file(`BranchMapper_Methods_and_Definitions.pdf`, pdfBlob);
+                zip.file(`BranchMapper_${safeName}_BranchData_${dateStr}.csv`, csvContent);
+                zip.file(`BranchMapper_${safeName}_AI_Analysis_${dateStr}.md`, mdContent);
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+                // 6. Download
+                const link = document.createElement('a');
+                link.download = `BranchMapper_${safeName}_${dateStr}.zip`;
+                link.href = URL.createObjectURL(zipBlob);
+                link.click();
+                URL.revokeObjectURL(link.href);
+
+                console.log(`Export bundle: ${branches.length} branches, map JPG, methods PDF, CSV, AI markdown`);
+                updateInfoPanel(`Export complete! Downloaded ZIP with ${branches.length} branches.`);
 
             } catch (error) {
                 console.error('Export error:', error);
                 alert('Error exporting data: ' + error.message);
                 updateInfoPanel('Export failed. Please try again.');
+            } finally {
+                if (exportBtn) { exportBtn.innerHTML = originalHTML; exportBtn.disabled = false; }
             }
         }
+
+        // Legacy alias for backward compatibility
+        async function exportMapAndData() { return exportBranchMapperBundle(); }
         
         // Helper function to escape CSV values
         function escapeCSV(value) {
