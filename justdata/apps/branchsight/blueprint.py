@@ -14,6 +14,7 @@ import json
 import zipfile
 from datetime import datetime
 from pathlib import Path
+import math
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
@@ -21,6 +22,18 @@ from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID
 from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
 from .version import __version__
+
+def sanitize_for_json(obj):
+    """Recursively replace Infinity and NaN with None in nested dicts/lists.
+    Prevents JSON serialization errors from invalid float values."""
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_for_json(item) for item in obj]
+    elif isinstance(obj, float) and (math.isinf(obj) or math.isnan(obj)):
+        return None
+    return obj
+
 
 # Get shared templates directory
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
@@ -234,14 +247,15 @@ def report_data():
             if key == 'hhi_by_year':
                 serialized_data[key] = df if isinstance(df, list) else []
             elif hasattr(df, 'to_dict'):
-                df_clean = df.replace({np.nan: None})
+                df_clean = df.replace({np.nan: None, np.inf: None, -np.inf: None})
                 serialized_data[key] = df_clean.to_dict('records')
             else:
                 serialized_data[key] = df
 
         ai_insights = analysis_result.get('ai_insights', {})
 
-        return jsonify({
+        # Sanitize all data to prevent Infinity/NaN from reaching JSON serialization
+        response_data = sanitize_for_json({
             'success': True,
             'data': serialized_data,
             'metadata': {
@@ -249,6 +263,8 @@ def report_data():
                 'ai_insights': ai_insights
             }
         })
+
+        return jsonify(response_data)
 
     except Exception as e:
         return jsonify({

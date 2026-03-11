@@ -476,14 +476,25 @@ def create_trend_analysis(df: pd.DataFrame, years: List[int]) -> pd.DataFrame:
         'bank_name': 'nunique'
     }).reset_index()
     
-    # Calculate year-over-year changes
+    # Calculate year-over-year changes (guard against zero denominators producing Infinity)
     yearly_totals['Total Branches YoY %'] = yearly_totals['total_branches'].pct_change() * 100
     yearly_totals['LMI Branches YoY %'] = yearly_totals['lmict'].pct_change() * 100
     yearly_totals['Minority Branches YoY %'] = yearly_totals['mmct'].pct_change() * 100
-    
-    # Calculate percentages
-    yearly_totals['LMI %'] = (yearly_totals['lmict'] / yearly_totals['total_branches'] * 100).round(1)
-    yearly_totals['Minority %'] = (yearly_totals['mmct'] / yearly_totals['total_branches'] * 100).round(1)
+
+    # Replace inf/-inf with 0 (occurs when previous year value is 0)
+    yearly_totals = yearly_totals.replace([np.inf, -np.inf], 0)
+
+    # Calculate percentages (guard against zero total_branches)
+    yearly_totals['LMI %'] = np.where(
+        yearly_totals['total_branches'] > 0,
+        (yearly_totals['lmict'] / yearly_totals['total_branches'] * 100).round(1),
+        0.0
+    )
+    yearly_totals['Minority %'] = np.where(
+        yearly_totals['total_branches'] > 0,
+        (yearly_totals['mmct'] / yearly_totals['total_branches'] * 100).round(1),
+        0.0
+    )
     
     # Rename columns
     yearly_totals.columns = ['Year', 'Total Branches', 'LMI Branches', 'Minority Branches', 'Number of Banks', 
