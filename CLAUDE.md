@@ -23,25 +23,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Branch Strategy
 
 ```
-jad_test / jay_test  -->  test  -->  staging  -->  main
-         (1 approval)   (1 approval)  (2 approvals)
+feature/*, fix/*, refactor/*, chore/*  -->  staging  -->  main
+                                      (1 approval)  (2 approvals)
 ```
 
-- `jad_test` / `jay_test` -- developer branches, PR to `test` (1 approval)
-- `test` -- integration branch, PR to `staging` (1 approval)
+- Feature branches from `staging` using prefixes: `fix/`, `feature/`, `refactor/`, `chore/`
+- PR feature branch to `staging` (1 approval)
 - `staging` -- pre-production, auto-deploys `justdata-test` Cloud Run service, PR to `main` (2 approvals)
 - `main` -- production, auto-deploys `justdata` Cloud Run service
+- No persistent developer branches. Old `jay_test`, `jad_test`, `test` branches are retired.
 
 ## Recent Work (Feb 2026)
 
-### BranchMapper Overhaul (committed to `jay_test`)
+### BranchMapper Overhaul (merged to `staging`)
 - Census tract overlays using Mapbox tileset (`editengine.census-tracts`, 60,648 features)
 - Replaced ZIP export with multi-sheet XLSX export (Notes, Bank Branches, Changes sheets) via SheetJS
 - Export respects drawn polygon area filter and "Show All Banks" mode
 - Blueprint refactor, improved data_utils, census_tract_utils enhancements
 - BranchMapper logo added
 
-### FDIC OSCR History Client (committed to `jay_test`)
+### FDIC OSCR History Client (merged to `staging`)
 - New `justdata/apps/lenderprofile/services/fdic_client.py`
 - Supports branch events, merger events, name changes via `https://api.fdic.gov/banks/history`
 - Schema analysis documented in `justdata/apps/lenderprofile/FDIC_OSCR_SCHEMA_ANALYSIS.md`
