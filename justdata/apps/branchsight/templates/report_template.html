@@ -727,55 +727,9 @@
                 </p>
             </div>
             
-            <!-- Section 3: County by County Analysis (only shown for multiple counties) -->
-            <div class="report-section print-break" id="countyTableSection" style="display: none;">
-                <h2 class="section-title">Section 3: County by County Analysis</h2>
-                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Branch Distribution by County</h3>
-                <div style="display: flex; gap: 20px; align-items: flex-start;">
-                    <!-- Intro Text - 1/3 width -->
-                    <div style="flex: 0 0 33.333%;">
-                        <div class="ai-insight-card">
-                            <div class="ai-content" id="countyTableIntroduction">
-                                <!-- Introduction will be populated by JavaScript -->
-                            </div>
-                        </div>
-                        <p class="table-caption" id="countyTableCaption" style="margin-top: 15px;">
-                            <!-- Caption will be populated by JavaScript -->
-                        </p>
-                    </div>
-                    
-                    <!-- Table - 2/3 width -->
-                    <div style="flex: 0 0 66.667%;">
-                        <div class="table-container">
-                            <table class="data-table" id="countyTable">
-                                <thead>
-                                    <tr>
-                                        <th style="text-align: left;">County</th>
-                                        <th style="text-align: center;">Total Branches</th>
-                                        <th style="text-align: center;">LMI Only Branches</th>
-                                        <th style="text-align: center;">MMCT Only Branches</th>
-                                        <th style="text-align: center;">Both LMICT/MMCT Branches</th>
-                                        <th style="text-align: center;">Number of Banks</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Data will be populated by JavaScript -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-                <div class="table-narrative" id="countyTableNarrative">
-                    <!-- Narrative analysis will be populated by JavaScript -->
-                </div>
-                <p id="countyTableAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
-                    Above text is AI generated from NCRC data and analysis
-                </p>
-            </div>
-            
-            <!-- Section 4: Market Concentration (Added before Methods) -->
+            <!-- Section 3: Market Concentration -->
             <div class="report-section print-break" id="marketConcentrationSection" style="display: none;">
-                <h2 class="section-title">Section 4: Market Concentration</h2>
+                <h2 class="section-title">Section 3: Market Concentration</h2>
                 <div style="display: flex; gap: 20px; align-items: flex-start;">
                     <!-- Intro Text - 1/3 width -->
                     <div style="flex: 0 0 33.333%;">
@@ -963,7 +917,7 @@
             console.log('[DEBUG] data.summary[0]:', data && data.summary && data.summary.length > 0 ? JSON.stringify(data.summary[0]) : 'N/A');
             console.log('[DEBUG] data.by_bank:', data ? data.by_bank : 'N/A');
             console.log('[DEBUG] data.by_bank.length:', data && data.by_bank ? data.by_bank.length : 'N/A');
-            console.log('[DEBUG] data.by_county:', data ? data.by_county : 'N/A');
+            // by_county removed — single-county only app
             console.log('[DEBUG] data.raw_data:', data && data.raw_data ? `Array with ${data.raw_data.length} items` : 'N/A');
 
             // Hide loading state
@@ -1086,31 +1040,12 @@
                 } else {
                     console.warn('table2 narrative is missing or empty');
                 }
-                if (metadata.ai_insights.table_narratives.table3) {
-                    const narrativeEl = document.getElementById('countyTableNarrative');
-                    if (narrativeEl) {
-                        console.log('Populating table3 narrative:', metadata.ai_insights.table_narratives.table3.substring(0, 100));
-                        narrativeEl.innerHTML = formatMarkdownContent(metadata.ai_insights.table_narratives.table3);
-                        // Show AI caption
-                        const captionEl = document.getElementById('countyTableAICaption');
-                        if (captionEl) {
-                            captionEl.style.display = 'block';
-                        }
-                    } else {
-                        console.warn('countyTableNarrative element not found');
-                    }
-                } else {
-                    console.warn('table3 narrative is missing or empty');
-                }
+                // table3 (county) narrative removed — single-county only
             } else {
                 console.warn('No table narratives in ai_insights:', metadata.ai_insights);
             }
             
-            // Show county table only if multiple counties and data exists
-            if (metadata.counties && metadata.counties.length > 1 && data.by_county && data.by_county.length > 0) {
-                document.getElementById('countyTableSection').style.display = 'block';
-                populateTable('countyTable', data.by_county, metadata, 'table3');
-            }
+            // County table removed — single-county only app
             
             // Methods section is hardcoded in HTML (not populated by JavaScript)
         }
@@ -1181,9 +1116,6 @@
             summary += `which is compiled annually by the FDIC and maintained in NCRC's curated databases. `;
             
             summary += `The report presents data in tables showing yearly breakdowns, analysis by bank, `;
-            if (counties.length > 1) {
-                summary += `county-by-county comparisons, `;
-            }
             summary += `and includes the complete underlying dataset for verification and further analysis.`;
             
             // Populate the executive summary
@@ -1591,23 +1523,7 @@
                 }
             }
             
-            // Populate caption for countyTable
-            if (tableId === 'countyTable' && metadata) {
-                const caption = document.getElementById('countyTableCaption');
-                if (caption) {
-                    const years = metadata.years || [];
-                    const latestYear = years.length > 0 ? Math.max(...years) : '';
-                    const counties = metadata.counties || [];
-                    let captionText = '<strong>Source:</strong> FDIC Summary of Deposits';
-                    if (latestYear) {
-                        captionText += ` | <strong>Year:</strong> ${latestYear} (most recent year in report)`;
-                    }
-                    if (counties.length > 1) {
-                        captionText += ` | <strong>Counties:</strong> ${counties.join(', ')}`;
-                    }
-                    caption.innerHTML = captionText;
-                    }
-            }
+            // countyTable caption removed — single-county only app
         }
         
         // Market Concentration Chart and Table Population
@@ -2126,19 +2042,7 @@
                 section2Intro.innerHTML = intro;
             }
 
-            // Section 3: County by County Introduction (if multiple counties)
-            const section3Intro = document.getElementById('countyTableIntroduction');
-            if (section3Intro && counties.length > 1) {
-                let intro = `<p>This table compares branch distribution across the ${counties.length} counties included in this analysis. `;
-                intro += `Data shown reflects the most recent year (${endYear}) and includes branch counts `;
-                intro += `in LMI and majority-minority census tracts for each county.</p>`;
-                intro += `<p>Comparing branch presence across counties can help identify disparities in banking access `;
-                intro += `and highlight areas where communities may be underserved.</p>`;
-                section3Intro.innerHTML = intro;
-            }
-
-            // Section 4: Market Concentration Introduction is already hardcoded in HTML
-            // No changes needed there
+            // Section 3: Market Concentration Introduction is already hardcoded in HTML
         }
 
         // Update download links with job_id
