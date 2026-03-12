@@ -460,7 +460,7 @@ def _build_bank_table(bank_data, max_rows=20):
 
 
 # ---------------------------------------------------------------------------
-# Section 3: County-by-County Table (multi-county only)
+# County-by-County Table (unused — single-county only app)
 # ---------------------------------------------------------------------------
 def _build_county_table(county_data):
     """Build the county-by-county comparison table."""
@@ -721,39 +721,12 @@ def generate_branchsight_pdf(report_data, metadata, ai_insights=None):
         story.extend(_ai_narrative_block(s2_narrative))
 
     # ==================================================================
-    # SECTION 3: COUNTY-BY-COUNTY (multi-county only)
-    # ==================================================================
-    county_df = report_data.get('by_county')
-    county_rows = _df_to_dicts(county_df)
-    if len(county_rows) > 1:
-        s3_table, s3_has = _build_county_table(county_df)
-        if s3_has:
-            story.append(Spacer(1, 24))
-            story.append(KeepTogether([
-                _h1('Section 3: County by County Analysis'),
-                Paragraph(
-                    'Branch distribution across counties in the selected geography. '
-                    'Shows total branches, branch categories by census tract type, '
-                    'and number of unique bank networks present in each county.',
-                    _TABLE_INTRO,
-                ),
-            ]))
-            story.append(s3_table)
-            story.append(_caption('Source: FDIC Summary of Deposits'))
-
-        # Section 3 AI narrative
-        s3_narrative = table_narratives.get('table3', '')
-        if s3_narrative and isinstance(s3_narrative, str) and s3_narrative.strip():
-            story.append(Spacer(1, 6))
-            story.extend(_ai_narrative_block(s3_narrative))
-
-    # ==================================================================
-    # SECTION 4: MARKET CONCENTRATION (HHI)
+    # SECTION 3: MARKET CONCENTRATION (HHI)
     # ==================================================================
     hhi_by_year = report_data.get('hhi_by_year', [])
     if hhi_by_year:
         story.append(Spacer(1, 24))
-        story.append(_h1('Section 4: Market Concentration'))
+        story.append(_h1('Section 3: Market Concentration'))
 
         # HHI info box + chart side by side
         hhi_info_text = (

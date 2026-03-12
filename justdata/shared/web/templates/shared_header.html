@@ -1124,6 +1124,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return userType || 'public_anonymous';
     }
 
+    let _authRetryCount = 0;
+    const _authMaxRetries = 15;
+
     function setupAuthListener() {
         if (typeof JustDataAuth !== 'undefined' && JustDataAuth.onAuthStateChanged) {
             console.log('[NavMenu] JustDataAuth found, setting up listener');
@@ -1134,9 +1137,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     filterNavMenuByAccess(userType);
                 }
             });
+        } else if (_authRetryCount < _authMaxRetries) {
+            _authRetryCount++;
+            setTimeout(setupAuthListener, 500 * Math.min(_authRetryCount, 4));
         } else {
-            console.log('[NavMenu] JustDataAuth not ready, retrying...');
-            setTimeout(setupAuthListener, 500);
+            console.log('[NavMenu] JustDataAuth not available after max retries, using public_anonymous');
         }
     }
 

@@ -18,6 +18,10 @@ import math
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
+from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id, generate_cache_key
+
+# In-memory fallback for when BigQuery cache storage fails
+_result_fallback = {}
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID
 from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
@@ -171,7 +175,18 @@ def analyze():
         session['job_id'] = job_id
         session['selection_type'] = selection_type
 
+        cache_params = {
+            'counties': counties_list,
+            'years': years_list,
+            'selection_type': selection_type,
+            'state_code': state_code or '',
+            'metro_code': metro_code or '',
+        }
+        user_type = get_user_type()
+
         def run_job():
+            import time as time_module
+            start_time = time_module.time()
             try:
                 result = run_analysis(';'.join(counties_list), ','.join(map(str, years_list)), job_id, progress_tracker,
                                        selection_type, state_code, metro_code)
@@ -181,11 +196,31 @@ def analyze():
                     progress_tracker.update_progress('error', error_msg)
                     return
 
-                # Store the analysis results
-                store_analysis_result(job_id, result)
-
-                # Mark analysis as completed
-                progress_tracker.complete(success=True)
+                # Store in BigQuery cache (survives across Cloud Run instances)
+                try:
+                    cache_metadata = {
+                        'counties': counties_list,
+                        'years': years_list,
+                        'duration_seconds': time_module.time() - start_time,
+                        'total_records': result.get('metadata', {}).get('total_records', 0) if isinstance(result.get('metadata'), dict) else 0,
+                        'generated_at': datetime.now().isoformat()
+                    }
+                    store_cached_result(
+                        app_name='branchsight',
+                        params=cache_params,
+                        job_id=job_id,
+                        result_data=result,
+                        user_type=user_type,
+                        metadata=cache_metadata
+                    )
+                    progress_tracker.complete(success=True)
+                except Exception as cache_error:
+                    print(f"WARNING: Failed to store in BigQuery cache: {cache_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Fall back to in-memory storage so user can still see results
+                    _result_fallback[job_id] = result
+                    progress_tracker.complete(success=True)
 
             except Exception as e:
                 error_msg = str(e)
@@ -232,25 +267,44 @@ def report_data():
         if not job_id:
             return jsonify({'error': 'No analysis session found'}), 404
 
-        analysis_result = get_analysis_result(job_id)
+        # Try BigQuery cache first (works across Cloud Run instances)
+        analysis_result = get_analysis_result_by_job_id(job_id)
+
+        # Fall back to in-memory if BigQuery doesn't have it
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.pop(job_id)
+            print(f"[INFO] Using in-memory fallback for job_id={job_id}")
+
         if not analysis_result:
+            # Check if analysis is still running
+            progress = get_progress(job_id)
+            if not progress.get('done', False):
+                response = jsonify({
+                    'success': False,
+                    'error': 'Analysis still in progress',
+                    'progress': progress
+                })
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                return response, 202
+
             return jsonify({'error': 'No analysis data found'}), 404
 
-        # Convert pandas DataFrames to JSON-serializable format
-        report_data = analysis_result.get('report_data', {})
-        serialized_data = {}
-
+        # Data from BigQuery is already serialized (no DataFrames)
+        # Data from in-memory fallback may have DataFrames
         import numpy as np
         import pandas as pd
 
-        for key, df in report_data.items():
+        report_data = analysis_result.get('report_data', {})
+        serialized_data = {}
+
+        for key, val in report_data.items():
             if key == 'hhi_by_year':
-                serialized_data[key] = df if isinstance(df, list) else []
-            elif hasattr(df, 'to_dict'):
-                df_clean = df.replace({np.nan: None, np.inf: None, -np.inf: None})
+                serialized_data[key] = val if isinstance(val, list) else []
+            elif hasattr(val, 'to_dict'):
+                df_clean = val.replace({np.nan: None, np.inf: None, -np.inf: None})
                 serialized_data[key] = df_clean.to_dict('records')
             else:
-                serialized_data[key] = df
+                serialized_data[key] = val
 
         ai_insights = analysis_result.get('ai_insights', {})
 
@@ -264,9 +318,13 @@ def report_data():
             }
         })
 
-        return jsonify(response_data)
+        response = jsonify(response_data)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': f'Failed to retrieve report data: {str(e)}'
@@ -284,7 +342,9 @@ def download():
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400
 
-        analysis_result = get_analysis_result(job_id)
+        analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.get(job_id)
         if not analysis_result:
             return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 400
 
