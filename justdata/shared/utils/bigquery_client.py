@@ -30,6 +30,7 @@ VALID_APP_NAMES = [
     'LENDERPROFILE',
     'ANALYTICS',
     'ELECTWATCH',
+    'HUBSPOT',
 ]
 
 

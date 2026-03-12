@@ -1,0 +1,30 @@
+# Dockerfile for HubSpot Daily Sync Job
+# Runs as a Cloud Run Job triggered by Cloud Scheduler (daily)
+
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+ENV PYTHONDONTWRITEBYTECODE=1
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    libpq-dev \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+RUN useradd --create-home --shell /bin/bash app && \
+    chown -R app:app /app
+USER app
+
+CMD ["python", "-c", "from justdata.apps.hubspot.daily_sync import HubSpotDailySync; HubSpotDailySync().run()"]

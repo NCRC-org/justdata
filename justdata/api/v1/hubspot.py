@@ -14,11 +14,7 @@ from justdata.apps.hubspot.services import HubSpotService
 from justdata.apps.hubspot.sync import HubSpotSyncManager
 from justdata.apps.hubspot.tracking import UserActivityTracker
 from justdata.apps.hubspot.lists import HubSpotListsClient
-from justdata.apps.hubspot.models import (
-    HubSpotContact,
-    HubSpotCompany,
-    HubSpotDeal
-)
+from justdata.apps.hubspot.models import HubSpotContact, HubSpotCompany
 
 logger = structlog.get_logger(__name__)
 
@@ -45,28 +41,12 @@ class BatchContactSyncRequest(BaseModel):
     batch_size: int = 100
 
 
-class ReportRecipientsRequest(BaseModel):
-    """Request model for syncing report recipients."""
-    report_id: str
-    recipients: List[Dict[str, str]]
-    report_type: str = "branchsight"
-
-
 class EngagementTrackingRequest(BaseModel):
     """Request model for tracking engagement."""
     contact_id: str
     report_name: str
     report_type: str
     engagement_type: str = "opened"
-
-
-class DealCreateRequest(BaseModel):
-    """Request model for creating a deal."""
-    deal_name: str
-    amount: float
-    analysis_type: str
-    company_id: Optional[str] = None
-    contact_id: Optional[str] = None
 
 
 class UserSignInRequest(BaseModel):
@@ -154,7 +134,8 @@ async def create_contact(contact: HubSpotContact) -> Dict[str, Any]:
     """
     try:
         client = HubSpotClient()
-        created = await client.create_contact(contact)
+        properties = contact.model_dump(exclude_none=True, exclude={"id", "created_at", "updated_at"})
+        created = await client.create_contact(properties)
         return created
     except Exception as e:
         logger.error("Failed to create contact", error=str(e))
@@ -262,7 +243,8 @@ async def create_company(company: HubSpotCompany) -> Dict[str, Any]:
     """
     try:
         client = HubSpotClient()
-        created = await client.create_company(company)
+        properties = company.model_dump(exclude_none=True, exclude={"id", "created_at", "updated_at"})
+        created = await client.create_company(properties)
         return created
     except Exception as e:
         logger.error("Failed to create company", error=str(e))
@@ -330,33 +312,6 @@ async def sync_contacts_batch(request: BatchContactSyncRequest) -> Dict[str, Any
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Failed to batch sync: {str(e)}"
-        )
-
-
-@router.post("/sync/report-recipients")
-async def sync_report_recipients(request: ReportRecipientsRequest) -> Dict[str, Any]:
-    """
-    Sync report recipients to HubSpot.
-    
-    Args:
-        request: Report recipients request
-        
-    Returns:
-        Sync results
-    """
-    try:
-        sync_manager = HubSpotSyncManager()
-        results = await sync_manager.sync_report_recipients(
-            report_id=request.report_id,
-            recipients=request.recipients,
-            report_type=request.report_type
-        )
-        return results
-    except Exception as e:
-        logger.error("Failed to sync report recipients", error=str(e))
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Failed to sync recipients: {str(e)}"
         )
 
 
