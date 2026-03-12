@@ -900,11 +900,27 @@
     </div>
     
     <script>
+        // Get job_id from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const jobId = urlParams.get('job_id');
+
         // Load and display report data
-        async function loadReportData() {
+        async function loadReportData(retryCount = 0) {
+            const maxRetries = 10;
+            const retryDelay = 1000;
             try {
                 const baseUrl = window.APP_BASE_URL || '/branchsight';
-                const response = await fetch(`${baseUrl}/report-data`);
+                const cacheBuster = new Date().getTime();
+                let url = `${baseUrl}/report-data?_t=${cacheBuster}`;
+                if (jobId) url += `&job_id=${jobId}`;
+                const response = await fetch(url);
+
+                if (response.status === 404 && retryCount < maxRetries) {
+                    console.log(`Data not yet available, retrying in ${retryDelay}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                    setTimeout(() => loadReportData(retryCount + 1), retryDelay);
+                    return;
+                }
+
                 const result = await response.json();
 
                 if (!result.success) {
@@ -919,6 +935,11 @@
                 }
 
             } catch (error) {
+                if (retryCount < maxRetries) {
+                    console.log(`Error loading report, retrying... (attempt ${retryCount + 1}/${maxRetries})`);
+                    setTimeout(() => loadReportData(retryCount + 1), retryDelay);
+                    return;
+                }
                 console.error('Error loading report:', error);
 
                 // Signal error to interstitial
@@ -2120,8 +2141,22 @@
             // No changes needed there
         }
 
+        // Update download links with job_id
+        function updateDownloadLinks() {
+            if (jobId) {
+                const baseUrl = window.APP_BASE_URL || '/branchsight';
+                const pdfBtn = document.getElementById('downloadPdfBtn');
+                const excelBtn = document.getElementById('downloadExcelBtn');
+                if (pdfBtn) pdfBtn.href = `${baseUrl}/download?format=pdf&job_id=${jobId}`;
+                if (excelBtn) excelBtn.href = `${baseUrl}/download?format=excel&job_id=${jobId}`;
+            }
+        }
+
         // Load report data when page loads
-        document.addEventListener('DOMContentLoaded', loadReportData);
+        document.addEventListener('DOMContentLoaded', function() {
+            updateDownloadLinks();
+            loadReportData();
+        });
     </script>
     
     <!-- Shared Footer -->
