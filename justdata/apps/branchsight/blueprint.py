@@ -363,7 +363,7 @@ def download():
         elif format_type == 'pdf':
             return download_pdf(report_data, metadata, analysis_result)
         elif format_type == 'zip':
-            return download_zip(report_data, metadata)
+            return download_zip(report_data, metadata, analysis_result)
         else:
             return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel, csv, json, zip'}), 400
 
@@ -582,46 +582,42 @@ def download_json(report_data, metadata):
         return jsonify({'error': f'JSON export failed: {str(e)}'}), 500
 
 
-def download_zip(report_data, metadata):
-    """Download ZIP file with multiple formats"""
+def download_zip(report_data, metadata, analysis_result=None):
+    """Download ZIP file with PDF and Excel"""
     try:
-        import numpy as np
-
         with tempfile.TemporaryDirectory() as temp_dir:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            counties = metadata.get('counties', [])
+            county_slug = str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
+
             zip_path = os.path.join(temp_dir, 'branchsight_reports.zip')
 
-            with zipfile.ZipFile(zip_path, 'w') as zipf:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 # Generate and add Excel file
-                excel_path = os.path.join(temp_dir, 'fdic_branch_analysis.xlsx')
+                excel_path = os.path.join(temp_dir, 'branchsight_analysis.xlsx')
                 from justdata.shared.reporting.report_builder import save_excel_report
                 save_excel_report(report_data, excel_path, metadata=metadata)
                 _add_methods_sheet(excel_path, metadata)
+                xlsx_filename = f'BranchSight_{county_slug}_{timestamp}.xlsx'
                 if os.path.exists(excel_path):
-                    zipf.write(excel_path, 'fdic_branch_analysis.xlsx')
+                    zipf.write(excel_path, xlsx_filename)
 
-                # Add JSON file
-                json_data = {}
-                for key, df in report_data.items():
-                    if hasattr(df, 'to_dict'):
-                        df_clean = df.replace({np.nan: None})
-                        json_data[key] = df_clean.to_dict('records')
-                    else:
-                        json_data[key] = df
-
-                json_content = json.dumps({
-                    'metadata': metadata,
-                    'data': json_data
-                }, indent=2)
-                zipf.writestr('analysis_data.json', json_content)
+                # Generate and add PDF file
+                from justdata.apps.branchsight.pdf_report import generate_branchsight_pdf
+                ai_insights = analysis_result.get('ai_insights', {}) if analysis_result else {}
+                pdf_buf = generate_branchsight_pdf(report_data, metadata, ai_insights)
+                pdf_filename = f'BranchSight_{county_slug}_{timestamp}.pdf'
+                zipf.writestr(pdf_filename, pdf_buf.getvalue())
 
             with open(zip_path, 'rb') as f:
                 zip_content = f.read()
 
+            zip_filename = f'BranchSight_{county_slug}_{timestamp}.zip'
             return Response(
                 zip_content,
                 mimetype='application/zip',
                 headers={
-                    'Content-Disposition': f'attachment; filename=branchsight_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+                    'Content-Disposition': f'attachment; filename={zip_filename}'
                 }
             )
     except Exception as e:
