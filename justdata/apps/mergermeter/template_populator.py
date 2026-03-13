@@ -15,6 +15,28 @@ from typing import Dict, Optional, List, Tuple
 import re
 from justdata.apps.mergermeter.config import PROJECT_ID
 
+# State FIPS code to state name mapping (used for "Rural [State]" labels on CBSA 99999)
+STATE_FIPS_TO_NAME = {
+    '01': 'Alabama', '02': 'Alaska', '04': 'Arizona', '05': 'Arkansas',
+    '06': 'California', '08': 'Colorado', '09': 'Connecticut', '10': 'Delaware',
+    '11': 'District of Columbia', '12': 'Florida', '13': 'Georgia', '15': 'Hawaii',
+    '16': 'Idaho', '17': 'Illinois', '18': 'Indiana', '19': 'Iowa',
+    '20': 'Kansas', '21': 'Kentucky', '22': 'Louisiana', '23': 'Maine',
+    '24': 'Maryland', '25': 'Massachusetts', '26': 'Michigan', '27': 'Minnesota',
+    '28': 'Mississippi', '29': 'Missouri', '30': 'Montana', '31': 'Nebraska',
+    '32': 'Nevada', '33': 'New Hampshire', '34': 'New Jersey', '35': 'New Mexico',
+    '36': 'New York', '37': 'North Carolina', '38': 'North Dakota', '39': 'Ohio',
+    '40': 'Oklahoma', '41': 'Oregon', '42': 'Pennsylvania', '44': 'Rhode Island',
+    '45': 'South Carolina', '46': 'South Dakota', '47': 'Tennessee', '48': 'Texas',
+    '49': 'Utah', '50': 'Vermont', '51': 'Virginia', '53': 'Washington',
+    '54': 'West Virginia', '55': 'Wisconsin', '56': 'Wyoming',
+    '60': 'American Samoa', '66': 'Guam', '69': 'Northern Mariana Islands',
+    '72': 'Puerto Rico', '78': 'U.S. Virgin Islands',
+}
+
+# Reverse mapping: state name -> FIPS code
+_STATE_NAME_TO_FIPS = {v: k for k, v in STATE_FIPS_TO_NAME.items()}
+
 
 def populate_template_from_file(
     template_path: Path,
@@ -1057,7 +1079,11 @@ def _get_cbsa_name_from_code(cbsa_code: str, client=None) -> str:
     """Get CBSA name from CBSA code using BigQuery."""
     if not cbsa_code or cbsa_code == 'N/A' or 'non-msa' in str(cbsa_code).lower():
         return str(cbsa_code)  # Return as-is for Non-MSA
-    
+
+    # CBSA 99999 = FFIEC non-metro/rural designation
+    if str(cbsa_code).strip() == '99999':
+        return 'Non-Metro Area'
+
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 
@@ -1080,9 +1106,13 @@ def _get_cbsa_name_from_code(cbsa_code: str, client=None) -> str:
 
 
 def _group_by_cbsa(data: pd.DataFrame, assessment_areas: Optional[Dict]) -> Dict[str, pd.DataFrame]:
-    """Group data by CBSA name, converting codes to names."""
+    """Group data by CBSA name, converting codes to names.
+
+    For CBSA 99999 (non-metro/rural), splits by state_code so each state
+    gets its own "Rural [State Name]" group instead of one lumped "CBSA 99999".
+    """
     groups = {}
-    
+
     # Get BigQuery client for CBSA name lookups
     from justdata.shared.utils.bigquery_client import get_bigquery_client
     client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
@@ -1094,11 +1124,29 @@ def _group_by_cbsa(data: pd.DataFrame, assessment_areas: Optional[Dict]) -> Dict
                 cbsa_name = _get_cbsa_name_from_code(str(cbsa_name), client)
             groups[cbsa_name] = group
     elif 'cbsa_code' in data.columns:
-        for cbsa_code, group in data.groupby('cbsa_code'):
-            # Convert code to name
-            cbsa_name = _get_cbsa_name_from_code(str(cbsa_code), client)
-            groups[cbsa_name] = group
-    
+        has_state = 'state_code' in data.columns
+
+        # Separate rural (99999) from metro rows
+        rural_mask = data['cbsa_code'].astype(str) == '99999'
+        non_rural = data[~rural_mask]
+        rural = data[rural_mask]
+
+        # Group non-rural rows by cbsa_code as before
+        if not non_rural.empty:
+            for cbsa_code, group in non_rural.groupby('cbsa_code'):
+                cbsa_name = _get_cbsa_name_from_code(str(cbsa_code), client)
+                groups[cbsa_name] = group
+
+        # Group rural rows by state_code → "Rural [State Name]"
+        if not rural.empty and has_state:
+            for state_code, group in rural.groupby('state_code'):
+                fips = str(state_code).zfill(2)
+                state_name = STATE_FIPS_TO_NAME.get(fips, f'State {fips}')
+                groups[f'Rural {state_name}'] = group
+        elif not rural.empty:
+            # Fallback when no state_code column
+            groups['Non-Metro Area'] = rural
+
     return groups
 
 
@@ -1122,10 +1170,26 @@ def _group_sb_by_assessment_area(data: pd.DataFrame) -> Dict[str, pd.DataFrame]:
 
 
 def _match_cbsa_in_data(data: pd.DataFrame, cbsa_name: str) -> pd.DataFrame:
-    """Find matching CBSA data in peer data."""
+    """Find matching CBSA data in peer data.
+
+    Handles "Rural [State]" names by filtering cbsa_code=='99999' + state_code.
+    """
+    if data.empty:
+        return pd.DataFrame()
+
     if 'cbsa_name' in data.columns:
         return data[data['cbsa_name'] == cbsa_name]
     elif 'cbsa_code' in data.columns:
+        # Handle "Rural [State Name]" → filter by cbsa_code 99999 + state FIPS
+        if cbsa_name.startswith('Rural ') and 'state_code' in data.columns:
+            state_name = cbsa_name[6:]  # strip "Rural " prefix
+            state_fips = _STATE_NAME_TO_FIPS.get(state_name)
+            if state_fips:
+                return data[
+                    (data['cbsa_code'].astype(str) == '99999') &
+                    (data['state_code'].astype(str).str.zfill(2) == state_fips)
+                ]
+            return pd.DataFrame()
         return data[data['cbsa_code'] == cbsa_name]
     return pd.DataFrame()
 

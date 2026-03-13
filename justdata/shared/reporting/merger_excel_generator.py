@@ -1177,7 +1177,11 @@ def _get_cbsa_name(group_data: pd.DataFrame) -> str:
         if cbsa_name and str(cbsa_name).lower() not in ['nan', 'none', '']:
             return str(cbsa_name).strip()
     if 'cbsa_code' in group_data.columns and not group_data.empty:
-        return f"CBSA {group_data['cbsa_code'].iloc[0]}"
+        code = str(group_data['cbsa_code'].iloc[0])
+        # CBSA 99999 = non-metro/rural (should have been split by state in transformer)
+        if code == '99999' or code.startswith('99999_'):
+            return "Non-Metro Area"
+        return f"CBSA {code}"
     return "Unknown CBSA"
 
 
