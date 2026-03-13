@@ -371,8 +371,8 @@ class BaseReportApp(ABC):
         elif metadata.get('state_name'):
             parts.append(metadata['state_name'].replace(' ', '_'))
 
-        # Add date
-        parts.append(datetime.now().strftime('%Y%m%d'))
+        # Add date and time
+        parts.append(datetime.now().strftime('%Y%m%d_%H%M%S'))
 
         return '_'.join(parts) + extension
 
