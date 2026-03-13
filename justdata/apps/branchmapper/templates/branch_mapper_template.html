@@ -1876,6 +1876,54 @@
                 const modeLabel = currentViewMode === 'sod' ? 'SOD June 30, 2025' : 'FDIC structural changes';
                 ctx.innerHTML = `<p style="margin: 0; color: #333; line-height: 1.4; font-size: 0.8rem;"><i class="fas fa-info-circle"></i> ${bankList} &mdash; ${modeLabel}</p>`;
             }
+            updateMapLegend();
+        }
+
+        function updateMapLegend() {
+            const mapLegend = document.getElementById('mapOverlayLegend');
+            if (!mapLegend) return;
+
+            // Build branch symbols section
+            let branchHtml = '';
+            const hasBranches = selectedBanks.length > 0 || showAllBanksActive;
+            if (hasBranches) {
+                branchHtml += '<div style="margin-bottom: 6px; padding-bottom: 5px; border-bottom: 1px solid #ddd;">';
+                branchHtml += '<strong>Branches</strong>';
+                if (showAllBanksActive && selectedBanks.length === 0) {
+                    branchHtml += '<div class="legend-item"><span class="legend-swatch" style="background:#333; border-radius: 50%;"></span> All bank branches</div>';
+                } else {
+                    selectedBanks.forEach(b => {
+                        branchHtml += `<div class="legend-item"><span class="legend-swatch" style="background:${b.color}; border-radius: 50%;"></span> ${b.name}</div>`;
+                    });
+                }
+                branchHtml += '</div>';
+            }
+
+            // Get current census overlay content (if any)
+            const activeBtn = document.querySelector('.tract-btn.active');
+            const censusType = activeBtn ? activeBtn.dataset.census : 'off';
+
+            let censusHtml = '';
+            if (censusType === 'income') {
+                censusHtml += '<strong>Income Levels</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#333333"></span> Low (\u226450%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Moderate (\u226480%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
+            } else if (censusType === 'minority') {
+                censusHtml += '<strong>Minority Population</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#1a1a1a"></span> Q4 (Highest 25%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Q3 (50\u201375%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Q2 (25\u201350%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Q1 (Lowest 25%)</div>';
+            }
+
+            if (branchHtml || censusHtml) {
+                mapLegend.innerHTML = branchHtml + censusHtml;
+                mapLegend.style.display = 'block';
+            } else {
+                mapLegend.style.display = 'none';
+            }
         }
 
         function setCensusOverlay(type) {
@@ -1901,11 +1949,10 @@
             if (column2IncomeLegend) column2IncomeLegend.style.display = 'none';
             if (column2MinorityLegend) column2MinorityLegend.style.display = 'none';
 
-            // Hide map overlay legend
-            const mapLegend = document.getElementById('mapOverlayLegend');
-            if (mapLegend) mapLegend.style.display = 'none';
-
-            if (type === 'off') return;
+            if (type === 'off') {
+                updateMapLegend();
+                return;
+            }
 
             // Move census layers below labels/roads (first symbol layer)
             const firstSymbol = findFirstSymbolLayer();
@@ -1920,14 +1967,6 @@
                 incomeLayerVisible = true;
                 if (column2Legend) column2Legend.style.display = 'block';
                 if (column2IncomeLegend) column2IncomeLegend.style.display = 'block';
-                if (mapLegend) {
-                    mapLegend.innerHTML = '<strong>Income Levels</strong>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#333333"></span> Low (\u226450%)</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Moderate (\u226480%)</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
-                    mapLegend.style.display = 'block';
-                }
             } else if (type === 'minority') {
                 if (firstSymbol) {
                     branchMap.moveLayer('census-minority-fill', firstSymbol);
@@ -1938,15 +1977,9 @@
                 minorityLayerVisible = true;
                 if (column2Legend) column2Legend.style.display = 'block';
                 if (column2MinorityLegend) column2MinorityLegend.style.display = 'block';
-                if (mapLegend) {
-                    mapLegend.innerHTML = '<strong>Minority Population</strong>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#1a1a1a"></span> Q4 (Highest 25%)</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Q3 (50\u201375%)</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Q2 (25\u201350%)</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Q1 (Lowest 25%)</div>';
-                    mapLegend.style.display = 'block';
-                }
             }
+
+            updateMapLegend();
         }
 
         // ── Draw Area Functions ──
@@ -3874,7 +3907,7 @@
 
             let mapDataUrl;
             try {
-                mapDataUrl = mapCanvas.toDataURL('image/jpeg', 0.92);
+                mapDataUrl = mapCanvas.toDataURL('image/jpeg', 0.95);
             } catch (e) {
                 console.error('Canvas capture failed:', e);
                 throw new Error('Map capture failed. Please try again.');
@@ -3884,11 +3917,12 @@
             const width = container.offsetWidth;
             const height = container.offsetHeight;
 
+            const scale = 3;  // 3x resolution for crisp presentation output
             const composite = document.createElement('canvas');
-            composite.width = width * 2;
-            composite.height = height * 2;
+            composite.width = width * scale;
+            composite.height = height * scale;
             const ctx = composite.getContext('2d');
-            ctx.scale(2, 2);
+            ctx.scale(scale, scale);
 
             // Draw the map
             const mapImg = new Image();
@@ -3901,7 +3935,7 @@
             if (markerOverlay) {
                 try {
                     const overlayCanvas = await html2canvas(markerOverlay, {
-                        backgroundColor: null, scale: 1, logging: false, useCORS: true, width, height
+                        backgroundColor: null, scale: scale, logging: false, useCORS: true, width, height
                     });
                     ctx.drawImage(overlayCanvas, 0, 0, width, height);
                 } catch (e) {
@@ -3915,7 +3949,7 @@
                 if (el && el.offsetParent !== null) {
                     try {
                         const elCanvas = await html2canvas(el, {
-                            backgroundColor: null, scale: 2, logging: false, useCORS: true
+                            backgroundColor: null, scale: scale, logging: false, useCORS: true
                         });
                         const rect = el.getBoundingClientRect();
                         const containerRect = mapContainer.getBoundingClientRect();
@@ -3940,7 +3974,7 @@
             ctx.fillText(dateStr, width - dateWidth - 12, height - 12);
 
             return new Promise(resolve => {
-                composite.toBlob(blob => resolve(blob), 'image/jpeg', 0.92);
+                composite.toBlob(blob => resolve(blob), 'image/jpeg', 0.95);
             });
         }
 
@@ -3992,8 +4026,35 @@
             const sorted = Object.entries(instCounts).sort((a, b) => b[1] - a[1]);
 
             const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const selectedBankNames = selectedBanks.length > 0
+                ? selectedBanks.map(b => b.name).join(' and ')
+                : 'All Banks';
 
-            let md = `# BranchMapper data export: ${geography}\n\n`;
+            // AI instructions and NCRC style guide at the top
+            let md = `## Instructions for AI analysis\n\n`;
+            md += `You are analyzing bank branch data for ${selectedBankNames} from the FDIC Summary of Deposits. `;
+            md += `This data was exported from NCRC's BranchMapper tool on ${dateStr}.\n\n`;
+            md += `Please provide a plain-language analysis covering:\n\n`;
+            md += `1. **Market structure:** Which institutions dominate this market? How concentrated is branch presence? Is this a competitive market or dominated by a few large banks?\n`;
+            md += `2. **Community access:** If LMI tract data is available, are low and moderate income communities adequately served by bank branches? Are there potential "banking deserts" where branch access is limited?\n`;
+            md += `3. **Deposit concentration:** How are deposits distributed across institutions? Does any single institution hold a disproportionate share?\n`;
+            md += `4. **Notable patterns:** Are there any geographic clusters, institutional patterns or access gaps worth highlighting?\n\n`;
+            md += `### Writing style requirements\n\n`;
+            md += `Follow these NCRC editorial standards:\n\n`;
+            md += `- **Tone:** Purely descriptive and factual. No causal claims, no policy recommendations in findings, no speculation.\n`;
+            md += `- **Language:** Use "demonstrates," "reveals," "indicates," "shows" \u2014 never "proves."\n`;
+            md += `- **Disparities:** Present findings as "disparities" or "gaps" rather than "discrimination." Note "underperformance" rather than "exclusion."\n`;
+            md += `- **Intent:** Acknowledge patterns without attributing intent. Describe patterns as "requiring attention" rather than "violations."\n`;
+            md += `- **Hedging:** Do not use "Research shows" as an opener. Note that this data represents a single point in time and may not capture recent changes.\n`;
+            md += `- **Numbers:** Format percentages as ##.#%. Format integers with commas. Spell out one through nine, use figures for 10 and above.\n`;
+            md += `- **Geography:** State names spelled out, not abbreviated (exception: Washington, DC).\n`;
+            md += `- **Race/ethnicity:** Capitalize racial and ethnic descriptors: Black, White, Hispanic, Asian, Indigenous. No hyphens in compound descriptors (e.g., "African American" not "African-American").\n`;
+            md += `- **No Oxford comma** unless needed for clarity.\n`;
+            md += `- **No em-dashes** \u2014 use commas, semicolons, or restructure the sentence.\n\n`;
+            md += `---\n\n`;
+
+            // Data sections
+            md += `# BranchMapper data export: ${geography}\n\n`;
             md += `**Exported:** ${dateStr}\n`;
             md += `**Source:** FDIC Summary of Deposits, compiled by NCRC JustData\n\n`;
 
@@ -4043,18 +4104,6 @@
             if (branches.length > 200) {
                 md += `\n*Showing first 200 of ${branches.length} branches. Full data available in the CSV file.*\n`;
             }
-
-            md += `\n---\n\n`;
-            md += `## Instructions for AI analysis\n\n`;
-            md += `You are analyzing bank branch data for ${geography} from the FDIC Summary of Deposits. `;
-            md += `This data was exported from NCRC's BranchMapper tool on ${dateStr}.\n\n`;
-            md += `Please provide a plain-language analysis covering:\n\n`;
-            md += `1. **Market structure:** Which institutions dominate this market? How concentrated is branch presence? Is this a competitive market or dominated by a few large banks?\n`;
-            md += `2. **Community access:** If LMI tract data is available, are low and moderate income communities adequately served by bank branches? Are there potential "banking deserts" where branch access is limited?\n`;
-            md += `3. **Deposit concentration:** How are deposits distributed across institutions? Does any single institution hold a disproportionate share?\n`;
-            md += `4. **Notable patterns:** Are there any geographic clusters, institutional patterns or access gaps worth highlighting?\n\n`;
-            md += `Keep the analysis factual and descriptive. Use phrases like "the data indicates" or "the distribution shows" rather than making causal claims. `;
-            md += `Present disparities as "gaps" rather than "discrimination." Note that this data represents a single point in time and may not capture recent changes.\n`;
 
             return md;
         }
