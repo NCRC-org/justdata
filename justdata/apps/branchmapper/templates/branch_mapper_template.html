@@ -1000,6 +1000,7 @@
         // Geocoder state
         let geocoder = null;
         let geocoderBoundarySourceId = null;
+        let geocoderBoundaryPolygon = null;  // Turf-compatible GeoJSON for clipping
 
         // Draw area state
         let drawControl = null;
@@ -1349,8 +1350,9 @@
                 if (typeof lng === 'string') lng = parseFloat(lng);
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
-                // Apply draw filter if active
-                if (activeDrawFilter && !turf.booleanPointInPolygon(turf.point([lng, lat]), activeDrawFilter)) return;
+                // Apply draw filter if active, otherwise clip to geocoder boundary
+                const clipPolygon = activeDrawFilter || geocoderBoundaryPolygon;
+                if (clipPolygon && !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon)) return;
 
                 const branchId = `${branch.uninumbr || ''}_${lat}_${lng}`;
                 window.branchDataMap[branchId] = branch;
@@ -1441,11 +1443,12 @@
 
             let validEvents = filtered.filter(e => e.latitude && e.longitude);
 
-            // Apply draw filter if active
-            if (activeDrawFilter) {
+            // Clip to draw filter or geocoder boundary
+            const clipPolygon1 = activeDrawFilter || geocoderBoundaryPolygon;
+            if (clipPolygon1) {
                 validEvents = validEvents.filter(e => {
                     const lat = parseFloat(e.latitude), lng = parseFloat(e.longitude);
-                    return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), activeDrawFilter);
+                    return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon1);
                 });
             }
 
@@ -1643,8 +1646,9 @@
                 if (typeof lng === 'string') lng = parseFloat(lng);
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
-                // Apply draw filter if active
-                if (activeDrawFilter && !turf.booleanPointInPolygon(turf.point([lng, lat]), activeDrawFilter)) return;
+                // Apply draw filter if active, otherwise clip to geocoder boundary
+                const clipPolygon = activeDrawFilter || geocoderBoundaryPolygon;
+                if (clipPolygon && !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon)) return;
 
                 const branchId = `gray_${branch.uninumbr || ''}_${lat}_${lng}`;
                 window.branchDataMap[branchId] = branch;
@@ -1730,10 +1734,11 @@
                 if (event.display_type === 'opening' && !showOpenings) return;
                 if (event.display_type === 'closing' && !showClosings) return;
 
-                // Apply draw filter if active
-                if (activeDrawFilter) {
+                // Clip to draw filter or geocoder boundary
+                const clipPolygon2 = activeDrawFilter || geocoderBoundaryPolygon;
+                if (clipPolygon2) {
                     const lat = parseFloat(event.latitude), lng = parseFloat(event.longitude);
-                    if (isNaN(lat) || isNaN(lng) || !turf.booleanPointInPolygon(turf.point([lng, lat]), activeDrawFilter)) return;
+                    if (isNaN(lat) || isNaN(lng) || !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon2)) return;
                 }
 
                 const el = document.createElement('div');
@@ -2783,6 +2788,7 @@
                 branchMap.removeSource(geocoderBoundarySourceId);
             }
             geocoderBoundarySourceId = null;
+            geocoderBoundaryPolygon = null;
         }
 
         // Handle geocoder search result — zoom to area and show boundary
@@ -2996,6 +3002,7 @@
             clearGeocoderBoundary();
             const sourceId = 'geocoder-boundary';
             geocoderBoundarySourceId = sourceId;
+            geocoderBoundaryPolygon = geojson;
 
             branchMap.addSource(sourceId, { type: 'geojson', data: geojson });
 
@@ -3997,8 +4004,9 @@
             selectedBanks.forEach(b => { allBranches.push(...b.branches); allOscrEvents.push(...b.oscrEvents); });
             if (showAllBanksActive) { allBranches.push(...allBanksBranches); allOscrEvents.push(...allBanksOscrData); }
 
-            if (activeDrawFilter) {
-                const polyGeom = activeDrawFilter.type === 'Feature' ? activeDrawFilter : { type: 'Feature', geometry: activeDrawFilter, properties: {} };
+            const exportClipPoly = activeDrawFilter || geocoderBoundaryPolygon;
+            if (exportClipPoly) {
+                const polyGeom = exportClipPoly.type === 'Feature' ? exportClipPoly : (exportClipPoly.type === 'FeatureCollection' ? exportClipPoly : { type: 'Feature', geometry: exportClipPoly, properties: {} });
                 allBranches = allBranches.filter(b => {
                     const lat = parseFloat(b.latitude), lng = parseFloat(b.longitude);
                     return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), polyGeom);
