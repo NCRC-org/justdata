@@ -101,7 +101,7 @@
 
         .map-overlay-logo {
             position: absolute;
-            bottom: 10px;
+            bottom: 30px;
             right: 10px;
             z-index: 3;
             background: rgba(255,255,255,0.88);
@@ -1913,11 +1913,11 @@
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
             } else if (censusType === 'minority') {
-                censusHtml += '<strong>Minority Population</strong>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#1a1a1a"></span> Q4 (Highest 25%)</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Q3 (50\u201375%)</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Q2 (25\u201350%)</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Q1 (Lowest 25%)</div>';
+                censusHtml += '<strong>% Minority Population</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#1a1a1a"></span> Highest</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Above median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Below median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Lowest</div>';
             }
 
             if (branchHtml || censusHtml) {
@@ -1967,8 +1967,6 @@
                 branchMap.setLayoutProperty('census-income-fill', 'visibility', 'visible');
                 branchMap.setLayoutProperty('census-income-outline', 'visibility', 'visible');
                 incomeLayerVisible = true;
-                if (column2Legend) column2Legend.style.display = 'block';
-                if (column2IncomeLegend) column2IncomeLegend.style.display = 'block';
             } else if (type === 'minority') {
                 if (firstSymbol) {
                     branchMap.moveLayer('census-minority-fill', firstSymbol);
@@ -1977,8 +1975,6 @@
                 branchMap.setLayoutProperty('census-minority-fill', 'visibility', 'visible');
                 branchMap.setLayoutProperty('census-minority-outline', 'visibility', 'visible');
                 minorityLayerVisible = true;
-                if (column2Legend) column2Legend.style.display = 'block';
-                if (column2MinorityLegend) column2MinorityLegend.style.display = 'block';
             }
 
             updateMapLegend();
