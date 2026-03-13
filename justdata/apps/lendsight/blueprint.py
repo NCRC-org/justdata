@@ -666,8 +666,10 @@ def download():
             import tempfile
             import os
             import re
+            import zipfile
+            import io
 
-            # Create temporary file
+            # Create temporary file for Excel
             tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
             tmp_path = tmp_file.name
             tmp_file.close()
@@ -675,14 +677,27 @@ def download():
             # Generate Excel report
             save_mortgage_excel_report(report_data, tmp_path, metadata=metadata)
 
-            # Generate descriptive filename
-            filename = generate_export_filename(metadata, 'xlsx')
+            # Generate descriptive filenames
+            xlsx_filename = generate_export_filename(metadata, 'xlsx')
+            zip_filename = generate_export_filename(metadata, 'zip')
+
+            # Bundle Excel into ZIP
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.write(tmp_path, xlsx_filename)
+            zip_buffer.seek(0)
+
+            # Clean up temp file
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
             return send_file(
-                tmp_path,
+                zip_buffer,
                 as_attachment=True,
-                download_name=filename,
-                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                download_name=zip_filename,
+                mimetype='application/zip'
             )
         elif format_type == 'pdf':
             from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
