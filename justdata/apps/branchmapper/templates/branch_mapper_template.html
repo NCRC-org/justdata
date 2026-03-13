@@ -110,6 +110,22 @@
             pointer-events: none;
         }
 
+        .map-overlay-title {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 3;
+            background: rgba(255,255,255,0.92);
+            border-radius: 6px;
+            padding: 6px 12px;
+            display: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--ncrc-dark-blue, #003366);
+            pointer-events: none;
+            max-width: 60%;
+        }
+
         .map-overlay-legend {
             position: absolute;
             bottom: 10px;
@@ -915,6 +931,7 @@
         <div class="map-container" style="position: relative;">
             <!-- Onboarding Overlay -->
             <div id="branchMap"></div>
+            <div class="map-overlay-title" id="mapOverlayTitle"></div>
             <div class="map-overlay-logo" id="mapOverlayLogo">
                 <img src="/static/img/ncrc-logo-mark.png" alt="NCRC" height="24">
             </div>
@@ -974,6 +991,7 @@
         let currentZoom = 4;
         let allBankNames = [];
         let viewportCounties = [];
+        let currentGeographyName = '';   // Set by geocoder result
 
         const BANK_COLORS = ['#1a8fc9', '#e67e22', '#8e44ad'];
         const METRO_ZOOM_THRESHOLD = 6;
@@ -1540,6 +1558,7 @@
             showAllBanksActive = true;
             updateShowAllButton();
             await loadAllBanksInView();
+            updateMapTitle();
             updateMapLegend();
         }
 
@@ -1548,6 +1567,7 @@
             loadedBounds = null;
             clearGrayMarkers();
             updateShowAllButton();
+            updateMapTitle();
             updateMapLegend();
         }
 
@@ -1878,7 +1898,41 @@
                 const modeLabel = currentViewMode === 'sod' ? 'SOD June 30, 2025' : 'FDIC structural changes';
                 ctx.innerHTML = `<p style="margin: 0; color: #333; line-height: 1.4; font-size: 0.8rem;"><i class="fas fa-info-circle"></i> ${bankList} &mdash; ${modeLabel}</p>`;
             }
+            updateMapTitle();
             updateMapLegend();
+        }
+
+        function updateMapTitle() {
+            const titleEl = document.getElementById('mapOverlayTitle');
+            if (!titleEl) return;
+
+            const parts = [];
+
+            // Geography part
+            if (currentGeographyName) {
+                parts.push(currentGeographyName);
+            }
+
+            // Bank part
+            if (selectedBanks.length > 0) {
+                const names = selectedBanks.map(b => b.name);
+                if (names.length <= 2) {
+                    parts.push(names.join(' & '));
+                } else {
+                    parts.push(names.slice(0, 2).join(', ') + ' + ' + (names.length - 2) + ' more');
+                }
+                parts.push('Branch Locations');
+            } else if (showAllBanksActive && currentGeographyName) {
+                parts.push('All Bank Branch Locations');
+            }
+
+            // Only show title if there's meaningful content
+            if (parts.length > 0 && (currentGeographyName || selectedBanks.length > 0)) {
+                titleEl.textContent = parts.join(' \u2014 ');
+                titleEl.style.display = 'block';
+            } else {
+                titleEl.style.display = 'none';
+            }
         }
 
         function updateMapLegend() {
@@ -2736,6 +2790,12 @@
         function handleGeocoderResult(result) {
             clearGeocoderBoundary();
 
+            // Store geography name for map title (strip country suffix like ", United States")
+            if (result.place_name) {
+                currentGeographyName = result.place_name.replace(/,\s*United States$/, '');
+            }
+            updateMapTitle();
+
             // If result has a bounding box, use fitBounds
             if (result.bbox) {
                 branchMap.fitBounds(result.bbox, { padding: 50, duration: 1500 });
@@ -3019,6 +3079,8 @@
             });
             geocoder.on('clear', function() {
                 clearGeocoderBoundary();
+                currentGeographyName = '';
+                updateMapTitle();
             });
 
             // Wait for map to load before adding census tileset layers
@@ -4025,7 +4087,7 @@
 
             // Capture map overlay elements (logo, legend)
             const mapContainer = container.closest('.map-container');
-            for (const el of [document.getElementById('mapOverlayLogo'), document.getElementById('mapOverlayLegend')]) {
+            for (const el of [document.getElementById('mapOverlayTitle'), document.getElementById('mapOverlayLogo'), document.getElementById('mapOverlayLegend')]) {
                 if (el && getComputedStyle(el).display !== 'none' && el.offsetWidth > 0) {
                     try {
                         const elCanvas = await html2canvas(el, {
