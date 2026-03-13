@@ -272,7 +272,7 @@ def report_data():
 
         # Fall back to in-memory if BigQuery doesn't have it
         if not analysis_result and job_id in _result_fallback:
-            analysis_result = _result_fallback.pop(job_id)
+            analysis_result = _result_fallback.get(job_id)
             print(f"[INFO] Using in-memory fallback for job_id={job_id}")
 
         if not analysis_result:
