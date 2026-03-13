@@ -3003,7 +3003,12 @@
             clearGeocoderBoundary();
             const sourceId = 'geocoder-boundary';
             geocoderBoundarySourceId = sourceId;
-            geocoderBoundaryPolygon = geojson;
+            // Store as turf-compatible polygon for clipping (ESRI returns FeatureCollection)
+            if (geojson.type === 'FeatureCollection' && geojson.features && geojson.features.length > 0) {
+                geocoderBoundaryPolygon = geojson.features[0];
+            } else {
+                geocoderBoundaryPolygon = geojson;
+            }
 
             branchMap.addSource(sourceId, { type: 'geojson', data: geojson });
 
