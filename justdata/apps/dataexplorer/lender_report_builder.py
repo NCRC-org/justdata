@@ -11,6 +11,8 @@ import logging
 from typing import Dict, List, Any, Optional, Tuple
 from datetime import datetime
 
+from justdata.shared.utils.name_utils import strip_trailing_punctuation
+
 logger = logging.getLogger(__name__)
 
 # Optional import for chi-squared testing
@@ -1254,7 +1256,7 @@ def build_lender_report(
     
     # Section 1: Lender Overview (basic info)
     report_data['lender_overview'] = {
-        'lender_name': lender_info.get('name', 'Unknown'),
+        'lender_name': strip_trailing_punctuation(lender_info.get('name', 'Unknown')),
         'lender_type': lender_info.get('type', 'Unknown'),
         'city': lender_info.get('city', ''),
         'state': lender_info.get('state', ''),

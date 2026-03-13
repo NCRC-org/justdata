@@ -11,6 +11,8 @@ import os
 import re
 import requests
 
+from justdata.shared.utils.name_utils import strip_trailing_punctuation
+
 
 def build_mortgage_report(raw_data: List[Dict[str, Any]], counties: List[str], years: List[int], census_data: Dict = None, hud_data: Dict[str, Dict[str, float]] = None, progress_tracker=None) -> Dict[str, pd.DataFrame]:
     """
@@ -474,6 +476,8 @@ def clean_mortgage_data(df: pd.DataFrame) -> pd.DataFrame:
         df['lender_name'] = df['lender_name'].fillna('Unknown Lender')
         # Convert all lender names to uppercase for display
         df['lender_name'] = df['lender_name'].apply(lambda x: str(x).upper() if x else x)
+        # Strip trailing commas/periods from FFIEC source data
+        df['lender_name'] = df['lender_name'].apply(strip_trailing_punctuation)
         # Abbreviate names longer than 30 characters
         df['lender_name'] = df['lender_name'].apply(lambda x: abbreviate_long_lender_name(x, max_length=30) if x else x)
     

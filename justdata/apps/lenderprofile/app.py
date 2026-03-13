@@ -13,6 +13,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from justdata.shared.web.app_factory import create_app, register_standard_routes
 from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
+from justdata.shared.utils.name_utils import strip_trailing_punctuation
 from justdata.apps.lenderprofile.config import TEMPLATES_DIR, STATIC_DIR
 from justdata.apps.lenderprofile.version import __version__
 from justdata.apps.lenderprofile.processors.identifier_resolver import IdentifierResolver
@@ -433,7 +434,7 @@ def generate_report():
         from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
         
         data = request.get_json()
-        institution_name = data.get('name', '').strip()
+        institution_name = strip_trailing_punctuation(data.get('name', '').strip())
         institution_id = data.get('id')  # FDIC cert, RSSD, LEI, etc.
         identifiers = data.get('identifiers', {})
         report_focus = data.get('report_focus', '').strip()  # Optional focus field
