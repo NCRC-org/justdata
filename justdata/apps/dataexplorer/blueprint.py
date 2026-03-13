@@ -756,6 +756,70 @@ def show_no_data():
                            breadcrumb_items=breadcrumb_items)
 
 
+@dataexplorer_bp.route('/api/export-area-report-excel', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def export_area_report_excel():
+    """Export area report to Excel with all data."""
+    try:
+        data = request.get_json()
+        job_id = data.get('job_id')
+        geography = data.get('geography', {})
+        years = data.get('years', [])
+        filters = data.get('filters', {})
+
+        # Try to get cached data first
+        from justdata.shared.utils.progress_tracker import get_analysis_result
+        cached_result = None
+        if job_id:
+            cached_result = get_analysis_result(job_id)
+
+        # If we have cached data, use it
+        if cached_result and cached_result.get('success'):
+            logger.info(f"Using cached data for Excel export (job_id: {job_id})")
+            report_data = cached_result.get('report_data', {})
+            metadata = cached_result.get('metadata', {})
+            census_data = cached_result.get('census_data', {})
+            historical_census_data = cached_result.get('historical_census_data', {})
+        else:
+            # Need to regenerate - reconstruct wizard_data from request
+            logger.info("No cached data found, running analysis for Excel export")
+            from justdata.apps.dataexplorer.core import run_area_analysis
+
+            wizard_data = {
+                'geography': geography,
+                'years': years,
+                'filters': filters
+            }
+
+            result = run_area_analysis(wizard_data, job_id=None, progress_tracker=None)
+
+            if not result.get('success'):
+                return jsonify({
+                    'success': False,
+                    'error': result.get('error', 'Failed to generate report data')
+                }), 500
+
+            report_data = result.get('report_data', {})
+            metadata = result.get('metadata', {})
+            census_data = result.get('census_data', {})
+            historical_census_data = result.get('historical_census_data', {})
+
+        return jsonify({
+            'success': True,
+            'report_data': report_data,
+            'metadata': metadata,
+            'census_data': census_data,
+            'historical_census_data': historical_census_data
+        })
+
+    except Exception as e:
+        logger.error(f"Error exporting area report to Excel: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Error generating Excel export: {str(e)}'
+        }), 500
+
+
 @dataexplorer_bp.route('/health')
 def health():
     """Health check endpoint."""

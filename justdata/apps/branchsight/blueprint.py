@@ -14,13 +14,30 @@ import json
 import zipfile
 from datetime import datetime
 from pathlib import Path
+import math
 
 from justdata.main.auth import require_access, get_user_permissions, get_user_type, login_required
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker, store_analysis_result, get_analysis_result
+from justdata.shared.utils.analysis_cache import store_cached_result, get_analysis_result_by_job_id, generate_cache_key
+
+# In-memory fallback for when BigQuery cache storage fails
+_result_fallback = {}
 from .core import run_analysis, parse_web_parameters
 from .config import TEMPLATES_DIR, STATIC_DIR, PROJECT_ID
 from .data_utils import get_available_counties, get_available_states, get_available_metro_areas, find_exact_county_match, get_fallback_states, get_fallback_counties
 from .version import __version__
+
+def sanitize_for_json(obj):
+    """Recursively replace Infinity and NaN with None in nested dicts/lists.
+    Prevents JSON serialization errors from invalid float values."""
+    if isinstance(obj, dict):
+        return {k: sanitize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [sanitize_for_json(item) for item in obj]
+    elif isinstance(obj, float) and (math.isinf(obj) or math.isnan(obj)):
+        return None
+    return obj
+
 
 # Get shared templates directory
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
@@ -158,7 +175,18 @@ def analyze():
         session['job_id'] = job_id
         session['selection_type'] = selection_type
 
+        cache_params = {
+            'counties': counties_list,
+            'years': years_list,
+            'selection_type': selection_type,
+            'state_code': state_code or '',
+            'metro_code': metro_code or '',
+        }
+        user_type = get_user_type()
+
         def run_job():
+            import time as time_module
+            start_time = time_module.time()
             try:
                 result = run_analysis(';'.join(counties_list), ','.join(map(str, years_list)), job_id, progress_tracker,
                                        selection_type, state_code, metro_code)
@@ -168,11 +196,31 @@ def analyze():
                     progress_tracker.update_progress('error', error_msg)
                     return
 
-                # Store the analysis results
-                store_analysis_result(job_id, result)
-
-                # Mark analysis as completed
-                progress_tracker.complete(success=True)
+                # Store in BigQuery cache (survives across Cloud Run instances)
+                try:
+                    cache_metadata = {
+                        'counties': counties_list,
+                        'years': years_list,
+                        'duration_seconds': time_module.time() - start_time,
+                        'total_records': result.get('metadata', {}).get('total_records', 0) if isinstance(result.get('metadata'), dict) else 0,
+                        'generated_at': datetime.now().isoformat()
+                    }
+                    store_cached_result(
+                        app_name='branchsight',
+                        params=cache_params,
+                        job_id=job_id,
+                        result_data=result,
+                        user_type=user_type,
+                        metadata=cache_metadata
+                    )
+                    progress_tracker.complete(success=True)
+                except Exception as cache_error:
+                    print(f"WARNING: Failed to store in BigQuery cache: {cache_error}")
+                    import traceback
+                    traceback.print_exc()
+                    # Fall back to in-memory storage so user can still see results
+                    _result_fallback[job_id] = result
+                    progress_tracker.complete(success=True)
 
             except Exception as e:
                 error_msg = str(e)
@@ -219,29 +267,49 @@ def report_data():
         if not job_id:
             return jsonify({'error': 'No analysis session found'}), 404
 
-        analysis_result = get_analysis_result(job_id)
+        # Try BigQuery cache first (works across Cloud Run instances)
+        analysis_result = get_analysis_result_by_job_id(job_id)
+
+        # Fall back to in-memory if BigQuery doesn't have it
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.get(job_id)
+            print(f"[INFO] Using in-memory fallback for job_id={job_id}")
+
         if not analysis_result:
+            # Check if analysis is still running
+            progress = get_progress(job_id)
+            if not progress.get('done', False):
+                response = jsonify({
+                    'success': False,
+                    'error': 'Analysis still in progress',
+                    'progress': progress
+                })
+                response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+                return response, 202
+
             return jsonify({'error': 'No analysis data found'}), 404
 
-        # Convert pandas DataFrames to JSON-serializable format
-        report_data = analysis_result.get('report_data', {})
-        serialized_data = {}
-
+        # Data from BigQuery is already serialized (no DataFrames)
+        # Data from in-memory fallback may have DataFrames
         import numpy as np
         import pandas as pd
 
-        for key, df in report_data.items():
+        report_data = analysis_result.get('report_data', {})
+        serialized_data = {}
+
+        for key, val in report_data.items():
             if key == 'hhi_by_year':
-                serialized_data[key] = df if isinstance(df, list) else []
-            elif hasattr(df, 'to_dict'):
-                df_clean = df.replace({np.nan: None})
+                serialized_data[key] = val if isinstance(val, list) else []
+            elif hasattr(val, 'to_dict'):
+                df_clean = val.replace({np.nan: None, np.inf: None, -np.inf: None})
                 serialized_data[key] = df_clean.to_dict('records')
             else:
-                serialized_data[key] = df
+                serialized_data[key] = val
 
         ai_insights = analysis_result.get('ai_insights', {})
 
-        return jsonify({
+        # Sanitize all data to prevent Infinity/NaN from reaching JSON serialization
+        response_data = sanitize_for_json({
             'success': True,
             'data': serialized_data,
             'metadata': {
@@ -250,7 +318,13 @@ def report_data():
             }
         })
 
+        response = jsonify(response_data)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': f'Failed to retrieve report data: {str(e)}'
@@ -268,7 +342,9 @@ def download():
         if not job_id:
             return jsonify({'error': 'No analysis session found. Please run an analysis first.'}), 400
 
-        analysis_result = get_analysis_result(job_id)
+        analysis_result = get_analysis_result_by_job_id(job_id)
+        if not analysis_result and job_id in _result_fallback:
+            analysis_result = _result_fallback.get(job_id)
         if not analysis_result:
             return jsonify({'error': 'No analysis data found. The analysis may have expired or failed.'}), 400
 
@@ -284,8 +360,10 @@ def download():
             return download_csv(report_data, metadata)
         elif format_type == 'json':
             return download_json(report_data, metadata)
+        elif format_type == 'pdf':
+            return download_pdf(report_data, metadata, analysis_result)
         elif format_type == 'zip':
-            return download_zip(report_data, metadata)
+            return download_zip(report_data, metadata, analysis_result)
         else:
             return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel, csv, json, zip'}), 400
 
@@ -298,6 +376,82 @@ def download():
         }), 500
 
 
+def _add_methods_sheet(excel_path, metadata):
+    """Add a Methods & Definitions sheet to an existing Excel workbook."""
+    from openpyxl import load_workbook
+    from openpyxl.styles import Font, Alignment, PatternFill
+    from justdata.shared.utils.versions import get_version
+
+    wb = load_workbook(excel_path)
+    ws = wb.create_sheet('Methods & Definitions')
+
+    # Build geography string from metadata
+    geography = 'Not specified'
+    if metadata and 'counties' in metadata:
+        counties = metadata['counties']
+        if isinstance(counties, list) and counties:
+            geography = ', '.join(counties)
+        elif counties:
+            geography = str(counties)
+
+    # Build year range string
+    years_str = 'Not specified'
+    if metadata and 'years' in metadata:
+        years = metadata['years']
+        if isinstance(years, list) and years:
+            years_str = f"{min(years)}-{max(years)}"
+        elif years:
+            years_str = str(years)
+
+    rows = [
+        ('Methods & Definitions', ''),
+        ('', ''),
+        ('Data Source', 'FDIC Summary of Deposits (SOD), accessed through the FDIC BankFind API and NCRC\'s BigQuery data warehouse'),
+        ('Geography', geography),
+        ('Years Analyzed', years_str),
+        ('', ''),
+        ('Definitions', ''),
+        ('', ''),
+        ('SOD (Summary of Deposits)', 'Annual survey of branch office deposits for all FDIC-insured institutions, collected as of June 30 each year'),
+        ('HHI (Herfindahl-Hirschman Index)', 'Market concentration measure calculated as the sum of squared deposit market shares \u00d7 10,000. HHI < 1,500 = unconcentrated; 1,500-2,500 = moderately concentrated; > 2,500 = highly concentrated'),
+        ('Deposit Market Share', 'Institution\'s deposits as a percentage of total deposits in the geographic area'),
+        ('Branch Count', 'Number of physical branch offices (excludes ATMs and loan production offices)'),
+        ('FDIC Certificate Number', 'Unique identifier assigned by FDIC to each insured institution'),
+        ('Institution Type', 'Charter type (National Bank, State Bank, Savings Association, etc.)'),
+        ('Net Change', 'Difference in branch count or deposits between time periods'),
+        ('LMI Census Tract', 'Low-to-Moderate Income census tract as defined by FFIEC'),
+        ('MMCT', 'Majority-Minority Census Tract where over 50% of the population belongs to a racial or ethnic minority group'),
+        ('', ''),
+        ('Disclaimer', 'This report was generated by NCRC\'s JustData BranchSight application using publicly available FDIC Summary of Deposits data. Branch counts and deposit figures are as reported by institutions to the FDIC. This analysis is provided for informational purposes and does not constitute legal or financial advice.'),
+        ('', ''),
+        ('Generated', datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')),
+        ('Platform', f'JustData BranchSight {get_version("branchsight")}'),
+    ]
+
+    header_font = Font(bold=True, size=14)
+    section_font = Font(bold=True, size=12)
+    section_fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
+    wrap_alignment = Alignment(wrap_text=True, vertical='top')
+
+    for row_idx, (label, value) in enumerate(rows, start=1):
+        cell_a = ws.cell(row=row_idx, column=1, value=label)
+        cell_b = ws.cell(row=row_idx, column=2, value=value)
+        cell_b.alignment = wrap_alignment
+
+        # Title row
+        if row_idx == 1:
+            cell_a.font = header_font
+        # Section headers (label present, value empty, not blank spacer)
+        elif label and not value:
+            cell_a.font = section_font
+            cell_a.fill = section_fill
+
+    ws.column_dimensions['A'].width = 35
+    ws.column_dimensions['B'].width = 90
+
+    wb.save(excel_path)
+
+
 def download_excel(report_data, metadata):
     """Download Excel file"""
     try:
@@ -306,6 +460,7 @@ def download_excel(report_data, metadata):
 
         from justdata.shared.reporting.report_builder import save_excel_report
         save_excel_report(report_data, tmp_path, metadata=metadata)
+        _add_methods_sheet(tmp_path, metadata)
 
         response = send_file(
             tmp_path,
@@ -327,6 +482,47 @@ def download_excel(report_data, metadata):
         import traceback
         traceback.print_exc()
         return jsonify({'error': f'Excel export failed: {str(e)}'}), 500
+
+
+def download_pdf(report_data, metadata, analysis_result):
+    """Download PDF report"""
+    try:
+        from justdata.apps.branchsight.pdf_report import generate_branchsight_pdf
+
+        ai_insights = analysis_result.get('ai_insights', {})
+        pdf_buf = generate_branchsight_pdf(report_data, metadata, ai_insights)
+
+        tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        tmp_path = tmp_file.name
+        tmp_file.close()
+
+        with open(tmp_path, 'wb') as f:
+            f.write(pdf_buf.getvalue())
+
+        counties = metadata.get('counties', [])
+        county_slug = str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
+        filename = f'branchsight_{county_slug}_{datetime.now().strftime("%Y%m%d_%H%M%S")}.pdf'
+
+        response = send_file(
+            tmp_path,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+
+        @response.call_on_close
+        def cleanup():
+            try:
+                if os.path.exists(tmp_path):
+                    os.unlink(tmp_path)
+            except:
+                pass
+
+        return response
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'PDF export failed: {str(e)}'}), 500
 
 
 def download_csv(report_data, metadata):
@@ -386,45 +582,42 @@ def download_json(report_data, metadata):
         return jsonify({'error': f'JSON export failed: {str(e)}'}), 500
 
 
-def download_zip(report_data, metadata):
-    """Download ZIP file with multiple formats"""
+def download_zip(report_data, metadata, analysis_result=None):
+    """Download ZIP file with PDF and Excel"""
     try:
-        import numpy as np
-
         with tempfile.TemporaryDirectory() as temp_dir:
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            counties = metadata.get('counties', [])
+            county_slug = str(counties[0]).replace(',', '').replace(' ', '_')[:30] if counties else 'report'
+
             zip_path = os.path.join(temp_dir, 'branchsight_reports.zip')
 
-            with zipfile.ZipFile(zip_path, 'w') as zipf:
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                 # Generate and add Excel file
-                excel_path = os.path.join(temp_dir, 'fdic_branch_analysis.xlsx')
+                excel_path = os.path.join(temp_dir, 'branchsight_analysis.xlsx')
                 from justdata.shared.reporting.report_builder import save_excel_report
                 save_excel_report(report_data, excel_path, metadata=metadata)
+                _add_methods_sheet(excel_path, metadata)
+                xlsx_filename = f'BranchSight_{county_slug}_{timestamp}.xlsx'
                 if os.path.exists(excel_path):
-                    zipf.write(excel_path, 'fdic_branch_analysis.xlsx')
+                    zipf.write(excel_path, xlsx_filename)
 
-                # Add JSON file
-                json_data = {}
-                for key, df in report_data.items():
-                    if hasattr(df, 'to_dict'):
-                        df_clean = df.replace({np.nan: None})
-                        json_data[key] = df_clean.to_dict('records')
-                    else:
-                        json_data[key] = df
-
-                json_content = json.dumps({
-                    'metadata': metadata,
-                    'data': json_data
-                }, indent=2)
-                zipf.writestr('analysis_data.json', json_content)
+                # Generate and add PDF file
+                from justdata.apps.branchsight.pdf_report import generate_branchsight_pdf
+                ai_insights = analysis_result.get('ai_insights', {}) if analysis_result else {}
+                pdf_buf = generate_branchsight_pdf(report_data, metadata, ai_insights)
+                pdf_filename = f'BranchSight_{county_slug}_{timestamp}.pdf'
+                zipf.writestr(pdf_filename, pdf_buf.getvalue())
 
             with open(zip_path, 'rb') as f:
                 zip_content = f.read()
 
+            zip_filename = f'BranchSight_{county_slug}_{timestamp}.zip'
             return Response(
                 zip_content,
                 mimetype='application/zip',
                 headers={
-                    'Content-Disposition': f'attachment; filename=branchsight_analysis_{datetime.now().strftime("%Y%m%d_%H%M%S")}.zip'
+                    'Content-Disposition': f'attachment; filename={zip_filename}'
                 }
             )
     except Exception as e:

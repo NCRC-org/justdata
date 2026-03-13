@@ -340,13 +340,8 @@
             border-color: #218838;
         }
 
-        /* Excel export button specific hover */
-        #downloadExcelBtn:hover {
-            background: #218838 !important;
-        }
-
-        /* PDF export button hover */
-        #downloadPdfBtn:hover {
+        /* Export button hover */
+        #downloadZipBtn:hover {
             background: #0f2440 !important;
         }
         
@@ -909,11 +904,8 @@
     <div class="report-container">
         <!-- Header Actions Row -->
         <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-bottom: 20px; padding: 10px 0;">
-            <a href="{{ app_base_url|default('/lendsight') }}/download?format=pdf" class="action-btn" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
-                <i class="fas fa-file-pdf"></i> Download PDF Report
-            </a>
-            <a href="{{ app_base_url|default('/lendsight') }}/download?format=excel" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
-                <i class="fas fa-file-excel"></i> Export Full Report to Excel
+            <a href="{{ app_base_url|default('/lendsight') }}/download?format=zip" class="action-btn primary" id="downloadZipBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-download"></i> Export Report
             </a>
         </div>
 
@@ -1073,7 +1065,7 @@
                 <!-- Table 2: Lending to Census Tracts by Income Level -->
                 <h3 style="margin-top: 40px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 2: Lending to Census Tracts by Income Level</h3>
                 <p class="table-introduction" id="incomeTractsIntro" style="margin-bottom: 20px; max-width: 100%;">
-                    This table shows lending activity by census tract income level over the selected time period. Census tract income is classified relative to the area median family income, as defined by HUD. The table shows lending to Low to Moderate Income Census Tracts (≤80% of AMFI) and their breakdown by Low Income (≤50% of AMFI), Moderate Income (>50% and ≤80% of AMFI), Middle Income (>80% and ≤120% of AMFI), and Upper Income (>120% of AMFI) census tracts. <strong>Note:</strong> Between 2021 and 2022, boundary changes dramatically increased the number of tracts with higher minority populations.
+                    This table shows lending activity by census tract income level over the selected time period. Census tract income is classified relative to the area median family income, as defined by HUD. The table shows lending to Low to Moderate Income Census Tracts (≤80% of AMFI) and their breakdown by Low Income (≤50% of AMFI), Moderate Income (>50% and ≤80% of AMFI), Middle Income (>80% and ≤120% of AMFI), and Upper Income (>120% of AMFI) census tracts. <strong>Note:</strong> Between 2021 and 2022, boundary changes substantially increased the number of tracts with higher minority populations.
                 </p>
                 <div class="table-container" style="width: 100%;">
                     <table class="data-table" id="incomeTractsTable">
@@ -1198,7 +1190,7 @@
                         <div class="ai-insight-card">
                             <div class="ai-content" id="marketConcentrationIntro">
                                 <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
-                                <p>This chart and table present the HHI for mortgage lending in the selected counties across the selected years, providing insight into how competitive the mortgage lending market is.</p>
+                                <p>HHI for mortgage lending in the selected counties across the selected years:</p>
                             </div>
                         </div>
                     </div>
@@ -1313,7 +1305,7 @@
                         <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
                         <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
                         <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
-                        <p>Market shares are based on total loan origination amounts (not count). The sum includes all lenders in the market. Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
+                        <p>Market shares are based on total loan origination amounts (not count). The sum includes all lenders in the market. Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders. Higher values indicate concentrated markets dominated by few lenders.</p>
                         <p><strong>Concentration Levels:</strong></p>
                         <ul style="padding-left: 20px;">
                             <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
@@ -1391,23 +1383,13 @@
                     }
                 });
                 
-                // Update PDF download button
-                const pdfBtn = document.getElementById('downloadPdfBtn');
-                if (pdfBtn) {
-                    const href = pdfBtn.getAttribute('href');
+                // Update Export Report button
+                const zipBtn = document.getElementById('downloadZipBtn');
+                if (zipBtn) {
+                    const href = zipBtn.getAttribute('href');
                     if (href && !href.includes('job_id=')) {
                         const separator = href.includes('?') ? '&' : '?';
-                        pdfBtn.setAttribute('href', `${href}${separator}job_id=${encodeURIComponent(jobId)}`);
-                    }
-                }
-                
-                // Update Excel download button
-                const excelBtn = document.getElementById('downloadExcelBtn');
-                if (excelBtn) {
-                    const href = excelBtn.getAttribute('href');
-                    if (href && !href.includes('job_id=')) {
-                        const separator = href.includes('?') ? '&' : '?';
-                        excelBtn.setAttribute('href', `${href}${separator}job_id=${encodeURIComponent(jobId)}`);
+                        zipBtn.setAttribute('href', `${href}${separator}job_id=${encodeURIComponent(jobId)}`);
                     }
                 }
             }

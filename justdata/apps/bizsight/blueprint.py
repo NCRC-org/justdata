@@ -741,36 +741,86 @@ def download():
                 'error': 'Export functionality is not available for your account type.'
             }), 403
         
-        # Check if format is allowed
+        # Check if format is allowed (zip requires excel permission)
         allowed_formats = user_permissions.get('export_formats', [])
-        if format_type not in allowed_formats:
+        check_format = 'excel' if format_type == 'zip' else format_type
+        if check_format not in allowed_formats:
             return jsonify({
                 'error': f'Export format "{format_type}" is not available for your account type.'
             }), 403
-        
+
         progress = get_progress(job_id)
         if not progress.get('done'):
             return jsonify({'error': 'Analysis not complete'}), 400
-        
+
         # Retrieve from BigQuery only (no in-memory storage)
         result = get_analysis_result_by_job_id(job_id)
         if not result:
             return jsonify({'error': 'Result not found'}), 404
-        
+
         # Get metadata
         metadata = {
             'county_data': session.get('county_data'),
             'years': session.get('years'),
             'job_id': job_id
         }
-        
+
         # Download based on format
-        if format_type == 'excel':
-            from justdata.apps.bizsight.excel_export import download_excel
-            return download_excel(result, metadata)
+        if format_type in ('zip', 'excel'):
+            from justdata.apps.bizsight.excel_export import save_bizsight_excel_report
+            from justdata.apps.bizsight.pdf_report import generate_bizsight_pdf
+            import tempfile
+            import zipfile
+            import io
+            import re
+
+            # Generate Excel
+            tmp_fd, tmp_path = tempfile.mkstemp(suffix='.xlsx')
+            os.close(tmp_fd)
+            save_bizsight_excel_report(result, tmp_path, metadata=metadata)
+
+            # Generate PDF
+            pdf_buf = generate_bizsight_pdf(result, metadata)
+
+            # Build filenames
+            county_data = metadata.get('county_data', {})
+            county_name = county_data.get('name', 'County') if isinstance(county_data, dict) else str(county_data) if county_data else 'County'
+            safe_name = re.sub(r'[^\w\s-]', '', county_name).replace(' ', '_')[:50]
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            xlsx_filename = f'BizSight_{safe_name}_{timestamp}.xlsx'
+            pdf_filename = f'BizSight_{safe_name}_{timestamp}.pdf'
+            zip_filename = f'BizSight_{safe_name}_{timestamp}.zip'
+
+            # Bundle into ZIP
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.write(tmp_path, xlsx_filename)
+                zf.writestr(pdf_filename, pdf_buf.getvalue())
+            zip_buffer.seek(0)
+
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
+
+            return send_file(
+                zip_buffer,
+                as_attachment=True,
+                download_name=zip_filename,
+                mimetype='application/zip'
+            )
         elif format_type == 'pdf':
-            from justdata.apps.bizsight.app import download_pdf_report
-            return download_pdf_report(result, metadata, job_id)
+            from justdata.apps.bizsight.pdf_report import generate_bizsight_pdf
+            pdf_buf = generate_bizsight_pdf(result, metadata)
+            county_data = metadata.get('county_data', {})
+            county_name = county_data.get('name', 'County') if isinstance(county_data, dict) else str(county_data) if county_data else 'County'
+            safe_name = county_name.replace(',', '').replace(' ', '_')[:50]
+            filename = f'BizSight_{safe_name}.pdf'
+            return Response(
+                pdf_buf.getvalue(),
+                mimetype='application/pdf',
+                headers={'Content-Disposition': f'attachment; filename="{filename}"'}
+            )
         elif format_type == 'powerpoint':
             # PowerPoint export would go here
             return jsonify({'error': 'PowerPoint export not yet implemented'}), 501

@@ -8,6 +8,8 @@ from jinja2 import ChoiceLoader, FileSystemLoader
 from datetime import datetime
 import os
 
+from justdata.shared.utils.name_utils import strip_trailing_punctuation
+
 
 # Shared fallback secret key for all JustData apps (consistent across instances)
 # In production, SECRET_KEY should ALWAYS be set via environment variable
@@ -63,6 +65,9 @@ def create_app(app_name: str, template_folder: str = None, static_folder: str = 
     if config:
         app.config.update(config)
     
+    # Register Jinja2 template filters
+    app.jinja_env.filters['clean_name'] = strip_trailing_punctuation
+
     # Register standard health check endpoint
     @app.route('/health')
     def health():

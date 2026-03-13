@@ -206,7 +206,19 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
                 'display_order': display_order
             })
             display_order += 1
-        
+
+        # HHI by year data
+        if 'hhi_by_year' in report_data and report_data['hhi_by_year']:
+            sections.append({
+                'section_name': 'hhi_by_year',
+                'section_type': 'data_table',
+                'section_category': 'metrics',
+                'section_data': sanitize_nan_values(report_data['hhi_by_year']),
+                'section_metadata': {'row_count': len(report_data['hhi_by_year'])},
+                'display_order': display_order
+            })
+            display_order += 1
+
         # Raw data (optional, can be large)
         if 'raw_data' in report_data:
             df = report_data['raw_data']
@@ -240,7 +252,7 @@ def extract_sections(app_name: str, result_data: Dict[str, Any]) -> List[Dict[st
                 })
                 display_order += 1
         
-        for insight_name in ['trends_analysis', 'bank_strategies', 'community_impact']:
+        for insight_name in ['trends_analysis', 'bank_strategies', 'community_impact', 'hhi_trends_discussion']:
             if insight_name in ai_insights:
                 sections.append({
                     'section_name': insight_name,

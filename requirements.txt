@@ -52,3 +52,7 @@ firebase-admin>=6.0.0
 # ElectWatch dependencies
 PyYAML>=6.0  # Required for congress-legislators crosswalk parsing
 python-dateutil>=2.8.0  # Date parsing for metadata
+
+# HubSpot Integration
+httpx>=0.27.0
+structlog>=24.0.0

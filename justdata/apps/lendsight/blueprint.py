@@ -661,28 +661,45 @@ def download():
                 'error': 'Export functionality is not available for your account type.'
             }), 403
         
-        if format_type == 'excel':
+        if format_type in ('zip', 'excel'):
             from .mortgage_report_builder import save_mortgage_excel_report
+            from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
             import tempfile
             import os
-            import re
+            import zipfile
+            import io
 
-            # Create temporary file
+            # Generate Excel
             tmp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.xlsx')
             tmp_path = tmp_file.name
             tmp_file.close()
-
-            # Generate Excel report
             save_mortgage_excel_report(report_data, tmp_path, metadata=metadata)
 
-            # Generate descriptive filename
-            filename = generate_export_filename(metadata, 'xlsx')
+            # Generate PDF
+            ai_insights = analysis_result.get('ai_insights', {})
+            pdf_buf = generate_lendsight_pdf(report_data, metadata, ai_insights)
+
+            # Bundle into ZIP
+            xlsx_filename = generate_export_filename(metadata, 'xlsx')
+            pdf_filename = generate_export_filename(metadata, 'pdf')
+            zip_filename = generate_export_filename(metadata, 'zip')
+
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                zf.write(tmp_path, xlsx_filename)
+                zf.writestr(pdf_filename, pdf_buf.getvalue())
+            zip_buffer.seek(0)
+
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
             return send_file(
-                tmp_path,
+                zip_buffer,
                 as_attachment=True,
-                download_name=filename,
-                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                download_name=zip_filename,
+                mimetype='application/zip'
             )
         elif format_type == 'pdf':
             from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
@@ -707,7 +724,7 @@ def download():
                 mimetype='application/pdf'
             )
         else:
-            return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: excel, pdf'}), 400
+            return jsonify({'error': f'Invalid format specified: {format_type}. Valid formats are: zip, excel, pdf'}), 400
             
     except Exception as e:
         import traceback

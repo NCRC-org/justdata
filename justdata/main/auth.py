@@ -558,12 +558,10 @@ def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
             try:
                 from justdata.apps.hubspot.membership import (
                     lookup_membership_sync,
-                    is_personal_email,
                     is_ncrc_email
                 )
 
-                # Only lookup for work emails (not personal or NCRC)
-                if not is_personal_email(email) and not is_ncrc_email(email):
+                if not is_ncrc_email(email):
                     print(f"[create_or_update_user_doc] Performing HubSpot lookup for {email}")
                     membership_result = lookup_membership_sync(email)
 
