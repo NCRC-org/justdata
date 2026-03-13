@@ -916,7 +916,7 @@
             <!-- Onboarding Overlay -->
             <div id="branchMap"></div>
             <div class="map-overlay-logo" id="mapOverlayLogo">
-                <img src="/static/img/ncrc-logo-black.png" alt="NCRC" height="28">
+                <img src="/static/img/ncrc-logo-mark.png" alt="NCRC" height="24">
             </div>
             <div class="map-overlay-legend" id="mapOverlayLegend"></div>
         </div>
@@ -3051,6 +3051,23 @@
                     paint: { 'line-color': '#666666', 'line-width': 0.5, 'line-opacity': 0.4 },
                     layout: { visibility: 'none' }
                 }, firstSymbolId);
+
+                // Hide minor/residential road layers for cleaner presentation maps
+                const minorRoadLayers = [
+                    'tunnel-minor-case', 'tunnel-street-case', 'tunnel-minor-link-case',
+                    'tunnel-minor', 'tunnel-minor-link', 'tunnel-street', 'tunnel-street-low',
+                    'road-minor-case', 'road-street-case', 'road-minor-link-case',
+                    'road-minor', 'road-minor-link', 'road-street', 'road-street-low',
+                    'road-rail-tracks',
+                    'bridge-minor-case', 'bridge-street-case', 'bridge-minor-link-case',
+                    'bridge-minor', 'bridge-minor-link', 'bridge-street', 'bridge-street-low',
+                    'bridge-rail-tracks'
+                ];
+                minorRoadLayers.forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setLayoutProperty(id, 'visibility', 'none');
+                    }
+                });
 
                 // Click popup for income layer
                 branchMap.on('click', 'census-income-fill', function(e) {
