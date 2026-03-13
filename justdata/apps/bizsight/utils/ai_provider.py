@@ -75,11 +75,29 @@ class AIAnalyzer:
 
 class AIProvider:
     """Simple wrapper around AIAnalyzer for compatibility."""
-    
+
+    STYLE_GUIDE = """
+        NCRC STYLE GUIDE (apply to all narrative output):
+        - Keep sentences short and direct. Maximum one subordinate clause per sentence.
+        - If a sentence exceeds 30 words, break it into two sentences.
+        - State the finding first, then the explanation. Do not front-load qualifiers.
+        - Do not hedge excessively. Use "suggest," "appear to," or "may indicate" no more than once per paragraph. After that, state findings directly.
+        - Prefer periods over semicolons. Use semicolons only to separate items in a complex list.
+        - Do not use the Oxford comma (no comma before "and" or "or" in a series).
+        - Do not insert commas before dependent clauses that complete the main thought. When in doubt, omit the comma.
+        - One sentence maximum for table or chart introductions. Lead with what the data shows, not what the visual element is.
+        - Do not separately describe a chart and its underlying table when they show the same data.
+        - Professional, objective, measured tone. No promotional language.
+        - Avoid adjectives that editorialize: "dramatic," "alarming," "impressive," "significant" (unless statistically significant). Let the data speak.
+        - Do not use em-dashes. Use commas, periods or colons instead.
+        - Do not use emoticons or emoji.
+        """
+
     def __init__(self, ai_provider: str = "claude", model: str = None, api_key: str = None):
         self.analyzer = AIAnalyzer(ai_provider=ai_provider, model=model, api_key=api_key)
-    
+
     def generate_text(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3) -> str:
-        """Generate text using the AI provider."""
-        return self.analyzer._call_ai(prompt, max_tokens=max_tokens, temperature=temperature)
+        """Generate text using the AI provider with NCRC style guide prepended."""
+        styled_prompt = self.STYLE_GUIDE + "\n" + prompt
+        return self.analyzer._call_ai(styled_prompt, max_tokens=max_tokens, temperature=temperature)
 

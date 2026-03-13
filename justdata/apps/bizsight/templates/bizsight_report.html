@@ -1053,7 +1053,7 @@
                     <div class="ai-insight-card">
                         <div class="ai-content" id="hhiTrendsIntro">
                             <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
-                            <p>This chart and table present the HHI for small business lending in the selected counties across the selected years, providing insight into how competitive the small business lending market is.</p>
+                            <p>HHI for small business lending in the selected counties across the selected years:</p>
                         </div>
                     </div>
                     <p class="table-caption" style="margin-top: 15px;">
@@ -1152,7 +1152,7 @@
                 <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
                 <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
                 <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = &Sigma;(market share<sub>i</sub>)<sup>2</sup></p>
-                <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders; higher values indicate concentrated markets dominated by few lenders.</p>
+                <p>Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders. Higher values indicate concentrated markets dominated by few lenders.</p>
                 <p><strong>Concentration Levels:</strong></p>
                 <ul style="padding-left: 20px;">
                     <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
@@ -1676,7 +1676,7 @@
                     
                     <div style="margin-top: 12px; margin-bottom: 8px;">
                         <div style="font-size: 11px; color: #666; font-weight: 600; margin-bottom: 4px;">Loan Amount by Year</div>
-                        <div style="font-size: 10px; color: #999; font-style: italic;">Note: 2020-2021 include PPP loans</div>
+                        <div style="font-size: 10px; color: #999; font-style: italic;"><strong>Note:</strong> 2020-2021 include PPP loans</div>
                     </div>
                     <div id="${popupId}-chart" style="width: 100%; min-width: 300px; height: 280px; margin-top: 8px;"></div>
                 </div>
@@ -3535,7 +3535,7 @@
             intro2 += `Loans to businesses with revenues under $1 million are considered lending to small businesses.`;
 
             // Third paragraph: PPP and Section 1071 notes
-            let intro3 = `Note: Small business lending in 2020 and 2021 was significantly impacted by the Paycheck Protection Program (PPP), which may result in elevated loan counts and amounts during those years. `;
+            let intro3 = `<strong>Note:</strong> Small business lending in 2020 and 2021 was significantly impacted by the Paycheck Protection Program (PPP), which may result in elevated loan counts and amounts during those years. `;
             intro3 += `Additionally, Section 1071 of the Dodd-Frank Act has not yet been fully implemented, so this report does not include borrower demographic information such as race, ethnicity, or gender of business owners.`;
 
             // Update the intro paragraphs
@@ -3545,7 +3545,7 @@
 
             if (p1) p1.textContent = intro1;
             if (p2) p2.textContent = intro2;
-            if (p3) p3.textContent = intro3;
+            if (p3) p3.innerHTML = intro3;
 
             // Also update the old intro county name for Section 1
             const introCountyNameEl = document.getElementById('introCountyName');
