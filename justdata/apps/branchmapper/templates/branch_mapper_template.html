@@ -127,10 +127,11 @@
 
         .map-overlay-legend {
             position: absolute;
-            bottom: 10px;
-            left: 10px;
+            bottom: 16px;
+            left: 14px;
             z-index: 3;
-            background: rgba(255,255,255,0.92);
+            background: #ffffff;
+            border: 1px solid #cccccc;
             border-radius: 6px;
             padding: 10px 14px;
             display: none;
@@ -1932,7 +1933,7 @@
 
             // Only show title if there's meaningful content
             if (parts.length > 0 && (currentGeographyName || selectedBanks.length > 0)) {
-                titleEl.textContent = parts.join(' \u2014 ');
+                titleEl.textContent = parts.join(' | ');
                 titleEl.style.display = 'block';
             } else {
                 titleEl.style.display = 'none';
@@ -1972,10 +1973,10 @@
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
             } else if (censusType === 'minority') {
                 censusHtml += '<strong>% Minority Population</strong>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#1a1a1a"></span> Highest</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Above median</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Below median</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Lowest</div>';
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest</div>';
             }
 
             if (branchHtml || censusHtml) {
@@ -3363,24 +3364,24 @@
         function getMinorityColor(category) {
             switch(category) {
                 case 'Q4 (Highest 25%)':
-                    return '#1a1a1a';      // Very dark gray - Highest quartile
+                    return '#0a0a0a';      // Near black - Highest quartile
                 case 'Q3 (50-75%)':
-                    return '#666666';      // Medium-dark gray - Third quartile
+                    return '#555555';      // Medium-dark gray - Third quartile
                 case 'Q2 (25-50%)':
-                    return '#999999';      // Medium gray - Second quartile
+                    return '#aaaaaa';      // Medium-light gray - Second quartile
                 case 'Q1 (Lowest 25%)':
-                    return '#cccccc';      // Light gray - Lowest quartile
+                    return '#d9d9d9';      // Light gray - Lowest quartile
                 // Legacy support for old categories
                 case 'Very High':
-                    return '#1a1a1a';
+                    return '#0a0a0a';
                 case 'High':
                     return '#333333';
                 case 'Above Average':
-                    return '#666666';
+                    return '#555555';
                 case 'Average':
-                    return '#999999';
+                    return '#aaaaaa';
                 case 'Below Average':
-                    return '#cccccc';
+                    return '#d9d9d9';
                 default:
                     return '#e0e0e0';      // Very light gray - Unknown
             }
@@ -3404,15 +3405,15 @@
             return [
                 'match',
                 ['get', 'minority_category'],
-                'Q4 (Highest 25%)', '#1a1a1a',
-                'Q3 (50-75%)', '#666666',
-                'Q2 (25-50%)', '#999999',
-                'Q1 (Lowest 25%)', '#cccccc',
-                'Very High', '#1a1a1a',
+                'Q4 (Highest 25%)', '#0a0a0a',
+                'Q3 (50-75%)', '#555555',
+                'Q2 (25-50%)', '#aaaaaa',
+                'Q1 (Lowest 25%)', '#d9d9d9',
+                'Very High', '#0a0a0a',
                 'High', '#333333',
-                'Above Average', '#666666',
-                'Average', '#999999',
-                'Below Average', '#cccccc',
+                'Above Average', '#555555',
+                'Average', '#aaaaaa',
+                'Below Average', '#d9d9d9',
                 '#e0e0e0' // default
             ];
         }
@@ -4064,9 +4065,10 @@
             const height = container.offsetHeight;
 
             const scale = 3;  // 3x resolution for crisp presentation output
+            const footerHeight = 36;
             const composite = document.createElement('canvas');
             composite.width = width * scale;
-            composite.height = height * scale;
+            composite.height = (height + footerHeight) * scale;
             const ctx = composite.getContext('2d');
             ctx.scale(scale, scale);
 
@@ -4111,16 +4113,17 @@
                 }
             }
 
-            // Add branded footer bar
-            const footerHeight = 36;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-            ctx.fillRect(0, height - footerHeight, width, footerHeight);
+            // Add branded footer bar below the map (not overlaid)
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, height, width, footerHeight);
+            ctx.fillStyle = '#dddddd';
+            ctx.fillRect(0, height, width, 1);  // subtle top border
             ctx.fillStyle = '#333333';
             ctx.font = '12px Georgia, serif';
-            ctx.fillText('Source: FDIC Summary of Deposits | NCRC JustData BranchMapper', 12, height - 12);
+            ctx.fillText('Source: FDIC Summary of Deposits | NCRC JustData BranchMapper', 12, height + 22);
             const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
             const dateWidth = ctx.measureText(dateStr).width;
-            ctx.fillText(dateStr, width - dateWidth - 12, height - 12);
+            ctx.fillText(dateStr, width - dateWidth - 12, height + 22);
 
             return new Promise(resolve => {
                 composite.toBlob(blob => resolve(blob), 'image/jpeg', 0.95);
