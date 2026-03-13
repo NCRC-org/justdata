@@ -11,6 +11,33 @@ from justdata.shared.analysis.ai_provider import AIAnalyzer, convert_numpy_types
 class BranchSightAnalyzer(AIAnalyzer):
     """AI analyzer specifically for bank branch data."""
 
+    @staticmethod
+    def _get_style_guide() -> str:
+        """Return the NCRC AI narrative style block for consistent output across all reports."""
+        return """
+        NCRC STYLE GUIDE (apply to all narrative output):
+        - Keep sentences short and direct. Maximum one subordinate clause per sentence.
+        - If a sentence exceeds 30 words, break it into two sentences.
+        - State the finding first, then the explanation. Do not front-load qualifiers.
+        - Do not hedge excessively. Use "suggest," "appear to," or "may indicate" no more than once per paragraph. After that, state findings directly.
+        - Prefer periods over semicolons. Use semicolons only to separate items in a complex list.
+        - Do not use the Oxford comma (no comma before "and" or "or" in a series).
+        - Do not insert commas before dependent clauses that complete the main thought. When in doubt, omit the comma.
+        - One sentence maximum for table or chart introductions. Lead with what the data shows, not what the visual element is.
+        - Do not separately describe a chart and its underlying table when they show the same data.
+        - Professional, objective, measured tone. No promotional language.
+        - Avoid adjectives that editorialize: "dramatic," "alarming," "impressive," "significant" (unless statistically significant). Let the data speak.
+        - Do not use em-dashes. Use commas, periods or colons instead.
+        - Do not use emoticons or emoji.
+        """
+
+    def _call_ai(self, prompt: str, max_tokens: int = 1000, temperature: float = 0.3,
+                  app_name: str = None, report_type: str = None) -> str:
+        """Override to prepend NCRC style guide to every prompt."""
+        styled_prompt = self._get_style_guide() + "\n" + prompt
+        return super()._call_ai(styled_prompt, max_tokens=max_tokens, temperature=temperature,
+                                app_name=app_name, report_type=report_type)
+
     def _get_data_source_context(self) -> str:
         """Return context about what FDIC Summary of Deposits branch data represents."""
         return """
@@ -71,7 +98,7 @@ class BranchSightAnalyzer(AIAnalyzer):
             census_note = """
         
         CRITICAL CENSUS BOUNDARY CHANGE NOTE (MUST INCLUDE):
-        The census tract changes from 2021 to 2022 created a 30% increase nationally in the number of majority-minority census tracts, most of which are not low to moderate income. The 2020 census boundaries that took effect in 2022 resulted in a dramatic increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a dramatic increase in majority-minority branch locations between 2021 and 2022. When discussing MMCT (Majority-Minority Census Tract) branch changes between 2021 and 2022, you MUST explicitly note this census boundary change effect. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual branch location changes or banking strategy shifts.
+        The census tract changes from 2021 to 2022 created a 30% increase nationally in the number of majority-minority census tracts, most of which are not low to moderate income. The 2020 census boundaries that took effect in 2022 resulted in a large increase in the number of middle and upper income majority-minority census tracts nationally. Therefore, it is expected that there would be a substantial increase in majority-minority branch locations between 2021 and 2022. When discussing MMCT (Majority-Minority Census Tract) branch changes between 2021 and 2022, you MUST explicitly note this census boundary change effect. This is a methodological artifact of the census boundary update, not necessarily a reflection of actual branch location changes or banking strategy shifts.
         """
         
         prompt = f"""
@@ -516,7 +543,7 @@ Top Banks by Deposits:
             
             Paragraph 1: Focus on broad trends over time
             - Identify which banks have grown the most or shrunk the most over the study period (use Net Change column)
-            - Note that bank mergers may result in dramatic changes in some branch networks
+            - Note that bank mergers may result in large changes in some branch networks
             - Describe overall patterns in how banks serve LMICT and MMCT communities based on percentages
             - Note any broad trends in branch distribution across the top banks
             
