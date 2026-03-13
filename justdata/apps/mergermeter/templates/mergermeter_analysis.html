@@ -725,6 +725,11 @@
                                     Interactive web report with export options
                                 </small>
                             </div>
+                            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
+                                <button type="button" id="runAnotherBtn" onclick="resetForm()" style="padding: 12px 32px; background: #1a8fc9; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                                    <i class="fas fa-redo"></i> Run Another Report
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2236,6 +2241,54 @@
                     console.log(isSingleBankMode ? 'Single bank selected - showing assessment area section' : 'Both banks selected - showing assessment area section');
                 }
             }
+
+            // Reset form to initial state for running another report
+            window.resetForm = function() {
+                // Hide results and error sections
+                document.getElementById('resultsSection').style.display = 'none';
+                document.getElementById('errorSection').style.display = 'none';
+                document.getElementById('progressSection').style.display = 'none';
+
+                // Reset the form
+                document.getElementById('analysisForm').reset();
+
+                // Clear both bank selections
+                ['acquirer', 'target'].forEach(function(bank) {
+                    var lei = document.getElementById(bank + '_lei');
+                    var rssd = document.getElementById(bank + '_rssd');
+                    var sbId = document.getElementById(bank + '_sb_id');
+                    var name = document.getElementById(bank + '_name');
+                    var search = document.getElementById(bank + '_search');
+                    var searchContainer = document.getElementById(bank + '_search_container');
+                    var selected = document.getElementById(bank + '_selected');
+
+                    if (lei) lei.value = '';
+                    if (rssd) rssd.value = '';
+                    if (sbId) sbId.value = '';
+                    if (name) name.value = '';
+                    if (search) search.value = '';
+                    if (searchContainer) searchContainer.style.display = 'block';
+                    if (selected) selected.style.display = 'none';
+                });
+
+                // Hide assessment area section
+                var assessmentSection = document.getElementById('assessmentAreaSection');
+                if (assessmentSection) assessmentSection.style.display = 'none';
+
+                // Reset progress bar
+                var progressFill = document.getElementById('progressFill');
+                var progressText = document.getElementById('progressText');
+                var progressPercent = document.getElementById('progressPercent');
+                if (progressFill) progressFill.style.width = '0%';
+                if (progressText) progressText.textContent = '';
+                if (progressPercent) progressPercent.textContent = '0%';
+
+                // Re-enable submit button
+                $('#submitBtn').prop('disabled', false);
+
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
 
             // Clear bank selection and show search again
             window.clearBankSelection = function(bank) {
