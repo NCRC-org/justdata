@@ -99,6 +99,49 @@
             border-radius: 8px;
         }
 
+        .map-overlay-logo {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            z-index: 3;
+            background: rgba(255,255,255,0.88);
+            border-radius: 6px;
+            padding: 6px 10px;
+            pointer-events: none;
+        }
+
+        .map-overlay-legend {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            z-index: 3;
+            background: rgba(255,255,255,0.92);
+            border-radius: 6px;
+            padding: 10px 14px;
+            display: none;
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .map-overlay-legend strong {
+            font-size: 0.85rem;
+            color: var(--ncrc-dark-blue, #003366);
+        }
+
+        .map-overlay-legend .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-top: 4px;
+        }
+
+        .map-overlay-legend .legend-swatch {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 1px solid #333;
+        }
+
         /* Desktop layout - side by side */
         @media (min-width: 992px) {
             .container {
@@ -872,6 +915,10 @@
         <div class="map-container" style="position: relative;">
             <!-- Onboarding Overlay -->
             <div id="branchMap"></div>
+            <div class="map-overlay-logo" id="mapOverlayLogo">
+                <img src="/static/img/ncrc-logo-black.png" alt="NCRC" height="28">
+            </div>
+            <div class="map-overlay-legend" id="mapOverlayLegend"></div>
         </div>
         
         <!-- Info Panel -->
@@ -1854,6 +1901,10 @@
             if (column2IncomeLegend) column2IncomeLegend.style.display = 'none';
             if (column2MinorityLegend) column2MinorityLegend.style.display = 'none';
 
+            // Hide map overlay legend
+            const mapLegend = document.getElementById('mapOverlayLegend');
+            if (mapLegend) mapLegend.style.display = 'none';
+
             if (type === 'off') return;
 
             // Move census layers below labels/roads (first symbol layer)
@@ -1869,6 +1920,14 @@
                 incomeLayerVisible = true;
                 if (column2Legend) column2Legend.style.display = 'block';
                 if (column2IncomeLegend) column2IncomeLegend.style.display = 'block';
+                if (mapLegend) {
+                    mapLegend.innerHTML = '<strong>Income Levels</strong>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#333333"></span> Low (\u226450%)</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Moderate (\u226480%)</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
+                    mapLegend.style.display = 'block';
+                }
             } else if (type === 'minority') {
                 if (firstSymbol) {
                     branchMap.moveLayer('census-minority-fill', firstSymbol);
@@ -1879,6 +1938,14 @@
                 minorityLayerVisible = true;
                 if (column2Legend) column2Legend.style.display = 'block';
                 if (column2MinorityLegend) column2MinorityLegend.style.display = 'block';
+                if (mapLegend) {
+                    mapLegend.innerHTML = '<strong>Minority Population</strong>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#1a1a1a"></span> Q4 (Highest 25%)</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#666666"></span> Q3 (50\u201375%)</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Q2 (25\u201350%)</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Q1 (Lowest 25%)</div>';
+                    mapLegend.style.display = 'block';
+                }
             }
         }
 
@@ -3822,6 +3889,25 @@
                     ctx.drawImage(overlayCanvas, 0, 0, width, height);
                 } catch (e) {
                     console.log('Overlay capture skipped:', e);
+                }
+            }
+
+            // Capture map overlay elements (logo, legend)
+            const mapContainer = container.closest('.map-container');
+            for (const el of [document.getElementById('mapOverlayLogo'), document.getElementById('mapOverlayLegend')]) {
+                if (el && el.offsetParent !== null) {
+                    try {
+                        const elCanvas = await html2canvas(el, {
+                            backgroundColor: null, scale: 2, logging: false, useCORS: true
+                        });
+                        const rect = el.getBoundingClientRect();
+                        const containerRect = mapContainer.getBoundingClientRect();
+                        const x = rect.left - containerRect.left;
+                        const y = rect.top - containerRect.top;
+                        ctx.drawImage(elCanvas, 0, 0, elCanvas.width, elCanvas.height, x, y, rect.width, rect.height);
+                    } catch (e) {
+                        console.log('Map overlay capture skipped:', e);
+                    }
                 }
             }
 
