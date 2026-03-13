@@ -420,14 +420,9 @@
             background: var(--ncrc-primary-blue);
         }
 
-        /* PDF export button hover style */
-        #downloadPdfBtn:hover {
-            background: #b71c1c !important;
-        }
-
-        /* Excel export button hover style */
-        #downloadExcelBtn:hover {
-            background: #218838 !important;
+        /* Export button hover style */
+        #downloadZipBtn:hover {
+            background: #0f2440 !important;
         }
 
         .data-table {
@@ -739,11 +734,8 @@
     <div class="report-container">
         <!-- Header Actions Row - Excel export only -->
         <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px; padding: 10px 0;">
-            <a href="/bizsight/download?format=pdf&job_id={{ job_id }}" class="action-btn primary" id="downloadPdfBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #c62828; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; font-size: 1rem; transition: background-color 0.2s; margin-right: 10px;">
-                <i class="fas fa-file-pdf"></i> Download PDF Report
-            </a>
-            <a href="/bizsight/download?format=excel&job_id={{ job_id }}" class="action-btn primary" id="downloadExcelBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #28a745; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; font-size: 1rem; transition: background-color 0.2s;">
-                <i class="fas fa-file-excel"></i> Export Full Report to Excel
+            <a href="/bizsight/download?format=zip&job_id={{ job_id }}" class="action-btn primary" id="downloadZipBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; font-size: 1rem; transition: background-color 0.2s;">
+                <i class="fas fa-download"></i> Export Report
             </a>
         </div>
 
@@ -1256,10 +1248,10 @@
             const jobId = urlParams.get('job_id');
             
             if (jobId) {
-                // Update PDF download link
-                const pdfBtn = document.getElementById('downloadPdfBtn');
-                if (pdfBtn) {
-                    pdfBtn.href = `${baseUrl}/download?format=pdf&job_id=${jobId}`;
+                // Update Export Report link
+                const zipBtn = document.getElementById('downloadZipBtn');
+                if (zipBtn) {
+                    zipBtn.href = `${baseUrl}/download?format=zip&job_id=${jobId}`;
                 }
 
                 // Update dropdown download links
