@@ -3087,18 +3087,97 @@
                     layout: { visibility: 'none' }
                 }, firstSymbolId);
 
-                // Hide minor/residential road layers for cleaner presentation maps
-                const minorRoadLayers = [
+                // ── Declutter base map for thematic cartography ──
+                // Keep: background, landcover, water, major roads (motorway/trunk),
+                // admin boundaries, major city/state/country labels, interstate shields.
+                // Hide everything else — this is a thematic map, not a navigation map.
+
+                const hideLayers = [
+                    // Land use, parks, structures, buildings
+                    'national-park', 'landuse', 'hillshade',
+                    'land-structure-polygon', 'land-structure-line',
+                    'aeroway-polygon', 'aeroway-line', 'building',
+
+                    // Tunnel: everything except motorway-trunk
                     'tunnel-minor-case', 'tunnel-street-case', 'tunnel-minor-link-case',
-                    'tunnel-minor', 'tunnel-minor-link', 'tunnel-street', 'tunnel-street-low',
+                    'tunnel-secondary-tertiary-case', 'tunnel-primary-case', 'tunnel-major-link-case',
+                    'tunnel-motorway-trunk-case', 'tunnel-construction',
+                    'tunnel-minor', 'tunnel-minor-link', 'tunnel-major-link',
+                    'tunnel-street', 'tunnel-street-low',
+                    'tunnel-secondary-tertiary', 'tunnel-primary',
+                    'tunnel-oneway-arrow-blue', 'tunnel-oneway-arrow-white',
+
+                    // Road: everything except motorway-trunk
+                    'road-polygon', 'turning-feature-outline', 'turning-feature',
                     'road-minor-case', 'road-street-case', 'road-minor-link-case',
-                    'road-minor', 'road-minor-link', 'road-street', 'road-street-low',
-                    'road-rail-tracks',
+                    'road-secondary-tertiary-case', 'road-primary-case',
+                    'road-major-link-case', 'road-motorway-trunk-case',
+                    'road-construction',
+                    'road-minor', 'road-minor-link', 'road-major-link',
+                    'road-street', 'road-street-low',
+                    'road-secondary-tertiary', 'road-primary',
+                    'level-crossing',
+                    'road-oneway-arrow-blue', 'road-oneway-arrow-white',
+                    'road-rail', 'road-rail-tracks',
+
+                    // Bridge: everything except motorway-trunk
                     'bridge-minor-case', 'bridge-street-case', 'bridge-minor-link-case',
-                    'bridge-minor', 'bridge-minor-link', 'bridge-street', 'bridge-street-low',
-                    'bridge-rail-tracks'
+                    'bridge-secondary-tertiary-case', 'bridge-primary-case',
+                    'bridge-major-link-case', 'bridge-motorway-trunk-case',
+                    'bridge-construction',
+                    'bridge-minor', 'bridge-minor-link', 'bridge-major-link',
+                    'bridge-street', 'bridge-street-low',
+                    'bridge-secondary-tertiary', 'bridge-primary',
+                    'bridge-major-link-2-case', 'bridge-motorway-trunk-2-case',
+                    'bridge-major-link-2',
+                    'bridge-oneway-arrow-blue', 'bridge-oneway-arrow-white',
+                    'bridge-rail', 'bridge-rail-tracks',
+
+                    // Labels: hide all except major cities, states, countries
+                    'building-entrance', 'building-number-label', 'block-number-label',
+                    'road-label', 'road-label copy', 'road-intersection', 'road-exit-shield',
+                    'natural-line-label', 'natural-point-label',
+                    'poi-label', 'transit-label', 'airport-label',
+                    'settlement-subdivision-label', 'settlement-minor-label',
+                    'continent-label',
+
+                    // Satellite raster (if present)
+                    'mapbox-satellite'
                 ];
-                minorRoadLayers.forEach(id => {
+
+                hideLayers.forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setLayoutProperty(id, 'visibility', 'none');
+                    }
+                });
+
+                // Mute kept roads to light gray so they don't compete with data
+                ['road-motorway-trunk', 'bridge-motorway-trunk', 'bridge-motorway-trunk-2', 'tunnel-motorway-trunk'].forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setPaintProperty(id, 'line-color', '#c0c0c0');
+                        branchMap.setPaintProperty(id, 'line-width', 1.5);
+                    }
+                });
+
+                // Filter road shields to motorway/trunk only (hide local route markers)
+                if (branchMap.getLayer('road-number-shield')) {
+                    branchMap.setFilter('road-number-shield', [
+                        'match', ['get', 'class'],
+                        ['motorway', 'trunk'], true,
+                        false
+                    ]);
+                }
+
+                // Mute admin boundaries to thin light gray
+                ['admin-0-boundary', 'admin-1-boundary', 'admin-2-boundary',
+                 'admin-0-boundary-bg', 'admin-1-boundary-bg', 'admin-2-boundary-bg'].forEach(id => {
+                    if (branchMap.getLayer(id)) {
+                        branchMap.setPaintProperty(id, 'line-color', '#bbbbbb');
+                    }
+                });
+
+                // Keep major water labels, hide minor ones
+                ['waterway-label'].forEach(id => {
                     if (branchMap.getLayer(id)) {
                         branchMap.setLayoutProperty(id, 'visibility', 'none');
                     }
