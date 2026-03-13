@@ -8,6 +8,8 @@ import pandas as pd
 from typing import List, Dict, Optional
 import numpy as np
 
+from justdata.shared.utils.name_utils import strip_trailing_punctuation
+
 
 def safe_int(value, default=0):
     """Safely convert value to int, handling pd.NA and None."""
@@ -548,8 +550,10 @@ def clean_lender_name(name: str) -> str:
         if name.upper().endswith(suffix.upper()):
             name = name[:-len(suffix)]
             break
-    
-    return name.strip()
+
+    # Strip trailing commas/periods from FFIEC source data
+    name = strip_trailing_punctuation(name)
+    return name
 
 
 def create_top_lenders_table(df: pd.DataFrame, year: int = 2024) -> pd.DataFrame:
