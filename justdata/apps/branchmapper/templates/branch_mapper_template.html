@@ -1856,15 +1856,13 @@
 
             if (type === 'off') return;
 
-            // Move census layers below bank markers
-            const firstBankLayer = selectedBanks.length > 0 && selectedBanks[0]._layerIds && selectedBanks[0]._layerIds.length > 1
-                ? selectedBanks[0]._layerIds[1] : undefined;
-            const beforeLayer = branchMap.getLayer('gray-all-banks-fill') ? 'gray-all-banks-fill' : firstBankLayer;
+            // Move census layers below labels/roads (first symbol layer)
+            const firstSymbol = findFirstSymbolLayer();
 
             if (type === 'income') {
-                if (beforeLayer) {
-                    branchMap.moveLayer('census-income-fill', beforeLayer);
-                    branchMap.moveLayer('census-income-outline', beforeLayer);
+                if (firstSymbol) {
+                    branchMap.moveLayer('census-income-fill', firstSymbol);
+                    branchMap.moveLayer('census-income-outline', firstSymbol);
                 }
                 branchMap.setLayoutProperty('census-income-fill', 'visibility', 'visible');
                 branchMap.setLayoutProperty('census-income-outline', 'visibility', 'visible');
@@ -1872,9 +1870,9 @@
                 if (column2Legend) column2Legend.style.display = 'block';
                 if (column2IncomeLegend) column2IncomeLegend.style.display = 'block';
             } else if (type === 'minority') {
-                if (beforeLayer) {
-                    branchMap.moveLayer('census-minority-fill', beforeLayer);
-                    branchMap.moveLayer('census-minority-outline', beforeLayer);
+                if (firstSymbol) {
+                    branchMap.moveLayer('census-minority-fill', firstSymbol);
+                    branchMap.moveLayer('census-minority-outline', firstSymbol);
                 }
                 branchMap.setLayoutProperty('census-minority-fill', 'visibility', 'visible');
                 branchMap.setLayoutProperty('census-minority-outline', 'visibility', 'visible');
