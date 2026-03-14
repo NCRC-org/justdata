@@ -35,6 +35,23 @@ BORDER_THIN = Border(
 )
 
 
+def _normalize_year_column(df: pd.DataFrame, year_col: str) -> pd.DataFrame:
+    """Normalize year column values to plain integer strings.
+
+    Handles int (2023), float (2023.0), string ('2023'), and string ('2023.0')
+    by converting all to '2023'. This prevents type mismatches when filtering
+    DataFrames by year, since BigQuery may return year as int, float, or string
+    depending on the query path and whether NaN values coerced the column to float.
+    """
+    if df is None or df.empty or year_col not in df.columns:
+        return df
+    df = df.copy()
+    df[year_col] = df[year_col].apply(
+        lambda x: str(int(float(x))) if pd.notna(x) and str(x).strip() != '' else ''
+    )
+    return df
+
+
 def _get_short_bank_name(bank_name: str) -> str:
     """
     Extract a short identifier from bank name for sheet naming.
@@ -908,6 +925,20 @@ def _create_mortgage_data_sheet(
     sorted_years = sorted([str(y) for y in years]) if years else []
     use_yearly = len(sorted_years) >= 2 and year_col is not None
 
+    # Normalize year column to plain strings (handles int/float/string mismatches)
+    if use_yearly:
+        raw_years = subject_data[year_col].unique().tolist() if year_col in subject_data.columns else []
+        raw_types = list(set(type(v).__name__ for v in raw_years))
+        print(f"[DEBUG] Mortgage {bank_name}: year_col='{year_col}', raw year values={raw_years}, types={raw_types}")
+        logger.info(f"Mortgage {bank_name}: year_col='{year_col}', raw year values={raw_years}, types={raw_types}")
+
+        subject_data = _normalize_year_column(subject_data, year_col)
+        peer_data = _normalize_year_column(peer_data, year_col) if peer_data is not None else peer_data
+
+        norm_years = subject_data[year_col].unique().tolist() if year_col in subject_data.columns else []
+        print(f"[DEBUG] Mortgage {bank_name}: normalized years={norm_years}, sorted_years={sorted_years}")
+        logger.info(f"Mortgage {bank_name}: normalized years={norm_years}, sorted_years={sorted_years}")
+
     # Metrics - match expected format
     metrics = [
         'Loans', 'LMICT%', 'LMIB%', 'LMIB$', 'MMCT%',
@@ -1169,6 +1200,20 @@ def _create_sb_data_sheet(
 
     sorted_years = sorted([str(y) for y in years]) if years else []
     use_yearly = len(sorted_years) >= 2 and year_col is not None
+
+    # Normalize year column to plain strings (handles int/float/string mismatches)
+    if use_yearly:
+        raw_years = subject_data[year_col].unique().tolist() if year_col in subject_data.columns else []
+        raw_types = list(set(type(v).__name__ for v in raw_years))
+        print(f"[DEBUG] SB {bank_name}: year_col='{year_col}', raw year values={raw_years}, types={raw_types}")
+        logger.info(f"SB {bank_name}: year_col='{year_col}', raw year values={raw_years}, types={raw_types}")
+
+        subject_data = _normalize_year_column(subject_data, year_col)
+        peer_data = _normalize_year_column(peer_data, year_col) if peer_data is not None else peer_data
+
+        norm_years = subject_data[year_col].unique().tolist() if year_col in subject_data.columns else []
+        print(f"[DEBUG] SB {bank_name}: normalized years={norm_years}, sorted_years={sorted_years}")
+        logger.info(f"SB {bank_name}: normalized years={norm_years}, sorted_years={sorted_years}")
 
     if not use_yearly:
         # --- Original single-column layout ---
