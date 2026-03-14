@@ -274,10 +274,10 @@ def calculate_mortgage_hhi_for_year(df: pd.DataFrame, year: int) -> Dict[str, An
 def sanitize_sheet_name(name: str, max_length: int = 31) -> str:
     """
     Sanitize Excel sheet name by removing invalid characters.
-    
-    Excel sheet names cannot contain: : \ / ? * [ ]
+
+    Excel sheet names cannot contain: : \\ / ? * [ ]
     Also truncate to max_length (Excel limit is 31 characters).
-    
+
     Args:
         name: Original sheet name
         max_length: Maximum length (default 31, Excel's limit)
@@ -2977,8 +2977,8 @@ def create_population_demographics_table_for_excel(census_data: Dict = None) -> 
 def sanitize_sheet_name(name: str, max_length: int = 31) -> str:
     """
     Sanitize a sheet name for Excel compatibility.
-    
-    Excel sheet names cannot contain: : \ / ? * [ ]
+
+    Excel sheet names cannot contain: : \\ / ? * [ ]
     Also limited to 31 characters.
     """
     # Replace invalid characters

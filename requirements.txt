@@ -1,58 +1,60 @@
-# Existing dependencies
-fastapi
-uvicorn
+# Core web framework
+flask>=2.3.0
+Werkzeug>=2.3.0
+gunicorn>=21.2.0
 python-dotenv
 requests
-pydantic
-sqlalchemy
-psycopg2-binary
-pytest
-pytest-asyncio
-pytest-cov
 
-# BranchSight/BizSight/LendSight/MergerMeter dependencies
+# Data processing
 pandas>=1.5.0
 numpy>=1.23.0
 scipy>=1.9.0
+
+# Google Cloud / BigQuery
 google-cloud-bigquery>=3.0.0
 google-cloud-storage>=2.0.0
 db-dtypes>=1.0.0
 google-auth>=2.0.0
 google-auth-oauthlib>=1.0.0
 google-auth-httplib2>=0.1.0
+
+# Reporting / Excel / PDF
 openpyxl>=3.0.0
 reportlab>=3.6.0
 Pillow>=10.0.0
 matplotlib>=3.5.0
 seaborn>=0.11.0
+
+# AI
 anthropic>=0.7.0
 openai>=1.0.0
-numpy>=1.21.0
-flask>=2.3.0
-Werkzeug>=2.3.0
-user-agents>=2.2.0
-gunicorn>=21.2.0
 
-# Optional - PDF Generation (for BizSight)
+# PDF Generation (BizSight)
 playwright>=1.40.0
 
-# Optional - Production Server
-# gunicorn>=20.1.0  # Already included above
-# uwsgi>=2.0.20     # Alternative production server
+# Census
 census>=0.8.0
 us>=3.0.0
 
-# LenderProfile dependencies
+# LenderProfile
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
 
 # Firebase Authentication
 firebase-admin>=6.0.0
 
-# ElectWatch dependencies
-PyYAML>=6.0  # Required for congress-legislators crosswalk parsing
-python-dateutil>=2.8.0  # Date parsing for metadata
+# ElectWatch
+PyYAML>=6.0
+python-dateutil>=2.8.0
 
-# HubSpot Integration
+# HTTP client
 httpx>=0.27.0
-structlog>=24.0.0
+
+# Misc
+user-agents>=2.2.0
+pydantic>=2.5.0
+
+# Testing
+pytest>=7.4.0
+pytest-asyncio
+pytest-cov
