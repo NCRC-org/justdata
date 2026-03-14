@@ -2242,52 +2242,10 @@
                 }
             }
 
-            // Reset form to initial state for running another report
+            // Reset to initial bank selection screen
             window.resetForm = function() {
-                // Hide results and error sections
-                document.getElementById('resultsSection').style.display = 'none';
-                document.getElementById('errorSection').style.display = 'none';
-                document.getElementById('progressSection').style.display = 'none';
-
-                // Reset the form
-                document.getElementById('analysisForm').reset();
-
-                // Clear both bank selections
-                ['acquirer', 'target'].forEach(function(bank) {
-                    var lei = document.getElementById(bank + '_lei');
-                    var rssd = document.getElementById(bank + '_rssd');
-                    var sbId = document.getElementById(bank + '_sb_id');
-                    var name = document.getElementById(bank + '_name');
-                    var search = document.getElementById(bank + '_search');
-                    var searchContainer = document.getElementById(bank + '_search_container');
-                    var selected = document.getElementById(bank + '_selected');
-
-                    if (lei) lei.value = '';
-                    if (rssd) rssd.value = '';
-                    if (sbId) sbId.value = '';
-                    if (name) name.value = '';
-                    if (search) search.value = '';
-                    if (searchContainer) searchContainer.style.display = 'block';
-                    if (selected) selected.style.display = 'none';
-                });
-
-                // Hide assessment area section
-                var assessmentSection = document.getElementById('assessmentAreaSection');
-                if (assessmentSection) assessmentSection.style.display = 'none';
-
-                // Reset progress bar
-                var progressFill = document.getElementById('progressFill');
-                var progressText = document.getElementById('progressText');
-                var progressPercent = document.getElementById('progressPercent');
-                if (progressFill) progressFill.style.width = '0%';
-                if (progressText) progressText.textContent = '';
-                if (progressPercent) progressPercent.textContent = '0%';
-
-                // Re-enable submit button
-                $('#submitBtn').prop('disabled', false);
-
-                // Scroll to top
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                var baseUrl = window.APP_BASE_URL || '/mergermeter';
+                window.location.href = baseUrl + '/';
             };
 
             // Clear bank selection and show search again
