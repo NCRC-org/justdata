@@ -725,6 +725,11 @@
                                     Interactive web report with export options
                                 </small>
                             </div>
+                            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
+                                <button type="button" id="runAnotherBtn" onclick="resetForm()" style="padding: 12px 32px; background: #1a8fc9; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">
+                                    <i class="fas fa-redo"></i> Run Another Report
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2236,6 +2241,12 @@
                     console.log(isSingleBankMode ? 'Single bank selected - showing assessment area section' : 'Both banks selected - showing assessment area section');
                 }
             }
+
+            // Reset to initial bank selection screen
+            window.resetForm = function() {
+                var baseUrl = window.APP_BASE_URL || '/mergermeter';
+                window.location.href = baseUrl + '/';
+            };
 
             // Clear bank selection and show search again
             window.clearBankSelection = function(bank) {
