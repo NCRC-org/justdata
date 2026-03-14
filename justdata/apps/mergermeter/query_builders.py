@@ -637,14 +637,11 @@ filtered_sb_data AS (
         COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
         COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
     FROM `justdata-ncrc.bizsight.sb_county_summary` d
-    INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
-        ON d.respondent_id = l.sb_resid
-        AND CAST(d.year AS STRING) = l.sb_year
     LEFT JOIN cbsa_crosswalk c
         ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = c.geoid5
     WHERE CAST(d.year AS STRING) IN ('{years_list}')
         AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
-        AND (l.sb_resid = '{respondent_id_no_prefix}' OR l.sb_resid = '{sb_respondent_id}')
+        AND (d.respondent_id = '{respondent_id_no_prefix}' OR d.respondent_id = '{sb_respondent_id}')
         AND c.cbsa_code IS NOT NULL  -- Only include counties that have a CBSA mapping (in assessment areas)
 ),
 aggregated_sb_metrics AS (
@@ -1072,7 +1069,7 @@ filtered_sb_data AS (
                 ELSE 'Non-MSA'
             END
         ) as cbsa_name,
-        l.sb_resid,
+        d.respondent_id as sb_resid,
         COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
         -- SB amounts are stored in thousands of dollars, convert to actual dollars
         (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
@@ -1086,9 +1083,6 @@ filtered_sb_data AS (
         COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
         COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
     FROM `justdata-ncrc.bizsight.sb_county_summary` d
-    INNER JOIN `justdata-ncrc.bizsight.sb_lenders` l
-        ON d.respondent_id = l.sb_resid
-        AND CAST(d.year AS STRING) = l.sb_year
     LEFT JOIN cbsa_crosswalk c
         ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = c.geoid5
     WHERE CAST(d.year AS STRING) IN ('{years_list}')
@@ -1105,7 +1099,7 @@ subject_sb_volume AS (
     GROUP BY year, cbsa_code
 ),
 all_lenders_sb_volume AS (
-    SELECT 
+    SELECT
         year,
         cbsa_code,
         sb_resid,
