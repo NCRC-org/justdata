@@ -78,7 +78,8 @@ jobs:
             --update-secrets "ANTHROPIC_API_KEY=claude-api-key:latest" \
             --update-secrets "CENSUS_API_KEY=census-api-key:latest" \
             --update-secrets "GOOGLE_APPLICATION_CREDENTIALS_JSON=bigquery-credentials:latest" \
-            --update-secrets "FIREBASE_CREDENTIALS_JSON=firebase-admin-credentials:latest"
+            --update-secrets "FIREBASE_CREDENTIALS_JSON=firebase-admin-credentials:latest" \
+            --update-secrets "MERGERMETER_API_KEY=mergermeter-api-key:latest"
 
       - name: Get Service URL
         run: |
