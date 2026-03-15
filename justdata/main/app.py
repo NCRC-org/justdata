@@ -22,6 +22,7 @@ EXEMPT_PATHS = [
     '/shared/',
     '/api/auth/',  # Auth routes for login/logout
     '/api/platform-stats',  # Public homepage stats (no auth; avoids 127.0.0.1 vs localhost cookie mismatch)
+    '/mergermeter/api/generate',  # API key auth, not Firebase — used by codebot
 ]
 
 
