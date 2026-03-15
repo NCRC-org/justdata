@@ -812,7 +812,7 @@ def api_search_banks_ext():
         sql = """
         WITH sb_latest AS (
             SELECT sb_rssd, sb_resid,
-                ROW_NUMBER() OVER (PARTITION BY SAFE_CAST(sb_rssd AS INT64) ORDER BY year DESC) AS rn
+                ROW_NUMBER() OVER (PARTITION BY SAFE_CAST(sb_rssd AS INT64) ORDER BY sb_year DESC) AS rn
             FROM `justdata-ncrc.bizsight.sb_lenders`
         )
         SELECT DISTINCT
