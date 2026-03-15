@@ -17,8 +17,8 @@ from openpyxl.utils import get_column_letter
 def sanitize_sheet_name(name: str, max_length: int = 31) -> str:
     """
     Sanitize sheet name for Excel compatibility.
-    
-    Excel sheet names cannot contain: \ / ? * [ ]
+
+    Excel sheet names cannot contain: \\ / ? * [ ]
     And must be <= 31 characters.
     """
     # Remove invalid characters

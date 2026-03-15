@@ -209,3 +209,17 @@ justdata/apps/bizsight/data/benchmarks/
 
 # Test output
 test_results.txt
+
+# Local working data / one-off scripts (never commit)
+analysis/
+widgets/
+branch_activity_*.json
+branch_activity_*.xlsx
+branch_activity_*.pdf
+branch_activity_*.txt
+current_report.txt
+update_google_doc.py
+branch_activity_update.py
+scripts/*.geojson.ld
+scripts/served*.txt
+scripts/style_check.json
