@@ -306,6 +306,10 @@ def create_merger_excel(
     if bank_b_branch_data is not None and not bank_b_branch_data.empty:
         _create_branch_data_sheet(wb, bank_b_name, bank_b_branch_data)
 
+    # Force Excel to recalculate all formulas on open
+    from openpyxl.workbook.properties import CalcProperties
+    wb.calculation = CalcProperties(fullCalcOnLoad=True)
+
     # Save workbook
     wb.save(output_path)
     logger.info(f"Merger Excel report saved to: {output_path}")
