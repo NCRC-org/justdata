@@ -779,6 +779,194 @@ def api_export_goals():
         return jsonify({'error': str(e)}), 500
 
 
+@mergermeter_bp.route('/api/generate', methods=['POST'])
+def api_generate():
+    """JSON API endpoint for programmatic Excel generation.
+
+    Accepts bank identifiers and parameters as JSON, runs the same analysis
+    pipeline as the web form, and returns the Excel file bytes directly.
+    No login required — authenticated via shared API key.
+    """
+    import traceback
+
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Request body must be valid JSON"}), 400
+
+    # Validate API key
+    expected_key = os.environ.get('MERGERMETER_API_KEY', '')
+    if not expected_key or data.get('api_key') != expected_key:
+        return jsonify({"error": "Invalid or missing API key"}), 401
+
+    try:
+        from .app import _perform_analysis, clean_bank_name
+
+        bank_a = data.get('bank_a') or {}
+        bank_b = data.get('bank_b')
+        single_bank_mode = bank_b is None or not bank_b
+
+        # Validate required fields
+        if not bank_a.get('lei'):
+            return jsonify({"error": "bank_a.lei is required"}), 422
+        if not bank_a.get('name'):
+            return jsonify({"error": "bank_a.name is required"}), 422
+
+        # --- Derive assessment areas if not provided ---
+        assessment_areas_json = '[]'
+        if data.get('assessment_areas'):
+            # Custom AAs provided — serialize for form_data
+            assessment_areas_json = json.dumps(data['assessment_areas'])
+        else:
+            # Auto-derive from branches using RSSD (or CERT via FDIC)
+            derived_areas = []
+            for bank_info in [bank_a] + ([bank_b] if bank_b else []):
+                rssd = (bank_info.get('rssd') or '').strip()
+                if rssd:
+                    try:
+                        areas = _generate_assessment_areas(rssd=rssd, year=2025, min_share=0.01)
+                        if areas:
+                            derived_areas.extend(areas)
+                    except Exception as e:
+                        print(f"[API] Warning: AA derivation failed for RSSD {rssd}: {e}")
+            if derived_areas:
+                assessment_areas_json = json.dumps(derived_areas)
+            else:
+                return jsonify({
+                    "error": "No assessment areas provided and could not derive from branches. "
+                             "Provide assessment_areas or ensure bank RSSD is correct."
+                }), 422
+
+        # --- Map loan_purposes strings to HMDA codes ---
+        loan_purpose_codes = []
+        for lp in (data.get('loan_purposes') or []):
+            if lp == 'home_purchase':
+                loan_purpose_codes.append('1')
+            elif lp == 'refinance':
+                loan_purpose_codes.extend(['31', '32'])
+            elif lp in ('home_improvement', 'home_equity'):
+                loan_purpose_codes.extend(['2', '4'])
+        loan_purpose_str = ','.join(loan_purpose_codes) if loan_purpose_codes else ''
+
+        # --- Map filter params ---
+        action_taken_list = data.get('action_taken', [1])
+        action_taken_str = ','.join(str(a) for a in action_taken_list)
+
+        occupancy_list = data.get('occupancy', [1])
+        occupancy_str = ','.join(str(o) for o in occupancy_list)
+
+        total_units_list = data.get('total_units', ['1', '2', '3', '4'])
+        total_units_str = ','.join(str(u) for u in total_units_list)
+
+        construction_list = data.get('construction_method', [1, 2])
+        construction_str = ','.join(str(c) for c in construction_list)
+
+        reverse_mortgage = data.get('reverse_mortgage', False)
+        not_reverse = '2' if reverse_mortgage else '1'
+
+        # --- Build form_data dict matching _perform_analysis expectations ---
+        job_id = str(uuid.uuid4())
+
+        hmda_start = str(data.get('hmda_years_start', 2023))
+        hmda_end = str(data.get('hmda_years_end', 2024))
+        sb_start = str(data.get('sb_years_start', 2023))
+        sb_end = str(data.get('sb_years_end', 2024))
+
+        form_data = {
+            'acquirer_lei': (bank_a.get('lei') or '').strip(),
+            'acquirer_rssd': (bank_a.get('rssd') or '').strip(),
+            'acquirer_sb_id': (bank_a.get('respondent_id') or bank_a.get('rssd') or '').strip(),
+            'acquirer_name': (bank_a.get('name') or 'Bank A').strip(),
+            'acquirer_assessment_areas': assessment_areas_json,
+            'target_lei': '',
+            'target_rssd': '',
+            'target_sb_id': '',
+            'target_name': '',
+            'target_assessment_areas': '[]',
+            'single_bank_mode': '1' if single_bank_mode else '0',
+            'use_national_data': '0',
+            'loan_purpose': loan_purpose_str,
+            'peer_group': 'volume_50_200',
+            'hmda_start_year': hmda_start,
+            'hmda_end_year': hmda_end,
+            'sb_start_year': sb_start,
+            'sb_end_year': sb_end,
+            'baseline_hmda_start_year': hmda_start,
+            'baseline_hmda_end_year': hmda_end,
+            'baseline_sb_start_year': sb_start,
+            'baseline_sb_end_year': sb_end,
+            'action_taken': action_taken_str,
+            'occupancy_type': occupancy_str,
+            'total_units': total_units_str,
+            'construction_method': construction_str,
+            'not_reverse': not_reverse,
+        }
+
+        if not single_bank_mode and bank_b:
+            form_data['target_lei'] = (bank_b.get('lei') or '').strip()
+            form_data['target_rssd'] = (bank_b.get('rssd') or '').strip()
+            form_data['target_sb_id'] = (bank_b.get('respondent_id') or bank_b.get('rssd') or '').strip()
+            form_data['target_name'] = (bank_b.get('name') or 'Bank B').strip()
+            form_data['target_assessment_areas'] = assessment_areas_json
+            form_data['single_bank_mode'] = '0'
+
+        # --- Run analysis synchronously ---
+        _perform_analysis(job_id, form_data)
+
+        # --- Check for errors via progress tracker ---
+        progress = get_progress(job_id)
+        if progress and progress.get('error'):
+            return jsonify({
+                "error": "Analysis failed",
+                "details": progress['error']
+            }), 500
+
+        # --- Find and return the Excel file ---
+        import re as re_mod
+        acquirer_name_short = clean_bank_name(bank_a.get('name', 'Bank A'))
+        acquirer_name_safe = re_mod.sub(r'[^\w\s-]', '', acquirer_name_short)
+        acquirer_name_safe = re_mod.sub(r'[\s-]+', '_', acquirer_name_safe)
+        acquirer_name_safe = re_mod.sub(r'__+', '_', acquirer_name_safe).strip('_')
+        if len(acquirer_name_safe) > 50:
+            acquirer_name_safe = acquirer_name_safe[:50]
+
+        excel_file = OUTPUT_DIR / f'merger_analysis_{acquirer_name_safe}_{job_id}.xlsx'
+
+        if not excel_file.exists():
+            # Try checking metadata for the actual filename
+            metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
+            if metadata_file.exists():
+                with open(metadata_file) as mf:
+                    meta = json.load(mf)
+                    actual_name = meta.get('excel_filename')
+                    if actual_name:
+                        excel_file = OUTPUT_DIR / actual_name
+
+        if not excel_file.exists():
+            return jsonify({
+                "error": "Analysis completed but Excel file not found",
+                "details": f"Expected at {excel_file}"
+            }), 500
+
+        # Build a friendly download filename
+        ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+        bank_a_short = clean_bank_name(bank_a.get('name', 'BANK')).upper().replace(' ', '_')[:25]
+        bank_b_short = ''
+        if not single_bank_mode and bank_b and bank_b.get('name'):
+            bank_b_short = '_' + clean_bank_name(bank_b['name']).upper().replace(' ', '_')[:25]
+        download_name = f'NCRC_MergerMeter_{bank_a_short}{bank_b_short}_{ts}.xlsx'
+
+        return send_file(
+            excel_file,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            as_attachment=True,
+            download_name=download_name
+        )
+
+    except Exception as e:
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @mergermeter_bp.route('/health')
 def health():
     """Health check endpoint"""
