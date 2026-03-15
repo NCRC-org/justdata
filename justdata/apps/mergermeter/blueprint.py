@@ -779,6 +779,90 @@ def api_export_goals():
         return jsonify({'error': str(e)}), 500
 
 
+@mergermeter_bp.route('/api/search-banks-ext', methods=['GET'])
+def api_search_banks_ext():
+    """Bank search endpoint for external callers (API key auth).
+
+    Same query as the web form's autocomplete: joins lender_names_gleif
+    with lenders18 and sb_lenders to return the authoritative LEI, RSSD,
+    and SB respondent ID that match HMDA/CRA filing data.
+
+    Query params:
+        q: search string (min 2 chars)
+        api_key: shared secret
+        limit: max results (default 10, max 50)
+    """
+    api_key = request.args.get('api_key', '')
+    expected_key = os.environ.get('MERGERMETER_API_KEY', '')
+    if not expected_key or api_key != expected_key:
+        return jsonify({"error": "Invalid or missing API key"}), 401
+
+    query = request.args.get('q', '').strip()
+    if len(query) < 2:
+        return jsonify({"banks": [], "message": "Enter at least 2 characters"})
+
+    limit = min(int(request.args.get('limit', 10)), 50)
+
+    try:
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
+        from google.cloud import bigquery as bq_module
+
+        client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
+
+        sql = """
+        WITH sb_latest AS (
+            SELECT sb_rssd, sb_resid,
+                ROW_NUMBER() OVER (PARTITION BY SAFE_CAST(sb_rssd AS INT64) ORDER BY year DESC) AS rn
+            FROM `justdata-ncrc.bizsight.sb_lenders`
+        )
+        SELECT DISTINCT
+            g.display_name AS name,
+            g.headquarters_city AS city,
+            g.headquarters_state AS state,
+            l.lei AS lei,
+            CAST(l.respondent_rssd AS STRING) AS rssd,
+            sb.sb_resid AS res_id,
+            SAFE_CAST(l.assets AS INT64) AS assets
+        FROM `justdata-ncrc.shared.lender_names_gleif` g
+        JOIN `justdata-ncrc.lendsight.lenders18` l ON g.lei = l.lei
+        LEFT JOIN sb_latest sb
+            ON SAFE_CAST(l.respondent_rssd AS INT64) = SAFE_CAST(sb.sb_rssd AS INT64)
+            AND sb.rn = 1
+        WHERE LOWER(g.display_name) LIKE LOWER(@search_pattern)
+        ORDER BY assets DESC NULLS LAST
+        LIMIT @limit
+        """
+
+        job_config = bq_module.QueryJobConfig(query_parameters=[
+            bq_module.ScalarQueryParameter('search_pattern', 'STRING', f'%{query}%'),
+            bq_module.ScalarQueryParameter('limit', 'INT64', limit),
+        ])
+
+        banks = []
+        for row in client.query(sql, job_config=job_config).result():
+            location = ''
+            if row.city and row.state:
+                location = f"{row.city}, {row.state}"
+            elif row.state:
+                location = row.state
+
+            banks.append({
+                'name': row.name,
+                'location': location,
+                'lei': row.lei or '',
+                'rssd': row.rssd or '',
+                'res_id': row.res_id or '',
+                'assets': row.assets,
+            })
+
+        return jsonify({"banks": banks, "count": len(banks)})
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+
 @mergermeter_bp.route('/api/generate', methods=['POST'])
 def api_generate():
     """JSON API endpoint for programmatic Excel generation.
