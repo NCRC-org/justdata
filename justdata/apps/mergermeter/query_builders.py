@@ -755,8 +755,8 @@ filtered_branches AS (
     SELECT
         CAST(b.rssd AS STRING) as rssd,
         b.bank_name as institution_name,
-        COALESCE(c.cbsa_code, CAST(b.msabr AS STRING), 'N/A') as cbsa_code,
-        COALESCE(c.cbsa_name, b.msanamb, CONCAT(c.state_name, ' Non-MSA')) as cbsa_name,
+        COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
+        COALESCE(c.cbsa_name, CONCAT(c.state_name, ' Non-MSA')) as cbsa_name,
         CAST(b.geoid5 AS STRING) as county_code,
         c.county_state,
         c.county_name,
@@ -878,8 +878,8 @@ filtered_branches AS (
     SELECT
         CAST(b.rssd AS STRING) as rssd,
         b.bank_name as institution_name,
-        COALESCE(c.cbsa_code, CAST(b.msabr AS STRING), 'N/A') as cbsa_code,
-        COALESCE(c.cbsa_name, b.msanamb, CONCAT(c.state_name, ' Non-MSA')) as cbsa_name,
+        COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
+        COALESCE(c.cbsa_name, CONCAT(c.state_name, ' Non-MSA')) as cbsa_name,
         CAST(b.geoid5 AS STRING) as county_code,
         c.county_state,
         c.county_name,
