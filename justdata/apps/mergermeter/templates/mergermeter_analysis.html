@@ -33,6 +33,114 @@
         .sidebar .feature-card {
             position: relative;
         }
+
+        /* Excel preview styles */
+        .excel-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0;
+            border-bottom: 2px solid #034EA0;
+            margin-bottom: 0;
+            padding: 0 16px;
+            background: #f8f9fa;
+        }
+        .excel-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 6px 6px 0 0;
+            background: #e9ecef;
+            color: #555;
+            font-size: 13px;
+            font-family: Arial, sans-serif;
+            font-weight: 500;
+            margin-bottom: -2px;
+            transition: background 0.15s, color 0.15s;
+            white-space: nowrap;
+        }
+        .excel-tab:hover { background: #dee2e6; }
+        .excel-tab.active {
+            background: #ffffff;
+            color: #034EA0;
+            border-color: #034EA0;
+            border-bottom-color: #ffffff;
+            font-weight: 600;
+        }
+        .excel-sheet {
+            display: none;
+            padding: 16px;
+            border: 1px solid #ddd;
+            border-top: none;
+            background: #ffffff;
+            overflow-x: auto;
+        }
+        .excel-sheet.active { display: block; }
+        .excel-sheet table {
+            border-collapse: collapse;
+            width: 100%;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        .excel-sheet th, .excel-sheet td {
+            border: 1px solid #d0d0d0;
+            padding: 6px 10px;
+            text-align: left;
+            vertical-align: top;
+            white-space: nowrap;
+        }
+        .excel-sheet th {
+            background: #034EA0;
+            color: #ffffff;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+        .excel-sheet tr:nth-child(even) { background: #f8f9fa; }
+        .excel-sheet tr:hover { background: #e8f0fe; }
+        .excel-sheet td.number-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .excel-sheet td.empty-cell {
+            color: #ccc;
+            font-style: italic;
+        }
+        .excel-download-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #f0f4f8;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        .excel-download-btn {
+            background: #034EA0;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .excel-download-btn:hover { background: #023d80; }
+        .validation-warnings {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            font-size: 13px;
+            color: #856404;
+        }
+        .validation-warnings ul { margin: 8px 0 0 0; padding-left: 20px; }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
@@ -702,35 +810,40 @@
                     </div>
                 </div>
 
-                <!-- Results Section -->
+                <!-- Results Section: Excel Preview -->
                 <div id="resultsSection" class="results-section" style="display: none;">
-                    <div class="results-card">
-                        <div class="results-header">
-                            <i class="fas fa-check-circle"></i>
-                            <h3>Analysis Complete!</h3>
+                    <!-- Download bar -->
+                    <div class="excel-download-bar">
+                        <div>
+                            <strong style="font-size: 15px;">MergerMeter Analysis Complete</strong>
+                            <div style="font-size: 12px; color: #666; margin-top: 2px;" id="excelFileInfo"></div>
                         </div>
-                        <div class="results-content">
-                            <p>Your merger impact analysis has been generated successfully.</p>
-                            <div class="download-options">
-                                <button class="download-btn" id="viewReportBtn">
-                                    <i class="fas fa-chart-bar"></i>
-                                    View Web Report
-                                </button>
-                                <button class="download-btn secondary" id="downloadBtn">
-                                    <i class="fas fa-download"></i>
-                                    Export Data
-                                </button>
-                                <small class="download-info">
-                                    <i class="fas fa-globe"></i>
-                                    Interactive web report with export options
-                                </small>
-                            </div>
-                            <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center;">
-                                <button type="button" id="runAnotherBtn" onclick="resetForm()" style="padding: 12px 32px; background: #1a8fc9; color: white; border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s;">
-                                    <i class="fas fa-redo"></i> Run Another Report
-                                </button>
-                            </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" id="runAnotherBtn" onclick="resetForm()" class="excel-download-btn" style="background: #6c757d;">
+                                <i class="fas fa-redo"></i> Run Another
+                            </button>
+                            <a id="downloadBtn" class="excel-download-btn" download>
+                                <i class="fas fa-download"></i> Download Excel
+                            </a>
                         </div>
+                    </div>
+
+                    <!-- Validation warnings -->
+                    <div id="validationWarnings" class="validation-warnings" style="display: none;">
+                        <strong>&#9888; Data quality warnings:</strong>
+                        <ul id="warningsList"></ul>
+                    </div>
+
+                    <!-- Tab bar -->
+                    <div class="excel-tabs" id="excelTabs"></div>
+
+                    <!-- Sheet content -->
+                    <div id="excelSheets"></div>
+
+                    <!-- Loading state -->
+                    <div id="excelLoading" style="padding: 40px; text-align: center; color: #666;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
+                        <p>Loading Excel preview...</p>
                     </div>
                 </div>
 
@@ -761,6 +874,7 @@
     {% include "shared_footer.html" %}
 
     <!-- jQuery (must be first) -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <!-- Select2 JS -->
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
@@ -1939,18 +2053,9 @@
                         } else {
                             $('#resultsSection').show();
                             $('#progressSection').hide();
-                            
-                            // Setup download button
-                            $('#downloadBtn').off('click').on('click', function() {
-                                const baseUrl = window.APP_BASE_URL || '/mergermeter';
-                                window.location.href = `${baseUrl}/download?job_id=${jobId}`;
-                            });
-                            
-                            // Setup view report button
-                            $('#viewReportBtn').off('click').on('click', function() {
-                                const baseUrl = window.APP_BASE_URL || '/mergermeter';
-                                window.location.href = `${baseUrl}/report?job_id=${jobId}`;
-                            });
+
+                            // Load and render Excel preview
+                            loadExcelPreview(jobId);
                         }
                         $('#submitBtn').prop('disabled', false);
                         return;
@@ -2239,6 +2344,187 @@
                         }, 100);
                     }
                     console.log(isSingleBankMode ? 'Single bank selected - showing assessment area section' : 'Both banks selected - showing assessment area section');
+                }
+            }
+
+            // Load and render Excel file as tabbed preview
+            function loadExcelPreview(jobId) {
+                const baseUrl = window.APP_BASE_URL || '/mergermeter';
+                const excelUrl = `${baseUrl}/excel-data?job_id=${jobId}`;
+                const downloadUrl = `${baseUrl}/download?job_id=${jobId}`;
+
+                fetch(excelUrl)
+                    .then(res => {
+                        if (!res.ok) throw new Error('Failed to load Excel file');
+                        return res.arrayBuffer();
+                    })
+                    .then(data => {
+                        document.getElementById('excelLoading').style.display = 'none';
+
+                        const wb = XLSX.read(data, { type: 'array', cellStyles: true, cellDates: true });
+                        renderWorkbook(wb);
+
+                        // Setup download button
+                        const blob = new Blob([data], {
+                            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                        });
+                        const btn = document.getElementById('downloadBtn');
+                        btn.href = URL.createObjectURL(blob);
+                        btn.download = 'MergerMeter_Analysis.xlsx';
+
+                        // Also allow direct server download for proper filename
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            window.location.href = downloadUrl;
+                        });
+
+                        // File info
+                        const sizeKB = Math.round(data.byteLength / 1024);
+                        document.getElementById('excelFileInfo').textContent =
+                            wb.SheetNames.length + ' sheets, ' + sizeKB + ' KB';
+                    })
+                    .catch(err => {
+                        document.getElementById('excelLoading').innerHTML =
+                            '<div style="color: #c00;">Error loading Excel preview: ' + err.message +
+                            '<br><a href="' + downloadUrl + '" style="color: #034EA0;">Download the file directly</a></div>';
+                    });
+            }
+
+            function renderWorkbook(wb) {
+                const tabsEl = document.getElementById('excelTabs');
+                const sheetsEl = document.getElementById('excelSheets');
+                const warnings = [];
+
+                wb.SheetNames.forEach(function(name, idx) {
+                    // Create tab
+                    const tab = document.createElement('div');
+                    tab.className = 'excel-tab' + (idx === 0 ? ' active' : '');
+                    tab.textContent = name;
+                    tab.onclick = function() { switchTab(name); };
+                    tabsEl.appendChild(tab);
+
+                    // Create sheet container
+                    const sheetDiv = document.createElement('div');
+                    sheetDiv.className = 'excel-sheet' + (idx === 0 ? ' active' : '');
+                    sheetDiv.id = 'sheet-' + idx;
+                    sheetDiv.setAttribute('data-name', name);
+
+                    const ws = wb.Sheets[name];
+                    sheetDiv.innerHTML = sheetToHTML(ws, name);
+                    validateSheet(ws, name, warnings);
+                    sheetsEl.appendChild(sheetDiv);
+                });
+
+                if (warnings.length > 0) {
+                    const warningsEl = document.getElementById('validationWarnings');
+                    const listEl = document.getElementById('warningsList');
+                    warnings.forEach(function(w) {
+                        const li = document.createElement('li');
+                        li.textContent = w;
+                        listEl.appendChild(li);
+                    });
+                    warningsEl.style.display = 'block';
+                }
+            }
+
+            function sheetToHTML(ws, sheetName) {
+                if (!ws['!ref']) return '<p style="padding: 20px; color: #999;">Empty sheet</p>';
+                var range = XLSX.utils.decode_range(ws['!ref']);
+                var merges = ws['!merges'] || [];
+                var html = '<table>';
+
+                for (var r = range.s.r; r <= range.e.r; r++) {
+                    html += '<tr>';
+                    for (var c = range.s.c; c <= range.e.c; c++) {
+                        var addr = XLSX.utils.encode_cell({ r: r, c: c });
+                        var cell = ws[addr];
+
+                        // Check merged cells
+                        var skip = false, colspan = 1, rowspan = 1;
+                        for (var m = 0; m < merges.length; m++) {
+                            var mg = merges[m];
+                            if (r === mg.s.r && c === mg.s.c) {
+                                colspan = mg.e.c - mg.s.c + 1;
+                                rowspan = mg.e.r - mg.s.r + 1;
+                            } else if (r >= mg.s.r && r <= mg.e.r && c >= mg.s.c && c <= mg.e.c) {
+                                skip = true;
+                            }
+                        }
+                        if (skip) continue;
+
+                        var tag = r <= 1 ? 'th' : 'td';
+                        var cls = '';
+                        var val = '';
+
+                        if (cell) {
+                            if (cell.t === 'n') {
+                                cls = 'number-cell';
+                                if (cell.z && cell.z.indexOf('$') >= 0) {
+                                    val = '$' + Math.round(cell.v).toLocaleString();
+                                } else if (cell.z && cell.z.indexOf('%') >= 0) {
+                                    val = (cell.v * 100).toFixed(2) + '%';
+                                } else if (cell.v === Math.floor(cell.v)) {
+                                    val = cell.v.toLocaleString();
+                                } else {
+                                    val = cell.v.toFixed(4);
+                                }
+                            } else if (cell.w) {
+                                val = cell.w;
+                            } else if (cell.v != null) {
+                                val = String(cell.v);
+                            }
+                            if (val === '--') cls = 'empty-cell';
+                        }
+
+                        var spanAttrs = (colspan > 1 ? ' colspan="' + colspan + '"' : '') +
+                                        (rowspan > 1 ? ' rowspan="' + rowspan + '"' : '');
+                        html += '<' + tag + spanAttrs + ' class="' + cls + '">' + val + '</' + tag + '>';
+                    }
+                    html += '</tr>';
+                }
+                html += '</table>';
+                return html;
+            }
+
+            function switchTab(name) {
+                document.querySelectorAll('.excel-tab').forEach(function(tab) {
+                    tab.classList.toggle('active', tab.textContent === name);
+                });
+                document.querySelectorAll('.excel-sheet').forEach(function(sheet) {
+                    sheet.classList.toggle('active', sheet.getAttribute('data-name') === name);
+                });
+            }
+
+            function validateSheet(ws, name, warnings) {
+                if (!ws['!ref']) return;
+                var range = XLSX.utils.decode_range(ws['!ref']);
+
+                // Check for raw CBSA codes
+                for (var r = range.s.r; r <= range.e.r; r++) {
+                    for (var c = range.s.c; c <= Math.min(range.s.c + 2, range.e.c); c++) {
+                        var addr = XLSX.utils.encode_cell({ r: r, c: c });
+                        var cell = ws[addr];
+                        if (cell && cell.t === 's' && /^CBSA \d{4,5}$/.test(cell.v)) {
+                            warnings.push('Sheet "' + name + '": CBSA code "' + cell.v + '" not resolved to a metro area name (row ' + (r + 1) + ')');
+                        }
+                    }
+                }
+
+                // Check for missing peer data in data sheets
+                if (name.indexOf('MORTGAGE DATA') >= 0 || name.indexOf('SB DATA') >= 0) {
+                    for (var r2 = 2; r2 <= range.e.r; r2++) {
+                        var metricCell = ws[XLSX.utils.encode_cell({ r: r2, c: 1 })];
+                        var peerCell = ws[XLSX.utils.encode_cell({ r: r2, c: 3 })];
+                        var areaCell = ws[XLSX.utils.encode_cell({ r: r2, c: 0 })];
+                        if (metricCell && metricCell.v === 'Loans' && areaCell) {
+                            if (!peerCell || peerCell.v === null || peerCell.v === undefined || peerCell.v === 0) {
+                                var areaName = areaCell.v || 'Unknown';
+                                if (areaName !== 'Grand Total') {
+                                    warnings.push('Sheet "' + name + '": No peer data for ' + areaName);
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
