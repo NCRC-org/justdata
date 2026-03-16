@@ -146,15 +146,25 @@ WHERE FALSE
     # Build total_units filter
     units_filter = ""
     if total_units:
-        if ',' in total_units:
-            # Multiple unit types
+        # Handle range notation like '1-4' → expand to '1','2','3','4'
+        if '-' in total_units and ',' not in total_units:
+            try:
+                parts = total_units.split('-')
+                start, end = int(parts[0].strip()), int(parts[1].strip())
+                units = [str(i) for i in range(start, end + 1)]
+            except (ValueError, IndexError):
+                units = [total_units.strip()]
+        elif ',' in total_units:
             units = [u.strip() for u in total_units.split(',')]
+        else:
+            units = [total_units.strip()]
+
+        if len(units) == 1:
+            units_filter = f"AND h.total_units = '{units[0]}'"
+        else:
             units_list = "', '".join(units)
             units_filter = f"AND h.total_units IN ('{units_list}')"
-        else:
-            # Single unit type
-            units_filter = f"AND h.total_units = '{total_units.strip()}'"
-    
+
     # Build construction_method filter
     construction_filter = ""
     if construction_method:
@@ -363,15 +373,25 @@ WHERE FALSE
     # Build total_units filter
     units_filter = ""
     if total_units:
-        if ',' in total_units:
-            # Multiple unit types
+        # Handle range notation like '1-4' → expand to '1','2','3','4'
+        if '-' in total_units and ',' not in total_units:
+            try:
+                parts = total_units.split('-')
+                start, end = int(parts[0].strip()), int(parts[1].strip())
+                units = [str(i) for i in range(start, end + 1)]
+            except (ValueError, IndexError):
+                units = [total_units.strip()]
+        elif ',' in total_units:
             units = [u.strip() for u in total_units.split(',')]
+        else:
+            units = [total_units.strip()]
+
+        if len(units) == 1:
+            units_filter = f"AND h.total_units = '{units[0]}'"
+        else:
             units_list = "', '".join(units)
             units_filter = f"AND h.total_units IN ('{units_list}')"
-        else:
-            # Single unit type
-            units_filter = f"AND h.total_units = '{total_units.strip()}'"
-    
+
     # Build construction_method filter
     construction_filter = ""
     if construction_method:

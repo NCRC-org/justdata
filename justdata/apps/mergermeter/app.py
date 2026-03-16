@@ -683,8 +683,49 @@ def _perform_analysis(job_id, form_data):
             if results:
                 bank_b_hmda_peer = pd.DataFrame(results)
         
+        # Auto-resolve SB respondent IDs from RSSD if not provided
+        if not acquirer_sb_id and acquirer_rssd:
+            try:
+                resolve_query = f"""
+                SELECT DISTINCT sb_resid
+                FROM `justdata-ncrc.bizsight.sb_lenders`
+                WHERE CAST(sb_rssd AS STRING) = '{acquirer_rssd}'
+                   OR LPAD(CAST(sb_rssd AS STRING), 10, '0') = LPAD('{acquirer_rssd}', 10, '0')
+                LIMIT 1
+                """
+                resolve_result = execute_query(client, resolve_query)
+                if resolve_result and resolve_result[0].get('sb_resid'):
+                    acquirer_sb_id = resolve_result[0]['sb_resid']
+                    print(f"[DEBUG] Auto-resolved acquirer SB ID from RSSD {acquirer_rssd}: {acquirer_sb_id}")
+                else:
+                    acquirer_sb_id = acquirer_rssd
+                    print(f"[DEBUG] No SB lender match for RSSD {acquirer_rssd}, falling back to RSSD as SB ID")
+            except Exception as e:
+                acquirer_sb_id = acquirer_rssd
+                print(f"[DEBUG] SB ID resolution failed for acquirer: {e}, falling back to RSSD")
+
+        if not target_sb_id and target_rssd:
+            try:
+                resolve_query = f"""
+                SELECT DISTINCT sb_resid
+                FROM `justdata-ncrc.bizsight.sb_lenders`
+                WHERE CAST(sb_rssd AS STRING) = '{target_rssd}'
+                   OR LPAD(CAST(sb_rssd AS STRING), 10, '0') = LPAD('{target_rssd}', 10, '0')
+                LIMIT 1
+                """
+                resolve_result = execute_query(client, resolve_query)
+                if resolve_result and resolve_result[0].get('sb_resid'):
+                    target_sb_id = resolve_result[0]['sb_resid']
+                    print(f"[DEBUG] Auto-resolved target SB ID from RSSD {target_rssd}: {target_sb_id}")
+                else:
+                    target_sb_id = target_rssd
+                    print(f"[DEBUG] No SB lender match for RSSD {target_rssd}, falling back to RSSD as SB ID")
+            except Exception as e:
+                target_sb_id = target_rssd
+                print(f"[DEBUG] SB ID resolution failed for target: {e}, falling back to RSSD")
+
         update_progress(job_id, {'percent': 55, 'step': 'Querying Small Business data for Bank A...', 'done': False, 'error': None})
-        
+
         # Bank A Small Business Subject
         bank_a_sb_subject = pd.DataFrame()
         if acquirer_sb_id and acquirer_geoids:
@@ -723,8 +764,16 @@ def _perform_analysis(job_id, form_data):
             if results:
                 bank_b_sb_peer = pd.DataFrame(results)
         
+        # Log warning if SB data is empty after auto-resolution
+        if acquirer_sb_id and acquirer_geoids and bank_a_sb_subject.empty:
+            print(f"[WARNING] No SB data found for acquirer SB ID '{acquirer_sb_id}' "
+                  f"(RSSD: {acquirer_rssd}) in {len(acquirer_geoids)} counties, years {sb_years}")
+        if target_sb_id and target_geoids and bank_b_sb_subject.empty:
+            print(f"[WARNING] No SB data found for target SB ID '{target_sb_id}' "
+                  f"(RSSD: {target_rssd}) in {len(target_geoids)} counties, years {sb_years}")
+
         update_progress(job_id, {'percent': 87, 'step': 'Querying branch data for Bank A...', 'done': False, 'error': None})
-        
+
         # Bank A Branch Data (aggregated) - subject and market
         bank_a_branch = pd.DataFrame()
         bank_a_branch_details = pd.DataFrame()
@@ -937,13 +986,25 @@ def _perform_analysis(job_id, form_data):
                     
                     units_filter = ""
                     if total_units:
-                        if ',' in total_units:
+                        # Handle range notation like '1-4' → expand to '1','2','3','4'
+                        if '-' in total_units and ',' not in total_units:
+                            try:
+                                parts = total_units.split('-')
+                                start, end = int(parts[0].strip()), int(parts[1].strip())
+                                units = [str(i) for i in range(start, end + 1)]
+                            except (ValueError, IndexError):
+                                units = [total_units.strip()]
+                        elif ',' in total_units:
                             units = [u.strip() for u in total_units.split(',')]
+                        else:
+                            units = [total_units.strip()]
+
+                        if len(units) == 1:
+                            units_filter = f"AND h.total_units = '{units[0]}'"
+                        else:
                             units_list = "', '".join(units)
                             units_filter = f"AND h.total_units IN ('{units_list}')"
-                        else:
-                            units_filter = f"AND h.total_units = '{total_units.strip()}'"
-                    
+
                     construction_filter = ""
                     if construction_method:
                         if ',' in construction_method:
