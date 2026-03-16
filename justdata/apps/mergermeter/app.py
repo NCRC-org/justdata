@@ -1358,7 +1358,7 @@ def _perform_analysis(job_id, form_data):
             print(f"[DEBUG] - SB Goals States: {list(sb_goals_data['state_name'].unique()) if 'state_name' in sb_goals_data.columns else 'N/A'}")
         print(f"[DEBUG] - Mortgage Goals Data: {list(mortgage_goals_data.keys()) if mortgage_goals_data else 'NONE'}")
 
-        create_merger_excel(
+        validation_warnings = create_merger_excel(
             output_path=excel_file,
             bank_a_name=acquirer_name,
             bank_b_name=target_name,
@@ -1377,7 +1377,7 @@ def _perform_analysis(job_id, form_data):
             metadata=metadata,
             mortgage_goals_data=mortgage_goals_data,
             sb_goals_data=sb_goals_data if sb_goals_data is not None and not sb_goals_data.empty else None
-        )
+        ) or []
         
         # Save metadata
         metadata_file = OUTPUT_DIR / f'merger_metadata_{job_id}.json'
@@ -1422,8 +1422,14 @@ def _perform_analysis(job_id, form_data):
         # "Doing something cool" step before completion
         update_progress(job_id, {'percent': 98, 'step': 'Doing something cool...', 'done': False, 'error': None})
         print("\nDoing something cool...")
-        
-        update_progress(job_id, {'percent': 100, 'step': 'Analysis complete!', 'done': True, 'error': None})
+
+        update_progress(job_id, {
+            'percent': 100,
+            'step': 'Analysis complete!',
+            'done': True,
+            'error': None,
+            'validation_warnings': [w['issue'] for w in validation_warnings] if validation_warnings else []
+        })
         
     except Exception as e:
         import traceback
