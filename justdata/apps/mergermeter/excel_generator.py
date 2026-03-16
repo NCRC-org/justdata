@@ -201,12 +201,13 @@ def create_merger_excel(
 ):
     """
     Create Excel workbook with merger analysis data using shared generator.
-    
+
     This function:
     1. Transforms query results using shared transformer
     2. Builds assessment_areas_data dictionary
     3. Calls shared Excel generator
-    
+    4. Validates the output workbook for data quality issues
+
     Args:
         output_path: Path to save Excel file
         bank_a_name: Acquirer bank name
@@ -214,6 +215,9 @@ def create_merger_excel(
         All data DataFrames for HMDA, SB, Branch, and HHI
         assessment_areas: Assessment area information (dict with 'acquirer' and 'target' keys)
         metadata: Additional metadata (years, loan purpose, LEI, RSSD, etc.)
+
+    Returns:
+        List of validation warning dicts, or empty list if no issues found.
     """
     
     if not SHARED_GENERATOR_AVAILABLE:
@@ -699,11 +703,25 @@ def create_merger_excel(
             logger.warning(f"[HHI] No HHI data - creating sheet with explanatory note")
             _add_empty_hhi_sheet(wb, bank_a_name, bank_b_name, bank_a_rssd, bank_b_rssd)
             logger.info("Added HHI Analysis sheet with no-data explanation")
+
+        # Run output validation before final save
+        from justdata.apps.mergermeter.output_validator import validate_workbook, add_warnings_sheet
+        validation_warnings = validate_workbook(wb)
+        if validation_warnings:
+            add_warnings_sheet(wb, validation_warnings)
+            print(f"[VALIDATION] {len(validation_warnings)} data quality issues found:")
+            for w in validation_warnings:
+                print(f"  [{w['severity'].upper()}] {w['sheet']}: {w['issue']}")
+        else:
+            print("[VALIDATION] No data quality issues found.")
+
         wb.save(output_path)
+        return validation_warnings
     except Exception as e:
         logger.error(f"Could not add HHI sheet: {e}")
         import traceback
         traceback.print_exc()
+        return []
 
 
 def _add_empty_hhi_sheet(wb: Workbook, bank_a_name: str, bank_b_name: str, bank_a_rssd: str, bank_b_rssd: str):
