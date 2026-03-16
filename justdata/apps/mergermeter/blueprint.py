@@ -398,6 +398,32 @@ def analyze():
         return jsonify({'error': str(e)}), 500
 
 
+@mergermeter_bp.route('/excel-data')
+@login_required
+@require_access('mergermeter', 'full')
+def excel_data():
+    """Serve the generated Excel file inline (for SheetJS preview rendering)"""
+    try:
+        from .app import get_excel_filename
+
+        job_id = request.args.get('job_id') or session.get('job_id')
+        if not job_id:
+            return jsonify({'error': 'Job ID required'}), 400
+
+        excel_filename = get_excel_filename(job_id)
+        excel_file = OUTPUT_DIR / excel_filename
+        if not excel_file.exists():
+            return jsonify({'error': 'Report file not found.'}), 404
+
+        return send_file(
+            str(excel_file),
+            as_attachment=False,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @mergermeter_bp.route('/download')
 @login_required
 @require_access('mergermeter', 'full')
