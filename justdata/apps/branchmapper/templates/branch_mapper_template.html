@@ -1351,9 +1351,9 @@
                 if (typeof lng === 'string') lng = parseFloat(lng);
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
-                // Apply draw filter if active, otherwise clip to geocoder boundary
+                // Check if inside boundary (show outside at reduced opacity)
                 const clipPolygon = activeDrawFilter || geocoderBoundaryPolygon;
-                if (clipPolygon && !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon)) return;
+                const insideBoundary = !clipPolygon || turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon);
 
                 const branchId = `${branch.uninumbr || ''}_${lat}_${lng}`;
                 window.branchDataMap[branchId] = branch;
@@ -1364,7 +1364,8 @@
                         id: branchId,
                         bank_name: branch.bank_name || bank.name,
                         branch_name: branch.branch_name || 'Branch',
-                        color: bank.color
+                        color: bank.color,
+                        insideBoundary: insideBoundary
                     },
                     geometry: { type: 'Point', coordinates: [lng, lat] }
                 });
@@ -1391,7 +1392,9 @@
                         'circle-radius': 6,
                         'circle-color': bank.color,
                         'circle-stroke-width': 1,
-                        'circle-stroke-color': '#ffffff'
+                        'circle-stroke-color': '#ffffff',
+                        'circle-opacity': ['case', ['get', 'insideBoundary'], 1, 0.2],
+                        'circle-stroke-opacity': ['case', ['get', 'insideBoundary'], 1, 0.2]
                     }
                 });
 
@@ -1444,21 +1447,22 @@
 
             let validEvents = filtered.filter(e => e.latitude && e.longitude);
 
-            // Clip to draw filter or geocoder boundary
+            // Tag events with boundary status (show outside at reduced opacity)
             const clipPolygon1 = activeDrawFilter || geocoderBoundaryPolygon;
             if (clipPolygon1) {
-                validEvents = validEvents.filter(e => {
+                validEvents.forEach(e => {
                     const lat = parseFloat(e.latitude), lng = parseFloat(e.longitude);
-                    return !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon1);
+                    e._insideBoundary = !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon1);
                 });
             }
 
             validEvents.forEach(event => {
+                const opacityVal = event._insideBoundary === false ? '0.2' : '1';
                 const el = document.createElement('div');
                 if (event.display_type === 'opening') {
-                    el.style.cssText = `width: 18px; height: 18px; background-color: #2e7d32; border: 2px solid ${bank.color}; border-radius: 50%; cursor: pointer;`;
+                    el.style.cssText = `width: 18px; height: 18px; background-color: #2e7d32; border: 2px solid ${bank.color}; border-radius: 50%; cursor: pointer; opacity: ${opacityVal};`;
                 } else {
-                    el.style.cssText = `width: 18px; height: 18px; background-color: #c62828; border: 2px solid ${bank.color}; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px;`;
+                    el.style.cssText = `width: 18px; height: 18px; background-color: #c62828; border: 2px solid ${bank.color}; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 12px; opacity: ${opacityVal};`;
                     el.textContent = '\u2715';
                 }
 
@@ -1647,9 +1651,9 @@
                 if (typeof lng === 'string') lng = parseFloat(lng);
                 if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) return;
 
-                // Apply draw filter if active, otherwise clip to geocoder boundary
+                // Check if inside boundary (show outside at reduced opacity)
                 const clipPolygon = activeDrawFilter || geocoderBoundaryPolygon;
-                if (clipPolygon && !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon)) return;
+                const insideBoundary = !clipPolygon || turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon);
 
                 const branchId = `gray_${branch.uninumbr || ''}_${lat}_${lng}`;
                 window.branchDataMap[branchId] = branch;
@@ -1659,7 +1663,8 @@
                     properties: {
                         id: branchId,
                         bank_name: branch.bank_name || 'Unknown',
-                        branch_name: branch.branch_name || 'Branch'
+                        branch_name: branch.branch_name || 'Branch',
+                        insideBoundary: insideBoundary
                     },
                     geometry: { type: 'Point', coordinates: [lng, lat] }
                 });
@@ -1685,7 +1690,8 @@
                         'circle-color': '#000000',
                         'circle-stroke-width': 1,
                         'circle-stroke-color': '#ffffff',
-                        'circle-opacity': 1
+                        'circle-opacity': ['case', ['get', 'insideBoundary'], 1, 0.15],
+                        'circle-stroke-opacity': ['case', ['get', 'insideBoundary'], 1, 0.15]
                     }
                 }, selectedBanks.length > 0 ? selectedBanks[0]._layerIds[1] : undefined);
 
@@ -1735,18 +1741,20 @@
                 if (event.display_type === 'opening' && !showOpenings) return;
                 if (event.display_type === 'closing' && !showClosings) return;
 
-                // Clip to draw filter or geocoder boundary
+                // Tag with boundary status (show outside at reduced opacity)
                 const clipPolygon2 = activeDrawFilter || geocoderBoundaryPolygon;
+                let insideBoundary2 = true;
                 if (clipPolygon2) {
                     const lat = parseFloat(event.latitude), lng = parseFloat(event.longitude);
-                    if (isNaN(lat) || isNaN(lng) || !turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon2)) return;
+                    insideBoundary2 = !isNaN(lat) && !isNaN(lng) && turf.booleanPointInPolygon(turf.point([lng, lat]), clipPolygon2);
                 }
 
+                const opacityVal2 = insideBoundary2 ? '0.7' : '0.15';
                 const el = document.createElement('div');
                 if (event.display_type === 'opening') {
-                    el.style.cssText = 'width: 12px; height: 12px; background: #2e7d32; border: 1px solid #fff; border-radius: 50%; opacity: 0.7; cursor: pointer;';
+                    el.style.cssText = `width: 12px; height: 12px; background: #2e7d32; border: 1px solid #fff; border-radius: 50%; opacity: ${opacityVal2}; cursor: pointer;`;
                 } else {
-                    el.style.cssText = 'width: 12px; height: 12px; background: #c62828; border: 1px solid #fff; border-radius: 2px; opacity: 0.7; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 8px; font-weight: bold;';
+                    el.style.cssText = `width: 12px; height: 12px; background: #c62828; border: 1px solid #fff; border-radius: 2px; opacity: ${opacityVal2}; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; font-size: 8px; font-weight: bold;`;
                     el.textContent = '\u2715';
                 }
 
@@ -3096,6 +3104,33 @@
 
                 // Find first symbol layer so data layers render below labels/roads/borders
                 const firstSymbolId = findFirstSymbolLayer();
+
+                // Add satellite imagery source (visible at zoom 13+)
+                if (!branchMap.getSource('satellite-basemap')) {
+                    branchMap.addSource('satellite-basemap', {
+                        type: 'raster',
+                        url: 'mapbox://mapbox.satellite',
+                        tileSize: 256
+                    });
+                }
+                branchMap.addLayer({
+                    id: 'satellite-basemap-layer',
+                    type: 'raster',
+                    source: 'satellite-basemap',
+                    layout: { 'visibility': 'none' },
+                    paint: { 'raster-opacity': 0.85 }
+                }, firstSymbolId);
+
+                // Hard toggle satellite at zoom 13
+                function updateSatelliteVisibility() {
+                    const zoom = branchMap.getZoom();
+                    const visibility = zoom >= 13 ? 'visible' : 'none';
+                    if (branchMap.getLayer('satellite-basemap-layer')) {
+                        branchMap.setLayoutProperty('satellite-basemap-layer', 'visibility', visibility);
+                    }
+                }
+                branchMap.on('zoom', updateSatelliteVisibility);
+                updateSatelliteVisibility();
 
                 // Add census tileset as vector source
                 // Use direct tile URLs with editengine's token for cross-account access
