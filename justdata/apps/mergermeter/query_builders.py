@@ -527,8 +527,26 @@ peers AS (
     INNER JOIN subject_volume sv
         ON al.activity_year = sv.activity_year
         AND al.cbsa_code = sv.cbsa_code
+    LEFT JOIN (
+        -- Count volume-matched peers per CBSA/year
+        SELECT al2.activity_year, al2.cbsa_code, COUNT(DISTINCT al2.lei) as peer_count
+        FROM all_lenders_volume al2
+        INNER JOIN subject_volume sv2
+            ON al2.activity_year = sv2.activity_year
+            AND al2.cbsa_code = sv2.cbsa_code
+        WHERE al2.lei != '{subject_lei}'
+            AND al2.lender_vol >= sv2.subject_vol * 0.5
+            AND al2.lender_vol <= sv2.subject_vol * 2.0
+        GROUP BY al2.activity_year, al2.cbsa_code
+    ) vpc ON al.activity_year = vpc.activity_year AND al.cbsa_code = vpc.cbsa_code
     WHERE al.lei != '{subject_lei}'
-      {volume_filter}
+      AND (
+          -- Volume peers exist for this CBSA: apply volume filter
+          (vpc.peer_count > 0 {volume_filter})
+          OR
+          -- No volume peers for this CBSA: fall back to all other lenders
+          (vpc.peer_count IS NULL OR vpc.peer_count = 0)
+      )
       {peer_type_filter}
 ),
 peer_hmda AS (
@@ -1136,9 +1154,26 @@ peers AS (
     INNER JOIN subject_sb_volume sv
         ON al.year = sv.year
         AND al.cbsa_code = sv.cbsa_code
+    LEFT JOIN (
+        -- Count volume-matched peers per CBSA/year
+        SELECT al2.year, al2.cbsa_code, COUNT(DISTINCT al2.sb_resid) as peer_count
+        FROM all_lenders_sb_volume al2
+        INNER JOIN subject_sb_volume sv2
+            ON al2.year = sv2.year
+            AND al2.cbsa_code = sv2.cbsa_code
+        WHERE (al2.sb_resid != '{respondent_id_no_prefix}' AND al2.sb_resid != '{sb_respondent_id}')
+            AND al2.lender_sb_vol >= sv2.subject_sb_vol * 0.5
+            AND al2.lender_sb_vol <= sv2.subject_sb_vol * 2.0
+        GROUP BY al2.year, al2.cbsa_code
+    ) vpc ON al.year = vpc.year AND al.cbsa_code = vpc.cbsa_code
     WHERE (al.sb_resid != '{respondent_id_no_prefix}' AND al.sb_resid != '{sb_respondent_id}')
-      AND al.lender_sb_vol >= sv.subject_sb_vol * 0.5
-      AND al.lender_sb_vol <= sv.subject_sb_vol * 2.0
+      AND (
+          -- Volume peers exist for this CBSA: apply volume filter
+          (vpc.peer_count > 0 AND al.lender_sb_vol >= sv.subject_sb_vol * 0.5 AND al.lender_sb_vol <= sv.subject_sb_vol * 2.0)
+          OR
+          -- No volume peers for this CBSA: fall back to all other lenders
+          (vpc.peer_count IS NULL OR vpc.peer_count = 0)
+      )
 ),
 peer_sb AS (
     SELECT f.*
