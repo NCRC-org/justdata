@@ -35,112 +35,65 @@
         }
 
         /* Excel preview styles */
+        .excel-viewer { margin: 20px 0; }
+
+        .excel-download-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 16px; background: #f0f4f8; border-radius: 6px; margin-bottom: 16px;
+        }
+        .excel-download-btn {
+            background: #034EA0; color: white; border: none; padding: 10px 24px;
+            border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+        }
+        .excel-download-btn:hover { background: #023d80; }
+
+        .validation-banner {
+            background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;
+            padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #856404;
+        }
+        .validation-banner ul { margin: 8px 0 0; padding-left: 20px; }
+
         .excel-tabs {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
-            border-bottom: 2px solid #034EA0;
-            margin-bottom: 0;
-            padding: 0 16px;
-            background: #f8f9fa;
+            display: flex; flex-wrap: wrap; gap: 0; border-bottom: 2px solid #034EA0;
+            margin-bottom: 0; padding: 0 8px; background: #f8f9fa; overflow-x: auto;
         }
         .excel-tab {
-            padding: 10px 20px;
-            cursor: pointer;
-            border: 1px solid #ddd;
-            border-bottom: none;
-            border-radius: 6px 6px 0 0;
-            background: #e9ecef;
-            color: #555;
-            font-size: 13px;
-            font-family: Arial, sans-serif;
-            font-weight: 500;
-            margin-bottom: -2px;
-            transition: background 0.15s, color 0.15s;
-            white-space: nowrap;
+            padding: 8px 16px; cursor: pointer; border: 1px solid #ddd; border-bottom: none;
+            border-radius: 6px 6px 0 0; background: #e9ecef; color: #555; font-size: 12px;
+            font-family: Arial, sans-serif; font-weight: 500; margin-bottom: -2px;
+            white-space: nowrap; transition: background 0.15s;
         }
         .excel-tab:hover { background: #dee2e6; }
         .excel-tab.active {
-            background: #ffffff;
-            color: #034EA0;
-            border-color: #034EA0;
-            border-bottom-color: #ffffff;
-            font-weight: 600;
+            background: #fff; color: #034EA0; border-color: #034EA0;
+            border-bottom-color: #fff; font-weight: 600;
         }
+
         .excel-sheet {
-            display: none;
-            padding: 16px;
-            border: 1px solid #ddd;
-            border-top: none;
-            background: #ffffff;
-            overflow-x: auto;
+            display: none; padding: 0; border: 1px solid #ddd; border-top: none;
+            background: #fff; overflow-x: auto; max-height: 600px; overflow-y: auto;
         }
         .excel-sheet.active { display: block; }
+
         .excel-sheet table {
-            border-collapse: collapse;
-            width: 100%;
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-        }
-        .excel-sheet th, .excel-sheet td {
-            border: 1px solid #d0d0d0;
-            padding: 6px 10px;
-            text-align: left;
-            vertical-align: top;
-            white-space: nowrap;
+            border-collapse: collapse; width: 100%; font: 12px Arial, sans-serif;
         }
         .excel-sheet th {
-            background: #034EA0;
-            color: #ffffff;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 1;
+            background: #034EA0; color: #fff; font-weight: 600; padding: 6px 10px;
+            text-align: left; position: sticky; top: 0; z-index: 1;
+            border: 1px solid #0256b3;
+        }
+        .excel-sheet td {
+            border: 1px solid #d0d0d0; padding: 5px 8px; text-align: left;
+            vertical-align: top; white-space: nowrap;
         }
         .excel-sheet tr:nth-child(even) { background: #f8f9fa; }
         .excel-sheet tr:hover { background: #e8f0fe; }
-        .excel-sheet td.number-cell {
-            text-align: right;
-            font-variant-numeric: tabular-nums;
-        }
-        .excel-sheet td.empty-cell {
-            color: #ccc;
-            font-style: italic;
-        }
-        .excel-download-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 16px;
-            background: #f0f4f8;
-            border-radius: 6px;
-            margin-bottom: 16px;
-        }
-        .excel-download-btn {
-            background: #034EA0;
-            color: white;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 500;
-            cursor: pointer;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .excel-download-btn:hover { background: #023d80; }
-        .validation-warnings {
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 6px;
-            padding: 12px 16px;
-            margin-bottom: 16px;
-            font-size: 13px;
-            color: #856404;
-        }
-        .validation-warnings ul { margin: 8px 0 0 0; padding-left: 20px; }
+        .excel-sheet td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .excel-sheet td.pct { text-align: right; color: #034EA0; }
+        .excel-sheet td.empty { color: #ccc; font-style: italic; }
+        .excel-sheet td.neg { color: #c00; }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 </head>
@@ -812,11 +765,11 @@
 
                 <!-- Results Section: Excel Preview -->
                 <div id="resultsSection" class="results-section" style="display: none;">
-                    <!-- Download bar -->
+                <div class="excel-viewer">
                     <div class="excel-download-bar">
                         <div>
-                            <strong style="font-size: 15px;">MergerMeter Analysis Complete</strong>
-                            <div style="font-size: 12px; color: #666; margin-top: 2px;" id="excelFileInfo"></div>
+                            <strong style="font-size: 15px;">Analysis Complete</strong>
+                            <div style="font-size: 12px; color: #666; margin-top: 2px;" id="excelFileInfo">Loading preview...</div>
                         </div>
                         <div style="display: flex; gap: 10px; align-items: center;">
                             <button type="button" id="runAnotherBtn" onclick="resetForm()" class="excel-download-btn" style="background: #6c757d;">
@@ -827,24 +780,17 @@
                             </a>
                         </div>
                     </div>
-
-                    <!-- Validation warnings -->
-                    <div id="validationWarnings" class="validation-warnings" style="display: none;">
-                        <strong>&#9888; Data quality warnings:</strong>
+                    <div id="validationBanner" class="validation-banner" style="display:none;">
+                        <strong>Data quality warnings found:</strong>
                         <ul id="warningsList"></ul>
                     </div>
-
-                    <!-- Tab bar -->
                     <div class="excel-tabs" id="excelTabs"></div>
-
-                    <!-- Sheet content -->
                     <div id="excelSheets"></div>
-
-                    <!-- Loading state -->
                     <div id="excelLoading" style="padding: 40px; text-align: center; color: #666;">
                         <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
                         <p>Loading Excel preview...</p>
                     </div>
+                </div>
                 </div>
 
                 <!-- Error Section -->
@@ -2349,41 +2295,23 @@
 
             // Load and render Excel file as tabbed preview
             function loadExcelPreview(jobId) {
-                const baseUrl = window.APP_BASE_URL || '/mergermeter';
-                const excelUrl = `${baseUrl}/excel-data?job_id=${jobId}`;
-                const downloadUrl = `${baseUrl}/download?job_id=${jobId}`;
+                var baseUrl = window.APP_BASE_URL || '/mergermeter';
+                var excelUrl = baseUrl + '/excel-data?job_id=' + jobId;
+                var downloadUrl = baseUrl + '/download?job_id=' + jobId;
 
                 fetch(excelUrl)
-                    .then(res => {
+                    .then(function(res) {
                         if (!res.ok) throw new Error('Failed to load Excel file');
                         return res.arrayBuffer();
                     })
-                    .then(data => {
+                    .then(function(data) {
                         document.getElementById('excelLoading').style.display = 'none';
 
-                        const wb = XLSX.read(data, { type: 'array', cellStyles: true, cellDates: true });
+                        var wb = XLSX.read(data, { type: 'array', cellStyles: true, cellDates: true });
                         renderWorkbook(wb);
-
-                        // Setup download button
-                        const blob = new Blob([data], {
-                            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                        });
-                        const btn = document.getElementById('downloadBtn');
-                        btn.href = URL.createObjectURL(blob);
-                        btn.download = 'MergerMeter_Analysis.xlsx';
-
-                        // Also allow direct server download for proper filename
-                        btn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            window.location.href = downloadUrl;
-                        });
-
-                        // File info
-                        const sizeKB = Math.round(data.byteLength / 1024);
-                        document.getElementById('excelFileInfo').textContent =
-                            wb.SheetNames.length + ' sheets, ' + sizeKB + ' KB';
+                        setupDownload(data, downloadUrl);
                     })
-                    .catch(err => {
+                    .catch(function(err) {
                         document.getElementById('excelLoading').innerHTML =
                             '<div style="color: #c00;">Error loading Excel preview: ' + err.message +
                             '<br><a href="' + downloadUrl + '" style="color: #034EA0;">Download the file directly</a></div>';
@@ -2391,44 +2319,52 @@
             }
 
             function renderWorkbook(wb) {
-                const tabsEl = document.getElementById('excelTabs');
-                const sheetsEl = document.getElementById('excelSheets');
-                const warnings = [];
+                var tabsEl = document.getElementById('excelTabs');
+                var sheetsEl = document.getElementById('excelSheets');
+                var validationWarnings = [];
 
                 wb.SheetNames.forEach(function(name, idx) {
-                    // Create tab
-                    const tab = document.createElement('div');
-                    tab.className = 'excel-tab' + (idx === 0 ? ' active' : '');
+                    if (name === 'Validation Warnings') {
+                        extractValidationWarnings(wb.Sheets[name], validationWarnings);
+                        return;
+                    }
+
+                    var tab = document.createElement('div');
+                    tab.className = 'excel-tab' + (tabsEl.children.length === 0 ? ' active' : '');
                     tab.textContent = name;
                     tab.onclick = function() { switchTab(name); };
                     tabsEl.appendChild(tab);
 
-                    // Create sheet container
-                    const sheetDiv = document.createElement('div');
-                    sheetDiv.className = 'excel-sheet' + (idx === 0 ? ' active' : '');
-                    sheetDiv.id = 'sheet-' + idx;
+                    var sheetDiv = document.createElement('div');
+                    sheetDiv.className = 'excel-sheet' + (sheetsEl.children.length === 0 ? ' active' : '');
                     sheetDiv.setAttribute('data-name', name);
-
-                    const ws = wb.Sheets[name];
-                    sheetDiv.innerHTML = sheetToHTML(ws, name);
-                    validateSheet(ws, name, warnings);
+                    sheetDiv.innerHTML = sheetToHTML(wb.Sheets[name], name);
                     sheetsEl.appendChild(sheetDiv);
                 });
 
-                if (warnings.length > 0) {
-                    const warningsEl = document.getElementById('validationWarnings');
-                    const listEl = document.getElementById('warningsList');
-                    warnings.forEach(function(w) {
-                        const li = document.createElement('li');
+                if (validationWarnings.length > 0) {
+                    var banner = document.getElementById('validationBanner');
+                    var list = document.getElementById('warningsList');
+                    validationWarnings.forEach(function(w) {
+                        var li = document.createElement('li');
                         li.textContent = w;
-                        listEl.appendChild(li);
+                        list.appendChild(li);
                     });
-                    warningsEl.style.display = 'block';
+                    banner.style.display = 'block';
+                }
+            }
+
+            function extractValidationWarnings(ws, warnings) {
+                if (!ws || !ws['!ref']) return;
+                var range = XLSX.utils.decode_range(ws['!ref']);
+                for (var r = 4; r <= range.e.r; r++) {
+                    var cell = ws[XLSX.utils.encode_cell({ r: r, c: 3 })];
+                    if (cell && cell.v) warnings.push(cell.v);
                 }
             }
 
             function sheetToHTML(ws, sheetName) {
-                if (!ws['!ref']) return '<p style="padding: 20px; color: #999;">Empty sheet</p>';
+                if (!ws || !ws['!ref']) return '<div style="padding:20px;color:#999;">Empty sheet</div>';
                 var range = XLSX.utils.decode_range(ws['!ref']);
                 var merges = ws['!merges'] || [];
                 var html = '<table>';
@@ -2438,8 +2374,10 @@
                     for (var c = range.s.c; c <= range.e.c; c++) {
                         var addr = XLSX.utils.encode_cell({ r: r, c: c });
                         var cell = ws[addr];
+                        var tag = r <= 1 ? 'th' : 'td';
+                        var cls = '';
+                        var val = '';
 
-                        // Check merged cells
                         var skip = false, colspan = 1, rowspan = 1;
                         for (var m = 0; m < merges.length; m++) {
                             var mg = merges[m];
@@ -2452,32 +2390,37 @@
                         }
                         if (skip) continue;
 
-                        var tag = r <= 1 ? 'th' : 'td';
-                        var cls = '';
-                        var val = '';
-
                         if (cell) {
                             if (cell.t === 'n') {
-                                cls = 'number-cell';
-                                if (cell.z && cell.z.indexOf('$') >= 0) {
-                                    val = '$' + Math.round(cell.v).toLocaleString();
+                                cls = 'num';
+                                if (cell.z && cell.z.indexOf(',') >= 0) {
+                                    val = Math.round(cell.v).toLocaleString();
                                 } else if (cell.z && cell.z.indexOf('%') >= 0) {
                                     val = (cell.v * 100).toFixed(2) + '%';
+                                    cls = 'pct';
+                                } else if (typeof cell.v === 'number' && cell.v < 1 && cell.v > -1 && cell.v !== 0) {
+                                    val = (cell.v * 100).toFixed(2) + '%';
+                                    cls = 'pct';
                                 } else if (cell.v === Math.floor(cell.v)) {
                                     val = cell.v.toLocaleString();
                                 } else {
-                                    val = cell.v.toFixed(4);
+                                    val = cell.v.toFixed(2);
                                 }
+                                if (typeof cell.v === 'number' && cell.v < 0) cls += ' neg';
+                            } else if (cell.t === 's') {
+                                val = cell.v;
+                                if (val === '--') cls = 'empty';
                             } else if (cell.w) {
                                 val = cell.w;
                             } else if (cell.v != null) {
                                 val = String(cell.v);
                             }
-                            if (val === '--') cls = 'empty-cell';
+                            if (typeof val === 'string' && val.indexOf('=IFERROR') === 0) val = '';
                         }
 
-                        var spanAttrs = (colspan > 1 ? ' colspan="' + colspan + '"' : '') +
-                                        (rowspan > 1 ? ' rowspan="' + rowspan + '"' : '');
+                        var spanAttrs = '';
+                        if (colspan > 1) spanAttrs += ' colspan="' + colspan + '"';
+                        if (rowspan > 1) spanAttrs += ' rowspan="' + rowspan + '"';
                         html += '<' + tag + spanAttrs + ' class="' + cls + '">' + val + '</' + tag + '>';
                     }
                     html += '</tr>';
@@ -2487,45 +2430,33 @@
             }
 
             function switchTab(name) {
-                document.querySelectorAll('.excel-tab').forEach(function(tab) {
-                    tab.classList.toggle('active', tab.textContent === name);
-                });
-                document.querySelectorAll('.excel-sheet').forEach(function(sheet) {
-                    sheet.classList.toggle('active', sheet.getAttribute('data-name') === name);
-                });
+                var tabs = document.querySelectorAll('.excel-tab');
+                for (var i = 0; i < tabs.length; i++) {
+                    tabs[i].classList.toggle('active', tabs[i].textContent === name);
+                }
+                var sheets = document.querySelectorAll('.excel-sheet');
+                for (var j = 0; j < sheets.length; j++) {
+                    sheets[j].classList.toggle('active', sheets[j].getAttribute('data-name') === name);
+                }
             }
 
-            function validateSheet(ws, name, warnings) {
-                if (!ws['!ref']) return;
-                var range = XLSX.utils.decode_range(ws['!ref']);
+            function setupDownload(arrayBuffer, downloadUrl) {
+                var blob = new Blob([arrayBuffer], {
+                    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                });
+                var btn = document.getElementById('downloadBtn');
+                btn.href = URL.createObjectURL(blob);
+                btn.download = 'MergerMeter_Analysis.xlsx';
 
-                // Check for raw CBSA codes
-                for (var r = range.s.r; r <= range.e.r; r++) {
-                    for (var c = range.s.c; c <= Math.min(range.s.c + 2, range.e.c); c++) {
-                        var addr = XLSX.utils.encode_cell({ r: r, c: c });
-                        var cell = ws[addr];
-                        if (cell && cell.t === 's' && /^CBSA \d{4,5}$/.test(cell.v)) {
-                            warnings.push('Sheet "' + name + '": CBSA code "' + cell.v + '" not resolved to a metro area name (row ' + (r + 1) + ')');
-                        }
-                    }
-                }
+                // Use server download for proper filename
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    window.location.href = downloadUrl;
+                });
 
-                // Check for missing peer data in data sheets
-                if (name.indexOf('MORTGAGE DATA') >= 0 || name.indexOf('SB DATA') >= 0) {
-                    for (var r2 = 2; r2 <= range.e.r; r2++) {
-                        var metricCell = ws[XLSX.utils.encode_cell({ r: r2, c: 1 })];
-                        var peerCell = ws[XLSX.utils.encode_cell({ r: r2, c: 3 })];
-                        var areaCell = ws[XLSX.utils.encode_cell({ r: r2, c: 0 })];
-                        if (metricCell && metricCell.v === 'Loans' && areaCell) {
-                            if (!peerCell || peerCell.v === null || peerCell.v === undefined || peerCell.v === 0) {
-                                var areaName = areaCell.v || 'Unknown';
-                                if (areaName !== 'Grand Total') {
-                                    warnings.push('Sheet "' + name + '": No peer data for ' + areaName);
-                                }
-                            }
-                        }
-                    }
-                }
+                var sizeKB = Math.round(arrayBuffer.byteLength / 1024);
+                document.getElementById('excelFileInfo').textContent =
+                    document.querySelectorAll('.excel-tab').length + ' sheets, ' + sizeKB + ' KB';
             }
 
             // Reset to initial bank selection screen
