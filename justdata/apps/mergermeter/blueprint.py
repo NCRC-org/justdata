@@ -934,7 +934,7 @@ def api_generate():
             rssd_a = (bank_a.get('rssd') or '').strip()
             if rssd_a:
                 try:
-                    areas_a = _generate_assessment_areas(rssd=rssd_a, year=2025, min_share=0.01)
+                    areas_a = _generate_assessment_areas(rssd=rssd_a, year=2025, method='deposits', min_share=0.01)
                     if areas_a:
                         acquirer_areas = areas_a
                 except Exception as e:
@@ -944,7 +944,7 @@ def api_generate():
                 rssd_b = (bank_b.get('rssd') or '').strip()
                 if rssd_b:
                     try:
-                        areas_b = _generate_assessment_areas(rssd=rssd_b, year=2025, min_share=0.01)
+                        areas_b = _generate_assessment_areas(rssd=rssd_b, year=2025, method='deposits', min_share=0.01)
                         if areas_b:
                             target_areas = areas_b
                     except Exception as e:
