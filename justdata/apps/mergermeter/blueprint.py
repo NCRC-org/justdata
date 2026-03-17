@@ -1008,7 +1008,7 @@ def api_generate():
             'single_bank_mode': '1' if single_bank_mode else '0',
             'use_national_data': '0',
             'loan_purpose': loan_purpose_str,
-            'peer_group': 'volume_50_200',
+            'peer_group': data.get('peer_group', 'volume_50_200'),
             'hmda_start_year': hmda_start,
             'hmda_end_year': hmda_end,
             'sb_start_year': sb_start,
