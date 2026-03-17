@@ -2126,7 +2126,7 @@
                         '<div style="color: #c00;">Error loading Excel preview: ' + err.message +
                         '<br><a href="' + downloadUrl + '" style="color: #034EA0;">Download the file directly</a></div>';
                 });
-        }
+        };
 
         window.renderWorkbook = function(wb) {
             var tabsEl = document.getElementById('excelTabs');
@@ -2162,7 +2162,7 @@
                 });
                 banner.style.display = 'block';
             }
-        }
+        };
 
         window.extractValidationWarnings = function(ws, warnings) {
             if (!ws || !ws['!ref']) return;
@@ -2171,7 +2171,7 @@
                 var cell = ws[XLSX.utils.encode_cell({ r: r, c: 3 })];
                 if (cell && cell.v) warnings.push(cell.v);
             }
-        }
+        };
 
         window.sheetToHTML = function(ws, sheetName) {
             if (!ws || !ws['!ref']) return '<div style="padding:20px;color:#999;">Empty sheet</div>';
@@ -2237,7 +2237,7 @@
             }
             html += '</table>';
             return html;
-        }
+        };
 
         window.switchTab = function(name) {
             var tabs = document.querySelectorAll('.excel-tab');
@@ -2248,7 +2248,7 @@
             for (var j = 0; j < sheets.length; j++) {
                 sheets[j].classList.toggle('active', sheets[j].getAttribute('data-name') === name);
             }
-        }
+        };
 
         window.setupDownload = function(arrayBuffer, downloadUrl) {
             var blob = new Blob([arrayBuffer], {
@@ -2266,7 +2266,7 @@
             var sizeKB = Math.round(arrayBuffer.byteLength / 1024);
             document.getElementById('excelFileInfo').textContent =
                 document.querySelectorAll('.excel-tab').length + ' sheets, ' + sizeKB + ' KB';
-        }
+        };
 
         // Bank Search Autocomplete Functionality
         (function() {
