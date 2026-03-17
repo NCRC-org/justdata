@@ -683,12 +683,13 @@ def _perform_analysis(job_id, form_data):
             if results:
                 bank_b_hmda_peer = pd.DataFrame(results)
         
-        # Auto-resolve SB respondent IDs from RSSD if not provided
-        # Banks may have multiple respondent_ids across years (e.g., after mergers/recharters)
-        acquirer_sb_ids = [acquirer_sb_id] if acquirer_sb_id else []
-        target_sb_ids = [target_sb_id] if target_sb_id else []
-
-        if not acquirer_sb_ids and acquirer_rssd:
+        # ALWAYS resolve ALL SB respondent IDs from RSSD, even if one was provided.
+        # Banks that merged/rechartered have different respondent_ids across years
+        # (e.g., Cadence Bank: 0000011813 for 2023, 0000606046 for 2024).
+        acquirer_sb_ids = set()
+        if acquirer_sb_id:
+            acquirer_sb_ids.add(acquirer_sb_id)
+        if acquirer_rssd:
             try:
                 resolve_query = f"""
                 SELECT DISTINCT sb_resid
@@ -700,16 +701,18 @@ def _perform_analysis(job_id, form_data):
                 if resolve_result:
                     for row in resolve_result:
                         if row.get('sb_resid'):
-                            acquirer_sb_ids.append(row['sb_resid'])
-                # Also add the RSSD itself as a fallback (zero-padded)
-                acquirer_sb_ids.append(str(acquirer_rssd).zfill(10))
-                acquirer_sb_ids = list(set(acquirer_sb_ids))
-                print(f"[DEBUG] Auto-resolved acquirer SB IDs from RSSD {acquirer_rssd}: {acquirer_sb_ids}")
+                            acquirer_sb_ids.add(row['sb_resid'])
+                acquirer_sb_ids.add(str(acquirer_rssd).zfill(10))
+                print(f"[DEBUG] Resolved acquirer SB IDs from RSSD {acquirer_rssd}: {acquirer_sb_ids}")
             except Exception as e:
-                acquirer_sb_ids = [str(acquirer_rssd).zfill(10)]
+                acquirer_sb_ids.add(str(acquirer_rssd).zfill(10))
                 print(f"[DEBUG] SB ID resolution failed for acquirer: {e}, falling back to RSSD")
+        acquirer_sb_ids = list(acquirer_sb_ids)
 
-        if not target_sb_ids and target_rssd:
+        target_sb_ids = set()
+        if target_sb_id:
+            target_sb_ids.add(target_sb_id)
+        if target_rssd:
             try:
                 resolve_query = f"""
                 SELECT DISTINCT sb_resid
@@ -721,14 +724,13 @@ def _perform_analysis(job_id, form_data):
                 if resolve_result:
                     for row in resolve_result:
                         if row.get('sb_resid'):
-                            target_sb_ids.append(row['sb_resid'])
-                # Also add the RSSD itself as a fallback (zero-padded)
-                target_sb_ids.append(str(target_rssd).zfill(10))
-                target_sb_ids = list(set(target_sb_ids))
-                print(f"[DEBUG] Auto-resolved target SB IDs from RSSD {target_rssd}: {target_sb_ids}")
+                            target_sb_ids.add(row['sb_resid'])
+                target_sb_ids.add(str(target_rssd).zfill(10))
+                print(f"[DEBUG] Resolved target SB IDs from RSSD {target_rssd}: {target_sb_ids}")
             except Exception as e:
-                target_sb_ids = [str(target_rssd).zfill(10)]
+                target_sb_ids.add(str(target_rssd).zfill(10))
                 print(f"[DEBUG] SB ID resolution failed for target: {e}, falling back to RSSD")
+        target_sb_ids = list(target_sb_ids)
 
         # Keep single-string variables for backward compat with metadata
         acquirer_sb_id = ', '.join(acquirer_sb_ids) if acquirer_sb_ids else ''
