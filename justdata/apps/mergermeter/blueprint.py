@@ -921,30 +921,43 @@ def api_generate():
         if not bank_a.get('name'):
             return jsonify({"error": "bank_a.name is required"}), 422
 
-        # --- Derive assessment areas if not provided ---
-        assessment_areas_json = '[]'
+        # --- Derive assessment areas separately per bank ---
+        acquirer_areas = []
+        target_areas = []
+
         if data.get('assessment_areas'):
-            # Custom AAs provided — serialize for form_data
-            assessment_areas_json = json.dumps(data['assessment_areas'])
+            # Custom AAs provided — use for both banks (user's explicit intent)
+            acquirer_areas = data['assessment_areas']
+            target_areas = data['assessment_areas']
         else:
-            # Auto-derive from branches using RSSD (or CERT via FDIC)
-            derived_areas = []
-            for bank_info in [bank_a] + ([bank_b] if bank_b else []):
-                rssd = (bank_info.get('rssd') or '').strip()
-                if rssd:
+            # Auto-derive from each bank's branches independently
+            rssd_a = (bank_a.get('rssd') or '').strip()
+            if rssd_a:
+                try:
+                    areas_a = _generate_assessment_areas(rssd=rssd_a, year=2025, min_share=0.01)
+                    if areas_a:
+                        acquirer_areas = areas_a
+                except Exception as e:
+                    print(f"[API] Warning: AA derivation failed for acquirer RSSD {rssd_a}: {e}")
+
+            if bank_b:
+                rssd_b = (bank_b.get('rssd') or '').strip()
+                if rssd_b:
                     try:
-                        areas = _generate_assessment_areas(rssd=rssd, year=2025, min_share=0.01)
-                        if areas:
-                            derived_areas.extend(areas)
+                        areas_b = _generate_assessment_areas(rssd=rssd_b, year=2025, min_share=0.01)
+                        if areas_b:
+                            target_areas = areas_b
                     except Exception as e:
-                        print(f"[API] Warning: AA derivation failed for RSSD {rssd}: {e}")
-            if derived_areas:
-                assessment_areas_json = json.dumps(derived_areas)
-            else:
+                        print(f"[API] Warning: AA derivation failed for target RSSD {rssd_b}: {e}")
+
+            if not acquirer_areas and not target_areas:
                 return jsonify({
                     "error": "No assessment areas provided and could not derive from branches. "
                              "Provide assessment_areas or ensure bank RSSD is correct."
                 }), 422
+
+        acquirer_areas_json = json.dumps(acquirer_areas)
+        target_areas_json = json.dumps(target_areas)
 
         # --- Map loan_purposes strings to HMDA codes ---
         loan_purpose_codes = []
@@ -986,7 +999,7 @@ def api_generate():
             'acquirer_rssd': (bank_a.get('rssd') or '').strip(),
             'acquirer_sb_id': (bank_a.get('respondent_id') or bank_a.get('rssd') or '').strip(),
             'acquirer_name': (bank_a.get('name') or 'Bank A').strip(),
-            'acquirer_assessment_areas': assessment_areas_json,
+            'acquirer_assessment_areas': acquirer_areas_json,
             'target_lei': '',
             'target_rssd': '',
             'target_sb_id': '',
@@ -1016,7 +1029,7 @@ def api_generate():
             form_data['target_rssd'] = (bank_b.get('rssd') or '').strip()
             form_data['target_sb_id'] = (bank_b.get('respondent_id') or bank_b.get('rssd') or '').strip()
             form_data['target_name'] = (bank_b.get('name') or 'Bank B').strip()
-            form_data['target_assessment_areas'] = assessment_areas_json
+            form_data['target_assessment_areas'] = target_areas_json
             form_data['single_bank_mode'] = '0'
 
         # --- Run analysis synchronously ---
