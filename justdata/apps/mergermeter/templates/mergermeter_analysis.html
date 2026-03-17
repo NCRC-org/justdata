@@ -2001,7 +2001,7 @@
                             $('#progressSection').hide();
 
                             // Load and render Excel preview
-                            loadExcelPreview(jobId);
+                            window.loadExcelPreview(jobId);
                         }
                         $('#submitBtn').prop('disabled', false);
                         return;
@@ -2104,7 +2104,7 @@
         });
 
         // Load and render Excel file as tabbed preview
-        function loadExcelPreview(jobId) {
+        window.loadExcelPreview = function(jobId) {
             var baseUrl = window.APP_BASE_URL || '/mergermeter';
             var excelUrl = baseUrl + '/excel-data?job_id=' + jobId;
             var downloadUrl = baseUrl + '/download?job_id=' + jobId;
@@ -2128,7 +2128,7 @@
                 });
         }
 
-        function renderWorkbook(wb) {
+        window.renderWorkbook = function(wb) {
             var tabsEl = document.getElementById('excelTabs');
             var sheetsEl = document.getElementById('excelSheets');
             var validationWarnings = [];
@@ -2164,7 +2164,7 @@
             }
         }
 
-        function extractValidationWarnings(ws, warnings) {
+        window.extractValidationWarnings = function(ws, warnings) {
             if (!ws || !ws['!ref']) return;
             var range = XLSX.utils.decode_range(ws['!ref']);
             for (var r = 4; r <= range.e.r; r++) {
@@ -2173,7 +2173,7 @@
             }
         }
 
-        function sheetToHTML(ws, sheetName) {
+        window.sheetToHTML = function(ws, sheetName) {
             if (!ws || !ws['!ref']) return '<div style="padding:20px;color:#999;">Empty sheet</div>';
             var range = XLSX.utils.decode_range(ws['!ref']);
             var merges = ws['!merges'] || [];
@@ -2239,7 +2239,7 @@
             return html;
         }
 
-        function switchTab(name) {
+        window.switchTab = function(name) {
             var tabs = document.querySelectorAll('.excel-tab');
             for (var i = 0; i < tabs.length; i++) {
                 tabs[i].classList.toggle('active', tabs[i].textContent === name);
@@ -2250,7 +2250,7 @@
             }
         }
 
-        function setupDownload(arrayBuffer, downloadUrl) {
+        window.setupDownload = function(arrayBuffer, downloadUrl) {
             var blob = new Blob([arrayBuffer], {
                 type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             });
