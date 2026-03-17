@@ -684,52 +684,62 @@ def _perform_analysis(job_id, form_data):
                 bank_b_hmda_peer = pd.DataFrame(results)
         
         # Auto-resolve SB respondent IDs from RSSD if not provided
-        if not acquirer_sb_id and acquirer_rssd:
+        # Banks may have multiple respondent_ids across years (e.g., after mergers/recharters)
+        acquirer_sb_ids = [acquirer_sb_id] if acquirer_sb_id else []
+        target_sb_ids = [target_sb_id] if target_sb_id else []
+
+        if not acquirer_sb_ids and acquirer_rssd:
             try:
                 resolve_query = f"""
                 SELECT DISTINCT sb_resid
                 FROM `justdata-ncrc.bizsight.sb_lenders`
                 WHERE CAST(sb_rssd AS STRING) = '{acquirer_rssd}'
                    OR LPAD(CAST(sb_rssd AS STRING), 10, '0') = LPAD('{acquirer_rssd}', 10, '0')
-                LIMIT 1
                 """
                 resolve_result = execute_query(client, resolve_query)
-                if resolve_result and resolve_result[0].get('sb_resid'):
-                    acquirer_sb_id = resolve_result[0]['sb_resid']
-                    print(f"[DEBUG] Auto-resolved acquirer SB ID from RSSD {acquirer_rssd}: {acquirer_sb_id}")
-                else:
-                    acquirer_sb_id = acquirer_rssd
-                    print(f"[DEBUG] No SB lender match for RSSD {acquirer_rssd}, falling back to RSSD as SB ID")
+                if resolve_result:
+                    for row in resolve_result:
+                        if row.get('sb_resid'):
+                            acquirer_sb_ids.append(row['sb_resid'])
+                # Also add the RSSD itself as a fallback (zero-padded)
+                acquirer_sb_ids.append(str(acquirer_rssd).zfill(10))
+                acquirer_sb_ids = list(set(acquirer_sb_ids))
+                print(f"[DEBUG] Auto-resolved acquirer SB IDs from RSSD {acquirer_rssd}: {acquirer_sb_ids}")
             except Exception as e:
-                acquirer_sb_id = acquirer_rssd
+                acquirer_sb_ids = [str(acquirer_rssd).zfill(10)]
                 print(f"[DEBUG] SB ID resolution failed for acquirer: {e}, falling back to RSSD")
 
-        if not target_sb_id and target_rssd:
+        if not target_sb_ids and target_rssd:
             try:
                 resolve_query = f"""
                 SELECT DISTINCT sb_resid
                 FROM `justdata-ncrc.bizsight.sb_lenders`
                 WHERE CAST(sb_rssd AS STRING) = '{target_rssd}'
                    OR LPAD(CAST(sb_rssd AS STRING), 10, '0') = LPAD('{target_rssd}', 10, '0')
-                LIMIT 1
                 """
                 resolve_result = execute_query(client, resolve_query)
-                if resolve_result and resolve_result[0].get('sb_resid'):
-                    target_sb_id = resolve_result[0]['sb_resid']
-                    print(f"[DEBUG] Auto-resolved target SB ID from RSSD {target_rssd}: {target_sb_id}")
-                else:
-                    target_sb_id = target_rssd
-                    print(f"[DEBUG] No SB lender match for RSSD {target_rssd}, falling back to RSSD as SB ID")
+                if resolve_result:
+                    for row in resolve_result:
+                        if row.get('sb_resid'):
+                            target_sb_ids.append(row['sb_resid'])
+                # Also add the RSSD itself as a fallback (zero-padded)
+                target_sb_ids.append(str(target_rssd).zfill(10))
+                target_sb_ids = list(set(target_sb_ids))
+                print(f"[DEBUG] Auto-resolved target SB IDs from RSSD {target_rssd}: {target_sb_ids}")
             except Exception as e:
-                target_sb_id = target_rssd
+                target_sb_ids = [str(target_rssd).zfill(10)]
                 print(f"[DEBUG] SB ID resolution failed for target: {e}, falling back to RSSD")
+
+        # Keep single-string variables for backward compat with metadata
+        acquirer_sb_id = ', '.join(acquirer_sb_ids) if acquirer_sb_ids else ''
+        target_sb_id = ', '.join(target_sb_ids) if target_sb_ids else ''
 
         update_progress(job_id, {'percent': 55, 'step': 'Querying Small Business data for Bank A...', 'done': False, 'error': None})
 
         # Bank A Small Business Subject
         bank_a_sb_subject = pd.DataFrame()
-        if acquirer_sb_id and acquirer_geoids:
-            query = build_sb_subject_query(acquirer_sb_id, acquirer_geoids, sb_years)
+        if acquirer_sb_ids and acquirer_geoids:
+            query = build_sb_subject_query(acquirer_sb_ids, acquirer_geoids, sb_years)
             results = execute_query(client, query)
             if results:
                 bank_a_sb_subject = pd.DataFrame(results)
@@ -738,8 +748,8 @@ def _perform_analysis(job_id, form_data):
         
         # Bank A Small Business Peer
         bank_a_sb_peer = pd.DataFrame()
-        if acquirer_sb_id and acquirer_geoids:
-            query = build_sb_peer_query(acquirer_sb_id, acquirer_geoids, sb_years)
+        if acquirer_sb_ids and acquirer_geoids:
+            query = build_sb_peer_query(acquirer_sb_ids, acquirer_geoids, sb_years)
             results = execute_query(client, query)
             if results:
                 bank_a_sb_peer = pd.DataFrame(results)
@@ -748,8 +758,8 @@ def _perform_analysis(job_id, form_data):
         
         # Bank B Small Business Subject
         bank_b_sb_subject = pd.DataFrame()
-        if target_sb_id and target_geoids:
-            query = build_sb_subject_query(target_sb_id, target_geoids, sb_years)
+        if target_sb_ids and target_geoids:
+            query = build_sb_subject_query(target_sb_ids, target_geoids, sb_years)
             results = execute_query(client, query)
             if results:
                 bank_b_sb_subject = pd.DataFrame(results)
@@ -758,18 +768,18 @@ def _perform_analysis(job_id, form_data):
         
         # Bank B Small Business Peer
         bank_b_sb_peer = pd.DataFrame()
-        if target_sb_id and target_geoids:
-            query = build_sb_peer_query(target_sb_id, target_geoids, sb_years)
+        if target_sb_ids and target_geoids:
+            query = build_sb_peer_query(target_sb_ids, target_geoids, sb_years)
             results = execute_query(client, query)
             if results:
                 bank_b_sb_peer = pd.DataFrame(results)
         
         # Log warning if SB data is empty after auto-resolution
-        if acquirer_sb_id and acquirer_geoids and bank_a_sb_subject.empty:
-            print(f"[WARNING] No SB data found for acquirer SB ID '{acquirer_sb_id}' "
+        if acquirer_sb_ids and acquirer_geoids and bank_a_sb_subject.empty:
+            print(f"[WARNING] No SB data found for acquirer SB IDs {acquirer_sb_ids} "
                   f"(RSSD: {acquirer_rssd}) in {len(acquirer_geoids)} counties, years {sb_years}")
-        if target_sb_id and target_geoids and bank_b_sb_subject.empty:
-            print(f"[WARNING] No SB data found for target SB ID '{target_sb_id}' "
+        if target_sb_ids and target_geoids and bank_b_sb_subject.empty:
+            print(f"[WARNING] No SB data found for target SB IDs {target_sb_ids} "
                   f"(RSSD: {target_rssd}) in {len(target_geoids)} counties, years {sb_years}")
 
         update_progress(job_id, {'percent': 87, 'step': 'Querying branch data for Bank A...', 'done': False, 'error': None})
@@ -1151,16 +1161,20 @@ def _perform_analysis(job_id, form_data):
             states_with_branches = set(state_map.values())
             
             # Build county-level SB query aggregated by state
-            def build_county_level_sb_query(sb_id, geoids, years):
+            def build_county_level_sb_query(sb_ids, geoids, years):
                 """Build SB query aggregated by county (GEOID5) then by state"""
                 geoid5_list = "', '".join([str(g).zfill(5) for g in geoids])
                 years_list = "', '".join([str(y) for y in years])
-                
-                # Extract respondent ID without prefix
-                if '-' in sb_id:
-                    respondent_id_no_prefix = sb_id.split('-', 1)[-1]
-                else:
-                    respondent_id_no_prefix = sb_id
+
+                # Build respondent_id IN clause from all IDs
+                if isinstance(sb_ids, str):
+                    sb_ids = [sb_ids]
+                all_ids = set()
+                for sid in sb_ids:
+                    all_ids.add(sid)
+                    if '-' in sid:
+                        all_ids.add(sid.split('-', 1)[-1])
+                id_list = "', '".join(all_ids)
                 
                 query = f"""
                 WITH county_state_map AS (
@@ -1191,7 +1205,7 @@ def _perform_analysis(job_id, form_data):
                         AND CAST(d.year AS STRING) = l.sb_year
                     WHERE CAST(d.year AS STRING) IN ('{years_list}')
                         AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
-                        AND (l.sb_resid = '{respondent_id_no_prefix}' OR l.sb_resid = '{sb_id}')
+                        AND l.sb_resid IN ('{id_list}')
                 )
                 SELECT
                     csm.state_name,
@@ -1211,16 +1225,16 @@ def _perform_analysis(job_id, form_data):
             combined_sb_dfs = []
 
             # Query Bank A - using baseline years for goals
-            if acquirer_sb_id and acquirer_geoids:
-                query = build_county_level_sb_query(acquirer_sb_id, acquirer_geoids, baseline_sb_years)
+            if acquirer_sb_ids and acquirer_geoids:
+                query = build_county_level_sb_query(acquirer_sb_ids, acquirer_geoids, baseline_sb_years)
                 results = execute_query(client, query)
                 if results:
                     df_a = pd.DataFrame(results)
                     combined_sb_dfs.append(df_a)
 
             # Query Bank B - using baseline years for goals
-            if target_sb_id and target_geoids:
-                query = build_county_level_sb_query(target_sb_id, target_geoids, baseline_sb_years)
+            if target_sb_ids and target_geoids:
+                query = build_county_level_sb_query(target_sb_ids, target_geoids, baseline_sb_years)
                 results = execute_query(client, query)
                 if results:
                     df_b = pd.DataFrame(results)

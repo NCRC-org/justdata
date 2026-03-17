@@ -597,18 +597,18 @@ ORDER BY activity_year, state_code, cbsa_code, loan_purpose_cat
 
 
 def build_sb_subject_query(
-    sb_respondent_id: str,
+    sb_respondent_ids,
     assessment_area_geoids: list,
     years: list
 ) -> str:
     """
     Build Small Business query for subject bank.
-    
+
     Args:
-        sb_respondent_id: Bank's SB Respondent ID (string, may have prefix)
+        sb_respondent_ids: Bank's SB Respondent ID(s) - string or list of strings
         assessment_area_geoids: List of GEOID5 codes (5-digit strings)
         years: List of years as strings
-    
+
     Returns:
         SQL query string
     """
@@ -628,15 +628,19 @@ SELECT
     CAST(NULL AS FLOAT64) as avg_loan_amt_rum_sb
 WHERE FALSE
 """
-    
+
     geoid5_list = "', '".join([str(g).zfill(5) for g in assessment_area_geoids])
     years_list = "', '".join([str(y) for y in years])
-    
-    # Extract respondent ID without prefix
-    if '-' in sb_respondent_id:
-        respondent_id_no_prefix = sb_respondent_id.split('-', 1)[-1]
-    else:
-        respondent_id_no_prefix = sb_respondent_id
+
+    # Build respondent_id IN clause from all IDs
+    if isinstance(sb_respondent_ids, str):
+        sb_respondent_ids = [sb_respondent_ids]
+    all_ids = set()
+    for sid in sb_respondent_ids:
+        all_ids.add(sid)
+        if '-' in sid:
+            all_ids.add(sid.split('-', 1)[-1])
+    id_list = "', '".join(all_ids)
     
     query = f"""
 -- CBSA crosswalk to get CBSA codes and names from GEOID5 (counties in assessment areas)
@@ -679,7 +683,7 @@ filtered_sb_data AS (
         ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = c.geoid5
     WHERE CAST(d.year AS STRING) IN ('{years_list}')
         AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
-        AND (d.respondent_id = '{respondent_id_no_prefix}' OR d.respondent_id = '{sb_respondent_id}')
+        AND d.respondent_id IN ('{id_list}')
         AND c.cbsa_code IS NOT NULL  -- Only include counties that have a CBSA mapping (in assessment areas)
 ),
 aggregated_sb_metrics AS (
@@ -1045,18 +1049,18 @@ ORDER BY state, county, city, branch_name
 
 
 def build_sb_peer_query(
-    sb_respondent_id: str,
+    sb_respondent_ids,
     assessment_area_geoids: list,
     years: list
 ) -> str:
     """
     Build Small Business query for peer banks (50%-200% volume rule).
-    
+
     Args:
-        sb_respondent_id: Subject bank's SB Respondent ID (string)
+        sb_respondent_ids: Subject bank's SB Respondent ID(s) - string or list of strings
         assessment_area_geoids: List of GEOID5 codes (5-digit strings)
         years: List of years as strings
-    
+
     Returns:
         SQL query string
     """
@@ -1076,15 +1080,19 @@ SELECT
     CAST(NULL AS FLOAT64) as avg_loan_amt_rum_sb
 WHERE FALSE
 """
-    
+
     geoid5_list = "', '".join([str(g).zfill(5) for g in assessment_area_geoids])
     years_list = "', '".join([str(y) for y in years])
-    
-    # Extract respondent ID without prefix
-    if '-' in sb_respondent_id:
-        respondent_id_no_prefix = sb_respondent_id.split('-', 1)[-1]
-    else:
-        respondent_id_no_prefix = sb_respondent_id
+
+    # Build respondent_id IN clause from all IDs
+    if isinstance(sb_respondent_ids, str):
+        sb_respondent_ids = [sb_respondent_ids]
+    all_ids = set()
+    for sid in sb_respondent_ids:
+        all_ids.add(sid)
+        if '-' in sid:
+            all_ids.add(sid.split('-', 1)[-1])
+    id_list = "', '".join(all_ids)
     
     query = f"""
 -- CBSA crosswalk to get CBSA codes and names from GEOID5 (counties in assessment areas)
@@ -1133,7 +1141,7 @@ subject_sb_volume AS (
         cbsa_code,
         SUM(sb_loans_count) as subject_sb_vol
     FROM filtered_sb_data
-    WHERE sb_resid = '{respondent_id_no_prefix}' OR sb_resid = '{sb_respondent_id}'
+    WHERE sb_resid IN ('{id_list}')
     GROUP BY year, cbsa_code
 ),
 all_lenders_sb_volume AS (
@@ -1161,12 +1169,12 @@ peers AS (
         INNER JOIN subject_sb_volume sv2
             ON al2.year = sv2.year
             AND al2.cbsa_code = sv2.cbsa_code
-        WHERE (al2.sb_resid != '{respondent_id_no_prefix}' AND al2.sb_resid != '{sb_respondent_id}')
+        WHERE al2.sb_resid NOT IN ('{id_list}')
             AND al2.lender_sb_vol >= sv2.subject_sb_vol * 0.5
             AND al2.lender_sb_vol <= sv2.subject_sb_vol * 2.0
         GROUP BY al2.year, al2.cbsa_code
     ) vpc ON al.year = vpc.year AND al.cbsa_code = vpc.cbsa_code
-    WHERE (al.sb_resid != '{respondent_id_no_prefix}' AND al.sb_resid != '{sb_respondent_id}')
+    WHERE al.sb_resid NOT IN ('{id_list}')
       AND (
           -- Volume peers exist for this CBSA: apply volume filter
           (vpc.peer_count > 0 AND al.lender_sb_vol >= sv.subject_sb_vol * 0.5 AND al.lender_sb_vol <= sv.subject_sb_vol * 2.0)
