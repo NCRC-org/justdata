@@ -12,7 +12,8 @@
             "median_family_income", "income_category", "income_ratio",
             "baseline_median_income", "baseline_type",
             "minority_percentage", "minority_category",
-            "total_population", "minority_population"
+            "total_population", "minority_population",
+            "cbsa_code", "cbsa_name"
           ]
         }
       }
