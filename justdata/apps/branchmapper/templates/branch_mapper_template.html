@@ -3005,7 +3005,49 @@
             clearGeocoderBoundary();
             const sourceId = 'geocoder-boundary';
             geocoderBoundarySourceId = sourceId;
-            geocoderBoundaryPolygon = geojson;
+            // Normalize to a Turf-compatible polygon for clipping
+            // booleanPointInPolygon accepts: Polygon Geometry, MultiPolygon Geometry, or Feature wrapping either
+            try {
+                let poly = null;
+                if (geojson.type === 'FeatureCollection' && geojson.features && geojson.features.length > 0) {
+                    poly = geojson.features[0];
+                } else {
+                    poly = geojson;
+                }
+
+                // If it's a Feature, validate it has a usable geometry
+                if (poly.type === 'Feature') {
+                    if (!poly.geometry || !poly.geometry.coordinates) {
+                        console.warn('[BranchMapper] Geocoder boundary Feature has no geometry — skipping clip polygon');
+                        geocoderBoundaryPolygon = null;
+                    } else if (poly.geometry.type === 'Polygon' || poly.geometry.type === 'MultiPolygon') {
+                        geocoderBoundaryPolygon = poly;
+                    } else if (poly.geometry.type === 'GeometryCollection') {
+                        // Extract first Polygon/MultiPolygon from the collection
+                        const usable = poly.geometry.geometries.find(
+                            g => g.type === 'Polygon' || g.type === 'MultiPolygon'
+                        );
+                        if (usable) {
+                            geocoderBoundaryPolygon = turf.feature(usable);
+                        } else {
+                            console.warn('[BranchMapper] GeometryCollection has no Polygon — skipping clip polygon');
+                            geocoderBoundaryPolygon = null;
+                        }
+                    } else {
+                        console.warn('[BranchMapper] Unexpected geometry type:', poly.geometry.type, '— skipping clip polygon');
+                        geocoderBoundaryPolygon = null;
+                    }
+                } else if (poly.type === 'Polygon' || poly.type === 'MultiPolygon') {
+                    // Raw geometry object — wrap in a Feature for Turf
+                    geocoderBoundaryPolygon = turf.feature(poly);
+                } else {
+                    console.warn('[BranchMapper] Unexpected GeoJSON type:', poly.type, '— skipping clip polygon');
+                    geocoderBoundaryPolygon = null;
+                }
+            } catch (err) {
+                console.error('[BranchMapper] Failed to normalize geocoder boundary:', err);
+                geocoderBoundaryPolygon = null;
+            }
 
             branchMap.addSource(sourceId, { type: 'geojson', data: geojson });
 
