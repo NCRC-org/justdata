@@ -992,7 +992,6 @@
         let allBankNames = [];
         let viewportCounties = [];
         let currentGeographyName = '';   // Set by geocoder result
-        let selectedCountyForAPI = null;  // County name for census API calls, set by geocoder
 
         const BANK_COLORS = ['#1a8fc9', '#e67e22', '#8e44ad'];
         const METRO_ZOOM_THRESHOLD = 6;
@@ -1975,21 +1974,11 @@
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
             } else if (censusType === 'minority') {
-                if (window._minorityQuartiles) {
-                    const q = window._minorityQuartiles;
-                    censusHtml += '<strong>% Minority Population</strong>'
-                        + `<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest (>${q.q3.toFixed(1)}%)</div>`
-                        + `<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median (${q.q2.toFixed(1)}-${q.q3.toFixed(1)}%)</div>`
-                        + `<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median (${q.q1.toFixed(1)}-${q.q2.toFixed(1)}%)</div>`
-                        + `<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest (<${q.q1.toFixed(1)}%)</div>`;
-                } else {
-                    // Fallback without percentages
-                    censusHtml += '<strong>% Minority Population</strong>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
-                        + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest</div>';
-                }
+                censusHtml += '<strong>% Minority Population (CBSA quartiles)</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest 25%</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest 25%</div>';
             }
 
             if (branchHtml || censusHtml) {
@@ -2028,36 +2017,25 @@
                 return;
             }
 
+            // Move census layers below labels/roads
+            const firstSymbol = findFirstSymbolLayer();
+
             if (type === 'income') {
-                if (selectedCountyForAPI) {
-                    // Geography selected → use API layer with proper quartiles
-                    loadIncomeLayer(selectedCountyForAPI);
-                } else {
-                    // No geography → fall back to tileset (national view)
-                    const firstSymbol = findFirstSymbolLayer();
-                    if (firstSymbol) {
-                        branchMap.moveLayer('census-income-fill', firstSymbol);
-                        branchMap.moveLayer('census-income-outline', firstSymbol);
-                    }
-                    branchMap.setLayoutProperty('census-income-fill', 'visibility', 'visible');
-                    branchMap.setLayoutProperty('census-income-outline', 'visibility', 'visible');
-                    incomeLayerVisible = true;
+                if (firstSymbol) {
+                    branchMap.moveLayer('census-income-fill', firstSymbol);
+                    branchMap.moveLayer('census-income-outline', firstSymbol);
                 }
+                branchMap.setLayoutProperty('census-income-fill', 'visibility', 'visible');
+                branchMap.setLayoutProperty('census-income-outline', 'visibility', 'visible');
+                incomeLayerVisible = true;
             } else if (type === 'minority') {
-                if (selectedCountyForAPI) {
-                    // Geography selected → use API layer with CBSA-scoped quartiles
-                    loadMinorityLayer(selectedCountyForAPI);
-                } else {
-                    // No geography → fall back to tileset (national view)
-                    const firstSymbol = findFirstSymbolLayer();
-                    if (firstSymbol) {
-                        branchMap.moveLayer('census-minority-fill', firstSymbol);
-                        branchMap.moveLayer('census-minority-outline', firstSymbol);
-                    }
-                    branchMap.setLayoutProperty('census-minority-fill', 'visibility', 'visible');
-                    branchMap.setLayoutProperty('census-minority-outline', 'visibility', 'visible');
-                    minorityLayerVisible = true;
+                if (firstSymbol) {
+                    branchMap.moveLayer('census-minority-fill', firstSymbol);
+                    branchMap.moveLayer('census-minority-outline', firstSymbol);
                 }
+                branchMap.setLayoutProperty('census-minority-fill', 'visibility', 'visible');
+                branchMap.setLayoutProperty('census-minority-outline', 'visibility', 'visible');
+                minorityLayerVisible = true;
             }
 
             updateMapLegend();
@@ -2834,34 +2812,8 @@
                 branchMap.flyTo({ center: result.center, zoom: 12, duration: 1500 });
             }
 
-            // Extract county name for census API calls
-            selectedCountyForAPI = null;
-            if (result.place_type && result.place_type[0] === 'district') {
-                // This IS a county
-                selectedCountyForAPI = result.place_name.replace(/, United States$/, '');
-            } else if (result.context) {
-                // Extract county from context array
-                const countyCtx = result.context.find(c => c.id && c.id.startsWith('district'));
-                if (countyCtx) {
-                    // Build "County Name, State Name" from context
-                    const stateCtx = result.context.find(c => c.id && c.id.startsWith('region'));
-                    if (stateCtx) {
-                        selectedCountyForAPI = countyCtx.text + ', ' + stateCtx.text;
-                    }
-                }
-            }
-            console.log('[Census] Selected county for API:', selectedCountyForAPI);
-
             // Try to fetch and display a boundary polygon
             fetchGeocoderBoundary(result);
-
-            // If a census overlay is already active, re-trigger it so it
-            // switches from the tileset to the CBSA-scoped API layer
-            if (minorityLayerVisible) {
-                setCensusOverlay('minority');
-            } else if (incomeLayerVisible) {
-                setCensusOverlay('income');
-            }
         }
 
         // Fetch boundary polygon for geocoder result
@@ -3179,16 +3131,7 @@
             geocoder.on('clear', function() {
                 clearGeocoderBoundary();
                 currentGeographyName = '';
-                selectedCountyForAPI = null;
                 updateMapTitle();
-
-                // If a census overlay is active, re-trigger it so it
-                // reverts from the API layer back to the tileset (national view)
-                if (minorityLayerVisible) {
-                    setCensusOverlay('minority');
-                } else if (incomeLayerVisible) {
-                    setCensusOverlay('income');
-                }
             });
 
             // Wait for map to load before adding census tileset layers
@@ -3383,6 +3326,7 @@
                     const props = e.features[0].properties;
                     const pct = props.minority_percentage != null ? parseFloat(props.minority_percentage).toFixed(1) + '%' : 'N/A';
                     const pop = props.total_population ? Math.round(parseFloat(props.total_population)).toLocaleString() : 'N/A';
+                    const scope = props.cbsa_name || 'rural tracts in state';
                     new mapboxgl.Popup({ maxWidth: '280px' })
                         .setLngLat(e.lngLat)
                         .setHTML(`<div style="min-width:200px;">
@@ -3391,7 +3335,7 @@
                             <strong>Minority Pop:</strong> ${pct}<br>
                             <strong>Total Pop:</strong> ${pop}<br>
                             <hr style="margin:8px 0;">
-                            <small style="color:#666;">Based on quartile distribution within ${window._quartileScope || 'state'}</small>
+                            <small style="color:#666;">Based on quartile distribution within ${scope}</small>
                         </div>`)
                         .addTo(branchMap);
                 });
@@ -3529,28 +3473,17 @@
         }
         
         // Get fill color expression for minority layer (Mapbox GL JS style)
-        // Uses step expression on numeric minority_percentage with quartile thresholds
+        // Uses match expression on minority_category (CBSA-scoped quartiles baked into tileset)
         function getMinorityColorExpression() {
-            const q = window._minorityQuartiles;
-            if (q) {
-                return [
-                    'step', ['get', 'minority_percentage'],
-                    '#d9d9d9',      // Lowest (below Q1)
-                    q.q1,           // Q1 threshold
-                    '#aaaaaa',      // Below median
-                    q.q2,           // Q2 (median)
-                    '#555555',      // Above median
-                    q.q3,           // Q3 threshold
-                    '#0a0a0a'       // Highest
-                ];
-            }
-            // Fallback: use fixed thresholds if quartiles not yet loaded
+            // Match on pre-computed minority_category baked into the tileset
+            // Quartiles are CBSA-scoped (metro tracts) or state-rural-scoped
             return [
-                'step', ['get', 'minority_percentage'],
-                '#d9d9d9',
-                25, '#aaaaaa',
-                50, '#555555',
-                75, '#0a0a0a'
+                'match', ['get', 'minority_category'],
+                'Q1 (Lowest 25%)', '#d9d9d9',
+                'Q2 (25-50%)', '#aaaaaa',
+                'Q3 (50-75%)', '#555555',
+                'Q4 (Highest 25%)', '#0a0a0a',
+                '#cccccc'  // fallback for Unknown
             ];
         }
         
