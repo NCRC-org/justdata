@@ -7,7 +7,7 @@ standardized Excel reports for bank merger analysis.
 Updated format to match NCRC MergerMeter expected output:
 - Notes sheet with methodology and data sources
 - Assessment Areas with Bank Name, CBSA Name, CBSA Code, State, County Name, County Code, State Code
-- Mortgage Goals and SB Goals sheets with formulas
+- Mortgage Goals and SB Goals sheets with computed values
 - Data sheets named "{SHORT_NAME} MORTGAGE DATA", "{SHORT_NAME} SB DATA", "{SHORT_NAME} BRANCH DATA"
 - Percentages stored as raw decimals, Difference shows "--" for non-percentage rows
 """
@@ -305,10 +305,6 @@ def create_merger_excel(
 
     if bank_b_branch_data is not None and not bank_b_branch_data.empty:
         _create_branch_data_sheet(wb, bank_b_name, bank_b_branch_data)
-
-    # Force Excel to recalculate all formulas on open
-    from openpyxl.workbook.properties import CalcProperties
-    wb.calculation = CalcProperties(fullCalcOnLoad=True)
 
     # Save workbook
     wb.save(output_path)
@@ -697,19 +693,25 @@ def _create_mortgage_goals_sheet(wb: Workbook, mortgage_goals_data: Dict, years_
             ws.cell(row, 4, refi_val)  # Refinance
             ws.cell(row, 5, hi_val)  # Home Improvement
 
-            # Total formula
-            ws.cell(row, 6, f'=SUM(C{row}:E{row})')
+            # Total (computed)
+            total_val = (hp_val or 0) + (refi_val or 0) + (hi_val or 0)
+            ws.cell(row, 6, total_val)
 
-            # Goal formulas
-            ws.cell(row, 7, f'=IFERROR(((C{row}/2)*C$2)*G$2,0)')  # HP Goal
-            ws.cell(row, 8, f'=IFERROR(((D{row}/2)*D$2)*H$2,0)')  # Refi Goal
-            ws.cell(row, 9, f'=IFERROR(((E{row}/2)*E$2)*I$2,0)')  # HI Goal
-            ws.cell(row, 10, f'=SUM(G{row}:I{row})')  # NCRC Proposal
+            # Goal values (computed) - uses multipliers from row 2
+            # Multipliers: C2=1.1, D2=1.5, E2=1, G2=5, H2=5, I2=5, K2=5
+            hp_goal = ((hp_val or 0) / 2) * 1.1 * 5 if hp_val else 0
+            refi_goal = ((refi_val or 0) / 2) * 1.5 * 5 if refi_val else 0
+            hi_goal = ((hi_val or 0) / 2) * 1 * 5 if hi_val else 0
+            ws.cell(row, 7, hp_goal)   # HP Goal
+            ws.cell(row, 8, refi_goal)  # Refi Goal
+            ws.cell(row, 9, hi_goal)   # HI Goal
+            ws.cell(row, 10, hp_goal + refi_goal + hi_goal)  # NCRC Proposal
 
             # Baseline and Total Increase only for LMIB$ row
             if metric == 'LMIB$':
-                ws.cell(row, 11, f'=IFERROR((F{row}/2)*K$2,0)')
-                ws.cell(row, 12, f'=J{row}-K{row}')
+                baseline = (total_val / 2) * 5 if total_val else 0
+                ws.cell(row, 11, baseline)
+                ws.cell(row, 12, (hp_goal + refi_goal + hi_goal) - baseline)
 
             # Apply number formatting based on metric
             if metric == 'LMIB$':
@@ -737,15 +739,21 @@ def _create_mortgage_goals_sheet(wb: Workbook, mortgage_goals_data: Dict, years_
                 ws.cell(row, 4, refi_val)
                 ws.cell(row, 5, hi_val)
 
-                ws.cell(row, 6, f'=SUM(C{row}:E{row})')
-                ws.cell(row, 7, f'=IFERROR(((C{row}/2)*C$2)*G$2,0)')
-                ws.cell(row, 8, f'=IFERROR(((D{row}/2)*D$2)*H$2,0)')
-                ws.cell(row, 9, f'=IFERROR(((E{row}/2)*E$2)*I$2,0)')
-                ws.cell(row, 10, f'=SUM(G{row}:I{row})')
+                # Computed values using same multipliers as grand total
+                total_val = (hp_val or 0) + (refi_val or 0) + (hi_val or 0)
+                ws.cell(row, 6, total_val)
+                hp_goal = ((hp_val or 0) / 2) * 1.1 * 5 if hp_val else 0
+                refi_goal = ((refi_val or 0) / 2) * 1.5 * 5 if refi_val else 0
+                hi_goal = ((hi_val or 0) / 2) * 1 * 5 if hi_val else 0
+                ws.cell(row, 7, hp_goal)
+                ws.cell(row, 8, refi_goal)
+                ws.cell(row, 9, hi_goal)
+                ws.cell(row, 10, hp_goal + refi_goal + hi_goal)
 
                 if metric == 'LMIB$':
-                    ws.cell(row, 11, f'=IFERROR((F{row}/2)*K$2,0)')
-                    ws.cell(row, 12, f'=J{row}-K{row}')
+                    baseline = (total_val / 2) * 5 if total_val else 0
+                    ws.cell(row, 11, baseline)
+                    ws.cell(row, 12, (hp_goal + refi_goal + hi_goal) - baseline)
 
                 # Apply number formatting based on metric
                 if metric == 'LMIB$':
@@ -818,12 +826,15 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                     val = rev_amount / rev_count if rev_count > 0 else 0
 
                 ws.cell(row, 3, val)  # Base Value
-                ws.cell(row, 4, f'=IFERROR(((C{row}/2)*C$2)*D$2,0)')  # NCRC Proposal
+                # NCRC Proposal (computed) - multipliers: C2=1.2, D2=5, E2=5
+                ncrc_proposal = ((val / 2) * 1.2 * 5) if val else 0
+                ws.cell(row, 4, ncrc_proposal)  # NCRC Proposal
 
                 # Baseline and Total Increase only for avg loan amount metrics
                 if 'Avg' in metric:
-                    ws.cell(row, 5, f'=IFERROR((C{row}/2)*E$2,0)')
-                    ws.cell(row, 6, f'=D{row}-E{row}')
+                    baseline = (val / 2) * 5 if val else 0
+                    ws.cell(row, 5, baseline)
+                    ws.cell(row, 6, ncrc_proposal - baseline)
 
                 # Apply number formatting based on metric
                 # Note: Only 'Avg' metrics are dollar amounts. "Loans Rev Under $1m" is a count
@@ -861,11 +872,14 @@ def _create_sb_goals_sheet(wb: Workbook, sb_goals_data: pd.DataFrame, years_sb: 
                         val = rev_amount / rev_count if rev_count > 0 else 0
 
                     ws.cell(row, 3, val)
-                    ws.cell(row, 4, f'=IFERROR(((C{row}/2)*C$2)*D$2,0)')
+                    # NCRC Proposal (computed)
+                    ncrc_proposal = ((val / 2) * 1.2 * 5) if val else 0
+                    ws.cell(row, 4, ncrc_proposal)
 
                     if 'Avg' in metric:
-                        ws.cell(row, 5, f'=IFERROR((C{row}/2)*E$2,0)')
-                        ws.cell(row, 6, f'=D{row}-E{row}')
+                        baseline = (val / 2) * 5 if val else 0
+                        ws.cell(row, 5, baseline)
+                        ws.cell(row, 6, ncrc_proposal - baseline)
 
                     # Apply number formatting based on metric
                     # Note: Only 'Avg' metrics are dollar amounts. "Loans Rev Under $1m" is a count
@@ -973,7 +987,8 @@ def _create_mortgage_data_sheet(
             if metric in ['Loans', 'LMIB$']:
                 ws.cell(row, 5, '--')
             else:
-                diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                diff_val = _compute_mortgage_pct_diff(metric, grand_total, peer_grand_total)
+                diff_cell = ws.cell(row, 5, diff_val)
                 diff_cell.number_format = '0.00%'
             row += 1
 
@@ -997,7 +1012,8 @@ def _create_mortgage_data_sheet(
                     if metric in ['Loans', 'LMIB$']:
                         ws.cell(row, 5, '--')
                     else:
-                        diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                        diff_val = _compute_mortgage_pct_diff(metric, cbsa_total, peer_cbsa_total)
+                        diff_cell = ws.cell(row, 5, diff_val)
                         diff_cell.number_format = '0.00%'
                     row += 1
 
@@ -1098,9 +1114,8 @@ def _create_mortgage_data_sheet(
                 if metric in ['Loans', 'LMIB$']:
                     ws.cell(r, c + 2, '--')
                 else:
-                    bcl = get_column_letter(c)
-                    pcl = get_column_letter(c + 1)
-                    diff_cell = ws.cell(r, c + 2, f'=IFERROR({bcl}{r}-{pcl}{r},0)')
+                    diff_val = _compute_mortgage_pct_diff(metric, s_tot, p_tot)
+                    diff_cell = ws.cell(r, c + 2, diff_val)
                     diff_cell.number_format = '0.00%'
 
                 c += 3
@@ -1113,9 +1128,8 @@ def _create_mortgage_data_sheet(
             if metric in ['Loans', 'LMIB$']:
                 ws.cell(r, c + 2, '--')
             else:
-                bcl = get_column_letter(c)
-                pcl = get_column_letter(c + 1)
-                diff_cell = ws.cell(r, c + 2, f'=IFERROR({bcl}{r}-{pcl}{r},0)')
+                diff_val = _compute_mortgage_pct_diff(metric, overall_subj, overall_peer)
+                diff_cell = ws.cell(r, c + 2, diff_val)
                 diff_cell.number_format = '0.00%'
 
             r += 1
@@ -1245,11 +1259,12 @@ def _create_sb_data_sheet(
             if metric == 'SB Loans':
                 ws.cell(row, 5, '--')
             elif metric in ['#LMICT', 'Loans Rev Under $1m']:
-                sb_loans_row = row - metrics.index(metric)
-                diff_cell = ws.cell(row, 5, f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)')
+                diff_val = _compute_sb_ratio_diff(metric, grand_total, peer_grand_total)
+                diff_cell = ws.cell(row, 5, diff_val)
                 diff_cell.number_format = '0.00%'
             elif 'Avg' in metric:
-                diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                diff_val = _compute_sb_avg_diff(metric, grand_total, peer_grand_total)
+                diff_cell = ws.cell(row, 5, diff_val)
                 diff_cell.number_format = '$#,##0'
             row += 1
 
@@ -1275,11 +1290,12 @@ def _create_sb_data_sheet(
                     if metric == 'SB Loans':
                         ws.cell(row, 5, '--')
                     elif metric in ['#LMICT', 'Loans Rev Under $1m']:
-                        sb_loans_row = row - metrics.index(metric)
-                        diff_cell = ws.cell(row, 5, f'=IFERROR((C{row}/C{sb_loans_row})-(D{row}/D{sb_loans_row}),0)')
+                        diff_val = _compute_sb_ratio_diff(metric, cbsa_total, peer_cbsa_total)
+                        diff_cell = ws.cell(row, 5, diff_val)
                         diff_cell.number_format = '0.00%'
                     elif 'Avg' in metric:
-                        diff_cell = ws.cell(row, 5, f'=IFERROR(C{row}-D{row},0)')
+                        diff_val = _compute_sb_avg_diff(metric, cbsa_total, peer_cbsa_total)
+                        diff_cell = ws.cell(row, 5, diff_val)
                         diff_cell.number_format = '$#,##0'
                     row += 1
 
@@ -1377,17 +1393,15 @@ def _create_sb_data_sheet(
                 if p_tot:
                     _write_sb_metric_new_format(ws, r, c + 1, metric, p_tot)
 
-                bcl = get_column_letter(c)
-                pcl = get_column_letter(c + 1)
-
                 if metric == 'SB Loans':
                     ws.cell(r, c + 2, '--')
                 elif metric in ['#LMICT', 'Loans Rev Under $1m']:
-                    diff_cell = ws.cell(r, c + 2,
-                        f'=IFERROR(({bcl}{r}/{bcl}{sb_loans_row})-({pcl}{r}/{pcl}{sb_loans_row}),0)')
+                    diff_val = _compute_sb_ratio_diff(metric, s_tot, p_tot)
+                    diff_cell = ws.cell(r, c + 2, diff_val)
                     diff_cell.number_format = '0.00%'
                 elif 'Avg' in metric:
-                    diff_cell = ws.cell(r, c + 2, f'=IFERROR({bcl}{r}-{pcl}{r},0)')
+                    diff_val = _compute_sb_avg_diff(metric, s_tot, p_tot)
+                    diff_cell = ws.cell(r, c + 2, diff_val)
                     diff_cell.number_format = '$#,##0'
 
                 c += 3
@@ -1397,17 +1411,15 @@ def _create_sb_data_sheet(
             if overall_peer:
                 _write_sb_metric_new_format(ws, r, c + 1, metric, overall_peer)
 
-            bcl = get_column_letter(c)
-            pcl = get_column_letter(c + 1)
-
             if metric == 'SB Loans':
                 ws.cell(r, c + 2, '--')
             elif metric in ['#LMICT', 'Loans Rev Under $1m']:
-                diff_cell = ws.cell(r, c + 2,
-                    f'=IFERROR(({bcl}{r}/{bcl}{sb_loans_row})-({pcl}{r}/{pcl}{sb_loans_row}),0)')
+                diff_val = _compute_sb_ratio_diff(metric, overall_subj, overall_peer)
+                diff_cell = ws.cell(r, c + 2, diff_val)
                 diff_cell.number_format = '0.00%'
             elif 'Avg' in metric:
-                diff_cell = ws.cell(r, c + 2, f'=IFERROR({bcl}{r}-{pcl}{r},0)')
+                diff_val = _compute_sb_avg_diff(metric, overall_subj, overall_peer)
+                diff_cell = ws.cell(r, c + 2, diff_val)
                 diff_cell.number_format = '$#,##0'
 
             r += 1
@@ -1490,15 +1502,15 @@ def _create_branch_data_sheet(wb: Workbook, bank_name: str, branch_data: pd.Data
         elif metric == 'LMICT':
             ws.cell(row, 3, int(grand_lmict))
             ws.cell(row, 4, int(grand_other_lmict))
-            # Difference as percentage point difference
-            branches_row = row - 1
-            ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+            # Difference as percentage point difference (computed)
+            diff_val = _compute_branch_pct_diff(grand_lmict, grand_total_subject, grand_other_lmict, grand_total_other)
+            ws.cell(row, 5, diff_val)
             ws.cell(row, 5).number_format = '0.00%'
         elif metric == 'MMCT':
             ws.cell(row, 3, int(grand_mmct))
             ws.cell(row, 4, int(grand_other_mmct))
-            branches_row = row - 2
-            ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+            diff_val = _compute_branch_pct_diff(grand_mmct, grand_total_subject, grand_other_mmct, grand_total_other)
+            ws.cell(row, 5, diff_val)
             ws.cell(row, 5).number_format = '0.00%'
         row += 1
 
@@ -1525,14 +1537,14 @@ def _create_branch_data_sheet(wb: Workbook, bank_name: str, branch_data: pd.Data
                 elif metric == 'LMICT':
                     ws.cell(row, 3, int(subject_lmict))
                     ws.cell(row, 4, int(other_lmict))
-                    branches_row = row - 1
-                    ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+                    diff_val = _compute_branch_pct_diff(subject_lmict, subject_total, other_lmict, other_total)
+                    ws.cell(row, 5, diff_val)
                     ws.cell(row, 5).number_format = '0.00%'
                 elif metric == 'MMCT':
                     ws.cell(row, 3, int(subject_mmct))
                     ws.cell(row, 4, int(other_mmct))
-                    branches_row = row - 2
-                    ws.cell(row, 5, f'=IFERROR((C{row}/C{branches_row})-(D{row}/D{branches_row}),0)')
+                    diff_val = _compute_branch_pct_diff(subject_mmct, subject_total, other_mmct, other_total)
+                    ws.cell(row, 5, diff_val)
                     ws.cell(row, 5).number_format = '0.00%'
                 row += 1
 
@@ -1545,7 +1557,81 @@ def _create_branch_data_sheet(wb: Workbook, bank_name: str, branch_data: pd.Data
     logger.info(f"Created branch DATA sheet for {bank_name}: {row - 2} rows")
 
 
-# Helper functions
+# Helper functions for computing difference values in Python
+# (replaces Excel formulas so SheetJS preview and Excel "Enable Editing" both work)
+
+def _compute_mortgage_pct_diff(metric: str, bank_totals: Dict, peer_totals: Dict) -> float:
+    """Compute bank_pct - peer_pct for a mortgage percentage metric.
+
+    Both bank and peer values are percentages (ratios of metric_loans / total_loans).
+    Returns the difference as a decimal (e.g., 0.05 for 5 percentage points).
+    """
+    if not bank_totals or not peer_totals:
+        return 0
+
+    total_bank = bank_totals.get('total_loans', 0)
+    total_peer = peer_totals.get('total_loans', 0)
+
+    metric_key_map = {
+        'LMICT%': 'lmict_loans', 'LMIB%': 'lmib_loans', 'MMCT%': 'mmct_loans',
+        'MINB%': 'minb_loans', 'Asian%': 'asian_loans', 'Black%': 'black_loans',
+        'Native American%': 'native_american_loans', 'HoPI%': 'hopi_loans',
+        'Hispanic%': 'hispanic_loans',
+    }
+    key = metric_key_map.get(metric)
+    if not key:
+        return 0
+
+    bank_pct = (bank_totals.get(key, 0) / total_bank) if total_bank > 0 else 0
+    peer_pct = (peer_totals.get(key, 0) / total_peer) if total_peer > 0 else 0
+    return bank_pct - peer_pct
+
+
+def _compute_sb_ratio_diff(metric: str, bank_totals: Dict, peer_totals: Dict) -> float:
+    """Compute (bank_metric/bank_sb_loans) - (peer_metric/peer_sb_loans) for SB ratio metrics."""
+    if not bank_totals or not peer_totals:
+        return 0
+
+    bank_sb = bank_totals.get('sb_loans_total', 0)
+    peer_sb = peer_totals.get('sb_loans_total', 0)
+
+    if metric == '#LMICT':
+        bank_val = bank_totals.get('lmict_count', 0)
+        peer_val = peer_totals.get('lmict_count', 0)
+    elif metric == 'Loans Rev Under $1m':
+        bank_val = bank_totals.get('loans_rev_under_1m_count', 0)
+        peer_val = peer_totals.get('loans_rev_under_1m_count', 0)
+    else:
+        return 0
+
+    bank_ratio = (bank_val / bank_sb) if bank_sb > 0 else 0
+    peer_ratio = (peer_val / peer_sb) if peer_sb > 0 else 0
+    return bank_ratio - peer_ratio
+
+
+def _compute_sb_avg_diff(metric: str, bank_totals: Dict, peer_totals: Dict) -> float:
+    """Compute bank_avg - peer_avg for SB average metrics."""
+    if not bank_totals or not peer_totals:
+        return 0
+
+    if metric == 'Avg SB LMICT Loan Amount':
+        bank_val = bank_totals.get('avg_sb_lmict_loan_amount', 0)
+        peer_val = peer_totals.get('avg_sb_lmict_loan_amount', 0)
+    elif metric == 'Avg Loan Amt for <$1M GAR SB':
+        bank_val = bank_totals.get('avg_loan_amt_rum_sb', 0)
+        peer_val = peer_totals.get('avg_loan_amt_rum_sb', 0)
+    else:
+        return 0
+
+    return bank_val - peer_val
+
+
+def _compute_branch_pct_diff(subj_count, subj_total, other_count, other_total) -> float:
+    """Compute (subject_count/subject_total) - (other_count/other_total) for branch metrics."""
+    subj_pct = (subj_count / subj_total) if subj_total > 0 else 0
+    other_pct = (other_count / other_total) if other_total > 0 else 0
+    return subj_pct - other_pct
+
 
 def _get_cbsa_name(group_data: pd.DataFrame) -> str:
     """Extract CBSA name from group data."""
