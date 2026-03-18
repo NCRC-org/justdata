@@ -1346,6 +1346,8 @@
             if (!window.branchDataMap) window.branchDataMap = {};
 
             bank.branches.forEach(branch => {
+                // Skip branches with missing coordinates
+                if (branch.latitude == null || branch.longitude == null) return;
                 let lat = branch.latitude, lng = branch.longitude;
                 if (typeof lat === 'string') lat = parseFloat(lat);
                 if (typeof lng === 'string') lng = parseFloat(lng);
@@ -1643,6 +1645,8 @@
                 // Skip branches from selected banks
                 if (selectedNames.some(n => (branch.bank_name || '').includes(n))) return;
 
+                // Skip branches with missing coordinates
+                if (branch.latitude == null || branch.longitude == null) return;
                 let lat = branch.latitude, lng = branch.longitude;
                 if (typeof lat === 'string') lat = parseFloat(lat);
                 if (typeof lng === 'string') lng = parseFloat(lng);
