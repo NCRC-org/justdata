@@ -992,6 +992,7 @@
         let allBankNames = [];
         let viewportCounties = [];
         let currentGeographyName = '';   // Set by geocoder result
+        let selectedCountyForAPI = null;  // County name for census API calls, set by geocoder
 
         const BANK_COLORS = ['#1a8fc9', '#e67e22', '#8e44ad'];
         const METRO_ZOOM_THRESHOLD = 6;
@@ -2027,25 +2028,36 @@
                 return;
             }
 
-            // Move census layers below labels/roads (first symbol layer)
-            const firstSymbol = findFirstSymbolLayer();
-
             if (type === 'income') {
-                if (firstSymbol) {
-                    branchMap.moveLayer('census-income-fill', firstSymbol);
-                    branchMap.moveLayer('census-income-outline', firstSymbol);
+                if (selectedCountyForAPI) {
+                    // Geography selected → use API layer with proper quartiles
+                    loadIncomeLayer(selectedCountyForAPI);
+                } else {
+                    // No geography → fall back to tileset (national view)
+                    const firstSymbol = findFirstSymbolLayer();
+                    if (firstSymbol) {
+                        branchMap.moveLayer('census-income-fill', firstSymbol);
+                        branchMap.moveLayer('census-income-outline', firstSymbol);
+                    }
+                    branchMap.setLayoutProperty('census-income-fill', 'visibility', 'visible');
+                    branchMap.setLayoutProperty('census-income-outline', 'visibility', 'visible');
+                    incomeLayerVisible = true;
                 }
-                branchMap.setLayoutProperty('census-income-fill', 'visibility', 'visible');
-                branchMap.setLayoutProperty('census-income-outline', 'visibility', 'visible');
-                incomeLayerVisible = true;
             } else if (type === 'minority') {
-                if (firstSymbol) {
-                    branchMap.moveLayer('census-minority-fill', firstSymbol);
-                    branchMap.moveLayer('census-minority-outline', firstSymbol);
+                if (selectedCountyForAPI) {
+                    // Geography selected → use API layer with CBSA-scoped quartiles
+                    loadMinorityLayer(selectedCountyForAPI);
+                } else {
+                    // No geography → fall back to tileset (national view)
+                    const firstSymbol = findFirstSymbolLayer();
+                    if (firstSymbol) {
+                        branchMap.moveLayer('census-minority-fill', firstSymbol);
+                        branchMap.moveLayer('census-minority-outline', firstSymbol);
+                    }
+                    branchMap.setLayoutProperty('census-minority-fill', 'visibility', 'visible');
+                    branchMap.setLayoutProperty('census-minority-outline', 'visibility', 'visible');
+                    minorityLayerVisible = true;
                 }
-                branchMap.setLayoutProperty('census-minority-fill', 'visibility', 'visible');
-                branchMap.setLayoutProperty('census-minority-outline', 'visibility', 'visible');
-                minorityLayerVisible = true;
             }
 
             updateMapLegend();
@@ -2822,6 +2834,24 @@
                 branchMap.flyTo({ center: result.center, zoom: 12, duration: 1500 });
             }
 
+            // Extract county name for census API calls
+            selectedCountyForAPI = null;
+            if (result.place_type && result.place_type[0] === 'district') {
+                // This IS a county
+                selectedCountyForAPI = result.place_name.replace(/, United States$/, '');
+            } else if (result.context) {
+                // Extract county from context array
+                const countyCtx = result.context.find(c => c.id && c.id.startsWith('district'));
+                if (countyCtx) {
+                    // Build "County Name, State Name" from context
+                    const stateCtx = result.context.find(c => c.id && c.id.startsWith('region'));
+                    if (stateCtx) {
+                        selectedCountyForAPI = countyCtx.text + ', ' + stateCtx.text;
+                    }
+                }
+            }
+            console.log('[Census] Selected county for API:', selectedCountyForAPI);
+
             // Try to fetch and display a boundary polygon
             fetchGeocoderBoundary(result);
         }
@@ -3141,6 +3171,7 @@
             geocoder.on('clear', function() {
                 clearGeocoderBoundary();
                 currentGeographyName = '';
+                selectedCountyForAPI = null;
                 updateMapTitle();
             });
 
