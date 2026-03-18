@@ -2854,6 +2854,14 @@
 
             // Try to fetch and display a boundary polygon
             fetchGeocoderBoundary(result);
+
+            // If a census overlay is already active, re-trigger it so it
+            // switches from the tileset to the CBSA-scoped API layer
+            if (minorityLayerVisible) {
+                setCensusOverlay('minority');
+            } else if (incomeLayerVisible) {
+                setCensusOverlay('income');
+            }
         }
 
         // Fetch boundary polygon for geocoder result
@@ -3173,6 +3181,14 @@
                 currentGeographyName = '';
                 selectedCountyForAPI = null;
                 updateMapTitle();
+
+                // If a census overlay is active, re-trigger it so it
+                // reverts from the API layer back to the tileset (national view)
+                if (minorityLayerVisible) {
+                    setCensusOverlay('minority');
+                } else if (incomeLayerVisible) {
+                    setCensusOverlay('income');
+                }
             });
 
             // Wait for map to load before adding census tileset layers
