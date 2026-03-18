@@ -34,12 +34,15 @@ from justdata.apps.branchmapper.data_utils import (
 from justdata.apps.branchmapper.core import load_sql_template
 from justdata.apps.branchmapper.census_tract_utils import (
     extract_fips_from_county_state,
+    get_cbsa_for_county,
+    get_counties_in_cbsa,
     get_county_median_family_income,
     get_county_minority_percentage,
     get_state_median_family_income,
     get_state_minority_percentage,
     get_tract_income_data,
     get_tract_minority_data,
+    get_tract_minority_data_by_cbsa,
     get_tract_income_data_by_state,
     get_tract_minority_data_by_state,
     get_tract_boundaries_geojson,
@@ -278,14 +281,35 @@ def api_census_tracts(county):
                 minority_lookup[geoid_normalized] = tract
                 minority_lookup[geoid] = tract
             print(f"Created minority lookup with {len(minority_lookup)} entries")
-            
-            # Calculate quartiles for minority percentage
+
+            # Look up CBSA for this county to scope quartiles to metro area
+            cbsa_info = get_cbsa_for_county(county)
+            quartile_source_tracts = tract_minority_data  # default: single county
+            quartile_scope = county
+            cbsa_found = False
+
+            if cbsa_info:
+                cbsa_code = cbsa_info['cbsa_code']
+                cbsa_name = cbsa_info.get('cbsa_name', cbsa_code)
+                print(f"[OK] Found CBSA {cbsa_code} ({cbsa_name}) for {county}, using CBSA-scoped quartiles")
+                cbsa_tracts = get_tract_minority_data_by_cbsa(cbsa_code, api_key)
+                if cbsa_tracts:
+                    quartile_source_tracts = cbsa_tracts
+                    quartile_scope = cbsa_name
+                    cbsa_found = True
+                    print(f"[OK] Using {len(cbsa_tracts)} CBSA tracts for quartile calculation")
+                else:
+                    print(f"[WARNING] CBSA tract data empty, falling back to county-level quartiles")
+            else:
+                print(f"[INFO] No CBSA found for {county} (rural county), using county-level quartiles")
+
+            # Calculate quartiles from CBSA-scoped (or fallback county) tracts
             minority_percentages = []
-            for tract in tract_minority_data:
+            for tract in quartile_source_tracts:
                 minority_pct = tract.get('minority_percentage')
                 if minority_pct is not None and minority_pct >= 0 and minority_pct <= 100:
                     minority_percentages.append(minority_pct)
-            
+
             if minority_percentages:
                 # Use numpy for accurate quartile calculation
                 try:
@@ -293,7 +317,7 @@ def api_census_tracts(county):
                     q2 = np.percentile(minority_percentages, 50)  # Median
                     q3 = np.percentile(minority_percentages, 75)
                     minority_quartiles = {'q1': float(q1), 'q2': float(q2), 'q3': float(q3)}
-                    print(f"[OK] Calculated minority quartiles: Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={len(minority_percentages)} tracts)")
+                    print(f"[OK] Calculated minority quartiles: Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={len(minority_percentages)} tracts, scope={quartile_scope})")
                 except Exception as e:
                     # Fallback to manual calculation if numpy fails
                     print(f"[WARNING] Error using numpy for quartiles: {e}, using manual calculation")
@@ -306,7 +330,7 @@ def api_census_tracts(county):
                     q2 = minority_percentages[q2_idx] if q2_idx < n else minority_percentages[-1]
                     q3 = minority_percentages[q3_idx] if q3_idx < n else minority_percentages[-1]
                     minority_quartiles = {'q1': q1, 'q2': q2, 'q3': q3}
-                    print(f"[OK] Calculated minority quartiles (manual): Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={n} tracts)")
+                    print(f"[OK] Calculated minority quartiles (manual): Q1={q1:.1f}%, Q2={q2:.1f}%, Q3={q3:.1f}% (n={n} tracts, scope={quartile_scope})")
             else:
                 print(f"[WARNING] No valid minority percentages found to calculate quartiles")
         
@@ -372,19 +396,23 @@ def api_census_tracts(county):
                     if minority_pct is not None and minority_pct >= 0 and minority_pct <= 100 and total_pop is not None and total_pop > 0:
                         # Categorize by quartile instead of ratio
                         if minority_quartiles:
+                            q1_pct = round(minority_quartiles['q1'], 1)
+                            q2_pct = round(minority_quartiles['q2'], 1)
+                            q3_pct = round(minority_quartiles['q3'], 1)
+
                             if minority_pct < minority_quartiles['q1']:
-                                minority_category = 'Q1 (Lowest 25%)'
+                                minority_category = f'Lowest (<{q1_pct}%)'
                             elif minority_pct < minority_quartiles['q2']:
-                                minority_category = 'Q2 (25-50%)'
+                                minority_category = f'Below median ({q1_pct}-{q2_pct}%)'
                             elif minority_pct < minority_quartiles['q3']:
-                                minority_category = 'Q3 (50-75%)'
+                                minority_category = f'Above median ({q2_pct}-{q3_pct}%)'
                             else:
-                                minority_category = 'Q4 (Highest 25%)'
+                                minority_category = f'Highest (>{q3_pct}%)'
                             minority_ratio = None  # Not using ratio for quartile-based categorization
                         else:
                             # Fallback to old method if quartiles not available
                             minority_category, minority_ratio = categorize_minority_level(minority_pct, county_minority_pct) if county_minority_pct else ('Unknown', None)
-                        
+
                         feature['properties']['minority_percentage'] = minority_pct
                         feature['properties']['minority_category'] = minority_category
                         feature['properties']['county_minority_percentage'] = county_minority_pct
@@ -437,9 +465,13 @@ def api_census_tracts(county):
         
         if include_minority:
             result['county_minority_percentage'] = county_minority_pct
-        
+            if minority_quartiles:
+                result['minority_quartiles'] = minority_quartiles
+                result['quartile_scope'] = quartile_scope
+                result['quartile_tract_count'] = len(quartile_source_tracts)
+
         return jsonify(result)
-        
+
     except Exception as e:
         error_msg = str(e)
         print(f"ERROR in api_census_tracts endpoint for county '{county}': {error_msg}")
@@ -648,14 +680,18 @@ def api_census_tracts_by_state(state_fips):
                     if minority_pct is not None and minority_pct >= 0 and minority_pct <= 100 and total_pop is not None and total_pop > 0:
                         # Categorize by quartile instead of ratio
                         if minority_quartiles:
+                            q1_pct = round(minority_quartiles['q1'], 1)
+                            q2_pct = round(minority_quartiles['q2'], 1)
+                            q3_pct = round(minority_quartiles['q3'], 1)
+
                             if minority_pct < minority_quartiles['q1']:
-                                minority_category = 'Q1 (Lowest 25%)'
+                                minority_category = f'Lowest (<{q1_pct}%)'
                             elif minority_pct < minority_quartiles['q2']:
-                                minority_category = 'Q2 (25-50%)'
+                                minority_category = f'Below median ({q1_pct}-{q2_pct}%)'
                             elif minority_pct < minority_quartiles['q3']:
-                                minority_category = 'Q3 (50-75%)'
+                                minority_category = f'Above median ({q2_pct}-{q3_pct}%)'
                             else:
-                                minority_category = 'Q4 (Highest 25%)'
+                                minority_category = f'Highest (>{q3_pct}%)'
                             minority_ratio = None  # Not using ratio for quartile-based categorization
                         else:
                             # Fallback to old method if quartiles not available
@@ -713,6 +749,10 @@ def api_census_tracts_by_state(state_fips):
 
         if include_minority:
             result['state_minority_percentage'] = state_minority_pct
+            if minority_quartiles:
+                result['minority_quartiles'] = minority_quartiles
+                result['quartile_scope'] = f'State {state_fips}'
+                result['quartile_tract_count'] = len(tract_minority_data)
 
         return jsonify(result)
 

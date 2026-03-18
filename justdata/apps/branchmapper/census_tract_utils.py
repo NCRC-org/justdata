@@ -1561,15 +1561,15 @@ def categorize_minority_level(tract_minority_pct: float, county_minority_pct: fl
     Args:
         tract_minority_pct: Tract minority percentage (0-100)
         county_minority_pct: County minority percentage (0-100)
-    
+
     Returns:
         Tuple of (category string, ratio float), or ('Unknown', None) if data unavailable
     """
     if tract_minority_pct is None or county_minority_pct is None or county_minority_pct <= 0:
         return ('Unknown', None)
-    
+
     ratio = tract_minority_pct / county_minority_pct
-    
+
     if ratio >= 2.0:
         return ('Very High', ratio)
     elif ratio >= 1.5:
@@ -1580,4 +1580,104 @@ def categorize_minority_level(tract_minority_pct: float, county_minority_pct: fl
         return ('Average', ratio)
     else:
         return ('Below Average', ratio)
+
+
+def get_counties_in_cbsa(cbsa_code: str) -> List[Dict[str, str]]:
+    """
+    Get all counties in a CBSA (metro area) from the shared.cbsa_to_county BigQuery table.
+
+    Results are cached for 24 hours.
+
+    Args:
+        cbsa_code: CBSA code (metro area code)
+
+    Returns:
+        List of dicts with 'geoid5', 'state_fips', 'county_fips', 'county_state'
+    """
+    cache_key = f"counties_in_cbsa_{cbsa_code}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached counties for CBSA {cbsa_code} ({len(cached)} counties)")
+        return cached
+
+    try:
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
+        from justdata.apps.branchmapper.config import PROJECT_ID
+
+        client = get_bigquery_client(PROJECT_ID)
+
+        query = f"""
+        SELECT DISTINCT
+            CAST(geoid5 AS STRING) as geoid5,
+            county_state
+        FROM shared.cbsa_to_county
+        WHERE CAST(cbsa_code AS STRING) = '{cbsa_code}'
+            AND geoid5 IS NOT NULL
+        """
+
+        query_job = client.query(query)
+        results = list(query_job.result())
+
+        counties = []
+        for row in results:
+            geoid5 = str(row.geoid5).zfill(5)
+            state_fips = geoid5[:2]
+            county_fips = geoid5[2:]
+            counties.append({
+                'geoid5': geoid5,
+                'state_fips': state_fips,
+                'county_fips': county_fips,
+                'county_state': str(row.county_state) if row.county_state else None
+            })
+
+        print(f"[OK] Found {len(counties)} counties in CBSA {cbsa_code}")
+        _set_cached(cache_key, counties)
+        return counties
+
+    except Exception as e:
+        print(f"[ERROR] Error getting counties for CBSA {cbsa_code}: {e}")
+        import traceback
+        traceback.print_exc()
+        return []
+
+
+def get_tract_minority_data_by_cbsa(cbsa_code: str, api_key: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Get minority population data for all census tracts in a CBSA (metro area).
+
+    Combines tract data from all counties in the CBSA.
+    Results are cached for 24 hours.
+
+    Args:
+        cbsa_code: CBSA code (metro area code)
+        api_key: Census API key (if None, tries CENSUS_API_KEY env var)
+
+    Returns:
+        List of dictionaries with tract data (same structure as get_tract_minority_data)
+    """
+    cache_key = f"tract_minority_cbsa_{cbsa_code}"
+    cached = _get_cached(cache_key)
+    if cached is not None:
+        print(f"[CACHE HIT] Returning cached CBSA tract minority data for {cbsa_code} ({len(cached)} tracts)")
+        return cached
+
+    if api_key is None:
+        api_key = get_census_api_key()
+
+    counties = get_counties_in_cbsa(cbsa_code)
+    if not counties:
+        print(f"[WARNING] No counties found for CBSA {cbsa_code}")
+        return []
+
+    print(f"Fetching minority data for {len(counties)} counties in CBSA {cbsa_code}")
+
+    all_tracts = []
+    for county in counties:
+        county_tracts = get_tract_minority_data(county['state_fips'], county['county_fips'], api_key)
+        all_tracts.extend(county_tracts)
+        print(f"  County {county['geoid5']} ({county.get('county_state', 'unknown')}): {len(county_tracts)} tracts")
+
+    print(f"[OK] Total CBSA tract minority data: {len(all_tracts)} tracts across {len(counties)} counties")
+    _set_cached(cache_key, all_tracts)
+    return all_tracts
 
