@@ -881,27 +881,27 @@
                         <!-- Minority Population Legend -->
                         <div id="column2MinorityLegend" style="display: none;">
                             <strong style="font-size: 0.85rem; color: var(--ncrc-dark-blue);">Minority Population:</strong>
-                            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; font-size: 0.75rem; color: #666;">
-                                <div style="display: inline-flex; align-items: center; gap: 4px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background: #1a1a1a; border: 1px solid #333;"></span>
-                                    <span>Q4 (Highest 25%)</span>
+                            <div id="column2MinorityItems" style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px; font-size: 0.75rem; color: #666;">
+                                <div id="minority-legend-q4" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #0a0a0a; border: 1px solid #333;"></span>
+                                    <span>Highest</span>
                                 </div>
-                                <div style="display: inline-flex; align-items: center; gap: 4px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background: #666666; border: 1px solid #333;"></span>
-                                    <span>Q3 (50-75%)</span>
+                                <div id="minority-legend-q3" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #555555; border: 1px solid #333;"></span>
+                                    <span>Above median</span>
                                 </div>
-                                <div style="display: inline-flex; align-items: center; gap: 4px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background: #999999; border: 1px solid #333;"></span>
-                                    <span>Q2 (25-50%)</span>
+                                <div id="minority-legend-q2" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #aaaaaa; border: 1px solid #333;"></span>
+                                    <span>Below median</span>
                                 </div>
-                                <div style="display: inline-flex; align-items: center; gap: 4px;">
-                                    <span style="display: inline-block; width: 12px; height: 12px; background: #cccccc; border: 1px solid #333;"></span>
-                                    <span>Q1 (Lowest 25%)</span>
+                                <div id="minority-legend-q1" style="display: inline-flex; align-items: center; gap: 4px;">
+                                    <span style="display: inline-block; width: 12px; height: 12px; background: #d9d9d9; border: 1px solid #333;"></span>
+                                    <span>Lowest</span>
                                 </div>
                             </div>
-                            <div style="margin-top: 4px; font-style: italic; color: #999; font-size: 0.7rem;">
+                            <div id="minority-legend-scope" style="margin-top: 4px; font-style: italic; color: #999; font-size: 0.7rem;">
                                 Minority = All non-Hispanic White excluded<br>
-                                Categories based on quartiles of minority % within county
+                                Categories based on quartiles of minority %
                             </div>
                         </div>
                     </div>
@@ -1974,11 +1974,21 @@
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
             } else if (censusType === 'minority') {
-                censusHtml += '<strong>% Minority Population</strong>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest</div>';
+                if (window._minorityQuartiles) {
+                    const q = window._minorityQuartiles;
+                    censusHtml += '<strong>% Minority Population</strong>'
+                        + `<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest (>${q.q3.toFixed(1)}%)</div>`
+                        + `<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median (${q.q2.toFixed(1)}-${q.q3.toFixed(1)}%)</div>`
+                        + `<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median (${q.q1.toFixed(1)}-${q.q2.toFixed(1)}%)</div>`
+                        + `<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest (<${q.q1.toFixed(1)}%)</div>`;
+                } else {
+                    // Fallback without percentages
+                    censusHtml += '<strong>% Minority Population</strong>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
+                        + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest</div>';
+                }
             }
 
             if (branchHtml || censusHtml) {
@@ -3334,7 +3344,7 @@
                             <strong>Minority Pop:</strong> ${pct}<br>
                             <strong>Total Pop:</strong> ${pop}<br>
                             <hr style="margin:8px 0;">
-                            <small style="color:#666;">Based on quartile distribution within state</small>
+                            <small style="color:#666;">Based on quartile distribution within ${window._quartileScope || 'state'}</small>
                         </div>`)
                         .addTo(branchMap);
                 });
@@ -3413,6 +3423,24 @@
             }
         }
         
+        // Update the sidebar minority legend with percentage cutoffs
+        function updateMinoritySidebarLegend(quartiles, scope) {
+            const q4 = document.getElementById('minority-legend-q4');
+            const q3 = document.getElementById('minority-legend-q3');
+            const q2 = document.getElementById('minority-legend-q2');
+            const q1 = document.getElementById('minority-legend-q1');
+            const scopeEl = document.getElementById('minority-legend-scope');
+            if (q4) q4.querySelector('span:last-child').textContent = `Highest (>${quartiles.q3.toFixed(1)}%)`;
+            if (q3) q3.querySelector('span:last-child').textContent = `Above median (${quartiles.q2.toFixed(1)}-${quartiles.q3.toFixed(1)}%)`;
+            if (q2) q2.querySelector('span:last-child').textContent = `Below median (${quartiles.q1.toFixed(1)}-${quartiles.q2.toFixed(1)}%)`;
+            if (q1) q1.querySelector('span:last-child').textContent = `Lowest (<${quartiles.q1.toFixed(1)}%)`;
+            if (scopeEl) {
+                scopeEl.innerHTML = `Minority = All non-Hispanic White excluded<br>Quartiles within ${scope || 'metro area'}`;
+            }
+            // Also update the map overlay legend
+            updateMapLegend();
+        }
+
         // Get gray shade for minority category (darker = higher minority percentage quartile)
         function getMinorityColor(category) {
             switch(category) {
@@ -3454,20 +3482,28 @@
         }
         
         // Get fill color expression for minority layer (Mapbox GL JS style)
+        // Uses step expression on numeric minority_percentage with quartile thresholds
         function getMinorityColorExpression() {
+            const q = window._minorityQuartiles;
+            if (q) {
+                return [
+                    'step', ['get', 'minority_percentage'],
+                    '#d9d9d9',      // Lowest (below Q1)
+                    q.q1,           // Q1 threshold
+                    '#aaaaaa',      // Below median
+                    q.q2,           // Q2 (median)
+                    '#555555',      // Above median
+                    q.q3,           // Q3 threshold
+                    '#0a0a0a'       // Highest
+                ];
+            }
+            // Fallback: use fixed thresholds if quartiles not yet loaded
             return [
-                'match',
-                ['get', 'minority_category'],
-                'Q4 (Highest 25%)', '#0a0a0a',
-                'Q3 (50-75%)', '#555555',
-                'Q2 (25-50%)', '#aaaaaa',
-                'Q1 (Lowest 25%)', '#d9d9d9',
-                'Very High', '#0a0a0a',
-                'High', '#333333',
-                'Above Average', '#555555',
-                'Average', '#aaaaaa',
-                'Below Average', '#d9d9d9',
-                '#e0e0e0' // default
+                'step', ['get', 'minority_percentage'],
+                '#d9d9d9',
+                25, '#aaaaaa',
+                50, '#555555',
+                75, '#0a0a0a'
             ];
         }
         
@@ -3576,6 +3612,11 @@
                     if (data.success && data.geojson && data.geojson.features) {
                         allFeatures.push(...data.geojson.features);
                         totalTracts += data.tract_count || data.geojson.features.length;
+                        // Store quartile data from state-level response
+                        if (data.minority_quartiles) {
+                            window._minorityQuartiles = data.minority_quartiles;
+                            window._quartileScope = data.quartile_scope || 'state';
+                        }
                     }
                 });
                 await Promise.all(fetches);
@@ -3618,7 +3659,7 @@
                             <strong>Minority Population:</strong> ${pct}<br>
                             <strong>Total Population:</strong> ${pop}<br>
                             <hr style="margin:8px 0;">
-                            <small style="color:#666;">Based on quartile distribution across state</small>
+                            <small style="color:#666;">Based on quartile distribution within ${window._quartileScope || 'state'}</small>
                         </div>`)
                         .addTo(branchMap);
                 });
@@ -3938,7 +3979,7 @@
                             <hr style="margin: 8px 0;">
                             <small style="color: #666;">
                                 Minority = Non-Hispanic White excluded<br>
-                                ${category.startsWith('Q') ? 'Categories based on quartiles of minority % within county' : 'Categories based on ratio to county average'}
+                                Based on quartile distribution within ${window._quartileScope || 'metro area'}
                             </small>
                         </div>
                     `;
@@ -3957,6 +3998,14 @@
                     branchMap.getCanvas().style.cursor = '';
                 });
                 
+                // Store quartile data for legend and paint expression
+                if (data.minority_quartiles) {
+                    window._minorityQuartiles = data.minority_quartiles;
+                    window._quartileScope = data.quartile_scope || 'metro area';
+                    // Update sidebar legend with percentage cutoffs
+                    updateMinoritySidebarLegend(data.minority_quartiles, data.quartile_scope);
+                }
+
                 const countyMinorityPct = data.county_minority_percentage;
                 const countyMinorityStr = (countyMinorityPct !== null && countyMinorityPct !== undefined) ? countyMinorityPct.toFixed(1) + '%' : 'N/A';
                 updateInfoPanel(`Loaded minority data for ${data.tract_count} census tracts. County: ${countyMinorityStr} minority`);
