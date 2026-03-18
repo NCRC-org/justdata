@@ -2,7 +2,7 @@
   "version": 1,
   "layers": {
     "census_tracts": {
-      "source": "mapbox://tileset-source/editengine/census-tracts",
+      "source": "mapbox://tileset-source/jedlebi/census-tracts",
       "minzoom": 5,
       "maxzoom": 12,
       "features": {

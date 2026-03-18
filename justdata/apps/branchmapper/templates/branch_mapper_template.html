@@ -995,7 +995,7 @@
 
         const BANK_COLORS = ['#1a8fc9', '#e67e22', '#8e44ad'];
         const METRO_ZOOM_THRESHOLD = 6;
-        const CENSUS_TILESET_ID = 'editengine.census-tracts';
+        const CENSUS_TILESET_ID = 'jedlebi.census-tracts';
         const CENSUS_SOURCE_LAYER = 'census_tracts';
 
         // Geocoder state
@@ -3141,15 +3141,10 @@
                 // Find first symbol layer so data layers render below labels/roads/borders
                 const firstSymbolId = findFirstSymbolLayer();
 
-                // Add census tileset as vector source
-                // Use direct tile URLs with editengine's token for cross-account access
-                const CENSUS_TILE_TOKEN = 'pk.eyJ1IjoiZWRpdGVuZ2luZSIsImEiOiJjaWd1MzVtNXMwYjh3dXNtMWExY25vOGpvIn0.cJpymrK-LK18dB8hZ66T8Q';
+                // Add census tileset as vector source (same account as map token)
                 branchMap.addSource('census-tileset', {
                     type: 'vector',
-                    tiles: [
-                        `https://a.tiles.mapbox.com/v4/${CENSUS_TILESET_ID}/{z}/{x}/{y}.vector.pbf?access_token=${CENSUS_TILE_TOKEN}`,
-                        `https://b.tiles.mapbox.com/v4/${CENSUS_TILESET_ID}/{z}/{x}/{y}.vector.pbf?access_token=${CENSUS_TILE_TOKEN}`
-                    ],
+                    url: `mapbox://${CENSUS_TILESET_ID}`,
                     minzoom: 5,
                     maxzoom: 12
                 });
