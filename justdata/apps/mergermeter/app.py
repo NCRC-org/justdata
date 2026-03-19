@@ -687,12 +687,13 @@ def _perform_analysis(job_id, form_data):
         # Banks that merged/rechartered have different respondent_ids across years
         # (e.g., Cadence Bank: 0000011813 for 2023, 0000606046 for 2024).
         acquirer_sb_ids = set()
+        acquirer_sb_ids_by_year = {}  # {year: resid} for Notes sheet
         if acquirer_sb_id:
             acquirer_sb_ids.add(acquirer_sb_id)
         if acquirer_rssd:
             try:
                 resolve_query = f"""
-                SELECT DISTINCT sb_resid
+                SELECT DISTINCT sb_resid, sb_year
                 FROM `justdata-ncrc.bizsight.sb_lenders`
                 WHERE CAST(sb_rssd AS STRING) = '{acquirer_rssd}'
                    OR LPAD(CAST(sb_rssd AS STRING), 10, '0') = LPAD('{acquirer_rssd}', 10, '0')
@@ -702,6 +703,8 @@ def _perform_analysis(job_id, form_data):
                     for row in resolve_result:
                         if row.get('sb_resid'):
                             acquirer_sb_ids.add(row['sb_resid'])
+                            if row.get('sb_year'):
+                                acquirer_sb_ids_by_year[str(row['sb_year'])] = row['sb_resid']
                 acquirer_sb_ids.add(str(acquirer_rssd).zfill(10))
                 print(f"[DEBUG] Resolved acquirer SB IDs from RSSD {acquirer_rssd}: {acquirer_sb_ids}")
             except Exception as e:
@@ -710,12 +713,13 @@ def _perform_analysis(job_id, form_data):
         acquirer_sb_ids = list(acquirer_sb_ids)
 
         target_sb_ids = set()
+        target_sb_ids_by_year = {}  # {year: resid} for Notes sheet
         if target_sb_id:
             target_sb_ids.add(target_sb_id)
         if target_rssd:
             try:
                 resolve_query = f"""
-                SELECT DISTINCT sb_resid
+                SELECT DISTINCT sb_resid, sb_year
                 FROM `justdata-ncrc.bizsight.sb_lenders`
                 WHERE CAST(sb_rssd AS STRING) = '{target_rssd}'
                    OR LPAD(CAST(sb_rssd AS STRING), 10, '0') = LPAD('{target_rssd}', 10, '0')
@@ -725,6 +729,8 @@ def _perform_analysis(job_id, form_data):
                     for row in resolve_result:
                         if row.get('sb_resid'):
                             target_sb_ids.add(row['sb_resid'])
+                            if row.get('sb_year'):
+                                target_sb_ids_by_year[str(row['sb_year'])] = row['sb_resid']
                 target_sb_ids.add(str(target_rssd).zfill(10))
                 print(f"[DEBUG] Resolved target SB IDs from RSSD {target_rssd}: {target_sb_ids}")
             except Exception as e:
@@ -1321,7 +1327,9 @@ def _perform_analysis(job_id, form_data):
             'acquirer_rssd': acquirer_rssd,
             'target_rssd': target_rssd,
             'acquirer_sb_id': acquirer_sb_id,
+            'acquirer_sb_ids_by_year': acquirer_sb_ids_by_year,
             'target_sb_id': target_sb_id,
+            'target_sb_ids_by_year': target_sb_ids_by_year,
             'acquirer_name': acquirer_name,
             'target_name': target_name,
             'acquirer_name_short': acquirer_name_short,

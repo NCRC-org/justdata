@@ -1942,6 +1942,23 @@
             }
         }
 
+        function buildMinorityLegendHtml() {
+            var q = window._minorityQuartiles;
+            if (q && q.q1 !== undefined && q.q2 !== undefined && q.q3 !== undefined) {
+                return '<strong>% Minority Population (CBSA quartiles)</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest 25% (>' + q.q3.toFixed(1) + '%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median (' + q.q2.toFixed(1) + '\u2013' + q.q3.toFixed(1) + '%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median (' + q.q1.toFixed(1) + '\u2013' + q.q2.toFixed(1) + '%)</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest 25% (<' + q.q1.toFixed(1) + '%)</div>';
+            } else {
+                return '<strong>% Minority Population (CBSA quartiles)</strong>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest 25%</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
+                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest 25%</div>';
+            }
+        }
+
         function updateMapLegend() {
             const mapLegend = document.getElementById('mapOverlayLegend');
             if (!mapLegend) return;
@@ -1974,11 +1991,7 @@
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#999999"></span> Middle (\u2264120%)</div>'
                     + '<div class="legend-item"><span class="legend-swatch" style="background:#cccccc"></span> Upper (>120%)</div>';
             } else if (censusType === 'minority') {
-                censusHtml += '<strong>% Minority Population (CBSA quartiles)</strong>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#0a0a0a"></span> Highest 25%</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#555555"></span> Above median</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#aaaaaa"></span> Below median</div>'
-                    + '<div class="legend-item"><span class="legend-swatch" style="background:#d9d9d9"></span> Lowest 25%</div>';
+                censusHtml += buildMinorityLegendHtml();
             }
 
             if (branchHtml || censusHtml) {

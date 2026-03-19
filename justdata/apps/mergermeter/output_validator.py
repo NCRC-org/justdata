@@ -126,12 +126,18 @@ def validate_workbook(wb: Workbook) -> list:
 
 def add_warnings_sheet(wb: Workbook, warnings: list):
     """
-    Add a Validation Warnings sheet to the workbook at position 1 (after Notes).
+    Add a Validation sheet to the workbook at position 1 (after Notes).
+    Always added — shows clean status when no issues found.
     """
-    if not warnings:
-        return
+    ws = wb.create_sheet("Validation", 1)
 
-    ws = wb.create_sheet("Validation Warnings", 1)
+    if not warnings:
+        ws['A1'] = "Data Quality Check"
+        ws['A1'].font = Font(bold=True, size=12)
+        ws['A2'] = "\u2713 No data quality issues found."
+        ws['A2'].font = Font(color="00AA00")
+        ws.column_dimensions['A'].width = 40
+        return
 
     header_font = Font(bold=True, size=14, color="CC0000")
     subheader_font = Font(size=11, italic=True, color="666666")

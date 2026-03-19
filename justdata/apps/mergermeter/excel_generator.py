@@ -282,9 +282,12 @@ def create_merger_excel(
         if s.lower().startswith('rural '):
             state = s[6:].strip()  # Remove "Rural " prefix
             return f'NON-METRO-{state}'
-        # Normalize "State Non-Metro Area" to "NON-METRO-State"
+        # Normalize "State Non-Metro Area" or "State Non-MSA" to "NON-METRO-State"
         if ' non-metro' in s.lower() or ' non-msa' in s.lower():
-            state = s.split()[0]  # Get first word (state name)
+            # Extract state name (everything before " Non-Metro" or " Non-MSA")
+            import re
+            match = re.match(r'^(.+?)\s+Non-(?:Metro|MSA)', s, re.IGNORECASE)
+            state = match.group(1) if match else s.split()[0]
             return f'NON-METRO-{state}'
         return s
     
@@ -707,8 +710,8 @@ def create_merger_excel(
         # Run output validation before final save
         from justdata.apps.mergermeter.output_validator import validate_workbook, add_warnings_sheet
         validation_warnings = validate_workbook(wb)
+        add_warnings_sheet(wb, validation_warnings)  # Always add — shows clean message if empty
         if validation_warnings:
-            add_warnings_sheet(wb, validation_warnings)
             print(f"[VALIDATION] {len(validation_warnings)} data quality issues found:")
             for w in validation_warnings:
                 print(f"  [{w['severity'].upper()}] {w['sheet']}: {w['issue']}")

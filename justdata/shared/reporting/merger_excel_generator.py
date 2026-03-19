@@ -1641,8 +1641,13 @@ def _get_cbsa_name(group_data: pd.DataFrame) -> str:
             return str(cbsa_name).strip()
     if 'cbsa_code' in group_data.columns and not group_data.empty:
         code = str(group_data['cbsa_code'].iloc[0])
-        # CBSA 99999 = non-metro/rural (should have been split by state in transformer)
-        if code == '99999' or code.startswith('99999_'):
+        # CBSA 99999 = non-metro/rural — preserve state-specific name if available
+        if code.startswith('99999_'):
+            from justdata.shared.reporting.merger_data_transformer import STATE_FIPS_TO_NAME
+            state_fips = code.split('_')[1] if '_' in code else ''
+            state_name = STATE_FIPS_TO_NAME.get(state_fips, '')
+            return f"{state_name} Non-MSA" if state_name else "Non-Metro Area"
+        if code == '99999':
             return "Non-Metro Area"
         return f"CBSA {code}"
     return "Unknown CBSA"
