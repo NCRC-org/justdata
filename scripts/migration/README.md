@@ -242,6 +242,20 @@ Manual alternative (no sync script): `gcloud secrets create NAME --data-file=key
 
 The Cloud Run runtime service account needs **roles/secretmanager.secretAccessor** on each secret referenced by the service. `gcloud run deploy` fails if a referenced secret does not exist.
 
+**GitHub Actions deploy SA** (the JSON in `GCP_SERVICE_ACCOUNT_KEY`, often `github-deploy@justdata-ncrc.iam.gserviceaccount.com`) must be allowed to **add secret versions** so the “Sync credential JSON to Secret Manager” workflow step succeeds. Grant at project level:
+
+```bash
+PROJECT=justdata-ncrc
+DEPLOY_SA=github-deploy@${PROJECT}.iam.gserviceaccount.com   # adjust if your key uses a different email
+
+gcloud projects add-iam-policy-binding "$PROJECT" \
+  --member="serviceAccount:${DEPLOY_SA}" \
+  --role="roles/secretmanager.secretVersionAdder" \
+  --quiet
+```
+
+Alternatively `roles/secretmanager.admin` works but is broader. If you skip this grant, the sync step is skipped (workflow continues) and Cloud Run keeps using whatever versions are already in Secret Manager—update them locally with `sync_cloudrun_bq_secrets.py` or the console.
+
 ## Dataset Permissions
 
 Each service account has project-level `roles/bigquery.dataViewer` and `roles/bigquery.jobUser` permissions, allowing them to query any dataset in `justdata-ncrc`.
