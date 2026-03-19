@@ -155,10 +155,20 @@ load_env_vars() {
             # Skip variables that are configured as Secret Manager references in Cloud Run
             # These cannot be overwritten with string literals
             if [ "$key" = "GOOGLE_APPLICATION_CREDENTIALS_JSON" ] || \
+               [ "$key" = "FIREBASE_CREDENTIALS_JSON" ] || \
                [ "$key" = "CLAUDE_API_KEY" ] || \
                [ "$key" = "ANTHROPIC_API_KEY" ] || \
                [ "$key" = "OPENAI_API_KEY" ] || \
-               [ "$key" = "CENSUS_API_KEY" ]; then
+               [ "$key" = "CENSUS_API_KEY" ] || \
+               [ "$key" = "LENDSIGHT_CREDENTIALS_JSON" ] || \
+               [ "$key" = "BIZSIGHT_CREDENTIALS_JSON" ] || \
+               [ "$key" = "BRANCHSIGHT_CREDENTIALS_JSON" ] || \
+               [ "$key" = "BRANCHMAPPER_CREDENTIALS_JSON" ] || \
+               [ "$key" = "MERGERMETER_CREDENTIALS_JSON" ] || \
+               [ "$key" = "DATAEXPLORER_CREDENTIALS_JSON" ] || \
+               [ "$key" = "LENDERPROFILE_CREDENTIALS_JSON" ] || \
+               [ "$key" = "ANALYTICS_CREDENTIALS_JSON" ] || \
+               [ "$key" = "ELECTWATCH_CREDENTIALS_JSON" ]; then
                 continue
             fi
             
@@ -247,6 +257,16 @@ deploy() {
     if [ -n "$env_file" ] && [ -f "$env_file" ]; then
         deploy_args+=("--env-vars-file" "${env_file}")
     fi
+
+    # Secret Manager: shared + per-app BigQuery (same mapping as .github/workflows/deploy-cloudrun.yml)
+    deploy_args+=(
+        "--update-secrets"
+        "GOOGLE_APPLICATION_CREDENTIALS_JSON=bigquery-credentials:latest,FIREBASE_CREDENTIALS_JSON=firebase-admin-credentials:latest"
+    )
+    deploy_args+=(
+        "--update-secrets"
+        "LENDSIGHT_CREDENTIALS_JSON=lendsight-bq-credentials:latest,BIZSIGHT_CREDENTIALS_JSON=bizsight-bq-credentials:latest,BRANCHSIGHT_CREDENTIALS_JSON=branchsight-bq-credentials:latest,BRANCHMAPPER_CREDENTIALS_JSON=branchmapper-bq-credentials:latest,MERGERMETER_CREDENTIALS_JSON=mergermeter-bq-credentials:latest,DATAEXPLORER_CREDENTIALS_JSON=dataexplorer-bq-credentials:latest,LENDERPROFILE_CREDENTIALS_JSON=lenderprofile-bq-credentials:latest,ANALYTICS_CREDENTIALS_JSON=analytics-bq-credentials:latest,ELECTWATCH_CREDENTIALS_JSON=electwatch-bq-credentials:latest"
+    )
     
     # Execute deployment
     gcloud run "${deploy_args[@]}"
@@ -358,6 +378,14 @@ main() {
     
     check_requirements
     authenticate
+
+    # Push SA JSON from .env into Secret Manager (Cloud Run mounts these by name)
+    if [ -f .env ]; then
+        log "Syncing credential JSON from .env to Secret Manager..."
+        python3 scripts/sync_cloudrun_bq_secrets.py --project "$PROJECT_ID"
+    else
+        warn ".env not found — skipping Secret Manager sync (using existing secret versions)"
+    fi
     
     # Build and push image
     local image_uri=$(build_and_push)

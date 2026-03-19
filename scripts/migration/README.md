@@ -215,6 +215,33 @@ for app in mergermeter dataexplorer lenderprofile lendsight bizsight branchsight
 done
 ```
 
+### Cloud Run (`justdata` + `justdata-test`)
+
+Cloud Run mounts keys from **Secret Manager** (see table below). **Staging and production use the same secret names** so both services attribute BigQuery jobs to the same app SAs.
+
+**Keep secrets updated from your `.env`:**
+
+- **Local deploy** (`scripts/deploy-cloudrun.sh`): if `.env` exists, the script runs `scripts/sync_cloudrun_bq_secrets.py`, which uploads each JSON value to the matching Secret Manager secret (creates the secret if missing).
+- **GitHub Actions**: add **repository secrets** whose names match your `.env` keys (`GOOGLE_APPLICATION_CREDENTIALS_JSON`, `FIREBASE_CREDENTIALS_JSON`, `LENDSIGHT_CREDENTIALS_JSON`, …). Copy the same one-line JSON values from `.env`. The workflow runs `sync_cloudrun_bq_secrets.py` before deploy. Omit a repo secret to leave that GCP secret unchanged for that deploy.
+
+| `.env` / repo secret key (GitHub) | Secret Manager name |
+|-----------------------------------|---------------------|
+| `GOOGLE_APPLICATION_CREDENTIALS_JSON` | `bigquery-credentials` |
+| `FIREBASE_CREDENTIALS_JSON` | `firebase-admin-credentials` |
+| `LENDSIGHT_CREDENTIALS_JSON` | `lendsight-bq-credentials` |
+| `BIZSIGHT_CREDENTIALS_JSON` | `bizsight-bq-credentials` |
+| `BRANCHSIGHT_CREDENTIALS_JSON` | `branchsight-bq-credentials` |
+| `BRANCHMAPPER_CREDENTIALS_JSON` | `branchmapper-bq-credentials` |
+| `MERGERMETER_CREDENTIALS_JSON` | `mergermeter-bq-credentials` |
+| `DATAEXPLORER_CREDENTIALS_JSON` | `dataexplorer-bq-credentials` |
+| `LENDERPROFILE_CREDENTIALS_JSON` | `lenderprofile-bq-credentials` |
+| `ANALYTICS_CREDENTIALS_JSON` | `analytics-bq-credentials` |
+| `ELECTWATCH_CREDENTIALS_JSON` | `electwatch-bq-credentials` |
+
+Manual alternative (no sync script): `gcloud secrets create NAME --data-file=key.json` or `gcloud secrets versions add NAME --data-file=key.json`.
+
+The Cloud Run runtime service account needs **roles/secretmanager.secretAccessor** on each secret referenced by the service. `gcloud run deploy` fails if a referenced secret does not exist.
+
 ## Dataset Permissions
 
 Each service account has project-level `roles/bigquery.dataViewer` and `roles/bigquery.jobUser` permissions, allowing them to query any dataset in `justdata-ncrc`.

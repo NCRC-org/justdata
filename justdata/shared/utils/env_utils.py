@@ -14,13 +14,16 @@ def is_local_development() -> bool:
     Detect if running in local development environment.
     
     Checks for:
-    - RENDER environment variable (not set locally, set on Render)
-    - Local .env file existence
-    - Development-specific environment variables
+    - Google Cloud Run (K_SERVICE / CLOUD_RUN_JOB)
+    - Render, Heroku, Railway hosted environments
     
     Returns:
-        True if running locally, False if on Render/production
+        True if running locally, False if on a known hosted platform
     """
+    # Cloud Run (services and jobs) — must not be treated as "local" for .env loading
+    if os.environ.get('K_SERVICE') or os.environ.get('CLOUD_RUN_JOB'):
+        return False
+
     # Render sets RENDER environment variable
     if os.environ.get('RENDER'):
         return False
