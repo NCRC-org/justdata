@@ -52,17 +52,22 @@
             background: #fff3cd; border: 1px solid #ffc107; border-radius: 6px;
             padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #856404;
         }
+        .validation-banner.clean {
+            background: #d4edda; border-color: #28a745; color: #155724;
+        }
         .validation-banner ul { margin: 8px 0 0; padding-left: 20px; }
 
         .excel-tabs {
-            display: flex; flex-wrap: wrap; gap: 0; border-bottom: 2px solid #034EA0;
-            margin-bottom: 0; padding: 0 8px; background: #f8f9fa; overflow-x: auto;
+            display: flex; flex-wrap: nowrap; gap: 0; border-bottom: 2px solid #034EA0;
+            margin-bottom: 0; padding: 0 4px; background: #f8f9fa; overflow-x: auto;
+            scrollbar-width: none;
         }
+        .excel-tabs::-webkit-scrollbar { display: none; }
         .excel-tab {
-            padding: 8px 16px; cursor: pointer; border: 1px solid #ddd; border-bottom: none;
-            border-radius: 6px 6px 0 0; background: #e9ecef; color: #555; font-size: 12px;
+            padding: 6px 10px; cursor: pointer; border: 1px solid #ddd; border-bottom: none;
+            border-radius: 6px 6px 0 0; background: #e9ecef; color: #555; font-size: 11px;
             font-family: Arial, sans-serif; font-weight: 500; margin-bottom: -2px;
-            white-space: nowrap; transition: background 0.15s;
+            white-space: nowrap; transition: background 0.15s; flex-shrink: 0;
         }
         .excel-tab:hover { background: #dee2e6; }
         .excel-tab.active {
@@ -781,8 +786,8 @@
                         </div>
                     </div>
                     <div id="validationBanner" class="validation-banner" style="display:none;">
-                        <strong>Data quality warnings found:</strong>
-                        <ul id="warningsList"></ul>
+                        <strong id="validationBannerTitle">Data quality check</strong>
+                        <ul id="warningsList" style="margin-top:6px;"></ul>
                     </div>
                     <div class="excel-tabs" id="excelTabs"></div>
                     <div id="excelSheets"></div>
@@ -2134,7 +2139,7 @@
             var validationWarnings = [];
 
             wb.SheetNames.forEach(function(name, idx) {
-                if (name === 'Validation Warnings') {
+                if (name === 'Validation' || name === 'Validation Warnings') {
                     extractValidationWarnings(wb.Sheets[name], validationWarnings);
                     return;
                 }
@@ -2152,14 +2157,21 @@
                 sheetsEl.appendChild(sheetDiv);
             });
 
+            var banner = document.getElementById('validationBanner');
+            var list = document.getElementById('warningsList');
+            var title = document.getElementById('validationBannerTitle');
             if (validationWarnings.length > 0) {
-                var banner = document.getElementById('validationBanner');
-                var list = document.getElementById('warningsList');
+                if (title) title.textContent = 'Data quality warnings found:';
                 validationWarnings.forEach(function(w) {
                     var li = document.createElement('li');
                     li.textContent = w;
                     list.appendChild(li);
                 });
+                banner.classList.toggle('clean', false);
+                banner.style.display = 'block';
+            } else {
+                if (title) title.textContent = '\u2713 No data quality issues found.';
+                banner.classList.toggle('clean', true);
                 banner.style.display = 'block';
             }
         };
