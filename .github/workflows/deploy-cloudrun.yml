@@ -44,8 +44,12 @@ jobs:
         run: |
           gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-      # Same JSON keys as local .env — add these repo secrets (values copied from .env) so SM stays in sync
-      - name: Sync credential JSON to Secret Manager
+      # Same JSON keys as local .env — pushes new SM versions before deploy. Requires the SA in
+      # GCP_SERVICE_ACCOUNT_KEY to have secretmanager.versions.add (see migration README). If not,
+      # this step fails but deploy continues using existing Secret Manager versions.
+      - id: sync-secrets
+        name: Sync credential JSON to Secret Manager
+        continue-on-error: true
         env:
           GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS_JSON }}
           FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
@@ -59,6 +63,14 @@ jobs:
           ANALYTICS_CREDENTIALS_JSON: ${{ secrets.ANALYTICS_CREDENTIALS_JSON }}
           ELECTWATCH_CREDENTIALS_JSON: ${{ secrets.ELECTWATCH_CREDENTIALS_JSON }}
         run: python3 scripts/sync_cloudrun_bq_secrets.py --project ${{ env.PROJECT_ID }}
+
+      - name: Note if Secret Manager sync failed
+        if: steps.sync-secrets.outcome == 'failure'
+        run: |
+          echo "::warning::Secret Manager sync failed — deploy still runs with existing secret versions. Grant roles/secretmanager.secretVersionAdder (or Secret Manager Admin) on project justdata-ncrc to the service account in GCP_SERVICE_ACCOUNT_KEY (e.g. github-deploy@...). See scripts/migration/README.md."
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Secret Manager sync failed" >> "$GITHUB_STEP_SUMMARY"
+          echo "The GitHub deploy SA needs permission to **add secret versions** (e.g. \`roles/secretmanager.secretVersionAdder\`). Until fixed, run \`scripts/sync_cloudrun_bq_secrets.py\` locally or update secrets in the console." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build Docker image
         run: |
