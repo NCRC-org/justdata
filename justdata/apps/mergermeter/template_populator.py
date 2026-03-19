@@ -966,27 +966,48 @@ def _populate_notes_sheet(
     ws.cell(row, 7, "SB Resid")
     ws.cell(row, 8, "SB RSSD")
     row += 1
-    
+
     acquirer_sb_id = metadata.get('acquirer_sb_id', '') if metadata else ''
+    acquirer_sb_ids_by_year = metadata.get('acquirer_sb_ids_by_year', {}) if metadata else {}
     acquirer_rssd = metadata.get('acquirer_rssd', '') if metadata else ''
-    
+
     ws.cell(row, 4, bank_a_name)
     ws.cell(row, 5, acquirer_city)
     ws.cell(row, 6, acquirer_state)
-    ws.cell(row, 7, acquirer_sb_id)
     ws.cell(row, 8, acquirer_rssd)
-    row += 1
-    
+    # Show SB Respondent IDs broken out by year if available
+    if acquirer_sb_ids_by_year and len(acquirer_sb_ids_by_year) > 1:
+        for yr in sorted(acquirer_sb_ids_by_year.keys()):
+            ws.cell(row, 7, f"SB Respondent ID ({yr}): {acquirer_sb_ids_by_year[yr]}")
+            row += 1
+        ws.cell(row, 7, "Note: Different SB Respondent IDs per year reflect merged or renamed entities.")
+        ws.cell(row, 7).font = Font(italic=True, size=9, color="666666")
+        row += 1
+    else:
+        ws.cell(row, 7, acquirer_sb_id)
+        row += 1
+
     # Bank B SB Info
     target_sb_id = metadata.get('target_sb_id', '') if metadata else ''
+    target_sb_ids_by_year = metadata.get('target_sb_ids_by_year', {}) if metadata else {}
     target_rssd = metadata.get('target_rssd', '') if metadata else ''
-    
+
     ws.cell(row, 4, bank_b_name)
     ws.cell(row, 5, target_city)
     ws.cell(row, 6, target_state)
-    ws.cell(row, 7, target_sb_id)
     ws.cell(row, 8, target_rssd)
-    row += 2
+    # Show SB Respondent IDs broken out by year if available
+    if target_sb_ids_by_year and len(target_sb_ids_by_year) > 1:
+        for yr in sorted(target_sb_ids_by_year.keys()):
+            ws.cell(row, 7, f"SB Respondent ID ({yr}): {target_sb_ids_by_year[yr]}")
+            row += 1
+        ws.cell(row, 7, "Note: Different SB Respondent IDs per year reflect merged or renamed entities.")
+        ws.cell(row, 7).font = Font(italic=True, size=9, color="666666")
+        row += 1
+    else:
+        ws.cell(row, 7, target_sb_id)
+        row += 1
+    row += 1
     
     # 3. Branch Data Section
     ws.cell(row, 1, "3")

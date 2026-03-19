@@ -203,7 +203,7 @@ WITH cbsa_crosswalk AS (
         CAST(geoid5 AS STRING) as county_code,
         -- Treat NULL/empty cbsa_code as '99999' for rural areas
         COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
-        COALESCE(cbsa, 'Rural Area') as cbsa_name
+        COALESCE(cbsa, CONCAT(State, ' Non-MSA')) as cbsa_name
     FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 -- Filter HMDA data to user-selected assessment area counties
@@ -455,7 +455,7 @@ WITH cbsa_crosswalk AS (
         CAST(geoid5 AS STRING) as county_code,
         -- Treat NULL/empty cbsa_code as '99999' for rural areas
         COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
-        COALESCE(cbsa, 'Rural Area') as cbsa_name
+        COALESCE(cbsa, CONCAT(State, ' Non-MSA')) as cbsa_name
     FROM `justdata-ncrc.shared.cbsa_to_county`
 ),
 -- Filter HMDA data to user-selected assessment area counties (includes all lenders for peer comparison)
