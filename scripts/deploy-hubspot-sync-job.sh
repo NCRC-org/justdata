@@ -38,6 +38,9 @@ fi
 echo -e "${YELLOW}Setting project to ${PROJECT_ID}...${NC}"
 gcloud config set project $PROJECT_ID
 
+# Cloud Run Jobs API uses numeric project id in the resource path (not PROJECT_ID string)
+PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format='value(projectNumber)')
+
 # =============================================================================
 # Step 1: Check required secrets
 # =============================================================================
@@ -121,7 +124,16 @@ echo -e "  ${GREEN}✓${NC} Cloud Run Job '$JOB_NAME' ${ACTION}d"
 echo ""
 echo -e "${YELLOW}Step 4: Creating Cloud Scheduler trigger...${NC}"
 
-SERVICE_ACCOUNT="hubspot-sync@justdata-ncrc.iam.gserviceaccount.com"
+SERVICE_ACCOUNT="hubspot-sync@${PROJECT_ID}.iam.gserviceaccount.com"
+# Scheduler OAuth caller must exist; create if missing (idempotent)
+if ! gcloud iam service-accounts describe "$SERVICE_ACCOUNT" --project=$PROJECT_ID > /dev/null 2>&1; then
+    echo "Creating service account for scheduler..."
+    gcloud iam service-accounts create hubspot-sync \
+        --display-name="HubSpot BQ sync (scheduler)" \
+        --project=$PROJECT_ID
+fi
+
+SCHEDULER_URI="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_NUMBER}/jobs/${JOB_NAME}:run"
 
 if gcloud scheduler jobs describe $SCHEDULER_NAME --location=$REGION --project=$PROJECT_ID > /dev/null 2>&1; then
     echo "Updating existing scheduler..."
@@ -130,7 +142,7 @@ if gcloud scheduler jobs describe $SCHEDULER_NAME --location=$REGION --project=$
         --project=$PROJECT_ID \
         --schedule="0 4 * * *" \
         --time-zone="America/New_York" \
-        --uri="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${JOB_NAME}:run" \
+        --uri="${SCHEDULER_URI}" \
         --http-method=POST \
         --oauth-service-account-email=$SERVICE_ACCOUNT
 else
@@ -140,7 +152,7 @@ else
         --project=$PROJECT_ID \
         --schedule="0 4 * * *" \
         --time-zone="America/New_York" \
-        --uri="https://${REGION}-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/${PROJECT_ID}/jobs/${JOB_NAME}:run" \
+        --uri="${SCHEDULER_URI}" \
         --http-method=POST \
         --oauth-service-account-email=$SERVICE_ACCOUNT
 fi
