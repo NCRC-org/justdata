@@ -137,7 +137,9 @@ class HubSpotDailySync:
             companies = self._fetch_all_companies(client, headers)
             logger.info("  Fetched %s companies from HubSpot", len(companies))
 
-            bq = get_bigquery_client(project_id=self.project_id, app_name="hubspot")
+            # Use Application Default Credentials (Cloud Run runtime SA: hubspot-sync@...).
+            # Do not use app_name="hubspot" here — that would force HUBSPOT_CREDENTIALS_JSON.
+            bq = get_bigquery_client(project_id=self.project_id)
             synced = _sync_ts()
             company_rows = [self._company_to_bq_row(c, synced) for c in companies]
             self._truncate_and_insert(
