@@ -143,7 +143,7 @@ gcloud run jobs $ACTION $JOB_NAME \
     --service-account="${RUNTIME_SA}" \
     --memory=2Gi \
     --cpu=2 \
-    --task-timeout=30m \
+    --task-timeout=120m \
     --max-retries=1 \
     --set-env-vars="PYTHONPATH=/app" \
     --set-env-vars="JUSTDATA_PROJECT_ID=justdata-ncrc" \

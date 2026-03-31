@@ -17,6 +17,8 @@ import httpx
 
 from justdata.shared.utils.bigquery_client import get_bigquery_client
 
+from justdata.apps.hubspot.address_geocode import CompanyAddressGeocoder
+
 logger = logging.getLogger(__name__)
 
 HUBSPOT_API = "https://api.hubapi.com"
@@ -26,8 +28,11 @@ COMPANY_PROPERTIES = [
     "domain",
     "membership_status",
     "current_membership_status",
+    "address",
+    "address2",
     "city",
     "state",
+    "zip",
     "country",
     "industry",
     "phone",
@@ -141,7 +146,15 @@ class HubSpotDailySync:
             # Do not use app_name="hubspot" here — that would force HUBSPOT_CREDENTIALS_JSON.
             bq = get_bigquery_client(project_id=self.project_id)
             synced = _sync_ts()
-            company_rows = [self._company_to_bq_row(c, synced) for c in companies]
+            geo = CompanyAddressGeocoder(client)
+            logger.info(
+                "  Geocoding addresses (Census + Nominatim fallback; cached per run)..."
+            )
+            company_rows = []
+            for i, c in enumerate(companies):
+                company_rows.append(self._company_to_bq_row(c, synced, geo))
+                if (i + 1) % 2000 == 0:
+                    logger.info("  Geocoded %s / %s companies...", i + 1, len(companies))
             self._truncate_and_insert(
                 bq,
                 f"{self.project_id}.hubspot.companies",
@@ -264,20 +277,29 @@ class HubSpotDailySync:
         raise RuntimeError("HubSpot GET failed after retries")
 
     def _company_to_bq_row(
-        self, obj: Dict[str, Any], synced: str
+        self,
+        obj: Dict[str, Any],
+        synced: str,
+        geocoder: CompanyAddressGeocoder,
     ) -> Dict[str, Any]:
         props = obj.get("properties") or {}
+        lat, lng = geocoder.geocode(props)
         return {
             "hubspot_company_id": str(obj.get("id", "")),
             "name": props.get("name"),
             "domain": props.get("domain"),
             "membership_status": props.get("membership_status"),
             "current_membership_status": props.get("current_membership_status"),
+            "street_address": props.get("address"),
+            "street_address_2": props.get("address2"),
             "city": props.get("city"),
             "state": props.get("state"),
+            "postal_code": props.get("zip"),
             "country": props.get("country"),
             "industry": props.get("industry"),
             "phone": props.get("phone"),
+            "latitude": lat,
+            "longitude": lng,
             "synced_at": synced,
         }
 
