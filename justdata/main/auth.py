@@ -87,6 +87,9 @@ VALID_USER_TYPES = [
     'admin'
 ]
 
+# HubSpot membership_status values that grant member access (grace period)
+GRACE_PERIOD_VALUES = ['GRACE PERIOD']
+
 # Privileged roles that have full access to the platform
 # Only these roles can see app content; all others see a restricted view
 PRIVILEGED_ROLES = ['staff', 'senior_executive', 'admin']
