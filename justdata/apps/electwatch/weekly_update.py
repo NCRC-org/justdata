@@ -3073,10 +3073,10 @@ Be factual and avoid speculation."""
         """Generate AI pattern insights for the dashboard using the app's insight generator."""
         try:
             # Import the insight generator from the app
-            from justdata.apps.electwatch.app import _generate_ai_pattern_insights
+            from justdata.apps.electwatch.services.ai_pattern_insights import generate_ai_pattern_insights
 
             logger.info("Calling AI to generate pattern insights...")
-            insights = _generate_ai_pattern_insights()
+            insights = generate_ai_pattern_insights()
 
             if insights and len(insights) > 0:
                 logger.info(f"Generated {len(insights)} pattern insights")
@@ -3141,8 +3141,8 @@ Be factual and avoid speculation."""
             save_insights(insights, self.weekly_dir)
         else:
             logger.warning("No insights generated - using sample insights")
-            from justdata.apps.electwatch.app import _get_sample_insights
-            save_insights(_get_sample_insights(), self.weekly_dir)
+            from justdata.apps.electwatch.services.ai_pattern_insights import get_sample_insights
+            save_insights(get_sample_insights(), self.weekly_dir)
 
         # Calculate next update time (next Sunday midnight)
         now = datetime.now()
