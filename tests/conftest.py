@@ -160,6 +160,16 @@ def bizsight_client(bizsight_app):
     return bizsight_app.test_client()
 
 
+@pytest.fixture
+def unified_client():
+    """Test client for the unified JustData platform (all blueprints)."""
+    from justdata.main.app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        yield c
+
+
 # ---------------------------------------------------------------------------
 # Progress tracker mock
 # ---------------------------------------------------------------------------
