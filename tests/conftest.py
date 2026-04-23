@@ -111,13 +111,13 @@ def mock_ai_provider():
 
 @pytest.fixture
 def branchsight_app():
-    """Create a BranchSight Flask test app."""
-    try:
-        from justdata.apps.branchsight.app import app
-        app.config["TESTING"] = True
-        return app
-    except Exception:
-        pytest.skip("BranchSight app could not be imported")
+    """Create a BranchSight Flask test app (blueprint only, no standalone app)."""
+    from flask import Flask
+    from justdata.apps.branchsight.blueprint import branchsight_bp
+    test_app = Flask(__name__)
+    test_app.register_blueprint(branchsight_bp, url_prefix="")
+    test_app.config["TESTING"] = True
+    return test_app
 
 
 @pytest.fixture
