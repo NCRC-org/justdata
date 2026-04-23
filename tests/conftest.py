@@ -128,13 +128,13 @@ def branchsight_client(branchsight_app):
 
 @pytest.fixture
 def lendsight_app():
-    """Create a LendSight Flask test app."""
-    try:
-        from justdata.apps.lendsight.app import app
-        app.config["TESTING"] = True
-        return app
-    except Exception:
-        pytest.skip("LendSight app could not be imported")
+    """Create a LendSight Flask test app (blueprint only, no standalone app)."""
+    from flask import Flask
+    from justdata.apps.lendsight.blueprint import lendsight_bp
+    test_app = Flask(__name__)
+    test_app.register_blueprint(lendsight_bp, url_prefix="")
+    test_app.config["TESTING"] = True
+    return test_app
 
 
 @pytest.fixture
@@ -158,6 +158,16 @@ def bizsight_app():
 def bizsight_client(bizsight_app):
     """BizSight test client."""
     return bizsight_app.test_client()
+
+
+@pytest.fixture
+def unified_client():
+    """Test client for the unified JustData platform."""
+    from justdata.main.app import create_app
+    app = create_app()
+    app.config["TESTING"] = True
+    with app.test_client() as c:
+        yield c
 
 
 # ---------------------------------------------------------------------------
