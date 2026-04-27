@@ -1,6 +1,8 @@
-#!/usr/bin/env python3
 """
-MergerMeter Flask web application - Two-bank merger impact analyzer.
+MergerMeter business logic: analysis, goals calculator, and API handlers.
+
+Extracted from the former standalone `app.py` (no Flask application object).
+The unified app uses `blueprint.py` for routes; this module provides callables only.
 """
 
 from flask import render_template, request, jsonify, send_file, session, Response
@@ -15,13 +17,12 @@ import time
 import json
 from typing import List, Dict
 from pathlib import Path
-from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Add repo root to path for shared modules
 REPO_ROOT = Path(__file__).parent.parent.parent.absolute()
 sys.path.insert(0, str(REPO_ROOT))
 
-from justdata.shared.web.app_factory import create_app, register_standard_routes
+# Routes and Flask app live in blueprint.py; this module is logic only.
 from justdata.shared.utils.progress_tracker import get_progress, update_progress, create_progress_tracker
 from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
 
@@ -76,30 +77,6 @@ def _import_local_module(module_name, *attributes):
                 # If only one attribute, return it directly (not as a tuple)
                 return result[0] if len(result) == 1 else result
             return module
-
-
-# Create the Flask app
-app = create_app(
-    'mergermeter',
-    template_folder=TEMPLATES_DIR,
-    static_folder=STATIC_DIR
-)
-
-# Configure shared templates (needed for standalone running)
-from jinja2 import ChoiceLoader, FileSystemLoader
-SHARED_TEMPLATES_DIR = REPO_ROOT / 'shared' / 'web' / 'templates'
-app.jinja_loader = ChoiceLoader([
-    FileSystemLoader(str(TEMPLATES_DIR)),       # App templates first
-    FileSystemLoader(str(SHARED_TEMPLATES_DIR)), # Shared templates second
-])
-
-# Add ProxyFix for proper request handling behind Render's proxy
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
-
-# Set maximum file upload size to 10MB (plenty for JSON files)
-app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024  # 10MB
-
-# Note: /health endpoint is already registered by create_app() in app_factory.py
 
 
 def index():
@@ -267,15 +244,13 @@ def analyze():
         
         # Run analysis in background thread so server can respond to progress requests
         def run_analysis():
-            # Push application context for background thread
-            with app.app_context():
-                try:
-                    _perform_analysis(job_id, form_data)
-                except Exception as e:
-                    import traceback
-                    error_msg = str(e)
-                    traceback.print_exc()
-                    update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
+            try:
+                _perform_analysis(job_id, form_data)
+            except Exception as e:
+                import traceback
+                error_msg = str(e)
+                traceback.print_exc()
+                update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
         
         thread = threading.Thread(target=run_analysis, daemon=True)
         thread.start()
@@ -1464,7 +1439,6 @@ def _perform_analysis(job_id, form_data):
         update_progress(job_id, {'percent': 0, 'step': 'Error occurred', 'done': True, 'error': error_msg})
 
 
-@app.route('/api/load-bank-names', methods=['POST'])
 def load_bank_names():
     """Load bank names from identifiers (LEI, RSSD, or SB Respondent ID)
     
@@ -1652,7 +1626,6 @@ def get_bank_name_from_lei(client, lei: str) -> str:
         return None
 
 
-@app.route('/api/generate-assessment-areas-from-branches', methods=['POST'])
 def generate_assessment_areas_from_branches():
     """Generate assessment areas from branch locations for a bank"""
     print(f"[DEBUG] Route /api/generate-assessment-areas-from-branches CALLED")
@@ -1740,7 +1713,6 @@ def generate_assessment_areas_from_branches():
         return jsonify({'success': False, 'error': f'Error: {str(e)}'}), 500
 
 
-@app.route('/api/download-assessment-area-template', methods=['GET'])
 def download_assessment_area_template():
     """Download CSV template for assessment areas"""
     import csv
@@ -1786,7 +1758,6 @@ def download_assessment_area_template():
     return response
 
 
-@app.route('/api/download-bank-identifiers-template', methods=['GET'])
 def download_bank_identifiers_template():
     """Download CSV template for bank identifiers (LEI, RSSD, ResID)"""
     import csv
@@ -1827,7 +1798,6 @@ def download_bank_identifiers_template():
     return response
 
 
-@app.route('/api/upload-assessment-areas', methods=['POST'])
 def upload_assessment_areas():
     """Upload and parse assessment area JSON or CSV file"""
     try:
@@ -2335,7 +2305,6 @@ def parse_assessment_areas_from_text(text):
     return assessment_areas
 
 
-@app.route('/api/generate-ai-summary', methods=['POST'])
 def generate_ai_summary():
     """Generate AI-powered written summary of merger analysis"""
     try:
@@ -2760,7 +2729,6 @@ IMPORTANT:
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
-@app.route('/report-data')
 def report_data():
     """Return report data from Excel file as JSON for web display"""
     try:
@@ -3199,26 +3167,10 @@ def download():
         return jsonify({'error': str(e)}), 500
 
 
-# Register standard routes
-register_standard_routes(
-    app,
-    index_handler=index,
-    analyze_handler=analyze,
-    progress_handler=progress_handler,
-    download_handler=download,
-    data_handler=None
-)
-
-# Register MergerMeter-specific routes
-app.add_url_rule('/report', 'report', report, methods=['GET'])
-# Note: /report-data and /api/generate-assessment-areas-from-branches are already registered via @app.route decorators above
-
-
 # ============================================================================
-# GOALS CALCULATOR ROUTES
+# GOALS CALCULATOR (handlers called from blueprint)
 # ============================================================================
 
-@app.route('/goals-calculator')
 def goals_calculator():
     """
     CBA Goals Calculator page - interactive tool for setting lending goals.
@@ -3836,7 +3788,6 @@ def _extract_goals_data_from_excel(excel_file):
     return mortgage_data, sb_data, data_years
 
 
-@app.route('/api/export-goals', methods=['POST'])
 def export_goals():
     """Export goals calculator configuration and data to Excel."""
     import pandas as pd
@@ -3988,7 +3939,6 @@ def export_goals():
         return jsonify({'error': str(e)}), 500
 
 
-@app.route('/api/save-goals-config', methods=['POST'])
 def save_goals_config():
     """Save goals calculator configuration to session/file."""
     try:
@@ -4017,19 +3967,4 @@ def save_goals_config():
         import traceback
         traceback.print_exc()
         return jsonify({'success': False, 'error': str(e)}), 500
-
-# Debug: Verify route is registered
-print(f"[DEBUG] Checking if /api/generate-assessment-areas-from-branches is registered...")
-route_found = False
-for rule in app.url_map.iter_rules():
-    if '/api/generate-assessment-areas-from-branches' in rule.rule:
-        route_found = True
-        print(f"[DEBUG] Found route: {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
-        break
-if not route_found:
-    print("[DEBUG] WARNING: Route /api/generate-assessment-areas-from-branches NOT FOUND in registered routes!")
-    print("[DEBUG] All /api routes:")
-    for rule in app.url_map.iter_rules():
-        if '/api/' in rule.rule:
-            print(f"  {rule.rule} -> {rule.endpoint} [{', '.join(rule.methods)}]")
 
