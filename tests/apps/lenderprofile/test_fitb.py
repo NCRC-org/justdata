@@ -129,7 +129,11 @@ def test_section_builders_v2():
     print("TESTING SECTION BUILDERS V2")
     print("="*60)
 
-    from justdata.apps.lenderprofile.report_builder import section_builders_v2 as sb
+    from justdata.apps.lenderprofile.report_builder import (
+        build_corporate_structure,
+        build_financial_performance,
+        build_risk_factors,
+    )
 
     # Create sample data
     sample_data = {
@@ -163,17 +167,17 @@ def test_section_builders_v2():
 
     # Financial Performance
     print("  Building Financial Performance section...")
-    fin_section = sb.build_financial_performance(sample_data)
+    fin_section = build_financial_performance(sample_data)
     print(f"    -> {len(fin_section.get('metrics', []))} metrics")
 
     # Risk Factors
     print("  Building Risk Factors section...")
-    risk_section = sb.build_risk_factors(sample_data.get('sec_data', {}))
+    risk_section = build_risk_factors(sample_data.get('sec_data', {}))
     print(f"    -> {len(risk_section.get('categories', []))} categories")
 
     # Corporate Structure
     print("  Building Corporate Structure section...")
-    corp_section = sb.build_corporate_structure(sample_data)
+    corp_section = build_corporate_structure(sample_data)
     print(f"    -> Parent: {corp_section.get('parent', {}).get('name', 'N/A')}")
     print(f"    -> Subsidiaries: {len(corp_section.get('subsidiaries', []))}")
 

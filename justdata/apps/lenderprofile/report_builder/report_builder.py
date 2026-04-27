@@ -10,7 +10,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 from justdata.apps.lenderprofile.processors.ai_summarizer import LenderProfileAnalyzer
-from justdata.apps.lenderprofile.report_builder.section_builders_v2 import build_complete_report_v2
+from justdata.apps.lenderprofile.report_builder.coordinator import build_complete_report_v2
 
 logger = logging.getLogger(__name__)
 
