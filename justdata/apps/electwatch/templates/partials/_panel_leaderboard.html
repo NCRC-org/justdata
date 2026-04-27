@@ -1,0 +1,123 @@
+        <!-- Leaderboard Panel -->
+        <div id="leaderboard" class="panel active">
+            <div class="card">
+                <div class="card-header" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                    <h2 class="page-title" style="margin: 0;">Officials by Financial Involvement</h2>
+                    <p class="secondary-text" style="margin: 0;">Campaign contributions and stock trades by members of Congress in financial sector companies</p>
+                    <div class="filters">
+                        <input type="text" class="search-input" id="search-official" placeholder="Search by name...">
+                        <select class="filter-select" id="filter-chamber">
+                            <option value="">All Chambers</option>
+                            <option value="house">House</option>
+                            <option value="senate">Senate</option>
+                        </select>
+                        <select class="filter-select" id="filter-party">
+                            <option value="">All Parties</option>
+                            <option value="R">Republican</option>
+                            <option value="D">Democrat</option>
+                            <option value="I">Independent</option>
+                        </select>
+                        <select class="filter-select" id="filter-industry">
+                            <option value="">All Industries</option>
+                            {% for code, info in sectors.items() %}
+                            <option value="{{ code }}">{{ info.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="button" class="reset-sort-btn" id="reset-sort-btn" title="Reset to default sort (by score)">
+                            <i class="fas fa-undo"></i> Reset Sort
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                    <table class="leaderboard-table">
+                        <thead>
+                            <!-- Group header row -->
+                            <tr class="header-group-row">
+                            <!-- Column headers -->
+                            <tr>
+                                <th class="rank" style="width: 40px;">#</th>
+                                <th class="sortable" data-sort="name" data-order="asc" style="width: 200px;">
+                                    <span class="header-tooltip">
+                                        Official
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Members of Congress ranked by financial sector involvement score.
+                                            <span class="tooltip-source">Source: Congress.gov</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th style="width: 500px; min-width: 450px;">
+                                    <span class="header-tooltip">
+                                        Top Financial Firms
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Top financial sector firms by contributions.<br>
+                                            Shows PAC and individual contributions from verified financial firms only.
+                                            <span class="tooltip-source">Source: FEC contribution data</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th style="width: 70px;">
+                                    <span class="header-tooltip">
+                                        Trend
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Change in financial sector contribution share vs. previous period.
+                                            <span class="tooltip-source">Compared to 6-month prior</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="total_contributions" data-order="desc" style="width: 90px;">
+                                    <span class="header-tooltip">
+                                        Total $
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Total contributions (PAC + Individual) from all sources over the last 24 months.
+                                            <span class="tooltip-source">Source: FEC Schedule A</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable active financial-sector-col" data-sort="finance_contributions" data-order="desc" style="width: 90px;">
+                                    <span class="header-tooltip">
+                                        Finance $
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Contributions from finance/housing sector (PAC + individual employee donations).
+                                            <span class="tooltip-source">Source: FEC Schedule A</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="financial_pct" data-order="desc" style="width: 70px;">
+                                    <span class="header-tooltip">
+                                        Finance %
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Finance/housing $ as percentage of total contributions.<br>
+                                            Higher % = more reliant on financial industry money.
+                                            <span class="tooltip-source">Calculation: Finance $ ÷ Total $</span>
+                                        </span>
+                                    </span>
+                                </th>
+                                <th class="sortable financial-sector-col" data-sort="trades" data-order="desc" style="width: 100px; text-align: center;">
+                                    <span class="header-tooltip">
+                                        Stock Trades
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-content">
+                                            Number of stock trades in finance/housing companies (24 months).<br>
+                                            Click official for detailed buy/sell breakdown.
+                                            <span class="tooltip-source">Source: STOCK Act disclosures</span>
+                                        </span>
+                                    </span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    </div>
+                    <div id="leaderboard-loading" class="loading">Loading officials...</div>
+                </div>
+            </div>
+        </div>

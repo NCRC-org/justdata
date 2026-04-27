@@ -1,0 +1,58 @@
+    <!-- Insight Detail Modal -->
+    <div id="insight-modal" class="modal-overlay" onclick="closeInsightModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h2 id="modal-title"><i class="fas fa-lightbulb"></i> <span>Insight Title</span></h2>
+                <button class="modal-close" onclick="closeInsightModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="modal-summary" class="insight-summary">
+                    Loading...
+                </div>
+
+                <div id="modal-firms" class="insight-section">
+                    <h3><i class="fas fa-building"></i> Firms Involved</h3>
+                    <div class="entity-list" id="modal-firms-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-officials" class="insight-section">
+                    <h3><i class="fas fa-user-tie"></i> Officials Involved</h3>
+                    <div class="entity-list" id="modal-officials-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-industries" class="insight-section">
+                    <h3><i class="fas fa-industry"></i> Industries</h3>
+                    <div class="entity-list" id="modal-industries-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-committees" class="insight-section">
+                    <h3><i class="fas fa-gavel"></i> Committees</h3>
+                    <div class="entity-list" id="modal-committees-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div id="modal-sources" class="insight-section" style="margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;">
+                    <h3><i class="fas fa-newspaper"></i> News & Sources</h3>
+                    <div class="sources-list" id="modal-sources-list">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <div class="insight-section" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+                    <h3><i class="fas fa-database"></i> Data Sources</h3>
+                    <p id="modal-evidence" style="font-size: 0.9rem; color: var(--ncrc-gray);">
+                        Based on FEC filings and STOCK Act disclosures
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>

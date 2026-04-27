@@ -1,0 +1,289 @@
+        <!-- Admin Data Mapper Panel -->
+        <div id="admin" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-cog"></i> Data Mapper</h2>
+                    <span style="font-size: 0.85rem; color: var(--ncrc-gray);">Admin tools for managing entity mappings and data quality</span>
+                </div>
+                <div class="card-body">
+                    <!-- Admin Sub-tabs -->
+                    <div class="admin-tabs">
+                        <button class="admin-tab active" data-admin-panel="merge-officials">
+                            <i class="fas fa-user-friends"></i> Merge Officials
+                        </button>
+                        <button class="admin-tab" data-admin-panel="firm-industry">
+                            <i class="fas fa-building"></i> Firm → Industry
+                        </button>
+                        <button class="admin-tab" data-admin-panel="employer-firm">
+                            <i class="fas fa-briefcase"></i> Employer → Firm
+                        </button>
+                        <button class="admin-tab" data-admin-panel="unmatched-entities">
+                            <i class="fas fa-question-circle"></i> Unmatched
+                        </button>
+                        <button class="admin-tab" data-admin-panel="review-queue">
+                            <i class="fas fa-clipboard-check"></i> Weekly Review
+                            <span id="review-queue-badge" class="review-badge" style="display: none;">0</span>
+                        </button>
+                    </div>
+
+                    <!-- Merge Officials Panel -->
+                    <div id="admin-merge-officials" class="admin-panel active">
+                        <!-- Potential Duplicates Section -->
+                        <div class="admin-section">
+                            <h3><i class="fas fa-user-friends"></i> Potential Duplicate Officials</h3>
+                            <p class="admin-description">Officials with the same last name that may be the same person under different name formats (e.g., "Rick Allen" vs "Allen, Rick"). Review each pair and confirm whether they're the same or different people.</p>
+
+                            <div id="potential-duplicates-container" style="margin-top: 15px;">
+                                <div class="loading">Loading potential duplicates...</div>
+                            </div>
+
+                            <div id="duplicates-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section" style="border-top: 1px solid var(--ncrc-gray-light); padding-top: 20px; margin-top: 20px;">
+                            <h3><i class="fas fa-user-check"></i> Manual Merge (Advanced)</h3>
+                            <p class="admin-description">Manually merge officials when the same person appears under different names (e.g., "Ted Cruz" and "Rafael Cruz").</p>
+
+                            <div class="mapping-form">
+                                <div class="form-group">
+                                    <label>Canonical Official (keep this name):</label>
+                                    <select id="canonical-official" class="admin-select">
+                                        <option value="">-- Select official --</option>
+                                    </select>
+                                </div>
+
+                                <div id="canonical-aliases" class="aliases-list" style="display: none;">
+                                    <label>Currently linked aliases:</label>
+                                    <div id="aliases-container">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Add alias (merge this record into canonical):</label>
+                                    <select id="alias-official" class="admin-select">
+                                        <option value="">-- Select official to merge --</option>
+                                    </select>
+                                </div>
+
+                                <button onclick="saveOfficialMerge()" class="admin-btn primary">
+                                    <i class="fas fa-save"></i> Save Mapping
+                                </button>
+                            </div>
+
+                            <div id="merge-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-list"></i> Existing Official Merges</h3>
+                            <div id="existing-merges" class="existing-mappings">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Firm to Industry Panel -->
+                    <div id="admin-firm-industry" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-industry"></i> Map Firm to Industry</h3>
+                            <p class="admin-description">Link firms to their industry classification. This determines how contributions and trades are categorized.</p>
+
+                            <div class="mapping-form">
+                                <div class="form-group">
+                                    <label>Firm Name:</label>
+                                    <input type="text" id="firm-name" class="admin-input" placeholder="e.g., Goldman Sachs">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Ticker (optional):</label>
+                                    <input type="text" id="firm-ticker" class="admin-input" placeholder="e.g., GS">
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Industry:</label>
+                                    <select id="firm-industry" class="admin-select">
+                                        <option value="">-- Select industry --</option>
+                                        <option value="banking">Banking & Depository</option>
+                                        <option value="investment">Investment & Securities</option>
+                                        <option value="insurance">Insurance</option>
+                                        <option value="mortgage">Mortgage & Real Estate Finance</option>
+                                        <option value="consumer_lending">Consumer Lending</option>
+                                        <option value="crypto">Digital Assets & Crypto</option>
+                                        <option value="fintech">Financial Technology</option>
+                                        <option value="payments">Payments & Processing</option>
+                                    </select>
+                                </div>
+
+                                <button onclick="saveFirmIndustry()" class="admin-btn primary">
+                                    <i class="fas fa-save"></i> Save Firm
+                                </button>
+                            </div>
+
+                            <div id="firm-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-list"></i> Existing Firms</h3>
+                            <div class="search-filter">
+                                <input type="text" id="firm-search" class="admin-input" placeholder="Search firms..." oninput="filterFirms()">
+                            </div>
+                            <div id="existing-firms" class="existing-mappings">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employer to Firm Panel -->
+                    <div id="admin-employer-firm" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-briefcase"></i> Map Employer Variation to Firm</h3>
+                            <p class="admin-description">Link employer name variations from FEC data to canonical firms. Search for variations of a firm name to map them.</p>
+
+                            <div class="mapping-form">
+                                <div class="form-group">
+                                    <label>Select Canonical Firm:</label>
+                                    <select id="employer-canonical-firm" class="admin-select" onchange="loadFirmAliases()">
+                                        <option value="">-- Select firm --</option>
+                                    </select>
+                                </div>
+
+                                <div id="firm-aliases" class="aliases-list" style="display: none;">
+                                    <label>Currently linked employer names:</label>
+                                    <div id="employer-aliases-container">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Search unmatched employers:</label>
+                                    <input type="text" id="employer-search" class="admin-input" placeholder="e.g., goldman" oninput="searchEmployers()">
+                                </div>
+
+                                <div id="employer-search-results" class="search-results" style="display: none;">
+                                    <label>Matching unmatched employers:</label>
+                                    <div id="employer-results-container">
+                                        <!-- Populated by JS -->
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Or enter employer name manually:</label>
+                                    <input type="text" id="employer-manual" class="admin-input" placeholder="e.g., GOLDMAN SACHS NYC">
+                                </div>
+
+                                <button onclick="saveEmployerMapping()" class="admin-btn primary">
+                                    <i class="fas fa-save"></i> Save Mapping
+                                </button>
+                            </div>
+
+                            <div id="employer-status" class="status-message" style="display: none;"></div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-question-circle"></i> Unmatched Employers (Top 50 by frequency)</h3>
+                            <div id="unmatched-employers" class="existing-mappings">
+                                <!-- Populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Unmatched Entities Panel -->
+                    <div id="admin-unmatched-entities" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-exclamation-triangle"></i> Entities Needing Manual Review</h3>
+                            <p class="admin-description">These items couldn't be automatically matched to known companies. Review and create mappings as needed.</p>
+
+                            <div class="unmatched-filters">
+                                <button class="filter-btn active" data-filter="all" onclick="filterUnmatched('all')">
+                                    All <span id="unmatched-count-all" class="badge">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="pacs" onclick="filterUnmatched('pacs')">
+                                    PACs <span id="unmatched-count-pacs" class="badge">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="employers" onclick="filterUnmatched('employers')">
+                                    Employers <span id="unmatched-count-employers" class="badge">0</span>
+                                </button>
+                                <button class="filter-btn" data-filter="tickers" onclick="filterUnmatched('tickers')">
+                                    Tickers <span id="unmatched-count-tickers" class="badge">0</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-building"></i> Unmatched PAC Names</h3>
+                            <p class="admin-description">Financial PACs that couldn't be matched to a canonical company name.</p>
+                            <div id="unmatched-pacs" class="unmatched-list" data-category="pacs">
+                                <div class="loading">Loading unmatched PACs...</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-briefcase"></i> Unmatched Employer Names</h3>
+                            <p class="admin-description">Employer names from individual contributions that couldn't be matched to a known firm.</p>
+                            <div id="unmatched-employer-names" class="unmatched-list" data-category="employers">
+                                <div class="loading">Loading unmatched employers...</div>
+                            </div>
+                        </div>
+
+                        <div class="admin-section">
+                            <h3><i class="fas fa-chart-line"></i> Uncategorized Stock Tickers</h3>
+                            <p class="admin-description">Stock tickers that haven't been assigned to an industry category.</p>
+                            <div id="unmatched-tickers" class="unmatched-list" data-category="tickers">
+                                <div class="loading">Loading uncategorized tickers...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Weekly Review Queue Panel -->
+                    <div id="admin-review-queue" class="admin-panel">
+                        <div class="admin-section">
+                            <h3><i class="fas fa-clipboard-check"></i> Weekly Review Queue</h3>
+                            <p class="admin-description">
+                                Entities discovered during data collection that need manual classification.
+                                Use the three-tier system: Sector (financial/non_financial) → Sub-sector → Entity Level (industry/firm).
+                            </p>
+
+                            <div class="review-queue-stats" id="review-queue-stats">
+                                <div class="stat-box">
+                                    <span class="stat-label">PACs</span>
+                                    <span id="rq-pac-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Employers</span>
+                                    <span id="rq-employer-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-box">
+                                    <span class="stat-label">Tickers</span>
+                                    <span id="rq-ticker-count" class="stat-value">--</span>
+                                </div>
+                                <div class="stat-box total">
+                                    <span class="stat-label">Total</span>
+                                    <span id="rq-total-count" class="stat-value">--</span>
+                                </div>
+                            </div>
+
+                            <div class="review-queue-filters">
+                                <button class="filter-btn active" data-rq-filter="all" onclick="filterReviewQueue('all')">
+                                    All
+                                </button>
+                                <button class="filter-btn" data-rq-filter="pac" onclick="filterReviewQueue('pac')">
+                                    PACs
+                                </button>
+                                <button class="filter-btn" data-rq-filter="employer" onclick="filterReviewQueue('employer')">
+                                    Employers
+                                </button>
+                                <button class="filter-btn" data-rq-filter="ticker" onclick="filterReviewQueue('ticker')">
+                                    Tickers
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="admin-section" id="review-queue-list-section">
+                            <div id="review-queue-list" class="review-queue-list">
+                                <div class="loading">Loading review queue...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
