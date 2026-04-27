@@ -3031,66 +3031,69 @@
     <script src="/static/js/auth.js"></script>
 
     <!-- Hamburger Menu Toggle & User Dropdown -->
+    <!-- Wrapped in IIFE so toggleNavMenu/toggleUserDropdown don't shadow shared_header.html's globals -->
     <script>
-        function toggleNavMenu() {
-            const menu = document.getElementById('navMenu');
-            if (menu) {
-                menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
-            }
-        }
-
-        function toggleUserDropdown() {
-            const dropdown = document.getElementById('userDropdown');
-            if (dropdown) {
-                dropdown.classList.toggle('active');
-            }
-        }
-
-        // Close menus when clicking outside
-        document.addEventListener('click', function(event) {
-            // Close nav menu
-            const menu = document.getElementById('navMenu');
-            const hamburger = document.querySelector('.hamburger-menu');
-            if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target)) {
-                menu.style.display = 'none';
-            }
-
-            // Close user dropdown
-            const userDropdown = document.getElementById('userDropdown');
-            const userMenu = document.getElementById('userMenu');
-            if (userDropdown && userMenu && !userMenu.contains(event.target)) {
-                userDropdown.classList.remove('active');
-            }
-        });
-
-        // Show/hide userMenu (options dropdown) based on auth state
-        // This supplements auth.js which handles userInfo, loginBtn, logoutBtn
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if we have staff/admin options to show
-            const userMenu = document.getElementById('userMenu');
-            const hasStaffOptions = userMenu && userMenu.querySelector('.user-dropdown-item');
-
-            if (hasStaffOptions) {
-                // Monitor userInfo visibility to sync userMenu
-                const userInfo = document.getElementById('userInfo');
-                if (userInfo) {
-                    const observer = new MutationObserver(function(mutations) {
-                        mutations.forEach(function(mutation) {
-                            if (mutation.attributeName === 'style') {
-                                const isLoggedIn = userInfo.style.display === 'flex';
-                                userMenu.style.display = isLoggedIn ? 'block' : 'none';
-                            }
-                        });
-                    });
-                    observer.observe(userInfo, { attributes: true });
-
-                    // Initial state check
-                    if (userInfo.style.display === 'flex') {
-                        userMenu.style.display = 'block';
-                    }
+        (function() {
+            function toggleNavMenu() {
+                const menu = document.getElementById('navMenu');
+                if (menu) {
+                    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
                 }
             }
-        });
+
+            function toggleUserDropdown() {
+                const dropdown = document.getElementById('userDropdown');
+                if (dropdown) {
+                    dropdown.classList.toggle('active');
+                }
+            }
+
+            // Close menus when clicking outside
+            document.addEventListener('click', function(event) {
+                // Close nav menu
+                const menu = document.getElementById('navMenu');
+                const hamburger = document.querySelector('.hamburger-menu');
+                if (menu && hamburger && !menu.contains(event.target) && !hamburger.contains(event.target)) {
+                    menu.style.display = 'none';
+                }
+
+                // Close user dropdown
+                const userDropdown = document.getElementById('userDropdown');
+                const userMenu = document.getElementById('userMenu');
+                if (userDropdown && userMenu && !userMenu.contains(event.target)) {
+                    userDropdown.classList.remove('active');
+                }
+            });
+
+            // Show/hide userMenu (options dropdown) based on auth state
+            // This supplements auth.js which handles userInfo, loginBtn, logoutBtn
+            document.addEventListener('DOMContentLoaded', function() {
+                // Check if we have staff/admin options to show
+                const userMenu = document.getElementById('userMenu');
+                const hasStaffOptions = userMenu && userMenu.querySelector('.user-dropdown-item');
+
+                if (hasStaffOptions) {
+                    // Monitor userInfo visibility to sync userMenu
+                    const userInfo = document.getElementById('userInfo');
+                    if (userInfo) {
+                        const observer = new MutationObserver(function(mutations) {
+                            mutations.forEach(function(mutation) {
+                                if (mutation.attributeName === 'style') {
+                                    const isLoggedIn = userInfo.style.display === 'flex';
+                                    userMenu.style.display = isLoggedIn ? 'block' : 'none';
+                                }
+                            });
+                        });
+                        observer.observe(userInfo, { attributes: true });
+
+                        // Initial state check
+                        if (userInfo.style.display === 'flex') {
+                            userMenu.style.display = 'block';
+                        }
+                    }
+                }
+            });
+        })();
     </script>
     <script>document.addEventListener('DOMContentLoaded',function(){function showAdminTabs(){if(window.justDataUserType==='admin')document.querySelectorAll('.nav-tab.admin-nav-tab').forEach(t=>t.style.display='flex');}function checkAdmin(){if(window.justDataUserType)showAdminTabs();else setTimeout(checkAdmin,500);}checkAdmin();const badge=document.getElementById('userTypeBadge');if(badge)new MutationObserver(showAdminTabs).observe(badge,{childList:true,characterData:true,subtree:true});});</script>
     {% include "shared_header_js.html" %}
