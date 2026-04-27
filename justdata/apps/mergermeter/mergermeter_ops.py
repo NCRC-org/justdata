@@ -1261,7 +1261,7 @@ def _perform_analysis(job_id, form_data):
         update_progress(job_id, {'percent': 95, 'step': 'Generating Excel report...', 'done': False, 'error': None})
         
         # Generate Excel file
-        from justdata.apps.mergermeter.excel import create_merger_excel
+        from justdata.apps.mergermeter.excel import build_mergermeter_workbook
         
         # Create filename with shortened acquiring bank name
         import re
@@ -1357,7 +1357,7 @@ def _perform_analysis(job_id, form_data):
             print(f"[DEBUG] - SB Goals States: {list(sb_goals_data['state_name'].unique()) if 'state_name' in sb_goals_data.columns else 'N/A'}")
         print(f"[DEBUG] - Mortgage Goals Data: {list(mortgage_goals_data.keys()) if mortgage_goals_data else 'NONE'}")
 
-        validation_warnings = create_merger_excel(
+        validation_warnings = build_mergermeter_workbook(
             output_path=excel_file,
             bank_a_name=acquirer_name,
             bank_b_name=target_name,
