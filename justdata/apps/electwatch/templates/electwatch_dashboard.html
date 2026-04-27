@@ -79,43 +79,7 @@
         </div>
     </div>
 
-    <!-- Data Source Info Modal -->
-    <div id="source-info-modal" class="source-info-modal" onclick="if(event.target === this) closeSourceInfo()">
-        <div class="source-info-content">
-            <div class="source-info-header">
-                <i id="source-info-icon" class="fas fa-hand-holding-dollar"></i>
-                <h3 id="source-info-title">Data Source</h3>
-                <button class="close-btn" onclick="closeSourceInfo()"><i class="fas fa-times"></i></button>
-            </div>
-            <div class="source-info-body">
-                <div class="source-info-section">
-                    <h4>Description</h4>
-                    <p id="source-info-description">Loading...</p>
-                </div>
-                <div class="source-info-section">
-                    <h4>Data Source</h4>
-                    <p id="source-info-origin">Loading...</p>
-                </div>
-                <div class="source-info-section">
-                    <h4>Update Frequency</h4>
-                    <div class="source-info-meta">
-                        <div class="source-meta-item">
-                            <i class="fas fa-sync"></i>
-                            <span id="source-info-frequency">--</span>
-                        </div>
-                        <div class="source-meta-item">
-                            <i class="fas fa-clock"></i>
-                            <span id="source-info-delay">--</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="source-info-section">
-                    <h4>Notes</h4>
-                    <p id="source-info-notes">Loading...</p>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'partials/_modal_data_source.html' %}
 
     <!-- Main Content -->
     <main class="main-content">
