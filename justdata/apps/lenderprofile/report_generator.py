@@ -33,7 +33,7 @@ def generate_report(data: Dict[str, Any]) -> Dict[str, Any]:
             - error: Error message if failed
     """
     from .processors.identifier_resolver import IdentifierResolver
-    from .processors.data_collector import DataCollector
+    from .processors.collector import DataCollector
     from .report_builder.report_builder import ReportBuilder
 
     institution_name = strip_trailing_punctuation(data.get('name', '').strip())
