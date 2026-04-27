@@ -1261,7 +1261,7 @@ def _perform_analysis(job_id, form_data):
         update_progress(job_id, {'percent': 95, 'step': 'Generating Excel report...', 'done': False, 'error': None})
         
         # Generate Excel file
-        create_merger_excel = _import_local_module('excel_generator', 'create_merger_excel')
+        from justdata.apps.mergermeter.excel import create_merger_excel
         
         # Create filename with shortened acquiring bank name
         import re
