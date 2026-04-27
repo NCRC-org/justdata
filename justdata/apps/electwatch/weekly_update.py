@@ -1753,40 +1753,8 @@ class WeeklyDataUpdate:
 
     def fetch_news_data(self):
         """Fetch news from NewsAPI with quality filtering."""
-        logger.info("\n--- Fetching NewsAPI Data ---")
-        try:
-            from justdata.apps.electwatch.services.news_client import NewsClient
-            client = NewsClient()
-
-            if not client.test_connection():
-                raise Exception("NewsAPI connection failed")
-
-            # Get political finance news
-            political_news = client.get_political_finance_news(days=7, limit=30)
-
-            # Get industry-specific news
-            industries = ['banking', 'cryptocurrency', 'financial services', 'fintech']
-            industry_news = []
-            for industry in industries:
-                try:
-                    news = client.get_industry_news(industry, days=7, limit=10)
-                    industry_news.extend(news or [])
-                except:
-                    pass
-
-            self.news_data = (political_news or []) + industry_news
-
-            self.source_status['newsapi'] = {
-                'status': 'success',
-                'articles': len(self.news_data),
-                'timestamp': datetime.now().isoformat()
-            }
-            logger.info(f"Fetched {len(self.news_data)} news articles")
-
-        except Exception as e:
-            logger.error(f"NewsAPI fetch failed: {e}")
-            self.warnings.append(f"NewsAPI: {e}")
-            self.source_status['newsapi'] = {'status': 'failed', 'error': str(e)}
+        from justdata.apps.electwatch.pipeline.fetchers.news import fetch_news_data
+        fetch_news_data(self)
 
     # =========================================================================
     # PHASE 2: PROCESS DATA
