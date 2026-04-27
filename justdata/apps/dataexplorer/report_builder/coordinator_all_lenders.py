@@ -20,6 +20,11 @@ from justdata.apps.dataexplorer.report_builder.sections.lender_race_ethnicity im
 )
 from justdata.apps.dataexplorer.shared.filters import filter_df_by_loan_purpose
 
+# Import LendSight's proven table building function
+from justdata.apps.lendsight.report_builder import (
+    calculate_mortgage_hhi_for_year,
+)
+
 logger = logging.getLogger(__name__)
 
 
