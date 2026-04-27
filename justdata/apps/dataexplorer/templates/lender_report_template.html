@@ -1697,7 +1697,7 @@
                 
                 console.log('[Excel Export] Sending request:', requestData);
                 
-                const exportResponse = await fetch('/api/export-lender-report-excel', {
+                const exportResponse = await fetch('/dataexplorer/api/export-lender-report-excel', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
