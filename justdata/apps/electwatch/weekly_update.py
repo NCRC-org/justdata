@@ -1721,35 +1721,8 @@ class WeeklyDataUpdate:
 
     def fetch_sec_data(self):
         """Fetch SEC EDGAR filings."""
-        logger.info("\n--- Fetching SEC EDGAR Data ---")
-        try:
-            from justdata.apps.electwatch.services.sec_client import SECClient
-            client = SECClient()
-
-            # Add SEC filings to existing firms data
-            filings_count = 0
-            for firm in self.firms_data:
-                try:
-                    ticker = firm.get('ticker')
-                    if ticker:
-                        filings = client.get_recent_10k_10q(ticker)
-                        firm['sec_filings'] = filings or []
-                        filings_count += len(filings or [])
-                except Exception as e:
-                    logger.warning(f"SEC error for {firm.get('ticker')}: {e}")
-                    firm['sec_filings'] = []
-
-            self.source_status['sec'] = {
-                'status': 'success',
-                'filings_found': filings_count,
-                'timestamp': datetime.now().isoformat()
-            }
-            logger.info(f"Fetched {filings_count} SEC filings")
-
-        except Exception as e:
-            logger.error(f"SEC fetch failed: {e}")
-            self.warnings.append(f"SEC: {e}")
-            self.source_status['sec'] = {'status': 'failed', 'error': str(e)}
+        from justdata.apps.electwatch.pipeline.fetchers.sec import fetch_sec_data
+        fetch_sec_data(self)
 
     def fetch_news_data(self):
         """Fetch news from NewsAPI with quality filtering."""
