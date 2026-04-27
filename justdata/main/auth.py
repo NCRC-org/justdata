@@ -31,6 +31,15 @@ from typing import Optional, Literal, Dict, List, TYPE_CHECKING
 import firebase_admin
 from firebase_admin import credentials, auth as firebase_auth, firestore
 
+# Firebase client wrappers (extracted into services module)
+from justdata.main.auth.services.firebase_client import (
+    init_firebase,
+    get_firebase_app,
+    get_firestore_client,
+    verify_firebase_token,
+    get_user_doc,
+)
+
 # Type hints for membership lookup (avoid circular imports)
 if TYPE_CHECKING:
     from justdata.apps.hubspot.membership import MembershipLookupResult
@@ -378,103 +387,8 @@ TIER_PRICING = {
 
 
 # ========================================
-# Firebase Initialization
-# ========================================
-
-_firebase_app = None
-_firestore_client = None
-
-
-def init_firebase():
-    """Initialize Firebase Admin SDK using credentials from environment."""
-    global _firebase_app
-
-    if _firebase_app is not None:
-        return _firebase_app
-
-    # Check if already initialized
-    try:
-        _firebase_app = firebase_admin.get_app()
-        return _firebase_app
-    except ValueError:
-        pass  # Not initialized yet
-
-    # Get credentials from environment (check multiple sources)
-    creds_path = os.environ.get('FIREBASE_CREDENTIALS')
-    creds_json = os.environ.get('FIREBASE_CREDENTIALS_JSON')
-
-    # Fallback to BigQuery credentials (often same service account)
-    if not creds_json:
-        creds_json = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-
-    if creds_path and os.path.exists(creds_path):
-        cred = credentials.Certificate(creds_path)
-        print(f"Firebase initialized with credentials from file: {creds_path}")
-    elif creds_json:
-        try:
-            cred_dict = json.loads(creds_json)
-            cred = credentials.Certificate(cred_dict)
-            print("Firebase initialized with credentials from environment JSON")
-        except json.JSONDecodeError as e:
-            print(f"Error parsing Firebase credentials JSON: {e}")
-            return None
-    else:
-        print("Warning: Firebase credentials not found. Authentication disabled.")
-        print("  Checked: FIREBASE_CREDENTIALS, FIREBASE_CREDENTIALS_JSON, GOOGLE_APPLICATION_CREDENTIALS_JSON")
-        return None
-
-    try:
-        _firebase_app = firebase_admin.initialize_app(cred)
-        return _firebase_app
-    except Exception as e:
-        print(f"Error initializing Firebase: {e}")
-        return None
-
-
-def get_firebase_app():
-    """Get or initialize Firebase app."""
-    global _firebase_app
-    if _firebase_app is None:
-        init_firebase()
-    return _firebase_app
-
-
-def get_firestore_client():
-    """Get or initialize Firestore client."""
-    global _firestore_client
-    if _firestore_client is None:
-        if get_firebase_app():
-            _firestore_client = firestore.client()
-    return _firestore_client
-
-
-# ========================================
 # Firestore User Management
 # ========================================
-
-def get_user_doc(uid: str) -> Optional[dict]:
-    """
-    Get user document from Firestore.
-
-    Args:
-        uid: Firebase Auth UID
-
-    Returns:
-        User document dict or None if not found
-    """
-    db = get_firestore_client()
-    if not db:
-        return None
-
-    try:
-        doc = db.collection('users').document(uid).get()
-        if doc.exists:
-            return doc.to_dict()
-        return None
-    except Exception as e:
-        print(f"Error getting user doc: {e}")
-        return None
-
 
 def create_or_update_user_doc(uid: str, email: str, display_name: str = None,
                                photo_url: str = None, email_verified: bool = False,
@@ -774,33 +688,8 @@ def log_activity(uid: str, email: str, action: str, app: str = None,
 
 
 # ========================================
-# Firebase User Authentication
+# Session and Current User
 # ========================================
-
-def verify_firebase_token(id_token: str) -> Optional[dict]:
-    """
-    Verify a Firebase ID token and return the decoded token.
-
-    Args:
-        id_token: The Firebase ID token from the client
-
-    Returns:
-        Decoded token dict with user info, or None if invalid
-    """
-    if not get_firebase_app():
-        return None
-
-    try:
-        decoded_token = firebase_auth.verify_id_token(id_token)
-        return decoded_token
-    except firebase_auth.InvalidIdTokenError:
-        return None
-    except firebase_auth.ExpiredIdTokenError:
-        return None
-    except Exception as e:
-        print(f"Firebase token verification error: {e}")
-        return None
-
 
 def get_current_user() -> Optional[dict]:
     """
