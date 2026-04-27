@@ -1,9 +1,19 @@
 """Mergermeter Excel report generator.
 
-create_merger_excel orchestrates the per-worksheet builders to produce
-the merger analysis workbook. The shared generator under
-justdata.shared.reporting.merger_excel_generator is used as the
-preferred path; this module is the fallback / legacy implementation.
+build_mergermeter_workbook is a mergermeter-specific adapter that:
+  1. takes raw query-result DataFrames + a metadata dict,
+  2. transforms them (CBSA name/code maps, required-CBSA sets,
+     mortgage_goals reshape) into the structure the shared generator
+     expects,
+  3. delegates the actual workbook build to
+     justdata.shared.reporting.excel.create_merger_excel (the canonical
+     workbook generator that owns every sheet builder),
+  4. post-processes by adding the mergermeter-only HHI sheet,
+  5. returns a list of validation warnings.
+
+The previous name (create_merger_excel) collided with the shared
+canonical name even though the two functions take different inputs and
+do different work — see Phase 3.3 PR for the rename rationale.
 """
 import logging
 from pathlib import Path
@@ -48,7 +58,7 @@ except ImportError as e:
 logger = logging.getLogger(__name__)
 
 
-def create_merger_excel(
+def build_mergermeter_workbook(
     output_path: Path,
     bank_a_name: str,
     bank_b_name: str,
