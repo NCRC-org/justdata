@@ -128,13 +128,13 @@ def branchsight_client(branchsight_app):
 
 @pytest.fixture
 def lendsight_app():
-    """Create a LendSight Flask test app."""
-    try:
-        from justdata.apps.lendsight.app import app
-        app.config["TESTING"] = True
-        return app
-    except Exception:
-        pytest.skip("LendSight app could not be imported")
+    """Create a LendSight Flask test app (blueprint only, no standalone app)."""
+    from flask import Flask
+    from justdata.apps.lendsight.blueprint import lendsight_bp
+    test_app = Flask(__name__)
+    test_app.register_blueprint(lendsight_bp, url_prefix="")
+    test_app.config["TESTING"] = True
+    return test_app
 
 
 @pytest.fixture
