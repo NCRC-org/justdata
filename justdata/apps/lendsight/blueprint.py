@@ -690,7 +690,7 @@ def download():
             }), 403
         
         if format_type in ('zip', 'excel'):
-            from .mortgage_report_builder import save_mortgage_excel_report
+            from .report_builder import save_mortgage_excel_report
             from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
             import tempfile
             import os
