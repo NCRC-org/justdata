@@ -362,12 +362,7 @@
     {% include "shared_header.html" %}
 
     <div class="report-container">
-        <!-- Export Controls -->
-        <div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
-            <button class="action-btn" onclick="exportToExcel()" style="background: #28a745;">
-                <i class="fas fa-file-excel"></i> Export Full Report to Excel
-            </button>
-        </div>
+        {% include 'partials/_export_controls.html' %}
         
         {% include 'partials/_status_states.html' %}
         
