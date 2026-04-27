@@ -164,7 +164,8 @@ class FECBulkLoader:
     ):
         self.project_id = project_id
         self.dataset_id = dataset_id
-        self.client = bigquery.Client(project=project_id)
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
+        self.client = get_bigquery_client(project_id=project_id, app_name='electwatch')
         
         # Lookups built from reference files
         self.committees: Dict[str, Dict] = {}  # cmte_id -> committee info

@@ -7,7 +7,7 @@ Uses branches.sod and branches.sod_legacy tables.
 import os
 import logging
 from typing import List, Dict, Any, Optional, Tuple
-from google.cloud import bigquery
+
 from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 logger = logging.getLogger(__name__)
