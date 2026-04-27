@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from typing import Dict, List
 
-from justdata.apps.electwatch.weekly_update import (
+from justdata.apps.electwatch.pipeline.coordinator import (
     ELECTION_CYCLE_START,
     normalize_to_public_name,
 )

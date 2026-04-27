@@ -2,7 +2,7 @@
 import logging
 from datetime import datetime
 
-from justdata.apps.electwatch.weekly_update import (
+from justdata.apps.electwatch.pipeline.coordinator import (
     NAME_ALIASES,
     convert_last_first_to_first_last,
     fetch_bioguide_photo,

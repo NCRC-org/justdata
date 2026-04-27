@@ -14,7 +14,7 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional
 
-from justdata.apps.electwatch.weekly_update import ELECTION_CYCLE_START
+from justdata.apps.electwatch.pipeline.coordinator import ELECTION_CYCLE_START
 
 logger = logging.getLogger(__name__)
 
