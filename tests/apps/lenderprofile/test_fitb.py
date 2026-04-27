@@ -98,7 +98,7 @@ def test_data_collection(identifiers):
         print("  No identifiers provided, skipping...")
         return None
 
-    from justdata.apps.lenderprofile.processors.data_collector import DataCollector
+    from justdata.apps.lenderprofile.processors.collector import DataCollector
 
     collector = DataCollector()
 

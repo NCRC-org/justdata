@@ -319,7 +319,7 @@ class CachingDataCollector:
             use_cache: Whether to use cached data if available
             cache_dir: Optional custom cache directory
         """
-        from justdata.apps.lenderprofile.processors.data_collector import DataCollector
+        from justdata.apps.lenderprofile.processors.collector import DataCollector
 
         self.institution_name = institution_name
         self.use_cache = use_cache
