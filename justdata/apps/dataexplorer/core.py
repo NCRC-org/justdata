@@ -647,7 +647,7 @@ def run_area_analysis(
         if progress_tracker:
             progress_tracker.update_progress('building_report', 65, 'Building report tables...')
         
-        from justdata.apps.dataexplorer.area_report_builder import build_area_report
+        from justdata.apps.dataexplorer.report_builder import build_area_report
         import pandas as pd
         import numpy as np
         
