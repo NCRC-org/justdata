@@ -11,7 +11,7 @@ import io
 import os
 from datetime import datetime
 
-from .bigquery_client import (
+from .bq import (
     get_user_locations,
     get_research_activity,
     get_lender_interest,
@@ -260,7 +260,7 @@ def api_coalition_opportunities():
 def api_entity_users():
     """Get users researching a specific entity (county or lender)."""
     try:
-        from .bigquery_client import get_entity_users
+        from .bq import get_entity_users
         entity_type = request.args.get('entity_type')
         entity_id = request.args.get('entity_id')
         days = request.args.get('days', 90, type=int)
@@ -310,7 +310,7 @@ def lender_detail(lender_id):
 def api_lender_detail(lender_id):
     """Get detailed data for a specific lender including reports and researchers."""
     try:
-        from .bigquery_client import get_lender_detail
+        from .bq import get_lender_detail
         days = request.args.get('days', 90, type=int)
         data = get_lender_detail(lender_id=lender_id, days=days)
         return jsonify({'success': True, 'data': data})
@@ -324,7 +324,7 @@ def api_lender_detail(lender_id):
 def api_users():
     """Get list of users with activity summary."""
     try:
-        from .bigquery_client import get_users
+        from .bq import get_users
         days = request.args.get('days', 90, type=int)
         search = request.args.get('search', None)
         data = get_users(days=days, search=search)
@@ -339,7 +339,7 @@ def api_users():
 def api_user_activity(user_id):
     """Get detailed activity for a specific user."""
     try:
-        from .bigquery_client import get_user_activity
+        from .bq import get_user_activity
         days = request.args.get('days', 90, type=int)
         data = get_user_activity(user_id=user_id, days=days)
         return jsonify({'success': True, 'data': data})
@@ -353,7 +353,7 @@ def api_user_activity(user_id):
 def api_user_types():
     """Get list of distinct user types for filtering."""
     try:
-        from .bigquery_client import get_bigquery_client, EVENTS_TABLE
+        from .bq import get_bigquery_client, EVENTS_TABLE
         client = get_bigquery_client()
         query = f"""
             SELECT DISTINCT user_type
@@ -388,7 +388,7 @@ def api_costs():
         JSON with cost breakdown by app, daily costs, and totals.
     """
     try:
-        from .bigquery_client import get_cost_summary
+        from .bq import get_cost_summary
         days = request.args.get('days', 30, type=int)
         skip_cache = request.args.get('refresh', '').strip() == '1'
         data = get_cost_summary(days=days, skip_cache=skip_cache)
@@ -469,7 +469,7 @@ def api_lookup_county_fips():
         JSON with county_fips if found.
     """
     try:
-        from .bigquery_client import get_county_centroids
+        from .bq import get_county_centroids
         
         county_name = request.args.get('county_name', '').strip()
         state = request.args.get('state', '').strip()
@@ -523,7 +523,7 @@ def api_export():
         from openpyxl import Workbook
         from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
         from openpyxl.utils import get_column_letter
-        from .bigquery_client import (
+        from .bq import (
             get_bigquery_client, EVENTS_TABLE, get_users,
             get_coalition_opportunities, get_entity_users
         )
