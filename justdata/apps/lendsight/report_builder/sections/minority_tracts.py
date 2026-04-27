@@ -9,8 +9,11 @@ from justdata.apps.lendsight.report_builder.sections.income_indicators import (
     calculate_minority_quartiles,
     classify_tract_minority_quartile,
 )
+from justdata.apps.lendsight.report_builder.sections.income_tracts import (
+    get_tract_population_data_for_counties,
+)
 
-def create_minority_tracts_table(df: pd.DataFrame, years: List[int], 
+def create_minority_tracts_table(df: pd.DataFrame, years: List[int],
                                   census_data: Dict = None) -> pd.DataFrame:
     """
     Create Table 3: Lending to Census Tracts by Minority Population.

@@ -28,6 +28,7 @@ from justdata.apps.lendsight.report_builder.sections.income_indicators import (
 )
 from justdata.apps.lendsight.report_builder.sections.income_tracts import (
     create_income_tracts_table,
+    get_tract_population_data_for_counties,
 )
 from justdata.apps.lendsight.report_builder.sections.minority_tracts import (
     create_minority_tracts_table,
@@ -47,6 +48,7 @@ __all__ = [
     "create_demographic_overview_table",
     "create_income_borrowers_table",
     "create_income_tracts_table",
+    "get_tract_population_data_for_counties",
     "create_minority_tracts_table",
     "create_top_lenders_detailed_table",
 ]
