@@ -4,14 +4,10 @@ Holds the BigQuery client singleton, the analytics cache, the
 EVENTS_TABLE constant pool used across queries, and the
 get_valid_user_filter SQL helper.
 """
-import os
 import json
 import hashlib
 from datetime import datetime, timedelta
 from typing import Any, Optional
-
-from google.cloud import bigquery
-from google.oauth2 import service_account
 
 
 # Initialize BigQuery client
@@ -136,56 +132,16 @@ def get_valid_user_filter(table_alias: str = '') -> str:
 
 
 def get_bigquery_client():
-    """Get or create BigQuery client for Analytics app.
-    
-    Uses per-app credentials if ANALYTICS_CREDENTIALS_JSON is set,
-    otherwise falls back to GOOGLE_APPLICATION_CREDENTIALS_JSON.
+    """Get or create the BigQuery client for the Analytics app.
+
+    Delegates to the shared client at justdata.shared.utils.bigquery_client.
+    The shared client handles ANALYTICS_CREDENTIALS_JSON (and the standard
+    GOOGLE_APPLICATION_CREDENTIALS_JSON fallback) plus per-app caching.
     """
     global _client
     if _client is None:
-        # Check for app-specific credentials first, then fall back to shared
-        creds_json = os.environ.get('ANALYTICS_CREDENTIALS_JSON') or os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-        if creds_json:
-            try:
-                import re
-
-                # First, try to parse as-is
-                try:
-                    creds_dict = json.loads(creds_json)
-                except json.JSONDecodeError:
-                    # If that fails, try to fix newlines in the private_key field
-                    def escape_newlines_in_key(match):
-                        key_content = match.group(1)
-                        key_content = key_content.replace('\r\n', '\\n').replace('\n', '\\n').replace('\r', '\\n')
-                        return f'"private_key":"{key_content}"'
-
-                    fixed_json = re.sub(
-                        r'"private_key"\s*:\s*"([^"]*(?:\\.[^"]*)*)"',
-                        escape_newlines_in_key,
-                        creds_json,
-                        flags=re.DOTALL
-                    )
-
-                    try:
-                        creds_dict = json.loads(fixed_json)
-                    except json.JSONDecodeError:
-                        print(f"[WARN] Analytics: Could not parse credentials JSON, falling back to default auth")
-                        _client = bigquery.Client(project=QUERY_PROJECT)
-                        return _client
-
-                # Log which credential is being used
-                client_email = creds_dict.get('client_email', 'unknown')
-                cred_source = 'ANALYTICS_CREDENTIALS_JSON' if os.environ.get('ANALYTICS_CREDENTIALS_JSON') else 'GOOGLE_APPLICATION_CREDENTIALS_JSON'
-                print(f"[INFO] Analytics: Using credentials from {cred_source} (service account: {client_email})")
-                
-                credentials = service_account.Credentials.from_service_account_info(creds_dict)
-                _client = bigquery.Client(
-                    project=QUERY_PROJECT,
-                    credentials=credentials
-                )
-            except Exception as e:
-                print(f"[ERROR] Analytics: Error parsing credentials: {e}")
-                _client = bigquery.Client(project=QUERY_PROJECT)
-        else:
-            _client = bigquery.Client(project=QUERY_PROJECT)
+        from justdata.shared.utils.bigquery_client import (
+            get_bigquery_client as shared_get_bigquery_client,
+        )
+        _client = shared_get_bigquery_client(project_id=QUERY_PROJECT, app_name='analytics')
     return _client

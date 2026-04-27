@@ -7,9 +7,8 @@ Fetches CRA small business lending data from BigQuery.
 import logging
 import os
 from typing import Dict, Any, List, Optional
-from google.cloud import bigquery
-from google.oauth2 import service_account
-import json
+
+from justdata.shared.utils.bigquery_client import get_bigquery_client
 
 logger = logging.getLogger(__name__)
 
@@ -25,32 +24,14 @@ class BigQueryCRAClient:
     """
 
     def __init__(self, project_id: str = None):
-        """Initialize BigQuery CRA client."""
-        self.project_id = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
-        self.client = self._get_client()
+        """Initialize BigQuery CRA client via the shared utility.
 
-    def _get_client(self):
-        """Get BigQuery client with credentials.
-        
-        Uses per-app credentials if LENDERPROFILE_CREDENTIALS_JSON is set,
-        otherwise falls back to GOOGLE_APPLICATION_CREDENTIALS_JSON.
+        The shared client honors LENDERPROFILE_CREDENTIALS_JSON via its
+        VALID_APP_NAMES list and falls back to
+        GOOGLE_APPLICATION_CREDENTIALS_JSON.
         """
-        try:
-            # Check for app-specific credentials first, then fall back to shared
-            cred_json = os.getenv('LENDERPROFILE_CREDENTIALS_JSON') or os.getenv('GOOGLE_APPLICATION_CREDENTIALS_JSON')
-            if cred_json and cred_json.strip().startswith('{'):
-                cred_dict = json.loads(cred_json)
-                credentials = service_account.Credentials.from_service_account_info(cred_dict)
-                client_email = cred_dict.get('client_email', 'unknown')
-                cred_source = 'LENDERPROFILE_CREDENTIALS_JSON' if os.getenv('LENDERPROFILE_CREDENTIALS_JSON') else 'GOOGLE_APPLICATION_CREDENTIALS_JSON'
-                logger.info(f"BigQuery client initialized using {cred_source} (service account: {client_email})")
-                return bigquery.Client(credentials=credentials, project=self.project_id)
-
-            # Fall back to default credentials
-            return bigquery.Client(project=self.project_id)
-        except Exception as e:
-            logger.error(f"Failed to initialize BigQuery client: {e}")
-            return None
+        self.project_id = project_id or os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+        self.client = get_bigquery_client(self.project_id, app_name='lenderprofile')
 
     def _execute_query(self, sql: str) -> List[Dict[str, Any]]:
         """Execute a BigQuery query and return results as list of dicts."""

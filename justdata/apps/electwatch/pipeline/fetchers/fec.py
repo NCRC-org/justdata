@@ -191,10 +191,10 @@ def _append_pac_contributions_to_bq(coordinator, contributions: list):
     logger.info(f"  Appending {len(contributions)} PAC contributions to BigQuery...")
 
     try:
-        from google.cloud import bigquery
         import hashlib
 
-        client = bigquery.Client(project='justdata-ncrc')
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
+        client = get_bigquery_client(project_id='justdata-ncrc', app_name='electwatch')
         table_id = 'justdata-ncrc.electwatch.official_pac_contributions'
 
         # Add IDs and timestamps
