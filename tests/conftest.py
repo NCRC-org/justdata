@@ -145,13 +145,13 @@ def lendsight_client(lendsight_app):
 
 @pytest.fixture
 def bizsight_app():
-    """Create a BizSight Flask test app."""
-    try:
-        from justdata.apps.bizsight.app import app
-        app.config["TESTING"] = True
-        return app
-    except Exception:
-        pytest.skip("BizSight app could not be imported")
+    """Create a BizSight Flask test app (blueprint only, no standalone app)."""
+    from flask import Flask
+    from justdata.apps.bizsight.blueprint import bizsight_bp
+    test_app = Flask(__name__)
+    test_app.register_blueprint(bizsight_bp, url_prefix="")
+    test_app.config["TESTING"] = True
+    return test_app
 
 
 @pytest.fixture
