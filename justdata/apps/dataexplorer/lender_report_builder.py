@@ -24,7 +24,7 @@ except ImportError:
     logger.warning("scipy not available. Chi-squared testing will be disabled.")
 
 # Import LendSight's proven table building functions
-from justdata.apps.lendsight.mortgage_report_builder import (
+from justdata.apps.lendsight.report_builder import (
     create_demographic_overview_table,
     create_income_borrowers_table,
     create_income_tracts_table,
@@ -952,7 +952,7 @@ def build_lender_report(
             logger.info(f"[build_lender_report] all_metros_data contains {metros_total:,} total loans (should be ~61,756 for national)")
     
     # Clean and prepare data - use LendSight's cleaning function
-    from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
+    from justdata.apps.lendsight.report_builder import clean_mortgage_data
     subject_df = clean_mortgage_data(subject_df)
     if not peer_df.empty:
         peer_df = clean_mortgage_data(peer_df)
@@ -985,7 +985,7 @@ def build_lender_report(
         # Use all metros data for national totals
         table1_df = pd.DataFrame(all_metros_data)
         # Clean the data
-        from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
+        from justdata.apps.lendsight.report_builder import clean_mortgage_data
         table1_df = clean_mortgage_data(table1_df)
         # Ensure numeric columns
         if 'total_originations' in table1_df.columns:
@@ -1136,7 +1136,7 @@ def build_lender_report(
             if all_metros_data and len(all_metros_data) > 0:
                 metros_df = pd.DataFrame(all_metros_data)
                 # Clean the data using LendSight's cleaning function
-                from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
+                from justdata.apps.lendsight.report_builder import clean_mortgage_data
                 metros_df = clean_mortgage_data(metros_df)
             else:
                 # Fall back to subject_df if all_metros_data not provided

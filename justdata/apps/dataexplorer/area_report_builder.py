@@ -19,7 +19,7 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 # Import LendSight's proven table building functions
-from justdata.apps.lendsight.mortgage_report_builder import (
+from justdata.apps.lendsight.report_builder import (
     create_demographic_overview_table,
     create_income_borrowers_table,
     create_income_tracts_table,
@@ -1239,7 +1239,7 @@ def build_area_report(
     df = pd.DataFrame(hmda_data)
     
     # Clean and prepare data - use LendSight's cleaning function
-    from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
+    from justdata.apps.lendsight.report_builder import clean_mortgage_data
     df = clean_mortgage_data(df)
     
     # Split geoid5 into state_fips and county_fips for tract population data functions
@@ -1513,7 +1513,7 @@ def build_area_report(
     
     # Calculate quartile_shares once using full dataset (all loans) for Table 4
     # This ensures Population Share doesn't change when switching loan purpose tabs
-    from justdata.apps.lendsight.mortgage_report_builder import (
+    from justdata.apps.lendsight.report_builder import (
         calculate_minority_quartiles, 
         classify_tract_minority_quartile,
         get_tract_population_data_for_counties
@@ -1872,7 +1872,7 @@ def build_area_report(
                 if 'lender_type' in purpose_df.columns:
                     # Normalize lender_type values to match expected categories
                     # Map values like "Bank or Affiliate" -> "Bank", "Mortgage Company" -> "Mortgage Company", etc.
-                    from justdata.apps.lendsight.mortgage_report_builder import map_lender_type
+                    from justdata.apps.lendsight.report_builder import map_lender_type
                     purpose_df_normalized = purpose_df.copy()
                     purpose_df_normalized['lender_type_normalized'] = purpose_df_normalized['lender_type'].apply(
                         lambda x: map_lender_type(x) if pd.notna(x) else ''
@@ -2031,7 +2031,7 @@ def build_area_report_all_lenders(
     
     # Now rebuild Section 3 with ALL lenders
     import pandas as pd
-    from justdata.apps.lendsight.mortgage_report_builder import clean_mortgage_data
+    from justdata.apps.lendsight.report_builder import clean_mortgage_data
     
     # Convert to DataFrame
     df = pd.DataFrame(hmda_data)
@@ -2304,7 +2304,7 @@ def create_lender_race_ethnicity_table(df: pd.DataFrame, years: List[int], censu
             lender_type_values = lender_df['lender_type'].dropna().unique()
             if len(lender_type_values) > 0:
                 # Use the most common lender type for this lender
-                from justdata.apps.lendsight.mortgage_report_builder import map_lender_type
+                from justdata.apps.lendsight.report_builder import map_lender_type
                 lender_type_mapped = map_lender_type(lender_type_values[0]) if pd.notna(lender_type_values[0]) else ''
                 # Normalize to display name
                 if lender_type_mapped in ['Bank', 'Credit Union', 'Mortgage Company']:
@@ -2385,7 +2385,7 @@ def create_lender_borrower_income_table(df: pd.DataFrame, years: List[int], hud_
         if 'lender_type' in lender_df.columns:
             lender_type_values = lender_df['lender_type'].dropna().unique()
             if len(lender_type_values) > 0:
-                from justdata.apps.lendsight.mortgage_report_builder import map_lender_type
+                from justdata.apps.lendsight.report_builder import map_lender_type
                 lender_type_mapped = map_lender_type(lender_type_values[0]) if pd.notna(lender_type_values[0]) else ''
                 if lender_type_mapped in ['Bank', 'Credit Union', 'Mortgage Company']:
                     lender_type = lender_type_mapped
@@ -2452,7 +2452,7 @@ def create_lender_neighborhood_income_table(df: pd.DataFrame, years: List[int],
         if 'lender_type' in lender_df.columns:
             lender_type_values = lender_df['lender_type'].dropna().unique()
             if len(lender_type_values) > 0:
-                from justdata.apps.lendsight.mortgage_report_builder import map_lender_type
+                from justdata.apps.lendsight.report_builder import map_lender_type
                 lender_type_mapped = map_lender_type(lender_type_values[0]) if pd.notna(lender_type_values[0]) else ''
                 if lender_type_mapped in ['Bank', 'Credit Union', 'Mortgage Company']:
                     lender_type = lender_type_mapped
@@ -2493,7 +2493,7 @@ def create_lender_neighborhood_demographics_table(df: pd.DataFrame, years: List[
         return pd.DataFrame()
     
     # Calculate minority quartiles (same as create_minority_tracts_table)
-    from justdata.apps.lendsight.mortgage_report_builder import calculate_minority_quartiles, classify_tract_minority_quartile
+    from justdata.apps.lendsight.report_builder import calculate_minority_quartiles, classify_tract_minority_quartile
     
     quartiles = calculate_minority_quartiles(df)
     df['minority_quartile'] = df['tract_minority_population_percent'].apply(
@@ -2524,7 +2524,7 @@ def create_lender_neighborhood_demographics_table(df: pd.DataFrame, years: List[
         if 'lender_type' in lender_df.columns:
             lender_type_values = lender_df['lender_type'].dropna().unique()
             if len(lender_type_values) > 0:
-                from justdata.apps.lendsight.mortgage_report_builder import map_lender_type
+                from justdata.apps.lendsight.report_builder import map_lender_type
                 lender_type_mapped = map_lender_type(lender_type_values[0]) if pd.notna(lender_type_values[0]) else ''
                 if lender_type_mapped in ['Bank', 'Credit Union', 'Mortgage Company']:
                     lender_type = lender_type_mapped
