@@ -28,6 +28,15 @@ from justdata.shared.utils.progress_tracker import (
     store_analysis_result,
 )
 
+# Import version
+try:
+    from justdata.apps.electwatch.version import __version__
+except ImportError:
+    __version__ = '0.9.0'
+
+# App directory (electwatch/) - parent of services/
+APP_DIR = Path(__file__).parent.parent.absolute()
+
 logger = logging.getLogger(__name__)
 
 
