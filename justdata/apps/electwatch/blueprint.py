@@ -3,14 +3,21 @@ ElectWatch Blueprint for main JustData app.
 Self-contained blueprint that works within the unified platform.
 """
 
-from flask import Blueprint, render_template, jsonify, request
+from flask import Blueprint, render_template, jsonify, request, session, Response
 from pathlib import Path
 from urllib.parse import unquote
 import json
 import logging
 import threading
+import uuid
 
 from justdata.main.auth import get_user_type, login_required, require_access, admin_required, staff_required
+from justdata.shared.utils.progress_tracker import (
+    create_progress_tracker,
+    get_progress,
+    store_analysis_result,
+    get_analysis_result,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1570,6 +1577,219 @@ def api_refresh_data():
             'success': False,
             'error': str(e)
         }), 500
+
+
+# =============================================================================
+# Search, bills API, analysis jobs, export (parity with former standalone app)
+# =============================================================================
+
+
+@electwatch_bp.route('/api/search', methods=['GET'])
+@login_required
+@require_access('electwatch', 'full')
+def api_search():
+    """Search for officials, firms, or PACs."""
+    query = request.args.get('q', '')
+    search_type = request.args.get('type', 'all')  # 'official', 'firm', 'pac', 'all'
+
+    return jsonify({
+        'success': True,
+        'query': query,
+        'type': search_type,
+        'results': []
+    })
+
+
+@electwatch_bp.route('/api/bills/search', methods=['GET'])
+@login_required
+@require_access('electwatch', 'full')
+def api_search_bills():
+    """
+    Search for bills by keyword or bill ID.
+
+    Query params:
+        q: Search query (e.g., "cryptocurrency", "H.R. 4763", "stablecoin")
+        limit: Max results (default 20)
+    """
+    from justdata.apps.electwatch.services.congress_api_client import get_congress_client
+
+    query = request.args.get('q', '').strip()
+    limit = int(request.args.get('limit', 20))
+
+    if not query:
+        return jsonify({
+            'success': False,
+            'error': 'Search query is required'
+        }), 400
+
+    client = get_congress_client()
+    results = client.search_bills(query, limit=limit)
+
+    return jsonify({
+        'success': True,
+        'query': query,
+        'bills': results,
+        'count': len(results)
+    })
+
+
+@electwatch_bp.route('/api/bills/<bill_id>', methods=['GET'])
+@login_required
+@require_access('electwatch', 'full')
+def api_get_bill(bill_id: str):
+    """
+    Get detailed information about a specific bill including sponsors, votes, and financial involvement.
+
+    Args:
+        bill_id: Bill identifier like "hr4763", "s1234", "H.R. 4763"
+    """
+    from justdata.apps.electwatch.services.bill_financial_enrichment import enrich_bill_with_financial_data
+    from justdata.apps.electwatch.services.congress_api_client import get_congress_client
+
+    client = get_congress_client()
+
+    parsed = client.parse_bill_id(bill_id)
+    if not parsed:
+        return jsonify({
+            'success': False,
+            'error': f'Invalid bill ID format: {bill_id}. Use format like "H.R. 4763" or "S. 1234"'
+        }), 400
+
+    bill = client.get_bill(parsed['type'], parsed['number'], parsed.get('congress', '119'))
+
+    if not bill:
+        return jsonify({
+            'success': False,
+            'error': f'Bill not found: {bill_id}'
+        }), 404
+
+    bill_with_involvement = enrich_bill_with_financial_data(bill)
+
+    return jsonify({
+        'success': True,
+        'bill': bill_with_involvement
+    })
+
+
+@electwatch_bp.route('/api/analyze', methods=['POST'])
+@login_required
+@require_access('electwatch', 'full')
+def api_analyze():
+    """
+    Run analysis for an official.
+
+    Request body:
+        {
+            "official_id": "hill_j_french",
+            "include_ai_insights": true
+        }
+    """
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'success': False, 'error': 'No data received'}), 400
+
+        official_id = data.get('official_id')
+        if not official_id:
+            return jsonify({'success': False, 'error': 'official_id required'}), 400
+
+        include_ai = data.get('include_ai_insights', True)
+
+        job_id = str(uuid.uuid4())
+        progress_tracker = create_progress_tracker(job_id)
+
+        session['official_id'] = official_id
+        session['job_id'] = job_id
+
+        def run_analysis():
+            try:
+                from justdata.apps.electwatch.core import run_official_analysis
+                result = run_official_analysis(
+                    official_id=official_id,
+                    include_ai=include_ai,
+                    job_id=job_id,
+                    progress_tracker=progress_tracker
+                )
+
+                if not result.get('success'):
+                    error_msg = result.get('error', 'Unknown error')
+                    progress_tracker.complete(success=False, error=error_msg)
+                    return
+
+                store_analysis_result(job_id, result)
+                progress_tracker.complete(success=True)
+
+            except Exception as e:
+                progress_tracker.complete(success=False, error=str(e))
+
+        thread = threading.Thread(target=run_analysis, daemon=True)
+        thread.start()
+
+        return jsonify({'success': True, 'job_id': job_id})
+
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@electwatch_bp.route('/progress/<job_id>')
+@login_required
+@require_access('electwatch', 'full')
+def electwatch_progress_stream(job_id: str):
+    """Progress tracking endpoint using Server-Sent Events."""
+    def event_stream():
+        import time
+        last_percent = -1
+        while True:
+            progress = get_progress(job_id)
+            percent = progress.get("percent", 0)
+            step = progress.get("step", "Starting...")
+            done = progress.get("done", False)
+            error = progress.get("error", None)
+
+            if percent != last_percent or done or error:
+                yield f"data: {json.dumps({'percent': percent, 'step': step, 'done': done, 'error': error})}\n\n"
+                last_percent = percent
+
+            if done or error:
+                break
+
+            time.sleep(0.5)
+
+    return Response(event_stream(), mimetype="text/event-stream")
+
+
+@electwatch_bp.route('/api/result/<job_id>')
+@login_required
+@require_access('electwatch', 'full')
+def api_get_analysis_result(job_id: str):
+    """Get analysis result for a job."""
+    result = get_analysis_result(job_id)
+    if not result:
+        return jsonify({'success': False, 'error': 'Result not found'}), 404
+
+    return jsonify({'success': True, 'result': result})
+
+
+@electwatch_bp.route('/download')
+@login_required
+@require_access('electwatch', 'full')
+def electwatch_download():
+    """Download generated reports (export not yet implemented)."""
+    try:
+        _ = request.args.get('format', 'excel').lower()
+        job_id = request.args.get('job_id') or session.get('job_id')
+
+        if not job_id:
+            return jsonify({'error': 'No analysis session found'}), 400
+
+        analysis_result = get_analysis_result(job_id)
+        if not analysis_result:
+            return jsonify({'error': 'No analysis data found'}), 400
+
+        return jsonify({'error': 'Export not yet implemented'}), 501
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 @electwatch_bp.route('/health')
