@@ -909,48 +909,7 @@
             </div>
         </aside>
         
-        <!-- Main Content -->
-        <div class="content-wrapper">
-    <div class="mapper-container">
-        <!-- Map Controls Header (simplified) -->
-        <div class="mapper-controls" style="margin-bottom: 12px;">
-            <h2 style="margin-bottom: 10px; color: var(--ncrc-dark-blue); font-size: 1.1rem;">
-                <i class="fas fa-map-marked-alt"></i> Branch Location Map
-            </h2>
-            
-            <!-- Dynamic Context Bar -->
-            <div id="mapContextBar" class="data-description" style="background: #e6f2ff; padding: 6px 10px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid var(--ncrc-primary-blue);">
-                <p style="margin: 0; color: #333; line-height: 1.4; font-size: 0.8rem;">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>About:</strong> Data from <strong>Summary of Deposits</strong> (June 30, 2025). Use the left sidebar to select state/county and load the map.
-                </p>
-            </div>
-        </div>
-        
-        <!-- Map Container -->
-        <div class="map-container" style="position: relative;">
-            <!-- Onboarding Overlay -->
-            <div id="branchMap"></div>
-            <div class="map-overlay-title" id="mapOverlayTitle"></div>
-            <div class="map-overlay-logo" id="mapOverlayLogo">
-                <img src="/static/img/ncrc-logo-mark.png" alt="NCRC" height="24">
-            </div>
-            <div class="map-overlay-legend" id="mapOverlayLegend"></div>
-        </div>
-        
-        <!-- Info Panel -->
-        <div class="info-panel" id="infoPanel">
-            <strong>Instructions:</strong><br>
-            • Select a state and county to view 2025 bank branch locations<br>
-            • Use the bank selector to filter by specific banks (select up to 3)<br>
-            • Click on markers to see branch details<br>
-            • Use the "Get Support" button in popups for help via Slack
-        </div>
-        </div>
-        </div>
-        
-        <!-- Right Info Sidebar -->
-    </div>
+        {% include 'partials/_map_container.html' %}
     
     {% include 'partials/_scripts.html' %}
 
