@@ -28,7 +28,7 @@ try:
         transform_sb_data,
         transform_branch_data
     )
-    from justdata.shared.reporting.merger_excel_generator import create_merger_excel as shared_create_merger_excel
+    from justdata.shared.reporting.excel import create_merger_excel as shared_create_merger_excel
     SHARED_GENERATOR_AVAILABLE = True
 except ImportError as e:
     SHARED_GENERATOR_AVAILABLE = False
