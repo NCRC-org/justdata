@@ -1,6 +1,7 @@
 """Lender queries."""
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
+from justdata.apps.analytics.sql_loader import load_sql
 
 from justdata.apps.analytics.bq.client import (
     EVENTS_TABLE,
@@ -238,26 +239,7 @@ def get_lender_detail(
     """
 
     # Get all reports for this lender with acquirer/target info from parameters
-    reports_query = f"""
-        SELECT
-            timestamp AS event_timestamp,
-            app_name AS report_type,
-            JSON_VALUE(parameters_json, '$.acquirer_name') AS acquirer_name,
-            JSON_VALUE(parameters_json, '$.target_name') AS target_name,
-            JSON_VALUE(parameters_json, '$.acquirer_lei') AS acquirer_lei,
-            JSON_VALUE(parameters_json, '$.target_lei') AS target_lei,
-            user_id,
-            user_email
-        FROM `justdata-ncrc.cache.usage_log`
-        WHERE app_name = 'mergermeter'
-            AND error_message IS NULL
-            AND (JSON_VALUE(parameters_json, '$.acquirer_lei') = '{lender_id}'
-                 OR JSON_VALUE(parameters_json, '$.target_lei') = '{lender_id}')
-            AND {user_filter_usage}
-            {date_filter}
-        ORDER BY timestamp DESC
-        LIMIT 500
-    """
+    reports_query = load_sql("lender_reports.sql").format(date_filter=date_filter, lender_id=lender_id, user_filter_usage=user_filter_usage)
 
     # Get researchers for this lender
     researchers_query = f"""
