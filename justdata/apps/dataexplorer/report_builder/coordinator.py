@@ -29,6 +29,15 @@ from justdata.apps.dataexplorer.report_builder.sections.owner_occupancy import (
 )
 from justdata.apps.dataexplorer.shared.filters import filter_df_by_loan_purpose
 
+# Import LendSight's proven table building functions
+from justdata.apps.lendsight.report_builder import (
+    create_demographic_overview_table,
+    create_income_borrowers_table,
+    create_income_tracts_table,
+    create_minority_tracts_table,
+    calculate_mortgage_hhi_for_year,
+)
+
 logger = logging.getLogger(__name__)
 
 
