@@ -14,7 +14,7 @@ sys.path.insert(0, str(project_root))
 from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_query
 from justdata.shared.utils.unified_env import ensure_unified_env_loaded, get_unified_config
 from justdata.apps.lendsight.core import load_sql_template
-from justdata.apps.dataexplorer.lender_analysis_core import apply_filters_to_sql_template, escape_sql_string
+from justdata.apps.dataexplorer.lender_analysis import apply_filters_to_sql_template, escape_sql_string
 
 # Load environment
 ensure_unified_env_loaded(verbose=True)

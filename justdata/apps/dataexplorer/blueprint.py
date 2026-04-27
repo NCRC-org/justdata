@@ -475,7 +475,7 @@ def api_generate_lender_report():
     import uuid
     import threading
     from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
-    from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis, check_lender_has_data
+    from justdata.apps.dataexplorer.lender_analysis import run_lender_analysis, check_lender_has_data
 
     try:
         data = request.get_json()
@@ -910,7 +910,7 @@ def export_lender_report_excel():
         else:
             # Need to regenerate - use wizard_data to run analysis
             logger.info("No cached data found, running analysis for Excel export")
-            from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis
+            from justdata.apps.dataexplorer.lender_analysis import run_lender_analysis
             
             # Run analysis to get all data
             result = run_lender_analysis(wizard_data, job_id=None, progress_tracker=None)
