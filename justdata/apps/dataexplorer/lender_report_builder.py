@@ -1202,7 +1202,7 @@ def build_lender_report(
                                 top_cbsa_codes = total_loans_by_cbsa.index.tolist()
                             
                             # Aggregate all loans by CBSA
-                            from justdata.apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
+                            from justdata.apps.dataexplorer.report_builder import filter_df_by_loan_purpose
                             all_df = filter_df_by_loan_purpose(cbsa_df, 'all')
                             purchase_df = filter_df_by_loan_purpose(cbsa_df, 'purchase')
                             refinance_df = filter_df_by_loan_purpose(cbsa_df, 'refinance')
@@ -1270,7 +1270,7 @@ def build_lender_report(
     section2_tables = {}
     
     # Import filter function from area_report_builder
-    from justdata.apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
+    from justdata.apps.dataexplorer.report_builder import filter_df_by_loan_purpose
     
     for purpose in loan_purposes:
         logger.info(f"[DEBUG] Building Section 2 tables for loan purpose: {purpose}")

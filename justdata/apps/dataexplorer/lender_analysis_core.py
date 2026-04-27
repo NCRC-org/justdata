@@ -30,7 +30,7 @@ def _format_all_metros_for_excel(metros_df: pd.DataFrame, years: List[int], PROJ
             return []
         
         # Get CBSA information for counties
-        from justdata.apps.dataexplorer.area_report_builder import filter_df_by_loan_purpose
+        from justdata.apps.dataexplorer.report_builder import filter_df_by_loan_purpose
         
         # Get unique counties
         if 'geoid5' not in metros_df.columns and 'county_code' in metros_df.columns:
