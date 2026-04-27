@@ -35,49 +35,7 @@
         });
     </script>
 
-    <!-- Data Freshness Banner with Navigation -->
-    <div class="data-freshness-banner">
-        <div class="data-freshness-content">
-            <!-- Navigation Tabs (moved here from header) -->
-            <nav class="nav-tabs secondary-nav">
-                <button class="nav-tab active" data-panel="leaderboard">
-                    <span>Leaderboard</span>
-                </button>
-                <button class="nav-tab" data-panel="committees">
-                    <span>Committees</span>
-                </button>
-                <button class="nav-tab" data-panel="industries">
-                    <span>Industries</span>
-                </button>
-                <button class="nav-tab" data-panel="firms">
-                    <span>Firms</span>
-                </button>
-                {% if is_admin %}
-                <button class="nav-tab admin-nav-tab" data-panel="admin">
-                    <i class="fas fa-cog"></i>
-                    <span>Admin</span>
-                    <span id="admin-review-badge" class="nav-badge" style="display: none;">0</span>
-                </button>
-                {% endif %}
-            </nav>
-            <div class="data-sources">
-                <div class="data-source" onclick="showSourceInfo('fec')" title="Click for details">
-                    <i class="fas fa-hand-holding-dollar"></i>
-                    <span class="source-name">FEC</span>
-                    <span id="fec-date" class="source-date">--</span>
-                    <span id="fec-status" class="source-status"></span>
-                    <i class="fas fa-info-circle source-info-icon"></i>
-                </div>
-                <div class="data-source" onclick="showSourceInfo('stock')" title="Click for details">
-                    <i class="fas fa-chart-line"></i>
-                    <span class="source-name">STOCK Act</span>
-                    <span id="stock-date" class="source-date">--</span>
-                    <span id="stock-status" class="source-status"></span>
-                    <i class="fas fa-info-circle source-info-icon"></i>
-                </div>
-            </div>
-        </div>
-    </div>
+    {% include 'partials/_navbar.html' %}
 
     {% include 'partials/_modal_data_source.html' %}
 
