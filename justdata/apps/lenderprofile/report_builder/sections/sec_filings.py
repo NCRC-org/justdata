@@ -7,6 +7,10 @@ from typing import Any, Dict, List, Optional
 logger = logging.getLogger(__name__)
 
 from justdata.apps.lenderprofile.report_builder.helpers import _is_recent
+from justdata.apps.lenderprofile.report_builder.sections.ai_intelligence_data import (
+    _collect_comprehensive_data,
+    _generate_comprehensive_key_findings,
+)
 
 def build_sec_filings_analysis(
     institution_data: Dict[str, Any],

@@ -6,7 +6,10 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-from justdata.apps.lenderprofile.report_builder.helpers import _format_currency
+from justdata.apps.lenderprofile.report_builder.helpers import (
+    _format_currency,
+    _is_recent,
+)
 
 def build_regulatory_risk(institution_data: Dict[str, Any]) -> Dict[str, Any]:
     """
