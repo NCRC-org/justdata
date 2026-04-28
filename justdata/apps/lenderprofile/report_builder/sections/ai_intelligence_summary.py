@@ -16,6 +16,9 @@ from justdata.apps.lenderprofile.report_builder.sections.ai_intelligence_data im
     _collect_comprehensive_data,
     _generate_comprehensive_key_findings,
 )
+from justdata.apps.lenderprofile.report_builder.sections.financial_performance import (
+    _build_financial_from_sec_xbrl,
+)
 
 def _generate_fallback_findings(company_name: str, data: Dict[str, Any]) -> List[str]:
     """Generate basic findings without AI if the AI call fails."""

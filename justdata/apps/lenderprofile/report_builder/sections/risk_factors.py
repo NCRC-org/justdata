@@ -6,7 +6,10 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
-from justdata.apps.lenderprofile.report_builder.helpers import _categorize_risks
+from justdata.apps.lenderprofile.report_builder.helpers import (
+    _categorize_risks,
+    _truncate_text,
+)
 
 def build_risk_factors(
     institution_data: Dict[str, Any],

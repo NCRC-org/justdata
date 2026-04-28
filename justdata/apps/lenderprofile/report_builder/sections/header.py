@@ -4,6 +4,8 @@ import re
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
+from justdata.apps.lenderprofile.report_builder.helpers import _format_currency
+
 logger = logging.getLogger(__name__)
 
 def build_institution_header(

@@ -11,6 +11,7 @@ from justdata.apps.lenderprofile.report_builder.helpers import (
     _extract_contraction_areas,
     _extract_growth_areas,
     _extract_strategic_priorities,
+    _truncate_text,
 )
 
 def build_business_strategy(
