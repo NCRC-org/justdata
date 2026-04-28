@@ -1,0 +1,582 @@
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Committee | ElectWatch - NCRC JustData</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --ncrc-navy: #1e3a5f;
+            --ncrc-primary-blue: #552d87;
+            --ncrc-justdata-blue: #1e3a5f;
+            --ncrc-dark-blue: #1e3a5f;
+            --ncrc-gold: #ffc23a;
+            --ncrc-gray: #818390;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --party-r: #dc2626;
+            --party-d: #2563eb;
+            --party-i: #7c3aed;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray-dark);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .header {
+            background: var(--ncrc-justdata-blue);
+            color: white;
+            padding: 16px 20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            opacity: 0.9;
+        }
+
+        .back-link:hover { opacity: 1; }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Committee Header */
+        .committee-header {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .committee-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .committee-badge.house {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .committee-badge.senate {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .committee-name {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 8px;
+        }
+
+        .committee-jurisdiction {
+            color: var(--ncrc-gray);
+            margin-bottom: 16px;
+            font-size: 0.95rem;
+        }
+
+        .leadership-row {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .leader-card {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--ncrc-gray-light);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .leader-card:hover {
+            background: #e5e7eb;
+            transform: translateY(-2px);
+        }
+
+        .leader-role {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+        }
+
+        .leader-name {
+            font-weight: 600;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .leader-state {
+            font-size: 0.85rem;
+            color: var(--ncrc-gray);
+        }
+
+        .party-badge {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.8rem;
+            color: white;
+        }
+
+        .party-badge.R { background: var(--party-r); }
+        .party-badge.D { background: var(--party-d); }
+        .party-badge.I { background: var(--party-i); }
+
+        /* Stats Row */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 500;
+            margin-top: 4px;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-header {
+            padding: 20px;
+            border-bottom: 1px solid #e5e7eb;
+            background: linear-gradient(135deg, #f8f9fa 0%, white 100%);
+        }
+
+        .card-header h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--ncrc-primary-blue);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-header h2 i { color: var(--ncrc-gold); }
+        .card-body { padding: 20px; }
+
+        /* Party Split */
+        .party-split {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .party-bar {
+            flex: 1;
+            height: 24px;
+            background: #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+        }
+
+        .party-fill-r { background: var(--party-r); height: 100%; }
+        .party-fill-d { background: var(--party-d); height: 100%; }
+
+        .party-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            margin-top: 8px;
+        }
+
+        /* Members Table */
+        .members-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .members-table th,
+        .members-table td {
+            padding: 12px 16px;
+            text-align: center;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .members-table th:first-child,
+        .members-table td:first-child {
+            text-align: left;
+        }
+
+        .members-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+        }
+
+        .members-table tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .members-table tr:hover { background: #f8fafc; }
+
+        .member-cell {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .member-name {
+            font-weight: 600;
+            color: var(--ncrc-justdata-blue);
+        }
+
+        .member-meta { font-size: 0.75rem; color: var(--ncrc-gray); }
+
+        .role-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+            color: var(--ncrc-gray);
+        }
+
+        .role-badge.chair {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        .role-badge.ranking {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .amount-cell {
+            text-align: center;
+            font-family: 'SF Mono', monospace;
+            font-weight: 600;
+        }
+
+        /* Votes Table */
+        .votes-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .votes-table th,
+        .votes-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .votes-table th {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--ncrc-gray);
+            font-weight: 600;
+            background: var(--ncrc-gray-light);
+        }
+
+        .votes-table tr {
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .votes-table tr:hover { background: #f8fafc; }
+
+        .vote-result {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .vote-result.passed { background: #d1fae5; color: #059669; }
+        .vote-result.failed { background: #fee2e2; color: #dc2626; }
+
+        .vote-count {
+            font-family: 'SF Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        .vote-count .yea { color: #059669; }
+        .vote-count .nay { color: #dc2626; }
+
+        /* Two columns */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        /* Legislation List */
+        .bill-item {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .bill-item:hover { background: #f8fafc; }
+        .bill-item:last-child { border-bottom: none; }
+
+        .bill-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 6px;
+        }
+
+        .bill-id {
+            font-weight: 700;
+            color: var(--ncrc-primary-blue);
+            font-size: 0.9rem;
+        }
+
+        .bill-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .bill-status.passed { background: #d1fae5; color: #059669; }
+        .bill-status.committee { background: #fef3c7; color: #d97706; }
+
+        .bill-title {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+        }
+
+        .bill-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+        }
+
+        .industry-tags {
+            display: flex;
+            gap: 4px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .industry-tag {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .industry-tag.banking { background: #dbeafe; color: #1e40af; }
+        .industry-tag.crypto { background: #fef3c7; color: #d97706; }
+        .industry-tag.investment { background: #ede9fe; color: #7c3aed; }
+        .industry-tag.consumer_lending { background: #ffedd5; color: #c2410c; }
+        .industry-tag.fintech { background: #cffafe; color: #0891b2; }
+
+        /* News List */
+        .news-item {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .news-item:hover { background: #f8fafc; }
+        .news-item:last-child { border-bottom: none; }
+
+        .news-title {
+            font-weight: 500;
+            color: var(--ncrc-gray-dark);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+
+        .news-meta {
+            font-size: 0.8rem;
+            color: var(--ncrc-gray);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .news-source { font-weight: 500; }
+
+        .source-badge {
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        /* Subcommittees */
+        .subcommittee-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .subcommittee-tag {
+            padding: 6px 12px;
+            background: var(--ncrc-gray-light);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--ncrc-gray-dark);
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            color: var(--ncrc-gray);
+        }
+
+        .loading::after {
+            content: "";
+            width: 24px;
+            height: 24px;
+            border: 3px solid #e5e7eb;
+            border-top-color: var(--ncrc-justdata-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 12px;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .footer {
+            background: var(--ncrc-justdata-blue);
+            padding: 20px;
+            margin-top: 40px;
+            text-align: center;
+            color: white;
+        }
+
+        .footer a { color: var(--ncrc-gold); text-decoration: none; }
+
+        /* Mobile Responsiveness */
+        @media (max-width: 768px) {
+            .container, .main-content {
+                padding: 10px;
+            }
+
+            .stats-grid, .stats-row {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .stat-card {
+                padding: 15px;
+            }
+
+            .two-column, .three-column, .two-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .card {
+                margin-bottom: 15px;
+            }
+
+            table {
+                display: block;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .filter-controls, .filters {
+                flex-direction: column;
+            }
+
+            h1 { font-size: 1.5rem; }
+            h2 { font-size: 1.25rem; }
+
+            .card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .leadership-row { flex-direction: column; }
+        }
+
+        @media (max-width: 480px) {
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .badge {
+                font-size: 0.7rem;
+                padding: 2px 6px;
+            }
+        }
+    </style>

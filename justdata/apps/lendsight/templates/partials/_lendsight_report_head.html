@@ -1,0 +1,893 @@
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LendSight - JustData</title>
+    <meta name="description" content="HMDA Mortgage Lending Analysis Report - Comprehensive mortgage market intelligence">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
+    <!-- Skip to main content link for screen readers -->
+    <style>
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #1e3a5f;
+            color: white;
+            padding: 8px;
+            text-decoration: none;
+            z-index: 100;
+        }
+        .skip-link:focus {
+            top: 0;
+        }
+    </style>
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="LendSight - Mortgage Lending Analysis Report">
+    <meta property="og:description" content="Comprehensive HMDA mortgage lending analysis report">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <!-- Set base URL for API calls -->
+    <script>
+        window.APP_BASE_URL = '{{ app_base_url|default("/lendsight") }}';
+    </script>
+    
+    <style>
+        /* Print-specific styles for PDF export - optimized for readability */
+        @media print {
+            .no-print { display: none !important; }
+            /* Eliminate all page breaks - content flows naturally */
+            .print-break { page-break-before: auto; }
+            
+            /* Base typography - improved readability */
+            body { 
+                font-size: 11pt; 
+                line-height: 1.4;
+                margin: 0;
+                padding: 0;
+                color: #333;
+            }
+            
+            html {
+                margin: 0;
+                padding: 0;
+            }
+            
+            /* Report container - reduce padding for more content per page */
+            .report-container {
+                padding: 15px;
+                max-width: 100%;
+            }
+            
+            /* Section spacing - tighter but readable */
+            .report-section { 
+                margin-bottom: 15px;
+                padding: 0;
+                page-break-inside: auto;
+            }
+            
+            /* Section titles - clear hierarchy */
+            .section-title {
+                font-size: 14pt;
+                font-weight: 600;
+                margin-bottom: 6px;
+                margin-top: 0;
+                color: #1a1a1a;
+            }
+            
+            /* Table introduction - readable paragraph spacing */
+            .table-introduction {
+                font-size: 10.5pt;
+                line-height: 1.5;
+                margin-bottom: 6px;
+                margin-top: 0;
+                orphans: 2;
+                widows: 2;
+            }
+            
+            /* Table description - smaller but readable */
+            .table-description {
+                font-size: 9.5pt;
+                line-height: 1.4;
+                color: #555;
+                margin-bottom: 6px;
+                margin-top: 0;
+            }
+            
+            /* Table container - proper spacing */
+            .table-container {
+                margin-top: 0;
+                margin-bottom: 8px;
+            }
+            
+            /* Tables - improved readability, allow breaking if needed */
+            table {
+                border-collapse: collapse;
+                margin: 0;
+                width: 100%;
+                font-size: 9pt;
+                line-height: 1.3;
+            }
+            
+            /* Table headers - clear and readable */
+            th {
+                background-color: #f5f5f5 !important;
+                font-weight: 600;
+                padding: 6px 8px;
+                border: 1px solid #ddd;
+                text-align: left;
+                font-size: 9pt;
+            }
+            
+            /* Table cells - proper spacing, allow breaking if needed */
+            td {
+                padding: 5px 8px;
+                border: 1px solid #e0e0e0;
+                font-size: 9pt;
+            }
+            
+            /* Table caption - readable but smaller */
+            .table-caption {
+                font-size: 8.5pt;
+                line-height: 1.4;
+                color: #666;
+                margin-top: 4px;
+                margin-bottom: 0;
+            }
+            
+            /* Table narrative - readable text blocks */
+            .table-narrative {
+                font-size: 10pt;
+                line-height: 1.6;
+                margin-top: 12px;
+                margin-bottom: 0;
+                orphans: 3;
+                widows: 3;
+            }
+            
+            /* Report header - compact */
+            .report-header {
+                margin-bottom: 12px;
+            }
+            
+            /* AI content sections */
+            .ai-insight-card {
+                margin-bottom: 12px;
+            }
+            
+            .ai-content {
+                font-size: 10pt;
+                line-height: 1.6;
+            }
+            
+            /* Introduction, population demographics, and key findings - allow natural flow */
+            #aiIntroParagraphSection {
+                margin-bottom: 12px;
+            }
+            
+            /* Population Demographics section */
+            #demographicOverviewTableSection {
+                margin-bottom: 12px;
+            }
+            
+            /* Key Findings section */
+            #aiKeyFindingsSection {
+                margin-bottom: 12px;
+            }
+            
+            /* Reduce excessive white space between sections */
+            .report-section.print-break {
+                margin-top: 20px;
+            }
+            
+            /* Headings hierarchy */
+            h1 { font-size: 16pt; font-weight: 700; margin: 0 0 10px 0; }
+            h2 { font-size: 14pt; font-weight: 600; margin: 0 0 8px 0; }
+            h3 { font-size: 12pt; font-weight: 600; margin: 0 0 6px 0; }
+            
+            /* Paragraphs */
+            p {
+                margin: 0 0 8px 0;
+                line-height: 1.5;
+            }
+            
+            /* Lists */
+            ul, ol {
+                margin: 0 0 8px 0;
+                padding-left: 20px;
+            }
+            
+            li {
+                margin-bottom: 4px;
+                line-height: 1.5;
+            }
+        }
+        
+        /* Report-specific styles */
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            box-sizing: border-box;
+        }
+        
+        @media (max-width: 1240px) {
+            body {
+                padding: 20px 10px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            /* Stack intro and chart on mobile */
+            #introAndCensusSection > div {
+                flex-direction: column !important;
+            }
+            
+            #introAndCensusSection > div > div {
+                flex: 1 1 100% !important;
+            }
+            
+            /* Stack intro and table on mobile for Section 1 and 2 */
+            .report-section > div[style*="display: flex"] {
+                flex-direction: column !important;
+            }
+            
+            .report-section > div[style*="display: flex"] > div {
+                flex: 1 1 100% !important;
+            }
+        }
+        
+        /* Table column width styles for Section 1 and 2 */
+        #demographicOverviewTable {
+            table-layout: auto;
+        }
+
+        #demographicOverviewTable th:first-child,
+        #demographicOverviewTable td:first-child {
+            white-space: nowrap;
+            width: auto;
+            min-width: 0;
+        }
+
+        #demographicOverviewTable th:not(:first-child),
+        #demographicOverviewTable td:not(:first-child) {
+            width: 100px;
+            min-width: 100px;
+        }
+        
+        .report-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px 20px;
+            background: #1e3a5f;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .report-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 10px;
+        }
+        
+        .report-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 20px;
+        }
+        
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.95);
+            text-align: left;
+        }
+        
+        .report-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            color: #333;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+        
+        .action-btn:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+        
+        .action-btn.primary {
+            background: #28a745;
+            color: white;
+            border-color: #28a745;
+        }
+
+        .action-btn.primary:hover {
+            background: #218838;
+            border-color: #218838;
+        }
+
+        /* Export button hover */
+        #downloadZipBtn:hover {
+            background: #0f2440 !important;
+        }
+        
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            min-width: 180px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .dropdown:hover .dropdown-menu {
+            display: block;
+        }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            color: #333;
+            text-decoration: none;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background 0.2s ease;
+        }
+        
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .dropdown-item:hover {
+            background: #f8f9fa;
+            color: #333;
+        }
+        
+        .ai-insights {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .ai-insight-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            transition: box-shadow 0.2s ease;
+        }
+        
+        .ai-insight-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .ai-insight-card h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .ai-insight-card h3 i {
+            color: #1e3a5f;
+        }
+        
+        .ai-content {
+            line-height: 1.6;
+            color: #555;
+        }
+        
+        .ai-content p {
+            margin: 0 0 15px 0;
+        }
+        
+        .ai-content p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .report-section {
+            margin-bottom: 40px;
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .table-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+            padding-bottom: 5px;
+        }
+        
+        .table-description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.4;
+            font-style: italic;
+        }
+        
+        .table-introduction {
+            font-size: 1rem;
+            color: #333;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .table-source {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 8px;
+            font-style: normal;
+        }
+        
+        .table-caption {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 15px;
+            padding: 12px;
+            background: #f8f9fa;
+            border-left: 3px solid #1e3a5f;
+            border-radius: 4px;
+            line-height: 1.6;
+        }
+        
+        .table-caption strong {
+            color: #1e3a5f;
+            font-weight: 600;
+        }
+        
+        .table-narrative {
+            margin-top: 25px;
+            font-size: 1rem;
+            line-height: 1.7;
+            color: #333;
+        }
+        
+        .table-narrative p {
+            margin-bottom: 15px;
+        }
+        
+        .table-narrative p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .summary-card h3 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #003366;
+            margin: 0 0 10px 0;
+        }
+        
+        .summary-card h3 .percentage-text {
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .summary-card p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            vertical-align: middle;
+        }
+        
+        .data-table th[role="button"] {
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+        
+        .data-table th[role="button"]:hover {
+            background: #e9ecef;
+        }
+        
+        .data-table th[role="button"]:focus {
+            outline: 2px solid #1e3a5f;
+            outline-offset: -2px;
+        }
+        
+        .sort-indicator {
+            display: inline-block;
+            margin-left: 4px;
+            color: #1e3a5f;
+            font-size: 0.85em;
+        }
+        
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .table-container {
+            position: relative;
+            overflow-x: auto;
+        }
+        
+        .table-header {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 10px;
+        }
+        
+        .collapse-btn {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: #666;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .collapse-btn:hover {
+            background: #e9ecef;
+            border-color: #999;
+        }
+        
+        .collapse-btn i {
+            transition: transform 0.2s ease;
+        }
+        
+        .collapse-btn.collapsed i {
+            transform: rotate(-90deg);
+        }
+        
+        .collapsible-table {
+            transition: all 0.3s ease;
+        }
+        
+        .collapsible-table.collapsed {
+            position: relative;
+        }
+        
+        .collapsible-table.collapsed tbody {
+            position: relative;
+        }
+        
+        .collapsible-table.collapsed tbody::after {
+            content: '... more rows available';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: linear-gradient(transparent, rgba(255,255,255,0.9), white);
+            pointer-events: none;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 10px;
+            font-size: 0.8rem;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .collapsible-table.collapsed tbody tr:nth-child(n+4) {
+            display: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: #1e3a5f;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            transition: background 0.2s ease;
+        }
+        
+        .back-btn:hover {
+            background: #2fade3;
+            color: white;
+        }
+        
+        @media (max-width: 768px) {
+            .report-container {
+                padding: 10px;
+            }
+            
+            .report-title {
+                font-size: 2rem;
+            }
+            
+            .report-meta {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .data-table {
+                font-size: 0.8rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: 8px;
+            }
+        }
+
+        /* ========== Unified Data Table Component ========== */
+        .unified-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 0.9rem;
+        }
+        .unified-table th {
+            background: #2C5F8A;
+            color: white;
+            padding: 10px 8px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            border-bottom: 2px solid #1E3D5C;
+            white-space: nowrap;
+        }
+        .unified-table th:first-child {
+            text-align: left;
+        }
+        .unified-table td {
+            padding: 8px;
+            border-bottom: 1px solid #e0e0e0;
+            text-align: center;
+            font-size: 0.85rem;
+            vertical-align: middle;
+        }
+        .unified-table td:first-child {
+            text-align: left;
+            white-space: nowrap;
+        }
+        .unified-table tr:hover {
+            background-color: rgba(26, 143, 201, 0.04);
+        }
+        .unified-table .total-row {
+            background: #f0f0f0 !important;
+            font-weight: 600;
+            border-bottom: 2px solid #CBD5E1;
+        }
+        .unified-table .total-row:hover {
+            background: #e8e8e8 !important;
+        }
+        .unified-table .aggregate-row {
+            background: #F0F4F8 !important;
+            font-weight: 600;
+            border-top: 2px solid #CBD5E1;
+        }
+        .unified-table .aggregate-row:hover {
+            background: #e4ebf1 !important;
+        }
+        .unified-table .aggregate-row td:first-child {
+            padding-left: 10px;
+        }
+        .unified-table .detail-row td:first-child {
+            padding-left: 24px;
+            position: relative;
+        }
+        .unified-table .detail-row td:first-child::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(26, 143, 201, 0.3);
+        }
+        .unified-table .census-boundary {
+            border-left: 2px solid rgba(51, 51, 51, 0.4) !important;
+        }
+        .unified-table .census-label-row th {
+            background: transparent !important;
+            color: #666;
+            font-size: 0.7em;
+            font-weight: normal;
+            padding: 2px 4px;
+            border: none;
+            border-bottom: none;
+        }
+        .unified-table .sparkline-cell {
+            padding: 4px 6px;
+            vertical-align: middle;
+        }
+        .unified-table .change-cell {
+            white-space: nowrap;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .unified-table .change-positive { color: #2E7D32; }
+        .unified-table .change-negative { color: #C62828; }
+        .unified-table .change-neutral { color: #666; }
+        .unified-table .share-bar-cell {
+            padding: 4px 8px;
+            min-width: 170px;
+        }
+        .share-bar-container {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            width: 170px;
+        }
+        .share-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .share-bar {
+            height: 14px;
+            border-radius: 3px;
+            min-width: 2px;
+        }
+        .share-bar-label {
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* Mobile responsive - simplified view below 1024px portrait */
+        @media (max-width: 1024px) and (orientation: portrait) {
+            .unified-table .year-col:not(.year-latest) {
+                display: none;
+            }
+            .unified-table .pop-share-col {
+                display: none;
+            }
+            .unified-table .share-bar-cell,
+            .unified-table th.share-bar-col {
+                display: none;
+            }
+            .unified-table .census-label-row {
+                display: none;
+            }
+            .unified-table th,
+            .unified-table td {
+                padding: 8px 6px;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* Print: show all unified table columns */
+        @media print {
+            .unified-table th {
+                background-color: #f5f5f5 !important;
+                color: #333 !important;
+            }
+            .unified-table .year-col:not(.year-latest),
+            .unified-table .pop-share-col,
+            .unified-table .share-bar-cell,
+            .unified-table th.share-bar-col {
+                display: table-cell !important;
+            }
+        }
+
+        /* Tab/Overview CSS removed — report loads directly into full view */
+
+        /* Top Lenders table — force uniform header alignment */
+        #topLendersDetailedTable th {
+            vertical-align: middle !important;
+            padding-top: 8px !important;
+            padding-bottom: 8px !important;
+            line-height: 1.2 !important;
+        }
+
+        /* Header logo replacement — now in shared style.css */
+    </style>

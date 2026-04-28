@@ -1,0 +1,58 @@
+    <div class="container">
+        <!-- Breadcrumb Navigation -->
+        <nav class="breadcrumb no-print" style="padding: 15px 0; margin-bottom: 10px;">
+            <a href="/" style="color: #1e3a5f; text-decoration: none;">
+                <i class="fas fa-home"></i> JustData
+            </a>
+            <span style="color: #666; margin: 0 8px;">/</span>
+            <a href="{{ app_base_url|default('/mergermeter') }}" style="color: #1e3a5f; text-decoration: none;">
+                MergerMeter
+            </a>
+            <span style="color: #666; margin: 0 8px;">/</span>
+            <span style="color: #666;">Report</span>
+        </nav>
+
+        <!-- Info Modal -->
+        <div id="infoModal" class="info-modal">
+            <div class="info-modal-content">
+                <div class="info-modal-header">
+                    <h3 id="modalTitle"></h3>
+                    <button class="info-modal-close" id="closeModal">&times;</button>
+                </div>
+                <div class="info-modal-body" id="modalBody"></div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <div class="report-container">
+                <div class="report-header">
+                    <h1 class="report-title">MergerMeter - Merger Impact Analysis</h1>
+                    <p class="report-subtitle">Two-Bank Community Benefits Assessment</p>
+                    <div class="report-meta">
+                        <div>
+                            <strong>Generated:</strong> <span id="reportDate"></span><br>
+                            <strong>Analysis Period:</strong> <span id="analysisPeriod"></span>
+                        </div>
+                        <div class="report-actions no-print">
+                            <a href="#" class="action-btn primary" id="downloadReportBtn" style="background: #28a745; color: white; border-color: #28a745; padding: 12px 24px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500;">
+                                <i class="fas fa-file-excel"></i> Export Full Report to Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reportContent" class="report-content">
+                    <div class="report-section">
+                        <h2>Loading report data...</h2>
+                        <p>Please wait while we load your merger analysis report.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shared Footer -->
+    {% set app_name = "MergerMeter" %}
+    {% include "shared_footer.html" %}
+
