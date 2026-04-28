@@ -6,7 +6,7 @@ from justdata.apps.dataexplorer.sql_loader import load_sql
 
 import pandas as pd
 
-from justdata.shared.utils.bigquery_client import escape_sql_string
+from justdata.shared.utils.bigquery_client import escape_sql_string, execute_query
 
 logger = logging.getLogger(__name__)
 
