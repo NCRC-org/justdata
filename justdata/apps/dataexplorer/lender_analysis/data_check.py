@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional
 import pandas as pd
 
 from justdata.apps.dataexplorer.config import PROJECT_ID
+from justdata.apps.dataexplorer.data_utils import validate_years
+from justdata.apps.dataexplorer.lender_analysis.filters import parse_lender_wizard_parameters
 from justdata.shared.utils.bigquery_client import escape_sql_string, execute_query, get_bigquery_client
 
 logger = logging.getLogger(__name__)

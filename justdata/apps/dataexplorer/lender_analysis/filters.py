@@ -1,5 +1,6 @@
 """SQL filter / parameter parsing for lender analysis."""
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 from justdata.shared.utils.bigquery_client import escape_sql_string
