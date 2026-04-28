@@ -1,0 +1,20 @@
+    <!-- Scripts -->
+    <script src="{{ url_for('.static', filename='js/api-client.js') }}"></script>
+    <script src="{{ url_for('.static', filename='js/wizard.js') }}"></script>
+    <script src="{{ url_for('.static', filename='js/wizard-steps.js') }}"></script>
+    <script>
+        // Initialize wizard on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all features
+            initializeSmartDefaults();
+            // createSummaryBar(); // Removed - summary bar not needed
+            initSwipeGestures();
+            initAccessibility();
+            initWizard();
+            
+            // Hide swipe indicator on desktop
+            if (window.innerWidth > 768) {
+                document.getElementById('swipeIndicator').style.display = 'none';
+            }
+        });
+    </script>
