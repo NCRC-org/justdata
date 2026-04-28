@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import pandas as pd
 import numpy as np
+import requests
 
 from justdata.apps.lendsight.report_builder.sections.income_indicators import (
     calculate_minority_quartiles,

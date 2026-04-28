@@ -1,6 +1,7 @@
 """Cost summary query."""
 from datetime import datetime, timedelta
 from typing import Any, Dict, Optional
+from justdata.apps.analytics.config import config
 from justdata.apps.analytics.sql_loader import load_sql
 
 from justdata.apps.analytics.bq.client import (
