@@ -1,0 +1,351 @@
+    <script>
+        const firmName = '{{ firm_name }}';
+
+        /**
+         * Format official name consistently as "Last, First" format.
+         */
+        function formatDisplayName(name) {
+            if (!name) return '';
+            if (name.includes(',')) return name.trim();
+            const parts = name.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0];
+            const lastName = parts[parts.length - 1];
+            const firstNames = parts.slice(0, -1).join(' ');
+            return `${lastName}, ${firstNames}`;
+        }
+
+        async function loadFirmData() {
+            try {
+                const response = await fetch(`/electwatch/api/firm/${encodeURIComponent(firmName)}`);
+                const data = await response.json();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+
+                if (data.success && data.firm) {
+                    renderFirmData(data.firm);
+                } else {
+                    // Show placeholder data for now
+                    renderPlaceholder();
+                }
+            } catch (error) {
+                console.error('Error loading firm data:', error);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('content').style.display = 'block';
+                renderPlaceholder();
+            }
+        }
+
+        function renderPlaceholder() {
+            // Show placeholder until real data is available
+            document.getElementById('stat-officials').textContent = '--';
+            document.getElementById('stat-total').textContent = '--';
+            document.getElementById('stat-contributions').textContent = '--';
+            document.getElementById('stat-stock').textContent = '--';
+
+            document.getElementById('officials-body').innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; color: var(--ncrc-gray); padding: 40px;">
+                        <i class="fas fa-info-circle" style="font-size: 1.5rem; display: block; margin-bottom: 8px;"></i>
+                        Firm data analysis coming soon. Connect real FEC and Quiver data to see officials connected to ${firmName}.
+                    </td>
+                </tr>
+            `;
+
+            document.getElementById('timeline').innerHTML = `
+                <p style="text-align: center; color: var(--ncrc-gray); padding: 20px;">
+                    No recent activity data available yet.
+                </p>
+            `;
+
+            document.getElementById('sec-filings').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No SEC filings data available</p>';
+            document.getElementById('regulatory-list').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No regulatory data available</p>';
+            document.getElementById('litigation-list').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No litigation data available</p>';
+            document.getElementById('news-list').innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No news available</p>';
+        }
+
+        function renderFirmData(firm) {
+            if (firm.ticker) {
+                const tickerEl = document.getElementById('firm-ticker');
+                tickerEl.textContent = firm.ticker;
+                tickerEl.style.display = 'inline-block';
+            }
+
+            // Stats
+            document.getElementById('stat-officials').textContent = firm.officials_count || 0;
+            document.getElementById('stat-total').textContent = formatAmount(firm.total || 0);
+            document.getElementById('stat-contributions').textContent = formatAmount(firm.contributions || 0);
+            document.getElementById('stat-stock').textContent = formatAmount(firm.stock_trades || 0);
+
+            // Industries
+            if (firm.industries && firm.industries.length > 0) {
+                document.getElementById('industry-tags').innerHTML = firm.industries.map(ind =>
+                    `<a href="/electwatch/industry/${ind}" class="industry-tag ${ind}" style="text-decoration: none;">${formatIndustry(ind)}</a>`
+                ).join('');
+            }
+
+            // Party split
+            const rPct = firm.party_split?.r || 50;
+            const dPct = firm.party_split?.d || 50;
+            document.getElementById('party-r-fill').style.width = rPct + '%';
+            document.getElementById('party-d-fill').style.width = dPct + '%';
+            document.getElementById('r-amount').textContent = `${formatAmount(firm.r_amount || 0)} (${rPct}%)`;
+            document.getElementById('d-amount').textContent = `${formatAmount(firm.d_amount || 0)} (${dPct}%)`;
+
+            // Officials (Stock Trades)
+            renderOfficials(firm.officials);
+
+            // PAC Contributions
+            renderPACContributions(firm);
+
+            // Timeline
+            renderTimeline(firm.activity);
+
+            // SEC Filings
+            renderSECFilings(firm.sec_filings);
+
+            // Regulatory Matters
+            renderRegulatory(firm.regulatory_mentions);
+
+            // Litigation
+            renderLitigation(firm.litigation);
+
+            // News
+            renderNews(firm.news);
+        }
+
+        function renderOfficials(officials) {
+            const tbody = document.getElementById('officials-body');
+
+            if (!officials || officials.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No officials found</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = officials.map(official => {
+                let typeClass = 'pac';
+                let typeLabel = 'PAC';
+                if (official.has_stock && official.has_pac) {
+                    typeClass = 'both';
+                    typeLabel = 'Both';
+                } else if (official.has_stock) {
+                    typeClass = 'stock';
+                    typeLabel = 'Stock';
+                }
+
+                return `
+                    <tr>
+                        <td>
+                            <div class="official-cell">
+                                <div class="party-badge ${official.party}">${official.party}</div>
+                                <div>
+                                    <a href="/electwatch/official/${official.id}" class="official-name">${formatDisplayName(official.name)}</a>
+                                    <div class="official-meta">${official.chamber === 'house' ? 'Rep' : 'Sen'}. - ${official.state}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="type-badge ${typeClass}">${typeLabel}</span></td>
+                        <td style="font-size: 0.85rem; color: var(--ncrc-gray);">${official.committee || 'N/A'}</td>
+                        <td class="amount-cell">${formatAmount(official.total)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderPACContributions(firm) {
+            const section = document.getElementById('pac-section');
+            const tbody = document.getElementById('pac-contributions-body');
+
+            // Check if firm has PAC data
+            if (!firm.pac_contributions || firm.pac_contributions.length === 0) {
+                // Hide section if no PAC contributions
+                if (!firm.pac_name && !firm.pac_names?.length) {
+                    section.style.display = 'none';
+                    return;
+                }
+                // Show section with message if PAC exists but no contributions found
+                section.style.display = 'block';
+                if (firm.pac_name) {
+                    document.getElementById('pac-name').textContent = firm.pac_name;
+                }
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: var(--ncrc-gray);">No PAC contributions found in tracked officials</td></tr>';
+                return;
+            }
+
+            // Show the section
+            section.style.display = 'block';
+
+            // Set PAC name if available
+            if (firm.pac_name) {
+                document.getElementById('pac-name').textContent = firm.pac_name;
+            }
+
+            // Update summary stats
+            document.getElementById('pac-total').textContent = formatAmount(firm.pac_contributions_total || 0);
+            document.getElementById('pac-recipients').textContent = firm.pac_recipients_count || 0;
+
+            // Render the contributions table
+            tbody.innerHTML = firm.pac_contributions.map(contrib => {
+                const officialId = contrib.official_id || contrib.official_name.toLowerCase().replace(/\s+/g, '_');
+                return `
+                    <tr>
+                        <td>
+                            <div class="official-cell">
+                                <div class="party-badge ${contrib.party}">${contrib.party}</div>
+                                <div>
+                                    <a href="/electwatch/official/${officialId}" class="official-name">${contrib.official_name}</a>
+                                    <div class="official-meta">${contrib.chamber === 'house' ? 'Rep' : 'Sen'}. - ${contrib.state}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="font-size: 0.8rem; color: var(--ncrc-gray); max-width: 200px; overflow: hidden; text-overflow: ellipsis;">${contrib.pac_name}</td>
+                        <td style="font-size: 0.85rem; color: var(--ncrc-gray);">${contrib.date || 'N/A'}</td>
+                        <td class="amount-cell">${formatAmount(contrib.amount)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderTimeline(activity) {
+            const container = document.getElementById('timeline');
+
+            if (!activity || activity.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--ncrc-gray);">No recent activity</p>';
+                return;
+            }
+
+            container.innerHTML = activity.slice(0, 15).map(item => `
+                <div class="timeline-item">
+                    <div class="timeline-icon ${item.type}">
+                        <i class="fas fa-${item.type === 'contribution' ? 'hand-holding-dollar' : 'chart-line'}"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">${item.official_name}</div>
+                        <div class="timeline-detail">${item.type === 'contribution' ? 'PAC Contribution' : `Stock ${item.transaction || 'Trade'}`}</div>
+                        <div class="timeline-date">${formatDate(item.date)}</div>
+                    </div>
+                    <div class="timeline-amount">${formatAmount(item.amount)}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatAmount(amount) {
+            if (!amount) return '$0';
+            if (typeof amount === 'object') return amount.display || '$0';
+            if (amount >= 1000000) return `$${(amount / 1000000).toFixed(1)}M`;
+            if (amount >= 1000) return `$${(amount / 1000).toFixed(0)}K`;
+            return `$${amount.toLocaleString()}`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            return new Date(dateStr).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function formatIndustry(code) {
+            const names = {
+                banking: 'Banking',
+                crypto: 'Crypto',
+                investment: 'Investment',
+                mortgage: 'Mortgage',
+                insurance: 'Insurance',
+                fintech: 'Fintech',
+                consumer_lending: 'Consumer Lending'
+            };
+            return names[code] || code;
+        }
+
+        function renderSECFilings(filings) {
+            const container = document.getElementById('sec-filings');
+
+            if (!filings || filings.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No SEC filings data available</p>';
+                return;
+            }
+
+            container.innerHTML = filings.map(filing => `
+                <div class="filing-item" onclick="window.open('${filing.url || '#'}', '_blank')">
+                    <div class="filing-header">
+                        <span class="filing-form">${filing.form}</span>
+                        <span class="filing-date">${filing.filing_date}</span>
+                    </div>
+                    <div style="font-size: 0.9rem; color: var(--ncrc-gray-dark);">${filing.description || ''}</div>
+                    ${filing.highlights && filing.highlights.length > 0 ? `
+                        <ul class="filing-highlights">
+                            ${filing.highlights.map(h => `<li>${h}</li>`).join('')}
+                        </ul>
+                    ` : ''}
+                    <a href="${filing.url || '#'}" class="filing-link" onclick="event.stopPropagation()">
+                        <i class="fas fa-external-link-alt"></i> View on SEC EDGAR
+                    </a>
+                </div>
+            `).join('');
+        }
+
+        function renderRegulatory(regulatory) {
+            const container = document.getElementById('regulatory-list');
+
+            if (!regulatory || regulatory.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No active regulatory matters</p>';
+                return;
+            }
+
+            container.innerHTML = regulatory.map(reg => {
+                let statusClass = 'ongoing';
+                if (reg.status.toLowerCase().includes('settled') || reg.status.toLowerCase().includes('satisfactory') || reg.status.toLowerCase().includes('passed')) {
+                    statusClass = 'settled';
+                } else if (reg.status.toLowerCase().includes('pending') || reg.status.toLowerCase().includes('active')) {
+                    statusClass = 'pending';
+                }
+
+                return `
+                    <div class="reg-item">
+                        <span class="reg-agency">${reg.agency}</span>
+                        <span class="reg-matter">${reg.matter}</span>
+                        <span class="reg-status ${statusClass}">${reg.status}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLitigation(litigation) {
+            const container = document.getElementById('litigation-list');
+
+            if (!litigation || litigation.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No active litigation</p>';
+                return;
+            }
+
+            container.innerHTML = litigation.map(lit => `
+                <div class="litigation-item">
+                    <div class="litigation-case">${lit.case}</div>
+                    <div class="litigation-meta">
+                        <span><i class="fas fa-balance-scale"></i> ${lit.status}</span>
+                        ${lit.amount ? `<span><i class="fas fa-dollar-sign"></i> ${lit.amount}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderNews(news) {
+            const container = document.getElementById('news-list');
+
+            if (!news || news.length === 0) {
+                container.innerHTML = '<p style="padding: 20px; text-align: center; color: var(--ncrc-gray);">No recent news</p>';
+                return;
+            }
+
+            container.innerHTML = news.map(item => `
+                <div class="news-item" onclick="window.open('${item.url}', '_blank')">
+                    <div class="news-title">${item.title}</div>
+                    <div class="news-meta">
+                        <span class="news-source">${item.source}</span>
+                        ${item.reliable ? '<span class="source-badge">Verified Source</span>' : ''}
+                        <span>${item.date}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        loadFirmData();
+    </script>
