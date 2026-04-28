@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    {% include 'partials/_head.html' %}
+    {% include 'partials/_branchmapper_head.html' %}
 </head>
 <body>
     {% set app_name = "BranchMapper" %}{% set app_logo = url_for('static', filename='img/branchmapper-logo.png') %}{% include "shared_header.html" %}
@@ -11,7 +11,7 @@
         
         {% include 'partials/_map_container.html' %}
     
-    {% include 'partials/_scripts.html' %}
+    {% include 'partials/_branchmapper_scripts.html' %}
 
     {% include 'partials/_modal_welcome.html' %}
 
@@ -19,7 +19,7 @@
     {% set app_name = "BranchMapper" %}
     {% include "shared_footer.html" %}
 
-    {% include 'partials/_scripts_footer.html' %}
+    {% include 'partials/_branchmapper_scripts_footer.html' %}
 </body>
 </html>
 
