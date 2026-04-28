@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 import numpy as np
 import pandas as pd
 
+from justdata.apps.dataexplorer.report_builder.coordinator import build_area_report
 from justdata.apps.dataexplorer.report_builder.sections.lender_borrower_income import (
     create_lender_borrower_income_table,
 )

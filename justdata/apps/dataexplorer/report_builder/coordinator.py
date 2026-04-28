@@ -20,6 +20,18 @@ from justdata.apps.dataexplorer.report_builder.sections.housing_costs import (
 from justdata.apps.dataexplorer.report_builder.sections.housing_units import (
     create_housing_units_table,
 )
+from justdata.apps.dataexplorer.report_builder.sections.lender_borrower_income import (
+    create_lender_borrower_income_table,
+)
+from justdata.apps.dataexplorer.report_builder.sections.lender_neighborhood_demographics import (
+    create_lender_neighborhood_demographics_table,
+)
+from justdata.apps.dataexplorer.report_builder.sections.lender_neighborhood_income import (
+    create_lender_neighborhood_income_table,
+)
+from justdata.apps.dataexplorer.report_builder.sections.lender_race_ethnicity import (
+    create_lender_race_ethnicity_table,
+)
 from justdata.apps.dataexplorer.report_builder.sections.loan_costs import (
     create_lender_loan_costs_table,
     create_loan_costs_table,
@@ -37,6 +49,7 @@ from justdata.apps.lendsight.report_builder import (
     create_minority_tracts_table,
     calculate_mortgage_hhi_for_year,
 )
+from justdata.apps.lendsight.hud_processor import get_hud_data_for_counties
 
 logger = logging.getLogger(__name__)
 
