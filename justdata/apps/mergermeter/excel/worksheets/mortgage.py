@@ -7,6 +7,8 @@ from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 
+from justdata.apps.mergermeter.excel.utils import _get_cbsa_name_from_code
+
 logger = logging.getLogger(__name__)
 
 
