@@ -1,5 +1,28 @@
 // DataExplorer Wizard Steps Implementation
 // Complete step rendering and interaction logic
+//
+// Orchestrator: imports state/util from wizard.js and apiClient from api-client.js,
+// owns the DOMContentLoaded init block, and (at the bottom) exposes the minimal set
+// of functions referenced from inline onclick= attributes via a window shim.
+
+import {
+    wizardState,
+    stepPaths,
+    validationRules,
+    saveToCache,
+    transitionToStep,
+    showError,
+    showLoading,
+    hideLoading,
+    showStepSuccess,
+    getSelectedCounties,
+    generateStepIndicators,
+    generateSummaryDetails,
+    initializeSmartDefaults,
+    initSwipeGestures,
+    initAccessibility,
+} from './wizard.js';
+import { apiClient } from './api-client.js';
 
 // Card Definitions
 // ============================================================================
@@ -531,7 +554,7 @@ function generateHeaderButtons(stepKey) {
 }
 
 // Render a step
-function renderStep(stepKey) {
+export function renderStep(stepKey) {
     const container = document.getElementById('wizardContainer');
     const card = cards[stepKey];
 
@@ -899,10 +922,6 @@ function hideAutocomplete() {
     }
 }
 
-// Make functions globally available
-window.selectAutocompleteLender = selectAutocompleteLender;
-window.highlightAutocompleteItem = highlightAutocompleteItem;
-
 // Analysis type selection
 function selectAnalysisType(type) {
     wizardState.analysisType = type;
@@ -928,7 +947,7 @@ function selectAnalysisType(type) {
 }
 
 // Navigation
-function goBack() {
+export function goBack() {
     const currentPath = wizardState.analysisType ? stepPaths[wizardState.analysisType] : ['step1'];
     const currentIndex = currentPath.findIndex(step => {
         const card = document.querySelector(`.step-card[data-step="${step}"]`);
@@ -2654,20 +2673,20 @@ function createInfoItemWithLink(label, value, linkUrl, linkText) {
     return item;
 }
 
-function validateLenderSearch() {
+export function validateLenderSearch() {
     const select = document.getElementById('lenderSelect');
     const selectText = document.getElementById('lenderSelectText');
-    
+
     if (!select || !select.value) {
         if (!selectText || selectText.textContent === 'Select a lender...') {
             return { valid: false, message: 'Please select a lender' };
         }
     }
-    
+
     if (!wizardState.data.lender || !wizardState.data.lender.lei) {
         return { valid: false, message: 'Please select a lender' };
     }
-    
+
     return { valid: true };
 }
 
@@ -3349,7 +3368,7 @@ function updateFilterEditor() {
 }
 
 // LOCKED: Part of Area Analysis Structure - Filter Validation
-function validateFilters() {
+export function validateFilters() {
     const filters = wizardState.data.filters || {};
     
     // Validate Action Taken (single-select, must have value)
@@ -4153,36 +4172,50 @@ function deselectAllCustomCounties() {
     validateCustomCountySelection();
 }
 
+// ----------------------------------------------------------------------------
+// Wizard initialization (moved from inline <script> in _wizard_scripts.html so it
+// runs inside the module graph; modules are deferred, so DOMContentLoaded fires
+// after the module loads).
+// ----------------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', function () {
+    initializeSmartDefaults();
+    // createSummaryBar(); // Removed - summary bar not needed
+    initSwipeGestures();
+    initAccessibility();
+    initWizard();
+
+    // Hide swipe indicator on desktop
+    if (window.innerWidth > 768) {
+        const swipeIndicator = document.getElementById('swipeIndicator');
+        if (swipeIndicator) {
+            swipeIndicator.style.display = 'none';
+        }
+    }
+});
+
+// ----------------------------------------------------------------------------
+// Window exports for inline onclick handlers — remove when onclick= is replaced
+// with event listeners. Only includes symbols referenced from inline HTML event
+// attributes (in templates and in HTML strings rendered by JS), nothing else.
+// ----------------------------------------------------------------------------
 window.selectAnalysisType = selectAnalysisType;
-window.goBack = goBack;
-window.goToStep = goToStep;
-window.loadMetros = loadMetros;
-window.setupMetroDropdown = setupMetroDropdown;
-window.renderMetroDropdown = renderMetroDropdown;
-window.loadCountiesByMetro = loadCountiesByMetro;
 window.selectAllCounties = selectAllCounties;
 window.deselectAllCounties = deselectAllCounties;
-window.removeCounty = removeCounty;
-window.loadCounties = loadCounties;
+window.selectAllCustomCounties = selectAllCustomCounties;
+window.deselectAllCustomCounties = deselectAllCustomCounties;
+window.goBack = goBack;
+window.goToStep = goToStep;
+window.toggleFilterEdit = toggleFilterEdit;
+window.selectAutocompleteLender = selectAutocompleteLender;
+window.highlightAutocompleteItem = highlightAutocompleteItem;
 window.validateCountySelection = validateCountySelection;
 window.confirmMetro = confirmMetro;
 window.confirmGeography = confirmGeography;
-window.confirmLender = confirmLender;
-window.toggleFilterEdit = toggleFilterEdit;
 window.confirmFilters = confirmFilters;
-window.applyFilters = applyFilters;
-window.renderFilterChips = renderFilterChips;
-window.removeFilter = toggleFilter; // Alias for backward compatibility
-window.createToggleSwitch = createToggleSwitch;
-window.updateFilterEditor = updateFilterEditor;
+window.generateReport = generateReport;
+window.confirmLender = confirmLender;
 window.confirmGeoScope = confirmGeoScope;
 window.confirmCustomCbsa = confirmCustomCbsa;
 window.confirmCustomCounties = confirmCustomCounties;
-window.selectAllCustomCounties = selectAllCustomCounties;
-window.deselectAllCustomCounties = deselectAllCustomCounties;
 window.confirmComparisonGroup = confirmComparisonGroup;
 window.confirmFiltersB = confirmFiltersB;
-window.generateReport = generateReport;
-window.renderStep = renderStep;
-window.initWizard = initWizard;
-window.updateSummaryBar = updateSummaryBar;
