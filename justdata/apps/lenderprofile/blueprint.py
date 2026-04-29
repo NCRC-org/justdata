@@ -27,7 +27,7 @@ lenderprofile_bp = Blueprint(
     __name__,
     template_folder=str(TEMPLATES_DIR),
     static_folder=str(STATIC_DIR),
-    static_url_path='/lenderprofile/static'
+    static_url_path='/static'
 )
 
 
