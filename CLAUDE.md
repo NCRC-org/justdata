@@ -23,11 +23,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Branch Strategy
 
 ```
-feature/*, fix/*, refactor/*, chore/*  -->  staging  -->  main
-                                      (1 approval)  (2 approvals)
+feature/*, fix/*, refactor/*, chore/*, docs/*  -->  staging  -->  main
+                                              (1 approval)  (2 approvals)
 ```
 
-- Feature branches from `staging` using prefixes: `fix/`, `feature/`, `refactor/`, `chore/`
+- Feature branches from `staging` using prefixes: `fix/`, `feature/`, `refactor/`, `chore/`, `docs/`
 - PR feature branch to `staging` (1 approval)
 - `staging` -- pre-production, auto-deploys `justdata-test` Cloud Run service, PR to `main` (2 approvals)
 - `main` -- production, auto-deploys `justdata` Cloud Run service
