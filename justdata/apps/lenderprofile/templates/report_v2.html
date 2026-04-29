@@ -12,7 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/report_v2.css') }}">
+    <link rel="stylesheet" href="{{ url_for('.static', filename='css/report_v2.css') }}">
 </head>
 <body>
     <!-- Shared Site Header with Navigation -->
@@ -348,6 +348,6 @@
         // Report data from backend
         window.reportData = {{ report | tojson if report else 'null' }};
     </script>
-    <script type="module" src="{{ url_for('static', filename='js/report_v2.js') }}"></script>
+    <script type="module" src="{{ url_for('.static', filename='js/report_v2.js') }}"></script>
 </body>
 </html>
