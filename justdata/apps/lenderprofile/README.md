@@ -1,91 +1,49 @@
 # LenderProfile
 
-Comprehensive lender intelligence reporting platform for NCRC leadership.
+Long-form lender intelligence reports combining corporate structure,
+financials, regulatory history, branch network, CRA performance,
+litigation, and news coverage.
 
-## Overview
+## Blueprint
 
-LenderProfile generates comprehensive intelligence reports on lenders combining:
-- Corporate structure and legal entity information
-- Financial performance and trends
-- Regulatory compliance and enforcement history
-- Strategic positioning and executive profiles
-- Branch network and market presence
-- CRA performance evaluations
-- Litigation history
-- Recent developments and news coverage
+- URL prefix: `/lenderprofile`
+- File: `blueprint.py` (`lenderprofile_bp`)
+- Routes cover the lender search, async report generation, and report
+  rendering (`report_v2.html`).
 
-## Features
+## Data sources
 
-- **Multi-API Integration**: Combines data from FDIC, SEC, GLEIF, CourtListener, NewsAPI, TheOrg, and more
-- **AI Summarization**: Uses Claude API to generate executive summaries and insights
-- **Comprehensive Reports**: 13-section reports covering all aspects of lender intelligence
-- **Caching**: Redis-backed caching with in-memory fallback for performance
-- **Rate Limiting**: Intelligent rate limiting for APIs with daily limits (e.g., NewsAPI)
+BigQuery:
+- `justdata-ncrc.hmda.hmda` — HMDA loan-level data
+- `justdata-ncrc.lenderprofile.cu_branches`, `cu_call_reports` — credit
+  unions
+- `justdata-ncrc.shared.lender_names_gleif`, `cbsa_to_county`
+- `justdata-ncrc.lendsight.lenders18`
 
-## Installation
+External APIs: FDIC (Financial Data, OSCR History), SEC EDGAR, GLEIF,
+CourtListener, NewsAPI, TheOrg, Candid, Claude. API clients in
+`services/`; identifier resolution in `processors/identifier_resolver.py`;
+data collection in `processors/collector/`.
 
-### Requirements
+## Reports
 
-```bash
-pip install -r requirements.txt
-```
+`report_builder/` package:
+- `coordinator.py` — section orchestration
+- `helpers.py` — shared report helpers
+- `sections/` — per-section builders
 
-### Environment Variables
+`report_builder.py` (top-level module) and `report_generator.py` are
+legacy entry points retained for current callers.
 
-Add to your `.env` file or environment:
+## Templates
 
-```bash
-# Required API Keys
-COURTLISTENER_API_KEY=faf1fd4f57c7d694d2080dc6bc1f03650e429656
-NEWSAPI_API_KEY=d5bbbca939c9442dae6c4ff8f1e7a716
-THEORG_API_KEY=206bd062350b4bb6aac28ac140590d58
+`templates/`:
+- `index.html` (search/landing)
+- `report_v2.html` (the rendered report)
+- `report_progress.html` (async progress)
 
-# Optional API Keys
-REGULATIONS_GOV_API_KEY=your-key-here
-FRED_API_KEY=your-key-here
+No `partials/` directory at present.
 
-# Already configured (via unified_env)
-CENSUS_API_KEY=your-census-key
-CLAUDE_API_KEY=your-claude-key
-```
+## Notes
 
-## Running Locally
-
-```bash
-python apps/lenderprofile/run.py
-```
-
-Then open: http://localhost:8086
-
-## API Endpoints
-
-- `GET /` - Search interface
-- `POST /api/search` - Search for institution by name
-- `POST /api/generate-report` - Generate comprehensive intelligence report
-- `GET /health` - Health check
-
-## Architecture
-
-- **services/**: API client services for external APIs
-- **processors/**: Data processing and analysis modules
-- **report_builder/**: Report generation and section builders
-- **cache/**: Caching layer (Redis + in-memory fallback)
-
-## Development Status
-
-Phase 1: Core Infrastructure ✅
-- App structure created
-- Flask app configured
-- Identifier resolution implemented
-- Basic search interface
-- Core API clients (FDIC, GLEIF, SEC, etc.)
-- Keyed API clients (CourtListener, NewsAPI, TheOrg)
-- Caching layer
-
-Next Steps:
-- Implement report generation
-- Add section builders
-- Integrate AI summarization
-- Add PDF export
-- Update landing page
-
+- Upstream API keys come from environment variables.
