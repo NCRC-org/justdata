@@ -348,6 +348,6 @@
         // Report data from backend
         window.reportData = {{ report | tojson if report else 'null' }};
     </script>
-    <script src="{{ url_for('static', filename='js/report_v2.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/report_v2.js') }}"></script>
 </body>
 </html>

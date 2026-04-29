@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // HEADER
 // =============================================================================
 
-function initializeHeader(data) {
+export function initializeHeader(data) {
     const header = data.header || {};
 
     // Update inst-name but preserve headquarters span
@@ -71,7 +71,7 @@ function initializeHeader(data) {
 // BUSINESS STRATEGY (SEC 10-K)
 // =============================================================================
 
-function initializeBusinessStrategy(data) {
+export function initializeBusinessStrategy(data) {
     const strategy = data.business_strategy || {};
     if (!strategy.has_data) return;
 
@@ -104,7 +104,7 @@ function initializeBusinessStrategy(data) {
 // RISK FACTORS (SEC 10-K Item 1A)
 // =============================================================================
 
-function initializeRiskFactors(data) {
+export function initializeRiskFactors(data) {
     const risks = data.risk_factors || {};
     if (!risks.has_data) return;
 
@@ -137,7 +137,7 @@ function initializeRiskFactors(data) {
 // FINANCIAL PERFORMANCE - Total Assets & Deposits (5 Year Trend)
 // =============================================================================
 
-function initializeFinancialPerformance(data) {
+export function initializeFinancialPerformance(data) {
     const financial = data.financial_performance || {};
     const section = document.getElementById('fdic-financials-section');
 
@@ -291,7 +291,7 @@ function initializeFinancialPerformance(data) {
     }
 }
 
-function updateGrowthElement(id, value) {
+export function updateGrowthElement(id, value) {
     const el = document.getElementById(id);
     if (el && value !== null && value !== undefined) {
         const formatted = value > 0 ? `+${value.toFixed(1)}%` : `${value.toFixed(1)}%`;
@@ -304,7 +304,7 @@ function updateGrowthElement(id, value) {
 // M&A ACTIVITY
 // =============================================================================
 
-function initializeMergerActivity(data) {
+export function initializeMergerActivity(data) {
     const mergers = data.merger_activity || {};
 
     // Pending acquisitions
@@ -342,7 +342,7 @@ function initializeMergerActivity(data) {
 // REGULATORY RISK
 // =============================================================================
 
-function initializeRegulatoryRisk(data) {
+export function initializeRegulatoryRisk(data) {
     const regulatory = data.regulatory_risk || {};
 
     // Enforcement
@@ -422,7 +422,7 @@ function initializeRegulatoryRisk(data) {
 // COMMUNITY INVESTMENT
 // =============================================================================
 
-function initializeCommunityInvestment(data) {
+export function initializeCommunityInvestment(data) {
     const community = data.community_investment || {};
 
     if (!community.has_data) return;
@@ -496,7 +496,7 @@ function initializeCommunityInvestment(data) {
 // BRANCH NETWORK
 // =============================================================================
 
-function initializeBranchNetwork(data) {
+export function initializeBranchNetwork(data) {
     const branches = data.branch_network || {};
 
     updateElement('branch-count', branches.total_branches ? `${formatNumber(branches.total_branches)} branches` : '-- branches');
@@ -527,7 +527,7 @@ function initializeBranchNetwork(data) {
 // LENDING FOOTPRINT (HMDA)
 // =============================================================================
 
-function initializeLendingFootprint(data) {
+export function initializeLendingFootprint(data) {
     const footprint = data.lending_footprint || {};
 
     // Update year badge
@@ -598,7 +598,7 @@ function initializeLendingFootprint(data) {
 // LEADERSHIP
 // =============================================================================
 
-function initializeLeadership(data) {
+export function initializeLeadership(data) {
     const leadership = data.leadership || {};
 
     // CEO
@@ -653,7 +653,7 @@ function initializeLeadership(data) {
 // CONGRESSIONAL TRADING
 // =============================================================================
 
-function initializeCongressionalTrading(data) {
+export function initializeCongressionalTrading(data) {
     const congress = data.congressional_trading || {};
 
     // Timeframe display
@@ -813,7 +813,7 @@ function initializeCongressionalTrading(data) {
 /**
  * Copy entity info to clipboard (name, LEI, GLEIF URL)
  */
-function copyEntityInfo(name, lei, gleifUrl) {
+export function copyEntityInfo(name, lei, gleifUrl) {
       var text = name + '\nLEI: ' + lei + '\n' + gleifUrl;
     navigator.clipboard.writeText(text).then(function() {
         var btn = event.target.closest('.copy-btn');
@@ -834,7 +834,7 @@ function copyEntityInfo(name, lei, gleifUrl) {
 /**
  * Build entity node HTML with GLEIF link and copy button
  */
-function buildEntityNode(entity, options) {
+export function buildEntityNode(entity, options) {
     options = options || {};
     var isCurrent = options.isCurrent || false;
     var isParent = options.isParent || false;
@@ -886,7 +886,7 @@ function buildEntityNode(entity, options) {
     return html;
 }
 
-function initializeCorporateStructure(data) {
+export function initializeCorporateStructure(data) {
     var structure = data.corporate_structure || {};
     var treeDiv = document.getElementById('org-tree');
     if (!treeDiv) return;
@@ -1005,7 +1005,7 @@ function initializeCorporateStructure(data) {
  * Build a report link for a related entity
  * Priority: ticker > fdic_cert > cik > lei > name search
  */
-function buildReportLink(entity) {
+export function buildReportLink(entity) {
     // Use ticker if available (most reliable for SEC data)
     if (entity.ticker) {
         return `/report?ticker=${encodeURIComponent(entity.ticker)}`;
@@ -1033,7 +1033,7 @@ function buildReportLink(entity) {
 // NEWS
 // =============================================================================
 
-function initializeNews(data) {
+export function initializeNews(data) {
     const news = data.recent_news || {};
 
     // Category counts
@@ -1069,7 +1069,7 @@ function initializeNews(data) {
 // SEEKING ALPHA
 // =============================================================================
 
-function initializeSeekingAlpha(data) {
+export function initializeSeekingAlpha(data) {
     const sa = data.seeking_alpha || {};
     const section = document.getElementById('seeking-alpha-section');
     const articlesDiv = document.getElementById('sa-articles');
@@ -1121,7 +1121,7 @@ function initializeSeekingAlpha(data) {
 // AI SUMMARY
 // =============================================================================
 
-function initializeAISummary(data) {
+export function initializeAISummary(data) {
     const ai = data.ai_summary || {};
 
     // Hide the executive summary section - we only want key findings
@@ -1150,7 +1150,7 @@ function initializeAISummary(data) {
 }
 
 // Parse bullet findings format into unordered list
-function parseBulletFindings(text) {
+export function parseBulletFindings(text) {
     if (!text) return '';
 
     // Normalize line endings
@@ -1193,7 +1193,7 @@ function parseBulletFindings(text) {
 }
 
 // Convert markdown to HTML for key findings
-function markdownToHtml(text) {
+export function markdownToHtml(text) {
     if (!text) return '';
     return text
         // Remove leading bullet characters (•, -, *, >) at start of text
@@ -1214,7 +1214,7 @@ function markdownToHtml(text) {
 // SEC FILINGS ANALYSIS
 // =============================================================================
 
-function initializeSECFilingsAnalysis(data) {
+export function initializeSECFilingsAnalysis(data) {
     const secData = data.sec_filings_analysis || {};
     const section = document.getElementById('sec-filings-section');
     const findingsDiv = document.getElementById('sec-filings-findings');
@@ -1284,7 +1284,7 @@ function initializeSECFilingsAnalysis(data) {
 /**
  * Create truncated summary showing first N words with faded last line
  */
-function createTruncatedSummary(html, wordLimit) {
+export function createTruncatedSummary(html, wordLimit) {
     // Create a temporary element to extract text
     const temp = document.createElement('div');
     temp.innerHTML = html;
@@ -1317,7 +1317,7 @@ function createTruncatedSummary(html, wordLimit) {
 /**
  * Initialize summary modal event handlers
  */
-function initializeSummaryModal() {
+export function initializeSummaryModal() {
     const viewBtn = document.getElementById('view-summary-btn');
     const modal = document.getElementById('summary-modal');
     const closeBtn = document.getElementById('close-summary-modal');
@@ -1383,19 +1383,19 @@ function initializeSummaryModal() {
 // UTILITY FUNCTIONS
 // =============================================================================
 
-function updateElement(id, value) {
+export function updateElement(id, value) {
     const el = document.getElementById(id);
     if (el && value !== undefined && value !== null) {
         el.textContent = value;
     }
 }
 
-function formatNumber(value) {
+export function formatNumber(value) {
     if (value === null || value === undefined) return '--';
     return value.toLocaleString();
 }
 
-function formatCurrency(value) {
+export function formatCurrency(value) {
     if (value === null || value === undefined || value === 0) return '--';
     if (value >= 1e12) return '$' + (value / 1e12).toFixed(2) + 'T';
     if (value >= 1e9) return '$' + (value / 1e9).toFixed(2) + 'B';
@@ -1404,7 +1404,7 @@ function formatCurrency(value) {
     return '$' + value.toLocaleString();
 }
 
-function formatCurrencyShort(value) {
+export function formatCurrencyShort(value) {
     if (value >= 1e12) return '$' + (value / 1e12).toFixed(1) + 'T';
     if (value >= 1e9) return '$' + (value / 1e9).toFixed(0) + 'B';
     if (value >= 1e6) return '$' + (value / 1e6).toFixed(0) + 'M';
@@ -1412,7 +1412,7 @@ function formatCurrencyShort(value) {
     return '$' + value;
 }
 
-function formatDate(dateStr) {
+export function formatDate(dateStr) {
     if (!dateStr) return '';
     try {
         const date = new Date(dateStr);
@@ -1422,14 +1422,14 @@ function formatDate(dateStr) {
     }
 }
 
-function escapeHtml(str) {
+export function escapeHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
     div.textContent = str;
     return div.innerHTML;
 }
 
-function exportToPDF() {
+export function exportToPDF() {
     window.print();
 }
 
@@ -1439,7 +1439,7 @@ function exportToPDF() {
 // =============================================================================
 
 // NCRC Colors
-const NCRC_COLORS = {
+export const NCRC_COLORS = {
     primary: '#1a8fc9',
     secondary: '#1a8fc9',
     accent1: '#1a8fc9',
@@ -1454,7 +1454,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(initializeVisualizations, 100);
 });
 
-function initializeVisualizations() {
+export function initializeVisualizations() {
     var data = window.reportData;
     if (!data) return;
     console.log('Initializing visualizations...');
@@ -1464,7 +1464,7 @@ function initializeVisualizations() {
     renderComplaintCharts(data);
 }
 
-function renderBranchCharts(data) {
+export function renderBranchCharts(data) {
     var branches = data.branch_network || {};
     var section = document.getElementById('branch-network-section');
 
@@ -1701,7 +1701,7 @@ function renderBranchCharts(data) {
     }
 }
 
-function renderLoanCharts(data) {
+export function renderLoanCharts(data) {
     var footprint = data.lending_footprint || {};
     var section = document.getElementById('hmda-section');
 
@@ -1953,7 +1953,7 @@ function renderLoanCharts(data) {
     }
 }
 
-function renderSBLendingCharts(data) {
+export function renderSBLendingCharts(data) {
     var sbLending = data.sb_lending || {};
     var section = document.getElementById('sb-lending-section');
 
@@ -2177,7 +2177,7 @@ function renderSBLendingCharts(data) {
     }
 }
 
-function renderComplaintCharts(data) {
+export function renderComplaintCharts(data) {
     var regulatory = data.regulatory_risk || {};
     var complaints = regulatory.complaints || {};
     var section = document.getElementById('complaints-section');
@@ -2420,7 +2420,7 @@ function renderComplaintCharts(data) {
 }
 
 // Shorten long CFPB category names
-function shortenCategoryName(name) {
+export function shortenCategoryName(name) {
     var shortNames = {
         'Checking or savings account': 'Checking/Savings',
         'Credit card or prepaid card': 'Credit Card',
@@ -2445,7 +2445,7 @@ function shortenCategoryName(name) {
     return shortNames[name] || name;
 }
 
-function renderCategoryList(container, categories, animate) {
+export function renderCategoryList(container, categories, animate) {
     if (!categories || categories.length === 0) {
         container.innerHTML = '<div class="viz-no-data">No category data available</div>';
         return;
@@ -2546,7 +2546,7 @@ function renderCategoryList(container, categories, animate) {
 }
 
 // State abbreviation to full name mapping
-var stateNames = {
+export var stateNames = {
     'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas', 'CA': 'California',
     'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware', 'FL': 'Florida', 'GA': 'Georgia',
     'HI': 'Hawaii', 'ID': 'Idaho', 'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa',
@@ -2560,11 +2560,11 @@ var stateNames = {
     'DC': 'District of Columbia', 'PR': 'Puerto Rico', 'VI': 'Virgin Islands', 'GU': 'Guam'
 };
 
-function getStateName(abbr) {
+export function getStateName(abbr) {
     return stateNames[abbr] || abbr;
 }
 
-function renderBubbleChart(container, data, animate, showAsPercent, totalOverride) {
+export function renderBubbleChart(container, data, animate, showAsPercent, totalOverride) {
     if (!data || Object.keys(data).length === 0) { container.innerHTML = '<div class="viz-no-data">No data available</div>'; return; }
     // Show ALL states (no limit), sorted by value descending
     var items = Object.entries(data).map(function(e) { return { label: e[0], value: parseInt(e[1]) || 0 }; }).filter(function(i) { return i.value > 0; }).sort(function(a, b) { return b.value - a.value; });
@@ -2671,7 +2671,7 @@ function renderBubbleChart(container, data, animate, showAsPercent, totalOverrid
     }
 }
 
-function animateCount(el, from, to, duration) {
+export function animateCount(el, from, to, duration) {
     var start = performance.now();
     var diff = to - from;
 
@@ -2688,3 +2688,10 @@ function animateCount(el, from, to, duration) {
     }
     requestAnimationFrame(update);
 }
+
+// ----------------------------------------------------------------------------
+// Window exports for inline onclick handlers — remove when onclick= is replaced
+// with event listeners. Only includes symbols referenced from inline HTML event
+// attributes (in templates and in HTML strings rendered by JS), nothing else.
+// ----------------------------------------------------------------------------
+window.copyEntityInfo = copyEntityInfo;
