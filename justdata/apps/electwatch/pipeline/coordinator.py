@@ -535,37 +535,37 @@ class WeeklyDataUpdate:
 
     def process_data(self):
         """Process and aggregate fetched data."""
-        from justdata.apps.electwatch.pipeline.transformers.normalize import process_data
+        from justdata.apps.electwatch.pipeline.transformers.electwatch_transform_congress import process_data
         process_data(self)
 
     def process_officials(self):
         """Process and enrich officials data."""
-        from justdata.apps.electwatch.pipeline.transformers.normalize import process_officials
+        from justdata.apps.electwatch.pipeline.transformers.electwatch_transform_congress import process_officials
         process_officials(self)
 
     def _build_top_donors(self):
         """Build top_donors list for each official by merging PAC and individual contributions."""
-        from justdata.apps.electwatch.pipeline.transformers.normalize import _build_top_donors
+        from justdata.apps.electwatch.pipeline.transformers.electwatch_transform_donors import _build_top_donors
         _build_top_donors(self)
 
     def _normalize_scores_to_zscore(self):
         """Convert raw involvement scores to percentile rank normalized to 1-100 range."""
-        from justdata.apps.electwatch.pipeline.transformers.normalize import _normalize_scores_to_zscore
+        from justdata.apps.electwatch.pipeline.transformers.electwatch_transform_scores import _normalize_scores_to_zscore
         _normalize_scores_to_zscore(self)
 
     def process_firms(self):
         """Build comprehensive firm records from actual trade data."""
-        from justdata.apps.electwatch.pipeline.transformers.normalize import process_firms
+        from justdata.apps.electwatch.pipeline.transformers.electwatch_transform_firms import process_firms
         process_firms(self)
 
     def process_industries(self):
         """Build industry aggregations from firms and officials data."""
-        from justdata.apps.electwatch.pipeline.transformers.normalize import process_industries
+        from justdata.apps.electwatch.pipeline.transformers.electwatch_transform_industries import process_industries
         process_industries(self)
 
     def process_committees(self):
         """Build committee data (mostly static but enriched with live stats)."""
-        from justdata.apps.electwatch.pipeline.transformers.normalize import process_committees
+        from justdata.apps.electwatch.pipeline.transformers.electwatch_transform_committees import process_committees
         process_committees(self)
 
     # =========================================================================
