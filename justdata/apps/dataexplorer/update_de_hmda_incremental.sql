@@ -45,7 +45,8 @@ SELECT
   h.total_units,
   h.construction_method,
   h.reverse_mortgage,
-  
+  h.lien_status,
+
   -- Loan amounts and values
   h.loan_amount,
   h.property_value,
