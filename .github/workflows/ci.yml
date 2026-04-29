@@ -31,3 +31,156 @@ jobs:
           pytest tests/ -v -m "not integration and not slow" --no-header --tb=short --cov=justdata --cov-report=term-missing
         env:
           PYTHONPATH: .
+
+  file-size-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check Python file sizes (limit 1000 lines)
+        run: |
+          # Allowlist: files that legitimately exceed 1,000 lines as of Phase 6.
+          # Each entry is tracked in ARCHITECTURE.md "Known follow-up items" or
+          # is an orchestrator-bound module noted in audit/structural-audit.md.
+          ALLOWLIST=(
+            "justdata/apps/mergermeter/mergermeter_ops.py"
+            "justdata/apps/lendsight/analysis.py"
+            "justdata/apps/branchmapper/census_tract_utils.py"
+            "justdata/apps/electwatch/services/firm_mapper.py"
+            "justdata/apps/lendsight/pdf_report.py"
+            "justdata/apps/lenderprofile/processors/ai_summarizer.py"
+            "justdata/apps/dataexplorer/lender_analysis/core.py"
+            "justdata/apps/memberview/utils/website_enricher.py"
+            "justdata/apps/mergermeter/template_populator.py"
+            "justdata/apps/dataexplorer/data_utils.py"
+            "justdata/apps/dataexplorer/lender_report_builder.py"
+            "justdata/apps/bizsight/core.py"
+            "justdata/apps/branchmapper/blueprint.py"
+            "justdata/apps/electwatch/services/fec_bulk.py"
+            "justdata/apps/electwatch/services/data_store.py"
+            "justdata/shared/utils/analysis_cache.py"
+            "justdata/apps/lenderprofile/services/sec_client.py"
+            "justdata/apps/mergermeter/blueprint.py"
+            "justdata/apps/bizsight/pdf_report.py"
+            "justdata/apps/dataexplorer/blueprint.py"
+            "justdata/apps/branchsight/census_tract_utils.py"
+            "justdata/main/auth/__init__.py"
+          )
+          FAILED=0
+          while IFS= read -r file; do
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt 1000 ]; then
+              allowed=0
+              for f in "${ALLOWLIST[@]}"; do
+                if [ "$file" = "$f" ]; then allowed=1; break; fi
+              done
+              if [ "$allowed" -eq 0 ]; then
+                echo "FAIL: $file has $lines lines (limit: 1000)"
+                FAILED=1
+              fi
+            fi
+          done < <(find justdata/ -name "*.py" -not -path "*/__pycache__/*" -not -path "*/venv/*")
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "One or more Python files exceed the 1,000-line limit."
+            echo "Either split the file or add it to the allowlist in"
+            echo ".github/workflows/ci.yml with justification."
+            exit 1
+          fi
+          echo "Python file size check passed"
+
+      - name: Check template file sizes (limit 1000 lines)
+        run: |
+          # Allowlist: templates that legitimately exceed 1,000 lines as of Phase 6.
+          # Several are listed in ARCHITECTURE.md under refactor/split-shared-templates.
+          ALLOWLIST=(
+            "justdata/apps/branchmapper/templates/partials/_branchmapper_scripts.html"
+            "justdata/apps/dataexplorer/templates/partials/_dataexplorer_scripts.html"
+            "justdata/shared/web/templates/justdata_landing_page.html"
+            "justdata/apps/electwatch/templates/partials/_electwatch_scripts.html"
+            "justdata/apps/electwatch/templates/partials/_electwatch_head.html"
+            "justdata/apps/bizsight/templates/partials/_bizsight_report_scripts.html"
+            "justdata/apps/lendsight/templates/partials/_lendsight_report_scripts.html"
+            "justdata/apps/loantrends/static_site/index.html"
+            "justdata/apps/dataexplorer/templates/partials/_lender_report_scripts.html"
+            "justdata/apps/mergermeter/templates/partials/_analysis_scripts.html"
+            "justdata/apps/dataexplorer/templates/partials/_wizard_head.html"
+            "justdata/shared/web/templates/admin-users.html"
+            "justdata/apps/mergermeter/templates/partials/_analysis_template_scripts.html"
+            "justdata/shared/web/templates/report_template.html"
+            "justdata/apps/branchsight/templates/partials/_branchsight_report_scripts.html"
+            "justdata/shared/web/templates/shared_header.html"
+          )
+          FAILED=0
+          while IFS= read -r file; do
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt 1000 ]; then
+              allowed=0
+              for f in "${ALLOWLIST[@]}"; do
+                if [ "$file" = "$f" ]; then allowed=1; break; fi
+              done
+              if [ "$allowed" -eq 0 ]; then
+                echo "FAIL: $file has $lines lines (limit: 1000)"
+                FAILED=1
+              fi
+            fi
+          done < <(find justdata/ -name "*.html" -not -path "*/__pycache__/*" -not -path "*/venv/*")
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "One or more templates exceed the 1,000-line limit."
+            echo "Either split the template or add it to the allowlist in"
+            echo ".github/workflows/ci.yml with justification."
+            exit 1
+          fi
+          echo "Template file size check passed"
+
+      - name: Check JavaScript file sizes (limit 500 lines)
+        run: |
+          # Allowlist: JS files that legitimately exceed 500 lines as of Phase 6.
+          # The shared/lendsight/bizsight app.js trio and analytics-*.js files are
+          # tracked under refactor/split-shared-app-js and
+          # refactor/modularize-analytics-pages.
+          ALLOWLIST=(
+            "justdata/shared/web/static/js/app.js"
+            "justdata/apps/lendsight/static/js/app.js"
+            "justdata/apps/lenderprofile/static/js/report/lenderprofile_report_charts.js"
+            "justdata/apps/bizsight/static/js/app.js"
+            "justdata/apps/dataexplorer/static/js/wizard/dataexplorer_wizard_step_lender.js"
+            "justdata/apps/analytics/static/js/analytics-lender.js"
+            "justdata/apps/analytics/static/js/analytics-dashboard.js"
+            "justdata/apps/lenderprofile/static/js/report/lenderprofile_report_sections.js"
+            "justdata/apps/analytics/static/js/analytics-coalitions.js"
+            "justdata/apps/analytics/static/js/analytics-users.js"
+            "justdata/apps/analytics/static/js/analytics-maps.js"
+            "justdata/shared/web/static/js/components/GoalsCalculator.js"
+            "justdata/shared/web/static/js/auth.js"
+            "justdata/apps/dataexplorer/static/js/wizard/dataexplorer_wizard_step_geography.js"
+            "justdata/apps/dataexplorer/static/js/wizard.js"
+            "justdata/apps/dataexplorer/static/js/wizard/dataexplorer_wizard_step_filters.js"
+            "justdata/apps/dataexplorer/static/js/wizard/dataexplorer_wizard_step_geography_custom.js"
+            "justdata/apps/analytics/static/js/analytics-user-map.js"
+          )
+          FAILED=0
+          while IFS= read -r file; do
+            lines=$(wc -l < "$file")
+            if [ "$lines" -gt 500 ]; then
+              allowed=0
+              for f in "${ALLOWLIST[@]}"; do
+                if [ "$file" = "$f" ]; then allowed=1; break; fi
+              done
+              if [ "$allowed" -eq 0 ]; then
+                echo "FAIL: $file has $lines lines (limit: 500)"
+                FAILED=1
+              fi
+            fi
+          done < <(find justdata/ -name "*.js" -not -path "*/__pycache__/*" -not -path "*/venv/*" -not -path "*/node_modules/*")
+          if [ "$FAILED" -eq 1 ]; then
+            echo ""
+            echo "One or more JavaScript files exceed the 500-line limit."
+            echo "Either split the file or add it to the allowlist in"
+            echo ".github/workflows/ci.yml with justification."
+            exit 1
+          fi
+          echo "JavaScript file size check passed"
