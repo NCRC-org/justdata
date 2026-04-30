@@ -82,7 +82,7 @@ def index():
 def report():
     """Report display page - renders Goals Calculator directly"""
     try:
-        from .mergermeter_ops import goals_calculator as goals_calc_func
+        from .app import goals_calculator as goals_calc_func
         # Call the goals calculator function which handles all the data loading
         return goals_calc_func()
     except Exception as e:
@@ -97,7 +97,7 @@ def report():
 def goals_calculator():
     """CBA Goals Calculator page - interactive tool for setting lending goals"""
     try:
-        from .mergermeter_ops import goals_calculator as goals_calc_func
+        from .app import goals_calculator as goals_calc_func
         return goals_calc_func()
     except Exception as e:
         import traceback
@@ -297,7 +297,7 @@ def analyze():
         
         def run_analysis():
             try:
-                from .mergermeter_ops import _perform_analysis
+                from .app import _perform_analysis
                 result = _perform_analysis(job_id, form_data)
                 
                 # Store in cache if successful
@@ -404,7 +404,7 @@ def analyze():
 def excel_data():
     """Serve the generated Excel file inline (for SheetJS preview rendering)"""
     try:
-        from .mergermeter_ops import get_excel_filename
+        from .app import get_excel_filename
 
         job_id = request.args.get('job_id') or session.get('job_id')
         if not job_id:
@@ -430,7 +430,7 @@ def excel_data():
 def download():
     """Download the generated Excel file"""
     try:
-        from .mergermeter_ops import get_excel_filename, generate_filename
+        from .app import get_excel_filename, generate_filename
         
         job_id = request.args.get('job_id') or session.get('job_id')
         if not job_id:
@@ -476,7 +476,7 @@ def api_load_bank_names():
     """Load bank names from identifiers (LEI, RSSD, or SB Respondent ID)"""
     try:
         from justdata.shared.utils.bigquery_client import get_bigquery_client
-        from .mergermeter_ops import clean_bank_name
+        from .app import clean_bank_name
         
         data = request.get_json()
         acquirer = data.get('acquirer', {})
@@ -493,7 +493,7 @@ def api_load_bank_names():
         client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
 
         # Import bank name lookup function
-        from .mergermeter_ops import get_bank_name_from_lei, clean_bank_name
+        from .app import get_bank_name_from_lei, clean_bank_name
         
         # Look up acquirer bank name using LEI
         if acquirer.get('name'):
@@ -670,7 +670,7 @@ def api_download_bank_identifiers_template():
 def api_upload_assessment_areas():
     """Upload and parse assessment area JSON or CSV file"""
     try:
-        from .mergermeter_ops import upload_assessment_areas as upload_func
+        from .app import upload_assessment_areas as upload_func
         # Call the original function from app module
         return upload_func()
     except Exception as e:
@@ -684,7 +684,7 @@ def api_upload_assessment_areas():
 def api_generate_ai_summary():
     """Generate AI summary of analysis"""
     try:
-        from .mergermeter_ops import generate_ai_summary as generate_func
+        from .app import generate_ai_summary as generate_func
         # Call the original function from app module
         return generate_func()
     except Exception as e:
@@ -698,7 +698,7 @@ def api_generate_ai_summary():
 def report_data():
     """Return the analysis report data for web display"""
     try:
-        from .mergermeter_ops import report_data as get_report_data_func
+        from .app import report_data as get_report_data_func
         # Call the original function
         return get_report_data_func()
     except Exception as e:
@@ -797,26 +797,12 @@ def api_search_banks():
 def api_export_goals():
     """Export goals calculator configuration and data to Excel"""
     try:
-        from .mergermeter_ops import export_goals as export_goals_func
+        from .app import export_goals as export_goals_func
         return export_goals_func()
     except Exception as e:
         import traceback
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
-
-
-@mergermeter_bp.route('/api/save-goals-config', methods=['POST'])
-@login_required
-@require_access('mergermeter', 'full')
-def api_save_goals_config():
-    """Save goals calculator configuration to session and optional per-job file."""
-    try:
-        from .mergermeter_ops import save_goals_config as save_cfg
-        return save_cfg()
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @mergermeter_bp.route('/api/search-banks-ext', methods=['GET'])
@@ -923,7 +909,7 @@ def api_generate():
         return jsonify({"error": "Invalid or missing API key"}), 401
 
     try:
-        from .mergermeter_ops import _perform_analysis, clean_bank_name
+        from .app import _perform_analysis, clean_bank_name
 
         bank_a = data.get('bank_a') or {}
         bank_b = data.get('bank_b')

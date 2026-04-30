@@ -10,7 +10,6 @@ When USE_SUMMARY_TABLES is enabled:
 """
 
 import os
-from justdata.apps.mergermeter.sql_loader import load_sql
 
 # Configuration for hybrid routing
 SUMMARY_PROJECT_ID = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
@@ -198,7 +197,93 @@ WHERE FALSE
             elif not_reverse == '2':
                 reverse_filter = "AND h.reverse_mortgage = '1'"
     
-    query = load_sql("mergermeter_hmda_subject.sql").format(action_taken_filter=action_taken_filter, construction_filter=construction_filter, geoid5_list=geoid5_list, loan_purpose_filter=loan_purpose_filter, occupancy_filter=occupancy_filter, reverse_filter=reverse_filter, subject_lei=subject_lei, units_filter=units_filter, years_list=years_list)
+    query = f"""
+WITH cbsa_crosswalk AS (
+    SELECT
+        CAST(geoid5 AS STRING) as county_code,
+        -- Treat NULL/empty cbsa_code as '99999' for rural areas
+        COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
+        COALESCE(cbsa, CONCAT(State, ' Non-MSA')) as cbsa_name
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+),
+-- Filter HMDA data to user-selected assessment area counties
+-- Note: de_hmda has pre-computed race/ethnicity and income flags as BOOL columns
+filtered_hmda AS (
+    SELECT
+        CAST(h.activity_year AS STRING) as activity_year,
+        -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
+        COALESCE(c.cbsa_code, '99999') as cbsa_code,
+        -- State code for Goals Calculator state tabs (derived from county_code, first 2 digits are state FIPS)
+        LPAD(SUBSTR(CAST(h.county_code AS STRING), 1, 2), 2, '0') as state_code,
+        -- Loan purpose category for HP/Refi/HI breakdown
+        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Home Equity, 5=N/A
+        -- NCRC methodology: Home Equity = loan purposes 2 (Home Improvement) + 4 (Other/Home Equity)
+        CASE
+            WHEN h.loan_purpose = '1' THEN 'hp'
+            WHEN h.loan_purpose IN ('2', '4') THEN 'hi'
+            WHEN h.loan_purpose IN ('31', '32') THEN 'refi'
+            ELSE 'other'
+        END as loan_purpose_cat,
+        h.loan_amount,
+        -- Use pre-computed flags from de_hmda table (convert BOOL to INT for aggregation)
+        CASE WHEN h.is_lmict THEN 1 ELSE 0 END as is_lmict,
+        CASE WHEN h.is_lmib THEN 1 ELSE 0 END as is_lmib,
+        CASE WHEN h.is_mmct THEN 1 ELSE 0 END as is_mmct,
+        CASE WHEN h.is_hispanic THEN 1 ELSE 0 END as is_hispanic,
+        CASE WHEN h.is_black THEN 1 ELSE 0 END as is_black,
+        CASE WHEN h.is_asian THEN 1 ELSE 0 END as is_asian,
+        CASE WHEN h.is_native_american THEN 1 ELSE 0 END as is_native_american,
+        CASE WHEN h.is_hopi THEN 1 ELSE 0 END as is_hopi
+    FROM `justdata-ncrc.shared.de_hmda` h
+    LEFT JOIN cbsa_crosswalk c
+        ON h.geoid5 = c.county_code
+    WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
+        {action_taken_filter}
+        {occupancy_filter}
+        {reverse_filter}
+        {construction_filter}
+        {units_filter}
+        AND h.lei = '{subject_lei}'
+        {loan_purpose_filter}
+        -- Filter to user-selected assessment area counties (use geoid5 which is already normalized)
+        AND h.geoid5 IN ('{geoid5_list}')
+),
+aggregated_metrics AS (
+    SELECT
+        activity_year,
+        cbsa_code,
+        state_code,
+        loan_purpose_cat,
+        COUNT(*) as total_loans,
+        SUM(loan_amount) as total_amount,
+        COUNTIF(is_lmict = 1) as lmict_loans,
+        SAFE_DIVIDE(COUNTIF(is_lmict = 1), COUNT(*)) * 100 as lmict_percentage,
+        COUNTIF(is_lmib = 1) as lmib_loans,
+        SAFE_DIVIDE(COUNTIF(is_lmib = 1), COUNT(*)) * 100 as lmib_percentage,
+        SUM(CASE WHEN is_lmib = 1 THEN loan_amount END) as lmib_amount,
+        COUNTIF(is_mmct = 1) as mmct_loans,
+        SAFE_DIVIDE(COUNTIF(is_mmct = 1), COUNT(*)) * 100 as mmct_percentage,
+        COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
+                OR is_native_american = 1 OR is_hopi = 1) as minb_loans,
+        SAFE_DIVIDE(COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
+                           OR is_native_american = 1 OR is_hopi = 1), COUNT(*)) * 100 as minb_percentage,
+        -- Individual race/ethnicity counts (using total loans as denominator)
+        COUNTIF(is_asian = 1) as asian_loans,
+        SAFE_DIVIDE(COUNTIF(is_asian = 1), COUNT(*)) * 100 as asian_percentage,
+        COUNTIF(is_black = 1) as black_loans,
+        SAFE_DIVIDE(COUNTIF(is_black = 1), COUNT(*)) * 100 as black_percentage,
+        COUNTIF(is_native_american = 1) as native_american_loans,
+        SAFE_DIVIDE(COUNTIF(is_native_american = 1), COUNT(*)) * 100 as native_american_percentage,
+        COUNTIF(is_hopi = 1) as hopi_loans,
+        SAFE_DIVIDE(COUNTIF(is_hopi = 1), COUNT(*)) * 100 as hopi_percentage,
+        COUNTIF(is_hispanic = 1) as hispanic_loans,
+        SAFE_DIVIDE(COUNTIF(is_hispanic = 1), COUNT(*)) * 100 as hispanic_percentage
+    FROM filtered_hmda
+    GROUP BY activity_year, cbsa_code, state_code, loan_purpose_cat
+)
+SELECT * FROM aggregated_metrics
+ORDER BY activity_year, state_code, cbsa_code, loan_purpose_cat
+"""
     return query
 
 
@@ -364,7 +449,150 @@ WHERE FALSE
         peer_type_filter = ""
         volume_filter = "AND al.lender_vol >= sv.subject_vol * 0.5 AND al.lender_vol <= sv.subject_vol * 2.0"
 
-    query = load_sql("mergermeter_hmda_peer.sql").format(action_taken_filter=action_taken_filter, construction_filter=construction_filter, geoid5_list=geoid5_list, loan_purpose_filter=loan_purpose_filter, occupancy_filter=occupancy_filter, peer_type_filter=peer_type_filter, reverse_filter=reverse_filter, subject_lei=subject_lei, units_filter=units_filter, volume_filter=volume_filter, years_list=years_list)
+    query = f"""
+WITH cbsa_crosswalk AS (
+    SELECT
+        CAST(geoid5 AS STRING) as county_code,
+        -- Treat NULL/empty cbsa_code as '99999' for rural areas
+        COALESCE(NULLIF(CAST(cbsa_code AS STRING), ''), '99999') as cbsa_code,
+        COALESCE(cbsa, CONCAT(State, ' Non-MSA')) as cbsa_name
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+),
+-- Filter HMDA data to user-selected assessment area counties (includes all lenders for peer comparison)
+-- Note: de_hmda has pre-computed race/ethnicity and income flags as BOOL columns
+filtered_hmda AS (
+    SELECT
+        CAST(h.activity_year AS STRING) as activity_year,
+        -- Use COALESCE to treat NULL cbsa_code as '99999' for rural areas
+        COALESCE(c.cbsa_code, '99999') as cbsa_code,
+        -- State code for Goals Calculator state tabs (derived from county_code, first 2 digits are state FIPS)
+        LPAD(SUBSTR(CAST(h.county_code AS STRING), 1, 2), 2, '0') as state_code,
+        -- Loan purpose category for HP/Refi/HI breakdown
+        -- HMDA codes: 1=Home Purchase, 2=Home Improvement, 31=Refinancing, 32=Cash-out Refi, 4=Home Equity, 5=N/A
+        -- NCRC methodology: Home Equity = loan purposes 2 (Home Improvement) + 4 (Other/Home Equity)
+        CASE
+            WHEN h.loan_purpose = '1' THEN 'hp'
+            WHEN h.loan_purpose IN ('2', '4') THEN 'hi'
+            WHEN h.loan_purpose IN ('31', '32') THEN 'refi'
+            ELSE 'other'
+        END as loan_purpose_cat,
+        h.lei,
+        h.loan_amount,
+        -- Use pre-computed flags from de_hmda table (convert BOOL to INT for aggregation)
+        CASE WHEN h.is_lmict THEN 1 ELSE 0 END as is_lmict,
+        CASE WHEN h.is_lmib THEN 1 ELSE 0 END as is_lmib,
+        CASE WHEN h.is_mmct THEN 1 ELSE 0 END as is_mmct,
+        CASE WHEN h.is_hispanic THEN 1 ELSE 0 END as is_hispanic,
+        CASE WHEN h.is_black THEN 1 ELSE 0 END as is_black,
+        CASE WHEN h.is_asian THEN 1 ELSE 0 END as is_asian,
+        CASE WHEN h.is_native_american THEN 1 ELSE 0 END as is_native_american,
+        CASE WHEN h.is_hopi THEN 1 ELSE 0 END as is_hopi
+    FROM `justdata-ncrc.shared.de_hmda` h
+    LEFT JOIN cbsa_crosswalk c
+        ON h.geoid5 = c.county_code
+    WHERE CAST(h.activity_year AS STRING) IN ('{years_list}')
+        {action_taken_filter}
+        {occupancy_filter}
+        {reverse_filter}
+        {construction_filter}
+        {units_filter}
+        {loan_purpose_filter}
+        -- Filter to user-selected assessment area counties (use geoid5 which is already normalized)
+        AND h.geoid5 IN ('{geoid5_list}')
+),
+subject_volume AS (
+    SELECT 
+        activity_year,
+        cbsa_code,
+        COUNT(*) as subject_vol
+    FROM filtered_hmda
+    WHERE lei = '{subject_lei}'
+    GROUP BY activity_year, cbsa_code
+),
+all_lenders_volume AS (
+    SELECT
+        activity_year,
+        cbsa_code,
+        lei,
+        COUNT(*) as lender_vol
+    FROM filtered_hmda
+    GROUP BY activity_year, cbsa_code, lei
+),
+peers AS (
+    SELECT DISTINCT
+        al.activity_year,
+        al.cbsa_code,
+        al.lei
+    FROM all_lenders_volume al
+    INNER JOIN subject_volume sv
+        ON al.activity_year = sv.activity_year
+        AND al.cbsa_code = sv.cbsa_code
+    LEFT JOIN (
+        -- Count volume-matched peers per CBSA/year
+        SELECT al2.activity_year, al2.cbsa_code, COUNT(DISTINCT al2.lei) as peer_count
+        FROM all_lenders_volume al2
+        INNER JOIN subject_volume sv2
+            ON al2.activity_year = sv2.activity_year
+            AND al2.cbsa_code = sv2.cbsa_code
+        WHERE al2.lei != '{subject_lei}'
+            AND al2.lender_vol >= sv2.subject_vol * 0.5
+            AND al2.lender_vol <= sv2.subject_vol * 2.0
+        GROUP BY al2.activity_year, al2.cbsa_code
+    ) vpc ON al.activity_year = vpc.activity_year AND al.cbsa_code = vpc.cbsa_code
+    WHERE al.lei != '{subject_lei}'
+      AND (
+          -- Volume peers exist for this CBSA: apply volume filter
+          (vpc.peer_count > 0 {volume_filter})
+          OR
+          -- No volume peers for this CBSA: fall back to all other lenders
+          (vpc.peer_count IS NULL OR vpc.peer_count = 0)
+      )
+      {peer_type_filter}
+),
+peer_hmda AS (
+    SELECT f.*
+    FROM filtered_hmda f
+    INNER JOIN peers p
+        ON f.activity_year = p.activity_year
+        AND f.cbsa_code = p.cbsa_code
+        AND f.lei = p.lei
+),
+aggregated_peer_metrics AS (
+    SELECT
+        activity_year,
+        cbsa_code,
+        state_code,
+        loan_purpose_cat,
+        COUNT(*) as total_loans,
+        SUM(loan_amount) as total_amount,
+        COUNTIF(is_lmict = 1) as lmict_loans,
+        SAFE_DIVIDE(COUNTIF(is_lmict = 1), COUNT(*)) * 100 as lmict_percentage,
+        COUNTIF(is_lmib = 1) as lmib_loans,
+        SAFE_DIVIDE(COUNTIF(is_lmib = 1), COUNT(*)) * 100 as lmib_percentage,
+        SUM(CASE WHEN is_lmib = 1 THEN loan_amount END) as lmib_amount,
+        COUNTIF(is_mmct = 1) as mmct_loans,
+        SAFE_DIVIDE(COUNTIF(is_mmct = 1), COUNT(*)) * 100 as mmct_percentage,
+        COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
+                OR is_native_american = 1 OR is_hopi = 1) as minb_loans,
+        SAFE_DIVIDE(COUNTIF(is_hispanic = 1 OR is_black = 1 OR is_asian = 1
+                           OR is_native_american = 1 OR is_hopi = 1), COUNT(*)) * 100 as minb_percentage,
+        -- Individual race/ethnicity counts (using total loans as denominator)
+        COUNTIF(is_asian = 1) as asian_loans,
+        SAFE_DIVIDE(COUNTIF(is_asian = 1), COUNT(*)) * 100 as asian_percentage,
+        COUNTIF(is_black = 1) as black_loans,
+        SAFE_DIVIDE(COUNTIF(is_black = 1), COUNT(*)) * 100 as black_percentage,
+        COUNTIF(is_native_american = 1) as native_american_loans,
+        SAFE_DIVIDE(COUNTIF(is_native_american = 1), COUNT(*)) * 100 as native_american_percentage,
+        COUNTIF(is_hopi = 1) as hopi_loans,
+        SAFE_DIVIDE(COUNTIF(is_hopi = 1), COUNT(*)) * 100 as hopi_percentage,
+        COUNTIF(is_hispanic = 1) as hispanic_loans,
+        SAFE_DIVIDE(COUNTIF(is_hispanic = 1), COUNT(*)) * 100 as hispanic_percentage
+    FROM peer_hmda
+    GROUP BY activity_year, cbsa_code, state_code, loan_purpose_cat
+)
+SELECT * FROM aggregated_peer_metrics
+ORDER BY activity_year, state_code, cbsa_code, loan_purpose_cat
+"""
     return query
 
 
@@ -414,7 +642,71 @@ WHERE FALSE
             all_ids.add(sid.split('-', 1)[-1])
     id_list = "', '".join(all_ids)
     
-    query = load_sql("mergermeter_sb_subject.sql").format(geoid5_list=geoid5_list, id_list=id_list, years_list=years_list)
+    query = f"""
+-- CBSA crosswalk to get CBSA codes and names from GEOID5 (counties in assessment areas)
+WITH cbsa_crosswalk AS (
+    SELECT DISTINCT
+        CAST(geoid5 AS STRING) as geoid5,
+        CAST(cbsa_code AS STRING) as cbsa_code,
+        CBSA as cbsa_name,
+        State as state_name,
+        -- Extract state FIPS code from geoid5 (first 2 digits) for Goals Calculator state tabs
+        LPAD(SUBSTR(CAST(geoid5 AS STRING), 1, 2), 2, '0') as state_code
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+    WHERE CAST(geoid5 AS STRING) IN ('{geoid5_list}')
+),
+filtered_sb_data AS (
+    SELECT
+        CAST(d.year AS STRING) as year,
+        COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
+        COALESCE(c.cbsa_name,
+            CASE
+                WHEN c.state_name IS NOT NULL THEN CONCAT(c.state_name, ' Non-MSA')
+                ELSE 'Non-MSA'
+            END
+        ) as cbsa_name,
+        c.state_code,
+        COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
+        -- SB amounts are stored in thousands of dollars, convert to actual dollars
+        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
+        -- LMICT: Use pre-computed lmi_tract_loans from summary table
+        COALESCE(d.lmi_tract_loans, 0) as lmict_loans_count,
+        -- Estimate LMICT amount proportionally (lmi_tract_loans / total_loans * total_amount)
+        SAFE_MULTIPLY(
+            SAFE_DIVIDE(COALESCE(d.lmi_tract_loans, 0), NULLIF(COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m), 0)),
+            (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
+        ) as lmict_loans_amount,
+        COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
+        COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
+    FROM `justdata-ncrc.bizsight.sb_county_summary` d
+    LEFT JOIN cbsa_crosswalk c
+        ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = c.geoid5
+    WHERE CAST(d.year AS STRING) IN ('{years_list}')
+        AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
+        AND d.respondent_id IN ('{id_list}')
+        AND c.cbsa_code IS NOT NULL  -- Only include counties that have a CBSA mapping (in assessment areas)
+),
+aggregated_sb_metrics AS (
+    SELECT
+        year,
+        state_code,
+        cbsa_code,
+        MAX(cbsa_name) as cbsa_name,  -- Get CBSA name (should be same for all rows with same cbsa_code)
+        SUM(sb_loans_count) as sb_loans_total,
+        SUM(sb_loans_amount) as sb_loans_amount,
+        SUM(lmict_loans_count) as lmict_count,
+        SUM(lmict_loans_amount) as lmict_loans_amount,
+        SUM(loans_rev_under_1m) as loans_rev_under_1m_count,
+        SUM(amount_rev_under_1m) as amount_rev_under_1m,
+        -- Calculate averages directly in the query
+        SAFE_DIVIDE(SUM(lmict_loans_amount), SUM(lmict_loans_count)) as avg_sb_lmict_loan_amount,
+        SAFE_DIVIDE(SUM(amount_rev_under_1m), SUM(loans_rev_under_1m)) as avg_loan_amt_rum_sb
+    FROM filtered_sb_data
+    GROUP BY year, state_code, cbsa_code
+)
+SELECT * FROM aggregated_sb_metrics
+ORDER BY year, state_code, cbsa_code
+"""
     return query
 
 
@@ -444,7 +736,104 @@ def build_branch_query(
     geoid5_list = [str(g).zfill(5) for g in assessment_area_geoids]
     geoid5_str = ', '.join([f"'{g}'" for g in geoid5_list])
     
-    query = load_sql("mergermeter_branch.sql").format(geoid5_str=geoid5_str, subject_rssd=subject_rssd, year=year)
+    query = f"""
+WITH assessment_area_counties AS (
+    SELECT DISTINCT geoid5
+    FROM UNNEST([{geoid5_str}]) as geoid5
+),
+
+-- CBSA crosswalk to get CBSA codes from GEOID5
+cbsa_crosswalk AS (
+    SELECT
+        CAST(geoid5 AS STRING) as county_code,
+        CAST(cbsa_code AS STRING) as cbsa_code,
+        cbsa as cbsa_name,
+        County as county_name,
+        State as state_name,
+        CONCAT(County, ', ', State) as county_state
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+),
+
+-- Filter branches to assessment area counties and year
+filtered_branches AS (
+    SELECT
+        CAST(b.rssd AS STRING) as rssd,
+        b.bank_name as institution_name,
+        COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
+        COALESCE(c.cbsa_name, CONCAT(c.state_name, ' Non-MSA')) as cbsa_name,
+        CAST(b.geoid5 AS STRING) as county_code,
+        c.county_state,
+        c.county_name,
+        COALESCE(c.state_name, b.state) as state_name,
+        b.geoid,
+        b.br_lmi,
+        b.br_minority as cr_minority,
+        b.uninumbr
+    FROM `justdata-ncrc.branchsight.sod` b
+    LEFT JOIN cbsa_crosswalk c
+        ON CAST(b.geoid5 AS STRING) = c.county_code
+    WHERE CAST(b.year AS STRING) = '{year}'
+        AND CAST(b.geoid5 AS STRING) IN ({geoid5_str})
+        AND CAST(b.rssd AS STRING) = '{subject_rssd}'
+),
+
+-- Deduplicate branches (use uninumbr as unique identifier)
+deduplicated_branches AS (
+    SELECT 
+        rssd,
+        institution_name,
+        cbsa_code,
+        cbsa_name,
+        county_code,
+        county_state,
+        county_name,
+        state_name,
+        geoid,
+        br_lmi,
+        cr_minority
+    FROM (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY uninumbr ORDER BY rssd) as rn
+        FROM filtered_branches
+    )
+    WHERE rn = 1
+),
+
+-- Prepare grouping key for Non-MSA areas
+grouped_branches AS (
+    SELECT 
+        *,
+        CASE 
+            WHEN cbsa_code = 'N/A' OR cbsa_code IS NULL THEN CONCAT(state_name, ' Non-MSA')
+            ELSE cbsa_code
+        END as group_key,
+        CASE 
+            WHEN cbsa_code = 'N/A' OR cbsa_code IS NULL THEN CONCAT(state_name, ' Non-MSA')
+            ELSE COALESCE(cbsa_name, cbsa_code)
+        END as group_name
+    FROM deduplicated_branches
+)
+
+-- Aggregate by CBSA for subject bank
+-- For Non-MSA areas (cbsa_code = 'N/A'), group by state name
+SELECT 
+    group_key as cbsa_code,
+    group_name as cbsa_name,
+    COUNT(*) as total_branches,
+    COUNTIF(br_lmi = 1) as branches_in_lmict,
+    SAFE_DIVIDE(COUNTIF(br_lmi = 1), COUNT(*)) * 100 as pct_lmict,
+    COUNTIF(cr_minority = 1) as branches_in_mmct,
+    SAFE_DIVIDE(COUNTIF(cr_minority = 1), COUNT(*)) * 100 as pct_mmct,
+    -- Count branches that are both LMICT and MMCT
+    COUNTIF(br_lmi = 1 AND cr_minority = 1) as branches_lmict_mmct,
+    -- Count branches that are LMI only (not MMCT)
+    COUNTIF(br_lmi = 1 AND cr_minority = 0) as branches_lmi_only,
+    -- Count branches that are MMCT only (not LMI)
+    COUNTIF(br_lmi = 0 AND cr_minority = 1) as branches_mmct_only
+FROM grouped_branches
+GROUP BY group_key, group_name
+ORDER BY group_key
+"""
     
     return query
 
@@ -470,7 +859,103 @@ def build_branch_market_query(
     geoid5_list = [str(g).zfill(5) for g in assessment_area_geoids]
     geoid5_str = ', '.join([f"'{g}'" for g in geoid5_list])
     
-    query = load_sql("mergermeter_branch_market.sql").format(geoid5_str=geoid5_str, subject_rssd=subject_rssd, year=year)
+    query = f"""
+WITH assessment_area_counties AS (
+    SELECT DISTINCT geoid5
+    FROM UNNEST([{geoid5_str}]) as geoid5
+),
+
+-- CBSA crosswalk to get CBSA codes from GEOID5
+cbsa_crosswalk AS (
+    SELECT
+        CAST(geoid5 AS STRING) as county_code,
+        CAST(cbsa_code AS STRING) as cbsa_code,
+        cbsa as cbsa_name,
+        County as county_name,
+        State as state_name,
+        CONCAT(County, ', ', State) as county_state
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+),
+
+-- Filter branches to assessment area counties and year, EXCLUDING subject bank
+filtered_branches AS (
+    SELECT
+        CAST(b.rssd AS STRING) as rssd,
+        b.bank_name as institution_name,
+        COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
+        COALESCE(c.cbsa_name, CONCAT(c.state_name, ' Non-MSA')) as cbsa_name,
+        CAST(b.geoid5 AS STRING) as county_code,
+        c.county_state,
+        c.county_name,
+        COALESCE(c.state_name, b.state) as state_name,
+        b.geoid,
+        b.br_lmi,
+        b.br_minority as cr_minority,
+        b.uninumbr
+    FROM `justdata-ncrc.branchsight.sod` b
+    LEFT JOIN cbsa_crosswalk c
+        ON CAST(b.geoid5 AS STRING) = c.county_code
+    WHERE CAST(b.year AS STRING) = '{year}'
+        AND CAST(b.geoid5 AS STRING) IN ({geoid5_str})
+        AND CAST(b.rssd AS STRING) != '{subject_rssd}'  -- Exclude subject bank
+),
+
+-- Deduplicate branches (use uninumbr as unique identifier)
+deduplicated_branches AS (
+    SELECT 
+        rssd,
+        institution_name,
+        cbsa_code,
+        cbsa_name,
+        county_code,
+        county_state,
+        county_name,
+        state_name,
+        geoid,
+        br_lmi,
+        cr_minority
+    FROM (
+        SELECT *,
+            ROW_NUMBER() OVER (PARTITION BY uninumbr ORDER BY rssd) as rn
+        FROM filtered_branches
+    )
+    WHERE rn = 1
+),
+
+-- Prepare grouping key for Non-MSA areas
+grouped_branches AS (
+    SELECT 
+        *,
+        CASE 
+            WHEN cbsa_code = 'N/A' OR cbsa_code IS NULL THEN CONCAT(state_name, ' Non-MSA')
+            ELSE cbsa_code
+        END as group_key,
+        CASE 
+            WHEN cbsa_code = 'N/A' OR cbsa_code IS NULL THEN CONCAT(state_name, ' Non-MSA')
+            ELSE COALESCE(cbsa_name, cbsa_code)
+        END as group_name
+    FROM deduplicated_branches
+)
+
+-- Aggregate by CBSA for market (all other banks)
+SELECT 
+    group_key as cbsa_code,
+    group_name as cbsa_name,
+    COUNT(*) as total_branches,
+    COUNTIF(br_lmi = 1) as branches_in_lmict,
+    SAFE_DIVIDE(COUNTIF(br_lmi = 1), COUNT(*)) * 100 as pct_lmict,
+    COUNTIF(cr_minority = 1) as branches_in_mmct,
+    SAFE_DIVIDE(COUNTIF(cr_minority = 1), COUNT(*)) * 100 as pct_mmct,
+    -- Count branches that are both LMICT and MMCT
+    COUNTIF(br_lmi = 1 AND cr_minority = 1) as branches_lmict_mmct,
+    -- Count branches that are LMI only (not MMCT)
+    COUNTIF(br_lmi = 1 AND cr_minority = 0) as branches_lmi_only,
+    -- Count branches that are MMCT only (not LMI)
+    COUNTIF(br_lmi = 0 AND cr_minority = 1) as branches_mmct_only
+FROM grouped_branches
+GROUP BY group_key, group_name
+ORDER BY group_key
+"""
     
     return query
 
@@ -496,7 +981,69 @@ def build_branch_details_query(
     geoid5_list = [str(g).zfill(5) for g in assessment_area_geoids]
     geoid5_str = ', '.join([f"'{g}'" for g in geoid5_list])
     
-    query = load_sql("mergermeter_branch_details.sql").format(geoid5_str=geoid5_str, subject_rssd=subject_rssd, year=year)
+    query = f"""
+WITH assessment_area_counties AS (
+    SELECT DISTINCT geoid5
+    FROM UNNEST([{geoid5_str}]) as geoid5
+),
+
+-- CBSA crosswalk to get CBSA codes and county info from GEOID5
+cbsa_crosswalk AS (
+    SELECT
+        CAST(geoid5 AS STRING) as county_code,
+        CAST(cbsa_code AS STRING) as cbsa_code,
+        cbsa as cbsa_name,
+        County as county_name,
+        State as state_name,
+        CONCAT(County, ', ', State) as county_state
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+),
+
+-- Get individual branch details
+filtered_branches AS (
+    SELECT 
+        CAST(b.rssd AS STRING) as rssd,
+        b.bank_name,
+        b.branch_name,
+        b.address,
+        b.city,
+        COALESCE(c.state_name, b.state) as state,
+        COALESCE(c.county_name, b.county) as county,
+        b.zip,
+        CAST(b.geoid AS STRING) as census_tract,
+        CAST(b.latitude AS FLOAT64) as latitude,
+        CAST(b.longitude AS FLOAT64) as longitude,
+        CAST(b.geoid5 AS STRING) as geoid5,
+        c.county_state,
+        b.uninumbr
+    FROM `justdata-ncrc.branchsight.sod` b
+    LEFT JOIN cbsa_crosswalk c
+        ON CAST(b.geoid5 AS STRING) = c.county_code
+    WHERE CAST(b.year AS STRING) = '{year}'
+        AND CAST(b.geoid5 AS STRING) IN ({geoid5_str})
+        AND CAST(b.rssd AS STRING) = '{subject_rssd}'
+)
+
+-- Deduplicate branches (use uninumbr as unique identifier) and return individual records
+SELECT 
+    bank_name,
+    branch_name,
+    address,
+    city,
+    state,
+    zip,
+    county,
+    census_tract,
+    latitude,
+    longitude
+FROM (
+    SELECT *,
+        ROW_NUMBER() OVER (PARTITION BY uninumbr ORDER BY rssd) as rn
+    FROM filtered_branches
+)
+WHERE rn = 1
+ORDER BY state, county, city, branch_name
+"""
     
     return query
 
@@ -547,6 +1094,122 @@ WHERE FALSE
             all_ids.add(sid.split('-', 1)[-1])
     id_list = "', '".join(all_ids)
     
-    query = load_sql("mergermeter_sb_peer.sql").format(geoid5_list=geoid5_list, id_list=id_list, years_list=years_list)
+    query = f"""
+-- CBSA crosswalk to get CBSA codes and names from GEOID5 (counties in assessment areas)
+WITH cbsa_crosswalk AS (
+    SELECT DISTINCT
+        CAST(geoid5 AS STRING) as geoid5,
+        CAST(cbsa_code AS STRING) as cbsa_code,
+        CBSA as cbsa_name,
+        State as state_name
+    FROM `justdata-ncrc.shared.cbsa_to_county`
+    WHERE CAST(geoid5 AS STRING) IN ('{geoid5_list}')
+),
+filtered_sb_data AS (
+    SELECT
+        CAST(d.year AS STRING) as year,
+        COALESCE(c.cbsa_code, 'N/A') as cbsa_code,
+        COALESCE(c.cbsa_name,
+            CASE
+                WHEN c.state_name IS NOT NULL THEN CONCAT(c.state_name, ' Non-MSA')
+                ELSE 'Non-MSA'
+            END
+        ) as cbsa_name,
+        d.respondent_id as sb_resid,
+        COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m) as sb_loans_count,
+        -- SB amounts are stored in thousands of dollars, convert to actual dollars
+        (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000 as sb_loans_amount,
+        -- LMICT: Use pre-computed lmi_tract_loans from summary table
+        COALESCE(d.lmi_tract_loans, 0) as lmict_loans_count,
+        -- Estimate LMICT amount proportionally (lmi_tract_loans / total_loans * total_amount)
+        SAFE_MULTIPLY(
+            SAFE_DIVIDE(COALESCE(d.lmi_tract_loans, 0), NULLIF(COALESCE(d.total_loans, d.num_under_100k + d.num_100k_250k + d.num_250k_1m), 0)),
+            (d.amt_under_100k + d.amt_100k_250k + d.amt_250k_1m) * 1000
+        ) as lmict_loans_amount,
+        COALESCE(d.numsbrev_under_1m, 0) as loans_rev_under_1m,
+        COALESCE(d.amtsbrev_under_1m, 0) * 1000 as amount_rev_under_1m
+    FROM `justdata-ncrc.bizsight.sb_county_summary` d
+    LEFT JOIN cbsa_crosswalk c
+        ON LPAD(CAST(d.geoid5 AS STRING), 5, '0') = c.geoid5
+    WHERE CAST(d.year AS STRING) IN ('{years_list}')
+        AND LPAD(CAST(d.geoid5 AS STRING), 5, '0') IN ('{geoid5_list}')
+        AND c.cbsa_code IS NOT NULL  -- Only include counties that have a CBSA mapping (in assessment areas)
+),
+subject_sb_volume AS (
+    SELECT
+        year,
+        cbsa_code,
+        SUM(sb_loans_count) as subject_sb_vol
+    FROM filtered_sb_data
+    WHERE sb_resid IN ('{id_list}')
+    GROUP BY year, cbsa_code
+),
+all_lenders_sb_volume AS (
+    SELECT
+        year,
+        cbsa_code,
+        sb_resid,
+        SUM(sb_loans_count) as lender_sb_vol
+    FROM filtered_sb_data
+    GROUP BY year, cbsa_code, sb_resid
+),
+peers AS (
+    SELECT DISTINCT
+        al.year,
+        al.cbsa_code,
+        al.sb_resid
+    FROM all_lenders_sb_volume al
+    INNER JOIN subject_sb_volume sv
+        ON al.year = sv.year
+        AND al.cbsa_code = sv.cbsa_code
+    LEFT JOIN (
+        -- Count volume-matched peers per CBSA/year
+        SELECT al2.year, al2.cbsa_code, COUNT(DISTINCT al2.sb_resid) as peer_count
+        FROM all_lenders_sb_volume al2
+        INNER JOIN subject_sb_volume sv2
+            ON al2.year = sv2.year
+            AND al2.cbsa_code = sv2.cbsa_code
+        WHERE al2.sb_resid NOT IN ('{id_list}')
+            AND al2.lender_sb_vol >= sv2.subject_sb_vol * 0.5
+            AND al2.lender_sb_vol <= sv2.subject_sb_vol * 2.0
+        GROUP BY al2.year, al2.cbsa_code
+    ) vpc ON al.year = vpc.year AND al.cbsa_code = vpc.cbsa_code
+    WHERE al.sb_resid NOT IN ('{id_list}')
+      AND (
+          -- Volume peers exist for this CBSA: apply volume filter
+          (vpc.peer_count > 0 AND al.lender_sb_vol >= sv.subject_sb_vol * 0.5 AND al.lender_sb_vol <= sv.subject_sb_vol * 2.0)
+          OR
+          -- No volume peers for this CBSA: fall back to all other lenders
+          (vpc.peer_count IS NULL OR vpc.peer_count = 0)
+      )
+),
+peer_sb AS (
+    SELECT f.*
+    FROM filtered_sb_data f
+    INNER JOIN peers p
+        ON f.year = p.year
+        AND f.cbsa_code = p.cbsa_code
+        AND f.sb_resid = p.sb_resid
+),
+aggregated_peer_sb_metrics AS (
+    SELECT
+        year,
+        cbsa_code,
+        MAX(cbsa_name) as cbsa_name,  -- Get CBSA name (should be same for all rows with same cbsa_code)
+        SUM(sb_loans_count) as sb_loans_total,
+        SUM(sb_loans_amount) as sb_loans_amount,
+        SUM(lmict_loans_count) as lmict_count,
+        SUM(lmict_loans_amount) as lmict_loans_amount,
+        SUM(loans_rev_under_1m) as loans_rev_under_1m_count,
+        SUM(amount_rev_under_1m) as amount_rev_under_1m,
+        -- Calculate averages directly in the query
+        SAFE_DIVIDE(SUM(lmict_loans_amount), SUM(lmict_loans_count)) as avg_sb_lmict_loan_amount,
+        SAFE_DIVIDE(SUM(amount_rev_under_1m), SUM(loans_rev_under_1m)) as avg_loan_amt_rum_sb
+    FROM peer_sb
+    GROUP BY year, cbsa_code
+)
+SELECT * FROM aggregated_peer_sb_metrics
+ORDER BY year, cbsa_code
+"""
     return query
 
