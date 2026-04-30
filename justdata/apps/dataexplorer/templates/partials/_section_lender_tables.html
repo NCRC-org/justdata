@@ -1,0 +1,178 @@
+            <!-- Section 3: Top Lenders -->
+            <div class="report-section">
+                <h2 class="section-title">Section 3: Top Lenders Analysis</h2>
+                
+                <!-- Lender Type Filter -->
+                <div style="margin-bottom: 20px;">
+                    <label for="lenderTypeFilter" style="margin-right: 10px; font-weight: 600;">Filter by Lender Type:</label>
+                    <select id="lenderTypeFilter" onchange="filterLendersByType()" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                        <option value="all">All Lender Types</option>
+                        <option value="Bank">Bank</option>
+                        <option value="Credit Union">Credit Union</option>
+                        <option value="Mortgage Company">Mortgage Company</option>
+                        <option value="Other">Other</option>
+                    </select>
+                    <button id="expandTopLendersBtn" onclick="expandTopLendersTable()" style="display: none; margin-left: 20px; padding: 8px 16px; background: #f8f9fa; border: 1px solid #ddd; border-radius: 6px; cursor: pointer;">
+                        <i class="fas fa-chevron-down"></i> Show All Lenders
+                    </button>
+                </div>
+                
+                <!-- Table 1: Loans by Race and Ethnicity by Lender -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4>Table 1: Loans by Race and Ethnicity by Lender</h4>
+                    </div>
+                    <div class="table-card-body" id="section3RaceEthnicityCard">
+                        <div class="loan-purpose-tabs">
+                            <button class="loan-purpose-tab active" data-purpose="all" onclick="switchLoanPurpose('section3', 'race_ethnicity', 'all')">All Loans</button>
+                            <button class="loan-purpose-tab" data-purpose="purchase" onclick="switchLoanPurpose('section3', 'race_ethnicity', 'purchase')">Home Purchase</button>
+                            <button class="loan-purpose-tab" data-purpose="refinance" onclick="switchLoanPurpose('section3', 'race_ethnicity', 'refinance')">Refinance</button>
+                            <button class="loan-purpose-tab" data-purpose="equity" onclick="switchLoanPurpose('section3', 'race_ethnicity', 'equity')">Home Equity</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="section3RaceEthnicityTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px;" onclick="sortTable('section3RaceEthnicityTable', 0, 'text')" role="button">Lender Name <span class="sort-indicator" id="sort-indicator-0"></span></th>
+                                        <th style="text-align: center; cursor: pointer; user-select: none; width: 75px;" onclick="sortTable('section3RaceEthnicityTable', 1, 'number')" role="button">Total Loans <span class="sort-indicator" id="sort-indicator-1"></span></th>
+                                        <!-- Data columns will be added dynamically -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption" id="section3RaceEthnicityCaption"></p>
+                    </div>
+                </div>
+                
+                <!-- Table 2: Loans by Borrower Income by Lender -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4>Table 2: Loans by Borrower Income by Lender</h4>
+                    </div>
+                    <div class="table-card-body" id="section3BorrowerIncomeCard">
+                        <div class="loan-purpose-tabs">
+                            <button class="loan-purpose-tab active" data-purpose="all" onclick="switchLoanPurpose('section3', 'borrower_income', 'all')">All Loans</button>
+                            <button class="loan-purpose-tab" data-purpose="purchase" onclick="switchLoanPurpose('section3', 'borrower_income', 'purchase')">Home Purchase</button>
+                            <button class="loan-purpose-tab" data-purpose="refinance" onclick="switchLoanPurpose('section3', 'borrower_income', 'refinance')">Refinance</button>
+                            <button class="loan-purpose-tab" data-purpose="equity" onclick="switchLoanPurpose('section3', 'borrower_income', 'equity')">Home Equity</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="section3BorrowerIncomeTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px;" onclick="sortTable('section3BorrowerIncomeTable', 0, 'text')" role="button">Lender Name <span class="sort-indicator" id="sort-indicator-0"></span></th>
+                                        <th style="text-align: center; cursor: pointer; user-select: none; width: 75px;" onclick="sortTable('section3BorrowerIncomeTable', 1, 'number')" role="button">Total Loans <span class="sort-indicator" id="sort-indicator-1"></span></th>
+                                        <!-- Data columns will be added dynamically -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption" id="section3BorrowerIncomeCaption"></p>
+                    </div>
+                </div>
+                
+                <!-- Table 3: Loans by Neighborhood Income by Lender -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4>Table 3: Loans by Neighborhood Income by Lender</h4>
+                    </div>
+                    <div class="table-card-body" id="section3NeighborhoodIncomeCard">
+                        <div class="loan-purpose-tabs">
+                            <button class="loan-purpose-tab active" data-purpose="all" onclick="switchLoanPurpose('section3', 'neighborhood_income', 'all')">All Loans</button>
+                            <button class="loan-purpose-tab" data-purpose="purchase" onclick="switchLoanPurpose('section3', 'neighborhood_income', 'purchase')">Home Purchase</button>
+                            <button class="loan-purpose-tab" data-purpose="refinance" onclick="switchLoanPurpose('section3', 'neighborhood_income', 'refinance')">Refinance</button>
+                            <button class="loan-purpose-tab" data-purpose="equity" onclick="switchLoanPurpose('section3', 'neighborhood_income', 'equity')">Home Equity</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="section3NeighborhoodIncomeTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px;" onclick="sortTable('section3NeighborhoodIncomeTable', 0, 'text')" role="button">Lender Name <span class="sort-indicator" id="sort-indicator-0"></span></th>
+                                        <th style="text-align: center; cursor: pointer; user-select: none; width: 75px;" onclick="sortTable('section3NeighborhoodIncomeTable', 1, 'number')" role="button">Total Loans <span class="sort-indicator" id="sort-indicator-1"></span></th>
+                                        <!-- Data columns will be added dynamically -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption" id="section3NeighborhoodIncomeCaption"></p>
+                    </div>
+                </div>
+                
+                <!-- Table 4: Loans by Neighborhood Demographics by Lender -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4>Table 4: Loans by Neighborhood Demographics by Lender</h4>
+                    </div>
+                    <div class="table-card-body" id="section3NeighborhoodDemographicsCard">
+                        <div class="loan-purpose-tabs">
+                            <button class="loan-purpose-tab active" data-purpose="all" onclick="switchLoanPurpose('section3', 'neighborhood_demographics', 'all')">All Loans</button>
+                            <button class="loan-purpose-tab" data-purpose="purchase" onclick="switchLoanPurpose('section3', 'neighborhood_demographics', 'purchase')">Home Purchase</button>
+                            <button class="loan-purpose-tab" data-purpose="refinance" onclick="switchLoanPurpose('section3', 'neighborhood_demographics', 'refinance')">Refinance</button>
+                            <button class="loan-purpose-tab" data-purpose="equity" onclick="switchLoanPurpose('section3', 'neighborhood_demographics', 'equity')">Home Equity</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="section3NeighborhoodDemographicsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px;" onclick="sortTable('section3NeighborhoodDemographicsTable', 0, 'text')" role="button">Lender Name <span class="sort-indicator" id="sort-indicator-0"></span></th>
+                                        <th style="text-align: center; cursor: pointer; user-select: none; width: 75px;" onclick="sortTable('section3NeighborhoodDemographicsTable', 1, 'number')" role="button">Total Loans <span class="sort-indicator" id="sort-indicator-1"></span></th>
+                                        <!-- Data columns will be added dynamically -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption" id="section3NeighborhoodDemographicsCaption"></p>
+                    </div>
+                </div>
+                
+                <!-- Table 5: Loan Costs by Lender -->
+                <div class="table-card">
+                    <div class="table-card-header">
+                        <h4>Table 5: Loan Costs by Lender</h4>
+                    </div>
+                    <div class="table-card-body" id="section3LoanCostsCard">
+                        <div style="margin-bottom: 15px;">
+                            <label for="section3LoanCostsLenderType" style="margin-right: 10px; font-weight: 600;">Lender Type:</label>
+                            <select id="section3LoanCostsLenderType" onchange="switchLoanCostsLenderType()" style="padding: 8px; border-radius: 4px; border: 1px solid #ddd;">
+                                <option value="All">All Lenders</option>
+                                <option value="Bank">Bank</option>
+                                <option value="Mortgage Company">Mortgage Company</option>
+                                <option value="Credit Union">Credit Union</option>
+                            </select>
+                        </div>
+                        <div class="loan-purpose-tabs">
+                            <button class="loan-purpose-tab active" data-purpose="all" onclick="switchLoanPurpose('section3', 'loan_costs', 'all')">All Loans</button>
+                            <button class="loan-purpose-tab" data-purpose="purchase" onclick="switchLoanPurpose('section3', 'loan_costs', 'purchase')">Home Purchase</button>
+                            <button class="loan-purpose-tab" data-purpose="refinance" onclick="switchLoanPurpose('section3', 'loan_costs', 'refinance')">Refinance</button>
+                            <button class="loan-purpose-tab" data-purpose="equity" onclick="switchLoanPurpose('section3', 'loan_costs', 'equity')">Home Equity</button>
+                        </div>
+                        <div class="table-container">
+                            <table class="data-table" id="section3LoanCostsTable">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align: left; cursor: pointer; user-select: none; white-space: nowrap; min-width: 280px;" onclick="sortTable('section3LoanCostsTable', 0, 'text')" role="button">Lender Name <span class="sort-indicator" id="sort-indicator-0"></span></th>
+                                        <th style="text-align: center; cursor: pointer; user-select: none; width: 75px;" onclick="sortTable('section3LoanCostsTable', 1, 'number')" role="button">Total Loans <span class="sort-indicator" id="sort-indicator-1"></span></th>
+                                        <!-- Data columns will be added dynamically -->
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Data will be populated by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <p class="table-caption" id="section3LoanCostsCaption"></p>
+                    </div>
+                </div>
+            </div>

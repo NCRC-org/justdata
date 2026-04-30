@@ -299,7 +299,4 @@ class APIClient {
 }
 
 // Create singleton instance
-const apiClient = new APIClient();
-
-// Export for use in other files
-window.apiClient = apiClient;
+export const apiClient = new APIClient();

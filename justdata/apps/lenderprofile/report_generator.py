@@ -9,6 +9,7 @@ import logging
 from typing import Dict, Any
 
 from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
+from justdata.shared.utils.name_utils import strip_trailing_punctuation
 
 logger = logging.getLogger(__name__)
 
@@ -32,10 +33,10 @@ def generate_report(data: Dict[str, Any]) -> Dict[str, Any]:
             - error: Error message if failed
     """
     from .processors.identifier_resolver import IdentifierResolver
-    from .processors.data_collector import DataCollector
+    from .processors.collector import DataCollector
     from .report_builder.report_builder import ReportBuilder
 
-    institution_name = data.get('name', '').strip()
+    institution_name = strip_trailing_punctuation(data.get('name', '').strip())
     institution_id = data.get('id')
     identifiers = data.get('identifiers', {})
     report_focus = data.get('report_focus', '').strip()

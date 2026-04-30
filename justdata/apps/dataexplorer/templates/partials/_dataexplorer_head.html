@@ -1,0 +1,356 @@
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Area Analysis Report - DataExplorer</title>
+    <meta name="description" content="HMDA Area Analysis Report - Comprehensive mortgage lending analysis">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
+    
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+    <!-- PDF Export Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Excel Export Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Shared Population Demographics Module -->
+    <script src="/shared/population_demographics.js?v=20260125a"></script>
+    
+    <style>
+        :root {
+            --ncrc-primary-blue: #552d87;
+            --ncrc-secondary-blue: #2fade3;
+            --ncrc-justdata-blue: #1e3a5f;
+            --ncrc-dark-blue: #1e3a5f;
+            --ncrc-gray-light: #F5F5F5;
+            --ncrc-gray-dark: #333333;
+            --ncrc-gray: #666666;
+            --ncrc-yellow: #FFD700;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--ncrc-gray-light);
+            min-height: 100vh;
+            color: var(--ncrc-gray-dark);
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .report-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        @media (max-width: 1280px) {
+            .report-container {
+                max-width: 100%;
+                padding: 15px;
+            }
+        }
+        
+        .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--ncrc-dark-blue);
+            color: white;
+            border-radius: 8px;
+        }
+        
+        .report-header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2rem;
+        }
+        
+        .report-actions {
+            text-align: right;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        .action-btn {
+            text-decoration: none;
+            cursor: pointer;
+            margin-right: 10px;
+            padding: 10px 20px;
+            background: var(--ncrc-primary-blue);
+            color: white;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        .action-btn:hover {
+            background: var(--ncrc-dark-blue);
+        }
+        
+        .report-section {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            box-sizing: border-box;
+            overflow-x: visible;
+        }
+        
+        @media (max-width: 768px) {
+            .report-section {
+                padding: 15px;
+            }
+        }
+        
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--ncrc-dark-blue);
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            table-layout: fixed;
+            font-size: 0.9rem;
+        }
+        
+        .data-table.compact {
+            font-size: 0.8rem;
+        }
+        
+        .data-table.very-compact {
+            font-size: 0.75rem;
+        }
+        
+        .data-table th {
+            background: #f8f9fa;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #333;
+            border-bottom: 2px solid #ddd;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .data-table th:last-child {
+            border-right: none;
+        }
+        
+        .data-table th[role="button"] {
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        
+        .data-table th[role="button"]:hover {
+            background: #e9ecef;
+        }
+        
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e0e0e0;
+            border-right: 1px solid #e0e0e0;
+            font-size: 0.9rem;
+        }
+        
+        .data-table td:last-child {
+            border-right: none;
+        }
+        
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .data-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .table-container {
+            position: relative;
+            margin: 20px 0;
+            overflow-x: auto;
+            overflow-y: visible;
+            width: 100%;
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on mobile */
+        }
+        
+        .table-caption {
+            margin-top: 10px;
+            font-size: 0.85rem;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            padding: 15px;
+            border-radius: 4px;
+            color: #c33;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .table-introduction {
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .table-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .table-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .table-card-header h4 {
+            margin: 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: var(--ncrc-dark-blue);
+        }
+        
+        .export-btn {
+            background: var(--ncrc-dark-blue);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: background 0.2s;
+        }
+        
+        .export-btn:hover {
+            background: var(--ncrc-primary-blue);
+        }
+        
+        .export-btn i {
+            font-size: 0.9rem;
+        }
+        
+        .table-card-body {
+            padding: 20px;
+        }
+        
+        .loan-purpose-tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .loan-purpose-tab {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.2s;
+            margin-bottom: -2px;
+        }
+        
+        .loan-purpose-tab:hover {
+            background: #e8e8e8;
+            color: #333;
+        }
+        
+        .loan-purpose-tab.active {
+            background: white;
+            color: var(--ncrc-dark-blue);
+            border-bottom-color: var(--ncrc-dark-blue);
+            font-weight: 600;
+        }
+
+        /* Methods and Definitions Card */
+        .methods-card {
+            background: #ffffff;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .methods-card h2 {
+            color: #1e3a5f;
+            font-size: 24px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #1e3a5f;
+            padding-bottom: 10px;
+        }
+
+        .methods-card h3 {
+            color: #1e3a5f;
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .methods-card h4 {
+            color: #333;
+            font-size: 16px;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .methods-card p {
+            line-height: 1.6;
+            margin-bottom: 10px;
+            color: #444;
+        }
+
+        .methods-card ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .methods-card li {
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+    </style>

@@ -1,0 +1,710 @@
+    <div class="container">
+        <!-- Main Content -->
+        <div class="content-wrapper">
+        <main class="main-content">
+            <div class="analysis-card">
+                <div class="card-header">
+                    <h2><i class="fas fa-search"></i> Generate Merger Impact Analysis</h2>
+                    <p>Upload merger research ticket and assessment area documents to analyze two-bank merger</p>
+                </div>
+
+                <form id="analysisForm" class="analysis-form">
+                    <!-- Bank Information Section -->
+                    <div class="form-group">
+                        <h3 style="margin-bottom: 20px; color: var(--ncrc-dark-blue);">
+                            <i class="fas fa-building"></i> Bank Information
+                        </h3>
+                        <p style="font-size: 0.9rem; color: #666; margin-bottom: 20px;">
+                            <i class="fas fa-info-circle"></i> Search for banks by name. The system will auto-populate identifiers when you select a bank.
+                        </p>
+
+                        <!-- Bank A (Acquirer) -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-hand-holding"></i> Bank A (Acquirer)
+                            </h4>
+
+                            <!-- Bank Search Input -->
+                            <div id="acquirer_search_container" style="position: relative;">
+                                <label for="acquirer_search" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                                    <i class="fas fa-search" style="color: var(--ncrc-secondary-blue);"></i>
+                                    Search Bank by Name
+                                </label>
+                                <input type="text" id="acquirer_search" class="bank-search-input" data-bank="acquirer"
+                                       placeholder="Type bank name to search (e.g., Chase, PNC, Wells Fargo)..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 14px 16px; font-size: 1rem; border: 2px solid #ddd; border-radius: 8px; transition: border-color 0.2s;">
+                                <div id="acquirer_search_results" class="bank-search-results"
+                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 350px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                </div>
+                            </div>
+
+                            <!-- Selected Bank Display (hidden until selection) -->
+                            <div id="acquirer_selected" style="display: none; margin-top: 15px; padding: 15px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #155724; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">
+                                            <i class="fas fa-check-circle"></i> Selected Bank
+                                        </div>
+                                        <div id="acquirer_name_display" style="font-size: 1.1rem; font-weight: 700; color: #1a365d;"></div>
+                                        <div id="acquirer_location_display" style="font-size: 0.9rem; color: #666; margin-top: 2px;"></div>
+                                    </div>
+                                    <button type="button" id="acquirer_change_btn" onclick="clearBankSelection('acquirer')"
+                                            style="padding: 6px 12px; background: #fff; color: #666; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                                        <i class="fas fa-edit"></i> Change
+                                    </button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">LEI</div>
+                                        <input type="text" id="acquirer_lei" name="acquirer_lei" placeholder="20-character LEI"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="acquirer_lei_display" style="display: none;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">RSSD</div>
+                                        <input type="text" id="acquirer_rssd" name="acquirer_rssd" placeholder="RSSD number"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="acquirer_rssd_display" style="display: none;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID <span style="font-weight: normal; color: #999;">(optional)</span></div>
+                                        <input type="text" id="acquirer_sb_id" name="acquirer_sb_id" placeholder="Enter if known"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="acquirer_name" name="acquirer_name">
+                        </div>
+
+                        <!-- Single Bank Analysis Toggle -->
+                        <div style="background: #fff3cd; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ffc107;">
+                            <label style="display: flex; align-items: center; cursor: pointer; margin: 0;">
+                                <input type="checkbox" id="singleBankMode" name="single_bank_mode" style="width: 18px; height: 18px; margin-right: 12px; cursor: pointer;">
+                                <span style="font-weight: 600; color: #856404;">
+                                    <i class="fas fa-university"></i> Single Bank Analysis
+                                </span>
+                                <span style="margin-left: 10px; font-size: 0.9rem; color: #856404;">
+                                    — Analyze only Bank A (no merger comparison)
+                                </span>
+                            </label>
+                        </div>
+
+                        <!-- Bank B (Target) -->
+                        <div id="bankBSection" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-bullseye"></i> Bank B (Target)
+                            </h4>
+
+                            <!-- Bank Search Input -->
+                            <div id="target_search_container" style="position: relative;">
+                                <label for="target_search" style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                                    <i class="fas fa-search" style="color: var(--ncrc-secondary-blue);"></i>
+                                    Search Bank by Name
+                                </label>
+                                <input type="text" id="target_search" class="bank-search-input" data-bank="target"
+                                       placeholder="Type bank name to search (e.g., Chase, PNC, Wells Fargo)..."
+                                       autocomplete="off"
+                                       style="width: 100%; padding: 14px 16px; font-size: 1rem; border: 2px solid #ddd; border-radius: 8px; transition: border-color 0.2s;">
+                                <div id="target_search_results" class="bank-search-results"
+                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 1px solid #ddd; border-top: none; border-radius: 0 0 8px 8px; max-height: 350px; overflow-y: auto; z-index: 1000; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                </div>
+                            </div>
+
+                            <!-- Selected Bank Display (hidden until selection) -->
+                            <div id="target_selected" style="display: none; margin-top: 15px; padding: 15px; background: #d4edda; border: 2px solid #28a745; border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                                    <div>
+                                        <div style="font-size: 0.85rem; color: #155724; text-transform: uppercase; font-weight: 600; margin-bottom: 4px;">
+                                            <i class="fas fa-check-circle"></i> Selected Bank
+                                        </div>
+                                        <div id="target_name_display" style="font-size: 1.1rem; font-weight: 700; color: #1a365d;"></div>
+                                        <div id="target_location_display" style="font-size: 0.9rem; color: #666; margin-top: 2px;"></div>
+                                    </div>
+                                    <button type="button" id="target_change_btn" onclick="clearBankSelection('target')"
+                                            style="padding: 6px 12px; background: #fff; color: #666; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">
+                                        <i class="fas fa-edit"></i> Change
+                                    </button>
+                                </div>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; padding-top: 12px; border-top: 1px solid rgba(0,0,0,0.1);">
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">LEI</div>
+                                        <input type="text" id="target_lei" name="target_lei" placeholder="20-character LEI"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="target_lei_display" style="display: none;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">RSSD</div>
+                                        <input type="text" id="target_rssd" name="target_rssd" placeholder="RSSD number"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                        <div id="target_rssd_display" style="display: none;"></div>
+                                    </div>
+                                    <div>
+                                        <div style="font-size: 0.75rem; color: #666; text-transform: uppercase; margin-bottom: 2px;">Res ID <span style="font-weight: normal; color: #999;">(optional)</span></div>
+                                        <input type="text" id="target_sb_id" name="target_sb_id" placeholder="Enter if known"
+                                               style="font-family: monospace; font-size: 0.85rem; padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                                    </div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="target_name" name="target_name">
+                        </div>
+                    </div>
+
+                    <!-- Assessment Area Upload Section -->
+                    <div class="form-group" id="assessmentAreaSection" style="display: none;">
+                        <h3 style="margin-bottom: 20px; color: var(--ncrc-dark-blue);">
+                            <i class="fas fa-upload"></i> Assessment Area Documents
+                        </h3>
+                        <small class="help-text" style="display: block; margin-bottom: 20px;">
+                            <i class="fas fa-info-circle"></i>
+                            Assessment areas are built from combining one or more counties. Upload PDF or Text files defining which counties are in each bank's assessment areas.
+                        </small>
+
+                        <!-- National Level Data Option -->
+                        <div style="background: #fff3cd; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ffc107; display: flex; align-items: center; gap: 15px;">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; font-weight: 600; color: #856404;">
+                                <input type="checkbox" id="useNationalData" name="use_national_data" value="1" style="width: 20px; height: 20px; cursor: pointer;">
+                                <i class="fas fa-globe-americas" style="font-size: 1.2em;"></i>
+                                Use National Level Data (Skip Assessment Areas)
+                            </label>
+                            <small style="color: #856404; margin-left: auto;">
+                                Check this to analyze data at the national level instead of by assessment area
+                            </small>
+                        </div>
+
+                        <!-- Assessment Area Input Sections (hidden when national data is selected) -->
+                        <div id="assessmentAreaInputs">
+
+                        <!-- Bank A Assessment Areas -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-hand-holding"></i> Bank A (Acquirer) Assessment Areas
+                            </h4>
+                            
+                            <!-- Toggle between upload, manual input, and branch generation -->
+                            <div style="margin-bottom: 15px; display: flex; gap: 10px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                                <button type="button" class="aa-toggle-btn" data-bank="acquirer" data-mode="upload" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-upload"></i> Upload JSON
+                                </button>
+                                <button type="button" class="aa-toggle-btn active" data-bank="acquirer" data-mode="manual" style="flex: 1; padding: 8px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-keyboard"></i> Manual Entry
+                                </button>
+                                <button type="button" class="aa-toggle-btn" data-bank="acquirer" data-mode="branches" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-map-marker-alt"></i> Generate from Branches
+                                </button>
+                            </div>
+                            
+                            <!-- Generate from Branches Option -->
+                            <div id="acquirer_branches_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px; padding: 15px; background: #e8f4f8; border: 1px solid #bee5eb; border-radius: 8px;">
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-weight: 600;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Generate assessment areas automatically from branch locations
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">
+                                        This will query all branch locations for Bank A and create assessment areas grouped by CBSA/metro area. Only counties where the bank has branches are included.
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-size: 0.9rem; font-weight: 600; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                        <i class="fas fa-filter"></i>
+                                        <strong>Note:</strong> Assessment areas include only counties where the bank has physical branch presence.
+                                    </p>
+                                    <button type="button" class="generate-from-branches-btn" data-bank="acquirer" style="padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                                        <i class="fas fa-magic"></i> Generate Assessment Areas from Branches
+                                    </button>
+                                    <small class="help-text" style="display: block; margin-top: 10px; color: #666;">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Requires RSSD number. Assessment areas will be grouped by metro area (CBSA).
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Upload Option -->
+                            <div id="acquirer_upload_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px;">
+                                    <label for="acquirer_assessment_areas">
+                                        <i class="fas fa-file-code"></i>
+                                        Upload Assessment Area File (JSON or CSV)
+                                    </label>
+                                    <input type="file" id="acquirer_assessment_areas" name="acquirer_assessment_areas" accept=".json,.csv" style="width: 100%; padding: 10px; border: 2px dashed #ccc; border-radius: 8px; background: white;">
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                                        <a href="/api/download-assessment-area-template" download="assessment_area_template.csv" style="padding: 6px 12px; background: var(--ncrc-secondary-blue); color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-download"></i> Download CSV Template
+                                        </a>
+                                        <small class="help-text" style="margin: 0; color: #666;">
+                                            <i class="fas fa-info-circle"></i>
+                                            Upload a JSON or CSV file. CSV format: Assessment Area Name, State Code, County Code, County Name, State Name
+                                        </small>
+                                    </div>
+                                    <details style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                                        <summary style="cursor: pointer; font-weight: 600; color: var(--ncrc-dark-blue);">JSON File Format</summary>
+                                        <pre style="margin-top: 10px; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; overflow-x: auto;">[
+  {
+    "cbsa_name": "Assessment Area Name",
+    "counties": [
+      "County Name, State",
+      "Another County, State"
+    ]
+  },
+  {
+    "cbsa_name": "Another Assessment Area",
+    "counties": [
+      "County Name, State"
+    ]
+  }
+]</pre>
+                                    </details>
+                                </div>
+                            </div>
+                            
+                            <!-- Manual Entry Option -->
+                            <div id="acquirer_manual_section" class="aa-input-section">
+                                <div style="margin-bottom: 15px;">
+                                    <label>
+                                        <i class="fas fa-keyboard"></i>
+                                        Enter Assessment Areas Manually
+                                    </label>
+                                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                                        <div id="acquirer_manual_areas" style="margin-bottom: 10px;">
+                                            <!-- Assessment areas will be added here dynamically -->
+                                        </div>
+                                        <button type="button" class="add-aa-btn" data-bank="acquirer" style="padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                            <i class="fas fa-plus"></i> Add Assessment Area
+                                        </button>
+                                    </div>
+                                    <small class="help-text" style="display: block; margin-top: 5px;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Enter assessment area name and list counties (one per line). You can also enter MSA codes like "MSA 14500, 19740" or MSA names like "Denver-Aurora-Lakewood, CO" and counties will be looked up automatically.
+                                    </small>
+                                </div>
+                            </div>
+                            <div id="acquirer_aa_status" style="display: none; padding: 12px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 6px; margin-top: 10px;">
+                                <strong><i class="fas fa-info-circle"></i> Status:</strong> 
+                                <span id="acquirer_aa_status_text"></span>
+                            </div>
+                            <div id="acquirer_aa_preview" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #ddd; border-radius: 6px;">
+                                <strong>Parsed Assessment Areas:</strong>
+                                <div id="acquirer_aa_list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bank B Assessment Areas -->
+                        <div id="bankBAASection" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 2px solid var(--ncrc-secondary-blue);">
+                            <h4 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                                <i class="fas fa-bullseye"></i> Bank B (Target) Assessment Areas
+                            </h4>
+                            
+                            <!-- Toggle between upload, manual input, and branch generation -->
+                            <div style="margin-bottom: 15px; display: flex; gap: 10px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
+                                <button type="button" class="aa-toggle-btn" data-bank="target" data-mode="upload" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-upload"></i> Upload JSON
+                                </button>
+                                <button type="button" class="aa-toggle-btn active" data-bank="target" data-mode="manual" style="flex: 1; padding: 8px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-keyboard"></i> Manual Entry
+                                </button>
+                                <button type="button" class="aa-toggle-btn" data-bank="target" data-mode="branches" style="flex: 1; padding: 8px; background: #e0e0e0; color: #333; border: none; border-radius: 4px; cursor: pointer;">
+                                    <i class="fas fa-map-marker-alt"></i> Generate from Branches
+                                </button>
+                            </div>
+                            
+                            <!-- Generate from Branches Option -->
+                            <div id="target_branches_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px; padding: 15px; background: #e8f4f8; border: 1px solid #bee5eb; border-radius: 8px;">
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-weight: 600;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Generate assessment areas automatically from branch locations
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #666; font-size: 0.9rem;">
+                                        This will query all branch locations for Bank B and create assessment areas grouped by CBSA/metro area. Only counties where the bank has branches are included.
+                                    </p>
+                                    <p style="margin: 0 0 15px 0; color: #0c5460; font-size: 0.9rem; font-weight: 600; padding: 10px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                        <i class="fas fa-filter"></i>
+                                        <strong>Note:</strong> Assessment areas include only counties where the bank has physical branch presence.
+                                    </p>
+                                    <button type="button" class="generate-from-branches-btn" data-bank="target" style="padding: 10px 20px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
+                                        <i class="fas fa-magic"></i> Generate Assessment Areas from Branches
+                                    </button>
+                                    <small class="help-text" style="display: block; margin-top: 10px; color: #666;">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        Requires RSSD number. Assessment areas will be grouped by metro area (CBSA).
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Upload Option -->
+                            <div id="target_upload_section" class="aa-input-section" style="display: none;">
+                                <div style="margin-bottom: 15px;">
+                                    <label for="target_assessment_areas">
+                                        <i class="fas fa-file-code"></i>
+                                        Upload Assessment Area File (JSON or CSV)
+                                    </label>
+                                    <input type="file" id="target_assessment_areas" name="target_assessment_areas" accept=".json,.csv" style="width: 100%; padding: 10px; border: 2px dashed #ccc; border-radius: 8px; background: white;">
+                                    <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px; margin-bottom: 5px; flex-wrap: wrap;">
+                                        <a href="/api/download-assessment-area-template" download="assessment_area_template.csv" style="padding: 6px 12px; background: var(--ncrc-secondary-blue); color: white; text-decoration: none; border-radius: 4px; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-download"></i> Download CSV Template
+                                        </a>
+                                        <small class="help-text" style="margin: 0; color: #666;">
+                                            <i class="fas fa-info-circle"></i>
+                                            Upload a JSON or CSV file. CSV format: Assessment Area Name, State Code, County Code, County Name, State Name
+                                        </small>
+                                    </div>
+                                    <details style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px;">
+                                        <summary style="cursor: pointer; font-weight: 600; color: var(--ncrc-dark-blue);">JSON File Format</summary>
+                                        <pre style="margin-top: 10px; padding: 10px; background: white; border: 1px solid #ddd; border-radius: 4px; font-size: 0.85rem; overflow-x: auto;">[
+  {
+    "cbsa_name": "Assessment Area Name",
+    "counties": [
+      "County Name, State",
+      "Another County, State"
+    ]
+  },
+  {
+    "cbsa_name": "Another Assessment Area",
+    "counties": [
+      "County Name, State"
+    ]
+  }
+]</pre>
+                                    </details>
+                                </div>
+                            </div>
+                            
+                            <!-- Manual Entry Option -->
+                            <div id="target_manual_section" class="aa-input-section">
+                                <div style="margin-bottom: 15px;">
+                                    <label>
+                                        <i class="fas fa-keyboard"></i>
+                                        Enter Assessment Areas Manually
+                                    </label>
+                                    <div style="background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd;">
+                                        <div id="target_manual_areas" style="margin-bottom: 10px;">
+                                            <!-- Assessment areas will be added here dynamically -->
+                                        </div>
+                                        <button type="button" class="add-aa-btn" data-bank="target" style="padding: 8px 16px; background: var(--ncrc-secondary-blue); color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;">
+                                            <i class="fas fa-plus"></i> Add Assessment Area
+                                        </button>
+                                    </div>
+                                    <small class="help-text" style="display: block; margin-top: 5px;">
+                                        <i class="fas fa-info-circle"></i>
+                                        Enter assessment area name and list counties (one per line). You can also enter MSA codes like "MSA 14500, 19740" or MSA names like "Denver-Aurora-Lakewood, CO" and counties will be looked up automatically.
+                                    </small>
+                                </div>
+                            </div>
+                            <div id="target_aa_status" style="display: none; padding: 12px; background: #d1ecf1; border: 1px solid #bee5eb; border-radius: 6px; margin-top: 10px;">
+                                <strong><i class="fas fa-info-circle"></i> Status:</strong> 
+                                <span id="target_aa_status_text"></span>
+                            </div>
+                            <div id="target_aa_preview" style="display: none; margin-top: 15px; padding: 15px; background: white; border: 1px solid #ddd; border-radius: 6px;">
+                                <strong>Parsed Assessment Areas:</strong>
+                                <div id="target_aa_list" style="margin-top: 10px; max-height: 200px; overflow-y: auto;"></div>
+                            </div>
+                        </div>
+
+                        </div><!-- End assessmentAreaInputs -->
+                    </div>
+
+                    <!-- Analysis Settings Section -->
+                    <div class="form-group">
+                        <h3 style="margin-bottom: 15px; color: var(--ncrc-dark-blue);">
+                            <i class="fas fa-cog"></i> Analysis Filters
+                        </h3>
+
+                        <!-- Compact Horizontal Filter Section -->
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <!-- Year Ranges Section -->
+                            <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+                                <div style="font-size: 0.85rem; color: #666; font-weight: 600; margin-bottom: 10px;">
+                                    <i class="fas fa-calendar-alt"></i> Year Ranges
+                                </div>
+
+                                <!-- Analysis Years Row -->
+                                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end; margin-bottom: 12px;">
+                                    <div style="flex: 0 0 auto; min-width: 120px;">
+                                        <span style="font-size: 0.8rem; color: #444; font-weight: 600;">Analysis Years:</span>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="hmda_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA Start</label>
+                                        <select id="hmda_start_year" name="hmda_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023" selected>2023</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="hmda_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA End</label>
+                                        <select id="hmda_end_year" name="hmda_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024" selected>2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="sb_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB Start</label>
+                                        <select id="sb_start_year" name="sb_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023" selected>2023</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="sb_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB End</label>
+                                        <select id="sb_end_year" name="sb_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024" selected>2024</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Goal-Setting Baseline Years Row -->
+                                <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: flex-end;">
+                                    <div style="flex: 0 0 auto; min-width: 120px;">
+                                        <span style="font-size: 0.8rem; color: #444; font-weight: 600;">Goal Baseline:</span>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_hmda_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA Start</label>
+                                        <select id="baseline_hmda_start_year" name="baseline_hmda_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023" selected>2023</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_hmda_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">HMDA End</label>
+                                        <select id="baseline_hmda_end_year" name="baseline_hmda_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024" selected>2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_sb_start_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB Start</label>
+                                        <select id="baseline_sb_start_year" name="baseline_sb_start_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023" selected>2023</option>
+                                            <option value="2024">2024</option>
+                                        </select>
+                                    </div>
+                                    <div style="flex: 0 0 auto;">
+                                        <label for="baseline_sb_end_year" style="font-size: 0.75rem; margin-bottom: 2px; display: block; color: #666;">SB End</label>
+                                        <select id="baseline_sb_end_year" name="baseline_sb_end_year" required style="padding: 6px 10px; font-size: 0.85rem; min-width: 75px;">
+                                            <option value="2018">2018</option>
+                                            <option value="2019">2019</option>
+                                            <option value="2020">2020</option>
+                                            <option value="2021">2021</option>
+                                            <option value="2022">2022</option>
+                                            <option value="2023">2023</option>
+                                            <option value="2024" selected>2024</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <small style="display: block; margin-top: 8px; font-size: 0.75rem; color: #888;">
+                                    <i class="fas fa-info-circle"></i> Analysis Years are used for data sheets. Goal Baseline Years are used for establishing baseline metrics in Goals sheets.
+                                </small>
+                            </div>
+
+                            <!-- Loan Purpose Row -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+                                <label for="loan_purpose" style="font-size: 0.85rem; color: #666; margin-right: 8px; font-weight: 600;">Loan Purpose:</label>
+                                <select id="loan_purpose" name="loan_purpose" style="padding: 8px 12px; font-size: 0.85rem; border: 2px solid var(--ncrc-secondary-blue); border-radius: 6px; background: #f0f7fa; min-width: 180px;">
+                                    <option value="" selected>All Loan Purposes</option>
+                                    <option value="1">Home Purchase Only</option>
+                                    <option value="31,32">Refinance Only</option>
+                                    <option value="2,4">Home Equity Only</option>
+                                </select>
+                            </div>
+
+                            <!-- Peer Group Selection Row -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #ddd;">
+                                <label for="peer_group" style="font-size: 0.85rem; color: #666; margin-right: 8px; font-weight: 600;">Peer Group:</label>
+                                <select id="peer_group" name="peer_group" style="padding: 8px 12px; font-size: 0.85rem; border: 2px solid var(--ncrc-secondary-blue); border-radius: 6px; background: #f0f7fa; min-width: 220px;">
+                                    <option value="volume_50_200" selected>50%-200% Volume (Default)</option>
+                                    <option value="all_banks">All Banks</option>
+                                    <option value="all_credit_unions">All Credit Unions</option>
+                                    <option value="all_mortgage_companies">All Mortgage Companies</option>
+                                    <option value="all_lenders">All Lenders</option>
+                                </select>
+                                <span style="font-size: 0.75rem; color: #888; margin-left: 5px;" title="Controls which lenders are included in peer comparisons">
+                                    <i class="fas fa-info-circle"></i>
+                                </span>
+                            </div>
+
+                            <!-- HMDA Filters Row -->
+                            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start; margin-bottom: 8px;">
+                                <span style="font-size: 0.85rem; color: #666; margin-right: 8px; font-weight: 600; align-self: flex-start; padding-top: 24px;">HMDA Filters:</span>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="action_taken" style="font-size: 0.75rem; color: #666;">Action Taken:</label>
+                                    <select id="action_taken" name="action_taken" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Originations (1)</option>
+                                        <option value="2">Approved but not accepted (2)</option>
+                                        <option value="3">Denied (3)</option>
+                                        <option value="4">Withdrawn (4)</option>
+                                        <option value="5">Closed for incompleteness (5)</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="occupancy_type" style="font-size: 0.75rem; color: #666;">Occupancy:</label>
+                                    <select id="occupancy_type" name="occupancy_type" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Owner-Occupied (1)</option>
+                                        <option value="2">Not Owner-Occupied (2)</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="total_units" style="font-size: 0.75rem; color: #666;">Units:</label>
+                                    <select id="total_units" name="total_units" multiple style="min-width: 180px;">
+                                        <option value="1" selected>1 Unit</option>
+                                        <option value="2" selected>2 Units</option>
+                                        <option value="3" selected>3 Units</option>
+                                        <option value="4" selected>4 Units</option>
+                                        <option value="5">5+ Units</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="construction_method" style="font-size: 0.75rem; color: #666;">Construction:</label>
+                                    <select id="construction_method" name="construction_method" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Site-Built (1)</option>
+                                        <option value="2" selected>Manufactured Home (2)</option>
+                                    </select>
+                                </div>
+                                
+                                <div style="display: flex; flex-direction: column; gap: 4px;">
+                                    <label for="not_reverse" style="font-size: 0.75rem; color: #666;">Reverse Mortgage:</label>
+                                    <select id="not_reverse" name="not_reverse" multiple style="min-width: 180px;">
+                                        <option value="1" selected>Not Reverse (1)</option>
+                                        <option value="2">Reverse Mortgage (2)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <small class="help-text" style="display: block; margin-top: 8px; font-size: 0.75rem; color: #666;">
+                                <i class="fas fa-info-circle"></i>
+                                Note: The Goals sheet includes all loan types. Loan Purpose selection applies to Mortgage Data sheets only.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Force Refresh Option - Senior Executives and Admins Only -->
+                    {% if permissions and permissions.get('executive_tools') %}
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px;">
+                        <input type="checkbox" id="forceRefreshCheckbox" style="cursor: pointer; width: 18px; height: 18px; accent-color: #ff9800;">
+                        <label for="forceRefreshCheckbox" style="cursor: pointer; font-size: 0.85rem; color: #666;">
+                            <i class="fas fa-sync-alt" style="color: #ff9800;"></i>
+                            Force refresh (bypass cache)
+                        </label>
+                    </div>
+                    {% endif %}
+
+                    <button type="submit" class="submit-btn" id="submitBtn" data-tooltip="Click to generate your merger analysis. Make sure you've entered bank information and uploaded the required files.">
+                        <i class="fas fa-magic"></i>
+                        <span>Generate Merger Analysis</span>
+                    </button>
+                    <small class="submit-info">
+                        <i class="fas fa-clock"></i>
+                        Analysis typically takes 5-10 minutes
+                    </small>
+                </form>
+
+                <!-- Progress Section -->
+                <div id="progressSection" class="progress-section" style="display: none;">
+                    <div class="progress-card">
+                        <div class="progress-header">
+                            <i class="fas fa-cog fa-spin"></i>
+                            <h3>Analyzing Merger Data...</h3>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <div class="progress-bar" style="margin-bottom: 20px;">
+                            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 0.9rem; color: #666;">
+                            <span id="progressPercent" style="font-weight: 600; color: var(--ncrc-secondary-blue);">0%</span>
+                            <span id="progressText" style="font-weight: 500;">Initializing analysis...</span>
+                        </div>
+                        
+                        <div class="progress-info" style="text-align: center; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                            <i class="fas fa-clock" style="margin-right: 5px;"></i>
+                            <small style="color: #666;">Analysis typically takes 5-10 minutes depending on the data volume. Please keep this window open.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Section: Excel Preview -->
+                <div id="resultsSection" class="results-section" style="display: none;">
+                <div class="excel-viewer">
+                    <div class="excel-download-bar">
+                        <div>
+                            <strong style="font-size: 15px;">Analysis Complete</strong>
+                            <div style="font-size: 12px; color: #666; margin-top: 2px;" id="excelFileInfo">Loading preview...</div>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button type="button" id="runAnotherBtn" onclick="resetForm()" class="excel-download-btn" style="background: #6c757d;">
+                                <i class="fas fa-redo"></i> Run Another
+                            </button>
+                            <a id="downloadBtn" class="excel-download-btn" download>
+                                <i class="fas fa-download"></i> Download Excel
+                            </a>
+                        </div>
+                    </div>
+                    <div id="validationBanner" class="validation-banner" style="display:none;">
+                        <strong id="validationBannerTitle">Data quality check</strong>
+                        <ul id="warningsList" style="margin-top:6px;"></ul>
+                    </div>
+                    <div class="excel-tabs" id="excelTabs"></div>
+                    <div id="excelSheets"></div>
+                    <div id="excelLoading" style="padding: 40px; text-align: center; color: #666;">
+                        <i class="fas fa-spinner fa-spin" style="font-size: 24px;"></i>
+                        <p>Loading Excel preview...</p>
+                    </div>
+                </div>
+                </div>
+
+                <!-- Error Section -->
+                <div id="errorSection" class="error-section" style="display: none;">
+                    <div class="error-card">
+                        <div class="error-header">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <h3>Analysis Failed</h3>
+                        </div>
+                        <div class="error-content">
+                            <p id="errorMessage"></p>
+                            <button class="retry-btn" onclick="resetForm()">
+                                <i class="fas fa-redo"></i>
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+        </div> <!-- End content-wrapper -->

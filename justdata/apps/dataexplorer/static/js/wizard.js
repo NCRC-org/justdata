@@ -20,9 +20,15 @@
 // DataExplorer Wizard - Complete Implementation
 // Features: Progressive disclosure, smart defaults, real-time validation, enhanced UX, mobile-first, accessibility
 
+// validateLenderSearch / validateFilters live in wizard-steps.js (orchestrator);
+// renderStep / goBack live there too. ES modules don't share script scope, so the
+// cross-file references that previously resolved via shared classic-script scope
+// are now explicit imports. (Circular import is fine — only used inside function bodies.)
+import { validateLenderSearch, validateFilters, renderStep, goBack } from './wizard-steps.js';
+
 // Wizard State Management
 // LOCKED: Core data structure - all user choices are stored here
-let wizardState = {
+export let wizardState = {
     currentStep: 1,
     analysisType: null, // 'area' or 'lender'
     stepHistory: [],
@@ -90,13 +96,13 @@ let wizardState = {
 // LOCKED: AREA ANALYSIS STEP PATHS - DO NOT MODIFY WITHOUT USER APPROVAL
 // This defines the area analysis flow structure which is locked and working.
 // ============================================================================
-const stepPaths = {
+export const stepPaths = {
     area: ['step1', 'step2A', 'step3A', 'step4A', 'step5A'],
     lender: ['step1', 'step2B', 'step3B', 'step4B', 'step5B', 'step6B']
 };
 
 // Progressive Disclosure: Mini Summary Bar
-function createSummaryBar() {
+export function createSummaryBar() {
     const summaryHTML = `
         <div class="wizard-summary-bar" id="wizardSummaryBar" role="region" aria-label="Wizard progress summary">
             <div class="summary-steps">
@@ -118,7 +124,7 @@ function createSummaryBar() {
     }
 }
 
-function generateStepIndicators() {
+export function generateStepIndicators() {
     const currentPath = wizardState.analysisType ? stepPaths[wizardState.analysisType] : ['step1'];
     let html = '';
     
@@ -144,7 +150,7 @@ function generateStepIndicators() {
     return html;
 }
 
-function generateSummaryDetails() {
+export function generateSummaryDetails() {
     let details = [];
     
     if (wizardState.data.analysisType) {
@@ -189,7 +195,7 @@ function attachSummaryListeners() {
 }
 
 // Smart Defaults: Auto-detect location, suggest common combinations
-function initializeSmartDefaults() {
+export function initializeSmartDefaults() {
     // Try to detect user's location
     if (navigator.geolocation && !wizardState.cache.lastState) {
         // Note: We'll use IP-based geolocation via backend instead
@@ -240,7 +246,7 @@ function loadCachedData() {
     }
 }
 
-function saveToCache(key, data) {
+export function saveToCache(key, data) {
     try {
         localStorage.setItem(`dataexplorer_${key}`, JSON.stringify(data));
     } catch (e) {
@@ -249,7 +255,7 @@ function saveToCache(key, data) {
 }
 
 // Real-time Validation
-const validationRules = {
+export const validationRules = {
     counties: {
         validate: (counties) => {
             if (!counties || counties.length === 0) {
@@ -307,7 +313,7 @@ const validationRules = {
     }
 };
 
-function validateStep(stepKey) {
+export function validateStep(stepKey) {
     switch(stepKey) {
         case 'step2A':
             // Validate metro selection
@@ -340,35 +346,16 @@ function validateStep(stepKey) {
     }
 }
 
-function validateCounties() {
+export function validateCounties() {
     const selectedCounties = getSelectedCounties();
     return validationRules.counties.validate(selectedCounties);
 }
 
-// Updated to work with lender dropdown selector
-function validateLenderSearch() {
-    const select = document.getElementById('lenderSelect');
-    const selectText = document.getElementById('lenderSelectText');
-    
-    if (!select || !select.value) {
-        if (!selectText || selectText.textContent === 'Select a lender...') {
-            return { valid: false, message: 'Please select a lender' };
-        }
-    }
-    
-    if (!wizardState.data.lender || !wizardState.data.lender.lei) {
-        return { valid: false, message: 'Please select a lender' };
-    }
-    
-    return { valid: true };
-}
+// validateLenderSearch and validateFilters are imported from wizard-steps.js;
+// previously the duplicate definitions here were silently overridden in classic-script
+// load order. Under ES modules each file has its own scope, so we delegate explicitly.
 
-function validateFilters() {
-    // Filters always have defaults, so always valid
-    return { valid: true };
-}
-
-function validateGeographyScope() {
+export function validateGeographyScope() {
     const selected = document.querySelector('input[name="geoScope"]:checked');
     if (!selected) {
         return { valid: false, message: 'Please select a geographic scope' };
@@ -376,7 +363,7 @@ function validateGeographyScope() {
     return { valid: true };
 }
 
-function validateComparisonGroup() {
+export function validateComparisonGroup() {
     const selected = document.querySelector('input[name="compGroup"]:checked');
     if (!selected) {
         return { valid: false, message: 'Please select a comparison group' };
@@ -385,7 +372,7 @@ function validateComparisonGroup() {
 }
 
 // Enhanced UX: Smooth transitions, loading states, success animations
-function transitionToStep(stepKey, direction = 'forward') {
+export function transitionToStep(stepKey, direction = 'forward') {
     const currentCard = document.querySelector('.step-card.active');
     if (!currentCard) return;
     
@@ -438,7 +425,7 @@ function transitionToStep(stepKey, direction = 'forward') {
     return true;
 }
 
-function updateWizardState(stepKey) {
+export function updateWizardState(stepKey) {
     // Determine step number from step key
     const path = wizardState.analysisType ? stepPaths[wizardState.analysisType] : [];
     const stepIndex = path.indexOf(stepKey);
@@ -452,12 +439,12 @@ function updateWizardState(stepKey) {
     }
 }
 
-function announceStepChange(stepKey) {
+export function announceStepChange(stepKey) {
     const stepName = getStepName(stepKey);
     announceToScreenReader(`Now on step ${wizardState.currentStep}: ${stepName}`);
 }
 
-function announceToScreenReader(message) {
+export function announceToScreenReader(message) {
     const announcement = document.createElement('div');
     announcement.setAttribute('role', 'status');
     announcement.setAttribute('aria-live', 'polite');
@@ -471,7 +458,7 @@ function announceToScreenReader(message) {
     }, 1000);
 }
 
-function focusFirstInput(container) {
+export function focusFirstInput(container) {
     const firstInput = container.querySelector('input, select, textarea, button');
     if (firstInput) {
         firstInput.focus();
@@ -479,7 +466,7 @@ function focusFirstInput(container) {
 }
 
 // Success animation when step completes
-function showStepSuccess(stepElement) {
+export function showStepSuccess(stepElement) {
     const checkmark = document.createElement('div');
     checkmark.className = 'step-success-checkmark';
     checkmark.innerHTML = '<i class="fas fa-check-circle"></i>';
@@ -498,7 +485,7 @@ function showStepSuccess(stepElement) {
 let touchStartX = 0;
 let touchEndX = 0;
 
-function initSwipeGestures() {
+export function initSwipeGestures() {
     const container = document.getElementById('wizardContainer');
     if (!container) return;
     
@@ -512,7 +499,7 @@ function initSwipeGestures() {
     }, { passive: true });
 }
 
-function handleSwipe() {
+export function handleSwipe() {
     const swipeThreshold = 50;
     const diff = touchStartX - touchEndX;
     
@@ -537,7 +524,7 @@ function handleSwipe() {
 }
 
 // Accessibility: Keyboard navigation, screen reader support, reduced motion
-function initAccessibility() {
+export function initAccessibility() {
     // Check for reduced motion preference
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) {
@@ -554,7 +541,7 @@ function initAccessibility() {
     initHighContrastToggle();
 }
 
-function handleKeyboardNavigation(e) {
+export function handleKeyboardNavigation(e) {
     // Escape key - go back
     if (e.key === 'Escape' && wizardState.currentStep > 1) {
         e.preventDefault();
@@ -581,7 +568,7 @@ function handleKeyboardNavigation(e) {
     }
 }
 
-function initFocusTraps() {
+export function initFocusTraps() {
     // Focus trap for modals/overlays
     const modals = document.querySelectorAll('.modal, .loading-overlay');
     modals.forEach(modal => {
@@ -605,7 +592,7 @@ function initFocusTraps() {
     });
 }
 
-function initHighContrastToggle() {
+export function initHighContrastToggle() {
     // Add high contrast toggle button (optional feature)
     const toggle = document.createElement('button');
     toggle.className = 'accessibility-toggle';
@@ -632,7 +619,7 @@ function initHighContrastToggle() {
 }
 
 // Utility functions
-function getStepName(stepKey) {
+export function getStepName(stepKey) {
     const names = {
         'step1': 'Choose Analysis Type',
         'step2A': 'Select Geography',
@@ -648,7 +635,7 @@ function getStepName(stepKey) {
     return names[stepKey] || stepKey;
 }
 
-function formatGeographyScope(scope) {
+export function formatGeographyScope(scope) {
     const formats = {
         'all_cbsas': 'All CBSAs',
         'branch_cbsas': 'Branch CBSAs (>1%)',
@@ -657,7 +644,7 @@ function formatGeographyScope(scope) {
     return formats[scope] || scope;
 }
 
-function formatComparisonGroup(group) {
+export function formatComparisonGroup(group) {
     const formats = {
         'all': 'All Lenders',
         'banks': 'Banks Only',
@@ -668,7 +655,7 @@ function formatComparisonGroup(group) {
     return formats[group] || group;
 }
 
-function getSelectedCounties() {
+export function getSelectedCounties() {
     const checkboxes = document.querySelectorAll('#countyCheckboxes input[type="checkbox"]:checked');
     return Array.from(checkboxes).map(cb => {
         return {
@@ -681,7 +668,7 @@ function getSelectedCounties() {
     });
 }
 
-function showError(message) {
+export function showError(message) {
     // Remove existing errors
     const existingErrors = document.querySelectorAll('.error-message');
     existingErrors.forEach(err => err.remove());
@@ -717,7 +704,7 @@ function showError(message) {
     }
 }
 
-function showLoading(text = 'Loading...') {
+export function showLoading(text = 'Loading...') {
     const overlay = document.getElementById('loadingOverlay');
     const loadingText = document.getElementById('loadingText');
     
@@ -729,7 +716,7 @@ function showLoading(text = 'Loading...') {
     }
 }
 
-function hideLoading() {
+export function hideLoading() {
     const overlay = document.getElementById('loadingOverlay');
     if (overlay) {
         overlay.classList.remove('active');
@@ -737,10 +724,5 @@ function hideLoading() {
     }
 }
 
-// Export for use in main HTML file
-window.wizardState = wizardState;
-window.transitionToStep = transitionToStep;
-window.createSummaryBar = createSummaryBar;
-window.initializeSmartDefaults = initializeSmartDefaults;
-window.initSwipeGestures = initSwipeGestures;
-window.initAccessibility = initAccessibility;
+// (Window exports removed — symbols are exported via ES module exports above; the
+// concentrated window shim for inline onclick handlers lives in wizard-steps.js.)

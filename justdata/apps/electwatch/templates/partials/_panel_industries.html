@@ -1,0 +1,39 @@
+        <!-- Industries Panel -->
+        <div id="industries" class="panel">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-pie"></i> Industry Sector Analysis</h2>
+                </div>
+                <div class="card-body">
+                    <div class="sector-grid">
+                        {% for code, info in sectors.items() %}
+                        <div class="sector-card" onclick="showIndustryDetail('{{ code }}')">
+                            <h4>
+                                {% if code == 'banking' %}<i class="fas fa-university"></i>
+                                {% elif code == 'crypto' %}<i class="fab fa-bitcoin"></i>
+                                {% elif code == 'mortgage' %}<i class="fas fa-home"></i>
+                                {% elif code == 'investment' %}<i class="fas fa-chart-line"></i>
+                                {% elif code == 'insurance' %}<i class="fas fa-shield-alt"></i>
+                                {% elif code == 'fintech' %}<i class="fas fa-mobile-alt"></i>
+                                {% elif code == 'consumer_lending' %}<i class="fas fa-credit-card"></i>
+                                {% else %}<i class="fas fa-industry"></i>
+                                {% endif %}
+                                {{ info.name }}
+                            </h4>
+                            <p class="description">{{ info.description }}</p>
+                            <div class="sector-stats">
+                                <div class="sector-stat">
+                                    <div class="value" id="stat-{{ code }}-officials">--</div>
+                                    <div class="label">Officials</div>
+                                </div>
+                                <div class="sector-stat">
+                                    <div class="value" id="stat-{{ code }}-total">--</div>
+                                    <div class="label">Total $</div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>

@@ -1,0 +1,466 @@
+
+    <div class="report-container">
+        <!-- Header Actions Row -->
+        <div class="report-actions-row no-print" style="display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-bottom: 20px; padding: 10px 0;">
+            <a href="{{ app_base_url|default('/lendsight') }}/download?format=zip" class="action-btn primary" id="downloadZipBtn" style="text-decoration: none; cursor: pointer; padding: 12px 24px; background: #1e3a5f; color: white; border-radius: 5px; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background-color 0.2s;">
+                <i class="fas fa-download"></i> Export Report
+            </a>
+        </div>
+
+        <!-- Loading State -->
+        <div id="loadingState" class="loading">
+            <i class="fas fa-spinner fa-spin fa-2x"></i>
+            <p>Loading report data...</p>
+        </div>
+        
+        <!-- Error State -->
+        <div id="errorState" class="error" style="display: none;">
+            <h3><i class="fas fa-exclamation-triangle"></i> Error Loading Report</h3>
+            <p id="errorMessage"></p>
+        </div>
+        
+        <div class="report-header" style="text-align: center; margin-bottom: 30px; padding: 20px; background: var(--ncrc-dark-blue); color: white; border-radius: 8px;">
+            <h1 style="margin: 0 0 10px 0;">Mortgage Lending Analysis</h1>
+            <p id="reportMetadata" style="margin: 10px 0 0 0; opacity: 0.9;">
+                <span id="counties">Loading...</span> | <span id="years">Loading...</span>
+            </p>
+        </div>
+        
+            <!-- Report Content -->
+            <main id="main-content" style="display: none;" role="main">
+
+            <!-- Report Content (no tabs — loads directly) -->
+            <!-- Intro Paragraph and Census Chart - Side by Side -->
+            <div class="report-section print-break" id="introAndCensusSection" style="display: none;">
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <!-- Intro Paragraph - 1/3 width -->
+                    <div style="flex: 0 0 33.333%;">
+                        <div class="ai-insight-card">
+                            <div class="ai-content" id="introParagraphContent">
+                                <!-- AI content will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Census Chart - 2/3 width -->
+                    <div style="flex: 0 0 66.667%;">
+                        <h2 class="section-title">Population Demographics</h2>
+                        <div style="position: relative; height: 400px;">
+                            <canvas id="censusChart"></canvas>
+                        </div>
+                        <div id="censusChartTotals" style="margin-top: 10px; text-align: center; font-size: 0.9em; color: #666;">
+                            <!-- Total population for each year will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Census Boundaries Callout -->
+            <div class="report-section" id="censusBoundariesCallout" style="display: none; margin-top: 15px; padding: 15px; background-color: #f0f7ff; border-left: 4px solid #1e3a5f; border-radius: 4px;">
+                <p style="margin: 0; font-size: 0.95em; line-height: 1.6;">
+                    <strong>Note:</strong> It is important to note that shifting census boundaries that took effect in 2022 resulted in a 30% increase in the number of majority-minority census tracts nationally. The vast majority of these newly designated majority-minority tracts are not low-to-moderate income tracts.
+                </p>
+            </div>
+            
+            <!-- AI Key Findings -->
+            <div class="report-section print-break" id="aiKeyFindingsSection" style="display: none;">
+                <h2 class="section-title">Key Findings</h2>
+                <div class="ai-insight-card">
+                    <div class="ai-content" id="keyFindingsContent" style="line-height: 1.8;">
+                        <!-- AI content will be populated by JavaScript -->
+                    </div>
+                </div>
+                <p style="margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Population Demographics Table Caption (moved below Key Findings) -->
+            <div class="report-section" id="populationDemographicsCaptionSection" style="display: none;">
+                <p class="table-caption" id="populationDemographicsCaption">
+                    <strong>Source:</strong> U.S. Census Bureau American Community Survey (ACS) 5-year estimates. Data represents the most recent available ACS 5-year period and is shown for reference years in the analysis. Groups representing less than 1% of the total population are excluded from this table.
+                </p>
+            </div>
+            
+            <style>
+                #keyFindingsContent ul {
+                    margin: 0;
+                    padding-left: 20px;
+                }
+                #keyFindingsContent ul li {
+                    margin-bottom: 12px;
+                    padding-left: 1.5em;
+                    text-indent: -1.5em;
+                }
+                #keyFindingsContent ul li:last-child {
+                    margin-bottom: 0;
+                }
+            </style>
+            
+            <!-- Section 1: Loans by Race and Ethnicity -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 1: Loans by Race and Ethnicity</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Loans by Race and Ethnicity</h3>
+                <p class="table-introduction" id="demographicOverviewIntro" style="margin-bottom: 20px; max-width: 100%;">
+                    <!-- Introduction will be populated by JavaScript -->
+                </p>
+                <div class="table-container" style="width: 100%;">
+                    <table class="data-table" id="demographicOverviewTable" role="table" aria-label="Demographic Overview Lending Data">
+                        <thead>
+                            <tr role="row">
+                                <th style="text-align: left; width: 240px;" role="columnheader" scope="col">Race / Ethnicity</th>
+                            </tr>
+                        </thead>
+                        <tbody role="rowgroup">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <div style="margin-top: 6px; font-size: 0.8em; color: #666;">
+                        <span style="display: inline-block; width: 10px; height: 10px; background: #E07C39; border-radius: 2px; vertical-align: middle; margin-right: 3px;"></span> Population Share
+                        <span style="display: inline-block; width: 10px; height: 10px; background: #1a8fc9; border-radius: 2px; vertical-align: middle; margin-left: 12px; margin-right: 3px;"></span> Lending Share
+                    </div>
+                    <p class="table-caption" id="demographicOverviewCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                </div>
+                <div class="table-narrative" id="demographicOverviewDiscussion">
+                    <!-- Discussion will be populated by JavaScript -->
+                </div>
+                <p id="demographicOverviewAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Section 2: Income and Neighborhood Indicators -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 2: Income and Neighborhood Indicators</h2>
+                
+                <!-- Table 1: Lending to Income Borrowers -->
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Lending to Income Borrowers</h3>
+                <p class="table-introduction" id="incomeBorrowersIntro" style="margin-bottom: 20px; max-width: 100%;">
+                    This table shows lending activity by borrower income level over the selected time period. Borrower income is classified relative to the area median family income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) in which the property is located. Income thresholds are determined using FFIEC median family income data. Population share refers to the percentage of the county residents that are in each income bracket as of 2020.
+                </p>
+                <div class="table-container" style="width: 100%;">
+                    <table class="data-table" id="incomeBorrowersTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; width: 240px;">Borrower Income</th>
+                                <!-- Year columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-narrative" id="incomeBorrowersDiscussion" style="margin-top: 20px;">
+                    <!-- AI narrative will be populated by JavaScript -->
+                </div>
+                <p id="incomeBorrowersAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+                
+                <!-- Table 2: Lending to Census Tracts by Income Level -->
+                <h3 style="margin-top: 40px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 2: Lending to Census Tracts by Income Level</h3>
+                <p class="table-introduction" id="incomeTractsIntro" style="margin-bottom: 20px; max-width: 100%;">
+                    This table shows lending activity by census tract income level over the selected time period. Census tract income is classified relative to the area median family income, as defined by HUD. The table shows lending to Low to Moderate Income Census Tracts (≤80% of AMFI) and their breakdown by Low Income (≤50% of AMFI), Moderate Income (>50% and ≤80% of AMFI), Middle Income (>80% and ≤120% of AMFI), and Upper Income (>120% of AMFI) census tracts. <strong>Note:</strong> Between 2021 and 2022, boundary changes substantially increased the number of tracts with higher minority populations.
+                </p>
+                <div class="table-container" style="width: 100%;">
+                    <table class="data-table" id="incomeTractsTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; width: 240px;">Tract Median Income</th>
+                                <!-- Year columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-narrative" id="incomeTractsDiscussion" style="margin-top: 20px;">
+                    <!-- AI narrative will be populated by JavaScript -->
+                </div>
+                <p id="incomeTractsAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+                
+                <!-- Table 3: Lending to Census Tracts by Minority Population -->
+                <h3 style="margin-top: 40px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 3: Lending to Census Tracts by Minority Population</h3>
+                <p class="table-introduction" id="minorityTractsIntro" style="margin-bottom: 20px; max-width: 100%;">
+                    This table shows lending activity by census tract minority population. "Majority-Minority" tracts have more than 50% residents of color — this is a fixed national threshold. Because that single threshold tells very different stories in different geographies (nearly all tracts qualify in South Florida; almost none in rural Iowa), this table also divides tracts into four quartile groups based on the actual distribution of minority population percentages across all census tracts in the CBSA. Quartile boundaries are specific to this geography. <strong>Note:</strong> Between 2021 and 2022, shifting census boundaries resulted in a ~30% increase in majority-minority census tract designations nationally.
+                </p>
+                <div class="table-container" style="width: 100%;">
+                    <table class="data-table" id="minorityTractsTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; width: 240px;">Tract Minority Population</th>
+                                <!-- Year columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="table-narrative" id="minorityTractsDiscussion" style="margin-top: 20px;">
+                    <!-- AI narrative will be populated by JavaScript -->
+                </div>
+                <p id="minorityTractsAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+                
+                <!-- Unified Source Caption -->
+                <p class="table-caption" id="section2SourceCaption" style="margin-top: 30px; max-width: 100%;">
+                    <strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. Census tract income classifications from HUD. <strong>Methodology:</strong> Borrower income is compared to FFIEC median family income for the MSA/MD. Census tract income is compared to area median family income. Minority quartiles are calculated from the distribution of minority population percentages across all census tracts in the CBSA. <strong>Note:</strong> The Change column indicates the change over time since 2020 through 2024. The Population Share (%) column shows the percentage of the population (for borrower income) or census tracts (for tract income and minority) in each category. <span id="section2AsteriskNote" style="display: none;"></span>
+                </p>
+
+                <!-- Section 2 Combined AI Discussion - "Neighborhood Overview" -->
+                <div id="incomeNeighborhoodDiscussion" style="margin-top: 30px; padding: 20px; background: #F8FAFB; border-left: 4px solid #1a8fc9; border-radius: 4px;">
+                    <h4 style="margin: 0 0 12px 0; color: #1e3a5f; font-size: 1.05em; font-weight: 600;">Neighborhood Overview</h4>
+                    <div class="table-narrative" id="incomeNeighborhoodDiscussionContent">
+                        <!-- AI narrative for Income and Neighborhood Indicators will be populated by JavaScript -->
+                    </div>
+                </div>
+                <p id="incomeNeighborhoodAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Section 3: Top Lenders by Total Loans -->
+            <div class="report-section print-break">
+                <h2 class="section-title">Section 3: Top Lenders by Total Loans</h2>
+                <h3 style="margin-top: 20px; margin-bottom: 15px; font-size: 1.2em; color: var(--ncrc-dark-blue);">Table 1: Top Lenders by Total Loans</h3>
+                <p class="table-introduction" id="topLendersDetailedIntro" style="margin-bottom: 20px; max-width: 100%;">
+                    This table ranks the largest mortgage lenders by total loan originations in the most recent year. Market share is calculated as each lender's originations divided by total market originations. Race/ethnicity percentages use loans with demographic data as the denominator; income and neighborhood indicators use each lender's total loans.
+                </p>
+                <p style="margin-bottom: 10px; font-size: 0.9em; color: #666; font-style: italic;">
+                    <strong>Note:</strong> Click on any column header to sort the table. All data columns are in percentages.
+                </p>
+                <div class="table-container">
+                    <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <label for="lenderTypeFilter" style="font-weight: 600; white-space: nowrap;">Filter by Lender Type:</label>
+                            <select id="lenderTypeFilter" onchange="filterLendersByType()" style="padding: 5px 10px; font-size: 14px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer;">
+                                <option value="all">All Lenders</option>
+                                <option value="Bank">Banks</option>
+                                <option value="Mortgage">Mortgage Companies</option>
+                                <option value="Credit Union">Credit Unions</option>
+                            </select>
+                        </div>
+                        <button class="expand-btn" id="expandTopLendersBtn" onclick="expandTopLendersTable()" style="display: none;">
+                            <i class="fas fa-chevron-down"></i> Show All Lenders
+                        </button>
+                    </div>
+                    <table class="data-table collapsible-table" id="topLendersDetailedTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">Lender Name</th>
+                                <th style="text-align: center;">Total Loans</th>
+                                <!-- Race/ethnicity and indicator columns will be added dynamically by JavaScript -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p class="table-caption" id="topLendersDetailedCaption">
+                        <!-- Caption will be populated by JavaScript -->
+                    </p>
+                    <p style="margin-top: 10px; font-size: 0.9em; color: #666; font-style: italic;">
+                        For the complete lender list, download the Excel export.
+                    </p>
+                </div>
+                <div class="table-narrative" id="topLendersDetailedDiscussion">
+                    <!-- Discussion will be populated by JavaScript -->
+                </div>
+                <p id="topLendersDetailedAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Section 4: Market Concentration -->
+            <div class="report-section print-break" id="marketConcentrationSection" style="display: none;">
+                <h2 class="section-title">Section 4: Market Concentration</h2>
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <!-- Intro Text - 1/3 width -->
+                    <div style="flex: 0 0 33.333%;">
+                        <div class="ai-insight-card">
+                            <div class="ai-content" id="marketConcentrationIntro">
+                                <p>The Herfindahl-Hirschman Index (HHI) is a common measure of market concentration and is used to determine market competitiveness. It is calculated by squaring the market share of each firm in the market and then summing the resulting numbers. The HHI can range from 0 to 10,000. A higher HHI indicates greater market concentration and less competition.</p>
+                                <p>HHI for mortgage lending in the selected counties across the selected years:</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Chart - 2/3 width -->
+                    <div style="flex: 0 0 66.667%;">
+                        <div class="chart-container" style="height: 400px;">
+                            <canvas id="hhiChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <!-- Source caption - full width -->
+                <p class="table-caption" style="margin-top: 15px; width: 100%;">
+                    <strong>Source:</strong> Home Mortgage Disclosure Act (HMDA) data, compiled and maintained in NCRC's curated databases. 
+                    <strong>Methodology:</strong> Herfindahl-Hirschman Index (HHI) is calculated as the sum of the squares of the market shares of all lenders in the market based on total loan amounts. 
+                    HHI values range from 0 to 10,000. 
+                    <strong>Concentration Levels:</strong> HHI &lt; 1,500 = Low concentration; 1,500-2,500 = Moderate concentration; &gt; 2,500 = High concentration.
+                </p>
+                <div class="table-narrative" id="marketConcentrationDiscussion" style="display: none;">
+                    <!-- Discussion will be populated by JavaScript -->
+                </div>
+                <p id="marketConcentrationAICaption" style="display: none; margin-top: 10px; font-size: 0.85em; font-style: italic; color: #666;">
+                    Above text is AI generated from NCRC data and analysis
+                </p>
+            </div>
+            
+            <!-- Methodology Section -->
+            <div class="report-section print-break" id="methodsSection">
+                <h2 class="section-title">Methods</h2>
+                <div class="ai-insight-card">
+                    <div class="ai-content">
+                        <h3>Data Sources</h3>
+                        <p><strong>HMDA Data:</strong> This report uses data from the Home Mortgage Disclosure Act (HMDA), which requires financial institutions to report information about mortgage loan applications and originations. HMDA data is collected and made publicly available by the Consumer Financial Protection Bureau (CFPB). The data used in this report is sourced from NCRC's curated HMDA databases, compiled and maintained by NCRC Research staff. For more information about HMDA data collection and reporting requirements, visit the <a href="https://www.consumerfinance.gov/data-research/hmda/" target="_blank">CFPB HMDA website</a>.</p>
+
+                        <p><strong>HMDA Data Coverage:</strong> This analysis includes mortgage loan originations (action taken = 1) for owner-occupied, site-built, 1-4 unit properties. <span id="loanPurposeCoverage">The analysis includes home purchase loans (loan purpose = 1).</span> Reverse mortgages are excluded from the analysis.</p>
+
+                        <p id="censusDataSource"><strong>Census Data:</strong> <span id="censusDataSourceText">Population demographic data is sourced from the U.S. Census Bureau, including the 2010 Decennial Census, 2020 Decennial Census, and American Community Survey (ACS) 5-year estimates.</span></p>
+
+                        <p><strong>HUD Data:</strong> Income category population shares are sourced from the U.S. Department of Housing and Urban Development (HUD) Low-Mod Summary Data, which shows the percentage of county residents in each income bracket based on 2020 ACS data.</p>
+
+                        <p><strong>Data Filters Applied:</strong> The following filters are automatically applied to all analyses:
+                            <ul id="dataFiltersList" style="margin-top: 8px; padding-left: 20px;">
+                                <li>Originations only (action taken = 1)</li>
+                                <li>Site-built properties (construction method = 1)</li>
+                                <li>Owner-occupied properties (occupancy type = 1)</li>
+                                <li>Forward loans (excludes reverse mortgages where reverse_mortgage = 1)</li>
+                                <li>1-4 unit properties (total_units IN ('1','2','3','4'))</li>
+                            </ul>
+                        </p>
+
+                        <p><strong>Data Cleaning:</strong> Loan amounts below the 1st percentile and above the 99th percentile within each county-year are excluded (&lt;1% of records). This outlier removal prevents extreme values from distorting market share and HHI calculations.</p>
+
+                        <h3>Definitions</h3>
+
+                        <p><strong>Loan Originations:</strong> Completed mortgage loans where action taken = 1. This excludes applications, denials, and withdrawn/incomplete applications.</p>
+
+                        <p><strong>Low-to-Moderate Income Borrower (LMIB):</strong> Borrowers whose reported income is at or below 80% of Area Median Family Income (AMFI) for the Metropolitan Statistical Area (MSA) or Metropolitan Division (MD) where the property is located.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Borrower Income Categories</h4>
+                        <p>Borrower income is classified relative to AMFI:</p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Low Income Borrower:</strong> Income at or below 50% of AMFI</li>
+                            <li><strong>Moderate Income Borrower:</strong> Income greater than 50% but at or below 80% of AMFI</li>
+                            <li><strong>Middle Income Borrower:</strong> Income greater than 80% but at or below 120% of AMFI</li>
+                            <li><strong>Upper Income Borrower:</strong> Income greater than 120% of AMFI</li>
+                        </ul>
+
+                        <h4 style="margin-top: 15px; color: #333;">Census Tract Income Categories</h4>
+                        <p>Census tract income levels are determined by comparing the tract's median family income to the Area Median Family Income (AMFI):</p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Low Income Tract:</strong> Median family income at or below 50% of AMFI</li>
+                            <li><strong>Moderate Income Tract:</strong> Median family income greater than 50% but at or below 80% of AMFI</li>
+                            <li><strong>Middle Income Tract:</strong> Median family income greater than 80% but at or below 120% of AMFI</li>
+                            <li><strong>Upper Income Tract:</strong> Median family income greater than 120% of AMFI</li>
+                            <li><strong>Low-to-Moderate Income Census Tract (LMICT or LMI Tract):</strong> Census tracts where median family income is at or below 80% of AMFI (combines Low and Moderate income tracts)</li>
+                        </ul>
+
+                        <p><strong>Majority-Minority Census Tract (MMCT):</strong> Census tracts where minority populations represent more than 50% of the total population, as defined by the U.S. Census Bureau.</p>
+
+                        <p><strong>Multi-Racial Borrowers:</strong> Non-Hispanic borrowers who report two or more distinct main race categories. This aligns with the Census Bureau's "Two or More Races" category. Based on national HMDA data (2018-2024), the most common race combinations among multi-racial mortgage borrowers are:</p>
+                        <ul style="padding-left: 20px;">
+                            <li>Asian and White: 38% of multi-racial borrowers</li>
+                            <li>Native American and White: 22%</li>
+                            <li>Black and White: 17%</li>
+                            <li>Hawaiian/Pacific Islander and White: 5%</li>
+                            <li>Native American and Black: 4%</li>
+                        </ul>
+                        <p>These five combinations account for approximately 86% of all multi-racial mortgage borrowers nationally.</p>
+
+                        <p><strong>Population Share:</strong> The percentage of the population (for borrower income categories) or census tracts (for tract income and minority categories) in each category, based on Census Bureau and HUD data.</p>
+
+                        <h3>Calculations</h3>
+
+                        <p><strong>Race and Ethnicity Classification:</strong> Race and ethnicity are determined from HMDA applicant fields:</p>
+                        <ul style="padding-left: 20px;">
+                            <li><strong>Hispanic:</strong> Classified if any ethnicity field indicates Hispanic (codes 1, 11, 12, 13, or 14), regardless of race codes.</li>
+                            <li><strong>Non-Hispanic Race:</strong> For non-Hispanic borrowers, race is determined from the first valid race code (excluding codes 6, 7, 8):
+                                <ul>
+                                    <li>Code 1: Native American</li>
+                                    <li>Code 2 or 21-27: Asian</li>
+                                    <li>Code 3: Black or African American</li>
+                                    <li>Code 4 or 41-44: Hawaiian/Pacific Islander</li>
+                                    <li>Code 5: White</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p><strong>Percentage Calculations:</strong> Race/ethnicity percentages are calculated as: (group loans / loans with demographic data) × 100. Loans without race/ethnicity data are excluded from the denominator. Income and neighborhood indicator percentages use total loans as the denominator. Only groups representing ≥1% of loans are displayed in tables.</p>
+
+                        <p><strong>Change Over Time:</strong> For percentage shares, Change = Last Year Share − First Year Share, expressed in percentage points (pp). For total counts, Change = ((Last − First) / First) × 100, expressed as a percentage. Positive changes are displayed in blue; negative changes in red.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Herfindahl-Hirschman Index (HHI)</h4>
+                        <p>A standard measure of market concentration used by regulators including the Department of Justice and Federal Trade Commission. HHI is calculated as the sum of squared market shares of all lenders in a market:</p>
+                        <p style="text-align: center; font-family: monospace; margin: 15px 0;">HHI = Σ(market share<sub>i</sub>)<sup>2</sup></p>
+                        <p>Market shares are based on total loan origination amounts (not count). The sum includes all lenders in the market. Market shares are expressed as percentages (0-100), so HHI ranges from 0 to 10,000. Lower values indicate more competitive markets with many lenders. Higher values indicate concentrated markets dominated by few lenders.</p>
+                        <p><strong>Concentration Levels:</strong></p>
+                        <ul style="padding-left: 20px;">
+                            <li>HHI &lt; 1,500: Low concentration (competitive market)</li>
+                            <li>HHI 1,500-2,500: Moderate concentration</li>
+                            <li>HHI &gt; 2,500: High concentration</li>
+                        </ul>
+
+                        <p><strong>Top Lenders:</strong> Lenders ranked by total loan originations in the most recent year. Race/ethnicity percentages use loans with demographic data as denominator; income and neighborhood indicators use total loans as denominator.</p>
+
+                        <h4 style="margin-top: 15px; color: #333;">Minority Population Quartile Calculation</h4>
+                        <p>Census tracts are divided into quartiles based on the distribution of minority population percentages across all census tracts in the Core Based Statistical Area (CBSA). Quartile boundaries are calculated from the actual distribution in each CBSA:</p>
+                        <ol style="padding-left: 20px;">
+                            <li><strong>Step 1:</strong> For each census tract in the CBSA, obtain the minority population percentage.</li>
+                            <li><strong>Step 2:</strong> Calculate the 25th, 50th, and 75th percentiles across all tracts.</li>
+                            <li><strong>Step 3:</strong> Classify each tract — ≤25th percentile = Low Minority, 25th–50th = Moderate, 50th–75th = Middle, &gt;75th = High.</li>
+                            <li><strong>Step 4:</strong> For each year, calculate the share of originations in tracts within each category.</li>
+                        </ol>
+                        <div id="methodologyQuartileValues" style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; display: none;">
+                            <!-- Dynamic quartile values will be populated by JavaScript from API response -->
+                        </div>
+
+                        <h3>Abbreviations</h3>
+                        <ul>
+                            <li><strong>ACS:</strong> American Community Survey</li>
+                            <li><strong>AMFI:</strong> Area Median Family Income</li>
+                            <li><strong>CBSA:</strong> Core Based Statistical Area</li>
+                            <li><strong>CFPB:</strong> Consumer Financial Protection Bureau</li>
+                            <li><strong>FIPS:</strong> Federal Information Processing Standards</li>
+                            <li><strong>HHI:</strong> Herfindahl-Hirschman Index</li>
+                            <li><strong>HMDA:</strong> Home Mortgage Disclosure Act</li>
+                            <li><strong>HUD:</strong> U.S. Department of Housing and Urban Development</li>
+                            <li><strong>LMIB:</strong> Low-to-Moderate Income Borrower</li>
+                            <li><strong>LMICT:</strong> Low-to-Moderate Income Census Tract</li>
+                            <li><strong>MD:</strong> Metropolitan Division</li>
+                            <li><strong>MMCT:</strong> Majority-Minority Census Tract</li>
+                            <li><strong>MSA:</strong> Metropolitan Statistical Area</li>
+                            <li><strong>NCRC:</strong> National Community Reinvestment Coalition</li>
+                            <li><strong>pp:</strong> Percentage Points</li>
+                        </ul>
+
+                        <h3>Data Quality and AI Disclosure</h3>
+                        <div style="padding: 15px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px;">
+                            <p style="font-style: italic; color: #856404; margin-bottom: 8px;"><strong>AI Disclosure — Placeholder</strong></p>
+                            <p style="color: #856404;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                            <p style="color: #856404;">Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit.</p>
+                            <p style="font-style: italic; color: #856404; margin-bottom: 0;">[This disclosure text will be provided by Rose/Legal]</p>
+                        </div>
+
+                        <p id="lendsightVersionNumber" style="margin-top: 20px; font-size: 0.85em; color: #999; text-align: right;">
+                            <!-- LendSight version will be populated by JavaScript -->
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <!-- end report sections -->
+
+        </main>
+        </div>
+    </div>
+

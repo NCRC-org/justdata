@@ -155,6 +155,34 @@ def index():
     return response
 
 
+@lendsight_bp.route('/progress', methods=['GET'])
+@login_required
+@require_access('lendsight', 'partial')
+def progress_status():
+    """JSON poll for job progress (fallback when SSE connection drops)."""
+    try:
+        job_id = request.args.get('job_id')
+        if not job_id:
+            return jsonify({'error': 'job_id parameter required'}), 400
+
+        progress = get_progress(job_id)
+        if not progress:
+            return jsonify({
+                'percent': 0,
+                'step': 'Job not found',
+                'done': False,
+                'error': None
+            })
+        return jsonify(progress)
+    except Exception as e:
+        return jsonify({
+            'percent': 0,
+            'step': 'Error checking progress',
+            'done': False,
+            'error': str(e)
+        }), 500
+
+
 @lendsight_bp.route('/progress/<job_id>')
 @login_required
 def progress_handler(job_id):
@@ -662,7 +690,7 @@ def download():
             }), 403
         
         if format_type in ('zip', 'excel'):
-            from .mortgage_report_builder import save_mortgage_excel_report
+            from .report_builder import save_mortgage_excel_report
             from justdata.apps.lendsight.pdf_report import generate_lendsight_pdf
             import tempfile
             import os

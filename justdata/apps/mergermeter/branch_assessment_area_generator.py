@@ -11,6 +11,7 @@ from justdata.shared.utils.bigquery_client import get_bigquery_client, execute_q
 from justdata.apps.mergermeter.config import PROJECT_ID
 import pandas as pd
 import os
+from justdata.apps.mergermeter.sql_loader import load_sql
 
 # Get PROJECT_ID - handle both relative and absolute imports
 # PROJECT_ID is also available via environment variable
@@ -50,73 +51,7 @@ def get_all_branches_for_bank(
     if not rssd or not rssd.strip():
         return pd.DataFrame()
     
-    query = f"""
-    WITH
-    -- CBSA crosswalk to get CBSA codes and names from GEOID5 (include all areas for the lookup)
-    cbsa_crosswalk AS (
-        SELECT
-            CAST(geoid5 AS STRING) as geoid5,
-            CAST(cbsa_code AS STRING) as cbsa_code,
-            CBSA as cbsa_name,
-            County as county_name,
-            State as state_name,
-            CONCAT(County, ', ', State) as county_state
-        FROM `{PROJECT_ID}.shared.cbsa_to_county`
-    ),
-
-    -- Get all branches for the bank
-    bank_branches AS (
-        SELECT
-            CAST(b.rssd AS STRING) as rssd,
-            CAST(b.geoid5 AS STRING) as geoid5,
-            b.uninumbr
-        FROM `{PROJECT_ID}.branchsight.sod` b
-        WHERE CAST(b.year AS STRING) = '{year}'
-            AND CAST(b.rssd AS STRING) = '{rssd}'
-            AND b.geoid5 IS NOT NULL
-    ),
-
-    -- Deduplicate branches (use uninumbr as unique identifier)
-    deduplicated_branches AS (
-        SELECT
-            geoid5
-        FROM (
-            SELECT *,
-                ROW_NUMBER() OVER (PARTITION BY uninumbr ORDER BY rssd) as rn
-            FROM bank_branches
-        )
-        WHERE rn = 1
-    ),
-
-    -- Join with CBSA crosswalk and aggregate by county/CBSA
-    branch_counties AS (
-        SELECT
-            db.geoid5,
-            COALESCE(c.county_state, 'Unknown') as county_state,
-            COALESCE(c.county_name, 'Unknown') as county_name,
-            COALESCE(c.state_name, 'Unknown') as state_name,
-            -- For CBSA code, treat 99999 (rural) as N/A
-            CASE WHEN COALESCE(c.cbsa_code, 'N/A') = '99999' THEN 'N/A' ELSE COALESCE(c.cbsa_code, 'N/A') END as cbsa_code,
-            CASE WHEN COALESCE(c.cbsa_code, 'N/A') = '99999' THEN 'Non-Metro Area' ELSE COALESCE(c.cbsa_name, 'Non-Metro Area') END as cbsa_name,
-            COUNT(*) as branch_count
-        FROM deduplicated_branches db
-        LEFT JOIN cbsa_crosswalk c
-            ON db.geoid5 = c.geoid5
-        GROUP BY db.geoid5, c.county_state, c.county_name, c.state_name, c.cbsa_code, c.cbsa_name
-    )
-
-    SELECT
-        geoid5,
-        county_state,
-        county_name,
-        state_name,
-        cbsa_code,
-        cbsa_name,
-        branch_count
-    FROM branch_counties
-    WHERE cbsa_code != '99999'
-    ORDER BY cbsa_code, county_state
-    """
+    query = load_sql("mergermeter_all_branches_for_bank.sql").format(PROJECT_ID=PROJECT_ID, rssd=rssd, year=year)
     
     try:
         client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
@@ -154,94 +89,7 @@ def get_cbsa_deposit_shares(
     if not rssd or not rssd.strip():
         return pd.DataFrame(), 0.0
     
-    query = f"""
-    WITH
-    -- CBSA crosswalk to get CBSA codes and names from GEOID5 (exclude rural areas with code 99999)
-    cbsa_crosswalk AS (
-        SELECT
-            CAST(geoid5 AS STRING) as geoid5,
-            CAST(cbsa_code AS STRING) as cbsa_code,
-            CBSA as cbsa_name
-        FROM `{PROJECT_ID}.shared.cbsa_to_county`
-        WHERE CAST(cbsa_code AS STRING) != '99999'
-    ),
-    
-    -- Get all branch deposits by county for the subject bank
-    bank_deposits_by_county AS (
-        SELECT 
-            CAST(b.geoid5 AS STRING) as geoid5,
-            SUM(b.deposits_000s * 1000) as bank_deposits  -- Convert from thousands to actual amount
-        FROM `{PROJECT_ID}.branchsight.sod` b
-        WHERE CAST(b.year AS STRING) = '{year}'
-            AND CAST(b.rssd AS STRING) = '{rssd}'
-            AND b.geoid5 IS NOT NULL
-            AND b.deposits_000s IS NOT NULL
-            AND b.deposits_000s > 0
-        GROUP BY geoid5
-    ),
-    
-    -- Calculate total national deposits for the bank
-    total_national_deposits AS (
-        SELECT SUM(bank_deposits) as total_deposits
-        FROM bank_deposits_by_county
-    ),
-    
-    -- Get state info for non-metro counties
-    state_crosswalk AS (
-        SELECT
-            CAST(geoid5 AS STRING) as geoid5,
-            State as state_name
-        FROM `{PROJECT_ID}.shared.cbsa_to_county`
-    ),
-    
-    -- Aggregate bank deposits by CBSA (for metro areas) and by State (for non-metro)
-    bank_deposits_by_cbsa AS (
-        SELECT 
-            CASE 
-                WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                THEN CONCAT('NON-METRO-', s.state_name)
-                ELSE CAST(c.cbsa_code AS STRING)
-            END as cbsa_code,
-            CASE 
-                WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                THEN CONCAT(s.state_name, ' Non-Metro Area')
-                ELSE COALESCE(c.cbsa_name, 'Non-Metro Area')
-            END as cbsa_name,
-            SUM(bd.bank_deposits) as cbsa_deposits,
-            MAX(s.state_name) as state_name  -- For non-metro areas, track the state
-        FROM bank_deposits_by_county bd
-        LEFT JOIN cbsa_crosswalk c
-            ON bd.geoid5 = c.geoid5
-        LEFT JOIN state_crosswalk s
-            ON bd.geoid5 = s.geoid5
-        GROUP BY 
-            CASE 
-                WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                THEN CONCAT('NON-METRO-', s.state_name)
-                ELSE CAST(c.cbsa_code AS STRING)
-            END,
-            CASE 
-                WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                THEN CONCAT(s.state_name, ' Non-Metro Area')
-                ELSE COALESCE(c.cbsa_name, 'Non-Metro Area')
-            END,
-            s.state_name
-        HAVING SUM(bd.bank_deposits) > 0
-    )
-    
-    -- Calculate percentage of national deposits in each CBSA
-    SELECT 
-        bdc.cbsa_code,
-        bdc.cbsa_name,
-        bdc.cbsa_deposits,
-        SAFE_DIVIDE(bdc.cbsa_deposits, tnd.total_deposits) * 100 as national_deposit_share_pct,
-        tnd.total_deposits as total_national_deposits,
-        bdc.state_name
-    FROM bank_deposits_by_cbsa bdc
-    CROSS JOIN total_national_deposits tnd
-    WHERE tnd.total_deposits > 0
-    ORDER BY national_deposit_share_pct DESC, cbsa_code
-    """
+    query = load_sql("mergermeter_cbsa_deposit_shares.sql").format(PROJECT_ID=PROJECT_ID, rssd=rssd, year=year)
     
     try:
         client = get_bigquery_client(PROJECT_ID, app_name='MERGERMETER')
@@ -548,84 +396,7 @@ def generate_assessment_areas_from_branches(
                 return []
             
             # Get loan data by CBSA
-            query = f"""
-            WITH
-            -- Get CBSA codes for counties (exclude rural areas with code 99999)
-            cbsa_crosswalk AS (
-                SELECT DISTINCT
-                    CAST(geoid5 AS STRING) as geoid5,
-                    CAST(cbsa_code AS STRING) as cbsa_code,
-                    CBSA as cbsa_name,
-                    State as state_name
-                FROM `{PROJECT_ID}.shared.cbsa_to_county`
-                WHERE CAST(cbsa_code AS STRING) != '99999'
-            ),
-            
-            -- Get bank's loans by county
-            -- HMDA county_code is already GEOID5 (5-digit state+county FIPS code)
-            bank_loans_by_county AS (
-                SELECT 
-                    LPAD(CAST(h.county_code AS STRING), 5, '0') as geoid5,
-                    COUNT(*) as loan_count
-                FROM `{PROJECT_ID}.shared.de_hmda` h
-                WHERE CAST(h.activity_year AS STRING) = '{year}'
-                    AND CAST(h.lei AS STRING) = '{lei}'
-                    AND h.county_code IS NOT NULL
-                    AND h.action_taken = '1'  -- Originations only
-                GROUP BY geoid5
-            ),
-            
-            -- Calculate total national loans
-            total_national_loans AS (
-                SELECT SUM(loan_count) as total_loans
-                FROM bank_loans_by_county
-            ),
-            
-            -- Aggregate loans by CBSA
-            bank_loans_by_cbsa AS (
-                SELECT 
-                    CASE 
-                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                        THEN CONCAT('NON-METRO-', c.state_name)
-                        ELSE CAST(c.cbsa_code AS STRING)
-                    END as cbsa_code,
-                    CASE 
-                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                        THEN CONCAT(c.state_name, ' Non-Metro Area')
-                        ELSE COALESCE(c.cbsa_name, 'Non-Metro Area')
-                    END as cbsa_name,
-                    SUM(bl.loan_count) as cbsa_loans,
-                    MAX(c.state_name) as state_name
-                FROM bank_loans_by_county bl
-                LEFT JOIN cbsa_crosswalk c
-                    ON bl.geoid5 = c.geoid5
-                GROUP BY 
-                    CASE 
-                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                        THEN CONCAT('NON-METRO-', c.state_name)
-                        ELSE CAST(c.cbsa_code AS STRING)
-                    END,
-                    CASE 
-                        WHEN c.cbsa_code IS NULL OR CAST(c.cbsa_code AS STRING) = 'N/A' 
-                        THEN CONCAT(c.state_name, ' Non-Metro Area')
-                        ELSE COALESCE(c.cbsa_name, 'Non-Metro Area')
-                    END,
-                    c.state_name
-                HAVING SUM(bl.loan_count) > 0
-            )
-            
-            SELECT 
-                blc.cbsa_code,
-                blc.cbsa_name,
-                blc.cbsa_loans,
-                SAFE_DIVIDE(blc.cbsa_loans, tnl.total_loans) * 100 as national_loan_share_pct,
-                tnl.total_loans as total_national_loans,
-                blc.state_name
-            FROM bank_loans_by_cbsa blc
-            CROSS JOIN total_national_loans tnl
-            WHERE tnl.total_loans > 0
-            ORDER BY national_loan_share_pct DESC, blc.cbsa_code
-            """
+            query = load_sql("mergermeter_assessment_areas_from_branches.sql").format(PROJECT_ID=PROJECT_ID, lei=lei, year=year)
             
             results = execute_query(client, query)
             

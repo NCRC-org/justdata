@@ -475,7 +475,7 @@ def api_generate_lender_report():
     import uuid
     import threading
     from justdata.shared.utils.progress_tracker import create_progress_tracker, store_analysis_result
-    from justdata.apps.dataexplorer.lender_analysis_core import run_lender_analysis, check_lender_has_data
+    from justdata.apps.dataexplorer.lender_analysis import run_lender_analysis, check_lender_has_data
 
     try:
         data = request.get_json()
@@ -818,6 +818,276 @@ def export_area_report_excel():
             'success': False,
             'error': f'Error generating Excel export: {str(e)}'
         }), 500
+
+
+
+
+@dataexplorer_bp.route('/api/search-lender', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def search_lender():
+    """Search for lenders by name using BigQuery Lenders18 table."""
+    try:
+        data = request.get_json()
+        query = data.get('query', '').strip()
+        
+        if not query or len(query) < 2:
+            return jsonify({'error': 'Search query must be at least 2 characters'}), 400
+        
+        # Use Lenders18 table directly
+        try:
+            from justdata.apps.dataexplorer.data_utils import search_lenders18
+            results = search_lenders18(query, limit=20)
+            logger.info(f"Found {len(results)} lenders from Lenders18 for query: {query}")
+        except Exception as bq_error:
+            logger.error(f"BigQuery Lenders18 search failed: {bq_error}", exc_info=True)
+            results = []
+        
+        return jsonify({
+            'success': True,
+            'results': results
+        })
+        
+    except Exception as e:
+        logger.error(f"Error searching lenders: {e}", exc_info=True)
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': f'An error occurred searching lenders: {str(e)}'}), 500
+
+
+@dataexplorer_bp.route('/api/config/data-types', methods=['GET'])
+@require_access('dataexplorer', 'full')
+def get_data_types():
+    """Get available data types and their configurations."""
+    from justdata.apps.dataexplorer.config import (
+        HMDA_YEARS, SB_YEARS, BRANCH_YEARS
+    )
+    
+    return jsonify({
+        'success': True,
+        'data': {
+            'hmda': {
+                'name': 'HMDA Mortgage Lending',
+                'years': HMDA_YEARS,
+                'description': 'Home Mortgage Disclosure Act mortgage lending data'
+            },
+            'sb': {
+                'name': 'Small Business Lending',
+                'years': SB_YEARS,
+                'description': 'HMDA Section 1071 small business lending data'
+            },
+            'branches': {
+                'name': 'Bank Branches',
+                'years': BRANCH_YEARS,
+                'description': 'FDIC Summary of Deposits branch data'
+            }
+        }
+    })
+
+
+
+@dataexplorer_bp.route('/api/export-lender-report-excel', methods=['POST'])
+@require_access('dataexplorer', 'full')
+def export_lender_report_excel():
+    """Export lender report to Excel with all data including all metros and peer details."""
+    try:
+        data = request.get_json()
+        job_id = data.get('job_id')
+        wizard_data = data.get('wizard_data', {})
+        
+        # Try to get cached data first
+        from justdata.shared.utils.progress_tracker import get_analysis_result
+        cached_result = None
+        if job_id:
+            cached_result = get_analysis_result(job_id)
+        
+        # If we have cached data, use it
+        if cached_result and cached_result.get('success'):
+            logger.info(f"Using cached data for Excel export (job_id: {job_id})")
+            report_data = cached_result.get('report_data', {})
+            metadata = cached_result.get('metadata', {})
+            all_metros_data = cached_result.get('all_metros_data', [])
+            peer_data = cached_result.get('peer_data', [])
+        else:
+            # Need to regenerate - use wizard_data to run analysis
+            logger.info("No cached data found, running analysis for Excel export")
+            from justdata.apps.dataexplorer.lender_analysis import run_lender_analysis
+            
+            # Run analysis to get all data
+            result = run_lender_analysis(wizard_data, job_id=None, progress_tracker=None)
+            
+            if not result.get('success'):
+                return jsonify({
+                    'success': False,
+                    'error': result.get('error', 'Failed to generate report data')
+                }), 500
+            
+            report_data = result.get('report_data', {})
+            metadata = result.get('metadata', {})
+            all_metros_data = result.get('all_metros_data', [])
+            peer_data = result.get('peer_data', [])
+        
+        # If all_metros_data or peer_data is missing, we already have it from the result above
+        # No need to query again - the result from run_lender_analysis already includes these
+        
+        # Format all metros data for Excel (if not already formatted)
+        if all_metros_data and len(all_metros_data) > 0:
+            # Check if it's already in the right format (list of dicts)
+            if isinstance(all_metros_data[0], dict):
+                # Already in correct format
+                formatted_metros = all_metros_data
+            else:
+                # Convert DataFrame to list of dicts
+                import pandas as pd
+                if isinstance(all_metros_data, pd.DataFrame):
+                    formatted_metros = all_metros_data.to_dict('records')
+                else:
+                    formatted_metros = []
+        else:
+            formatted_metros = []
+        
+        return jsonify({
+            'success': True,
+            'report_data': report_data,
+            'all_metros_data': formatted_metros,
+            'peer_data': peer_data if peer_data else [],
+            'metadata': metadata
+        })
+        
+    except Exception as e:
+        logger.error(f"Error exporting lender report to Excel: {e}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': f'Error generating Excel export: {str(e)}'
+        }), 500
+
+
+@dataexplorer_bp.route('/api/bigquery/job-history', methods=['GET'])
+@require_access('dataexplorer', 'full')
+def get_bigquery_job_history():
+    """Query BigQuery job history to see recent queries."""
+    try:
+        from justdata.shared.utils.bigquery_client import get_bigquery_client
+        from google.cloud import bigquery
+        from datetime import datetime, timedelta
+        
+        # Get query parameters
+        max_results = request.args.get('max_results', 50, type=int)
+        hours_back = request.args.get('hours_back', 24, type=int)
+        lei_filter = request.args.get('lei', None)  # Optional LEI filter
+        
+        # Get BigQuery client
+        client = get_bigquery_client(app_name='dataexplorer')
+        if not client:
+            return jsonify({'success': False, 'error': 'BigQuery client not available'}), 500
+        
+        # Calculate time threshold
+        time_threshold = datetime.utcnow() - timedelta(hours=hours_back)
+        
+        # List jobs
+        jobs = []
+        job_count = 0
+        
+        # Query the INFORMATION_SCHEMA for query history
+        # This is more reliable than listing jobs
+        project_id = os.getenv('JUSTDATA_PROJECT_ID', 'justdata-ncrc')
+        
+        # Query job history from INFORMATION_SCHEMA
+        query = f"""
+        SELECT
+            job_id,
+            creation_time,
+            start_time,
+            end_time,
+            state,
+            total_bytes_processed,
+            total_slot_ms,
+            user_email,
+            query,
+            statement_type,
+            error_result
+        FROM `{project_id}`.`region-us`.INFORMATION_SCHEMA.JOBS_BY_PROJECT
+        WHERE creation_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL {hours_back} HOUR)
+            AND job_type = 'QUERY'
+            AND state = 'DONE'
+        ORDER BY creation_time DESC
+        LIMIT {max_results}
+        """
+        
+        try:
+            query_job = client.query(query)
+            results = query_job.result()
+            
+            for row in results:
+                job_data = {
+                    'job_id': row.job_id,
+                    'creation_time': row.creation_time.isoformat() if row.creation_time else None,
+                    'start_time': row.start_time.isoformat() if row.start_time else None,
+                    'end_time': row.end_time.isoformat() if row.end_time else None,
+                    'state': row.state,
+                    'total_bytes_processed': row.total_bytes_processed,
+                    'total_slot_ms': row.total_slot_ms,
+                    'user_email': row.user_email,
+                    'query': row.query,
+                    'statement_type': row.statement_type,
+                    'error': str(row.error_result) if row.error_result else None
+                }
+                
+                # Filter by LEI if provided
+                if lei_filter and lei_filter.upper() in (job_data.get('query', '') or '').upper():
+                    jobs.append(job_data)
+                    job_count += 1
+                elif not lei_filter:
+                    jobs.append(job_data)
+                    job_count += 1
+                
+                if job_count >= max_results:
+                    break
+        except Exception as e:
+            logger.error(f"Error querying job history: {e}", exc_info=True)
+            # Fallback: try listing jobs directly
+            try:
+                for job in client.list_jobs(max_results=max_results):
+                    if job.created < time_threshold:
+                        continue
+                    
+                    job.reload()  # Get full job details
+                    
+                    if job.job_type == 'query' and job.state == 'DONE':
+                        job_data = {
+                            'job_id': job.job_id,
+                            'creation_time': job.created.isoformat() if job.created else None,
+                            'start_time': job.started.isoformat() if job.started else None,
+                            'end_time': job.ended.isoformat() if job.ended else None,
+                            'state': job.state,
+                            'total_bytes_processed': job.total_bytes_processed,
+                            'user_email': job.user_email if hasattr(job, 'user_email') else None,
+                            'query': job.query if hasattr(job, 'query') else None,
+                            'error': str(job.errors[0]) if job.errors else None
+                        }
+                        
+                        # Filter by LEI if provided
+                        if lei_filter and lei_filter.upper() in (job_data.get('query', '') or '').upper():
+                            jobs.append(job_data)
+                        elif not lei_filter:
+                            jobs.append(job_data)
+            except Exception as e2:
+                logger.error(f"Error in fallback job listing: {e2}", exc_info=True)
+                return jsonify({
+                    'success': False,
+                    'error': f'Error querying job history: {str(e)}. Fallback also failed: {str(e2)}'
+                }), 500
+        
+        return jsonify({
+            'success': True,
+            'jobs': jobs,
+            'count': len(jobs),
+            'hours_back': hours_back,
+            'lei_filter': lei_filter
+        })
+        
+    except Exception as e:
+        logger.error(f"Error getting BigQuery job history: {e}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 
 @dataexplorer_bp.route('/health')
